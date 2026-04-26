@@ -624,7 +624,7 @@ async function init() {
 async function afterLogin() {
   // Gauti profilį
   const { data: profile } = await sb.from('profiles')
-    .select('*, clubs(name)')
+    .select('*')
     .eq('id', currentUser.id)
     .single();
 
