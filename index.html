@@ -803,6 +803,47 @@ function updateExpBar(totalExp, level) {
 }
 
 async function loadCategories() {
+  try {
+    const { data: cats, error } = await sb
+      .from('career_categories')
+      .select('*')
+      .order('sort_order');
+
+    if (error) throw error;
+    if (!cats || cats.length === 0) {
+      document.getElementById('v-categories-list').innerHTML =
+        '<div style="padding:20px;text-align:center;color:var(--mut);">Kategorijų nerasta</div>';
+      return;
+    }
+
+    let totalCareerExp = 0;
+    const html = cats.map(cat => {
+      const exp = 0;
+      const badge = 'Pradinis';
+      const badgeClass = 'mu';
+      const pct = 0;
+      return `<div class="ri">
+        <div style="font-size:18px;">${cat.icon||'💪'}</div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:13px;font-weight:800;">${cat.name}</span>
+            <span style="font-size:11px;color:var(--mut);">${exp}/${cat.max_exp}</span>
+          </div>
+          <div class="pb2"><div class="pf" style="width:${pct}%;background:var(--br);"></div></div>
+        </div>
+        <div class="bg ${badgeClass}">${badge}</div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('v-categories-list').innerHTML = html;
+    document.getElementById('v-career-exp').textContent = totalCareerExp;
+    document.getElementById('v-kar-total').textContent = `${totalCareerExp} / 4200`;
+    document.getElementById('v-kar-bar').style.width = '0%';
+  } catch(e) {
+    document.getElementById('v-categories-list').innerHTML =
+      '<div style="padding:20px;text-align:center;color:var(--br);">Klaida: ' + e.message + '</div>';
+  }
+}{
   // Gauti visas kategorijas (be club_id filtro)
   const { data: cats, error } = await sb.from('career_categories')
     .select('*').order('sort_order').limit(7);
