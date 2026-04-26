@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#FF4D00">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <!-- SUPABASE SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--br:#FF4D00;--br2:#FF7A33;--card:#1A1A1A;--bg:#111;--txt:#F5F2ED;--mut:#888;--bdr:rgba(255,255,255,0.08);--grn:#22C55E;--blu:#3B82F6;--pur:#A855F7;--gld:#FFD700;--r:18px;}
@@ -569,7 +569,7 @@ select.inp option{background:#222;}
 // SVARBU: pakeisk šiuos raktus savo Supabase projekto raktais!
 // ════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://fabpruvcwddobpfdqhio.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_mSPoXTXhF8qtbx7W71KMMQ_yK2E1I_o';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhYnBydXZjd2Rkb2JwZmRxaGlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxOTg2MTMsImV4cCI6MjA5Mjc3NDYxM30.OnW-PaZwlieGcjfP6u1gFwQG5xNq25M4sQvhjUX006c';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ════════════════════════════════════════
