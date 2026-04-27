@@ -394,8 +394,8 @@ select.inp option{background:#222;}
       <div class="ebt" style="margin-top:8px;"><div class="ebf" id="v-kar-bar" style="width:0%;"></div></div>
       <div style="display:flex;gap:12px;margin-top:8px;">
         <span style="font-size:10px;color:rgba(255,255,255,.6);">Bronze ≥100</span>
-        <span style="font-size:10px;color:rgba(255,255,255,.6);">Silver ≥200</span>
-        <span style="font-size:10px;color:rgba(255,255,255,.6);">Gold ≥400</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.6);">Silver ≥300</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.6);">Gold ≥500</span>
       </div>
     </div>
     <div class="st" style="padding-top:4px;">7 KATEGORIJOS</div>
@@ -678,6 +678,11 @@ async function afterLogin() {
     .select('*').eq('id', currentUser.id).single();
   currentKid = kidData || { id: currentUser.id, total_exp: 0, current_level: 1, wins: 0, losses: 0 };
   loadKidData();
+
+  // Jei vaikas – subscribuoti realaus laiko pranešimams (kai treneris patvirtina/atmeta)
+  if (profile?.role === 'kid') {
+    subscribeKidNotifications();
+  }
 
   // Jei treneris – subscribuoti realaus laiko pranešimams
   if (profile?.role === 'trainer') {
@@ -1150,6 +1155,36 @@ function subscribeTrainerNotifications() {
       // Atnaujinti sąrašą jei esame patvirtinimų ekrane
       if (document.getElementById('tr-pat').classList.contains('on')) {
         loadPendingSubmissions();
+      }
+    })
+    .subscribe();
+}
+
+function subscribeKidNotifications() {
+  sb.channel('kid-'+currentUser.id)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'result_submissions',
+      filter: `kid_id=eq.${currentUser.id}`
+    }, async payload => {
+      const sub = payload.new;
+      if (!sub) return;
+
+      // Gaunam pratimo pavadinimą
+      const { data: ex } = await sb.from('exercises')
+        .select('name, career_categories(name)')
+        .eq('id', sub.exercise_id)
+        .single();
+      const exName = ex?.name || 'Pratimas';
+
+      if (sub.status === 'approved') {
+        showToast(`✅ Treneris patvirtino: ${exName} (+${sub.exp_gain} EXP)`, 'success', 5000);
+        // Atnaujinam visus duomenis
+        await loadKidData();
+      } else if (sub.status === 'rejected') {
+        const reason = sub.rejection_reason || 'be priežasties';
+        showToast(`❌ Atmesta: ${exName} (${reason})`, 'error', 5000);
+        // Atnaujinam tik laukiančių sąrašą
+        await loadKidPendingSubmissions();
       }
     })
     .subscribe();
