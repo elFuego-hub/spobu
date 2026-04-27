@@ -282,6 +282,49 @@ select.inp option{background:#222;}
   </div>
 </div>
 
+<!-- CREATE CHALLENGE MODAL -->
+<div class="mo" id="ccmo">
+  <div class="mbox" style="max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="mt">NAUJAS IŠŠŪKIS</div>
+      <button class="bb" onclick="closeCreateChallenge()">✕</button>
+    </div>
+    
+    <label class="lbl">PAVADINIMAS</label>
+    <input class="inp" type="text" id="cc-title" placeholder="Pvz. Atlik 50 burpees per dieną" maxlength="80">
+    
+    <label class="lbl">APRAŠYMAS / INSTRUKCIJOS</label>
+    <textarea class="inp" id="cc-description" placeholder="Detalesnis aprašymas vaikams..." rows="3" style="resize:none;"></textarea>
+    
+    <label class="lbl">TIPAS</label>
+    <div class="chs" style="margin-bottom:14px;">
+      <div class="ch on" onclick="selectChallengeType(this,'weekly')" data-type="weekly">⚡ Savaitinis</div>
+      <div class="ch" onclick="selectChallengeType(this,'monthly')" data-type="monthly">🎯 Mėnesinis</div>
+      <div class="ch" onclick="selectChallengeType(this,'oneoff')" data-type="oneoff">✨ Vienkartinis</div>
+    </div>
+    <input type="hidden" id="cc-type" value="weekly">
+    
+    <label class="lbl">EXP ATLYGIS <span id="cc-exp-max" style="color:var(--mut);">(max 25)</span></label>
+    <input class="inp" type="number" id="cc-exp" min="1" max="25" value="10" oninput="validateChallengeExp()">
+    
+    <label class="lbl">IKONA</label>
+    <div class="chs" style="margin-bottom:14px;" id="cc-icons">
+      <div class="ch on" onclick="selectChallengeIcon(this,'⚡')">⚡</div>
+      <div class="ch" onclick="selectChallengeIcon(this,'🎯')">🎯</div>
+      <div class="ch" onclick="selectChallengeIcon(this,'🔥')">🔥</div>
+      <div class="ch" onclick="selectChallengeIcon(this,'💪')">💪</div>
+      <div class="ch" onclick="selectChallengeIcon(this,'🏃')">🏃</div>
+      <div class="ch" onclick="selectChallengeIcon(this,'🏋️')">🏋️</div>
+      <div class="ch" onclick="selectChallengeIcon(this,'🧘')">🧘</div>
+      <div class="ch" onclick="selectChallengeIcon(this,'🥋')">🥋</div>
+    </div>
+    <input type="hidden" id="cc-icon" value="⚡">
+    
+    <button class="btn btng" id="cc-submit" style="margin:8px 0 0;width:100%;" onclick="submitNewChallenge()">SUKURTI IŠŠŪKĮ</button>
+    <button class="btn btnd" style="margin:8px 0 0;width:100%;" onclick="closeCreateChallenge()">Atšaukti</button>
+  </div>
+</div>
+
 <!-- ACHIEVEMENT (NEW BADGE) MODAL -->
 <div class="amo" id="amo">
   <div class="amo-box">
@@ -613,8 +656,18 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div class="tb"><div class="bb" onclick="g('tr','tr-main')">←</div><div class="tt">PATVIRTINIMAI</div>
   <div style="background:var(--br);color:white;font-size:16px;font-weight:800;padding:3px 10px;border-radius:99px;font-family:'Bebas Neue',sans-serif;" id="tr-pending-badge">0</div></div>
+  <div class="tabs">
+    <div class="tab on" onclick="switchTrTab(this,'career')">🏋️ Karjera <span id="tr-career-count" style="opacity:.6;">0</span></div>
+    <div class="tab" onclick="switchTrTab(this,'challenges')">⚡ Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
+    <div class="tab" onclick="openCreateChallenge()" style="background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.4);color:var(--grn);">+ Naujas iššūkis</div>
+  </div>
   <div class="sa">
+    <!-- Karjeros pateikimai -->
     <div id="tr-submissions-list">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <!-- Iššūkių pateikimai (paslėpti pradžioje) -->
+    <div id="tr-challenge-submissions-list" style="display:none;">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
   </div>
@@ -1299,6 +1352,7 @@ async function loadTrainerData() {
   document.getElementById('tr-name').textContent = name + ' 🥋';
   document.getElementById('tr-avatar').textContent = currentProfile.first_name?.[0]||'T';
   await loadPendingSubmissions();
+  await loadPendingChallengeSubmissions();
   await loadTrainerMembers();
 }
 
@@ -1330,9 +1384,13 @@ async function loadPendingSubmissions() {
 
   const count = subs?.length || 0;
   document.getElementById('tr-pending-count').textContent = `${count} →`;
-  document.getElementById('tr-pending-badge').textContent = count;
+  document.getElementById('tr-career-count').textContent = count;
   document.getElementById('tr-pending-summary').textContent =
     count ? `${count} rezultatų laukia` : 'Viskas patvirtinta ✓';
+  
+  // Bendras skaičiukas (karjera + iššūkiai)
+  const challengesCount = parseInt(document.getElementById('tr-challenges-count').textContent) || 0;
+  document.getElementById('tr-pending-badge').textContent = count + challengesCount;
 
   if (!subs?.length) {
     document.getElementById('tr-submissions-list').innerHTML =
@@ -1408,6 +1466,246 @@ async function loadTrainerMembers() {
 }
 
 // ════════════════════════════════════════
+// IŠŠŪKIŲ SISTEMA – TRENERIS
+// ════════════════════════════════════════
+
+// Tab perjungimas trenerio Patvirtinimų ekrane
+function switchTrTab(el, type) {
+  el.parentElement.querySelectorAll('.tab').forEach(t => {
+    if (!t.textContent.includes('+')) t.classList.remove('on');
+  });
+  el.classList.add('on');
+  
+  const careerList = document.getElementById('tr-submissions-list');
+  const challengesList = document.getElementById('tr-challenge-submissions-list');
+  
+  if (type === 'career') {
+    careerList.style.display = 'block';
+    challengesList.style.display = 'none';
+  } else if (type === 'challenges') {
+    careerList.style.display = 'none';
+    challengesList.style.display = 'block';
+    loadPendingChallengeSubmissions();
+  }
+}
+
+// EXP ribos pagal tipą
+const CHALLENGE_EXP_LIMITS = { weekly: 25, monthly: 50, oneoff: 10 };
+const CHALLENGE_EXPIRY_DAYS = { weekly: 7, monthly: 30, oneoff: 365 };
+
+function openCreateChallenge() {
+  document.getElementById('cc-title').value = '';
+  document.getElementById('cc-description').value = '';
+  document.getElementById('cc-exp').value = '10';
+  document.getElementById('cc-type').value = 'weekly';
+  document.getElementById('cc-icon').value = '⚡';
+  // Reset chips
+  document.querySelectorAll('#ccmo .chs .ch').forEach(c => c.classList.remove('on'));
+  document.querySelector('#ccmo [data-type="weekly"]').classList.add('on');
+  document.querySelector('#cc-icons .ch').classList.add('on');
+  validateChallengeExp();
+  document.getElementById('ccmo').classList.add('open');
+}
+
+function closeCreateChallenge() {
+  document.getElementById('ccmo').classList.remove('open');
+}
+
+function selectChallengeType(el, type) {
+  el.parentElement.querySelectorAll('.ch').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('cc-type').value = type;
+  
+  const max = CHALLENGE_EXP_LIMITS[type] || 25;
+  document.getElementById('cc-exp-max').textContent = `(max ${max})`;
+  document.getElementById('cc-exp').max = max;
+  
+  // Jei dabartinis EXP per didelis – sumažinti iki max
+  const current = parseInt(document.getElementById('cc-exp').value) || 0;
+  if (current > max) document.getElementById('cc-exp').value = max;
+  validateChallengeExp();
+}
+
+function selectChallengeIcon(el, icon) {
+  el.parentElement.querySelectorAll('.ch').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('cc-icon').value = icon;
+}
+
+function validateChallengeExp() {
+  const type = document.getElementById('cc-type').value;
+  const max = CHALLENGE_EXP_LIMITS[type] || 25;
+  const exp = parseInt(document.getElementById('cc-exp').value) || 0;
+  const btn = document.getElementById('cc-submit');
+  if (exp < 1 || exp > max) {
+    btn.disabled = true;
+    btn.style.opacity = '.5';
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+
+async function submitNewChallenge() {
+  const title = document.getElementById('cc-title').value.trim();
+  const desc = document.getElementById('cc-description').value.trim();
+  const type = document.getElementById('cc-type').value;
+  const exp = parseInt(document.getElementById('cc-exp').value);
+  const icon = document.getElementById('cc-icon').value;
+  
+  if (!title) { showToast('❌ Įvesk pavadinimą', 'error'); return; }
+  if (!exp || exp < 1) { showToast('❌ Įvesk EXP atlygį', 'error'); return; }
+  
+  const max = CHALLENGE_EXP_LIMITS[type];
+  if (exp > max) { showToast(`❌ Max EXP: ${max}`, 'error'); return; }
+  
+  const expiryDays = CHALLENGE_EXPIRY_DAYS[type];
+  const expiresAt = new Date(Date.now() + expiryDays * 86400 * 1000).toISOString();
+  
+  const btn = document.getElementById('cc-submit');
+  btn.disabled = true;
+  btn.textContent = 'KURIAMA...';
+  
+  const { error } = await sb.from('challenges').insert({
+    trainer_id: currentUser.id,
+    club_id: currentProfile?.club_id,
+    title,
+    description: desc || null,
+    instructions: desc || null,
+    type,
+    exp_reward: exp,
+    icon,
+    is_active: true,
+    expires_at: expiresAt
+  });
+  
+  btn.disabled = false;
+  btn.textContent = 'SUKURTI IŠŠŪKĮ';
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    console.error(error);
+    return;
+  }
+  
+  showToast(`✅ Iššūkis sukurtas!\n\n${title}\n+${exp} EXP`, 'success');
+  closeCreateChallenge();
+}
+
+async function loadPendingChallengeSubmissions() {
+  const { data: subs, error } = await sb.from('challenge_submissions')
+    .select('*, challenges(title, icon, type, exp_reward)')
+    .eq('status', 'pending')
+    .eq('trainer_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  
+  if (error) {
+    console.error('loadPendingChallengeSubmissions:', error);
+    document.getElementById('tr-challenge-submissions-list').innerHTML =
+      `<div style="text-align:center;padding:40px;color:var(--br);">Klaida: ${error.message}</div>`;
+    return;
+  }
+  
+  // Atskirai gauname vaikų vardus
+  const kidIds = [...new Set((subs || []).map(s => s.kid_id))];
+  let kidsMap = {};
+  if (kidIds.length > 0) {
+    const { data: kidsData } = await sb.from('profiles')
+      .select('id, first_name, last_name')
+      .in('id', kidIds);
+    (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
+  }
+  
+  // Atnaujinam skaičiukus
+  document.getElementById('tr-challenges-count').textContent = subs?.length || 0;
+  
+  // Bendras skaičiukas (karjera + iššūkiai)
+  const careerCount = parseInt(document.getElementById('tr-career-count').textContent) || 0;
+  document.getElementById('tr-pending-badge').textContent = careerCount + (subs?.length || 0);
+  
+  if (!subs?.length) {
+    document.getElementById('tr-challenge-submissions-list').innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--mut);">🎉 Iššūkių pateikimų nėra</div>';
+    return;
+  }
+  
+  const typeLabels = { weekly: 'Sav.', monthly: 'Mėn.', oneoff: 'Vnk.' };
+  
+  const html = subs.map(s => {
+    const kid = kidsMap[s.kid_id];
+    const kidName = kid ? `${kid.first_name} ${kid.last_name}` : 'Nežinomas';
+    const ch = s.challenges;
+    return `<div class="cd" style="margin-bottom:12px;" id="csub-${s.id}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div class="av" style="width:36px;height:36px;font-size:14px;background:var(--br);">${kid?.first_name?.[0]||'?'}</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:900;">${kidName}</div>
+          <div style="font-size:11px;color:var(--mut);">${ch?.icon||'⚡'} ${ch?.title||'Iššūkis'}</div>
+        </div>
+        <div class="bg or">${typeLabels[ch?.type]||''}</div>
+      </div>
+      ${s.value ? `<div style="font-size:12px;color:var(--mut);margin-bottom:10px;background:var(--bg);padding:8px 12px;border-radius:10px;">💬 ${s.value}</div>` : ''}
+      <div style="background:var(--bg);border-radius:12px;padding:10px;margin-bottom:10px;text-align:center;">
+        <div style="font-size:10px;color:var(--mut);">EXP ATLYGIS</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--br);">+${ch?.exp_reward||0} EXP</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveChallengeSubmission('${s.id}')">✓ Patvirtinti</button>
+        <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="rejectChallengeSubmission('${s.id}')">✗ Atmesti</button>
+      </div>
+    </div>`;
+  }).join('');
+  
+  document.getElementById('tr-challenge-submissions-list').innerHTML = html;
+}
+
+async function approveChallengeSubmission(subId) {
+  const { error } = await sb.from('challenge_submissions')
+    .update({ status: 'approved' })
+    .eq('id', subId);
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error');
+    return;
+  }
+  
+  const el = document.getElementById(`csub-${subId}`);
+  if (el) {
+    el.style.opacity = '.3';
+    el.style.pointerEvents = 'none';
+  }
+  showToast('✅ Patvirtinta! EXP priskaičiuota', 'success');
+  loadPendingChallengeSubmissions();
+}
+
+async function rejectChallengeSubmission(subId) {
+  const reason = prompt('Atmetimo priežastis (neprivaloma):') || 'Be priežasties';
+  
+  const { error } = await sb.from('challenge_submissions')
+    .update({ 
+      status: 'rejected', 
+      rejection_reason: reason,
+      reviewed_at: new Date().toISOString()
+    })
+    .eq('id', subId);
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error');
+    return;
+  }
+  
+  const el = document.getElementById(`csub-${subId}`);
+  if (el) {
+    el.style.opacity = '.3';
+    el.style.pointerEvents = 'none';
+  }
+  showToast('Atmesta', 'error');
+  loadPendingChallengeSubmissions();
+}
+
+
+// ════════════════════════════════════════
 // REALAUS LAIKO (WebSocket)
 // ════════════════════════════════════════
 function subscribeTrainerNotifications() {
@@ -1420,6 +1718,15 @@ function subscribeTrainerNotifications() {
       // Atnaujinti sąrašą jei esame patvirtinimų ekrane
       if (document.getElementById('tr-pat').classList.contains('on')) {
         loadPendingSubmissions();
+      }
+    })
+    .on('postgres_changes',{
+      event:'INSERT', schema:'public', table:'challenge_submissions'
+    }, payload => {
+      showToast('🎯 Naujas iššūkio pateikimas!', 'success', 4000);
+      document.getElementById('tr-notif-badge').style.display = 'block';
+      if (document.getElementById('tr-pat').classList.contains('on')) {
+        loadPendingChallengeSubmissions();
       }
     })
     .subscribe();
