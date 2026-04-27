@@ -138,6 +138,48 @@ body.am{padding:20px 0;justify-content:flex-start;}
 .mt{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:16px;}
 .sw{position:fixed;bottom:20px;right:20px;background:var(--br);color:white;border:none;border-radius:99px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 4px 20px rgba(255,77,0,.5);z-index:50;display:none;}
 select.inp option{background:#222;}
+/* SKILL BADGES */
+.skb{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.skb-circle{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;position:relative;transition:transform .15s;border:3px solid;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.08), transparent 60%);}
+.skb:hover .skb-circle{transform:scale(1.05);}
+.skb-name{font-size:10px;font-weight:800;color:var(--txt);text-align:center;line-height:1.2;}
+.skb-progress{font-size:9px;color:var(--mut);font-weight:700;}
+/* Pradinis (be medal) */
+.skb-pradinis .skb-circle{border-color:#444;background-color:rgba(60,60,60,.4);filter:grayscale(.5);opacity:.65;}
+/* Bronze */
+.skb-bronze .skb-circle{border-color:#CD7F32;background-color:rgba(205,127,50,.18);box-shadow:0 0 12px rgba(205,127,50,.4);}
+.skb-bronze .skb-name{color:#CD7F32;}
+/* Silver */
+.skb-silver .skb-circle{border-color:#C0C0C0;background-color:rgba(192,192,192,.22);box-shadow:0 0 16px rgba(192,192,192,.5);}
+.skb-silver .skb-name{color:#D5D5D5;}
+.skb-silver .skb-circle::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1.5px solid rgba(192,192,192,.5);}
+/* Gold */
+.skb-gold .skb-circle{border-color:#FFD700;background-color:rgba(255,215,0,.25);box-shadow:0 0 24px rgba(255,215,0,.6);}
+.skb-gold .skb-name{color:#FFD700;}
+.skb-gold .skb-circle::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px dashed rgba(255,215,0,.6);animation:badgeRotate 14s linear infinite;}
+/* Completed (užbaigta) */
+.skb-completed .skb-circle{border-color:#FF4D00;background:radial-gradient(circle at 30% 30%, rgba(255,215,0,.4), rgba(255,77,0,.3));box-shadow:0 0 32px rgba(255,77,0,.8),0 0 60px rgba(255,215,0,.3);animation:badgePulse 2s ease-in-out infinite;}
+.skb-completed .skb-name{color:#FFD700;font-weight:900;}
+.skb-completed .skb-circle::after{content:'★';position:absolute;top:-10px;right:-6px;font-size:18px;color:#FFD700;text-shadow:0 0 8px rgba(255,215,0,.8);animation:badgeStarSpin 4s linear infinite;}
+.skb-completed .skb-circle::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(255,215,0,.6);animation:badgeRotate 8s linear infinite reverse;}
+@keyframes badgeRotate{to{transform:rotate(360deg);}}
+@keyframes badgePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+@keyframes badgeStarSpin{to{transform:rotate(360deg);}}
+/* Achievement modal */
+.amo{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;}
+.amo.open{display:flex;}
+.amo-box{background:linear-gradient(135deg,var(--card),#222);border-radius:24px;padding:32px 28px;max-width:340px;width:100%;text-align:center;border:2px solid var(--gld);box-shadow:0 30px 80px rgba(255,215,0,.3),0 0 60px rgba(255,77,0,.4);position:relative;overflow:hidden;}
+.amo-box::before{content:'';position:absolute;inset:-50%;background:radial-gradient(circle,rgba(255,215,0,.15),transparent 60%);animation:amoSpin 6s linear infinite;}
+@keyframes amoSpin{to{transform:rotate(360deg);}}
+.amo-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--gld);margin-bottom:18px;position:relative;}
+.amo-badge{margin:0 auto 18px;position:relative;}
+.amo-badge .skb-circle{width:120px;height:120px;font-size:54px;}
+.amo-tier{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;margin-bottom:6px;position:relative;}
+.amo-cat{font-size:13px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:2px;margin-bottom:18px;position:relative;}
+.amo-msg{font-size:13px;color:var(--txt);margin-bottom:22px;line-height:1.5;position:relative;opacity:.85;}
+.amo-btn{position:relative;background:var(--br);color:white;border:none;border-radius:99px;padding:12px 32px;font-size:14px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:1px;}
+.confetti{position:absolute;width:8px;height:8px;border-radius:2px;pointer-events:none;animation:confettiFall 2.5s ease-out forwards;}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0);opacity:1;}100%{transform:translateY(400px) rotate(720deg);opacity:0;}}
 </style>
 </head>
 <body>
@@ -237,6 +279,18 @@ select.inp option{background:#222;}
     <div style="text-align:center;margin-top:12px;">
       <button class="btn-link" onclick="showLogin()">← Grįžti</button>
     </div>
+  </div>
+</div>
+
+<!-- ACHIEVEMENT (NEW BADGE) MODAL -->
+<div class="amo" id="amo">
+  <div class="amo-box">
+    <div class="amo-title">✨ NAUJAS PASIEKIMAS ✨</div>
+    <div class="amo-badge" id="amo-badge"></div>
+    <div class="amo-tier" id="amo-tier">SILVER</div>
+    <div class="amo-cat" id="amo-cat">JĖGA</div>
+    <div class="amo-msg" id="amo-msg">Tęsk treniruotes ir pasiek dar aukštesnį lygį!</div>
+    <button class="amo-btn" onclick="closeAchievement()">Tęsti</button>
   </div>
 </div>
 
@@ -481,6 +535,17 @@ select.inp option{background:#222;}
       <div style="flex:1;background:var(--card);padding:12px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-prof-exp">0</div><div style="font-size:10px;color:var(--mut);font-weight:700;margin-top:2px;">EXP</div></div>
       <div style="flex:1;background:var(--card);padding:12px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-prof-level">1</div><div style="font-size:10px;color:var(--mut);font-weight:700;margin-top:2px;">Lygis</div></div>
       <div style="flex:1;background:var(--card);padding:12px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--br);" id="v-prof-record">0–0</div><div style="font-size:10px;color:var(--mut);font-weight:700;margin-top:2px;">Rekordas</div></div>
+    </div>
+    <div class="st">MANO INVENTORIUS</div>
+    <div class="cd">
+      <div style="font-size:11px;font-weight:800;color:var(--mut);margin-bottom:12px;letter-spacing:1px;">🏆 SKILL BADGES</div>
+      <div id="v-skill-badges" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        <div style="text-align:center;padding:20px 0;color:var(--mut);font-size:12px;grid-column:span 4;">Kraunama...</div>
+      </div>
+      <div style="font-size:11px;font-weight:800;color:var(--mut);margin:18px 0 12px;letter-spacing:1px;">🥇 VARŽYBŲ MEDALIAI</div>
+      <div id="v-comp-medals" style="text-align:center;padding:14px;color:var(--mut);font-size:12px;background:var(--bg);border-radius:12px;border:.5px dashed var(--bdr);">
+        Dar nedalyvavai varžybose
+      </div>
     </div>
     <div class="st">PRIVATUMO NUSTATYMAI</div>
     <div class="cd">
@@ -838,6 +903,12 @@ async function loadKidData() {
 
   // Laukiantys pateikimai
   await loadKidPendingSubmissions();
+  
+  // Badge inventorius
+  await loadBadges();
+  
+  // Patikrinam ar yra naujų pasiekimų (po pirmo užkrovimo, kitu kartu rodys popup)
+  await checkForNewAchievements();
 }
 
 function updateExpBar(totalExp, level) {
@@ -913,6 +984,155 @@ async function loadCategories() {
   document.getElementById('v-career-exp').textContent = totalCareerExp;
   document.getElementById('v-kar-total').textContent = `${totalCareerExp} / 4200`;
   document.getElementById('v-kar-bar').style.width = Math.min(100, totalCareerExp/4200*100) + '%';
+}
+
+// ════════════════════════════════════════
+// SKILL BADGES (Inventorius)
+// ════════════════════════════════════════
+const CATEGORY_ICONS = {
+  'Jėga': '💪',
+  'Ištvermė': '🏃',
+  'Technika': '🥋',
+  'Lankstumas': '🤸',
+  'Greitis': '⚡',
+  'Karate atributika': '🎓',
+  'Drausmė': '🧘'
+};
+
+const TIER_NAMES = {
+  pradinis: 'Pradinis',
+  bronze: 'Bronze',
+  silver: 'Silver',
+  gold: 'Gold',
+  completed: 'Užbaigta'
+};
+
+const TIER_EMOJI = {
+  pradinis: '',
+  bronze: '🥉',
+  silver: '🥈',
+  gold: '🥇',
+  completed: '🏆'
+};
+
+function getTierFromExp(exp) {
+  if (exp >= 600) return 'completed';
+  if (exp >= 500) return 'gold';
+  if (exp >= 300) return 'silver';
+  if (exp >= 100) return 'bronze';
+  return 'pradinis';
+}
+
+async function loadBadges() {
+  // Visos kategorijos
+  const { data: cats } = await sb.from('career_categories')
+    .select('*').order('sort_order').limit(7);
+  if (!cats?.length) return;
+
+  // EXP per kategoriją
+  const { data: records } = await sb.from('kid_records')
+    .select('category_id, category_exp')
+    .eq('kid_id', currentUser.id);
+
+  const expByCategory = {};
+  (records || []).forEach(r => {
+    expByCategory[r.category_id] = (expByCategory[r.category_id] || 0) + (r.category_exp || 0);
+  });
+
+  const html = cats.map(cat => {
+    const exp = Math.min(expByCategory[cat.id] || 0, 600);
+    const tier = getTierFromExp(exp);
+    const icon = CATEGORY_ICONS[cat.name] || cat.icon || '💪';
+    return `<div class="skb skb-${tier}" title="${cat.name}: ${exp}/600 EXP">
+      <div class="skb-circle">${icon}</div>
+      <div class="skb-name">${cat.name}</div>
+      <div class="skb-progress">${exp}/600</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('v-skill-badges').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// ACHIEVEMENT POPUP (kai pasiekiamas naujas medalis)
+// ════════════════════════════════════════
+let lastKnownTiers = {}; // { categoryId: 'bronze' }
+
+async function checkForNewAchievements() {
+  const { data: cats } = await sb.from('career_categories')
+    .select('id, name').limit(7);
+  if (!cats?.length) return;
+
+  const { data: records } = await sb.from('kid_records')
+    .select('category_id, category_exp')
+    .eq('kid_id', currentUser.id);
+
+  const expByCategory = {};
+  (records || []).forEach(r => {
+    expByCategory[r.category_id] = (expByCategory[r.category_id] || 0) + (r.category_exp || 0);
+  });
+
+  for (const cat of cats) {
+    const exp = expByCategory[cat.id] || 0;
+    const newTier = getTierFromExp(exp);
+    const oldTier = lastKnownTiers[cat.id];
+    
+    // Jei tier'as pakilo (ne pirmas užkrovimas)
+    if (oldTier !== undefined && newTier !== oldTier && newTier !== 'pradinis') {
+      const tierOrder = ['pradinis', 'bronze', 'silver', 'gold', 'completed'];
+      if (tierOrder.indexOf(newTier) > tierOrder.indexOf(oldTier)) {
+        showAchievement(cat.name, newTier);
+      }
+    }
+    lastKnownTiers[cat.id] = newTier;
+  }
+}
+
+function showAchievement(catName, tier) {
+  const icon = CATEGORY_ICONS[catName] || '💪';
+  const tierName = TIER_NAMES[tier] || tier.toUpperCase();
+  const tierEmoji = TIER_EMOJI[tier] || '';
+  
+  const messages = {
+    bronze: 'Pirmasis žingsnis pasiektas! Tęsk treniruotes.',
+    silver: 'Puikiai! Dar šiek tiek iki Gold lygio.',
+    gold: 'Įspūdingas pasiekimas! Tu beveik užbaigei kategoriją.',
+    completed: 'Tu UŽBAIGEI šią kategoriją! Tikras meistras!'
+  };
+  
+  const badgeHtml = `<div class="skb skb-${tier}" style="cursor:default;"><div class="skb-circle">${icon}</div></div>`;
+  document.getElementById('amo-badge').innerHTML = badgeHtml;
+  document.getElementById('amo-tier').textContent = `${tierEmoji} ${tierName.toUpperCase()}`;
+  document.getElementById('amo-cat').textContent = catName;
+  document.getElementById('amo-msg').textContent = messages[tier] || 'Pasiekei naują lygį!';
+  document.getElementById('amo').classList.add('open');
+  
+  // Confetti animacija
+  spawnConfetti();
+  
+  // Vibracija
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+}
+
+function closeAchievement() {
+  document.getElementById('amo').classList.remove('open');
+}
+
+function spawnConfetti() {
+  const box = document.querySelector('.amo-box');
+  if (!box) return;
+  const colors = ['#FFD700', '#FF4D00', '#22C55E', '#3B82F6', '#A855F7'];
+  for (let i = 0; i < 30; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random()*100 + '%';
+    c.style.top = '-20px';
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDelay = (Math.random()*0.5) + 's';
+    c.style.animationDuration = (2 + Math.random()*1.5) + 's';
+    box.appendChild(c);
+    setTimeout(() => c.remove(), 4000);
+  }
 }
 
 async function loadChallenges() {
