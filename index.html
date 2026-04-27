@@ -633,12 +633,10 @@ async function afterLogin() {
   // Atnaujinti logout mygtuko el. paštą
   document.getElementById('logout-email').textContent = currentUser.email;
 
-  // Nukreipti pagal rolę
+  // Nukreipti pagal rolę automatiškai
   const autoPortal = { kid:'v', parent:'t', trainer:'tr', club_admin:'k', admin:'a' };
   if (profile && autoPortal[profile.role]) {
-    showPortalSelector();
-    // Auto-open jei tik viena rolė
-    // op(autoPortal[profile.role]);
+    op(autoPortal[profile.role]);
   } else {
     showPortalSelector();
   }
@@ -725,8 +723,13 @@ async function doRegister() {
   }
 
   showLoading(false);
-  showToast('✅ Registracija sėkminga! Patikrinkite el. paštą', 'success', 4000);
-  showLogin();
+  showToast('✅ Registracija sėkminga!', 'success', 3000);
+  // Auto prisijungti po registracijos
+  setTimeout(() => {
+    document.getElementById('login-email').value = email;
+    document.getElementById('login-pass').value = pass;
+    doLogin();
+  }, 1000);
 }
 
 async function doForgot() {
