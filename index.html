@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#FF4D00">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <!-- SUPABASE SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.26.0/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--br:#FF4D00;--br2:#FF7A33;--card:#1A1A1A;--bg:#111;--txt:#F5F2ED;--mut:#888;--bdr:rgba(255,255,255,0.08);--grn:#22C55E;--blu:#3B82F6;--pur:#A855F7;--gld:#FFD700;--r:18px;}
@@ -233,6 +233,7 @@ select.inp option{background:#222;}
     </div>
   </div>
 </div>
+
 <!-- EXERCISE / SUBMISSION MODAL -->
 <div class="mo" id="exo">
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
@@ -240,21 +241,15 @@ select.inp option{background:#222;}
       <div class="mt" id="exo-title">PRATIMAI</div>
       <button class="bb" onclick="closeExercises()">✕</button>
     </div>
-    
-    <!-- Pratimų sąrašas -->
     <div id="exo-list">
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
-    
-    <!-- Submission forma (paslepta iki paspaudimo) -->
     <div id="exo-form" style="display:none;">
       <button class="btn btnd" style="margin:0 0 14px;width:100%;" onclick="backToExerciseList()">← Atgal į pratimų sąrašą</button>
-      
       <div class="cd" style="margin:0 0 14px;">
         <div style="font-size:13px;font-weight:900;margin-bottom:4px;" id="exo-form-name">Pratimas</div>
         <div style="font-size:11px;color:var(--mut);" id="exo-form-info">–</div>
       </div>
-      
       <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-around;align-items:center;">
         <div style="text-align:center;">
           <div style="font-size:10px;color:var(--mut);">DABARTINIS PR</div>
@@ -266,20 +261,18 @@ select.inp option{background:#222;}
           <input type="number" class="inp" id="exo-form-new" min="1" step="1" style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:24px;width:90px;margin:0;padding:6px;" oninput="recalcExpGain()">
         </div>
       </div>
-      
       <div style="background:linear-gradient(135deg,var(--br),var(--br2));border-radius:12px;padding:14px;text-align:center;color:white;margin-bottom:14px;">
         <div style="font-size:11px;opacity:.85;letter-spacing:1px;">UŽDIRBSI</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;" id="exo-form-exp">+0 EXP</div>
       </div>
-      
       <label class="lbl">KOMENTARAS (neprivalomai)</label>
       <textarea class="inp" id="exo-form-comment" placeholder="Pvz. nufilmavau, ant kilimėlio..." rows="2" style="resize:none;"></textarea>
-      
       <button class="btn btng" id="exo-form-submit" style="margin:8px 0 0;width:100%;" onclick="submitExerciseResult()">SIŲSTI TRENERIUI</button>
       <div style="font-size:11px;color:var(--mut);text-align:center;margin-top:8px;">⚠️ Galima siųsti tik rezultatą, didesnį už PR</div>
     </div>
   </div>
 </div>
+
 <!-- REJECT MODAL -->
 <div class="mo" id="rmo">
   <div class="mbox">
@@ -614,8 +607,8 @@ select.inp option{background:#222;}
 // SUPABASE KONFIGŪRACIJA
 // SVARBU: pakeisk šiuos raktus savo Supabase projekto raktais!
 // ════════════════════════════════════════════════════════
-const SUPABASE_URL = 'https://uowhoqqchrxksffdwkcq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvd2hvcXFjaHJ4a3NmZmR3a2NxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTcwMzQsImV4cCI6MjA5Mjc5MzAzNH0.igHddvnGfcgpyc2Q--Vdfsy4MM3JlrN4g4Nuj3ypbPM';
+const SUPABASE_URL = 'https://fabpruvcwddobpfdqhio.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhYnBydXZjd2Rkb2JwZmRxaGlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxOTg2MTMsImV4cCI6MjA5Mjc3NDYxM30.OnW-PaZwlieGcjfP6u1gFwQG5xNq25M4sQvhjUX006c';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ════════════════════════════════════════
@@ -630,21 +623,12 @@ let rejectTargetId = null;
 // INICIALIZACIJA
 // ════════════════════════════════════════
 async function init() {
-  // Visada paslėpti loading po 3 sekundžių
-  setTimeout(() => {
-    document.getElementById('loading').style.display = 'none';
-  }, 3000);
-  
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-      await afterLogin();
-    } else {
-      showLogin();
-    }
-  } catch(e) {
-    console.error('Init error:', e);
+  // Patikrinti ar vartotojas jau prisijungęs
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await afterLogin();
+  } else {
     showLogin();
   }
   document.getElementById('loading').style.display = 'none';
@@ -670,7 +654,7 @@ async function init() {
 async function afterLogin() {
   // Gauti profilį
   const { data: profile } = await sb.from('profiles')
-    .select('*')
+    .select('*, clubs(name)')
     .eq('id', currentUser.id)
     .single();
 
@@ -679,10 +663,12 @@ async function afterLogin() {
   // Atnaujinti logout mygtuko el. paštą
   document.getElementById('logout-email').textContent = currentUser.email;
 
-  // Nukreipti pagal rolę automatiškai
+  // Nukreipti pagal rolę
   const autoPortal = { kid:'v', parent:'t', trainer:'tr', club_admin:'k', admin:'a' };
   if (profile && autoPortal[profile.role]) {
-    op(autoPortal[profile.role]);
+    showPortalSelector();
+    // Auto-open jei tik viena rolė
+    // op(autoPortal[profile.role]);
   } else {
     showPortalSelector();
   }
@@ -769,13 +755,8 @@ async function doRegister() {
   }
 
   showLoading(false);
-  showToast('✅ Registracija sėkminga!', 'success', 3000);
-  // Auto prisijungti po registracijos
-  setTimeout(() => {
-    document.getElementById('login-email').value = email;
-    document.getElementById('login-pass').value = pass;
-    doLogin();
-  }, 1000);
+  showToast('✅ Registracija sėkminga! Patikrinkite el. paštą', 'success', 4000);
+  showLogin();
 }
 
 async function doForgot() {
@@ -865,14 +846,9 @@ async function loadCategories() {
   const { data: cats, error } = await sb.from('career_categories')
     .select('*').order('sort_order').limit(7);
 
-  if (error) {
+  if (error || !cats || cats.length === 0) {
     document.getElementById('v-categories-list').innerHTML =
-      '<div style="padding:20px;text-align:center;color:var(--br);">Klaida: ' + (error.message||JSON.stringify(error)) + '</div>';
-    return;
-  }
-  if (!cats || cats.length === 0) {
-    document.getElementById('v-categories-list').innerHTML =
-      '<div style="padding:20px;text-align:center;color:var(--mut);">Kategorijų nerasta (0 eilučių)</div>';
+      '<div style="padding:20px;text-align:center;color:var(--mut);">Kategorijų nerasta duomenų bazėje</div>';
     return;
   }
 
@@ -1029,14 +1005,30 @@ async function loadTrainerData() {
 }
 
 async function loadPendingSubmissions() {
-  // Gauti visus laukiančius pateikimus iš trenerio klubo
-  const { data: subs } = await sb.from('result_submissions')
-    .select(`*, exercises(name,category_id,career_categories(name)),
-      kids!inner(id, profiles!inner(first_name,last_name,club_id))`)
+  // Gauti pateikimus, kuriuose trainer_id = aš
+  const { data: subs, error } = await sb.from('result_submissions')
+    .select(`*, exercises(name,category_id,career_categories(name))`)
     .eq('status','pending')
-    .eq('kids.profiles.club_id', currentProfile?.club_id)
-    .order('submitted_at',{ascending:false})
+    .eq('trainer_id', currentUser.id)
+    .order('created_at',{ascending:false})
     .limit(20);
+
+  if (error) {
+    console.error('loadPendingSubmissions error:', error);
+    document.getElementById('tr-submissions-list').innerHTML =
+      `<div style="text-align:center;padding:40px;color:var(--br);">Klaida: ${error.message}</div>`;
+    return;
+  }
+
+  // Atskirai gauname vaikų vardus
+  const kidIds = [...new Set((subs || []).map(s => s.kid_id))];
+  let kidsMap = {};
+  if (kidIds.length > 0) {
+    const { data: kidsData } = await sb.from('profiles')
+      .select('id, first_name, last_name')
+      .in('id', kidIds);
+    (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
+  }
 
   const count = subs?.length || 0;
   document.getElementById('tr-pending-count').textContent = `${count} →`;
@@ -1051,10 +1043,11 @@ async function loadPendingSubmissions() {
   }
 
   const html = subs.map(s => {
-    const kid = s.kids?.profiles;
+    const kid = kidsMap[s.kid_id];
     const kidName = kid ? `${kid.first_name} ${kid.last_name}` : 'Nežinomas';
     const catName = s.exercises?.career_categories?.name || '';
     const delta = (s.new_value||0) - (s.old_pr||0);
+    const expG = s.exp_gain || delta;
     return `<div class="cd" style="margin-bottom:12px;" id="sub-${s.id}">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
         <div class="av" style="width:36px;height:36px;font-size:14px;background:var(--br);">${kid?.first_name?.[0]||'?'}</div>
@@ -1066,7 +1059,7 @@ async function loadPendingSubmissions() {
         <div style="color:var(--mut);">→</div>
         <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">NAUJAS</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--grn);">${s.new_value}</div></div>
         <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">DELTA</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);">+${delta}</div></div>
-        <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">EXP</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);">+${delta}</div></div>
+        <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">EXP</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);">+${expG}</div></div>
       </div>
       ${s.comment?`<div style="font-size:11px;color:var(--mut);margin-bottom:10px;">💬 ${s.comment}</div>`:''}
       <div style="display:flex;gap:8px;">
@@ -1158,6 +1151,7 @@ async function cr() {
   showToast('Atmesta su priežastimi', 'error');
   loadPendingSubmissions();
 }
+
 // ════════════════════════════════════════
 // VAIKO SUBMISSION FORMA (showExercises)
 // ════════════════════════════════════════
@@ -1171,8 +1165,7 @@ async function showExercises(categoryId, categoryName) {
   document.getElementById('exo').classList.add('open');
   document.getElementById('exo-list').innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
 
-  // Gauti pratimus pagal kategoriją + lytį
-  const gender = currentKid?.gender || 'male'; // default male jei nenurodyta
+  const gender = currentKid?.gender || 'male';
   const { data: exercises, error } = await sb.from('exercises')
     .select('*')
     .eq('category_id', categoryId)
@@ -1192,14 +1185,12 @@ async function showExercises(categoryId, categoryName) {
     return;
   }
 
-  // Gauti vaiko PR kiekvienam pratimui
   const exerciseIds = exercises.map(e => e.id);
   const { data: records } = await sb.from('kid_records')
     .select('exercise_id, current_pr, category_exp')
     .eq('kid_id', currentUser.id)
     .in('exercise_id', exerciseIds);
 
-  // Sujungti
   currentExerciseList = exercises.map(ex => {
     const rec = records?.find(r => r.exercise_id === ex.id);
     return {
@@ -1210,7 +1201,6 @@ async function showExercises(categoryId, categoryName) {
     };
   });
 
-  // Render
   const html = currentExerciseList.map(ex => {
     const pct = Math.min(100, (ex.current_pr / ex.max_reps) * 100);
     const completed = ex.current_pr >= ex.max_reps;
@@ -1221,7 +1211,7 @@ async function showExercises(categoryId, categoryName) {
           <span style="font-size:11px;color:var(--mut);">${ex.current_pr}/${ex.max_reps} ${ex.unit}</span>
         </div>
         <div class="pb2"><div class="pf" style="width:${pct}%;background:${completed?'var(--gld)':'var(--br)'};"></div></div>
-        <div style="font-size:10px;color:var(--mut);margin-top:3px;">+${ex.exp_per_rep.toFixed(2)} EXP už ${ex.unit==='km'||ex.unit==='sekundžių'?'vienetą':'pakartojimą'}</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:3px;">+${ex.exp_per_rep.toFixed(2)} EXP už vienetą</div>
       </div>
       <div style="font-size:18px;color:var(--br);">${completed?'🏆':'→'}</div>
     </div>`;
@@ -1233,13 +1223,12 @@ async function showExercises(categoryId, categoryName) {
 function openSubmissionForm(exerciseId) {
   const ex = currentExerciseList.find(e => e.id === exerciseId);
   if (!ex) return;
-  
   currentExercise = ex;
   document.getElementById('exo-list').style.display = 'none';
   document.getElementById('exo-form').style.display = 'block';
   document.getElementById('exo-form-name').textContent = ex.name;
   document.getElementById('exo-form-info').textContent = 
-    `Max ${ex.max_reps} ${ex.unit} = 100 EXP · ${ex.exp_per_rep.toFixed(2)} EXP už pakartojimą`;
+    `Max ${ex.max_reps} ${ex.unit} = 100 EXP · ${ex.exp_per_rep.toFixed(2)} EXP už vienetą`;
   document.getElementById('exo-form-pr').textContent = ex.current_pr;
   document.getElementById('exo-form-new').value = '';
   document.getElementById('exo-form-new').min = ex.current_pr + 1;
@@ -1258,17 +1247,13 @@ function recalcExpGain() {
   if (!currentExercise) return;
   const newVal = parseInt(document.getElementById('exo-form-new').value) || 0;
   const oldPr = currentExercise.current_pr;
-  
   if (newVal <= oldPr) {
     document.getElementById('exo-form-exp').textContent = '+0 EXP';
     return;
   }
-  
-  // Apriboti iki max_reps (kad neviršytų 100 EXP per pratimą)
   const cappedNew = Math.min(newVal, currentExercise.max_reps);
   const delta = cappedNew - oldPr;
   const expGain = Math.round(delta * currentExercise.exp_per_rep);
-  
   document.getElementById('exo-form-exp').textContent = `+${expGain} EXP`;
 }
 
@@ -1280,34 +1265,28 @@ function closeExercises() {
 
 async function submitExerciseResult() {
   if (!currentExercise) return;
-  
   const newVal = parseInt(document.getElementById('exo-form-new').value);
   const comment = document.getElementById('exo-form-comment').value.trim();
   const oldPr = currentExercise.current_pr;
-  
-  // Validacija
+
   if (!newVal || newVal <= oldPr) {
     showToast('❌ Rezultatas turi būti didesnis už PR', 'error');
     return;
   }
-  
-  // Patikrinti, ar treneris yra priskirtas
   if (!currentKid?.trainer_id) {
     showToast('❌ Treneris dar nepriskirtas. Susisiek su klubu.', 'error', 4000);
     return;
   }
-  
-  // EXP skaičiavimas (tas pats, kas formoje)
+
   const cappedNew = Math.min(newVal, currentExercise.max_reps);
   const delta = cappedNew - oldPr;
   const expGain = Math.round(delta * currentExercise.exp_per_rep);
-  
-  // Disable mygtuką
+
   const btn = document.getElementById('exo-form-submit');
   btn.disabled = true;
   btn.textContent = 'SIUNČIAMA...';
   btn.style.opacity = '.6';
-  
+
   const { error } = await sb.from('result_submissions').insert({
     kid_id: currentUser.id,
     exercise_id: currentExercise.id,
@@ -1319,23 +1298,22 @@ async function submitExerciseResult() {
     comment: comment || null,
     status: 'pending'
   });
-  
+
   btn.disabled = false;
   btn.textContent = 'SIŲSTI TRENERIUI';
   btn.style.opacity = '1';
-  
+
   if (error) {
     showToast('❌ Klaida: ' + error.message, 'error', 4000);
     console.error('Submit error:', error);
     return;
   }
-  
+
   showToast('✅ Išsiųsta treneriui patvirtinti!', 'success', 3000);
   closeExercises();
-  
-  // Atnaujinti laukiančių pateikimų sąrašą
   await loadKidPendingSubmissions();
 }
+
 // ════════════════════════════════════════
 // PAYSERA MOKĖJIMAS
 // ════════════════════════════════════════
