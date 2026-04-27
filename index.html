@@ -233,7 +233,53 @@ select.inp option{background:#222;}
     </div>
   </div>
 </div>
-
+<!-- EXERCISE / SUBMISSION MODAL -->
+<div class="mo" id="exo">
+  <div class="mbox" style="max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="mt" id="exo-title">PRATIMAI</div>
+      <button class="bb" onclick="closeExercises()">✕</button>
+    </div>
+    
+    <!-- Pratimų sąrašas -->
+    <div id="exo-list">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    
+    <!-- Submission forma (paslepta iki paspaudimo) -->
+    <div id="exo-form" style="display:none;">
+      <button class="btn btnd" style="margin:0 0 14px;width:100%;" onclick="backToExerciseList()">← Atgal į pratimų sąrašą</button>
+      
+      <div class="cd" style="margin:0 0 14px;">
+        <div style="font-size:13px;font-weight:900;margin-bottom:4px;" id="exo-form-name">Pratimas</div>
+        <div style="font-size:11px;color:var(--mut);" id="exo-form-info">–</div>
+      </div>
+      
+      <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-around;align-items:center;">
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--mut);">DABARTINIS PR</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;" id="exo-form-pr">0</div>
+        </div>
+        <div style="color:var(--mut);font-size:24px;">→</div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--mut);">NAUJAS REKORDAS</div>
+          <input type="number" class="inp" id="exo-form-new" min="1" step="1" style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:24px;width:90px;margin:0;padding:6px;" oninput="recalcExpGain()">
+        </div>
+      </div>
+      
+      <div style="background:linear-gradient(135deg,var(--br),var(--br2));border-radius:12px;padding:14px;text-align:center;color:white;margin-bottom:14px;">
+        <div style="font-size:11px;opacity:.85;letter-spacing:1px;">UŽDIRBSI</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;" id="exo-form-exp">+0 EXP</div>
+      </div>
+      
+      <label class="lbl">KOMENTARAS (neprivalomai)</label>
+      <textarea class="inp" id="exo-form-comment" placeholder="Pvz. nufilmavau, ant kilimėlio..." rows="2" style="resize:none;"></textarea>
+      
+      <button class="btn btng" id="exo-form-submit" style="margin:8px 0 0;width:100%;" onclick="submitExerciseResult()">SIŲSTI TRENERIUI</button>
+      <div style="font-size:11px;color:var(--mut);text-align:center;margin-top:8px;">⚠️ Galima siųsti tik rezultatą, didesnį už PR</div>
+    </div>
+  </div>
+</div>
 <!-- REJECT MODAL -->
 <div class="mo" id="rmo">
   <div class="mbox">
@@ -1112,7 +1158,184 @@ async function cr() {
   showToast('Atmesta su priežastimi', 'error');
   loadPendingSubmissions();
 }
+// ════════════════════════════════════════
+// VAIKO SUBMISSION FORMA (showExercises)
+// ════════════════════════════════════════
+let currentExercise = null;
+let currentExerciseList = [];
 
+async function showExercises(categoryId, categoryName) {
+  document.getElementById('exo-title').textContent = categoryName.toUpperCase();
+  document.getElementById('exo-list').style.display = 'block';
+  document.getElementById('exo-form').style.display = 'none';
+  document.getElementById('exo').classList.add('open');
+  document.getElementById('exo-list').innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
+
+  // Gauti pratimus pagal kategoriją + lytį
+  const gender = currentKid?.gender || 'male'; // default male jei nenurodyta
+  const { data: exercises, error } = await sb.from('exercises')
+    .select('*')
+    .eq('category_id', categoryId)
+    .eq('is_active', true)
+    .or(`gender.eq.${gender},gender.eq.both`)
+    .order('sort_order');
+
+  if (error) {
+    document.getElementById('exo-list').innerHTML = 
+      `<div style="padding:20px;text-align:center;color:var(--br);">Klaida: ${error.message}</div>`;
+    return;
+  }
+
+  if (!exercises?.length) {
+    document.getElementById('exo-list').innerHTML = 
+      '<div style="padding:20px;text-align:center;color:var(--mut);">Pratimų šioje kategorijoje dar nėra</div>';
+    return;
+  }
+
+  // Gauti vaiko PR kiekvienam pratimui
+  const exerciseIds = exercises.map(e => e.id);
+  const { data: records } = await sb.from('kid_records')
+    .select('exercise_id, current_pr, category_exp')
+    .eq('kid_id', currentUser.id)
+    .in('exercise_id', exerciseIds);
+
+  // Sujungti
+  currentExerciseList = exercises.map(ex => {
+    const rec = records?.find(r => r.exercise_id === ex.id);
+    return {
+      ...ex,
+      current_pr: rec?.current_pr || 0,
+      category_exp: rec?.category_exp || 0,
+      exp_per_rep: ex.max_exp / ex.max_reps
+    };
+  });
+
+  // Render
+  const html = currentExerciseList.map(ex => {
+    const pct = Math.min(100, (ex.current_pr / ex.max_reps) * 100);
+    const completed = ex.current_pr >= ex.max_reps;
+    return `<div class="ri" style="cursor:pointer;${completed?'opacity:.6;':''}" onclick="openSubmissionForm('${ex.id}')">
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:13px;font-weight:800;">${ex.name}</span>
+          <span style="font-size:11px;color:var(--mut);">${ex.current_pr}/${ex.max_reps} ${ex.unit}</span>
+        </div>
+        <div class="pb2"><div class="pf" style="width:${pct}%;background:${completed?'var(--gld)':'var(--br)'};"></div></div>
+        <div style="font-size:10px;color:var(--mut);margin-top:3px;">+${ex.exp_per_rep.toFixed(2)} EXP už ${ex.unit==='km'||ex.unit==='sekundžių'?'vienetą':'pakartojimą'}</div>
+      </div>
+      <div style="font-size:18px;color:var(--br);">${completed?'🏆':'→'}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('exo-list').innerHTML = html;
+}
+
+function openSubmissionForm(exerciseId) {
+  const ex = currentExerciseList.find(e => e.id === exerciseId);
+  if (!ex) return;
+  
+  currentExercise = ex;
+  document.getElementById('exo-list').style.display = 'none';
+  document.getElementById('exo-form').style.display = 'block';
+  document.getElementById('exo-form-name').textContent = ex.name;
+  document.getElementById('exo-form-info').textContent = 
+    `Max ${ex.max_reps} ${ex.unit} = 100 EXP · ${ex.exp_per_rep.toFixed(2)} EXP už pakartojimą`;
+  document.getElementById('exo-form-pr').textContent = ex.current_pr;
+  document.getElementById('exo-form-new').value = '';
+  document.getElementById('exo-form-new').min = ex.current_pr + 1;
+  document.getElementById('exo-form-new').max = ex.max_reps;
+  document.getElementById('exo-form-comment').value = '';
+  document.getElementById('exo-form-exp').textContent = '+0 EXP';
+}
+
+function backToExerciseList() {
+  document.getElementById('exo-form').style.display = 'none';
+  document.getElementById('exo-list').style.display = 'block';
+  currentExercise = null;
+}
+
+function recalcExpGain() {
+  if (!currentExercise) return;
+  const newVal = parseInt(document.getElementById('exo-form-new').value) || 0;
+  const oldPr = currentExercise.current_pr;
+  
+  if (newVal <= oldPr) {
+    document.getElementById('exo-form-exp').textContent = '+0 EXP';
+    return;
+  }
+  
+  // Apriboti iki max_reps (kad neviršytų 100 EXP per pratimą)
+  const cappedNew = Math.min(newVal, currentExercise.max_reps);
+  const delta = cappedNew - oldPr;
+  const expGain = Math.round(delta * currentExercise.exp_per_rep);
+  
+  document.getElementById('exo-form-exp').textContent = `+${expGain} EXP`;
+}
+
+function closeExercises() {
+  document.getElementById('exo').classList.remove('open');
+  currentExercise = null;
+  currentExerciseList = [];
+}
+
+async function submitExerciseResult() {
+  if (!currentExercise) return;
+  
+  const newVal = parseInt(document.getElementById('exo-form-new').value);
+  const comment = document.getElementById('exo-form-comment').value.trim();
+  const oldPr = currentExercise.current_pr;
+  
+  // Validacija
+  if (!newVal || newVal <= oldPr) {
+    showToast('❌ Rezultatas turi būti didesnis už PR', 'error');
+    return;
+  }
+  
+  // Patikrinti, ar treneris yra priskirtas
+  if (!currentKid?.trainer_id) {
+    showToast('❌ Treneris dar nepriskirtas. Susisiek su klubu.', 'error', 4000);
+    return;
+  }
+  
+  // EXP skaičiavimas (tas pats, kas formoje)
+  const cappedNew = Math.min(newVal, currentExercise.max_reps);
+  const delta = cappedNew - oldPr;
+  const expGain = Math.round(delta * currentExercise.exp_per_rep);
+  
+  // Disable mygtuką
+  const btn = document.getElementById('exo-form-submit');
+  btn.disabled = true;
+  btn.textContent = 'SIUNČIAMA...';
+  btn.style.opacity = '.6';
+  
+  const { error } = await sb.from('result_submissions').insert({
+    kid_id: currentUser.id,
+    exercise_id: currentExercise.id,
+    category_id: currentExercise.category_id,
+    trainer_id: currentKid.trainer_id,
+    old_pr: oldPr,
+    new_value: newVal,
+    exp_gain: expGain,
+    comment: comment || null,
+    status: 'pending'
+  });
+  
+  btn.disabled = false;
+  btn.textContent = 'SIŲSTI TRENERIUI';
+  btn.style.opacity = '1';
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error', 4000);
+    console.error('Submit error:', error);
+    return;
+  }
+  
+  showToast('✅ Išsiųsta treneriui patvirtinti!', 'success', 3000);
+  closeExercises();
+  
+  // Atnaujinti laukiančių pateikimų sąrašą
+  await loadKidPendingSubmissions();
+}
 // ════════════════════════════════════════
 // PAYSERA MOKĖJIMAS
 // ════════════════════════════════════════
