@@ -984,26 +984,65 @@ async function loadLeaderboard() {
 
 async function loadKidPendingSubmissions() {
   const { data: subs } = await sb.from('result_submissions')
-    .select('*, exercises(name)')
+    .select('*, exercises(name, unit, career_categories(name, icon))')
     .eq('kid_id', currentUser.id)
     .eq('status', 'pending')
-    .limit(5);
+    .order('created_at', {ascending: false})
+    .limit(10);
 
   if (!subs?.length) {
     document.getElementById('v-pending-list').innerHTML =
       '<div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Nėra laukiančių pateikimų</div>';
+    document.getElementById('v-notif-dot').style.display = 'none';
     return;
   }
 
   document.getElementById('v-notif-dot').style.display = 'block';
-  const html = subs.map(s =>
-    `<div class="ri">
-      <div style="font-size:18px;">⏳</div>
-      <div style="flex:1;"><div style="font-size:13px;font-weight:800;">${s.exercises?.name||'Pratimas'}</div>
-      <div style="font-size:11px;color:var(--mut);">Laukia trenerio patvirtinimo</div></div>
-      <div class="bg or">Laukia</div>
-    </div>`
-  ).join('');
+
+  // Pagalbinė funkcija – kiek laiko praėjo
+  const timeAgo = (dateStr) => {
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (diff < 60) return 'ką tik';
+    if (diff < 3600) return `prieš ${Math.floor(diff/60)} min.`;
+    if (diff < 86400) return `prieš ${Math.floor(diff/3600)} val.`;
+    return `prieš ${Math.floor(diff/86400)} d.`;
+  };
+
+  const html = subs.map(s => {
+    const exName = s.exercises?.name || 'Pratimas';
+    const catName = s.exercises?.career_categories?.name || '';
+    const catIcon = s.exercises?.career_categories?.icon || '💪';
+    const unit = s.exercises?.unit || 'pakartojimų';
+    const delta = (s.new_value || 0) - (s.old_pr || 0);
+    const time = timeAgo(s.created_at);
+    
+    return `<div style="background:var(--bg);border-radius:14px;padding:12px;margin-bottom:10px;border:.5px solid rgba(255,77,0,.2);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-size:22px;">${catIcon}</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:900;">${exName}</div>
+          <div style="font-size:10px;color:var(--mut);">${catName} · ${time}</div>
+        </div>
+        <div class="bg or" style="white-space:nowrap;">⏳ Laukia</div>
+      </div>
+      <div style="display:flex;justify-content:space-around;align-items:center;background:var(--card);border-radius:10px;padding:8px;">
+        <div style="text-align:center;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:.5px;">SENAS PR</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--mut);">${s.old_pr || 0}</div>
+        </div>
+        <div style="color:var(--mut);font-size:14px;">→</div>
+        <div style="text-align:center;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:.5px;">NAUJAS</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--grn);">${s.new_value}</div>
+        </div>
+        <div style="color:var(--mut);font-size:14px;">|</div>
+        <div style="text-align:center;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:.5px;">+${delta}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--br);">+${s.exp_gain || 0} EXP</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
   document.getElementById('v-pending-list').innerHTML = html;
 }
 
