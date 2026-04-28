@@ -1779,7 +1779,7 @@ async function submitNewClub() {
   const city = document.getElementById('cclub-city').value.trim();
   const address = document.getElementById('cclub-address').value.trim();
   const sportId = document.getElementById('cclub-sport').value;
-  const adminEmail = document.getElementById('cclub-admin-email').value.trim();
+  const adminEmail = document.getElementById('cclub-admin-email').value.trim().toLowerCase();
   const phone = document.getElementById('cclub-phone').value.trim();
   const iban = document.getElementById('cclub-iban').value.trim();
   const commission = parseFloat(document.getElementById('cclub-commission').value) || 10;
@@ -1788,49 +1788,92 @@ async function submitNewClub() {
   if (!city) { showToast('❌ Įvesk miestą', 'error'); return; }
   if (!sportId) { showToast('❌ Pasirink sporto šaką', 'error'); return; }
   if (!adminEmail) { showToast('❌ Įvesk admin email', 'error'); return; }
+  if (!adminEmail.includes('@')) { showToast('❌ Neteisingas email', 'error'); return; }
 
   const btn = document.getElementById('cclub-submit');
   btn.disabled = true;
   btn.textContent = 'KURIAMA...';
 
-  // Generuojame invite_code
-  const inviteCode = name.replace(/[^A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž0-9]/g, '').toUpperCase().slice(0, 6) + '-' + Math.floor(Math.random()*9000+1000);
+  try {
+    // 1. Patikriname, ar email jau egzistuoja sistemoje (kaip kitos rolės)
+    const { data: existingProfile } = await sb.rpc('check_email_exists', { p_email: adminEmail });
+    
+    // Generuojame invite_code klubo nariams
+    const inviteCode = name.replace(/[^A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž0-9]/g, '').toUpperCase().slice(0, 6) + '-' + Math.floor(Math.random()*9000+1000);
 
-  // Sukuriame klubą
-  const { data: newClub, error } = await sb.from('clubs').insert({
-    name,
-    city,
-    address: address || null,
-    sport_id: sportId,
-    contact_email: adminEmail,
-    contact_phone: phone || null,
-    iban: iban || null,
-    commission_pct: commission,
-    invite_code: inviteCode,
-    is_active: true,
-    created_by_admin_id: currentUser.id
-  }).select().single();
+    // 2. Sukuriame klubą
+    const { data: newClub, error: clubError } = await sb.from('clubs').insert({
+      name,
+      city,
+      address: address || null,
+      sport_id: sportId,
+      contact_email: adminEmail,
+      contact_phone: phone || null,
+      iban: iban || null,
+      commission_pct: commission,
+      invite_code: inviteCode,
+      is_active: true,
+      created_by_admin_id: currentUser.id
+    }).select().single();
 
-  btn.disabled = false;
-  btn.textContent = 'SUKURTI KLUBĄ';
+    if (clubError) throw clubError;
 
-  if (error) {
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
-    console.error(error);
-    return;
+    // 3. Sukuriame pending invitation
+    const { error: invError } = await sb.from('pending_invitations').insert({
+      email: adminEmail,
+      role: 'club_admin',
+      invited_by: currentUser.id,
+      first_name: 'Klubo',
+      last_name: 'Administratorius',
+      club_id: newClub.id,
+      status: 'pending'
+    });
+
+    if (invError) {
+      console.error('Invitation error:', invError);
+      // Net jei pending_invitations nesukūrė, klubas jau yra
+    }
+
+    // 4. Sukuriame vartotoją per signUp su laikinu slaptažodžiu
+    const tempPassword = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
+    const { data: signUpData, error: signUpError } = await sb.auth.signUp({
+      email: adminEmail,
+      password: tempPassword,
+      options: {
+        emailRedirectTo: `${window.location.origin}/spobu/set-password.html`
+      }
+    });
+
+    if (signUpError) {
+      // Jei vartotojas jau egzistuoja – tik siunčiam reset password
+      if (signUpError.message.includes('already') || signUpError.message.includes('exists')) {
+        await sb.auth.resetPasswordForEmail(adminEmail, {
+          redirectTo: `${window.location.origin}/spobu/set-password.html`
+        });
+        showToast('✅ Klubas sukurtas!\n\nVartotojas jau egzistuoja, jam išsiųstas slaptažodžio nustatymo email\'as.', 'success');
+      } else {
+        throw signUpError;
+      }
+    } else {
+      // 5. Iškart siunčiame password reset, kad vartotojas galėtų nustatyti savo slaptažodį
+      await sb.auth.resetPasswordForEmail(adminEmail, {
+        redirectTo: `${window.location.origin}/spobu/set-password.html`
+      });
+      
+      showToast(`✅ Klubas sukurtas!\n\n📧 ${adminEmail}\nIšsiųstas aktyvavimo email'as`, 'success');
+    }
+
+    closeCreateClub();
+    await loadAdminClubs();
+    await loadAdminData();
+
+  } catch (error) {
+    console.error('submitNewClub error:', error);
+    showToast('❌ Klaida: ' + (error.message || JSON.stringify(error)), 'error', 6000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'SUKURTI KLUBĄ';
   }
-
-  showToast(`✅ Klubas sukurtas!\n\n${name}\nReikia kviesti admin: ${adminEmail}`, 'success');
-  closeCreateClub();
-  
-  // Atnaujinam sąrašą
-  await loadAdminClubs();
-  await loadAdminData();
-  
-  // Pranešam, kad reikia rankiniu būdu pakviesti adminą per Supabase Dashboard (kol kas)
-  setTimeout(() => {
-    showToast('ℹ️ Klubo administratorius dar turi būti sukurtas Supabase Dashboard\'e', 'success', 6000);
-  }, 4000);
 }
 
 // ════════════════════════════════════════
@@ -1934,29 +1977,74 @@ function closeInviteTrainer() {
 async function submitInviteTrainer() {
   const fname = document.getElementById('invtr-fname').value.trim();
   const lname = document.getElementById('invtr-lname').value.trim();
-  const email = document.getElementById('invtr-email').value.trim();
+  const email = document.getElementById('invtr-email').value.trim().toLowerCase();
 
   if (!fname || !lname) { showToast('❌ Įvesk vardą ir pavardę', 'error'); return; }
   if (!email) { showToast('❌ Įvesk email', 'error'); return; }
+  if (!email.includes('@')) { showToast('❌ Neteisingas email', 'error'); return; }
   if (!currentClub) { showToast('❌ Klubas neidentifikuotas', 'error'); return; }
 
   const btn = document.getElementById('invtr-submit');
   btn.disabled = true;
   btn.textContent = 'SIUNČIAMA...';
 
-  // Pastaba: tikram inviteUserByEmail reikia service role key, kuris frontend'e netinkamas
-  // Todėl dabar kviesim per Edge Function arba per signUp + email confirmation
-  // MVP versijai – sukursim profilį su pending statusu
-  
-  showToast('⚠️ Aktyvavimo email\'ų sistema dar pilnai neįdiegta.\n\nKol kas: paprašyk Admin sukurti per Supabase Dashboard.', 'error', 7000);
-  
-  btn.disabled = false;
-  btn.textContent = 'SIŲSTI KVIETIMĄ';
-  
-  // TODO: kai bus Edge Function setup:
-  // const { error } = await sb.functions.invoke('invite-trainer', {
-  //   body: { email, first_name: fname, last_name: lname, club_id: currentClub.id }
-  // });
+  try {
+    // 1. Sukuriame pending invitation
+    const { error: invError } = await sb.from('pending_invitations').insert({
+      email,
+      role: 'trainer',
+      invited_by: currentUser.id,
+      first_name: fname,
+      last_name: lname,
+      invited_by_club_id: currentClub.id,
+      status: 'pending'
+    });
+
+    if (invError) {
+      console.error('Invitation error:', invError);
+      throw invError;
+    }
+
+    // 2. Sukuriame vartotoją per signUp su laikinu slaptažodžiu
+    const tempPassword = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
+    const { data: signUpData, error: signUpError } = await sb.auth.signUp({
+      email,
+      password: tempPassword,
+      options: {
+        emailRedirectTo: `${window.location.origin}/spobu/set-password.html`
+      }
+    });
+
+    if (signUpError) {
+      // Jei vartotojas jau egzistuoja
+      if (signUpError.message.includes('already') || signUpError.message.includes('exists')) {
+        await sb.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/spobu/set-password.html`
+        });
+        showToast(`✅ Kvietimas išsiųstas!\n\n${fname} ${lname} jau yra sistemoje, jam išsiųsta nauja prisijungimo nuoroda.`, 'success');
+      } else {
+        throw signUpError;
+      }
+    } else {
+      // 3. Iškart siunčiame password reset
+      await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/spobu/set-password.html`
+      });
+      
+      showToast(`✅ Kvietimas išsiųstas!\n\n📧 ${email}\nTreneris gaus aktyvavimo email'ą`, 'success');
+    }
+
+    closeInviteTrainer();
+    await loadClubTrainers();
+    await loadClubData();
+
+  } catch (error) {
+    console.error('submitInviteTrainer error:', error);
+    showToast('❌ Klaida: ' + (error.message || JSON.stringify(error)), 'error', 6000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'SIŲSTI KVIETIMĄ';
+  }
 }
 
 // ════════════════════════════════════════
