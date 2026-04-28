@@ -282,6 +282,69 @@ select.inp option{background:#222;}
   </div>
 </div>
 
+<!-- INVITE TRAINER MODAL -->
+<div class="mo" id="invtrmo">
+  <div class="mbox">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="mt">PAKVIESTI TRENERĮ</div>
+      <button class="bb" onclick="closeInviteTrainer()">✕</button>
+    </div>
+    
+    <label class="lbl">VARDAS</label>
+    <input class="inp" type="text" id="invtr-fname" placeholder="Vardas">
+    
+    <label class="lbl">PAVARDĖ</label>
+    <input class="inp" type="text" id="invtr-lname" placeholder="Pavardė">
+    
+    <label class="lbl">EL. PAŠTAS</label>
+    <input class="inp" type="email" id="invtr-email" placeholder="treneris@klubas.lt">
+    <div style="font-size:11px;color:var(--mut);margin-bottom:14px;">Treneris gaus aktyvavimo nuorodą šiuo el. paštu</div>
+    
+    <button class="btn btng" id="invtr-submit" style="margin:8px 0 0;width:100%;" onclick="submitInviteTrainer()">SIŲSTI KVIETIMĄ</button>
+    <button class="btn btnd" style="margin:8px 0 0;width:100%;" onclick="closeInviteTrainer()">Atšaukti</button>
+  </div>
+</div>
+
+<!-- CREATE CLUB MODAL (admin) -->
+<div class="mo" id="cclubmo">
+  <div class="mbox" style="max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="mt">NAUJAS KLUBAS</div>
+      <button class="bb" onclick="closeCreateClub()">✕</button>
+    </div>
+    
+    <label class="lbl">KLUBO PAVADINIMAS</label>
+    <input class="inp" type="text" id="cclub-name" placeholder="Pvz. Vilniaus Kyokushin Karate Klubas" maxlength="120">
+    
+    <label class="lbl">MIESTAS</label>
+    <input class="inp" type="text" id="cclub-city" placeholder="Vilnius">
+    
+    <label class="lbl">ADRESAS</label>
+    <input class="inp" type="text" id="cclub-address" placeholder="Gedimino pr. 1, Vilnius">
+    
+    <label class="lbl">SPORTO ŠAKA</label>
+    <select class="inp" id="cclub-sport">
+      <option value="">Pasirinkti...</option>
+    </select>
+    
+    <label class="lbl">KLUBO ADMIN EMAIL</label>
+    <input class="inp" type="email" id="cclub-admin-email" placeholder="admin@klubas.lt">
+    <div style="font-size:11px;color:var(--mut);margin-bottom:14px;">Šis žmogus gaus aktyvavimo nuorodą ir taps klubo administratoriumi</div>
+    
+    <label class="lbl">KONTAKTINIS TELEFONAS</label>
+    <input class="inp" type="tel" id="cclub-phone" placeholder="+370 600 00000">
+    
+    <label class="lbl">IBAN (mokėjimams)</label>
+    <input class="inp" type="text" id="cclub-iban" placeholder="LT12 1000 0000 0000 0000">
+    
+    <label class="lbl">KOMISINIS % <span style="color:var(--mut);">(default 10%)</span></label>
+    <input class="inp" type="number" id="cclub-commission" placeholder="10" value="10" min="0" max="100" step="0.1">
+    
+    <button class="btn btng" id="cclub-submit" style="margin:8px 0 0;width:100%;" onclick="submitNewClub()">SUKURTI KLUBĄ</button>
+    <button class="btn btnd" style="margin:8px 0 0;width:100%;" onclick="closeCreateClub()">Atšaukti</button>
+  </div>
+</div>
+
 <!-- CREATE CHALLENGE MODAL -->
 <div class="mo" id="ccmo">
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
@@ -707,24 +770,193 @@ select.inp option{background:#222;}
 </div></div></div></div></div>
 
 <div id="pk" style="display:none;"><div class="df"><div class="ds"><div class="ph">
+<!-- KLUBAS: PAGRINDINIS -->
 <div class="sc on" id="k-main">
   <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
-  <div style="padding:40px 20px;text-align:center;color:var(--mut);">
-    <div style="font-size:48px;margin-bottom:16px;">🏢</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--txt);margin-bottom:8px;">KLUBO PASKYRA</div>
-    <div style="font-size:13px;">Bus pilnai integruota su Supabase duomenimis.</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px;">
+    <div>
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">KLUBO ADMINISTRATORIUS</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="k-club-name">KLUBAS 🏢</div>
+    </div>
+    <div style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--blu);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--blu);" id="k-avatar">K</div>
   </div>
-</div></div></div></div></div>
+  <div class="sa">
+    <!-- Klubo info kortelė -->
+    <div class="hero" style="background:linear-gradient(135deg,var(--blu),#2563EB);">
+      <div class="hbrand">SPOBU · KLUBAS</div>
+      <div style="font-size:11px;opacity:.85;letter-spacing:1px;margin-bottom:4px;" id="k-club-city">–</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;" id="k-club-fullname">–</div>
+    </div>
+    
+    <!-- Greita statistika -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px;">
+      <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
+        <div style="font-size:22px;margin-bottom:4px;">🥋</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--grn);" id="k-trainers-count">0</div>
+        <div style="font-size:10px;color:var(--mut);font-weight:700;">TRENERIAI</div>
+      </div>
+      <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
+        <div style="font-size:22px;margin-bottom:4px;">⚡</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--br);" id="k-kids-count">0</div>
+        <div style="font-size:10px;color:var(--mut);font-weight:700;">VAIKAI</div>
+      </div>
+    </div>
+    
+    <div class="st">VEIKSMAI</div>
+    <div class="cd" style="padding:12px;">
+      <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openInviteTrainer()">➕ Pakviesti trenerį</button>
+      <button class="btn btnd" style="margin:0;width:100%;" onclick="g('k','k-trainers')">🥋 Valdyti trenerius</button>
+    </div>
+    
+    <div style="height:16px;"></div>
+  </div>
+  <div class="bn2">
+    <div class="ni on" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- KLUBAS: TRENERIAI -->
+<div class="sc" id="k-trainers">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('k','k-main')">←</div><div class="tt">TRENERIAI</div>
+    <button class="bb" onclick="openInviteTrainer()" style="background:var(--br);border-color:var(--br);color:white;">+</button>
+  </div>
+  <div class="sa">
+    <div id="k-trainers-list" style="padding:0 16px;">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- KLUBAS: PROFILIS -->
+<div class="sc" id="k-prof">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">PROFILIS</div></div>
+  <div class="sa">
+    <div class="hero" style="background:linear-gradient(135deg,var(--blu),#2563EB);">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;margin:0 auto 10px;" id="k-prof-avatar">K</div>
+      <div style="text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="k-prof-name">Klubo administratorius</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px;" id="k-prof-club">–</div>
+      </div>
+    </div>
+    <div class="st">PASKYROS NUSTATYMAI</div>
+    <div class="cd" style="padding:12px;">
+      <button class="btn btnd" style="margin:0;width:100%;" onclick="doLogout()">🚪 Atsijungti</button>
+    </div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+</div></div></div></div>
 
 <div id="pa" style="display:none;"><div class="df"><div class="ds"><div class="ph">
+<!-- ADMIN: PAGRINDINIS -->
 <div class="sc on" id="a-main">
   <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
-  <div style="padding:40px 20px;text-align:center;color:var(--mut);">
-    <div style="font-size:48px;margin-bottom:16px;">👑</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--txt);margin-bottom:8px;">ADMIN PASKYRA</div>
-    <div style="font-size:13px;">Bus pilnai integruota su Supabase duomenimis.</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px;">
+    <div>
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">ADMINISTRATORIUS</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;" id="a-name">ADMIN 👑</div>
+    </div>
+    <div style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--pur);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--pur);" id="a-avatar">A</div>
   </div>
-</div></div></div></div></div>
+  <div class="sa">
+    <!-- Greita statistika -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;">
+      <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
+        <div style="font-size:22px;margin-bottom:4px;">🏢</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--pur);" id="a-clubs-count">0</div>
+        <div style="font-size:10px;color:var(--mut);font-weight:700;">KLUBAI</div>
+      </div>
+      <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
+        <div style="font-size:22px;margin-bottom:4px;">🥋</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--grn);" id="a-trainers-count">0</div>
+        <div style="font-size:10px;color:var(--mut);font-weight:700;">TRENERIAI</div>
+      </div>
+      <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
+        <div style="font-size:22px;margin-bottom:4px;">⚡</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--br);" id="a-kids-count">0</div>
+        <div style="font-size:10px;color:var(--mut);font-weight:700;">VAIKAI</div>
+      </div>
+      <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
+        <div style="font-size:22px;margin-bottom:4px;">👨‍👩‍👦</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--blu);" id="a-parents-count">0</div>
+        <div style="font-size:10px;color:var(--mut);font-weight:700;">TĖVAI</div>
+      </div>
+    </div>
+    
+    <div class="st">VEIKSMAI</div>
+    <div class="cd" style="padding:12px;">
+      <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openCreateClub()">➕ Sukurti naują klubą</button>
+      <button class="btn btnd" style="margin:0;width:100%;" onclick="g('a','a-clubs')">🏢 Valdyti klubus</button>
+    </div>
+    
+    <div class="st">NAUJAUSIA VEIKLA</div>
+    <div class="cd" id="a-recent-activity">
+      <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Veikla atsiras kai bus klubų</div>
+    </div>
+    <div style="height:16px;"></div>
+  </div>
+  <div class="bn2">
+    <div class="ni on" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-clubs')"><span class="ic">🏢</span><span class="lb">Klubai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- ADMIN: KLUBAI -->
+<div class="sc" id="a-clubs">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">KLUBAI</div>
+    <button class="bb" onclick="openCreateClub()" style="background:var(--br);border-color:var(--br);color:white;">+</button>
+  </div>
+  <div class="sa">
+    <div id="a-clubs-list" style="padding:0 16px;">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('a',this,'a-clubs')"><span class="ic">🏢</span><span class="lb">Klubai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- ADMIN: PROFILIS -->
+<div class="sc" id="a-prof">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">PROFILIS</div></div>
+  <div class="sa">
+    <div class="hero" style="background:linear-gradient(135deg,var(--pur),#7C3AED);">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;margin:0 auto 10px;" id="a-prof-avatar">A</div>
+      <div style="text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="a-prof-name">Admin</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px;">SPOBU Administratorius</div>
+      </div>
+    </div>
+    <div class="st">PASKYROS NUSTATYMAI</div>
+    <div class="cd" style="padding:12px;">
+      <button class="btn btnd" style="margin:0;width:100%;" onclick="doLogout()">🚪 Atsijungti</button>
+    </div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-clubs')"><span class="ic">🏢</span><span class="lb">Klubai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('a',this,'a-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+</div></div></div></div>
 
 <script>
 // ════════════════════════════════════════════════════════
@@ -777,41 +1009,52 @@ async function init() {
 
 async function afterLogin() {
   // Gauti profilį
-  const { data: profile } = await sb.from('profiles')
-    .select('*, clubs(name)')
+  const { data: profile, error: profileErr } = await sb.from('profiles')
+    .select('*, clubs(id, name, city)')
     .eq('id', currentUser.id)
     .single();
 
-  currentProfile = profile;
+  if (profileErr || !profile) {
+    console.error('Profile error:', profileErr);
+    showToast('❌ Paskyra nėra sukurta. Kreipkis į administratorių.', 'error', 6000);
+    await sb.auth.signOut();
+    return;
+  }
 
-  // Atnaujinti logout mygtuko el. paštą
+  currentProfile = profile;
   document.getElementById('logout-email').textContent = currentUser.email;
 
-  // Nukreipti pagal rolę
+  // AUTO-NUKREIPIMAS pagal rolę
   const autoPortal = { kid:'v', parent:'t', trainer:'tr', club_admin:'k', admin:'a' };
-  if (profile && autoPortal[profile.role]) {
-    showPortalSelector();
-    // Auto-open jei tik viena rolė
-    // op(autoPortal[profile.role]);
-  } else {
-    showPortalSelector();
+  const portal = autoPortal[profile.role];
+
+  if (!portal) {
+    showToast('❌ Nežinoma paskyros rolė: ' + profile.role, 'error');
+    return;
   }
 
-  // Visada krauname kid duomenis
-  const { data: kidData } = await sb.from('kids')
-    .select('*').eq('id', currentUser.id).single();
-  currentKid = kidData || { id: currentUser.id, total_exp: 0, current_level: 1, wins: 0, losses: 0 };
-  loadKidData();
-
-  // Jei vaikas – subscribuoti realaus laiko pranešimams (kai treneris patvirtina/atmeta)
-  if (profile?.role === 'kid') {
-    subscribeKidNotifications();
-  }
-
-  // Jei treneris – subscribuoti realaus laiko pranešimams
-  if (profile?.role === 'trainer') {
+  // Pagal rolę krauname tinkamą duomenis
+  if (profile.role === 'admin') {
+    await loadAdminData();
+    op('a');
+  } else if (profile.role === 'club_admin') {
+    await loadClubData();
+    op('k');
+  } else if (profile.role === 'trainer') {
     subscribeTrainerNotifications();
-    loadTrainerData();
+    await loadTrainerData();
+    op('tr');
+  } else if (profile.role === 'kid') {
+    // Krauname kid duomenis
+    const { data: kidData } = await sb.from('kids')
+      .select('*').eq('id', currentUser.id).single();
+    currentKid = kidData || { id: currentUser.id, total_exp: 0, current_level: 1, wins: 0, losses: 0 };
+    subscribeKidNotifications();
+    await loadKidData();
+    op('v');
+  } else if (profile.role === 'parent') {
+    // Tėvo paskyra (kol kas placeholder)
+    op('t');
   }
 }
 
@@ -840,52 +1083,12 @@ async function doLogin() {
 }
 
 async function doRegister() {
-  const fname = document.getElementById('reg-fname').value.trim();
-  const lname = document.getElementById('reg-lname').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const pass = document.getElementById('reg-pass').value;
-  const role = document.getElementById('reg-role').value;
-  const clubCode = document.getElementById('reg-club').value.trim().toUpperCase();
-  const consentPrivacy = document.getElementById('consent-privacy').checked;
-  const consentParent = document.getElementById('consent-parent').checked;
   const errEl = document.getElementById('reg-err');
   errEl.style.display = 'none';
-
-  if (!fname||!lname||!email||!pass) { showErr(errEl,'Užpildykite visus laukelius'); return; }
-  if (pass.length < 8) { showErr(errEl,'Slaptažodis per trumpas (min. 8 simboliai)'); return; }
-  if (!consentPrivacy) { showErr(errEl,'Privaloma sutikti su privatumo politika'); return; }
-  if (role === 'kid' && !consentParent) { showErr(errEl,'Tėvai privalo patvirtinti sutikimą'); return; }
-
-  // Patikrinti klubo kodą
-  let clubId = null;
-  if (clubCode) {
-    const { data: club } = await sb.from('clubs').select('id').eq('invite_code', clubCode).single();
-    if (!club) { showErr(errEl,'Neteisingas klubo kodas'); return; }
-    clubId = club.id;
-  }
-
-  showLoading(true);
-  const { data, error } = await sb.auth.signUp({
-    email, password: pass,
-    options: { data: { first_name: fname, last_name: lname, role } }
-  });
-
-  if (error) { showLoading(false); showErr(errEl, error.message); return; }
-
-  // Sukurti profilį
-  await sb.from('profiles').insert({
-    id: data.user.id, role,
-    first_name: fname, last_name: lname, club_id: clubId
-  });
-
-  // Jei vaikas – sukurti kid įrašą
-  if (role === 'kid') {
-    await sb.from('kids').insert({ id: data.user.id });
-  }
-
-  showLoading(false);
-  showToast('✅ Registracija sėkminga! Patikrinkite el. paštą', 'success', 4000);
-  showLogin();
+  
+  // Sesija 1: registracijos forma dar nepritaikyta naujai schemai
+  // Bus padaryta 2-ojoje sesijoje (su sporto šaka, kyu, svoriu, klubo+trenerio pasirinkimu)
+  showErr(errEl, '🚧 Registracija dabar atnaujinama. Naują versiją įdiegsime kitoje sesijoje. Tuo tarpu kreipkis į administratorių.');
 }
 
 async function doForgot() {
@@ -1463,6 +1666,287 @@ async function loadTrainerMembers() {
     </div>`;
   }).join('');
   document.getElementById('tr-members-preview').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// ADMIN PASKYRA
+// ════════════════════════════════════════
+async function loadAdminData() {
+  if (!currentProfile) return;
+  const name = `${currentProfile.first_name || 'Admin'} ${currentProfile.last_name || ''}`.toUpperCase();
+  document.getElementById('a-name').textContent = name;
+  document.getElementById('a-avatar').textContent = (currentProfile.first_name?.[0] || 'A').toUpperCase();
+  document.getElementById('a-prof-avatar').textContent = (currentProfile.first_name?.[0] || 'A').toUpperCase();
+  document.getElementById('a-prof-name').textContent = name;
+
+  // Statistikos
+  const [clubsRes, trainersRes, kidsRes, parentsRes] = await Promise.all([
+    sb.from('clubs').select('id', { count: 'exact', head: true }),
+    sb.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'trainer'),
+    sb.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'kid'),
+    sb.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'parent')
+  ]);
+
+  document.getElementById('a-clubs-count').textContent = clubsRes.count || 0;
+  document.getElementById('a-trainers-count').textContent = trainersRes.count || 0;
+  document.getElementById('a-kids-count').textContent = kidsRes.count || 0;
+  document.getElementById('a-parents-count').textContent = parentsRes.count || 0;
+
+  // Klubų sąrašas
+  await loadAdminClubs();
+}
+
+async function loadAdminClubs() {
+  const { data: clubs, error } = await sb.from('clubs')
+    .select('*, sports(name, icon)')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('loadAdminClubs:', error);
+    document.getElementById('a-clubs-list').innerHTML = 
+      `<div style="text-align:center;padding:20px;color:var(--br);">Klaida: ${error.message}</div>`;
+    return;
+  }
+
+  if (!clubs?.length) {
+    document.getElementById('a-clubs-list').innerHTML = 
+      `<div style="text-align:center;padding:40px;color:var(--mut);">
+        <div style="font-size:40px;margin-bottom:12px;">🏢</div>
+        <div style="font-size:14px;font-weight:800;margin-bottom:6px;">Dar nėra klubų</div>
+        <div style="font-size:12px;margin-bottom:16px;">Sukurk pirmą klubą, kad pradėtum</div>
+        <button class="btn" style="margin:0;" onclick="openCreateClub()">➕ Sukurti klubą</button>
+      </div>`;
+    return;
+  }
+
+  const html = clubs.map(c => `
+    <div class="cd" style="margin-bottom:12px;padding:14px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--blu);display:flex;align-items:center;justify-content:center;font-size:20px;">${c.sports?.icon || '🏢'}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:900;">${c.name}</div>
+          <div style="font-size:11px;color:var(--mut);">${c.city || '–'} · ${c.sports?.name || ''}</div>
+        </div>
+        <div class="bg ${c.is_active ? 'gn' : 'mu'}">${c.is_active ? 'Aktyvus' : 'Nеaktyvus'}</div>
+      </div>
+      <div style="display:flex;gap:8px;font-size:11px;color:var(--mut);">
+        <span>📧 ${c.contact_email || '–'}</span>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('a-clubs-list').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// CREATE CLUB MODAL
+// ════════════════════════════════════════
+async function openCreateClub() {
+  // Užkrauname sporto šakas
+  const { data: sports } = await sb.from('sports').select('*').eq('is_active', true);
+  const select = document.getElementById('cclub-sport');
+  select.innerHTML = '<option value="">Pasirinkti...</option>' + 
+    (sports || []).map(s => `<option value="${s.id}">${s.icon || ''} ${s.name}</option>`).join('');
+  
+  // Reset
+  document.getElementById('cclub-name').value = '';
+  document.getElementById('cclub-city').value = '';
+  document.getElementById('cclub-address').value = '';
+  document.getElementById('cclub-admin-email').value = '';
+  document.getElementById('cclub-phone').value = '';
+  document.getElementById('cclub-iban').value = '';
+  document.getElementById('cclub-commission').value = '10';
+  
+  document.getElementById('cclubmo').classList.add('open');
+}
+
+function closeCreateClub() {
+  document.getElementById('cclubmo').classList.remove('open');
+}
+
+async function submitNewClub() {
+  const name = document.getElementById('cclub-name').value.trim();
+  const city = document.getElementById('cclub-city').value.trim();
+  const address = document.getElementById('cclub-address').value.trim();
+  const sportId = document.getElementById('cclub-sport').value;
+  const adminEmail = document.getElementById('cclub-admin-email').value.trim();
+  const phone = document.getElementById('cclub-phone').value.trim();
+  const iban = document.getElementById('cclub-iban').value.trim();
+  const commission = parseFloat(document.getElementById('cclub-commission').value) || 10;
+
+  if (!name) { showToast('❌ Įvesk klubo pavadinimą', 'error'); return; }
+  if (!city) { showToast('❌ Įvesk miestą', 'error'); return; }
+  if (!sportId) { showToast('❌ Pasirink sporto šaką', 'error'); return; }
+  if (!adminEmail) { showToast('❌ Įvesk admin email', 'error'); return; }
+
+  const btn = document.getElementById('cclub-submit');
+  btn.disabled = true;
+  btn.textContent = 'KURIAMA...';
+
+  // Generuojame invite_code
+  const inviteCode = name.replace(/[^A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž0-9]/g, '').toUpperCase().slice(0, 6) + '-' + Math.floor(Math.random()*9000+1000);
+
+  // Sukuriame klubą
+  const { data: newClub, error } = await sb.from('clubs').insert({
+    name,
+    city,
+    address: address || null,
+    sport_id: sportId,
+    contact_email: adminEmail,
+    contact_phone: phone || null,
+    iban: iban || null,
+    commission_pct: commission,
+    invite_code: inviteCode,
+    is_active: true,
+    created_by_admin_id: currentUser.id
+  }).select().single();
+
+  btn.disabled = false;
+  btn.textContent = 'SUKURTI KLUBĄ';
+
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    console.error(error);
+    return;
+  }
+
+  showToast(`✅ Klubas sukurtas!\n\n${name}\nReikia kviesti admin: ${adminEmail}`, 'success');
+  closeCreateClub();
+  
+  // Atnaujinam sąrašą
+  await loadAdminClubs();
+  await loadAdminData();
+  
+  // Pranešam, kad reikia rankiniu būdu pakviesti adminą per Supabase Dashboard (kol kas)
+  setTimeout(() => {
+    showToast('ℹ️ Klubo administratorius dar turi būti sukurtas Supabase Dashboard\'e', 'success', 6000);
+  }, 4000);
+}
+
+// ════════════════════════════════════════
+// KLUBO PASKYRA
+// ════════════════════════════════════════
+let currentClub = null;
+
+async function loadClubData() {
+  if (!currentProfile) return;
+
+  // Gaunam klubą, kuriam šis vartotojas yra admin
+  const { data: club, error } = await sb.from('clubs')
+    .select('*, sports(name, icon)')
+    .eq('admin_profile_id', currentUser.id)
+    .single();
+
+  if (error || !club) {
+    showToast('❌ Šis klubas dar nepriskirtas. Susisiek su admin.', 'error', 5000);
+    return;
+  }
+
+  currentClub = club;
+
+  // Atnaujinam UI
+  document.getElementById('k-club-name').textContent = club.name.toUpperCase();
+  document.getElementById('k-club-fullname').textContent = club.name;
+  document.getElementById('k-club-city').textContent = `${club.city} · ${club.sports?.name || ''}`;
+  document.getElementById('k-avatar').textContent = club.name[0]?.toUpperCase() || 'K';
+  document.getElementById('k-prof-avatar').textContent = club.name[0]?.toUpperCase() || 'K';
+  document.getElementById('k-prof-name').textContent = currentProfile.first_name || 'Klubo administratorius';
+  document.getElementById('k-prof-club').textContent = club.name;
+
+  // Statistikos
+  const [trainersRes, kidsRes] = await Promise.all([
+    sb.from('trainers').select('id', { count: 'exact', head: true }).eq('invited_by_club_id', club.id),
+    sb.from('kids').select('id', { count: 'exact', head: true })
+  ]);
+
+  document.getElementById('k-trainers-count').textContent = trainersRes.count || 0;
+  document.getElementById('k-kids-count').textContent = kidsRes.count || 0;
+
+  await loadClubTrainers();
+}
+
+async function loadClubTrainers() {
+  if (!currentClub) return;
+
+  const { data: trainers, error } = await sb.from('trainers')
+    .select('*, profiles!inner(first_name, last_name, status, activated_at)')
+    .eq('invited_by_club_id', currentClub.id);
+
+  if (error) {
+    console.error('loadClubTrainers:', error);
+    return;
+  }
+
+  if (!trainers?.length) {
+    document.getElementById('k-trainers-list').innerHTML = 
+      `<div style="text-align:center;padding:40px;color:var(--mut);">
+        <div style="font-size:40px;margin-bottom:12px;">🥋</div>
+        <div style="font-size:14px;font-weight:800;margin-bottom:6px;">Dar nėra trenerių</div>
+        <div style="font-size:12px;margin-bottom:16px;">Pakviesk pirmą trenerį</div>
+        <button class="btn" style="margin:0;" onclick="openInviteTrainer()">➕ Pakviesti trenerį</button>
+      </div>`;
+    return;
+  }
+
+  const html = trainers.map(t => {
+    const p = t.profiles;
+    const name = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Bevardis';
+    const isActive = p.status === 'active';
+    return `<div class="cd" style="margin-bottom:12px;padding:14px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="av" style="background:var(--grn);">${name[0]?.toUpperCase() || 'T'}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:900;">${name}</div>
+          <div style="font-size:11px;color:var(--mut);">Kodas: ${t.trainer_code}</div>
+        </div>
+        <div class="bg ${isActive ? 'gn' : 'or'}">${isActive ? 'Aktyvus' : 'Laukia'}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('k-trainers-list').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// INVITE TRAINER (klubo pusė)
+// ════════════════════════════════════════
+function openInviteTrainer() {
+  document.getElementById('invtr-fname').value = '';
+  document.getElementById('invtr-lname').value = '';
+  document.getElementById('invtr-email').value = '';
+  document.getElementById('invtrmo').classList.add('open');
+}
+
+function closeInviteTrainer() {
+  document.getElementById('invtrmo').classList.remove('open');
+}
+
+async function submitInviteTrainer() {
+  const fname = document.getElementById('invtr-fname').value.trim();
+  const lname = document.getElementById('invtr-lname').value.trim();
+  const email = document.getElementById('invtr-email').value.trim();
+
+  if (!fname || !lname) { showToast('❌ Įvesk vardą ir pavardę', 'error'); return; }
+  if (!email) { showToast('❌ Įvesk email', 'error'); return; }
+  if (!currentClub) { showToast('❌ Klubas neidentifikuotas', 'error'); return; }
+
+  const btn = document.getElementById('invtr-submit');
+  btn.disabled = true;
+  btn.textContent = 'SIUNČIAMA...';
+
+  // Pastaba: tikram inviteUserByEmail reikia service role key, kuris frontend'e netinkamas
+  // Todėl dabar kviesim per Edge Function arba per signUp + email confirmation
+  // MVP versijai – sukursim profilį su pending statusu
+  
+  showToast('⚠️ Aktyvavimo email\'ų sistema dar pilnai neįdiegta.\n\nKol kas: paprašyk Admin sukurti per Supabase Dashboard.', 'error', 7000);
+  
+  btn.disabled = false;
+  btn.textContent = 'SIŲSTI KVIETIMĄ';
+  
+  // TODO: kai bus Edge Function setup:
+  // const { error } = await sb.functions.invoke('invite-trainer', {
+  //   body: { email, first_name: fname, last_name: lname, club_id: currentClub.id }
+  // });
 }
 
 // ════════════════════════════════════════
