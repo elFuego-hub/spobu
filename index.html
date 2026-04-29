@@ -880,6 +880,18 @@ select.inp option{background:#222;}
         <div style="background:var(--br);color:white;font-family:'Bebas Neue',sans-serif;font-size:20px;padding:6px 14px;border-radius:99px;letter-spacing:1px;" id="tr-pending-count">...</div>
       </div>
     </div>
+    
+    <!-- Naujos vaikų paskyros laukia patvirtinimo -->
+    <div class="cd" id="tr-new-kids-card" style="background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div>
+          <div style="font-size:14px;font-weight:900;color:var(--grn);">🆕 Naujos paskyros</div>
+          <div style="font-size:12px;color:var(--grn);opacity:.8;margin-top:2px;" id="tr-new-kids-summary">Kraunama...</div>
+        </div>
+        <div style="background:var(--grn);color:white;font-family:'Bebas Neue',sans-serif;font-size:20px;padding:6px 14px;border-radius:99px;letter-spacing:1px;" id="tr-new-kids-count">0</div>
+      </div>
+      <div id="tr-new-kids-list"></div>
+    </div>
     <div class="st">MANO NARIAI</div>
     <div class="cd" id="tr-members-preview">
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
@@ -1563,6 +1575,15 @@ async function rwSubmit(skipPhoto) {
   btn.textContent = 'KURIAMA...';
   
   try {
+    // Pirma patikrinam, ar abu email'ai turi tinkamą formatą (be lietuviškų raidžių)
+    const emailRegex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(rwData.parent_email)) {
+      throw new Error('Tėvų email\'e yra neleistinų simbolių (pvz. lietuviškos raidės). Naudok tik a-z, 0-9, +, -, _, .');
+    }
+    if (rwData.account_type === 'parent_and_kid' && !emailRegex.test(rwData.kid_email)) {
+      throw new Error('Vaiko email\'e yra neleistinų simbolių (pvz. lietuviškos raidės)');
+    }
+    
     // 1. Sukuriam pending invitation TĖVAMS (su visa vaiko info)
     const { error: parentInvError } = await sb.from('pending_invitations').insert({
       email: rwData.parent_email,
@@ -1610,14 +1631,16 @@ async function rwSubmit(skipPhoto) {
         sport_id: rwData.sport_id,
         gender: rwData.gender,
         birth_year: rwData.birth_year,
+        weight_range: rwData.weight_range,
         kyu: rwData.kyu,
         club_id: rwData.club_id,
+        assigned_trainer_id: rwData.trainer_id,
         status: 'pending'
       });
       
       if (kidInvError) {
         console.error('Kid invitation error:', kidInvError);
-        // Tėvai jau sukurti – tęsiam, bet logaim
+        throw new Error('Vaiko registracijos klaida: ' + kidInvError.message);
       }
       
       // signUp vaikui su laikinu slaptažodžiu
@@ -1628,7 +1651,13 @@ async function rwSubmit(skipPhoto) {
       });
       
       if (kidSignUpError) {
-        console.error('Kid signUp error:', kidSignUpError);
+        // Jei email jau egzistuoja – aiški klaida
+        if (kidSignUpError.message.includes('already') || 
+            kidSignUpError.message.includes('exists') ||
+            kidSignUpError.message.includes('registered')) {
+          throw new Error('Vaiko email\'as ' + rwData.kid_email + ' jau yra užregistruotas. Pasirink kitą email\'ą.');
+        }
+        throw new Error('Vaiko paskyros klaida: ' + kidSignUpError.message);
       }
       
       // Reset password vaikui (į jo email)
@@ -2141,9 +2170,114 @@ async function loadTrainerData() {
   const name = `${currentProfile.first_name} ${currentProfile.last_name}`.toUpperCase();
   document.getElementById('tr-name').textContent = name + ' 🥋';
   document.getElementById('tr-avatar').textContent = currentProfile.first_name?.[0]||'T';
+  await loadNewKids();
   await loadPendingSubmissions();
   await loadPendingChallengeSubmissions();
   await loadTrainerMembers();
+}
+
+async function loadNewKids() {
+  // Naujieji vaikai laukia patvirtinimo (assigned_trainer_id = man, status='pending')
+  const { data: kids, error } = await sb.from('kids')
+    .select('id, gender, birth_year, weight_range, kyu, created_at')
+    .eq('assigned_trainer_id', currentUser.id)
+    .eq('approval_status', 'pending')
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('loadNewKids error:', error);
+    document.getElementById('tr-new-kids-card').style.display = 'none';
+    return;
+  }
+  
+  const card = document.getElementById('tr-new-kids-card');
+  
+  if (!kids || kids.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  
+  // Gauname vaikų vardus
+  const kidIds = kids.map(k => k.id);
+  const { data: profiles } = await sb.from('profiles')
+    .select('id, first_name, last_name')
+    .in('id', kidIds);
+  
+  const profileMap = {};
+  (profiles || []).forEach(p => { profileMap[p.id] = p; });
+  
+  card.style.display = 'block';
+  document.getElementById('tr-new-kids-count').textContent = kids.length;
+  document.getElementById('tr-new-kids-summary').textContent = 
+    kids.length === 1 ? '1 vaikas laukia patvirtinimo' : `${kids.length} vaikai laukia patvirtinimo`;
+  
+  const list = document.getElementById('tr-new-kids-list');
+  list.innerHTML = kids.map(k => {
+    const profile = profileMap[k.id] || {};
+    const name = `${profile.first_name || 'Vaikas'} ${profile.last_name || ''}`.trim();
+    const age = new Date().getFullYear() - k.birth_year;
+    const genderIcon = k.gender === 'male' ? '👦' : '👧';
+    
+    return `
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div>
+            <div style="font-weight:900;font-size:14px;">${genderIcon} ${name}</div>
+            <div style="font-size:11px;color:var(--mut);margin-top:2px;line-height:1.5;">
+              ${age}m. • ${k.weight_range || '-'}kg • ${k.kyu || 'Be kyu'}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btng" style="flex:1;font-size:12px;padding:8px;" onclick="approveKid('${k.id}')">✓ PATVIRTINTI</button>
+          <button class="btn" style="flex:1;font-size:12px;padding:8px;background:rgba(255,77,0,.1);color:var(--br);" onclick="rejectKid('${k.id}')">✗ ATMESTI</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function approveKid(kidId) {
+  if (!confirm('Patvirtinti vaiko paskyrą?')) return;
+  
+  const { error } = await sb.from('kids')
+    .update({ approval_status: 'approved' })
+    .eq('id', kidId);
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message);
+    return;
+  }
+  
+  // Atnaujinam profile status iš pending į active
+  await sb.from('profiles')
+    .update({ status: 'active' })
+    .eq('id', kidId);
+  
+  showToast('✓ Vaikas patvirtintas!');
+  await loadNewKids();
+  await loadTrainerMembers();
+}
+
+async function rejectKid(kidId) {
+  if (!confirm('Tikrai atmesti vaiko paskyrą? Vaikas negalės naudotis platforma.')) return;
+  
+  const { error } = await sb.from('kids')
+    .update({ approval_status: 'rejected' })
+    .eq('id', kidId);
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message);
+    return;
+  }
+  
+  // Profilis suspend'ed
+  await sb.from('profiles')
+    .update({ status: 'suspended' })
+    .eq('id', kidId);
+  
+  showToast('Vaikas atmestas');
+  await loadNewKids();
 }
 
 async function loadPendingSubmissions() {
