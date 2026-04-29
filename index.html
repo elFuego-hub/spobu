@@ -138,6 +138,13 @@ body.am{padding:20px 0;justify-content:flex-start;}
 .mt{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:16px;}
 .sw{position:fixed;bottom:20px;right:20px;background:var(--br);color:white;border:none;border-radius:99px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 4px 20px rgba(255,77,0,.5);z-index:50;display:none;}
 select.inp option{background:#222;}
+/* WIZARD STILIAI */
+.rw-step{flex:1;height:4px;background:rgba(255,255,255,.1);border-radius:2px;transition:all .3s;}
+.rw-step.on{background:var(--br);}
+.rw-step.done{background:var(--grn);}
+.rw-role-opt{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;border:1.5px solid var(--bdr);background:var(--bg);cursor:pointer;transition:all .15s;}
+.rw-role-opt:hover{border-color:var(--mut);}
+.rw-role-opt.on{border-color:var(--br);background:rgba(255,77,0,.08);}
 /* SKILL BADGES */
 .skb{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
 .skb-circle{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;position:relative;transition:transform .15s;border:3px solid;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.08), transparent 60%);}
@@ -217,52 +224,154 @@ select.inp option{background:#222;}
   </div>
 </div>
 
-<!-- AUTH: REGISTER -->
+<!-- AUTH: REGISTER WIZARD (3 ekranai) -->
 <div class="auth-wrap" id="auth-register" style="display:none;">
-  <div class="auth-box">
+  <div class="auth-box" style="max-height:90vh;overflow-y:auto;">
     <div class="auth-logo">SPO<span>BU</span><span style="color:var(--br);">.</span></div>
-    <div class="auth-sub">Registracija</div>
-    <div class="auth-title">SUKURTI PASKYRĄ</div>
+    
+    <!-- Progress indicator -->
+    <div style="display:flex;gap:6px;margin:12px 0 18px;">
+      <div id="rw-step-1" class="rw-step on"></div>
+      <div id="rw-step-2" class="rw-step"></div>
+      <div id="rw-step-3" class="rw-step"></div>
+    </div>
+    
     <div class="err-msg" id="reg-err"></div>
-
-    <label class="lbl">PASKYROS TIPAS</label>
-    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-      <div class="ch on" onclick="selectRole(this,'kid')" data-role="kid">👦 Vaikas</div>
-      <div class="ch" onclick="selectRole(this,'parent')" data-role="parent">👨‍👩‍👦 Tėvai</div>
-      <div class="ch" onclick="selectRole(this,'trainer')" data-role="trainer">🥋 Treneris</div>
+    
+    <!-- ===== EKRANAS 1: SPORTAS + ROLĖ ===== -->
+    <div id="rw-screen-1">
+      <div class="auth-title">REGISTRACIJA</div>
+      <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
+        Sveikas! Pirmiausia, kas registruojasi?
+      </div>
+      
+      <label class="lbl">KAS UŽPILDO?</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+        <div class="rw-role-opt on" onclick="selectRwRole(this, 'parent')" data-role="parent">
+          <div style="font-size:24px;">👨‍👩‍👦</div>
+          <div>
+            <div style="font-weight:900;font-size:13px;">Tėvas/globėjas</div>
+            <div style="font-size:11px;color:var(--mut);">Registruoju savo vaiką</div>
+          </div>
+        </div>
+        <div class="rw-role-opt" onclick="selectRwRole(this, 'kid_self')" data-role="kid_self">
+          <div style="font-size:24px;">🧒</div>
+          <div>
+            <div style="font-weight:900;font-size:13px;">Sportuojantis (14+m.)</div>
+            <div style="font-size:11px;color:var(--mut);">Registruojuosi pats, tėvai patvirtins</div>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="rw-role" value="parent">
+      
+      <label class="lbl">SPORTO ŠAKA</label>
+      <select class="inp" id="rw-sport" style="margin-bottom:14px;">
+        <option value="">Pasirinkti...</option>
+      </select>
+      
+      <button class="btn-auth" onclick="rwNext(1)">TĘSTI →</button>
+      <div style="text-align:center;margin-top:12px;">
+        <button class="btn-link" onclick="showLogin()">← Grįžti į prisijungimą</button>
+      </div>
     </div>
-    <input type="hidden" id="reg-role" value="kid">
-
-    <label class="lbl">VARDAS</label>
-    <input class="inp" type="text" id="reg-fname" placeholder="Vardas">
-    <label class="lbl">PAVARDĖ</label>
-    <input class="inp" type="text" id="reg-lname" placeholder="Pavardė">
-    <label class="lbl">EL. PAŠTAS</label>
-    <input class="inp" type="email" id="reg-email" placeholder="vardas@email.lt">
-    <label class="lbl">SLAPTAŽODIS (min. 8 simboliai)</label>
-    <input class="inp" type="password" id="reg-pass" placeholder="••••••••">
-    <label class="lbl">KLUBO KODAS</label>
-    <input class="inp" type="text" id="reg-club" placeholder="Pvz. DOJO2026">
-    <div style="font-size:11px;color:var(--mut);margin-bottom:14px;">Klubo kodą suteikia treneris arba administratorius</div>
-
-    <!-- Tėvų sutikimas -->
-    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
-      <input type="checkbox" id="consent-privacy" style="width:16px;height:16px;margin-top:2px;flex-shrink:0;">
-      <label for="consent-privacy" style="font-size:12px;color:var(--mut);line-height:1.5;">
-        Sutinku su <a href="/privatumas" target="_blank" style="color:var(--br);">Privatumo politika</a> ir <a href="/salygos" target="_blank" style="color:var(--br);">Naudojimo sąlygomis</a>
-      </label>
+    
+    <!-- ===== EKRANAS 2: VAIKO INFO ===== -->
+    <div id="rw-screen-2" style="display:none;">
+      <div class="auth-title">VAIKO INFORMACIJA</div>
+      <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;" id="rw-step2-hint">
+        Užpildyk vaiko bazinę informaciją
+      </div>
+      
+      <label class="lbl">VARDAS</label>
+      <input class="inp" type="text" id="rw-fname" placeholder="Pvz. Marius" maxlength="40">
+      
+      <label class="lbl">PAVARDĖ</label>
+      <input class="inp" type="text" id="rw-lname" placeholder="Pvz. Kazlauskas" maxlength="40">
+      
+      <label class="lbl">LYTIS</label>
+      <div class="chs" style="margin-bottom:14px;">
+        <div class="ch on" onclick="selectRwGender(this, 'male')" data-g="male">👦 Vaikinas</div>
+        <div class="ch" onclick="selectRwGender(this, 'female')" data-g="female">👧 Mergina</div>
+      </div>
+      <input type="hidden" id="rw-gender" value="male">
+      
+      <label class="lbl">GIMIMO METAI</label>
+      <input class="inp" type="number" id="rw-birth-year" placeholder="2015" min="2005" max="2025">
+      
+      <label class="lbl">SVORIS (kg, neprivaloma)</label>
+      <input class="inp" type="number" id="rw-weight" placeholder="35" min="15" max="200" step="0.1">
+      
+      <label class="lbl">KYU LYGIS (jei žinote)</label>
+      <select class="inp" id="rw-kyu" style="margin-bottom:14px;">
+        <option value="">Nežinome / dar neturiu</option>
+        <option value="10 kyu">10 kyu (baltas)</option>
+        <option value="9 kyu">9 kyu</option>
+        <option value="8 kyu">8 kyu</option>
+        <option value="7 kyu">7 kyu</option>
+        <option value="6 kyu">6 kyu</option>
+        <option value="5 kyu">5 kyu</option>
+        <option value="4 kyu">4 kyu</option>
+        <option value="3 kyu">3 kyu</option>
+        <option value="2 kyu">2 kyu</option>
+        <option value="1 kyu">1 kyu</option>
+        <option value="1 dan">1 dan (juodas)</option>
+        <option value="2 dan">2 dan</option>
+      </select>
+      
+      <button class="btn-auth" onclick="rwNext(2)">TĘSTI →</button>
+      <div style="text-align:center;margin-top:12px;">
+        <button class="btn-link" onclick="rwPrev(2)">← Atgal</button>
+      </div>
     </div>
-    <div id="parent-consent" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;">
-      <input type="checkbox" id="consent-parent" style="width:16px;height:16px;margin-top:2px;flex-shrink:0;">
-      <label for="consent-parent" style="font-size:12px;color:var(--mut);line-height:1.5;">
-        Esu tėvas/globėjas ir sutinku su vaiko (iki 14 m.) asmens duomenų tvarkymu
-      </label>
+    
+    <!-- ===== EKRANAS 3: KONTAKTAI + SUTIKIMAI ===== -->
+    <div id="rw-screen-3" style="display:none;">
+      <div class="auth-title">KONTAKTAI</div>
+      <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
+        Į šitą email atsiųsime aktyvavimo nuorodą
+      </div>
+      
+      <label class="lbl" id="rw-email-label">TĖVŲ EL. PAŠTAS</label>
+      <input class="inp" type="email" id="rw-email" placeholder="vardas@email.lt">
+      
+      <label class="lbl">TELEFONAS (neprivaloma)</label>
+      <input class="inp" type="tel" id="rw-phone" placeholder="+370 600 00000" style="margin-bottom:14px;">
+      
+      <div style="background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;border:.5px solid var(--bdr);">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;margin-bottom:8px;">SUTIKIMAI</div>
+        
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
+          <input type="checkbox" id="rw-consent-1" style="width:16px;height:16px;margin-top:2px;flex-shrink:0;">
+          <label for="rw-consent-1" style="font-size:12px;color:var(--txt);line-height:1.4;">
+            Sutinku su <span style="color:var(--br);">Privatumo politika</span> ir <span style="color:var(--br);">Naudojimo sąlygomis</span>
+          </label>
+        </div>
+        
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;" id="rw-consent-parent-wrap">
+          <input type="checkbox" id="rw-consent-2" style="width:16px;height:16px;margin-top:2px;flex-shrink:0;">
+          <label for="rw-consent-2" style="font-size:12px;color:var(--txt);line-height:1.4;">
+            Esu tėvas/globėjas ir sutinku su vaiko duomenų tvarkymu
+          </label>
+        </div>
+      </div>
+      
+      <button class="btn-auth" id="rw-submit-btn" onclick="rwSubmit()">REGISTRUOTI</button>
+      <div style="text-align:center;margin-top:12px;">
+        <button class="btn-link" onclick="rwPrev(3)">← Atgal</button>
+      </div>
     </div>
-
-    <button class="btn-auth" onclick="doRegister()">REGISTRUOTIS</button>
-    <div style="text-align:center;margin-top:12px;">
-      <button class="btn-link" onclick="showLogin()">← Grįžti</button>
+    
+    <!-- ===== EKRANAS 4: SUCCESS ===== -->
+    <div id="rw-screen-success" style="display:none;text-align:center;padding:30px 0;">
+      <div style="font-size:60px;margin-bottom:16px;">✅</div>
+      <div class="auth-title" style="margin-bottom:14px;">REGISTRACIJA SĖKMINGA!</div>
+      <div style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:20px;">
+        📧 Į <span id="rw-success-email" style="color:var(--br);font-weight:700;"></span> išsiųstas slaptažodžio nustatymo laiškas.<br><br>
+        Spauskite jame esančią nuorodą, nustatykite slaptažodį, ir prisijunkite.
+      </div>
+      <button class="btn-auth" onclick="showLogin()">EITI Į PRISIJUNGIMĄ</button>
     </div>
+    
   </div>
 </div>
 
@@ -1092,13 +1201,231 @@ async function doLogin() {
   }
 }
 
-async function doRegister() {
+// ════════════════════════════════════════
+// REGISTRACIJOS WIZARDAS
+// ════════════════════════════════════════
+
+let rwData = {
+  role: 'parent',
+  sport_id: null,
+  sport_name: null,
+  fname: '',
+  lname: '',
+  gender: 'male',
+  birth_year: null,
+  weight: null,
+  kyu: null,
+  email: '',
+  phone: ''
+};
+
+async function showRwSports() {
+  // Užkrauname sporto šakas
+  const { data: sports } = await sb.from('sports').select('*').eq('is_active', true);
+  const select = document.getElementById('rw-sport');
+  select.innerHTML = '<option value="">Pasirinkti...</option>' + 
+    (sports || []).map(s => `<option value="${s.id}" data-name="${s.name}">${s.icon || ''} ${s.name}</option>`).join('');
+}
+
+function selectRwRole(el, role) {
+  document.querySelectorAll('.rw-role-opt').forEach(e => e.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('rw-role').value = role;
+  rwData.role = role;
+  
+  // Atnaujinam ekrano 2 hint'ą
+  if (role === 'kid_self') {
+    document.getElementById('rw-step2-hint').textContent = 'Užpildyk savo bazinę informaciją';
+    document.getElementById('rw-email-label').textContent = 'TAVO EL. PAŠTAS';
+  } else {
+    document.getElementById('rw-step2-hint').textContent = 'Užpildyk vaiko bazinę informaciją';
+    document.getElementById('rw-email-label').textContent = 'TĖVŲ EL. PAŠTAS';
+  }
+  
+  // Sutikimo dėl tėvų – tik tėvams
+  document.getElementById('rw-consent-parent-wrap').style.display = (role === 'parent') ? 'flex' : 'none';
+}
+
+function selectRwGender(el, gender) {
+  el.parentElement.querySelectorAll('.ch').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('rw-gender').value = gender;
+  rwData.gender = gender;
+}
+
+function rwShowScreen(num) {
+  ['rw-screen-1', 'rw-screen-2', 'rw-screen-3', 'rw-screen-success'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  if (num === 'success') {
+    document.getElementById('rw-screen-success').style.display = 'block';
+  } else {
+    document.getElementById(`rw-screen-${num}`).style.display = 'block';
+  }
+  
+  // Progress
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById(`rw-step-${i}`);
+    if (el) {
+      if (i < num) el.className = 'rw-step done';
+      else if (i === num) el.className = 'rw-step on';
+      else el.className = 'rw-step';
+    }
+  }
+  
+  document.getElementById('reg-err').style.display = 'none';
+}
+
+function rwNext(currentScreen) {
   const errEl = document.getElementById('reg-err');
   errEl.style.display = 'none';
   
-  // Sesija 1: registracijos forma dar nepritaikyta naujai schemai
-  // Bus padaryta 2-ojoje sesijoje (su sporto šaka, kyu, svoriu, klubo+trenerio pasirinkimu)
-  showErr(errEl, '🚧 Registracija dabar atnaujinama. Naują versiją įdiegsime kitoje sesijoje. Tuo tarpu kreipkis į administratorių.');
+  if (currentScreen === 1) {
+    const sportEl = document.getElementById('rw-sport');
+    if (!sportEl.value) {
+      showErr(errEl, 'Pasirink sporto šaką');
+      return;
+    }
+    rwData.sport_id = sportEl.value;
+    rwData.sport_name = sportEl.options[sportEl.selectedIndex]?.text || '';
+    rwShowScreen(2);
+  }
+  
+  else if (currentScreen === 2) {
+    const fname = document.getElementById('rw-fname').value.trim();
+    const lname = document.getElementById('rw-lname').value.trim();
+    const birthYear = parseInt(document.getElementById('rw-birth-year').value);
+    
+    if (!fname) { showErr(errEl, 'Įvesk vardą'); return; }
+    if (!lname) { showErr(errEl, 'Įvesk pavardę'); return; }
+    if (!birthYear || birthYear < 2005 || birthYear > 2025) {
+      showErr(errEl, 'Įvesk teisingus gimimo metus (2005-2025)');
+      return;
+    }
+    
+    rwData.fname = fname;
+    rwData.lname = lname;
+    rwData.birth_year = birthYear;
+    rwData.weight = parseFloat(document.getElementById('rw-weight').value) || null;
+    rwData.kyu = document.getElementById('rw-kyu').value || null;
+    
+    rwShowScreen(3);
+  }
+}
+
+function rwPrev(currentScreen) {
+  rwShowScreen(currentScreen - 1);
+}
+
+async function rwSubmit() {
+  const errEl = document.getElementById('reg-err');
+  errEl.style.display = 'none';
+  
+  const email = document.getElementById('rw-email').value.trim().toLowerCase();
+  const phone = document.getElementById('rw-phone').value.trim();
+  const consent1 = document.getElementById('rw-consent-1').checked;
+  const consent2 = document.getElementById('rw-consent-2').checked;
+  
+  if (!email || !email.includes('@')) {
+    showErr(errEl, 'Įvesk teisingą email\'ą');
+    return;
+  }
+  if (!consent1) {
+    showErr(errEl, 'Privaloma sutikti su Privatumo politika');
+    return;
+  }
+  if (rwData.role === 'parent' && !consent2) {
+    showErr(errEl, 'Privaloma patvirtinti tėvų sutikimą');
+    return;
+  }
+  
+  rwData.email = email;
+  rwData.phone = phone;
+  
+  const btn = document.getElementById('rw-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'KURIAMA...';
+  
+  try {
+    // 1. Sukuriam pending invitation su VAIKO duomenimis
+    const role = (rwData.role === 'parent') ? 'parent' : 'kid';
+    
+    const { error: invError } = await sb.from('pending_invitations').insert({
+      email: email,
+      role: role,
+      invited_by: null, // Self-registration
+      first_name: rwData.fname,
+      last_name: rwData.lname,
+      sport_id: rwData.sport_id,
+      gender: rwData.gender,
+      birth_year: rwData.birth_year,
+      weight: rwData.weight,
+      kyu: rwData.kyu,
+      phone: phone || null,
+      status: 'pending'
+    });
+    
+    if (invError) {
+      console.error('Invitation error:', invError);
+      throw new Error('Nepavyko sukurti registracijos: ' + invError.message);
+    }
+    
+    // 2. Sukuriam vartotoją per signUp
+    const tempPassword = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
+    const { data: signUpData, error: signUpError } = await sb.auth.signUp({
+      email: email,
+      password: tempPassword,
+      options: {
+        emailRedirectTo: `${window.location.origin}/spobu/set-password.html`,
+        data: {
+          // Saugom registracijos duomenis user_metadata - naudosim po prisijungimo
+          fname: rwData.fname,
+          lname: rwData.lname,
+          gender: rwData.gender,
+          birth_year: rwData.birth_year,
+          weight: rwData.weight,
+          kyu: rwData.kyu,
+          phone: rwData.phone,
+          role: role,
+          sport_id: rwData.sport_id
+        }
+      }
+    });
+    
+    if (signUpError) {
+      if (signUpError.message.includes('already') || signUpError.message.includes('exists')) {
+        // Email jau yra – tik password reset
+        await sb.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/spobu/set-password.html`
+        });
+        document.getElementById('rw-success-email').textContent = email;
+        rwShowScreen('success');
+        return;
+      }
+      throw signUpError;
+    }
+    
+    // 3. Reset password – kad nustatytų savo
+    await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/spobu/set-password.html`
+    });
+    
+    // Success!
+    document.getElementById('rw-success-email').textContent = email;
+    rwShowScreen('success');
+    
+  } catch (error) {
+    console.error('rwSubmit error:', error);
+    showErr(errEl, 'Klaida: ' + (error.message || 'nežinoma'));
+    btn.disabled = false;
+    btn.textContent = 'REGISTRUOTI';
+  }
+}
+
+// Senas doRegister (alias for backward compat)
+async function doRegister() {
+  // Naudosim wizard'ą
+  console.warn('Old doRegister called – using wizard instead');
 }
 
 async function doForgot() {
@@ -2590,7 +2917,11 @@ function showLogin(){
   hideAll();document.getElementById('auth-login').style.display='';
 }
 function showRegister(){
-  hideAll();document.getElementById('auth-register').style.display='';
+  hideAll();
+  document.getElementById('auth-register').style.display='';
+  // Inicializuojam wizard'ą
+  rwShowScreen(1);
+  showRwSports();
 }
 function showForgot(){
   hideAll();document.getElementById('auth-forgot').style.display='';
