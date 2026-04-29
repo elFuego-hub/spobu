@@ -1198,6 +1198,57 @@ async function init() {
   });
 }
 
+async function showPendingApprovalScreen(profile) {
+  // Slėpiame visus portal'us
+  hideAll();
+  
+  // Sukuriame pending ekraną
+  let pendingDiv = document.getElementById('pending-approval-screen');
+  if (!pendingDiv) {
+    pendingDiv = document.createElement('div');
+    pendingDiv.id = 'pending-approval-screen';
+    pendingDiv.className = 'auth-wrap';
+    pendingDiv.style.display = 'flex';
+    pendingDiv.innerHTML = `
+      <div class="auth-box" style="text-align:center;">
+        <div class="auth-logo">SPO<span>BU</span><span style="color:var(--br);">.</span></div>
+        <div style="font-size:80px;margin:20px 0;">⏳</div>
+        <div class="auth-title" style="margin-bottom:14px;">LAUKIA PATVIRTINIMO</div>
+        <div style="font-size:14px;color:var(--mut);line-height:1.6;margin-bottom:20px;text-align:left;">
+          Tavo paskyra sukurta sėkmingai!<br><br>
+          🥋 <strong>Treneris</strong> gavo pranešimą apie tavo registraciją ir greitai patvirtins paskyrą.<br><br>
+          📧 Apie patvirtinimą informuosime per paštą: <span style="color:var(--br);">${currentUser.email}</span><br><br>
+          Atvyk vėliau!
+        </div>
+        <button class="btn-auth" onclick="checkApprovalStatus()">🔄 PATIKRINTI BŪKLĘ</button>
+        <div style="margin-top:12px;">
+          <button class="btn-link" onclick="logout()">Atsijungti</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(pendingDiv);
+  }
+  pendingDiv.style.display = 'flex';
+}
+
+async function checkApprovalStatus() {
+  const { data: profile } = await sb.from('profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .single();
+  
+  if (profile && profile.status === 'active') {
+    showToast('✓ Paskyra patvirtinta!');
+    document.getElementById('pending-approval-screen').style.display = 'none';
+    await afterLogin(); // Iš naujo paleisti
+  } else if (profile && profile.status === 'suspended') {
+    showToast('❌ Paskyra atmesta');
+    await sb.auth.signOut();
+  } else {
+    showToast('⏳ Vis dar laukia patvirtinimo');
+  }
+}
+
 async function afterLogin() {
   // Gauti profilį (BE clubs JOIN, kad neluštų jei nėra klubo)
   const { data: profile, error: profileErr } = await sb.from('profiles')
@@ -1213,6 +1264,19 @@ async function afterLogin() {
   }
 
   currentProfile = profile;
+  
+  // PATIKRINIMAS: ar paskyra patvirtinta?
+  if (profile.status === 'pending' && (profile.role === 'kid' || profile.role === 'parent')) {
+    // Rodyti "Laukia patvirtinimo" ekraną
+    showPendingApprovalScreen(profile);
+    return;
+  }
+  
+  if (profile.status === 'suspended') {
+    showToast('❌ Tavo paskyra buvo atmesta. Kreipkis į trenerį.', 'error', 8000);
+    await sb.auth.signOut();
+    return;
+  }
   
   // Jei yra club_id – atskirai gauname klubą
   if (profile.club_id) {
@@ -1660,6 +1724,35 @@ async function rwSubmit(skipPhoto) {
         throw new Error('Vaiko paskyros klaida: ' + kidSignUpError.message);
       }
       
+      // Susiejam vaiko ir tėvų paskyras (po trumpos pauzės kad trigger spėtų)
+      await new Promise(r => setTimeout(r, 1500));
+      
+      try {
+        // Surandam ką tik sukurtus user'ius
+        const { data: parentUser } = await sb.auth.admin?.getUserByEmail?.(rwData.parent_email).catch(() => ({}));
+        // Naudosim alternative – per profiles
+        const { data: parentProfiles } = await sb.from('profiles')
+          .select('id')
+          .eq('role', 'parent')
+          .order('activated_at', { ascending: false })
+          .limit(1);
+        
+        const { data: kidProfiles } = await sb.from('profiles')
+          .select('id')
+          .eq('role', 'kid')
+          .order('activated_at', { ascending: false })
+          .limit(1);
+        
+        if (parentProfiles?.[0] && kidProfiles?.[0]) {
+          await sb.from('kid_parent_links').insert({
+            kid_id: kidProfiles[0].id,
+            parent_id: parentProfiles[0].id
+          });
+        }
+      } catch (linkErr) {
+        console.warn('kid_parent_links linking failed:', linkErr);
+      }
+      
       // Reset password vaikui (į jo email)
       await sb.auth.resetPasswordForEmail(rwData.kid_email, {
         redirectTo: `${window.location.origin}/spobu/set-password.html`
@@ -1672,7 +1765,7 @@ async function rwSubmit(skipPhoto) {
       <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
         <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">✓ Tėvų paskyra sukurta</div>
         <div style="font-size:12px;">Email: <span style="color:var(--br);">${rwData.parent_email}</span></div>
-        <div style="font-size:12px;">Gali iškart prisijungti su nustatytu slaptažodžiu</div>
+        <div style="font-size:12px;">Prisijunk su tavo nustatytu slaptažodžiu</div>
       </div>
     `;
     
@@ -1681,15 +1774,18 @@ async function rwSubmit(skipPhoto) {
         <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
           <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">✓ Vaiko paskyra sukurta</div>
           <div style="font-size:12px;">Email: <span style="color:var(--br);">${rwData.kid_email}</span></div>
-          <div style="font-size:12px;">📧 Į paštą atsiųstas slaptažodžio nustatymo laiškas</div>
+          <div style="font-size:12px;">📧 Vaikas gavo email su slaptažodžio nustatymo nuoroda</div>
         </div>
       `;
     }
     
     successHTML += `
       <div style="background:rgba(255,77,0,.1);border:.5px solid var(--br);border-radius:10px;padding:12px;">
-        <div style="font-weight:900;color:var(--br);margin-bottom:6px;">⏳ Laukiama trenerio patvirtinimo</div>
-        <div style="font-size:12px;">Treneris <strong>${rwData.trainer_name}</strong> gaus pranešimą ir patvirtins paskyrą.</div>
+        <div style="font-weight:900;color:var(--br);margin-bottom:6px;">⏳ Laukia trenerio patvirtinimo</div>
+        <div style="font-size:12px;line-height:1.5;">
+          Treneris <strong>${rwData.trainer_name}</strong> gaus pranešimą.<br>
+          Po patvirtinimo galėsi pilnai naudotis platforma.
+        </div>
       </div>
     `;
     
@@ -2238,46 +2334,73 @@ async function loadNewKids() {
 }
 
 async function approveKid(kidId) {
-  if (!confirm('Patvirtinti vaiko paskyrą?')) return;
+  if (!confirm('Patvirtinti vaiko paskyrą? Tėvai ir vaikas bus aktyvuoti.')) return;
   
-  const { error } = await sb.from('kids')
-    .update({ approval_status: 'approved' })
-    .eq('id', kidId);
-  
-  if (error) {
+  try {
+    // 1. Patvirtinam vaiką
+    const { error: kidError } = await sb.from('kids')
+      .update({ approval_status: 'approved' })
+      .eq('id', kidId);
+    
+    if (kidError) throw kidError;
+    
+    // 2. Vaiko profilis → active
+    await sb.from('profiles')
+      .update({ status: 'active' })
+      .eq('id', kidId);
+    
+    // 3. Surandam tėvų paskyrą per kid_parent_links
+    const { data: links } = await sb.from('kid_parent_links')
+      .select('parent_id')
+      .eq('kid_id', kidId);
+    
+    // 4. Aktyvuojam tėvų paskyras
+    if (links && links.length > 0) {
+      const parentIds = links.map(l => l.parent_id);
+      await sb.from('profiles')
+        .update({ status: 'active' })
+        .in('id', parentIds);
+    }
+    
+    showToast('✓ Vaikas ir tėvai patvirtinti!');
+    await loadNewKids();
+    await loadTrainerMembers();
+  } catch (error) {
+    console.error('approveKid error:', error);
     showToast('❌ Klaida: ' + error.message);
-    return;
   }
-  
-  // Atnaujinam profile status iš pending į active
-  await sb.from('profiles')
-    .update({ status: 'active' })
-    .eq('id', kidId);
-  
-  showToast('✓ Vaikas patvirtintas!');
-  await loadNewKids();
-  await loadTrainerMembers();
 }
 
 async function rejectKid(kidId) {
-  if (!confirm('Tikrai atmesti vaiko paskyrą? Vaikas negalės naudotis platforma.')) return;
+  if (!confirm('Tikrai atmesti vaiko paskyrą? Vaikas ir tėvai negalės naudotis platforma.')) return;
   
-  const { error } = await sb.from('kids')
-    .update({ approval_status: 'rejected' })
-    .eq('id', kidId);
-  
-  if (error) {
+  try {
+    await sb.from('kids')
+      .update({ approval_status: 'rejected' })
+      .eq('id', kidId);
+    
+    await sb.from('profiles')
+      .update({ status: 'suspended' })
+      .eq('id', kidId);
+    
+    // Tėvai taip pat suspenduojami
+    const { data: links } = await sb.from('kid_parent_links')
+      .select('parent_id')
+      .eq('kid_id', kidId);
+    
+    if (links && links.length > 0) {
+      const parentIds = links.map(l => l.parent_id);
+      await sb.from('profiles')
+        .update({ status: 'suspended' })
+        .in('id', parentIds);
+    }
+    
+    showToast('Vaikas atmestas');
+    await loadNewKids();
+  } catch (error) {
+    console.error('rejectKid error:', error);
     showToast('❌ Klaida: ' + error.message);
-    return;
   }
-  
-  // Profilis suspend'ed
-  await sb.from('profiles')
-    .update({ status: 'suspended' })
-    .eq('id', kidId);
-  
-  showToast('Vaikas atmestas');
-  await loadNewKids();
 }
 
 async function loadPendingSubmissions() {
