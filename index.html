@@ -1431,10 +1431,17 @@ async function afterLogin() {
     await loadTrainerData();
     op('tr');
   } else if (profile.role === 'kid') {
-    // Krauname kid duomenis
+    // Krauname kid duomenis - ieškom per user_id (NE per id, nes kids.id !== auth.users.id)
     const { data: kidData } = await sb.from('kids')
-      .select('*').eq('id', currentUser.id).single();
-    currentKid = kidData || { id: currentUser.id, total_exp: 0, current_level: 1, wins: 0, losses: 0 };
+      .select('*').eq('user_id', currentUser.id).maybeSingle();
+    
+    if (!kidData) {
+      showToast('❌ Vaiko duomenys nerasti DB. Kreipkis į administratorių.', 'error', 8000);
+      await sb.auth.signOut();
+      return;
+    }
+    
+    currentKid = kidData;
     subscribeKidNotifications();
     await loadKidData();
     op('v');
@@ -2596,9 +2603,10 @@ async function doLogout() {
 async function loadKidData() {
   if (!currentProfile) return;
 
-  // Perkrauname currentKid iš DB (kad būtų šviežias EXP)
+  // Perkrauname currentKid iš DB (per user_id, nes kids.id != auth.users.id)
+  const kidId = currentKid?.id || currentUser.id;
   const { data: freshKid } = await sb.from('kids')
-    .select('*').eq('id', currentUser.id).single();
+    .select('*').eq('id', kidId).maybeSingle();
   if (freshKid) currentKid = freshKid;
   
   if (!currentKid) return;
@@ -2681,7 +2689,7 @@ async function loadCategories() {
   // Sumuojam category_exp visiems pratimams toje kategorijoje
   const { data: records } = await sb.from('kid_records')
     .select('category_id, category_exp, medal')
-    .eq('kid_id', currentUser.id);
+    .eq('kid_id', currentKid?.id || currentUser.id);
 
   // Suskaičiuojam EXP suma per kategoriją
   const expByCategory = {};
@@ -2768,7 +2776,7 @@ async function loadBadges() {
   // EXP per kategoriją
   const { data: records } = await sb.from('kid_records')
     .select('category_id, category_exp')
-    .eq('kid_id', currentUser.id);
+    .eq('kid_id', currentKid?.id || currentUser.id);
 
   const expByCategory = {};
   (records || []).forEach(r => {
@@ -2801,7 +2809,7 @@ async function checkForNewAchievements() {
 
   const { data: records } = await sb.from('kid_records')
     .select('category_id, category_exp')
-    .eq('kid_id', currentUser.id);
+    .eq('kid_id', currentKid?.id || currentUser.id);
 
   const expByCategory = {};
   (records || []).forEach(r => {
@@ -2941,7 +2949,7 @@ async function loadLeaderboard() {
 async function loadKidPendingSubmissions() {
   const { data: subs } = await sb.from('result_submissions')
     .select('*, exercises(name, unit, career_categories(name, icon))')
-    .eq('kid_id', currentUser.id)
+    .eq('kid_id', currentKid?.id || currentUser.id)
     .eq('status', 'pending')
     .order('created_at', {ascending: false})
     .limit(10);
@@ -3022,7 +3030,7 @@ async function toggleAnon() {
   const tg = document.getElementById('v-anon-toggle');
   const newVal = !tg.classList.contains('on');
   tg.classList.toggle('on');
-  await sb.from('kids').update({is_anonymous: newVal}).eq('id', currentUser.id);
+  await sb.from('kids').update({is_anonymous: newVal}).eq('id', currentKid?.id || currentUser.id);
   showToast(newVal ? '👤 Anoniminis' : '📛 Vardas rodomas', 'success');
 }
 
@@ -3921,7 +3929,7 @@ function subscribeKidNotifications() {
   sb.channel('kid-'+currentUser.id)
     .on('postgres_changes', {
       event: 'UPDATE', schema: 'public', table: 'result_submissions',
-      filter: `kid_id=eq.${currentUser.id}`
+      filter: `kid_id=eq.${currentKid?.id || currentUser.id}`
     }, async payload => {
       const sub = payload.new;
       if (!sub) return;
@@ -4043,7 +4051,7 @@ async function showExercises(categoryId, categoryName) {
 
   const { data: records } = await sb.from('kid_records')
     .select('exercise_id, current_pr, category_exp')
-    .eq('kid_id', currentUser.id)
+    .eq('kid_id', currentKid?.id || currentUser.id)
     .in('exercise_id', exerciseIds);
 
   currentExerciseList = exercises.map(ex => {
@@ -4276,7 +4284,7 @@ async function submitExerciseResult() {
   btn.style.opacity = '.6';
 
   const { error } = await sb.from('result_submissions').insert({
-    kid_id: currentUser.id,
+    kid_id: currentKid?.id || currentUser.id,
     exercise_id: currentExercise.id,
     category_id: currentExercise.category_id,
     trainer_id: currentKid.assigned_trainer_id,
@@ -4309,7 +4317,7 @@ async function submitExerciseResult() {
 async function startPayment() {
   const orderId = `SPOBU-${currentUser.id.split('-')[0]}-${Date.now()}`;
   await sb.from('subscriptions').insert({
-    kid_id: currentUser.id, paysera_order_id: orderId,
+    kid_id: currentKid?.id || currentUser.id, paysera_order_id: orderId,
     amount_cents: 4000, status:'pending'
   });
   // SVARBU: pakeisk JŪSŲ_PAYSERA_PROJECT_ID į tikrą
