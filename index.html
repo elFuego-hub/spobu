@@ -931,8 +931,31 @@ select.inp option{background:#222;}
       </div>
       <input type="hidden" id="ak-gender" value="male">
       
-      <label class="lbl">GIMIMO METAI</label>
-      <input class="inp" type="number" id="ak-birth-year" placeholder="2015" min="2005" max="2025" oninput="akUpdateWeightOptions()">
+      <label class="lbl">GIMIMO DATA</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+        <select class="inp" id="ak-birth-day" onchange="akUpdateAge()">
+          <option value="">Diena</option>
+        </select>
+        <select class="inp" id="ak-birth-month" onchange="akUpdateAge()">
+          <option value="">Mėnuo</option>
+          <option value="1">Sausis</option>
+          <option value="2">Vasaris</option>
+          <option value="3">Kovas</option>
+          <option value="4">Balandis</option>
+          <option value="5">Gegužė</option>
+          <option value="6">Birželis</option>
+          <option value="7">Liepa</option>
+          <option value="8">Rugpjūtis</option>
+          <option value="9">Rugsėjis</option>
+          <option value="10">Spalis</option>
+          <option value="11">Lapkritis</option>
+          <option value="12">Gruodis</option>
+        </select>
+        <select class="inp" id="ak-birth-year" onchange="akUpdateAge()">
+          <option value="">Metai</option>
+        </select>
+      </div>
+      <div id="ak-age-display" style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;"></div>
       
       <!-- Atributai pagal sportą (kol kas tik karatė) -->
       <div id="ak-karate-fields">
@@ -941,22 +964,12 @@ select.inp option{background:#222;}
           <option value="">Pirma įvesk gimimo metus...</option>
         </select>
         
-        <label class="lbl">KYU LYGIS (jei žinote)</label>
-        <select class="inp" id="ak-kyu" style="margin-bottom:14px;">
-          <option value="">Nežinome / dar neturiu</option>
-          <option value="10 kyu">10 kyu (baltas)</option>
-          <option value="9 kyu">9 kyu</option>
-          <option value="8 kyu">8 kyu</option>
-          <option value="7 kyu">7 kyu</option>
-          <option value="6 kyu">6 kyu</option>
-          <option value="5 kyu">5 kyu</option>
-          <option value="4 kyu">4 kyu</option>
-          <option value="3 kyu">3 kyu</option>
-          <option value="2 kyu">2 kyu</option>
-          <option value="1 kyu">1 kyu</option>
-          <option value="1 dan">1 dan (juodas)</option>
-          <option value="2 dan">2 dan</option>
-        </select>
+        <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.2);border-radius:10px;padding:10px;margin-bottom:14px;">
+          <div style="font-size:11px;color:var(--txt);line-height:1.4;">
+            🥋 <strong>Diržo lygis:</strong> visi pradeda nuo <strong>10 kyu (baltas)</strong>.<br>
+            Vėliau treneris patvirtins egzaminus ir kyu pakils.
+          </div>
+        </div>
       </div>
       
       <button class="btn-auth" onclick="akNext(2)">TĘSTI →</button>
@@ -1455,7 +1468,7 @@ async function loadParentKids() {
   }
   
   const html = kids.map(k => {
-    const age = new Date().getFullYear() - k.birth_year;
+    const age = k.birth_date ? calculateAge(k.birth_date) : (new Date().getFullYear() - k.birth_year);
     const genderIcon = k.gender === 'male' ? '👦' : '👧';
     const isApproved = k.approval_status === 'approved';
     const hasAccount = !!k.user_id;
@@ -1522,17 +1535,34 @@ async function openAddKidWizard() {
   // Reset data
   akData = {
     sport_id: null, sport_name: null, fname: '', lname: '', gender: 'male',
-    birth_year: null, weight_range: null, kyu: null, club_id: null, club_name: null,
+    birth_year: null, birth_month: null, birth_day: null, birth_date: null,
+    weight_range: null, kyu: null, club_id: null, club_name: null,
     trainer_id: null, trainer_name: null, has_phone: false, kid_email: null
   };
   
   // Reset forms
   document.getElementById('ak-fname').value = '';
   document.getElementById('ak-lname').value = '';
-  document.getElementById('ak-birth-year').value = '';
-  document.getElementById('ak-kyu').value = '';
   document.getElementById('ak-kid-email').value = '';
-  document.getElementById('ak-weight').innerHTML = '<option value="">Pirma įvesk gimimo metus...</option>';
+  document.getElementById('ak-weight').innerHTML = '<option value="">Pirma įvesk gimimo datą...</option>';
+  
+  // Init dienos (1-31)
+  const daySelect = document.getElementById('ak-birth-day');
+  let dayOpts = '<option value="">Diena</option>';
+  for (let d = 1; d <= 31; d++) dayOpts += `<option value="${d}">${d}</option>`;
+  daySelect.innerHTML = dayOpts;
+  daySelect.value = '';
+  
+  // Init metai (2005-2025)
+  const yearSelect = document.getElementById('ak-birth-year');
+  let yearOpts = '<option value="">Metai</option>';
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear; y >= currentYear - 25; y--) yearOpts += `<option value="${y}">${y}</option>`;
+  yearSelect.innerHTML = yearOpts;
+  yearSelect.value = '';
+  
+  document.getElementById('ak-birth-month').value = '';
+  document.getElementById('ak-age-display').textContent = '';
   
   // Krauname sportus
   const { data: sports } = await sb.from('sports').select('*').eq('is_active', true);
@@ -1552,6 +1582,99 @@ async function openAddKidWizard() {
   
   akShowScreen(1);
   document.getElementById('add-kid-modal').style.display = 'block';
+}
+
+// Tikslaus amžiaus skaičiavimas pagal datą
+function calculateAge(birthDate) {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+function akUpdateAge() {
+  const day = parseInt(document.getElementById('ak-birth-day').value);
+  const month = parseInt(document.getElementById('ak-birth-month').value);
+  const year = parseInt(document.getElementById('ak-birth-year').value);
+  
+  if (!day || !month || !year) {
+    document.getElementById('ak-age-display').textContent = '';
+    document.getElementById('ak-weight').innerHTML = '<option value="">Pirma įvesk gimimo datą...</option>';
+    return;
+  }
+  
+  // Patikrinam ar data validi
+  const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const birthDate = new Date(dateStr);
+  if (isNaN(birthDate.getTime()) || birthDate.getDate() !== day) {
+    document.getElementById('ak-age-display').innerHTML = '<span style="color:var(--br);">⚠️ Ši data neegzistuoja</span>';
+    return;
+  }
+  
+  const age = calculateAge(dateStr);
+  if (age < 4 || age > 25) {
+    document.getElementById('ak-age-display').innerHTML = '<span style="color:var(--br);">⚠️ Amžius turi būti 4-25 m.</span>';
+    return;
+  }
+  
+  document.getElementById('ak-age-display').innerHTML = `🎂 Amžius: <strong>${age} m.</strong> · Grupė: <strong>${age <= 12 ? 'Vaikinai/Merginos 6-12m.' : 'Vaikinai/Merginos 13+m.'}</strong>`;
+  
+  akData.birth_date = dateStr;
+  akData.birth_year = year;
+  akData.birth_month = month;
+  akData.birth_day = day;
+  
+  // Atnaujinam svorio intervalus pagal amžių
+  akUpdateWeightOptions();
+}
+
+function akUpdateWeightOptions() {
+  const day = parseInt(document.getElementById('ak-birth-day').value);
+  const month = parseInt(document.getElementById('ak-birth-month').value);
+  const year = parseInt(document.getElementById('ak-birth-year').value);
+  
+  if (!day || !month || !year) return;
+  
+  const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const age = calculateAge(dateStr);
+  if (age < 4 || age > 25) return;
+  
+  const isUnder13 = age <= 12;
+  const select = document.getElementById('ak-weight');
+  let options = '<option value="">Pasirinkti svorio intervalą...</option>';
+  
+  if (isUnder13) {
+    options += `
+      <option value="20-25">20-25 kg</option>
+      <option value="25-30">25-30 kg</option>
+      <option value="30-35">30-35 kg</option>
+      <option value="35-40">35-40 kg</option>
+      <option value="40-45">40-45 kg</option>
+      <option value="45-50">45-50 kg</option>
+      <option value="50-55">50-55 kg</option>
+      <option value="55+">55+ kg</option>
+    `;
+  } else {
+    options += `
+      <option value="40-45">40-45 kg</option>
+      <option value="45-50">45-50 kg</option>
+      <option value="50-55">50-55 kg</option>
+      <option value="55-60">55-60 kg</option>
+      <option value="60-65">60-65 kg</option>
+      <option value="65-70">65-70 kg</option>
+      <option value="70-75">70-75 kg</option>
+      <option value="75-80">75-80 kg</option>
+      <option value="80-85">80-85 kg</option>
+      <option value="85-90">85-90 kg</option>
+      <option value="90+">90+ kg</option>
+    `;
+  }
+  
+  select.innerHTML = options;
 }
 
 function closeAddKidWizard() {
@@ -1590,41 +1713,6 @@ function akSelectGender(el, gender) {
   el.classList.add('on');
   document.getElementById('ak-gender').value = gender;
   akData.gender = gender;
-  akUpdateWeightOptions();
-}
-
-function akUpdateWeightOptions() {
-  const birthYear = parseInt(document.getElementById('ak-birth-year').value);
-  if (!birthYear || birthYear < 2005 || birthYear > 2025) return;
-  
-  const age = new Date().getFullYear() - birthYear;
-  const isUnder13 = age <= 12;
-  
-  const select = document.getElementById('ak-weight');
-  let options = '<option value="">Pasirinkti svorio intervalą...</option>';
-  
-  if (isUnder13) {
-    options += `
-      <option value="20-25">20-25 kg</option>
-      <option value="26-30">26-30 kg</option>
-      <option value="31-35">31-35 kg</option>
-      <option value="36-40">36-40 kg</option>
-      <option value="41-45">41-45 kg</option>
-      <option value="46-50">46-50 kg</option>
-      <option value="51+">51+ kg</option>
-    `;
-  } else {
-    options += `
-      <option value="40-50">40-50 kg</option>
-      <option value="51-60">51-60 kg</option>
-      <option value="61-70">61-70 kg</option>
-      <option value="71-80">71-80 kg</option>
-      <option value="81-90">81-90 kg</option>
-      <option value="91+">91+ kg</option>
-    `;
-  }
-  
-  select.innerHTML = options;
 }
 
 function akSelectPhone(el, hasPhone) {
@@ -1709,22 +1797,39 @@ function akNext(currentScreen) {
   else if (currentScreen === 2) {
     const fname = document.getElementById('ak-fname').value.trim();
     const lname = document.getElementById('ak-lname').value.trim();
-    const birthYear = parseInt(document.getElementById('ak-birth-year').value);
+    const day = parseInt(document.getElementById('ak-birth-day').value);
+    const month = parseInt(document.getElementById('ak-birth-month').value);
+    const year = parseInt(document.getElementById('ak-birth-year').value);
     const weight = document.getElementById('ak-weight').value;
     
     if (!fname) { showErr(errEl, 'Įvesk vardą'); return; }
     if (!lname) { showErr(errEl, 'Įvesk pavardę'); return; }
-    if (!birthYear || birthYear < 2005 || birthYear > 2025) {
-      showErr(errEl, 'Įvesk teisingus gimimo metus (2005-2025)');
+    if (!day || !month || !year) {
+      showErr(errEl, 'Įvesk pilną gimimo datą (diena, mėnuo, metai)');
       return;
     }
+    
+    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const birthDate = new Date(dateStr);
+    if (isNaN(birthDate.getTime()) || birthDate.getDate() !== day) {
+      showErr(errEl, 'Tokia data neegzistuoja');
+      return;
+    }
+    
+    const age = calculateAge(dateStr);
+    if (age < 4 || age > 25) {
+      showErr(errEl, 'Amžius turi būti 4-25 m.');
+      return;
+    }
+    
     if (!weight) { showErr(errEl, 'Pasirink svorio intervalą'); return; }
     
     akData.fname = fname;
     akData.lname = lname;
-    akData.birth_year = birthYear;
+    akData.birth_date = dateStr;
+    akData.birth_year = year;  // Backward compat
     akData.weight_range = weight;
-    akData.kyu = document.getElementById('ak-kyu').value || null;
+    akData.kyu = '10 kyu';  // Visada pradeda nuo baltojo diržo
     
     akShowScreen(3);
   }
@@ -1779,6 +1884,7 @@ async function akSubmit() {
       sport_id: akData.sport_id,
       gender: akData.gender,
       birth_year: akData.birth_year,
+      birth_date: akData.birth_date,
       weight_range: akData.weight_range,
       kyu: akData.kyu,
       total_exp: 0,
@@ -1882,32 +1988,41 @@ async function akSubmit() {
 }
 
 async function showKidDetail(kidId) {
-  // Užkrauname vaiko duomenis
+  // Užkrauname vaiko duomenis (vardas iš kids, ne profiles)
   const { data: kid } = await sb.from('kids').select('*').eq('id', kidId).single();
-  const { data: profile } = await sb.from('profiles').select('*').eq('id', kidId).single();
-  const { data: kidUser } = await sb.from('auth_users_view').select('email').eq('id', kidId).maybeSingle().catch(() => ({ data: null }));
   
-  if (!kid || !profile) {
+  if (!kid) {
     showToast('❌ Nepavyko užkrauti vaiko duomenų');
     return;
   }
   
-  currentParentKid = { ...kid, ...profile };
+  // Jei vaikas turi auth paskyrą - paimam jos email
+  let kidEmail = null;
+  if (kid.user_id) {
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', kid.user_id).maybeSingle();
+    // Email gausim kitu būdu (RLS gali blokuoti auth.users iš client'o)
+  }
   
-  document.getElementById('t-kid-name').textContent = `${profile.first_name} ${profile.last_name}`;
+  currentParentKid = kid;
   
-  const age = new Date().getFullYear() - kid.birth_year;
-  const isAutoEmail = kidUser?.email?.includes('+kid');
-  const realEmail = isAutoEmail ? null : kidUser?.email;
+  const fullName = `${kid.first_name || 'Vaikas'} ${kid.last_name || ''}`.trim();
+  document.getElementById('t-kid-name').textContent = fullName;
+  
+  const age = kid.birth_date ? calculateAge(kid.birth_date) : (new Date().getFullYear() - kid.birth_year);
+  const hasAccount = !!kid.user_id;
   
   const html = `
     <div class="sect">
+      <!-- Vaiko info -->
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
-        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">VAIKO INFO</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;">VAIKO INFO</div>
+          <button onclick="showEditKidModal('${kidId}')" style="background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;">✏️ Redaguoti</button>
+        </div>
         <div style="font-size:13px;line-height:1.7;">
-          <div><strong>${profile.first_name} ${profile.last_name}</strong></div>
+          <div><strong>${fullName}</strong></div>
           <div style="color:var(--mut);">${age} m. · ${kid.gender === 'male' ? '👦 Vaikinas' : '👧 Mergina'}</div>
-          <div style="color:var(--mut);">Svoris: ${kid.weight_range || '?'} kg · Kyu: ${kid.kyu || 'Be kyu'}</div>
+          <div style="color:var(--mut);">Svoris: <strong>${kid.weight_range || '?'} kg</strong> · Kyu: <strong>${kid.kyu || '10 kyu'}</strong></div>
           <div style="margin-top:6px;">EXP: <strong>${kid.total_exp || 0}</strong> · Lvl <strong>${kid.current_level || 1}</strong></div>
           <div style="color:${kid.approval_status === 'approved' ? 'var(--grn)' : 'var(--br)'};margin-top:6px;font-weight:700;">
             ${kid.approval_status === 'approved' ? '✓ Patvirtinta' : '⏳ Laukia trenerio patvirtinimo'}
@@ -1915,27 +2030,210 @@ async function showKidDetail(kidId) {
         </div>
       </div>
       
+      <!-- Vaiko prieiga -->
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
         <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">VAIKO PRIEIGA</div>
-        ${isAutoEmail || !realEmail ? `
+        ${!hasAccount ? `
           <div style="font-size:12px;color:var(--mut);margin-bottom:10px;line-height:1.5;">
-            🔒 Vaikas dar neturi savo prisijungimo. Tu fiksuoji jo rezultatus per savo paskyrą.
+            🔒 Vaikas dar neturi savo prisijungimo.<br>
+            Treneris pildo rezultatus, tu stebėsi per savo paskyrą.
           </div>
           <button class="btn btng" style="width:100%;" onclick="showAddKidAccess('${kidId}')">
             ➕ PRIDĖTI VAIKO PRIEIGĄ
           </button>
         ` : `
           <div style="font-size:12px;color:var(--mut);line-height:1.5;">
-            📧 Vaiko email: <span style="color:var(--br);">${realEmail}</span><br>
-            ✓ Vaikas gali prisijungti pats
+            📱 Vaikas turi savo paskyrą<br>
+            ✓ Gali prisijungti pats ir teikti rezultatus
           </div>
         `}
+      </div>
+      
+      <!-- Mygtukai -->
+      <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.2);border-radius:14px;padding:14px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">VEIKSMAI</div>
+        <div style="font-size:12px;color:var(--mut);line-height:1.5;">
+          🎯 Karjera, statistikos, pasiekimai – ateityje.<br>
+          📊 Tu kaip tėvai stebi vaiko progresą.
+        </div>
       </div>
     </div>
   `;
   
   document.getElementById('t-kid-detail-content').innerHTML = html;
   showTab('t', 't-kid-detail');
+}
+
+// =====================================
+// VAIKO REDAGAVIMO MODALAS
+// =====================================
+function showEditKidModal(kidId) {
+  // Užkrauname dabartinius duomenis
+  const kid = currentParentKid;
+  if (!kid || kid.id !== kidId) {
+    showToast('❌ Klaida: vaiko duomenys neužkrauti');
+    return;
+  }
+  
+  // Sukuriam modalą jei nėra
+  let modal = document.getElementById('edit-kid-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'edit-kid-modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1001;overflow-y:auto;padding:20px;';
+    document.body.appendChild(modal);
+  }
+  
+  const age = kid.birth_date ? calculateAge(kid.birth_date) : (new Date().getFullYear() - kid.birth_year);
+  const isUnder13 = age <= 12;
+  
+  let weightOptions = '<option value="">Pasirinkti...</option>';
+  if (isUnder13) {
+    ['20-25','25-30','30-35','35-40','40-45','45-50','50-55','55+'].forEach(w => {
+      weightOptions += `<option value="${w}" ${kid.weight_range === w ? 'selected' : ''}>${w} kg</option>`;
+    });
+  } else {
+    ['40-45','45-50','50-55','55-60','60-65','65-70','70-75','75-80','80-85','85-90','90+'].forEach(w => {
+      weightOptions += `<option value="${w}" ${kid.weight_range === w ? 'selected' : ''}>${w} kg</option>`;
+    });
+  }
+  
+  // Gimimo datos parsinimas (jei yra)
+  let bDay = '', bMonth = '', bYear = kid.birth_year || '';
+  if (kid.birth_date) {
+    const d = new Date(kid.birth_date);
+    bDay = d.getDate();
+    bMonth = d.getMonth() + 1;
+    bYear = d.getFullYear();
+  }
+  
+  // Dienos opcijos
+  let dayOpts = '<option value="">Diena</option>';
+  for (let d = 1; d <= 31; d++) {
+    dayOpts += `<option value="${d}" ${d === bDay ? 'selected' : ''}>${d}</option>`;
+  }
+  
+  // Metų opcijos
+  let yearOpts = '<option value="">Metai</option>';
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear; y >= currentYear - 25; y--) {
+    yearOpts += `<option value="${y}" ${y === bYear ? 'selected' : ''}>${y}</option>`;
+  }
+  
+  const months = [['1','Sausis'],['2','Vasaris'],['3','Kovas'],['4','Balandis'],['5','Gegužė'],['6','Birželis'],['7','Liepa'],['8','Rugpjūtis'],['9','Rugsėjis'],['10','Spalis'],['11','Lapkritis'],['12','Gruodis']];
+  let monthOpts = '<option value="">Mėnuo</option>';
+  months.forEach(([v, n]) => {
+    monthOpts += `<option value="${v}" ${parseInt(v) === bMonth ? 'selected' : ''}>${n}</option>`;
+  });
+  
+  modal.innerHTML = `
+    <div style="max-width:420px;margin:20px auto;background:var(--card);border-radius:20px;padding:24px;border:.5px solid var(--bdr);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">REDAGUOTI</div>
+        <button onclick="closeEditKidModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+      </div>
+      
+      <div style="font-size:13px;color:var(--mut);margin-bottom:16px;line-height:1.5;">
+        Redaguoji: <strong>${kid.first_name} ${kid.last_name}</strong>
+      </div>
+      
+      <div class="err-msg" id="edit-kid-err"></div>
+      
+      <label class="lbl">VARDAS</label>
+      <input class="inp" type="text" id="edit-fname" value="${kid.first_name || ''}" maxlength="40">
+      
+      <label class="lbl">PAVARDĖ</label>
+      <input class="inp" type="text" id="edit-lname" value="${kid.last_name || ''}" maxlength="40">
+      
+      <label class="lbl">GIMIMO DATA</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+        <select class="inp" id="edit-birth-day">${dayOpts}</select>
+        <select class="inp" id="edit-birth-month">${monthOpts}</select>
+        <select class="inp" id="edit-birth-year">${yearOpts}</select>
+      </div>
+      
+      <label class="lbl">SVORIO INTERVALAS (kg)</label>
+      <select class="inp" id="edit-weight" style="margin-bottom:14px;">
+        ${weightOptions}
+      </select>
+      
+      <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.2);border-radius:10px;padding:10px;margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--txt);line-height:1.4;">
+          💡 <strong>Kyu lygis</strong> keičiamas tik per diržo egzaminus (treneris patvirtina).<br>
+          🥋 Dabartinis: <strong>${kid.kyu || '10 kyu'}</strong>
+        </div>
+      </div>
+      
+      <button class="btn-auth" onclick="saveEditKid('${kidId}')">IŠSAUGOTI</button>
+      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="closeEditKidModal()">ATŠAUKTI</button>
+    </div>
+  `;
+  
+  modal.style.display = 'block';
+}
+
+function closeEditKidModal() {
+  const modal = document.getElementById('edit-kid-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function saveEditKid(kidId) {
+  const errEl = document.getElementById('edit-kid-err');
+  errEl.style.display = 'none';
+  
+  const fname = document.getElementById('edit-fname').value.trim();
+  const lname = document.getElementById('edit-lname').value.trim();
+  const day = parseInt(document.getElementById('edit-birth-day').value);
+  const month = parseInt(document.getElementById('edit-birth-month').value);
+  const year = parseInt(document.getElementById('edit-birth-year').value);
+  const weight = document.getElementById('edit-weight').value;
+  
+  if (!fname) { showErr(errEl, 'Įvesk vardą'); return; }
+  if (!lname) { showErr(errEl, 'Įvesk pavardę'); return; }
+  if (!day || !month || !year) {
+    showErr(errEl, 'Įvesk pilną gimimo datą');
+    return;
+  }
+  
+  const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const birthDate = new Date(dateStr);
+  if (isNaN(birthDate.getTime()) || birthDate.getDate() !== day) {
+    showErr(errEl, 'Tokia data neegzistuoja');
+    return;
+  }
+  
+  const age = calculateAge(dateStr);
+  if (age < 4 || age > 25) {
+    showErr(errEl, 'Amžius turi būti 4-25 m.');
+    return;
+  }
+  
+  if (!weight) { showErr(errEl, 'Pasirink svorį'); return; }
+  
+  try {
+    const { error } = await sb.from('kids')
+      .update({
+        first_name: fname,
+        last_name: lname,
+        birth_date: dateStr,
+        birth_year: year,  // backward compat
+        weight_range: weight
+      })
+      .eq('id', kidId);
+    
+    if (error) throw error;
+    
+    showToast('✓ Duomenys atnaujinti');
+    closeEditKidModal();
+    
+    // Atnaujinam ekraną
+    await showKidDetail(kidId);
+    await loadParentKids();
+    
+  } catch (error) {
+    console.error('saveEditKid error:', error);
+    showErr(errEl, 'Klaida: ' + error.message);
+  }
 }
 
 function showAddKidAccess(kidId) {
@@ -2621,7 +2919,7 @@ async function loadTrainerData() {
 async function loadNewKids() {
   // Naujieji vaikai laukia patvirtinimo (assigned_trainer_id = man, status='pending')
   const { data: kids, error } = await sb.from('kids')
-    .select('id, first_name, last_name, gender, birth_year, weight_range, kyu, created_at, user_id')
+    .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id')
     .eq('assigned_trainer_id', currentUser.id)
     .eq('approval_status', 'pending')
     .order('created_at', { ascending: false });
@@ -2647,7 +2945,7 @@ async function loadNewKids() {
   const list = document.getElementById('tr-new-kids-list');
   list.innerHTML = kids.map(k => {
     const name = `${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim();
-    const age = new Date().getFullYear() - k.birth_year;
+    const age = k.birth_date ? calculateAge(k.birth_date) : (new Date().getFullYear() - k.birth_year);
     const genderIcon = k.gender === 'male' ? '👦' : '👧';
     const hasAccount = !!k.user_id;
     
@@ -3558,8 +3856,17 @@ let currentExerciseList = [];
 
 // Helper: surask vaiko amžiaus grupę
 async function getKidAgeGroup() {
-  if (!currentKid?.gender || !currentKid?.birth_year) return null;
-  const age = new Date().getFullYear() - currentKid.birth_year;
+  if (!currentKid?.gender) return null;
+  
+  // Tikslus amžius pagal birth_date arba fallback į birth_year
+  let age;
+  if (currentKid.birth_date) {
+    age = calculateAge(currentKid.birth_date);
+  } else if (currentKid.birth_year) {
+    age = new Date().getFullYear() - currentKid.birth_year;
+  } else {
+    return null;
+  }
   
   const { data: groups } = await sb.from('exercise_age_groups')
     .select('*')
