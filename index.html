@@ -1352,10 +1352,30 @@ async function checkApprovalStatus() {
 
 async function afterLogin() {
   // Gauti profilį (BE clubs JOIN, kad neluštų jei nėra klubo)
-  const { data: profile, error: profileErr } = await sb.from('profiles')
+  let { data: profile, error: profileErr } = await sb.from('profiles')
     .select('*')
     .eq('id', currentUser.id)
     .single();
+
+  // Jei profile nėra - pabandykim sukurti (vaikams kurie turi auth.users bet ne profile)
+  if (profileErr || !profile) {
+    console.log('Profile nerastas, bandom sukurti per ensure_kid_profile...');
+    
+    try {
+      await sb.rpc('ensure_kid_profile', { p_user_id: currentUser.id });
+      
+      // Bandom dar kartą gauti profile
+      const result = await sb.from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+      
+      profile = result.data;
+      profileErr = result.error;
+    } catch (err) {
+      console.error('ensure_kid_profile failed:', err);
+    }
+  }
 
   if (profileErr || !profile) {
     console.error('Profile error:', profileErr);
@@ -1928,17 +1948,58 @@ async function akSubmit() {
       throw new Error('Susiejimo klaida: ' + linkError.message);
     }
     
-    // 3. Jei turi telefoną – sukuriam vaiko auth paskyrą
-    // PASTABA: kol kas tik išsaugom email kids lentelėje, paskyra bus sukurta vėliau
-    // (signUp vaikui sugadina tėvų sesiją - reikalingas backend sprendimas)
+    // 3. Jei turi telefoną – sukuriam vaiko auth paskyrą per ATSKIRĄ klientą
+    // (kad nesugadintumėm tėvų sesijos)
     if (akData.has_phone && akData.kid_email) {
-      // TODO: Per backend funkciją sukurti vaiko paskyrą po trenerio patvirtinimo
-      // Kol kas saugom email - tėvai vėliau galės "aktyvuoti" prieigą
-      // arba siųsti laišką per Supabase Edge Function
-      console.log('Vaiko email išsaugomas, paskyra bus sukurta vėliau:', akData.kid_email);
-      
-      // Galim išsaugoti email papildomame stulpelyje (pridėsim per SQL)
-      // Kol kas tiesiog pranešam vartotojui
+      try {
+        // Atskiras klientas (be sesijos saugojimo)
+        const tempClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: { 
+            persistSession: false,
+            autoRefreshToken: false 
+          }
+        });
+        
+        const tempPass = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
+        const { data: kidSignUp, error: kidSignUpError } = await tempClient.auth.signUp({
+          email: akData.kid_email,
+          password: tempPass
+        });
+        
+        if (kidSignUpError) {
+          if (kidSignUpError.message.includes('already')) {
+            // Jei jau egzistuoja - paliekam pending_email, tėvai galės bandyti per "Pridėti prieigą"
+            await sb.from('kids').update({ pending_email: akData.kid_email }).eq('id', kidId);
+            console.warn('Vaiko email jau registruotas, paliekam pending_email');
+          } else {
+            throw kidSignUpError;
+          }
+        } else {
+          // Sėkmingai - susiejam ir sukuriam profile
+          const kidUserId = kidSignUp.user?.id;
+          if (kidUserId) {
+            // Atjungiam atskirą klientą
+            await tempClient.auth.signOut();
+            
+            // Susiejam kids.user_id (per pagrindinį klientą - tėvai)
+            await sb.from('kids').update({ 
+              user_id: kidUserId 
+            }).eq('id', kidId);
+            
+            // Sukuriam vaiko profile per RPC
+            await sb.rpc('ensure_kid_profile', { p_user_id: kidUserId });
+            
+            // Siunčiame slaptažodžio nustatymo laišką
+            await sb.auth.resetPasswordForEmail(akData.kid_email, {
+              redirectTo: `${window.location.origin}/spobu/set-password.html`
+            });
+          }
+        }
+      } catch (kidErr) {
+        console.error('Vaiko paskyros klaida:', kidErr);
+        // Vaikas DB sukurtas - tai jau gerai. Tėvai galės bandyti per "Pridėti prieigą"
+        await sb.from('kids').update({ pending_email: akData.kid_email }).eq('id', kidId);
+      }
     }
     
     // 4. Success
@@ -1953,11 +2014,12 @@ async function akSubmit() {
     
     if (akData.has_phone) {
       successHTML += `
-        <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.2);border-radius:10px;padding:12px;margin-bottom:12px;">
-          <div style="font-weight:900;color:var(--br);margin-bottom:6px;">📱 Vaiko email išsaugotas</div>
+        <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
+          <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">📧 Vaiko paskyra kuriama</div>
           <div style="font-size:12px;">Email: <span style="color:var(--br);">${akData.kid_email}</span></div>
           <div style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5;">
-            Po trenerio patvirtinimo galėsi paspausti <strong>"Pridėti vaiko prieigą"</strong> – tada vaikas gaus laišką ir galės prisijungti.
+            Vaikas gaus laišką su slaptažodžio nustatymo nuoroda. Po nustatymo galės prisijungti.<br>
+            ⏳ Bet pirma reikia trenerio patvirtinimo.
           </div>
         </div>
       `;
@@ -2237,13 +2299,24 @@ async function saveEditKid(kidId) {
 }
 
 function showAddKidAccess(kidId) {
-  const newEmail = prompt('Įvesk vaiko realų email\'ą:\n\n💡 Vaikas gaus laišką su slaptažodžio nustatymo nuoroda. Po to galės prisijungti su SAVO paskyra.', '');
-  if (!newEmail || !newEmail.includes('@')) {
-    if (newEmail !== null) showToast('❌ Neteisingas email\'as');
+  // Patikrinkim ar yra pending_email
+  const kid = currentParentKid;
+  const defaultEmail = (kid && kid.pending_email) || '';
+  
+  const promptText = defaultEmail 
+    ? `Vaiko email: ${defaultEmail}\n\nAr siųsti laišką šiuo adresu? Jei ne - nutrauk ir įvesk kitą.`
+    : 'Įvesk vaiko email\'ą:\n\n💡 Vaikas gaus laišką su slaptažodžio nustatymo nuoroda. Po to galės prisijungti su SAVO paskyra.';
+  
+  const newEmail = prompt(promptText, defaultEmail);
+  if (newEmail === null) return; // Cancel
+  
+  const trimmedEmail = newEmail.trim().toLowerCase();
+  if (!trimmedEmail || !trimmedEmail.includes('@')) {
+    showToast('❌ Neteisingas email\'as');
     return;
   }
   
-  addKidEmailAccess(kidId, newEmail.trim().toLowerCase());
+  addKidEmailAccess(kidId, trimmedEmail);
 }
 
 async function addKidEmailAccess(kidId, newEmail) {
@@ -2255,19 +2328,74 @@ async function addKidEmailAccess(kidId, newEmail) {
   }
   
   try {
-    showToast('Atnaujinama...');
+    showToast('Kuriama vaiko paskyra...');
     
-    // Naudojam Supabase RPC arba update per profile
-    // Email keitimas auth.users yra sudėtingas iš client'o – siunčiame reset password į naują
-    const { error } = await sb.auth.resetPasswordForEmail(newEmail, {
+    // 1. Išsaugom email kids lentelėje (pending_email)
+    await sb.from('kids').update({ pending_email: newEmail }).eq('id', kidId);
+    
+    // 2. Sukuriam atskirą Supabase klientą (kad nesugadintų tėvų sesijos)
+    const tempClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { 
+        persistSession: false,  // NESAUGOM sesijos
+        autoRefreshToken: false 
+      }
+    });
+    
+    // 3. signUp vaikui per ATSKIRĄ klientą
+    const tempPass = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
+    const { data: kidSignUp, error: signUpError } = await tempClient.auth.signUp({
+      email: newEmail,
+      password: tempPass
+    });
+    
+    if (signUpError) {
+      if (signUpError.message.includes('already')) {
+        // Jei email jau egzistuoja - bandom rasti per email
+        showToast('⚠️ Email jau registruotas. Siunčiame slaptažodžio atstatymo nuorodą.', 'error', 5000);
+        await sb.auth.resetPasswordForEmail(newEmail, {
+          redirectTo: `${window.location.origin}/spobu/set-password.html`
+        });
+        return;
+      }
+      throw signUpError;
+    }
+    
+    const kidUserId = kidSignUp.user?.id;
+    if (!kidUserId) {
+      throw new Error('Nepavyko gauti vaiko ID');
+    }
+    
+    // 4. Atjungiam vaiką iš atskiro kliento (jei jis prisijungė)
+    await tempClient.auth.signOut();
+    
+    // 5. Susiejam kids.user_id (per pagrindinį klientą - tėvų sesija)
+    await sb.from('kids').update({ 
+      user_id: kidUserId,
+      pending_email: null  // Išvalom pending email, nes paskyra sukurta
+    }).eq('id', kidId);
+    
+    // 6. Sukuriam vaiko profile (per RPC, nes šiuo metu nesame vaikas)
+    // Naudosim ensure_kid_profile - ji veikia su SECURITY DEFINER
+    await sb.rpc('ensure_kid_profile', { p_user_id: kidUserId });
+    
+    // 7. Siunčiame slaptažodžio nustatymo laišką
+    await sb.auth.resetPasswordForEmail(newEmail, {
       redirectTo: `${window.location.origin}/spobu/set-password.html`
     });
     
-    // Dėl to, kad email keitimas auth.users iš client SDK negalimas, 
-    // šiuo metu rodom message – reikia DB pakeitimo per Dashboard arba SQL
-    showToast('⚠️ Funkcija dar tobulinama. Ateinančioje sesijoje bus baigta.', 'error', 6000);
+    showToast('✅ Vaiko paskyra sukurta! Laiškas išsiųstas.', 'success', 6000);
+    
+    // Atnaujinam ekraną
+    setTimeout(async () => {
+      await showKidDetail(kidId);
+      await loadParentKids();
+    }, 1500);
     
   } catch (error) {
+    console.error('addKidEmailAccess error:', error);
+    showToast('❌ Klaida: ' + (error.message || 'nežinoma'));
+  }
+}
     console.error('addKidEmailAccess error:', error);
     showToast('❌ Klaida: ' + error.message);
   }
