@@ -224,7 +224,7 @@ select.inp option{background:#222;}
   </div>
 </div>
 
-<!-- AUTH: REGISTER WIZARD (5 ekranai) -->
+<!-- AUTH: REGISTER WIZARD - TĖVAI (3 ekranai) -->
 <div class="auth-wrap" id="auth-register" style="display:none;">
   <div class="auth-box" style="max-height:90vh;overflow-y:auto;">
     <div class="auth-logo">SPO<span>BU</span><span style="color:var(--br);">.</span></div>
@@ -234,42 +234,25 @@ select.inp option{background:#222;}
       <div id="rw-step-1" class="rw-step on"></div>
       <div id="rw-step-2" class="rw-step"></div>
       <div id="rw-step-3" class="rw-step"></div>
-      <div id="rw-step-4" class="rw-step"></div>
-      <div id="rw-step-5" class="rw-step"></div>
     </div>
     
     <div class="err-msg" id="reg-err"></div>
     
-    <!-- ===== EKRANAS 1: TIPAS + SPORTAS ===== -->
+    <!-- ===== EKRANAS 1: PRISIJUNGIMO DUOMENYS ===== -->
     <div id="rw-screen-1">
       <div class="auth-title">REGISTRACIJA</div>
       <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
-        Sveikas! Pirmiausia, kaip registruosi vaiką?
+        Sukurk savo (tėvų/globėjo) paskyrą.<br>Vaikus pridėsi vėliau – kiekvienam pasirinksi sportą, klubą ir trenerį.
       </div>
       
-      <label class="lbl">PASKYROS TIPAS</label>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
-        <div class="rw-role-opt on" onclick="selectRwAccountType(this, 'parent_only')" data-type="parent_only">
-          <div style="font-size:24px;">👨‍👩‍👦</div>
-          <div>
-            <div style="font-weight:900;font-size:13px;">Tik mano paskyra</div>
-            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Vaikas neturi telefono.<br>Treneris pildys rezultatus, aš stebėsiu.</div>
-          </div>
-        </div>
-        <div class="rw-role-opt" onclick="selectRwAccountType(this, 'parent_and_kid')" data-type="parent_and_kid">
-          <div style="font-size:24px;">👨‍👩‍👦+🧒</div>
-          <div>
-            <div style="font-weight:900;font-size:13px;">Mano + vaiko paskyros</div>
-            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Vaikas turi telefoną/email.<br>Vaikas pats teiks rezultatus.</div>
-          </div>
-        </div>
-      </div>
-      <input type="hidden" id="rw-account-type" value="parent_only">
+      <label class="lbl">EL. PAŠTAS</label>
+      <input class="inp" type="email" id="rw-parent-email" placeholder="vardas@email.lt">
       
-      <label class="lbl">SPORTO ŠAKA</label>
-      <select class="inp" id="rw-sport" style="margin-bottom:14px;">
-        <option value="">Pasirinkti...</option>
-      </select>
+      <label class="lbl">SLAPTAŽODIS (min. 8 simb.)</label>
+      <input class="inp" type="password" id="rw-parent-pass" placeholder="••••••••" minlength="8">
+      
+      <label class="lbl">PAKARTOTI SLAPTAŽODĮ</label>
+      <input class="inp" type="password" id="rw-parent-pass2" placeholder="••••••••" minlength="8" style="margin-bottom:14px;">
       
       <button class="btn-auth" onclick="rwNext(1)">TĘSTI →</button>
       <div style="text-align:center;margin-top:12px;">
@@ -277,50 +260,21 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- ===== EKRANAS 2: VAIKO INFO ===== -->
+    <!-- ===== EKRANAS 2: ASMENINĖ INFORMACIJA ===== -->
     <div id="rw-screen-2" style="display:none;">
-      <div class="auth-title">VAIKO INFORMACIJA</div>
+      <div class="auth-title">JŪSŲ DUOMENYS</div>
       <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
-        Užpildyk vaiko bazinę informaciją
+        Užpildyk savo (tėvų/globėjo) duomenis
       </div>
       
       <label class="lbl">VARDAS</label>
-      <input class="inp" type="text" id="rw-fname" placeholder="Pvz. Marius" maxlength="40">
+      <input class="inp" type="text" id="rw-fname" placeholder="Pvz. Jonas" maxlength="40">
       
       <label class="lbl">PAVARDĖ</label>
-      <input class="inp" type="text" id="rw-lname" placeholder="Pvz. Kazlauskas" maxlength="40">
+      <input class="inp" type="text" id="rw-lname" placeholder="Pvz. Petraitis" maxlength="40">
       
-      <label class="lbl">LYTIS</label>
-      <div class="chs" style="margin-bottom:14px;">
-        <div class="ch on" onclick="selectRwGender(this, 'male')" data-g="male">👦 Vaikinas</div>
-        <div class="ch" onclick="selectRwGender(this, 'female')" data-g="female">👧 Mergina</div>
-      </div>
-      <input type="hidden" id="rw-gender" value="male">
-      
-      <label class="lbl">GIMIMO METAI</label>
-      <input class="inp" type="number" id="rw-birth-year" placeholder="2015" min="2005" max="2025" oninput="updateWeightOptions()">
-      
-      <label class="lbl">SVORIS</label>
-      <select class="inp" id="rw-weight" style="margin-bottom:14px;">
-        <option value="">Pirma įvesk gimimo metus...</option>
-      </select>
-      
-      <label class="lbl">KYU LYGIS (jei žinote)</label>
-      <select class="inp" id="rw-kyu" style="margin-bottom:14px;">
-        <option value="">Nežinome / dar neturiu</option>
-        <option value="10 kyu">10 kyu (baltas)</option>
-        <option value="9 kyu">9 kyu</option>
-        <option value="8 kyu">8 kyu</option>
-        <option value="7 kyu">7 kyu</option>
-        <option value="6 kyu">6 kyu</option>
-        <option value="5 kyu">5 kyu</option>
-        <option value="4 kyu">4 kyu</option>
-        <option value="3 kyu">3 kyu</option>
-        <option value="2 kyu">2 kyu</option>
-        <option value="1 kyu">1 kyu</option>
-        <option value="1 dan">1 dan (juodas)</option>
-        <option value="2 dan">2 dan</option>
-      </select>
+      <label class="lbl">TELEFONAS</label>
+      <input class="inp" type="tel" id="rw-phone" placeholder="+370 600 00000" style="margin-bottom:14px;">
       
       <button class="btn-auth" onclick="rwNext(2)">TĘSTI →</button>
       <div style="text-align:center;margin-top:12px;">
@@ -328,116 +282,51 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- ===== EKRANAS 3: KLUBAS + TRENERIS ===== -->
+    <!-- ===== EKRANAS 3: SUTIKIMAI ===== -->
     <div id="rw-screen-3" style="display:none;">
-      <div class="auth-title">KLUBAS IR TRENERIS</div>
+      <div class="auth-title">SUTIKIMAI</div>
       <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
-        Į kurį klubą priklausys vaikas?
+        Beveik baigta! Patvirtink sutikimus.
       </div>
       
-      <label class="lbl">KLUBAS</label>
-      <select class="inp" id="rw-club" style="margin-bottom:14px;" onchange="loadRwTrainers()">
-        <option value="">Pasirinkti klubą...</option>
-      </select>
-      
-      <label class="lbl">TRENERIS</label>
-      <select class="inp" id="rw-trainer" style="margin-bottom:14px;" disabled>
-        <option value="">Pirma pasirink klubą...</option>
-      </select>
-      <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;">
-        💡 Treneris gaus pranešimą apie tavo registraciją ir patvirtins paskyrą
-      </div>
-      
-      <button class="btn-auth" onclick="rwNext(3)">TĘSTI →</button>
-      <div style="text-align:center;margin-top:12px;">
-        <button class="btn-link" onclick="rwPrev(3)">← Atgal</button>
-      </div>
-    </div>
-    
-    <!-- ===== EKRANAS 4: KONTAKTAI ===== -->
-    <div id="rw-screen-4" style="display:none;">
-      <div class="auth-title">KONTAKTAI</div>
-      <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
-        Tėvų prisijungimo duomenys
-      </div>
-      
-      <label class="lbl">TĖVŲ EL. PAŠTAS</label>
-      <input class="inp" type="email" id="rw-parent-email" placeholder="vardas@email.lt">
-      
-      <label class="lbl">TĖVŲ SLAPTAŽODIS (min. 8 simb.)</label>
-      <input class="inp" type="password" id="rw-parent-pass" placeholder="••••••••" minlength="8">
-      
-      <label class="lbl">PAKARTOTI SLAPTAŽODĮ</label>
-      <input class="inp" type="password" id="rw-parent-pass2" placeholder="••••••••" minlength="8">
-      
-      <label class="lbl">TELEFONAS</label>
-      <input class="inp" type="tel" id="rw-phone" placeholder="+370 600 00000" style="margin-bottom:14px;">
-      
-      <!-- Vaiko email - rodomas tik jei "parent_and_kid" -->
-      <div id="rw-kid-email-section" style="display:none;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;border:.5px solid var(--bdr);">
-        <div style="font-size:11px;color:var(--mut);font-weight:800;margin-bottom:8px;">🧒 VAIKO PASKYRA</div>
-        <label class="lbl">VAIKO EL. PAŠTAS</label>
-        <input class="inp" type="email" id="rw-kid-email" placeholder="vaikas@email.lt">
-        <div style="font-size:11px;color:var(--mut);line-height:1.4;">
-          📧 Į šį paštą atkeliaus slaptažodžio nustatymo nuoroda.<br>
-          💡 Galima naudoti +vaikas trick'ą (pvz. tavovardas+marius@gmail.com)
-        </div>
-      </div>
-      
-      <div style="background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;border:.5px solid var(--bdr);">
-        <div style="font-size:11px;color:var(--mut);font-weight:800;margin-bottom:8px;">SUTIKIMAI</div>
-        
-        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
-          <input type="checkbox" id="rw-consent-1" style="width:16px;height:16px;margin-top:2px;flex-shrink:0;">
-          <label for="rw-consent-1" style="font-size:12px;color:var(--txt);line-height:1.4;">
+      <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px;border:.5px solid var(--bdr);">
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;">
+          <input type="checkbox" id="rw-consent-1" style="width:18px;height:18px;margin-top:2px;flex-shrink:0;">
+          <label for="rw-consent-1" style="font-size:12px;color:var(--txt);line-height:1.5;">
             Sutinku su <span style="color:var(--br);">Privatumo politika</span> ir <span style="color:var(--br);">Naudojimo sąlygomis</span>
           </label>
         </div>
         
         <div style="display:flex;align-items:flex-start;gap:8px;">
-          <input type="checkbox" id="rw-consent-2" style="width:16px;height:16px;margin-top:2px;flex-shrink:0;">
-          <label for="rw-consent-2" style="font-size:12px;color:var(--txt);line-height:1.4;">
-            Esu tėvas/globėjas ir sutinku su vaiko duomenų tvarkymu
+          <input type="checkbox" id="rw-consent-2" style="width:18px;height:18px;margin-top:2px;flex-shrink:0;">
+          <label for="rw-consent-2" style="font-size:12px;color:var(--txt);line-height:1.5;">
+            Esu tėvas/globėjas ir prisiimu atsakomybę už registruojamų vaikų duomenis
           </label>
         </div>
       </div>
       
-      <button class="btn-auth" onclick="rwNext(4)">TĘSTI →</button>
-      <div style="text-align:center;margin-top:12px;">
-        <button class="btn-link" onclick="rwPrev(4)">← Atgal</button>
-      </div>
-    </div>
-    
-    <!-- ===== EKRANAS 5: NUOTRAUKA (PRALEIDŽIAMA) ===== -->
-    <div id="rw-screen-5" style="display:none;">
-      <div class="auth-title">VAIKO NUOTRAUKA</div>
-      <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
-        Įkelk vaiko nuotrauką (neprivaloma)
-      </div>
-      
-      <div style="text-align:center;padding:30px 20px;border:2px dashed var(--bdr);border-radius:14px;margin-bottom:14px;">
-        <div style="font-size:60px;margin-bottom:12px;">📷</div>
-        <div style="font-size:13px;color:var(--mut);margin-bottom:14px;">
-          Nuotrauką galima pridėti vėliau
+      <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.2);border-radius:12px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:12px;color:var(--txt);line-height:1.5;">
+          ✨ <strong>Po registracijos:</strong><br>
+          • Iš karto galėsi prisijungti<br>
+          • "Mano vaikai" ekrane spausi <strong>+ Pridėti vaiką</strong><br>
+          • Kiekvienam vaikui pasirinksi sportą, klubą ir trenerį
         </div>
-        <input type="file" id="rw-photo" accept="image/*" style="display:none;" onchange="rwPhotoPick(this)">
-        <button class="btn-auth" style="background:var(--bdr);color:var(--txt);" onclick="document.getElementById('rw-photo').click()">📷 PASIRINKTI NUOTRAUKĄ</button>
-        <div id="rw-photo-name" style="font-size:11px;color:var(--grn);margin-top:8px;"></div>
       </div>
       
       <button class="btn-auth" id="rw-submit-btn" onclick="rwSubmit()">BAIGTI REGISTRACIJĄ</button>
-      <button class="btn-auth" style="background:transparent;color:var(--mut);border:1px solid var(--bdr);margin-top:8px;" onclick="rwSubmit(true)">PRALEISTI NUOTRAUKĄ</button>
       <div style="text-align:center;margin-top:12px;">
-        <button class="btn-link" onclick="rwPrev(5)">← Atgal</button>
+        <button class="btn-link" onclick="rwPrev(3)">← Atgal</button>
       </div>
     </div>
     
-    <!-- ===== EKRANAS 6: SUCCESS ===== -->
+    <!-- ===== SUCCESS ===== -->
     <div id="rw-screen-success" style="display:none;text-align:center;padding:30px 0;">
       <div style="font-size:60px;margin-bottom:16px;">✅</div>
       <div class="auth-title" style="margin-bottom:14px;">REGISTRACIJA SĖKMINGA!</div>
-      <div id="rw-success-content" style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:20px;text-align:left;">
-        <!-- Užpildomas dinamiškai -->
+      <div style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:20px;">
+        Tavo paskyra sukurta!<br><br>
+        Prisijunk ir spausk <strong>+ Pridėti vaiką</strong> – kiekvienam vaikui pasirinksi sportą, klubą ir trenerį.
       </div>
       <button class="btn-auth" onclick="showLogin()">EITI Į PRISIJUNGIMĄ</button>
     </div>
@@ -1571,146 +1460,20 @@ async function doLogin() {
 // REGISTRACIJOS WIZARDAS (5 ekranų)
 // ════════════════════════════════════════
 
+// ════════════════════════════════════════════════
+// TĖVŲ REGISTRACIJOS WIZARD'AS (3 ekranai)
+// ════════════════════════════════════════════════
+
 let rwData = {
-  account_type: 'parent_only',  // arba 'parent_and_kid'
-  sport_id: null,
-  sport_name: null,
-  fname: '',
-  lname: '',
-  gender: 'male',
-  birth_year: null,
-  weight_range: null,
-  kyu: null,
-  club_id: null,
-  club_name: null,
-  trainer_id: null,
-  trainer_name: null,
   parent_email: '',
   parent_pass: '',
-  phone: '',
-  kid_email: '',
-  photo_file: null
+  fname: '',
+  lname: '',
+  phone: ''
 };
 
-function selectRwAccountType(el, type) {
-  document.querySelectorAll('.rw-role-opt').forEach(e => e.classList.remove('on'));
-  el.classList.add('on');
-  document.getElementById('rw-account-type').value = type;
-  rwData.account_type = type;
-  
-  // Atnaujinam ekrane 4 vaiko email sekciją
-  const kidSection = document.getElementById('rw-kid-email-section');
-  if (kidSection) {
-    kidSection.style.display = (type === 'parent_and_kid') ? 'block' : 'none';
-  }
-}
-
-function selectRwGender(el, gender) {
-  el.parentElement.querySelectorAll('.ch').forEach(c => c.classList.remove('on'));
-  el.classList.add('on');
-  document.getElementById('rw-gender').value = gender;
-  rwData.gender = gender;
-  // Atnaujinam svorio intervalus jei jau pasirinkti metai
-  updateWeightOptions();
-}
-
-function updateWeightOptions() {
-  const birthYear = parseInt(document.getElementById('rw-birth-year').value);
-  if (!birthYear || birthYear < 2005 || birthYear > 2025) return;
-  
-  const age = new Date().getFullYear() - birthYear;
-  const isUnder13 = age <= 12;
-  
-  const select = document.getElementById('rw-weight');
-  let options = '<option value="">Pasirinkti svorio intervalą...</option>';
-  
-  if (isUnder13) {
-    // Iki 12m.
-    options += `
-      <option value="20-25">20-25 kg</option>
-      <option value="26-30">26-30 kg</option>
-      <option value="31-35">31-35 kg</option>
-      <option value="36-40">36-40 kg</option>
-      <option value="41-45">41-45 kg</option>
-      <option value="46-50">46-50 kg</option>
-      <option value="51+">51+ kg</option>
-    `;
-  } else {
-    // 13+ m.
-    options += `
-      <option value="40-50">40-50 kg</option>
-      <option value="51-60">51-60 kg</option>
-      <option value="61-70">61-70 kg</option>
-      <option value="71-80">71-80 kg</option>
-      <option value="81-90">81-90 kg</option>
-      <option value="91+">91+ kg</option>
-    `;
-  }
-  
-  select.innerHTML = options;
-}
-
-async function showRwSports() {
-  const { data: sports } = await sb.from('sports').select('*').eq('is_active', true);
-  const select = document.getElementById('rw-sport');
-  select.innerHTML = '<option value="">Pasirinkti...</option>' + 
-    (sports || []).map(s => `<option value="${s.id}" data-name="${s.name}">${s.icon || ''} ${s.name}</option>`).join('');
-}
-
-async function loadRwClubs() {
-  if (!rwData.sport_id) return;
-  
-  const { data: clubs } = await sb.from('clubs')
-    .select('id, name, city')
-    .eq('sport_id', rwData.sport_id)
-    .eq('is_active', true)
-    .order('name');
-  
-  const select = document.getElementById('rw-club');
-  if (!clubs || clubs.length === 0) {
-    select.innerHTML = '<option value="">Nėra registruotų klubų...</option>';
-    return;
-  }
-  
-  select.innerHTML = '<option value="">Pasirinkti klubą...</option>' + 
-    clubs.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name} (${c.city || 'Lietuva'})</option>`).join('');
-}
-
-async function loadRwTrainers() {
-  const clubId = document.getElementById('rw-club').value;
-  const trainerSelect = document.getElementById('rw-trainer');
-  
-  if (!clubId) {
-    trainerSelect.innerHTML = '<option value="">Pirma pasirink klubą...</option>';
-    trainerSelect.disabled = true;
-    return;
-  }
-  
-  rwData.club_id = clubId;
-  rwData.club_name = document.getElementById('rw-club').options[document.getElementById('rw-club').selectedIndex]?.dataset?.name || '';
-  
-  // Krauname trenerius su jų vardais iš profiles
-  const { data: trainers } = await sb.from('trainers')
-    .select('id, profiles!inner(first_name, last_name)')
-    .eq('invited_by_club_id', clubId)
-    .eq('is_active', true);
-  
-  if (!trainers || trainers.length === 0) {
-    trainerSelect.innerHTML = '<option value="">Nėra registruotų trenerių...</option>';
-    trainerSelect.disabled = true;
-    return;
-  }
-  
-  trainerSelect.innerHTML = '<option value="">Pasirinkti trenerį...</option>' + 
-    trainers.map(t => {
-      const name = `${t.profiles?.first_name || 'Vardas'} ${t.profiles?.last_name || ''}`.trim();
-      return `<option value="${t.id}" data-name="${name}">${name}</option>`;
-    }).join('');
-  trainerSelect.disabled = false;
-}
-
 function rwShowScreen(num) {
-  ['rw-screen-1', 'rw-screen-2', 'rw-screen-3', 'rw-screen-4', 'rw-screen-5', 'rw-screen-success'].forEach(id => {
+  ['rw-screen-1', 'rw-screen-2', 'rw-screen-3', 'rw-screen-success'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1722,7 +1485,7 @@ function rwShowScreen(num) {
   }
   
   // Progress indicator
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 3; i++) {
     const el = document.getElementById(`rw-step-${i}`);
     if (el) {
       if (i < num) el.className = 'rw-step done';
@@ -1732,9 +1495,6 @@ function rwShowScreen(num) {
   }
   
   document.getElementById('reg-err').style.display = 'none';
-  
-  // Specialūs init veiksmai
-  if (num === 3) loadRwClubs();
 }
 
 function rwNext(currentScreen) {
@@ -1742,102 +1502,42 @@ function rwNext(currentScreen) {
   errEl.style.display = 'none';
   
   if (currentScreen === 1) {
-    const sportEl = document.getElementById('rw-sport');
-    if (!sportEl.value) {
-      showErr(errEl, 'Pasirink sporto šaką');
+    const email = document.getElementById('rw-parent-email').value.trim().toLowerCase();
+    const pass = document.getElementById('rw-parent-pass').value;
+    const pass2 = document.getElementById('rw-parent-pass2').value;
+    
+    const emailRegex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      showErr(errEl, 'Neteisingas el. pašto formatas (be lietuviškų raidžių)');
       return;
     }
-    rwData.sport_id = sportEl.value;
-    rwData.sport_name = sportEl.options[sportEl.selectedIndex]?.text || '';
+    if (!pass || pass.length < 8) {
+      showErr(errEl, 'Slaptažodis turi būti bent 8 simboliai');
+      return;
+    }
+    if (pass !== pass2) {
+      showErr(errEl, 'Slaptažodžiai nesutampa');
+      return;
+    }
+    
+    rwData.parent_email = email;
+    rwData.parent_pass = pass;
     rwShowScreen(2);
   }
   
   else if (currentScreen === 2) {
     const fname = document.getElementById('rw-fname').value.trim();
     const lname = document.getElementById('rw-lname').value.trim();
-    const birthYear = parseInt(document.getElementById('rw-birth-year').value);
-    const weight = document.getElementById('rw-weight').value;
+    const phone = document.getElementById('rw-phone').value.trim();
     
     if (!fname) { showErr(errEl, 'Įvesk vardą'); return; }
     if (!lname) { showErr(errEl, 'Įvesk pavardę'); return; }
-    if (!birthYear || birthYear < 2005 || birthYear > 2025) {
-      showErr(errEl, 'Įvesk teisingus gimimo metus (2005-2025)');
-      return;
-    }
-    if (!weight) { showErr(errEl, 'Pasirink svorio intervalą'); return; }
+    if (!phone) { showErr(errEl, 'Įvesk telefono numerį'); return; }
     
     rwData.fname = fname;
     rwData.lname = lname;
-    rwData.birth_year = birthYear;
-    rwData.weight_range = weight;
-    rwData.kyu = document.getElementById('rw-kyu').value || null;
-    
-    rwShowScreen(3);
-  }
-  
-  else if (currentScreen === 3) {
-    const clubId = document.getElementById('rw-club').value;
-    const trainerId = document.getElementById('rw-trainer').value;
-    
-    if (!clubId) { showErr(errEl, 'Pasirink klubą'); return; }
-    if (!trainerId) { showErr(errEl, 'Pasirink trenerį'); return; }
-    
-    rwData.club_id = clubId;
-    rwData.trainer_id = trainerId;
-    rwData.trainer_name = document.getElementById('rw-trainer').options[document.getElementById('rw-trainer').selectedIndex]?.dataset?.name || '';
-    
-    rwShowScreen(4);
-  }
-  
-  else if (currentScreen === 4) {
-    const parentEmail = document.getElementById('rw-parent-email').value.trim().toLowerCase();
-    const parentPass = document.getElementById('rw-parent-pass').value;
-    const parentPass2 = document.getElementById('rw-parent-pass2').value;
-    const phone = document.getElementById('rw-phone').value.trim();
-    const consent1 = document.getElementById('rw-consent-1').checked;
-    const consent2 = document.getElementById('rw-consent-2').checked;
-    
-    if (!parentEmail || !parentEmail.includes('@')) {
-      showErr(errEl, 'Įvesk teisingą tėvų email\'ą');
-      return;
-    }
-    if (!parentPass || parentPass.length < 8) {
-      showErr(errEl, 'Slaptažodis turi būti bent 8 simboliai');
-      return;
-    }
-    if (parentPass !== parentPass2) {
-      showErr(errEl, 'Slaptažodžiai nesutampa');
-      return;
-    }
-    if (!phone) {
-      showErr(errEl, 'Įvesk telefono numerį');
-      return;
-    }
-    
-    // Vaiko email patikra (tik jei "parent_and_kid")
-    if (rwData.account_type === 'parent_and_kid') {
-      const kidEmail = document.getElementById('rw-kid-email').value.trim().toLowerCase();
-      if (!kidEmail || !kidEmail.includes('@')) {
-        showErr(errEl, 'Įvesk teisingą vaiko email\'ą');
-        return;
-      }
-      if (kidEmail === parentEmail) {
-        showErr(errEl, 'Vaiko email turi skirtis nuo tėvų email\'o');
-        return;
-      }
-      rwData.kid_email = kidEmail;
-    } else {
-      rwData.kid_email = null; // Vaikas neturi paskyros
-    }
-    
-    if (!consent1) { showErr(errEl, 'Privaloma sutikti su Privatumo politika'); return; }
-    if (!consent2) { showErr(errEl, 'Privaloma patvirtinti tėvų sutikimą'); return; }
-    
-    rwData.parent_email = parentEmail;
-    rwData.parent_pass = parentPass;
     rwData.phone = phone;
-    
-    rwShowScreen(5);
+    rwShowScreen(3);
   }
 }
 
@@ -1845,45 +1545,29 @@ function rwPrev(currentScreen) {
   rwShowScreen(currentScreen - 1);
 }
 
-function rwPhotoPick(input) {
-  if (input.files && input.files[0]) {
-    rwData.photo_file = input.files[0];
-    document.getElementById('rw-photo-name').textContent = '✓ ' + input.files[0].name;
-  }
-}
-
-async function rwSubmit(skipPhoto) {
+async function rwSubmit() {
   const errEl = document.getElementById('reg-err');
   errEl.style.display = 'none';
+  
+  const consent1 = document.getElementById('rw-consent-1').checked;
+  const consent2 = document.getElementById('rw-consent-2').checked;
+  
+  if (!consent1) { showErr(errEl, 'Privaloma sutikti su Privatumo politika'); return; }
+  if (!consent2) { showErr(errEl, 'Privaloma patvirtinti tėvų sutikimą'); return; }
   
   const btn = document.getElementById('rw-submit-btn');
   btn.disabled = true;
   btn.textContent = 'KURIAMA...';
   
   try {
-    // Pirma patikrinam, ar abu email'ai turi tinkamą formatą (be lietuviškų raidžių)
-    const emailRegex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(rwData.parent_email)) {
-      throw new Error('Tėvų email\'e yra neleistinų simbolių (pvz. lietuviškos raidės). Naudok tik a-z, 0-9, +, -, _, .');
-    }
-    if (rwData.account_type === 'parent_and_kid' && !emailRegex.test(rwData.kid_email)) {
-      throw new Error('Vaiko email\'e yra neleistinų simbolių (pvz. lietuviškos raidės)');
-    }
-    
-    // 1. Sukuriam pending invitation TĖVAMS (su visa vaiko info)
+    // 1. Sukuriam pending invitation TĖVAMS
     const { error: parentInvError } = await sb.from('pending_invitations').insert({
       email: rwData.parent_email,
       role: 'parent',
       invited_by: null,
-      first_name: 'Tėvas/Globėjas',
-      last_name: rwData.lname,  // Naudojam vaiko pavardę
-      sport_id: rwData.sport_id,
-      gender: rwData.gender,
-      birth_year: rwData.birth_year,
-      weight: null,  // Tėvai neturi svorio
-      kyu: rwData.kyu,
+      first_name: rwData.fname,
+      last_name: rwData.lname,
       phone: rwData.phone,
-      club_id: rwData.club_id,
       status: 'pending'
     });
     
@@ -1892,7 +1576,7 @@ async function rwSubmit(skipPhoto) {
       throw new Error('Tėvų registracija: ' + parentInvError.message);
     }
     
-    // 2. signUp tėvams su jų pasirinktu slaptažodžiu
+    // 2. signUp tėvams
     const { data: parentSignUp, error: parentSignUpError } = await sb.auth.signUp({
       email: rwData.parent_email,
       password: rwData.parent_pass
@@ -1905,112 +1589,10 @@ async function rwSubmit(skipPhoto) {
       throw parentSignUpError;
     }
     
-    // 3. PALAUKIM, kol trigger sukurs tėvų profile
-    await new Promise(r => setTimeout(r, 1500));
-    
-    // 4. Surandam tėvų ID
-    const { data: parentUserResult } = await sb.auth.signInWithPassword({
-      email: rwData.parent_email,
-      password: rwData.parent_pass
-    });
-    
-    const parentUserId = parentUserResult?.user?.id || parentSignUp?.user?.id;
-    
-    if (!parentUserId) {
-      throw new Error('Nepavyko gauti tėvų ID. Pabandykite dar kartą.');
-    }
-    
-    // 5. Sukuriam VAIKO įrašą kids lentelėje (nepriklausomai nuo paskyros tipo)
-    const { data: newKid, error: kidError } = await sb.from('kids').insert({
-      first_name: rwData.fname,
-      last_name: rwData.lname,
-      sport_id: rwData.sport_id,
-      gender: rwData.gender,
-      birth_year: rwData.birth_year,
-      weight_range: rwData.weight_range,
-      kyu: rwData.kyu,
-      total_exp: 0,
-      current_level: 1,
-      wins: 0,
-      losses: 0,
-      has_phone: rwData.account_type === 'parent_and_kid',
-      approval_status: 'pending',
-      assigned_trainer_id: rwData.trainer_id,
-      user_id: null  // Kol kas vaikas neturi auth paskyros
-    }).select().single();
-    
-    if (kidError) {
-      console.error('Kid creation error:', kidError);
-      throw new Error('Vaiko sukurimo klaida: ' + kidError.message);
-    }
-    
-    const kidId = newKid.id;
-    
-    // 6. Kid_parent_links - susiejam vaiką su tėvais
-    await sb.from('kid_parent_links').insert({
-      kid_id: kidId,
-      parent_id: parentUserId,
-      is_primary: true
-    });
-    
-    // 7. Pridedam vaiko vardą į kažkokį "kids_meta" - kol kas naudosim profiles fallback
-    // Naudosim profiles_meta arba tiesiog kids.first_name (jei yra)
-    // Šiuo metu pavadinimas saugojamas tik per kid_parent_links + atskirą lookup
-    // Tam reikia papildomo stulpelio - pridėsim per SQL po šito
-    
-    // 8. Jei "parent_and_kid" - sukuriam vaikui auth paskyrą
-    if (rwData.account_type === 'parent_and_kid' && rwData.kid_email) {
-      const tempPass = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
-      const { data: kidSignUp, error: kidSignUpError } = await sb.auth.signUp({
-        email: rwData.kid_email,
-        password: tempPass
-      });
-      
-      if (kidSignUpError) {
-        if (kidSignUpError.message.includes('already')) {
-          throw new Error('Vaiko email\'as ' + rwData.kid_email + ' jau yra užregistruotas.');
-        }
-        console.error('Kid signUp error:', kidSignUpError);
-        // Tęsiam - vaikas DB sukurtas, tik be auth paskyros
-      } else {
-        // Susiejam vaiko user_id su kids
-        const kidUserId = kidSignUp.user?.id;
-        if (kidUserId) {
-          await sb.from('kids').update({ user_id: kidUserId }).eq('id', kidId);
-          
-          // Reset password vaikui
-          await sb.auth.resetPasswordForEmail(rwData.kid_email, {
-            redirectTo: `${window.location.origin}/spobu/set-password.html`
-          });
-        }
-      }
-    }
-    
-    // 9. Atsijungiam (kad tėvai galėtų prisijungti rankiniu būdu)
+    // 3. Atsijungiam (kad tėvai galėtų prisijungti rankiniu būdu)
     await sb.auth.signOut();
     
-    // 4. Success – paruošiam pranešimą
-    const successContent = document.getElementById('rw-success-content');
-    let successHTML = `
-      <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
-        <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">✓ Paskyra sukurta</div>
-        <div style="font-size:12px;">Tėvų email: <span style="color:var(--br);">${rwData.parent_email}</span></div>
-        <div style="font-size:12px;margin-top:4px;">Vaiko paskyra: <strong>${rwData.fname} ${rwData.lname}</strong></div>
-        <div style="font-size:11px;color:var(--mut);margin-top:6px;">💡 Vėliau galėsi pridėti vaiko realų email per "Mano vaikai"</div>
-      </div>
-    `;
-    
-    successHTML += `
-      <div style="background:rgba(255,77,0,.1);border:.5px solid var(--br);border-radius:10px;padding:12px;">
-        <div style="font-weight:900;color:var(--br);margin-bottom:6px;">⏳ Laukia trenerio patvirtinimo</div>
-        <div style="font-size:12px;line-height:1.5;">
-          Treneris <strong>${rwData.trainer_name}</strong> gaus pranešimą.<br>
-          Po patvirtinimo galėsi pilnai naudotis platforma.
-        </div>
-      </div>
-    `;
-    
-    successContent.innerHTML = successHTML;
+    // 4. Sėkmė
     rwShowScreen('success');
     
   } catch (error) {
@@ -3810,7 +3392,6 @@ function showRegister(){
   document.getElementById('auth-register').style.display='';
   // Inicializuojam wizard'ą
   rwShowScreen(1);
-  showRwSports();
 }
 function showForgot(){
   hideAll();document.getElementById('auth-forgot').style.display='';
