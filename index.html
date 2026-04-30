@@ -854,7 +854,7 @@ select.inp option{background:#222;}
     <div style="padding:12px 16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;">MANO VAIKAI</div>
-        <button class="btn btng" style="font-size:11px;padding:6px 12px;" onclick="alert('Pridėti antrą vaiką – ateityje')">+ Vaikas</button>
+        <button class="btn btng" style="font-size:11px;padding:6px 12px;" onclick="openAddKidWizard()">+ Vaikas</button>
       </div>
       <div id="t-kids-list">
         <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
@@ -876,6 +876,165 @@ select.inp option{background:#222;}
 </div>
 
 </div></div></div>
+
+<!-- ============================================ -->
+<!-- "+ PRIDĖTI VAIKĄ" WIZARDAS (modal) -->
+<!-- ============================================ -->
+<div id="add-kid-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;overflow-y:auto;padding:20px;">
+  <div style="max-width:420px;margin:20px auto;background:var(--card);border-radius:20px;padding:24px;border:.5px solid var(--bdr);">
+    
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">+ PRIDĖTI VAIKĄ</div>
+      <button onclick="closeAddKidWizard()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    
+    <!-- Progress -->
+    <div style="display:flex;gap:6px;margin-bottom:18px;">
+      <div id="ak-step-1" class="rw-step on"></div>
+      <div id="ak-step-2" class="rw-step"></div>
+      <div id="ak-step-3" class="rw-step"></div>
+      <div id="ak-step-4" class="rw-step"></div>
+    </div>
+    
+    <div class="err-msg" id="ak-err"></div>
+    
+    <!-- ===== EKRANAS 1: SPORTAS ===== -->
+    <div id="ak-screen-1">
+      <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
+        Kokį sportą lanko vaikas?
+      </div>
+      
+      <label class="lbl">SPORTO ŠAKA</label>
+      <select class="inp" id="ak-sport" style="margin-bottom:14px;">
+        <option value="">Pasirinkti...</option>
+      </select>
+      
+      <button class="btn-auth" onclick="akNext(1)">TĘSTI →</button>
+    </div>
+    
+    <!-- ===== EKRANAS 2: VAIKO INFO ===== -->
+    <div id="ak-screen-2" style="display:none;">
+      <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
+        Užpildyk vaiko bazinę informaciją
+      </div>
+      
+      <label class="lbl">VARDAS</label>
+      <input class="inp" type="text" id="ak-fname" placeholder="Pvz. Marius" maxlength="40">
+      
+      <label class="lbl">PAVARDĖ</label>
+      <input class="inp" type="text" id="ak-lname" placeholder="Pvz. Kazlauskas" maxlength="40">
+      
+      <label class="lbl">LYTIS</label>
+      <div class="chs" style="margin-bottom:14px;">
+        <div class="ch on" onclick="akSelectGender(this, 'male')" data-g="male">👦 Vaikinas</div>
+        <div class="ch" onclick="akSelectGender(this, 'female')" data-g="female">👧 Mergina</div>
+      </div>
+      <input type="hidden" id="ak-gender" value="male">
+      
+      <label class="lbl">GIMIMO METAI</label>
+      <input class="inp" type="number" id="ak-birth-year" placeholder="2015" min="2005" max="2025" oninput="akUpdateWeightOptions()">
+      
+      <!-- Atributai pagal sportą (kol kas tik karatė) -->
+      <div id="ak-karate-fields">
+        <label class="lbl">SVORIO INTERVALAS</label>
+        <select class="inp" id="ak-weight" style="margin-bottom:14px;">
+          <option value="">Pirma įvesk gimimo metus...</option>
+        </select>
+        
+        <label class="lbl">KYU LYGIS (jei žinote)</label>
+        <select class="inp" id="ak-kyu" style="margin-bottom:14px;">
+          <option value="">Nežinome / dar neturiu</option>
+          <option value="10 kyu">10 kyu (baltas)</option>
+          <option value="9 kyu">9 kyu</option>
+          <option value="8 kyu">8 kyu</option>
+          <option value="7 kyu">7 kyu</option>
+          <option value="6 kyu">6 kyu</option>
+          <option value="5 kyu">5 kyu</option>
+          <option value="4 kyu">4 kyu</option>
+          <option value="3 kyu">3 kyu</option>
+          <option value="2 kyu">2 kyu</option>
+          <option value="1 kyu">1 kyu</option>
+          <option value="1 dan">1 dan (juodas)</option>
+          <option value="2 dan">2 dan</option>
+        </select>
+      </div>
+      
+      <button class="btn-auth" onclick="akNext(2)">TĘSTI →</button>
+      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(2)">← Atgal</button>
+    </div>
+    
+    <!-- ===== EKRANAS 3: KLUBAS + TRENERIS ===== -->
+    <div id="ak-screen-3" style="display:none;">
+      <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
+        Į kurį klubą priklausys vaikas?
+      </div>
+      
+      <label class="lbl">KLUBAS</label>
+      <select class="inp" id="ak-club" style="margin-bottom:14px;" onchange="akLoadTrainers()">
+        <option value="">Pasirinkti klubą...</option>
+      </select>
+      
+      <label class="lbl">TRENERIS</label>
+      <select class="inp" id="ak-trainer" style="margin-bottom:14px;" disabled>
+        <option value="">Pirma pasirink klubą...</option>
+      </select>
+      <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;">
+        💡 Treneris gaus pranešimą ir patvirtins vaiko paskyrą
+      </div>
+      
+      <button class="btn-auth" onclick="akNext(3)">TĘSTI →</button>
+      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(3)">← Atgal</button>
+    </div>
+    
+    <!-- ===== EKRANAS 4: TELEFONAS ===== -->
+    <div id="ak-screen-4" style="display:none;">
+      <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
+        Ar vaikas turi savo telefoną?
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+        <div class="rw-role-opt on" onclick="akSelectPhone(this, false)" data-phone="false">
+          <div style="font-size:24px;">👨‍👩‍👦</div>
+          <div>
+            <div style="font-weight:900;font-size:13px;">Ne, neturi telefono</div>
+            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Treneris pildys rezultatus,<br>aš stebėsiu per savo paskyrą.</div>
+          </div>
+        </div>
+        <div class="rw-role-opt" onclick="akSelectPhone(this, true)" data-phone="true">
+          <div style="font-size:24px;">🧒📱</div>
+          <div>
+            <div style="font-weight:900;font-size:13px;">Taip, turi telefoną</div>
+            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Vaikas pats teiks rezultatus<br>per savo paskyrą.</div>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="ak-has-phone" value="false">
+      
+      <!-- Vaiko email - tik jei turi telefoną -->
+      <div id="ak-kid-email-section" style="display:none;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;border:.5px solid var(--bdr);">
+        <label class="lbl">VAIKO EL. PAŠTAS</label>
+        <input class="inp" type="email" id="ak-kid-email" placeholder="vaikas@email.lt">
+        <div style="font-size:11px;color:var(--mut);line-height:1.4;">
+          📧 Vaikas gaus laišką su slaptažodžio nustatymo nuoroda.
+        </div>
+      </div>
+      
+      <button class="btn-auth" id="ak-submit-btn" onclick="akSubmit()">PRIDĖTI VAIKĄ</button>
+      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(4)">← Atgal</button>
+    </div>
+    
+    <!-- ===== SUCCESS ===== -->
+    <div id="ak-screen-success" style="display:none;text-align:center;padding:20px 0;">
+      <div style="font-size:60px;margin-bottom:16px;">✅</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:14px;">VAIKAS PRIDĖTAS!</div>
+      <div id="ak-success-content" style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:20px;text-align:left;">
+        <!-- Užpildomas dinamiškai -->
+      </div>
+      <button class="btn-auth" onclick="closeAddKidWizard()">UŽDARYTI</button>
+    </div>
+    
+  </div>
+</div>
 
 <div id="pk" style="display:none;"><div class="df"><div class="ds"><div class="ph">
 <!-- KLUBAS: PAGRINDINIS -->
@@ -1337,6 +1496,390 @@ async function loadParentKids() {
 }
 
 let currentParentKid = null;
+
+// ════════════════════════════════════════
+// "+ PRIDĖTI VAIKĄ" WIZARD'AS (atskiras tėvų ekrane)
+// ════════════════════════════════════════
+
+let akData = {
+  sport_id: null,
+  sport_name: null,
+  fname: '',
+  lname: '',
+  gender: 'male',
+  birth_year: null,
+  weight_range: null,
+  kyu: null,
+  club_id: null,
+  club_name: null,
+  trainer_id: null,
+  trainer_name: null,
+  has_phone: false,
+  kid_email: null
+};
+
+async function openAddKidWizard() {
+  // Reset data
+  akData = {
+    sport_id: null, sport_name: null, fname: '', lname: '', gender: 'male',
+    birth_year: null, weight_range: null, kyu: null, club_id: null, club_name: null,
+    trainer_id: null, trainer_name: null, has_phone: false, kid_email: null
+  };
+  
+  // Reset forms
+  document.getElementById('ak-fname').value = '';
+  document.getElementById('ak-lname').value = '';
+  document.getElementById('ak-birth-year').value = '';
+  document.getElementById('ak-kyu').value = '';
+  document.getElementById('ak-kid-email').value = '';
+  document.getElementById('ak-weight').innerHTML = '<option value="">Pirma įvesk gimimo metus...</option>';
+  
+  // Krauname sportus
+  const { data: sports } = await sb.from('sports').select('*').eq('is_active', true);
+  const sportSelect = document.getElementById('ak-sport');
+  sportSelect.innerHTML = '<option value="">Pasirinkti...</option>' + 
+    (sports || []).map(s => `<option value="${s.id}" data-name="${s.name}">${s.icon || ''} ${s.name}</option>`).join('');
+  
+  // Reset gender selector
+  document.querySelectorAll('#ak-screen-2 .ch').forEach(c => c.classList.remove('on'));
+  document.querySelector('#ak-screen-2 .ch[data-g="male"]')?.classList.add('on');
+  
+  // Reset phone selector
+  document.querySelectorAll('#ak-screen-4 .rw-role-opt').forEach(c => c.classList.remove('on'));
+  document.querySelector('#ak-screen-4 .rw-role-opt[data-phone="false"]')?.classList.add('on');
+  document.getElementById('ak-has-phone').value = 'false';
+  document.getElementById('ak-kid-email-section').style.display = 'none';
+  
+  akShowScreen(1);
+  document.getElementById('add-kid-modal').style.display = 'block';
+}
+
+function closeAddKidWizard() {
+  document.getElementById('add-kid-modal').style.display = 'none';
+}
+
+function akShowScreen(num) {
+  ['ak-screen-1', 'ak-screen-2', 'ak-screen-3', 'ak-screen-4', 'ak-screen-success'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  
+  if (num === 'success') {
+    document.getElementById('ak-screen-success').style.display = 'block';
+  } else {
+    document.getElementById(`ak-screen-${num}`).style.display = 'block';
+  }
+  
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById(`ak-step-${i}`);
+    if (el) {
+      if (i < num) el.className = 'rw-step done';
+      else if (i === num) el.className = 'rw-step on';
+      else el.className = 'rw-step';
+    }
+  }
+  
+  document.getElementById('ak-err').style.display = 'none';
+  
+  // Specialūs init veiksmai
+  if (num === 3) akLoadClubs();
+}
+
+function akSelectGender(el, gender) {
+  el.parentElement.querySelectorAll('.ch').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('ak-gender').value = gender;
+  akData.gender = gender;
+  akUpdateWeightOptions();
+}
+
+function akUpdateWeightOptions() {
+  const birthYear = parseInt(document.getElementById('ak-birth-year').value);
+  if (!birthYear || birthYear < 2005 || birthYear > 2025) return;
+  
+  const age = new Date().getFullYear() - birthYear;
+  const isUnder13 = age <= 12;
+  
+  const select = document.getElementById('ak-weight');
+  let options = '<option value="">Pasirinkti svorio intervalą...</option>';
+  
+  if (isUnder13) {
+    options += `
+      <option value="20-25">20-25 kg</option>
+      <option value="26-30">26-30 kg</option>
+      <option value="31-35">31-35 kg</option>
+      <option value="36-40">36-40 kg</option>
+      <option value="41-45">41-45 kg</option>
+      <option value="46-50">46-50 kg</option>
+      <option value="51+">51+ kg</option>
+    `;
+  } else {
+    options += `
+      <option value="40-50">40-50 kg</option>
+      <option value="51-60">51-60 kg</option>
+      <option value="61-70">61-70 kg</option>
+      <option value="71-80">71-80 kg</option>
+      <option value="81-90">81-90 kg</option>
+      <option value="91+">91+ kg</option>
+    `;
+  }
+  
+  select.innerHTML = options;
+}
+
+function akSelectPhone(el, hasPhone) {
+  document.querySelectorAll('#ak-screen-4 .rw-role-opt').forEach(e => e.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('ak-has-phone').value = hasPhone ? 'true' : 'false';
+  akData.has_phone = hasPhone;
+  
+  document.getElementById('ak-kid-email-section').style.display = hasPhone ? 'block' : 'none';
+}
+
+async function akLoadClubs() {
+  if (!akData.sport_id) return;
+  
+  const { data: clubs } = await sb.from('clubs')
+    .select('id, name, city')
+    .eq('sport_id', akData.sport_id)
+    .eq('is_active', true)
+    .order('name');
+  
+  const select = document.getElementById('ak-club');
+  if (!clubs || clubs.length === 0) {
+    select.innerHTML = '<option value="">Nėra registruotų klubų...</option>';
+    return;
+  }
+  
+  select.innerHTML = '<option value="">Pasirinkti klubą...</option>' + 
+    clubs.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name} (${c.city || 'Lietuva'})</option>`).join('');
+  
+  // Reset trainer
+  document.getElementById('ak-trainer').innerHTML = '<option value="">Pirma pasirink klubą...</option>';
+  document.getElementById('ak-trainer').disabled = true;
+}
+
+async function akLoadTrainers() {
+  const clubId = document.getElementById('ak-club').value;
+  const trainerSelect = document.getElementById('ak-trainer');
+  
+  if (!clubId) {
+    trainerSelect.innerHTML = '<option value="">Pirma pasirink klubą...</option>';
+    trainerSelect.disabled = true;
+    return;
+  }
+  
+  akData.club_id = clubId;
+  akData.club_name = document.getElementById('ak-club').options[document.getElementById('ak-club').selectedIndex]?.dataset?.name || '';
+  
+  const { data: trainers } = await sb.from('trainers')
+    .select('id, profiles!inner(first_name, last_name)')
+    .eq('invited_by_club_id', clubId)
+    .eq('is_active', true);
+  
+  if (!trainers || trainers.length === 0) {
+    trainerSelect.innerHTML = '<option value="">Nėra registruotų trenerių...</option>';
+    trainerSelect.disabled = true;
+    return;
+  }
+  
+  trainerSelect.innerHTML = '<option value="">Pasirinkti trenerį...</option>' + 
+    trainers.map(t => {
+      const name = `${t.profiles?.first_name || 'Vardas'} ${t.profiles?.last_name || ''}`.trim();
+      return `<option value="${t.id}" data-name="${name}">${name}</option>`;
+    }).join('');
+  trainerSelect.disabled = false;
+}
+
+function akNext(currentScreen) {
+  const errEl = document.getElementById('ak-err');
+  errEl.style.display = 'none';
+  
+  if (currentScreen === 1) {
+    const sportEl = document.getElementById('ak-sport');
+    if (!sportEl.value) {
+      showErr(errEl, 'Pasirink sporto šaką');
+      return;
+    }
+    akData.sport_id = sportEl.value;
+    akData.sport_name = sportEl.options[sportEl.selectedIndex]?.dataset?.name || '';
+    akShowScreen(2);
+  }
+  
+  else if (currentScreen === 2) {
+    const fname = document.getElementById('ak-fname').value.trim();
+    const lname = document.getElementById('ak-lname').value.trim();
+    const birthYear = parseInt(document.getElementById('ak-birth-year').value);
+    const weight = document.getElementById('ak-weight').value;
+    
+    if (!fname) { showErr(errEl, 'Įvesk vardą'); return; }
+    if (!lname) { showErr(errEl, 'Įvesk pavardę'); return; }
+    if (!birthYear || birthYear < 2005 || birthYear > 2025) {
+      showErr(errEl, 'Įvesk teisingus gimimo metus (2005-2025)');
+      return;
+    }
+    if (!weight) { showErr(errEl, 'Pasirink svorio intervalą'); return; }
+    
+    akData.fname = fname;
+    akData.lname = lname;
+    akData.birth_year = birthYear;
+    akData.weight_range = weight;
+    akData.kyu = document.getElementById('ak-kyu').value || null;
+    
+    akShowScreen(3);
+  }
+  
+  else if (currentScreen === 3) {
+    const clubId = document.getElementById('ak-club').value;
+    const trainerId = document.getElementById('ak-trainer').value;
+    
+    if (!clubId) { showErr(errEl, 'Pasirink klubą'); return; }
+    if (!trainerId) { showErr(errEl, 'Pasirink trenerį'); return; }
+    
+    akData.club_id = clubId;
+    akData.trainer_id = trainerId;
+    akData.trainer_name = document.getElementById('ak-trainer').options[document.getElementById('ak-trainer').selectedIndex]?.dataset?.name || '';
+    
+    akShowScreen(4);
+  }
+}
+
+function akPrev(currentScreen) {
+  akShowScreen(currentScreen - 1);
+}
+
+async function akSubmit() {
+  const errEl = document.getElementById('ak-err');
+  errEl.style.display = 'none';
+  
+  // Jei turi telefoną – patikrinkim email
+  if (akData.has_phone) {
+    const kidEmail = document.getElementById('ak-kid-email').value.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!kidEmail || !emailRegex.test(kidEmail)) {
+      showErr(errEl, 'Įvesk teisingą vaiko email\'ą (be lietuviškų raidžių)');
+      return;
+    }
+    if (kidEmail === currentUser.email) {
+      showErr(errEl, 'Vaiko email turi skirtis nuo tavo email\'o');
+      return;
+    }
+    akData.kid_email = kidEmail;
+  }
+  
+  const btn = document.getElementById('ak-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'KURIAMA...';
+  
+  try {
+    // 1. Sukuriam vaiko įrašą kids lentelėje
+    const { data: newKid, error: kidError } = await sb.from('kids').insert({
+      first_name: akData.fname,
+      last_name: akData.lname,
+      sport_id: akData.sport_id,
+      gender: akData.gender,
+      birth_year: akData.birth_year,
+      weight_range: akData.weight_range,
+      kyu: akData.kyu,
+      total_exp: 0,
+      current_level: 1,
+      wins: 0,
+      losses: 0,
+      has_phone: akData.has_phone,
+      approval_status: 'pending',
+      assigned_trainer_id: akData.trainer_id,
+      user_id: null
+    }).select().single();
+    
+    if (kidError) {
+      console.error('Kid creation error:', kidError);
+      throw new Error('Vaiko sukurimo klaida: ' + kidError.message);
+    }
+    
+    const kidId = newKid.id;
+    
+    // 2. Susiejam su tėvais
+    const { error: linkError } = await sb.from('kid_parent_links').insert({
+      kid_id: kidId,
+      parent_id: currentUser.id,
+      is_primary: true
+    });
+    
+    if (linkError) {
+      console.error('Link error:', linkError);
+      throw new Error('Susiejimo klaida: ' + linkError.message);
+    }
+    
+    // 3. Jei turi telefoną – sukuriam vaiko auth paskyrą
+    if (akData.has_phone && akData.kid_email) {
+      const tempPass = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
+      const { data: kidSignUp, error: kidSignUpError } = await sb.auth.signUp({
+        email: akData.kid_email,
+        password: tempPass
+      });
+      
+      if (kidSignUpError) {
+        if (kidSignUpError.message.includes('already')) {
+          throw new Error('Vaiko email\'as jau užregistruotas. Pasirink kitą email\'ą.');
+        }
+        console.error('Kid signUp error:', kidSignUpError);
+        throw new Error('Vaiko paskyros klaida: ' + kidSignUpError.message);
+      }
+      
+      const kidUserId = kidSignUp.user?.id;
+      if (kidUserId) {
+        await sb.from('kids').update({ user_id: kidUserId }).eq('id', kidId);
+        
+        // Reset password vaikui
+        await sb.auth.resetPasswordForEmail(akData.kid_email, {
+          redirectTo: `${window.location.origin}/spobu/set-password.html`
+        });
+      }
+    }
+    
+    // 4. Success
+    let successHTML = `
+      <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
+        <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">✓ Vaikas pridėtas</div>
+        <div style="font-size:12px;">${akData.fname} ${akData.lname}</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:4px;">Klubas: ${akData.club_name}</div>
+        <div style="font-size:11px;color:var(--mut);">Treneris: ${akData.trainer_name}</div>
+      </div>
+    `;
+    
+    if (akData.has_phone) {
+      successHTML += `
+        <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
+          <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">📧 Vaiko paskyra sukurta</div>
+          <div style="font-size:12px;">Email: <span style="color:var(--br);">${akData.kid_email}</span></div>
+          <div style="font-size:11px;color:var(--mut);margin-top:4px;">Vaikas gavo laišką su slaptažodžio nustatymo nuoroda.</div>
+        </div>
+      `;
+    }
+    
+    successHTML += `
+      <div style="background:rgba(255,77,0,.1);border:.5px solid var(--br);border-radius:10px;padding:12px;">
+        <div style="font-weight:900;color:var(--br);margin-bottom:6px;">⏳ Laukia trenerio patvirtinimo</div>
+        <div style="font-size:12px;line-height:1.5;">
+          Treneris <strong>${akData.trainer_name}</strong> gaus pranešimą.<br>
+          Po patvirtinimo vaikas pilnai naudosis platforma.
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('ak-success-content').innerHTML = successHTML;
+    akShowScreen('success');
+    
+    // Reload Mano vaikai sąrašą
+    await loadParentKids();
+    
+  } catch (error) {
+    console.error('akSubmit error:', error);
+    showErr(errEl, 'Klaida: ' + (error.message || 'nežinoma'));
+    btn.disabled = false;
+    btn.textContent = 'PRIDĖTI VAIKĄ';
+  }
+}
 
 async function showKidDetail(kidId) {
   // Užkrauname vaiko duomenis
