@@ -1929,30 +1929,16 @@ async function akSubmit() {
     }
     
     // 3. Jei turi telefoną – sukuriam vaiko auth paskyrą
+    // PASTABA: kol kas tik išsaugom email kids lentelėje, paskyra bus sukurta vėliau
+    // (signUp vaikui sugadina tėvų sesiją - reikalingas backend sprendimas)
     if (akData.has_phone && akData.kid_email) {
-      const tempPass = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
-      const { data: kidSignUp, error: kidSignUpError } = await sb.auth.signUp({
-        email: akData.kid_email,
-        password: tempPass
-      });
+      // TODO: Per backend funkciją sukurti vaiko paskyrą po trenerio patvirtinimo
+      // Kol kas saugom email - tėvai vėliau galės "aktyvuoti" prieigą
+      // arba siųsti laišką per Supabase Edge Function
+      console.log('Vaiko email išsaugomas, paskyra bus sukurta vėliau:', akData.kid_email);
       
-      if (kidSignUpError) {
-        if (kidSignUpError.message.includes('already')) {
-          throw new Error('Vaiko email\'as jau užregistruotas. Pasirink kitą email\'ą.');
-        }
-        console.error('Kid signUp error:', kidSignUpError);
-        throw new Error('Vaiko paskyros klaida: ' + kidSignUpError.message);
-      }
-      
-      const kidUserId = kidSignUp.user?.id;
-      if (kidUserId) {
-        await sb.from('kids').update({ user_id: kidUserId }).eq('id', kidId);
-        
-        // Reset password vaikui
-        await sb.auth.resetPasswordForEmail(akData.kid_email, {
-          redirectTo: `${window.location.origin}/spobu/set-password.html`
-        });
-      }
+      // Galim išsaugoti email papildomame stulpelyje (pridėsim per SQL)
+      // Kol kas tiesiog pranešam vartotojui
     }
     
     // 4. Success
@@ -1967,10 +1953,12 @@ async function akSubmit() {
     
     if (akData.has_phone) {
       successHTML += `
-        <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
-          <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">📧 Vaiko paskyra sukurta</div>
+        <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.2);border-radius:10px;padding:12px;margin-bottom:12px;">
+          <div style="font-weight:900;color:var(--br);margin-bottom:6px;">📱 Vaiko email išsaugotas</div>
           <div style="font-size:12px;">Email: <span style="color:var(--br);">${akData.kid_email}</span></div>
-          <div style="font-size:11px;color:var(--mut);margin-top:4px;">Vaikas gavo laišką su slaptažodžio nustatymo nuoroda.</div>
+          <div style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5;">
+            Po trenerio patvirtinimo galėsi paspausti <strong>"Pridėti vaiko prieigą"</strong> – tada vaikas gaus laišką ir galės prisijungti.
+          </div>
         </div>
       `;
     }
