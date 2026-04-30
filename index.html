@@ -2155,6 +2155,8 @@ function showEditKidModal(kidId) {
   
   const age = kid.birth_date ? calculateAge(kid.birth_date) : (new Date().getFullYear() - kid.birth_year);
   const isUnder13 = age <= 12;
+  const genderName = kid.gender === 'male' ? 'Vaikinai' : 'Merginos';
+  const groupName = isUnder13 ? `${genderName} 6-12m.` : `${genderName} 13+m.`;
   
   let weightOptions = '<option value="">Pasirinkti...</option>';
   if (isUnder13) {
@@ -2167,69 +2169,69 @@ function showEditKidModal(kidId) {
     });
   }
   
-  // Gimimo datos parsinimas (jei yra)
-  let bDay = '', bMonth = '', bYear = kid.birth_year || '';
+  // Gimimo data tekstu
+  let birthDateText = '–';
   if (kid.birth_date) {
     const d = new Date(kid.birth_date);
-    bDay = d.getDate();
-    bMonth = d.getMonth() + 1;
-    bYear = d.getFullYear();
+    birthDateText = `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`;
+  } else if (kid.birth_year) {
+    birthDateText = kid.birth_year + ' (tiksli data nenustatyta)';
   }
   
-  // Dienos opcijos
-  let dayOpts = '<option value="">Diena</option>';
-  for (let d = 1; d <= 31; d++) {
-    dayOpts += `<option value="${d}" ${d === bDay ? 'selected' : ''}>${d}</option>`;
-  }
-  
-  // Metų opcijos
-  let yearOpts = '<option value="">Metai</option>';
-  const currentYear = new Date().getFullYear();
-  for (let y = currentYear; y >= currentYear - 25; y--) {
-    yearOpts += `<option value="${y}" ${y === bYear ? 'selected' : ''}>${y}</option>`;
-  }
-  
-  const months = [['1','Sausis'],['2','Vasaris'],['3','Kovas'],['4','Balandis'],['5','Gegužė'],['6','Birželis'],['7','Liepa'],['8','Rugpjūtis'],['9','Rugsėjis'],['10','Spalis'],['11','Lapkritis'],['12','Gruodis']];
-  let monthOpts = '<option value="">Mėnuo</option>';
-  months.forEach(([v, n]) => {
-    monthOpts += `<option value="${v}" ${parseInt(v) === bMonth ? 'selected' : ''}>${n}</option>`;
-  });
+  const isAnonymous = !!kid.is_anonymous;
   
   modal.innerHTML = `
     <div style="max-width:420px;margin:20px auto;background:var(--card);border-radius:20px;padding:24px;border:.5px solid var(--bdr);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">REDAGUOTI</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">REDAGUOTI VAIKĄ</div>
         <button onclick="closeEditKidModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
       </div>
       
-      <div style="font-size:13px;color:var(--mut);margin-bottom:16px;line-height:1.5;">
-        Redaguoji: <strong>${kid.first_name} ${kid.last_name}</strong>
+      <!-- Vaiko info (read-only) -->
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:6px;">VAIKO INFO</div>
+        <div style="font-size:13px;line-height:1.7;">
+          <div><strong>${kid.first_name || 'Vaikas'} ${kid.last_name || ''}</strong></div>
+          <div style="color:var(--mut);">${kid.gender === 'male' ? '👦 Vaikinas' : '👧 Mergina'} · ${birthDateText}</div>
+          <div style="color:var(--mut);">${age} m. · ${groupName}</div>
+          <div style="color:var(--mut);">Kyu: <strong>${kid.kyu || '10 kyu'}</strong></div>
+        </div>
+      </div>
+      
+      <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.2);border-radius:10px;padding:10px;margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--txt);line-height:1.5;">
+          💡 <strong>Vardą, pavardę, gimimo datą</strong> gali keisti tik treneris.<br>
+          🥋 <strong>Kyu lygis</strong> keičiasi po diržo egzaminų.
+        </div>
       </div>
       
       <div class="err-msg" id="edit-kid-err"></div>
       
-      <label class="lbl">VARDAS</label>
-      <input class="inp" type="text" id="edit-fname" value="${kid.first_name || ''}" maxlength="40">
-      
-      <label class="lbl">PAVARDĖ</label>
-      <input class="inp" type="text" id="edit-lname" value="${kid.last_name || ''}" maxlength="40">
-      
-      <label class="lbl">GIMIMO DATA</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-        <select class="inp" id="edit-birth-day">${dayOpts}</select>
-        <select class="inp" id="edit-birth-month">${monthOpts}</select>
-        <select class="inp" id="edit-birth-year">${yearOpts}</select>
-      </div>
-      
       <label class="lbl">SVORIO INTERVALAS (kg)</label>
-      <select class="inp" id="edit-weight" style="margin-bottom:14px;">
+      <select class="inp" id="edit-weight" style="margin-bottom:18px;">
         ${weightOptions}
       </select>
       
-      <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.2);border-radius:10px;padding:10px;margin-bottom:14px;">
-        <div style="font-size:11px;color:var(--txt);line-height:1.4;">
-          💡 <strong>Kyu lygis</strong> keičiamas tik per diržo egzaminus (treneris patvirtina).<br>
-          🥋 Dabartinis: <strong>${kid.kyu || '10 kyu'}</strong>
+      <!-- Anonimiškumas -->
+      <label class="lbl">ANONIMIŠKUMAS</label>
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:13px;margin-bottom:4px;">
+              ${isAnonymous ? '🔒 Anoniminis vaikas' : '👁️ Vaikas matomas viešai'}
+            </div>
+            <div style="font-size:11px;color:var(--mut);line-height:1.5;">
+              ${isAnonymous 
+                ? 'Vaikas slepiamas viešose statistikose ir leaderboard\'uose. Rodo "anonimas".'
+                : 'Vaikas matomas statistikose savo vardu. Gali būti TOP sąrašuose.'}
+            </div>
+          </div>
+          <label class="switch" style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
+            <input type="checkbox" id="edit-anonymous" ${isAnonymous ? 'checked' : ''} style="opacity:0;width:0;height:0;">
+            <span class="slider" id="edit-anonymous-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${isAnonymous ? 'var(--br)' : 'var(--bdr)'};transition:.3s;border-radius:28px;">
+              <span style="position:absolute;height:22px;width:22px;left:${isAnonymous ? '25px' : '3px'};top:3px;background:white;transition:.3s;border-radius:50%;"></span>
+            </span>
+          </label>
         </div>
       </div>
       
@@ -2239,6 +2241,18 @@ function showEditKidModal(kidId) {
   `;
   
   modal.style.display = 'block';
+  
+  // Pridėt event listener kad slider'is animuotai veiktų
+  const checkbox = document.getElementById('edit-anonymous');
+  const slider = document.getElementById('edit-anonymous-slider');
+  if (checkbox && slider) {
+    checkbox.addEventListener('change', () => {
+      const checked = checkbox.checked;
+      slider.style.background = checked ? 'var(--br)' : 'var(--bdr)';
+      const ball = slider.querySelector('span');
+      if (ball) ball.style.left = checked ? '25px' : '3px';
+    });
+  }
 }
 
 function closeEditKidModal() {
@@ -2250,43 +2264,16 @@ async function saveEditKid(kidId) {
   const errEl = document.getElementById('edit-kid-err');
   errEl.style.display = 'none';
   
-  const fname = document.getElementById('edit-fname').value.trim();
-  const lname = document.getElementById('edit-lname').value.trim();
-  const day = parseInt(document.getElementById('edit-birth-day').value);
-  const month = parseInt(document.getElementById('edit-birth-month').value);
-  const year = parseInt(document.getElementById('edit-birth-year').value);
   const weight = document.getElementById('edit-weight').value;
-  
-  if (!fname) { showErr(errEl, 'Įvesk vardą'); return; }
-  if (!lname) { showErr(errEl, 'Įvesk pavardę'); return; }
-  if (!day || !month || !year) {
-    showErr(errEl, 'Įvesk pilną gimimo datą');
-    return;
-  }
-  
-  const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-  const birthDate = new Date(dateStr);
-  if (isNaN(birthDate.getTime()) || birthDate.getDate() !== day) {
-    showErr(errEl, 'Tokia data neegzistuoja');
-    return;
-  }
-  
-  const age = calculateAge(dateStr);
-  if (age < 4 || age > 25) {
-    showErr(errEl, 'Amžius turi būti 4-25 m.');
-    return;
-  }
+  const isAnonymous = document.getElementById('edit-anonymous').checked;
   
   if (!weight) { showErr(errEl, 'Pasirink svorį'); return; }
   
   try {
     const { error } = await sb.from('kids')
       .update({
-        first_name: fname,
-        last_name: lname,
-        birth_date: dateStr,
-        birth_year: year,  // backward compat
-        weight_range: weight
+        weight_range: weight,
+        is_anonymous: isAnonymous
       })
       .eq('id', kidId);
     
