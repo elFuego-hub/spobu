@@ -142,6 +142,8 @@ select.inp option{background:#222;}
 .rw-step{flex:1;height:4px;background:rgba(255,255,255,.1);border-radius:2px;transition:all .3s;}
 .rw-step.on{background:var(--br);}
 .rw-step.done{background:var(--grn);}
+.cg-color{width:100%;aspect-ratio:1;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .2s;}
+.cg-color.on{border-color:white;transform:scale(1.1);box-shadow:0 0 0 2px var(--card);}
 .rw-role-opt{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;border:1.5px solid var(--bdr);background:var(--bg);cursor:pointer;transition:all .15s;}
 .rw-role-opt:hover{border-color:var(--mut);}
 .rw-role-opt.on{border-color:var(--br);background:rgba(255,77,0,.08);}
@@ -781,6 +783,18 @@ select.inp option{background:#222;}
       </div>
       <div id="tr-new-kids-list"></div>
     </div>
+    
+    <!-- Mano grupės nuoroda -->
+    <div class="cd" style="background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.3);cursor:pointer;" onclick="nv('tr',document.querySelector('#ptr .bn2 .ni:nth-child(2)'),'tr-groups')">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:14px;font-weight:900;color:var(--blu);">👥 Mano grupės</div>
+          <div style="font-size:12px;color:var(--blu);opacity:.8;margin-top:2px;" id="tr-groups-summary">Kraunama...</div>
+        </div>
+        <div style="background:var(--blu);color:white;font-family:'Bebas Neue',sans-serif;font-size:20px;padding:6px 14px;border-radius:99px;letter-spacing:1px;" id="tr-groups-count">0</div>
+      </div>
+    </div>
+    
     <div class="st">MANO NARIAI</div>
     <div class="cd" id="tr-members-preview">
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
@@ -789,8 +803,9 @@ select.inp option{background:#222;}
   </div>
   <div class="bn2">
     <div class="ni on" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Statistika</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
   </div>
 </div>
 
@@ -816,8 +831,87 @@ select.inp option{background:#222;}
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Statistika</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- TRENERIS – GRUPĖS -->
+<div class="sc" id="tr-groups">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 6px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">MANO GRUPĖS</div>
+    <button class="btn btng" style="font-size:11px;padding:6px 12px;" onclick="openCreateGroupModal()">+ GRUPĖ</button>
+  </div>
+  <div class="sa" id="tr-groups-content">
+    <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SUKURTI GRUPĘ MODALAS -->
+<!-- ============================================ -->
+<div id="create-group-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;overflow-y:auto;padding:20px;">
+  <div style="max-width:420px;margin:20px auto;background:var(--card);border-radius:20px;padding:24px;border:.5px solid var(--bdr);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">SUKURTI GRUPĘ</div>
+      <button onclick="closeCreateGroupModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    
+    <div class="err-msg" id="create-group-err"></div>
+    
+    <label class="lbl">GRUPĖS PAVADINIMAS</label>
+    <input class="inp" type="text" id="cg-name" placeholder="Pvz. Pradedantieji 6-9m." maxlength="50">
+    
+    <label class="lbl">APRAŠYMAS (neprivaloma)</label>
+    <textarea class="inp" id="cg-description" placeholder="Pvz. Vaikai pradedantieji nuo 6 iki 9 metų..." maxlength="200" style="min-height:60px;resize:vertical;"></textarea>
+    
+    <label class="lbl">SPALVA</label>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px;">
+      <div class="cg-color on" onclick="selectGroupColor(this, '#FF4D00')" data-color="#FF4D00" style="background:#FF4D00;"></div>
+      <div class="cg-color" onclick="selectGroupColor(this, '#22C55E')" data-color="#22C55E" style="background:#22C55E;"></div>
+      <div class="cg-color" onclick="selectGroupColor(this, '#3B82F6')" data-color="#3B82F6" style="background:#3B82F6;"></div>
+      <div class="cg-color" onclick="selectGroupColor(this, '#A855F7')" data-color="#A855F7" style="background:#A855F7;"></div>
+      <div class="cg-color" onclick="selectGroupColor(this, '#EAB308')" data-color="#EAB308" style="background:#EAB308;"></div>
+      <div class="cg-color" onclick="selectGroupColor(this, '#EC4899')" data-color="#EC4899" style="background:#EC4899;"></div>
+    </div>
+    <input type="hidden" id="cg-color" value="#FF4D00">
+    
+    <button class="btn-auth" onclick="submitCreateGroup()">SUKURTI</button>
+    <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="closeCreateGroupModal()">ATŠAUKTI</button>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PRISKIRTI VAIKUS GRUPEI MODALAS -->
+<!-- ============================================ -->
+<div id="assign-kids-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;overflow-y:auto;padding:20px;">
+  <div style="max-width:480px;margin:20px auto;background:var(--card);border-radius:20px;padding:24px;border:.5px solid var(--bdr);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">PRISKIRTI VAIKUS</div>
+        <div style="font-size:12px;color:var(--mut);margin-top:4px;" id="ak-group-name">–</div>
+      </div>
+      <button onclick="closeAssignKidsModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    
+    <div style="font-size:12px;color:var(--mut);margin-bottom:14px;line-height:1.5;">
+      Pažymėk vaikus, kuriuos nori priskirti šiai grupei. Vaikai automatiškai pašalinami iš ankstesnės grupės.
+    </div>
+    
+    <div id="assign-kids-list" style="max-height:60vh;overflow-y:auto;margin-bottom:14px;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    
+    <button class="btn-auth" onclick="submitAssignKids()">IŠSAUGOTI</button>
+    <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="closeAssignKidsModal()">ATŠAUKTI</button>
   </div>
 </div>
 
@@ -832,8 +926,9 @@ select.inp option{background:#222;}
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Statistika</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
   </div>
 </div>
 </div></div></div></div>
@@ -3033,6 +3128,7 @@ async function loadTrainerData() {
   await loadPendingSubmissions();
   await loadPendingChallengeSubmissions();
   await loadTrainerMembers();
+  await loadTrainerGroups();
 }
 
 async function loadNewKids() {
@@ -3252,21 +3348,22 @@ async function approveSubmission(subId) {
 
 async function loadTrainerMembers() {
   const { data: members } = await sb.from('kids')
-    .select('id, total_exp, current_level, profiles!inner(first_name,last_name)')
-    .eq('trainer_id', currentUser.id)
+    .select('id, first_name, last_name, total_exp, current_level, group_id')
+    .eq('assigned_trainer_id', currentUser.id)
+    .eq('approval_status', 'approved')
     .order('total_exp',{ascending:false})
     .limit(5);
 
   if (!members?.length) {
     document.getElementById('tr-members-preview').innerHTML =
-      '<div style="padding:12px;text-align:center;color:var(--mut);">Nėra narių</div>';
+      '<div style="padding:12px;text-align:center;color:var(--mut);">Nėra patvirtintų narių</div>';
     return;
   }
   const html = members.map(m => {
-    const name = `${m.profiles?.first_name||''} ${m.profiles?.last_name||''}`;
+    const name = `${m.first_name||'Vaikas'} ${m.last_name||''}`.trim();
     const pct = Math.min(100,(m.total_exp||0)/2000*100);
     return `<div class="ri">
-      <div class="av" style="background:var(--br);">${m.profiles?.first_name?.[0]||'?'}</div>
+      <div class="av" style="background:var(--br);">${m.first_name?.[0]||'?'}</div>
       <div style="flex:1;"><div style="font-size:13px;font-weight:800;">${name}</div>
       <div class="pb2" style="margin-top:4px;"><div class="pf" style="width:${pct}%;background:var(--br);"></div></div></div>
       <div style="text-align:right;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${(m.total_exp||0).toLocaleString()}</div>
@@ -3274,6 +3371,332 @@ async function loadTrainerMembers() {
     </div>`;
   }).join('');
   document.getElementById('tr-members-preview').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// TRENERIO GRUPĖS
+// ════════════════════════════════════════
+
+let currentGroupForAssign = null;
+let allTrainerKids = [];
+
+async function loadTrainerGroups() {
+  // 1. Užkrauname trenerio grupes
+  const { data: groups, error } = await sb.from('groups')
+    .select('*')
+    .eq('trainer_id', currentUser.id)
+    .eq('is_active', true)
+    .order('created_at', { ascending: true });
+  
+  if (error) {
+    console.error('loadTrainerGroups:', error);
+    document.getElementById('tr-groups-content').innerHTML = 
+      '<div style="padding:20px;text-align:center;color:var(--br);">Klaida kraunant grupes</div>';
+    return;
+  }
+  
+  // 2. Užkrauname visus trenerio vaikus (su jų group_id)
+  const { data: kids } = await sb.from('kids')
+    .select('id, first_name, last_name, total_exp, current_level, kyu, weight_range, group_id, gender, birth_date, birth_year')
+    .eq('assigned_trainer_id', currentUser.id)
+    .eq('approval_status', 'approved')
+    .order('first_name');
+  
+  allTrainerKids = kids || [];
+  
+  // Atnaujinam summary tr-main
+  const totalGroups = (groups || []).length;
+  const summaryEl = document.getElementById('tr-groups-summary');
+  const countEl = document.getElementById('tr-groups-count');
+  if (summaryEl) summaryEl.textContent = `${totalGroups} grupės · ${(kids||[]).length} narių`;
+  if (countEl) countEl.textContent = totalGroups;
+  
+  // 3. Renderiname grupes
+  const content = document.getElementById('tr-groups-content');
+  
+  if (!groups || groups.length === 0) {
+    content.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;">
+        <div style="font-size:48px;margin-bottom:12px;">👥</div>
+        <div style="font-weight:800;font-size:16px;margin-bottom:8px;">Dar nėra grupių</div>
+        <div style="font-size:13px;color:var(--mut);line-height:1.5;margin-bottom:20px;">
+          Sukurk savo pirmąją grupę – pavyzdžiui<br>"Pradedantieji 6-9m." arba "Mergaitės"
+        </div>
+        <button class="btn btng" onclick="openCreateGroupModal()">+ SUKURTI PIRMĄ GRUPĘ</button>
+      </div>
+    `;
+    return;
+  }
+  
+  let html = '';
+  
+  // Kiekvienai grupei rodome jos vaikus
+  groups.forEach(g => {
+    const kidsInGroup = (kids || []).filter(k => k.group_id === g.id);
+    
+    html += `
+      <div style="background:var(--card);border:.5px solid ${g.color || 'var(--bdr)'};border-left:4px solid ${g.color || 'var(--br)'};border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <div style="width:12px;height:12px;border-radius:50%;background:${g.color || 'var(--br)'};"></div>
+              <div style="font-weight:900;font-size:15px;">${g.name}</div>
+            </div>
+            ${g.description ? `<div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:4px;">${g.description}</div>` : ''}
+            <div style="font-size:11px;color:var(--mut);margin-top:6px;">
+              👥 <strong>${kidsInGroup.length}</strong> ${kidsInGroup.length === 1 ? 'narys' : 'nariai'}
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button onclick="openAssignKidsToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Priskirti vaikus">+👤</button>
+            <button onclick="deleteGroup('${g.id}')" style="background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Ištrinti grupę">🗑️</button>
+          </div>
+        </div>
+        
+        ${kidsInGroup.length > 0 ? `
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+            ${kidsInGroup.map(k => `
+              <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;">
+                <div style="width:34px;height:34px;border-radius:50%;background:${g.color || 'var(--br)'};display:flex;align-items:center;justify-content:center;color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${k.first_name?.[0]||'?'}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
+                  <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
+                </div>
+                <button onclick="removeKidFromGroup('${k.id}')" style="background:transparent;color:var(--mut);border:none;cursor:pointer;font-size:18px;padding:4px 8px;" title="Pašalinti iš grupės">✕</button>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">
+            Grupė tuščia. Spauskime <strong>+👤</strong> kad priskirtum vaikus.
+          </div>
+        `}
+      </div>
+    `;
+  });
+  
+  // Vaikai BE grupės
+  const ungroupedKids = (kids || []).filter(k => !k.group_id);
+  if (ungroupedKids.length > 0) {
+    html += `
+      <div style="background:rgba(255,255,255,.03);border:.5px dashed var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div>
+            <div style="font-weight:900;font-size:14px;color:var(--mut);">👤 BE GRUPĖS</div>
+            <div style="font-size:11px;color:var(--mut);margin-top:4px;">${ungroupedKids.length} ${ungroupedKids.length === 1 ? 'vaikas' : 'vaikai'} laukia priskirimo</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${ungroupedKids.map(k => `
+            <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;">
+              <div style="width:34px;height:34px;border-radius:50%;background:var(--bdr);display:flex;align-items:center;justify-content:center;color:var(--mut);font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${k.first_name?.[0]||'?'}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
+                <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  content.innerHTML = html;
+}
+
+function openCreateGroupModal() {
+  document.getElementById('cg-name').value = '';
+  document.getElementById('cg-description').value = '';
+  document.getElementById('cg-color').value = '#FF4D00';
+  document.getElementById('create-group-err').style.display = 'none';
+  
+  // Reset color
+  document.querySelectorAll('.cg-color').forEach(c => c.classList.remove('on'));
+  document.querySelector('.cg-color[data-color="#FF4D00"]')?.classList.add('on');
+  
+  document.getElementById('create-group-modal').style.display = 'block';
+}
+
+function closeCreateGroupModal() {
+  document.getElementById('create-group-modal').style.display = 'none';
+}
+
+function selectGroupColor(el, color) {
+  document.querySelectorAll('.cg-color').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('cg-color').value = color;
+}
+
+async function submitCreateGroup() {
+  const errEl = document.getElementById('create-group-err');
+  errEl.style.display = 'none';
+  
+  const name = document.getElementById('cg-name').value.trim();
+  const description = document.getElementById('cg-description').value.trim();
+  const color = document.getElementById('cg-color').value;
+  
+  if (!name) {
+    showErr(errEl, 'Įvesk grupės pavadinimą');
+    return;
+  }
+  
+  if (name.length < 2) {
+    showErr(errEl, 'Pavadinimas per trumpas (min. 2 simboliai)');
+    return;
+  }
+  
+  // Trenerio klubo ID
+  const { data: trainer } = await sb.from('trainers')
+    .select('invited_by_club_id')
+    .eq('id', currentUser.id)
+    .single();
+  
+  if (!trainer?.invited_by_club_id) {
+    showErr(errEl, 'Klaida: nepavyko nustatyti trenerio klubo');
+    return;
+  }
+  
+  try {
+    const { error } = await sb.from('groups').insert({
+      club_id: trainer.invited_by_club_id,
+      trainer_id: currentUser.id,
+      name: name,
+      description: description || null,
+      color: color,
+      is_active: true
+    });
+    
+    if (error) throw error;
+    
+    showToast('✓ Grupė sukurta');
+    closeCreateGroupModal();
+    await loadTrainerGroups();
+    
+  } catch (error) {
+    console.error('submitCreateGroup error:', error);
+    showErr(errEl, 'Klaida: ' + error.message);
+  }
+}
+
+async function deleteGroup(groupId) {
+  if (!confirm('Ar tikrai ištrinti šią grupę?\n\nVaikai bus atkabinti iš grupės (NE ištrinti).')) return;
+  
+  try {
+    // Pirma atkabinam vaikus
+    await sb.from('kids').update({ group_id: null }).eq('group_id', groupId);
+    
+    // Ištriname grupę (soft delete - is_active = false)
+    const { error } = await sb.from('groups')
+      .update({ is_active: false })
+      .eq('id', groupId);
+    
+    if (error) throw error;
+    
+    showToast('✓ Grupė ištrinta');
+    await loadTrainerGroups();
+    
+  } catch (error) {
+    console.error('deleteGroup error:', error);
+    showToast('❌ Klaida: ' + error.message, 'error');
+  }
+}
+
+async function removeKidFromGroup(kidId) {
+  if (!confirm('Pašalinti vaiką iš grupės?')) return;
+  
+  try {
+    const { error } = await sb.from('kids').update({ group_id: null }).eq('id', kidId);
+    if (error) throw error;
+    
+    showToast('✓ Vaikas pašalintas iš grupės');
+    await loadTrainerGroups();
+    
+  } catch (error) {
+    console.error('removeKidFromGroup error:', error);
+    showToast('❌ Klaida: ' + error.message, 'error');
+  }
+}
+
+function openAssignKidsToGroup(groupId, groupName) {
+  currentGroupForAssign = groupId;
+  document.getElementById('ak-group-name').textContent = groupName;
+  
+  // Renderiname vaikų sąrašą su checkbox'ais
+  const list = document.getElementById('assign-kids-list');
+  
+  if (!allTrainerKids || allTrainerKids.length === 0) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--mut);">Nėra patvirtintų vaikų</div>';
+    document.getElementById('assign-kids-modal').style.display = 'block';
+    return;
+  }
+  
+  list.innerHTML = allTrainerKids.map(k => {
+    const inThisGroup = k.group_id === groupId;
+    const inOtherGroup = k.group_id && k.group_id !== groupId;
+    
+    return `
+      <label style="display:flex;align-items:center;gap:10px;padding:10px;background:${inThisGroup ? 'rgba(34,197,94,.1)' : 'var(--bg)'};border:.5px solid ${inThisGroup ? 'var(--grn)' : 'var(--bdr)'};border-radius:10px;margin-bottom:6px;cursor:pointer;">
+        <input type="checkbox" class="ak-kid-check" data-kid-id="${k.id}" ${inThisGroup ? 'checked' : ''} style="width:18px;height:18px;flex-shrink:0;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
+          <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg</div>
+          ${inOtherGroup ? '<div style="font-size:10px;color:var(--br);margin-top:2px;">⚠️ Bus perkeltas iš kitos grupės</div>' : ''}
+        </div>
+      </label>
+    `;
+  }).join('');
+  
+  document.getElementById('assign-kids-modal').style.display = 'block';
+}
+
+function closeAssignKidsModal() {
+  document.getElementById('assign-kids-modal').style.display = 'none';
+  currentGroupForAssign = null;
+}
+
+async function submitAssignKids() {
+  if (!currentGroupForAssign) return;
+  
+  const checkboxes = document.querySelectorAll('.ak-kid-check');
+  const selectedKidIds = [];
+  const unselectedKidIds = [];
+  
+  checkboxes.forEach(cb => {
+    const kidId = cb.dataset.kidId;
+    if (cb.checked) {
+      selectedKidIds.push(kidId);
+    } else {
+      unselectedKidIds.push(kidId);
+    }
+  });
+  
+  try {
+    // 1. Priskiriam pažymėtus vaikus į šią grupę
+    if (selectedKidIds.length > 0) {
+      const { error: assignErr } = await sb.from('kids')
+        .update({ group_id: currentGroupForAssign })
+        .in('id', selectedKidIds);
+      
+      if (assignErr) throw assignErr;
+    }
+    
+    // 2. Atkabinam tuos, kurie buvo šioje grupėje, bet dabar atžymėti
+    if (unselectedKidIds.length > 0) {
+      // Tik tuos kurie šiuo metu yra šioje grupėje
+      await sb.from('kids')
+        .update({ group_id: null })
+        .eq('group_id', currentGroupForAssign)
+        .in('id', unselectedKidIds);
+    }
+    
+    showToast('✓ Vaikai priskirti grupei');
+    closeAssignKidsModal();
+    await loadTrainerGroups();
+    
+  } catch (error) {
+    console.error('submitAssignKids error:', error);
+    showToast('❌ Klaida: ' + error.message, 'error');
+  }
 }
 
 // ════════════════════════════════════════
