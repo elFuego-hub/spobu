@@ -961,14 +961,26 @@ select.inp option{background:#222;}
       <div id="ak-karate-fields">
         <label class="lbl">SVORIO INTERVALAS</label>
         <select class="inp" id="ak-weight" style="margin-bottom:14px;">
-          <option value="">Pirma įvesk gimimo metus...</option>
+          <option value="">Pirma įvesk gimimo datą...</option>
         </select>
         
-        <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.2);border-radius:10px;padding:10px;margin-bottom:14px;">
-          <div style="font-size:11px;color:var(--txt);line-height:1.4;">
-            🥋 <strong>Diržo lygis:</strong> visi pradeda nuo <strong>10 kyu (baltas)</strong>.<br>
-            Vėliau treneris patvirtins egzaminus ir kyu pakils.
-          </div>
+        <label class="lbl">DIRŽO LYGIS (KYU)</label>
+        <select class="inp" id="ak-kyu" style="margin-bottom:14px;">
+          <option value="10 kyu" selected>10 kyu (baltas) – pradedantysis</option>
+          <option value="9 kyu">9 kyu</option>
+          <option value="8 kyu">8 kyu</option>
+          <option value="7 kyu">7 kyu</option>
+          <option value="6 kyu">6 kyu</option>
+          <option value="5 kyu">5 kyu</option>
+          <option value="4 kyu">4 kyu</option>
+          <option value="3 kyu">3 kyu</option>
+          <option value="2 kyu">2 kyu</option>
+          <option value="1 kyu">1 kyu</option>
+          <option value="1 dan">1 dan (juodas)</option>
+          <option value="2 dan">2 dan</option>
+        </select>
+        <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;">
+          💡 Vėliau treneris patvirtins egzaminus ir kyu pakils.
         </div>
       </div>
       
@@ -1829,7 +1841,7 @@ function akNext(currentScreen) {
     akData.birth_date = dateStr;
     akData.birth_year = year;  // Backward compat
     akData.weight_range = weight;
-    akData.kyu = '10 kyu';  // Visada pradeda nuo baltojo diržo
+    akData.kyu = document.getElementById('ak-kyu').value || '10 kyu';
     
     akShowScreen(3);
   }
