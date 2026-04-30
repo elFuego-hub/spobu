@@ -240,30 +240,22 @@ select.inp option{background:#222;}
     
     <div class="err-msg" id="reg-err"></div>
     
-    <!-- ===== EKRANAS 1: TIPAS + SPORTAS ===== -->
+    <!-- ===== EKRANAS 1: SPORTAS ===== -->
     <div id="rw-screen-1">
       <div class="auth-title">REGISTRACIJA</div>
       <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
-        Sveikas! Pirmiausia, kaip registruosi vaiką?
+        Sveikas! Registruojam vaiką į pasirinktą sporto klubą.
       </div>
       
-      <label class="lbl">PASKYROS TIPAS</label>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
-        <div class="rw-role-opt on" onclick="selectRwAccountType(this, 'parent_only')" data-type="parent_only">
-          <div style="font-size:24px;">👨‍👩‍👦</div>
-          <div>
-            <div style="font-weight:900;font-size:13px;">Tik mano paskyra</div>
-            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Vaikas neturi telefono.<br>Aš stebėsiu, treneris pildys rezultatus.</div>
-          </div>
-        </div>
-        <div class="rw-role-opt" onclick="selectRwAccountType(this, 'parent_and_kid')" data-type="parent_and_kid">
-          <div style="font-size:24px;">👨‍👩‍👦+🧒</div>
-          <div>
-            <div style="font-weight:900;font-size:13px;">Mano + vaiko paskyros</div>
-            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Vaikas turi telefoną/email.<br>Vaikas pats teiks rezultatus.</div>
-          </div>
+      <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.2);border-radius:12px;padding:12px;margin-bottom:18px;">
+        <div style="font-size:12px;color:var(--txt);line-height:1.5;">
+          💡 <strong>Kaip tai veikia:</strong><br>
+          • Sukuriam tėvų paskyrą + vaiko profilį<br>
+          • Tėvai stebi progresą, fiksuoja rezultatus<br>
+          • Kai vaikas turės savo telefoną – pridėsi jam prieigą per "Mano vaikai"
         </div>
       </div>
+      
       <input type="hidden" id="rw-account-type" value="parent_only">
       
       <label class="lbl">SPORTO ŠAKA</label>
@@ -372,17 +364,6 @@ select.inp option{background:#222;}
       
       <label class="lbl">TELEFONAS</label>
       <input class="inp" type="tel" id="rw-phone" placeholder="+370 600 00000" style="margin-bottom:14px;">
-      
-      <!-- Vaiko email – rodomas tik jei "parent_and_kid" -->
-      <div id="rw-kid-email-section" style="display:none;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;border:.5px solid var(--bdr);">
-        <div style="font-size:11px;color:var(--mut);font-weight:800;margin-bottom:8px;">🧒 VAIKO PASKYRA</div>
-        <label class="lbl">VAIKO EL. PAŠTAS</label>
-        <input class="inp" type="email" id="rw-kid-email" placeholder="vaikas@email.lt">
-        <div style="font-size:11px;color:var(--mut);line-height:1.4;">
-          📧 Į šį paštą atkeliaus slaptažodžio nustatymo nuoroda.<br>
-          💡 Galima naudoti +vaikas trick'ą (pvz. tavovardas+marius@gmail.com)
-        </div>
-      </div>
       
       <div style="background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;border:.5px solid var(--bdr);">
         <div style="font-size:11px;color:var(--mut);font-weight:800;margin-bottom:8px;">SUTIKIMAI</div>
@@ -953,12 +934,40 @@ select.inp option{background:#222;}
 <div id="pt" style="display:none;"><div class="df"><div class="ds"><div class="ph">
 <div class="sc on" id="t-main">
   <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
-  <div style="padding:40px 20px;text-align:center;color:var(--mut);">
-    <div style="font-size:48px;margin-bottom:16px;">👨‍👩‍👦</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--txt);margin-bottom:8px;">TĖVŲ PASKYRA</div>
-    <div style="font-size:13px;">Bus pilnai integruota su Supabase duomenimis.</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px;">
+    <div>
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">TĖVAI / GLOBĖJAS</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="t-name">VARTOTOJAS 👨‍👩‍👦</div>
+    </div>
+    <div style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--br);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);" id="t-avatar">T</div>
   </div>
-</div></div></div></div></div>
+  <div class="sa">
+    <!-- Mano vaikai -->
+    <div style="padding:12px 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;">MANO VAIKAI</div>
+        <button class="btn btng" style="font-size:11px;padding:6px 12px;" onclick="alert('Pridėti antrą vaiką – ateityje')">+ Vaikas</button>
+      </div>
+      <div id="t-kids-list">
+        <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Vaiko detalių ekranas -->
+<div class="sc" id="t-kid-detail" style="display:none;">
+  <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;">
+    <button class="btn-back" onclick="showTab('t','t-main')">←</button>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;" id="t-kid-name">Vaikas</div>
+  </div>
+  <div class="sa" id="t-kid-detail-content">
+    <div style="padding:20px;text-align:center;color:var(--mut);">Kraunama...</div>
+  </div>
+</div>
+
+</div></div></div>
 
 <div id="pk" style="display:none;"><div class="df"><div class="ds"><div class="ph">
 <!-- KLUBAS: PAGRINDINIS -->
@@ -1318,8 +1327,197 @@ async function afterLogin() {
     await loadKidData();
     op('v');
   } else if (profile.role === 'parent') {
-    // Tėvo paskyra (kol kas placeholder)
+    // Tėvų paskyra
+    await loadParentData();
     op('t');
+  }
+}
+
+function showTab(portal, tabId) {
+  const portalEl = document.getElementById('p' + portal);
+  if (!portalEl) return;
+  portalEl.querySelectorAll('.sc').forEach(s => {
+    s.style.display = 'none';
+    s.classList.remove('on');
+  });
+  const tab = document.getElementById(tabId);
+  if (tab) {
+    tab.style.display = '';
+    tab.classList.add('on');
+  }
+}
+
+async function loadParentData() {
+  if (!currentProfile) return;
+  const name = `${currentProfile.first_name} ${currentProfile.last_name}`.toUpperCase();
+  document.getElementById('t-name').textContent = name + ' 👨‍👩‍👦';
+  document.getElementById('t-avatar').textContent = currentProfile.first_name?.[0] || 'T';
+  await loadParentKids();
+}
+
+async function loadParentKids() {
+  // Vaikai per kid_parent_links
+  const { data: links, error } = await sb.from('kid_parent_links')
+    .select('kid_id, is_primary')
+    .eq('parent_id', currentUser.id);
+  
+  if (error) {
+    console.error('loadParentKids error:', error);
+    document.getElementById('t-kids-list').innerHTML = 
+      '<div style="padding:20px;text-align:center;color:var(--br);">Klaida: ' + error.message + '</div>';
+    return;
+  }
+  
+  if (!links || links.length === 0) {
+    document.getElementById('t-kids-list').innerHTML = 
+      '<div style="padding:20px;text-align:center;color:var(--mut);">Vaikų dar nepridėjote</div>';
+    return;
+  }
+  
+  const kidIds = links.map(l => l.kid_id);
+  
+  // Vaikų info
+  const { data: kids } = await sb.from('kids')
+    .select('*')
+    .in('id', kidIds);
+  
+  const { data: profiles } = await sb.from('profiles')
+    .select('id, first_name, last_name, status')
+    .in('id', kidIds);
+  
+  const profileMap = {};
+  (profiles || []).forEach(p => { profileMap[p.id] = p; });
+  
+  const html = (kids || []).map(k => {
+    const p = profileMap[k.id] || {};
+    const age = new Date().getFullYear() - k.birth_year;
+    const genderIcon = k.gender === 'male' ? '👦' : '👧';
+    const isPending = p.status === 'pending';
+    const isApproved = k.approval_status === 'approved';
+    
+    let statusBadge;
+    if (isPending) {
+      statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(255,77,0,.2);color:var(--br);font-weight:700;">⏳ Laukia patvirtinimo</span>';
+    } else if (isApproved) {
+      statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(34,197,94,.2);color:var(--grn);font-weight:700;">✓ Aktyvi</span>';
+    } else {
+      statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(255,77,0,.2);color:var(--br);font-weight:700;">' + (k.approval_status||'?') + '</span>';
+    }
+    
+    return `<div class="ri" style="cursor:pointer;flex-direction:column;align-items:flex-start;padding:14px;" onclick="showKidDetail('${k.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--bg);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:20px;">${genderIcon}</div>
+          <div>
+            <div style="font-weight:900;font-size:14px;">${p.first_name || 'Vaikas'} ${p.last_name || ''}</div>
+            <div style="font-size:11px;color:var(--mut);">${age}m. · ${k.weight_range || '?'}kg · ${k.kyu || 'Be kyu'}</div>
+          </div>
+        </div>
+        <div style="font-size:18px;color:var(--br);">→</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+        ${statusBadge}
+        <span style="font-size:11px;color:var(--mut);">EXP: ${k.total_exp || 0} · Lvl ${k.current_level || 1}</span>
+      </div>
+    </div>`;
+  }).join('');
+  
+  document.getElementById('t-kids-list').innerHTML = html;
+}
+
+let currentParentKid = null;
+
+async function showKidDetail(kidId) {
+  // Užkrauname vaiko duomenis
+  const { data: kid } = await sb.from('kids').select('*').eq('id', kidId).single();
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', kidId).single();
+  const { data: kidUser } = await sb.from('auth_users_view').select('email').eq('id', kidId).maybeSingle().catch(() => ({ data: null }));
+  
+  if (!kid || !profile) {
+    showToast('❌ Nepavyko užkrauti vaiko duomenų');
+    return;
+  }
+  
+  currentParentKid = { ...kid, ...profile };
+  
+  document.getElementById('t-kid-name').textContent = `${profile.first_name} ${profile.last_name}`;
+  
+  const age = new Date().getFullYear() - kid.birth_year;
+  const isAutoEmail = kidUser?.email?.includes('+kid');
+  const realEmail = isAutoEmail ? null : kidUser?.email;
+  
+  const html = `
+    <div class="sect">
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">VAIKO INFO</div>
+        <div style="font-size:13px;line-height:1.7;">
+          <div><strong>${profile.first_name} ${profile.last_name}</strong></div>
+          <div style="color:var(--mut);">${age} m. · ${kid.gender === 'male' ? '👦 Vaikinas' : '👧 Mergina'}</div>
+          <div style="color:var(--mut);">Svoris: ${kid.weight_range || '?'} kg · Kyu: ${kid.kyu || 'Be kyu'}</div>
+          <div style="margin-top:6px;">EXP: <strong>${kid.total_exp || 0}</strong> · Lvl <strong>${kid.current_level || 1}</strong></div>
+          <div style="color:${kid.approval_status === 'approved' ? 'var(--grn)' : 'var(--br)'};margin-top:6px;font-weight:700;">
+            ${kid.approval_status === 'approved' ? '✓ Patvirtinta' : '⏳ Laukia trenerio patvirtinimo'}
+          </div>
+        </div>
+      </div>
+      
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">VAIKO PRIEIGA</div>
+        ${isAutoEmail || !realEmail ? `
+          <div style="font-size:12px;color:var(--mut);margin-bottom:10px;line-height:1.5;">
+            🔒 Vaikas dar neturi savo prisijungimo. Tu fiksuoji jo rezultatus per savo paskyrą.
+          </div>
+          <button class="btn btng" style="width:100%;" onclick="showAddKidAccess('${kidId}')">
+            ➕ PRIDĖTI VAIKO PRIEIGĄ
+          </button>
+        ` : `
+          <div style="font-size:12px;color:var(--mut);line-height:1.5;">
+            📧 Vaiko email: <span style="color:var(--br);">${realEmail}</span><br>
+            ✓ Vaikas gali prisijungti pats
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('t-kid-detail-content').innerHTML = html;
+  showTab('t', 't-kid-detail');
+}
+
+function showAddKidAccess(kidId) {
+  const newEmail = prompt('Įvesk vaiko realų email\'ą:\n\n💡 Vaikas gaus laišką su slaptažodžio nustatymo nuoroda. Po to galės prisijungti su SAVO paskyra.', '');
+  if (!newEmail || !newEmail.includes('@')) {
+    if (newEmail !== null) showToast('❌ Neteisingas email\'as');
+    return;
+  }
+  
+  addKidEmailAccess(kidId, newEmail.trim().toLowerCase());
+}
+
+async function addKidEmailAccess(kidId, newEmail) {
+  // Validuojam email
+  const emailRegex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(newEmail)) {
+    showToast('❌ Email turi tik lotyniškas raides, skaičius, +-_.');
+    return;
+  }
+  
+  try {
+    showToast('Atnaujinama...');
+    
+    // Naudojam Supabase RPC arba update per profile
+    // Email keitimas auth.users yra sudėtingas iš client'o – siunčiame reset password į naują
+    const { error } = await sb.auth.resetPasswordForEmail(newEmail, {
+      redirectTo: `${window.location.origin}/spobu/set-password.html`
+    });
+    
+    // Dėl to, kad email keitimas auth.users iš client SDK negalimas, 
+    // šiuo metu rodom message – reikia DB pakeitimo per Dashboard arba SQL
+    showToast('⚠️ Funkcija dar tobulinama. Ateinančioje sesijoje bus baigta.', 'error', 6000);
+    
+  } catch (error) {
+    console.error('addKidEmailAccess error:', error);
+    showToast('❌ Klaida: ' + error.message);
   }
 }
 
@@ -1594,19 +1792,11 @@ function rwNext(currentScreen) {
       return;
     }
     
-    // Vaiko email patikra (tik jei "parent_and_kid")
-    if (rwData.account_type === 'parent_and_kid') {
-      const kidEmail = document.getElementById('rw-kid-email').value.trim().toLowerCase();
-      if (!kidEmail || !kidEmail.includes('@')) {
-        showErr(errEl, 'Įvesk teisingą vaiko email\'ą');
-        return;
-      }
-      if (kidEmail === parentEmail) {
-        showErr(errEl, 'Vaiko email turi skirtis nuo tėvų email\'o');
-        return;
-      }
-      rwData.kid_email = kidEmail;
-    }
+    // Vaiko email AUTO-generuojam (tevoEmail+kidNNN)
+    const emailParts = parentEmail.split('@');
+    const timestamp = Date.now().toString().slice(-6);
+    rwData.kid_email = `${emailParts[0]}+kid${timestamp}@${emailParts[1]}`;
+    rwData.kid_email_is_auto = true;
     
     if (!consent1) { showErr(errEl, 'Privaloma sutikti su Privatumo politika'); return; }
     if (!consent2) { showErr(errEl, 'Privaloma patvirtinti tėvų sutikimą'); return; }
@@ -1683,8 +1873,8 @@ async function rwSubmit(skipPhoto) {
       throw parentSignUpError;
     }
     
-    // 3. Jei "parent_and_kid" – sukurti VAIKO paskyrą
-    if (rwData.account_type === 'parent_and_kid') {
+    // 3. VISADA sukuriam vaiko paskyrą (auto-suffix email)
+    {
       // Sukuriam vaiko pending invitation
       const { error: kidInvError } = await sb.from('pending_invitations').insert({
         email: rwData.kid_email,
@@ -1707,7 +1897,7 @@ async function rwSubmit(skipPhoto) {
         throw new Error('Vaiko registracijos klaida: ' + kidInvError.message);
       }
       
-      // signUp vaikui su laikinu slaptažodžiu
+      // signUp vaikui su laikinu slaptažodžiu (auto - tėvai vėliau pridės realų email)
       const tempPass = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
       const { error: kidSignUpError } = await sb.auth.signUp({
         email: rwData.kid_email,
@@ -1715,22 +1905,19 @@ async function rwSubmit(skipPhoto) {
       });
       
       if (kidSignUpError) {
-        // Jei email jau egzistuoja – aiški klaida
         if (kidSignUpError.message.includes('already') || 
             kidSignUpError.message.includes('exists') ||
             kidSignUpError.message.includes('registered')) {
-          throw new Error('Vaiko email\'as ' + rwData.kid_email + ' jau yra užregistruotas. Pasirink kitą email\'ą.');
+          // Auto suffix dublikatas – mažai tikėtina, bet jei taip, pagal naują timestamp
+          throw new Error('Vaiko paskyros klaida (dublikatas). Bandyk dar kartą.');
         }
         throw new Error('Vaiko paskyros klaida: ' + kidSignUpError.message);
       }
       
-      // Susiejam vaiko ir tėvų paskyras (po trumpos pauzės kad trigger spėtų)
+      // Susiejam vaiko ir tėvų paskyras
       await new Promise(r => setTimeout(r, 1500));
       
       try {
-        // Surandam ką tik sukurtus user'ius
-        const { data: parentUser } = await sb.auth.admin?.getUserByEmail?.(rwData.parent_email).catch(() => ({}));
-        // Naudosim alternative – per profiles
         const { data: parentProfiles } = await sb.from('profiles')
           .select('id')
           .eq('role', 'parent')
@@ -1746,38 +1933,28 @@ async function rwSubmit(skipPhoto) {
         if (parentProfiles?.[0] && kidProfiles?.[0]) {
           await sb.from('kid_parent_links').insert({
             kid_id: kidProfiles[0].id,
-            parent_id: parentProfiles[0].id
+            parent_id: parentProfiles[0].id,
+            is_primary: true
           });
         }
       } catch (linkErr) {
         console.warn('kid_parent_links linking failed:', linkErr);
       }
       
-      // Reset password vaikui (į jo email)
-      await sb.auth.resetPasswordForEmail(rwData.kid_email, {
-        redirectTo: `${window.location.origin}/spobu/set-password.html`
-      });
+      // NEKVIETA reset password – nes vaikas neturi realaus email
+      // Vėliau tėvai per "Pridėti vaiko prieigą" siųs reset password į realų email
     }
     
     // 4. Success – paruošiam pranešimą
     const successContent = document.getElementById('rw-success-content');
     let successHTML = `
       <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
-        <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">✓ Tėvų paskyra sukurta</div>
-        <div style="font-size:12px;">Email: <span style="color:var(--br);">${rwData.parent_email}</span></div>
-        <div style="font-size:12px;">Prisijunk su tavo nustatytu slaptažodžiu</div>
+        <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">✓ Paskyra sukurta</div>
+        <div style="font-size:12px;">Tėvų email: <span style="color:var(--br);">${rwData.parent_email}</span></div>
+        <div style="font-size:12px;margin-top:4px;">Vaiko paskyra: <strong>${rwData.fname} ${rwData.lname}</strong></div>
+        <div style="font-size:11px;color:var(--mut);margin-top:6px;">💡 Vėliau galėsi pridėti vaiko realų email per "Mano vaikai"</div>
       </div>
     `;
-    
-    if (rwData.account_type === 'parent_and_kid') {
-      successHTML += `
-        <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
-          <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">✓ Vaiko paskyra sukurta</div>
-          <div style="font-size:12px;">Email: <span style="color:var(--br);">${rwData.kid_email}</span></div>
-          <div style="font-size:12px;">📧 Vaikas gavo email su slaptažodžio nustatymo nuoroda</div>
-        </div>
-      `;
-    }
     
     successHTML += `
       <div style="background:rgba(255,77,0,.1);border:.5px solid var(--br);border-radius:10px;padding:12px;">
