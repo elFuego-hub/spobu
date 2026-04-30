@@ -240,22 +240,30 @@ select.inp option{background:#222;}
     
     <div class="err-msg" id="reg-err"></div>
     
-    <!-- ===== EKRANAS 1: SPORTAS ===== -->
+    <!-- ===== EKRANAS 1: TIPAS + SPORTAS ===== -->
     <div id="rw-screen-1">
       <div class="auth-title">REGISTRACIJA</div>
       <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
-        Sveikas! Registruojam vaiką į pasirinktą sporto klubą.
+        Sveikas! Pirmiausia, kaip registruosi vaiką?
       </div>
       
-      <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.2);border-radius:12px;padding:12px;margin-bottom:18px;">
-        <div style="font-size:12px;color:var(--txt);line-height:1.5;">
-          💡 <strong>Kaip tai veikia:</strong><br>
-          • Sukuriam tėvų paskyrą + vaiko profilį<br>
-          • Tėvai stebi progresą, fiksuoja rezultatus<br>
-          • Kai vaikas turės savo telefoną – pridėsi jam prieigą per "Mano vaikai"
+      <label class="lbl">PASKYROS TIPAS</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+        <div class="rw-role-opt on" onclick="selectRwAccountType(this, 'parent_only')" data-type="parent_only">
+          <div style="font-size:24px;">👨‍👩‍👦</div>
+          <div>
+            <div style="font-weight:900;font-size:13px;">Tik mano paskyra</div>
+            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Vaikas neturi telefono.<br>Treneris pildys rezultatus, aš stebėsiu.</div>
+          </div>
+        </div>
+        <div class="rw-role-opt" onclick="selectRwAccountType(this, 'parent_and_kid')" data-type="parent_and_kid">
+          <div style="font-size:24px;">👨‍👩‍👦+🧒</div>
+          <div>
+            <div style="font-weight:900;font-size:13px;">Mano + vaiko paskyros</div>
+            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Vaikas turi telefoną/email.<br>Vaikas pats teiks rezultatus.</div>
+          </div>
         </div>
       </div>
-      
       <input type="hidden" id="rw-account-type" value="parent_only">
       
       <label class="lbl">SPORTO ŠAKA</label>
@@ -364,6 +372,17 @@ select.inp option{background:#222;}
       
       <label class="lbl">TELEFONAS</label>
       <input class="inp" type="tel" id="rw-phone" placeholder="+370 600 00000" style="margin-bottom:14px;">
+      
+      <!-- Vaiko email - rodomas tik jei "parent_and_kid" -->
+      <div id="rw-kid-email-section" style="display:none;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;border:.5px solid var(--bdr);">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;margin-bottom:8px;">🧒 VAIKO PASKYRA</div>
+        <label class="lbl">VAIKO EL. PAŠTAS</label>
+        <input class="inp" type="email" id="rw-kid-email" placeholder="vaikas@email.lt">
+        <div style="font-size:11px;color:var(--mut);line-height:1.4;">
+          📧 Į šį paštą atkeliaus slaptažodžio nustatymo nuoroda.<br>
+          💡 Galima naudoti +vaikas trick'ą (pvz. tavovardas+marius@gmail.com)
+        </div>
+      </div>
       
       <div style="background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;border:.5px solid var(--bdr);">
         <div style="font-size:11px;color:var(--mut);font-weight:800;margin-bottom:8px;">SUTIKIMAI</div>
@@ -1376,41 +1395,44 @@ async function loadParentKids() {
   
   const kidIds = links.map(l => l.kid_id);
   
-  // Vaikų info
+  // Vaikų info iš kids lentelės (su vardais)
   const { data: kids } = await sb.from('kids')
     .select('*')
     .in('id', kidIds);
   
-  const { data: profiles } = await sb.from('profiles')
-    .select('id, first_name, last_name, status')
-    .in('id', kidIds);
+  if (!kids || kids.length === 0) {
+    document.getElementById('t-kids-list').innerHTML = 
+      '<div style="padding:20px;text-align:center;color:var(--mut);">Vaikų duomenys nerasti</div>';
+    return;
+  }
   
-  const profileMap = {};
-  (profiles || []).forEach(p => { profileMap[p.id] = p; });
-  
-  const html = (kids || []).map(k => {
-    const p = profileMap[k.id] || {};
+  const html = kids.map(k => {
     const age = new Date().getFullYear() - k.birth_year;
     const genderIcon = k.gender === 'male' ? '👦' : '👧';
-    const isPending = p.status === 'pending';
     const isApproved = k.approval_status === 'approved';
+    const hasAccount = !!k.user_id;
     
     let statusBadge;
-    if (isPending) {
-      statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(255,77,0,.2);color:var(--br);font-weight:700;">⏳ Laukia patvirtinimo</span>';
+    if (k.approval_status === 'pending') {
+      statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(255,77,0,.2);color:var(--br);font-weight:700;">⏳ Laukia trenerio</span>';
     } else if (isApproved) {
       statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(34,197,94,.2);color:var(--grn);font-weight:700;">✓ Aktyvi</span>';
     } else {
       statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(255,77,0,.2);color:var(--br);font-weight:700;">' + (k.approval_status||'?') + '</span>';
     }
     
+    const accountBadge = hasAccount 
+      ? '<span style="font-size:10px;color:var(--grn);">🔐 Vaiko paskyra aktyvi</span>'
+      : '<span style="font-size:10px;color:var(--mut);">👨‍👩 Tik mano valdoma</span>';
+    
     return `<div class="ri" style="cursor:pointer;flex-direction:column;align-items:flex-start;padding:14px;" onclick="showKidDetail('${k.id}')">
       <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px;">
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="width:40px;height:40px;border-radius:50%;background:var(--bg);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:20px;">${genderIcon}</div>
           <div>
-            <div style="font-weight:900;font-size:14px;">${p.first_name || 'Vaikas'} ${p.last_name || ''}</div>
+            <div style="font-weight:900;font-size:14px;">${k.first_name || 'Vaikas'} ${k.last_name || ''}</div>
             <div style="font-size:11px;color:var(--mut);">${age}m. · ${k.weight_range || '?'}kg · ${k.kyu || 'Be kyu'}</div>
+            <div style="margin-top:2px;">${accountBadge}</div>
           </div>
         </div>
         <div style="font-size:18px;color:var(--br);">→</div>
@@ -1792,11 +1814,21 @@ function rwNext(currentScreen) {
       return;
     }
     
-    // Vaiko email AUTO-generuojam (tevoEmail+kidNNN)
-    const emailParts = parentEmail.split('@');
-    const timestamp = Date.now().toString().slice(-6);
-    rwData.kid_email = `${emailParts[0]}+kid${timestamp}@${emailParts[1]}`;
-    rwData.kid_email_is_auto = true;
+    // Vaiko email patikra (tik jei "parent_and_kid")
+    if (rwData.account_type === 'parent_and_kid') {
+      const kidEmail = document.getElementById('rw-kid-email').value.trim().toLowerCase();
+      if (!kidEmail || !kidEmail.includes('@')) {
+        showErr(errEl, 'Įvesk teisingą vaiko email\'ą');
+        return;
+      }
+      if (kidEmail === parentEmail) {
+        showErr(errEl, 'Vaiko email turi skirtis nuo tėvų email\'o');
+        return;
+      }
+      rwData.kid_email = kidEmail;
+    } else {
+      rwData.kid_email = null; // Vaikas neturi paskyros
+    }
     
     if (!consent1) { showErr(errEl, 'Privaloma sutikti su Privatumo politika'); return; }
     if (!consent2) { showErr(errEl, 'Privaloma patvirtinti tėvų sutikimą'); return; }
@@ -1873,77 +1905,89 @@ async function rwSubmit(skipPhoto) {
       throw parentSignUpError;
     }
     
-    // 3. VISADA sukuriam vaiko paskyrą (auto-suffix email)
-    {
-      // Sukuriam vaiko pending invitation
-      const { error: kidInvError } = await sb.from('pending_invitations').insert({
-        email: rwData.kid_email,
-        role: 'kid',
-        invited_by: null,
-        first_name: rwData.fname,
-        last_name: rwData.lname,
-        sport_id: rwData.sport_id,
-        gender: rwData.gender,
-        birth_year: rwData.birth_year,
-        weight_range: rwData.weight_range,
-        kyu: rwData.kyu,
-        club_id: rwData.club_id,
-        assigned_trainer_id: rwData.trainer_id,
-        status: 'pending'
-      });
-      
-      if (kidInvError) {
-        console.error('Kid invitation error:', kidInvError);
-        throw new Error('Vaiko registracijos klaida: ' + kidInvError.message);
-      }
-      
-      // signUp vaikui su laikinu slaptažodžiu (auto - tėvai vėliau pridės realų email)
+    // 3. PALAUKIM, kol trigger sukurs tėvų profile
+    await new Promise(r => setTimeout(r, 1500));
+    
+    // 4. Surandam tėvų ID
+    const { data: parentUserResult } = await sb.auth.signInWithPassword({
+      email: rwData.parent_email,
+      password: rwData.parent_pass
+    });
+    
+    const parentUserId = parentUserResult?.user?.id || parentSignUp?.user?.id;
+    
+    if (!parentUserId) {
+      throw new Error('Nepavyko gauti tėvų ID. Pabandykite dar kartą.');
+    }
+    
+    // 5. Sukuriam VAIKO įrašą kids lentelėje (nepriklausomai nuo paskyros tipo)
+    const { data: newKid, error: kidError } = await sb.from('kids').insert({
+      first_name: rwData.fname,
+      last_name: rwData.lname,
+      sport_id: rwData.sport_id,
+      gender: rwData.gender,
+      birth_year: rwData.birth_year,
+      weight_range: rwData.weight_range,
+      kyu: rwData.kyu,
+      total_exp: 0,
+      current_level: 1,
+      wins: 0,
+      losses: 0,
+      has_phone: rwData.account_type === 'parent_and_kid',
+      approval_status: 'pending',
+      assigned_trainer_id: rwData.trainer_id,
+      user_id: null  // Kol kas vaikas neturi auth paskyros
+    }).select().single();
+    
+    if (kidError) {
+      console.error('Kid creation error:', kidError);
+      throw new Error('Vaiko sukurimo klaida: ' + kidError.message);
+    }
+    
+    const kidId = newKid.id;
+    
+    // 6. Kid_parent_links - susiejam vaiką su tėvais
+    await sb.from('kid_parent_links').insert({
+      kid_id: kidId,
+      parent_id: parentUserId,
+      is_primary: true
+    });
+    
+    // 7. Pridedam vaiko vardą į kažkokį "kids_meta" - kol kas naudosim profiles fallback
+    // Naudosim profiles_meta arba tiesiog kids.first_name (jei yra)
+    // Šiuo metu pavadinimas saugojamas tik per kid_parent_links + atskirą lookup
+    // Tam reikia papildomo stulpelio - pridėsim per SQL po šito
+    
+    // 8. Jei "parent_and_kid" - sukuriam vaikui auth paskyrą
+    if (rwData.account_type === 'parent_and_kid' && rwData.kid_email) {
       const tempPass = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
-      const { error: kidSignUpError } = await sb.auth.signUp({
+      const { data: kidSignUp, error: kidSignUpError } = await sb.auth.signUp({
         email: rwData.kid_email,
         password: tempPass
       });
       
       if (kidSignUpError) {
-        if (kidSignUpError.message.includes('already') || 
-            kidSignUpError.message.includes('exists') ||
-            kidSignUpError.message.includes('registered')) {
-          // Auto suffix dublikatas – mažai tikėtina, bet jei taip, pagal naują timestamp
-          throw new Error('Vaiko paskyros klaida (dublikatas). Bandyk dar kartą.');
+        if (kidSignUpError.message.includes('already')) {
+          throw new Error('Vaiko email\'as ' + rwData.kid_email + ' jau yra užregistruotas.');
         }
-        throw new Error('Vaiko paskyros klaida: ' + kidSignUpError.message);
-      }
-      
-      // Susiejam vaiko ir tėvų paskyras
-      await new Promise(r => setTimeout(r, 1500));
-      
-      try {
-        const { data: parentProfiles } = await sb.from('profiles')
-          .select('id')
-          .eq('role', 'parent')
-          .order('activated_at', { ascending: false })
-          .limit(1);
-        
-        const { data: kidProfiles } = await sb.from('profiles')
-          .select('id')
-          .eq('role', 'kid')
-          .order('activated_at', { ascending: false })
-          .limit(1);
-        
-        if (parentProfiles?.[0] && kidProfiles?.[0]) {
-          await sb.from('kid_parent_links').insert({
-            kid_id: kidProfiles[0].id,
-            parent_id: parentProfiles[0].id,
-            is_primary: true
+        console.error('Kid signUp error:', kidSignUpError);
+        // Tęsiam - vaikas DB sukurtas, tik be auth paskyros
+      } else {
+        // Susiejam vaiko user_id su kids
+        const kidUserId = kidSignUp.user?.id;
+        if (kidUserId) {
+          await sb.from('kids').update({ user_id: kidUserId }).eq('id', kidId);
+          
+          // Reset password vaikui
+          await sb.auth.resetPasswordForEmail(rwData.kid_email, {
+            redirectTo: `${window.location.origin}/spobu/set-password.html`
           });
         }
-      } catch (linkErr) {
-        console.warn('kid_parent_links linking failed:', linkErr);
       }
-      
-      // NEKVIETA reset password – nes vaikas neturi realaus email
-      // Vėliau tėvai per "Pridėti vaiko prieigą" siųs reset password į realų email
     }
+    
+    // 9. Atsijungiam (kad tėvai galėtų prisijungti rankiniu būdu)
+    await sb.auth.signOut();
     
     // 4. Success – paruošiam pranešimą
     const successContent = document.getElementById('rw-success-content');
@@ -2452,7 +2496,7 @@ async function loadTrainerData() {
 async function loadNewKids() {
   // Naujieji vaikai laukia patvirtinimo (assigned_trainer_id = man, status='pending')
   const { data: kids, error } = await sb.from('kids')
-    .select('id, gender, birth_year, weight_range, kyu, created_at')
+    .select('id, first_name, last_name, gender, birth_year, weight_range, kyu, created_at, user_id')
     .eq('assigned_trainer_id', currentUser.id)
     .eq('approval_status', 'pending')
     .order('created_at', { ascending: false });
@@ -2470,15 +2514,6 @@ async function loadNewKids() {
     return;
   }
   
-  // Gauname vaikų vardus
-  const kidIds = kids.map(k => k.id);
-  const { data: profiles } = await sb.from('profiles')
-    .select('id, first_name, last_name')
-    .in('id', kidIds);
-  
-  const profileMap = {};
-  (profiles || []).forEach(p => { profileMap[p.id] = p; });
-  
   card.style.display = 'block';
   document.getElementById('tr-new-kids-count').textContent = kids.length;
   document.getElementById('tr-new-kids-summary').textContent = 
@@ -2486,10 +2521,10 @@ async function loadNewKids() {
   
   const list = document.getElementById('tr-new-kids-list');
   list.innerHTML = kids.map(k => {
-    const profile = profileMap[k.id] || {};
-    const name = `${profile.first_name || 'Vaikas'} ${profile.last_name || ''}`.trim();
+    const name = `${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim();
     const age = new Date().getFullYear() - k.birth_year;
     const genderIcon = k.gender === 'male' ? '👦' : '👧';
+    const hasAccount = !!k.user_id;
     
     return `
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-top:8px;">
@@ -2498,6 +2533,9 @@ async function loadNewKids() {
             <div style="font-weight:900;font-size:14px;">${genderIcon} ${name}</div>
             <div style="font-size:11px;color:var(--mut);margin-top:2px;line-height:1.5;">
               ${age}m. • ${k.weight_range || '-'}kg • ${k.kyu || 'Be kyu'}
+            </div>
+            <div style="font-size:10px;color:${hasAccount?'var(--grn)':'var(--mut)'};margin-top:2px;">
+              ${hasAccount ? '🔐 Vaikas turi paskyrą' : '👨‍👩 Tik tėvų valdoma'}
             </div>
           </div>
         </div>
@@ -2521,10 +2559,13 @@ async function approveKid(kidId) {
     
     if (kidError) throw kidError;
     
-    // 2. Vaiko profilis → active
-    await sb.from('profiles')
-      .update({ status: 'active' })
-      .eq('id', kidId);
+    // 2. Vaiko profilis → active (tik jei vaikas turi auth paskyrą)
+    const { data: kidData } = await sb.from('kids').select('user_id').eq('id', kidId).single();
+    if (kidData?.user_id) {
+      await sb.from('profiles')
+        .update({ status: 'active' })
+        .eq('id', kidData.user_id);
+    }
     
     // 3. Surandam tėvų paskyrą per kid_parent_links
     const { data: links } = await sb.from('kid_parent_links')
@@ -2556,9 +2597,13 @@ async function rejectKid(kidId) {
       .update({ approval_status: 'rejected' })
       .eq('id', kidId);
     
-    await sb.from('profiles')
-      .update({ status: 'suspended' })
-      .eq('id', kidId);
+    // Vaiko profile tik jei yra
+    const { data: kidData } = await sb.from('kids').select('user_id').eq('id', kidId).single();
+    if (kidData?.user_id) {
+      await sb.from('profiles')
+        .update({ status: 'suspended' })
+        .eq('id', kidData.user_id);
+    }
     
     // Tėvai taip pat suspenduojami
     const { data: links } = await sb.from('kid_parent_links')
