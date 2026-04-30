@@ -3256,21 +3256,19 @@ async function showExercises(categoryId, categoryName) {
     return;
   }
 
-  // 3. Targets visiems pratimams (klubo overlay arba default)
+  // 4. Vaiko PR rezultatai
   const exerciseIds = exercises.map(e => e.id);
   const { data: targets } = await sb.from('exercise_targets')
     .select('*')
     .in('exercise_id', exerciseIds)
     .eq('age_group_id', ageGroup.id);
 
-  // 4. Vaiko PR rezultatai
   const { data: records } = await sb.from('kid_records')
-    .select('exercise_id, value, category_exp')
+    .select('exercise_id, current_pr, category_exp')
     .eq('kid_id', currentUser.id)
     .in('exercise_id', exerciseIds);
 
   currentExerciseList = exercises.map(ex => {
-    // Surandam target (klubo turi pirmumą prieš default)
     const exTargets = (targets || []).filter(t => t.exercise_id === ex.id);
     const target = exTargets.find(t => t.club_id === currentKid.club_id) 
                 || exTargets.find(t => t.club_id === null);
@@ -3279,7 +3277,7 @@ async function showExercises(categoryId, categoryName) {
     return {
       ...ex,
       target: target || null,
-      current_pr: rec?.value || 0,
+      current_pr: rec?.current_pr || 0,
       category_exp: rec?.category_exp || 0,
       ageGroup: ageGroup
     };
