@@ -3209,6 +3209,19 @@ async function cr() {
 let currentExercise = null;
 let currentExerciseList = [];
 
+// Helper: surask vaiko amžiaus grupę
+async function getKidAgeGroup() {
+  if (!currentKid?.gender || !currentKid?.birth_year) return null;
+  const age = new Date().getFullYear() - currentKid.birth_year;
+  
+  const { data: groups } = await sb.from('exercise_age_groups')
+    .select('*')
+    .eq('gender', currentKid.gender);
+  
+  if (!groups) return null;
+  return groups.find(g => age >= g.age_min && age <= g.age_max);
+}
+
 async function showExercises(categoryId, categoryName) {
   document.getElementById('exo-title').textContent = categoryName.toUpperCase();
   document.getElementById('exo-list').style.display = 'block';
@@ -3216,12 +3229,19 @@ async function showExercises(categoryId, categoryName) {
   document.getElementById('exo').classList.add('open');
   document.getElementById('exo-list').innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
 
-  const gender = currentKid?.gender || 'male';
+  // 1. Vaiko amžiaus grupė
+  const ageGroup = await getKidAgeGroup();
+  if (!ageGroup) {
+    document.getElementById('exo-list').innerHTML = 
+      '<div style="padding:20px;text-align:center;color:var(--br);">Vaiko duomenys neužpildyti (lytis arba amžius)</div>';
+    return;
+  }
+
+  // 2. Pratimai šioje kategorijoje
   const { data: exercises, error } = await sb.from('exercises')
     .select('*')
     .eq('category_id', categoryId)
     .eq('is_active', true)
-    .or(`gender.eq.${gender},gender.eq.both`)
     .order('sort_order');
 
   if (error) {
@@ -3236,33 +3256,77 @@ async function showExercises(categoryId, categoryName) {
     return;
   }
 
+  // 3. Targets visiems pratimams (klubo overlay arba default)
   const exerciseIds = exercises.map(e => e.id);
+  const { data: targets } = await sb.from('exercise_targets')
+    .select('*')
+    .in('exercise_id', exerciseIds)
+    .eq('age_group_id', ageGroup.id);
+
+  // 4. Vaiko PR rezultatai
   const { data: records } = await sb.from('kid_records')
-    .select('exercise_id, current_pr, category_exp')
+    .select('exercise_id, value, category_exp')
     .eq('kid_id', currentUser.id)
     .in('exercise_id', exerciseIds);
 
   currentExerciseList = exercises.map(ex => {
+    // Surandam target (klubo turi pirmumą prieš default)
+    const exTargets = (targets || []).filter(t => t.exercise_id === ex.id);
+    const target = exTargets.find(t => t.club_id === currentKid.club_id) 
+                || exTargets.find(t => t.club_id === null);
+    
     const rec = records?.find(r => r.exercise_id === ex.id);
     return {
       ...ex,
-      current_pr: rec?.current_pr || 0,
+      target: target || null,
+      current_pr: rec?.value || 0,
       category_exp: rec?.category_exp || 0,
-      exp_per_rep: ex.max_exp / ex.max_reps
+      ageGroup: ageGroup
     };
   });
 
   const html = currentExerciseList.map(ex => {
-    const pct = Math.min(100, (ex.current_pr / ex.max_reps) * 100);
-    const completed = ex.current_pr >= ex.max_reps;
-    return `<div class="ri" style="cursor:pointer;${completed?'opacity:.6;':''}" onclick="openSubmissionForm('${ex.id}')">
+    if (!ex.target) {
+      return `<div class="ri" style="opacity:.4;">
+        <div style="flex:1;">
+          <span style="font-size:13px;font-weight:800;">${ex.name}</span>
+          <div style="font-size:10px;color:var(--mut);margin-top:3px;">⚠️ Ribos dar nenustatytos</div>
+        </div>
+      </div>`;
+    }
+    
+    const completedTarget = parseFloat(ex.target.completed);
+    const lower = ex.lower_is_better;
+    
+    // Skaičiuojam progress
+    let pct, completed, exp;
+    if (lower) {
+      // Mažiau geriau: jei PR <= completed, esi 100%
+      if (ex.current_pr === 0) {
+        pct = 0; exp = 0; completed = false;
+      } else if (ex.current_pr <= completedTarget) {
+        pct = 100; exp = 100; completed = true;
+      } else {
+        pct = Math.round((completedTarget / ex.current_pr) * 100);
+        exp = pct; completed = false;
+      }
+    } else {
+      // Daugiau geriau
+      pct = Math.min(100, Math.round((ex.current_pr / completedTarget) * 100));
+      exp = pct;
+      completed = ex.current_pr >= completedTarget;
+    }
+    
+    return `<div class="ri" style="cursor:pointer;${completed?'opacity:.7;':''}" onclick="openSubmissionForm('${ex.id}')">
       <div style="flex:1;">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
           <span style="font-size:13px;font-weight:800;">${ex.name}</span>
-          <span style="font-size:11px;color:var(--mut);">${ex.current_pr}/${ex.max_reps} ${ex.unit}</span>
+          <span style="font-size:11px;color:var(--mut);">${ex.current_pr}/${completedTarget} ${ex.unit}</span>
         </div>
         <div class="pb2"><div class="pf" style="width:${pct}%;background:${completed?'var(--gld)':'var(--br)'};"></div></div>
-        <div style="font-size:10px;color:var(--mut);margin-top:3px;">+${ex.exp_per_rep.toFixed(2)} EXP už vienetą</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:3px;">
+          🥉 ${ex.target.bronze} · 🥈 ${ex.target.silver} · 🥇 ${ex.target.gold} · 🏆 ${completedTarget} ${ex.unit}
+        </div>
       </div>
       <div style="font-size:18px;color:var(--br);">${completed?'🏆':'→'}</div>
     </div>`;
@@ -3273,19 +3337,33 @@ async function showExercises(categoryId, categoryName) {
 
 function openSubmissionForm(exerciseId) {
   const ex = currentExerciseList.find(e => e.id === exerciseId);
-  if (!ex) return;
+  if (!ex || !ex.target) return;
   currentExercise = ex;
   document.getElementById('exo-list').style.display = 'none';
   document.getElementById('exo-form').style.display = 'block';
   document.getElementById('exo-form-name').textContent = ex.name;
-  document.getElementById('exo-form-info').textContent = 
-    `Max ${ex.max_reps} ${ex.unit} = 100 EXP · ${ex.exp_per_rep.toFixed(2)} EXP už vienetą`;
-  document.getElementById('exo-form-pr').textContent = ex.current_pr;
+  
+  const t = ex.target;
+  const lower = ex.lower_is_better;
+  const arrow = lower ? '↓' : '↑';
+  document.getElementById('exo-form-info').innerHTML = 
+    `<strong>${ex.ageGroup.name}</strong> · ${lower?'mažiau geriau':'daugiau geriau'} ${arrow}<br>` +
+    `🥉 Bronze: ${t.bronze} · 🥈 Silver: ${t.silver} · 🥇 Gold: ${t.gold} · 🏆 Max: ${t.completed} ${ex.unit}`;
+  
+  document.getElementById('exo-form-pr').textContent = ex.current_pr || 0;
   document.getElementById('exo-form-new').value = '';
-  document.getElementById('exo-form-new').min = ex.current_pr + 1;
-  document.getElementById('exo-form-new').max = ex.max_reps;
   document.getElementById('exo-form-comment').value = '';
   document.getElementById('exo-form-exp').textContent = '+0 EXP';
+  
+  // Naujo rezultato min/max ribos
+  const newInput = document.getElementById('exo-form-new');
+  if (lower) {
+    newInput.removeAttribute('min');
+    newInput.removeAttribute('max');
+  } else {
+    newInput.min = (ex.current_pr || 0) + 1;
+    newInput.removeAttribute('max');
+  }
 }
 
 function backToExerciseList() {
@@ -3295,17 +3373,66 @@ function backToExerciseList() {
 }
 
 function recalcExpGain() {
-  if (!currentExercise) return;
-  const newVal = parseInt(document.getElementById('exo-form-new').value) || 0;
-  const oldPr = currentExercise.current_pr;
-  if (newVal <= oldPr) {
+  if (!currentExercise || !currentExercise.target) return;
+  const newVal = parseFloat(document.getElementById('exo-form-new').value) || 0;
+  const oldPr = currentExercise.current_pr || 0;
+  const t = currentExercise.target;
+  const completed = parseFloat(t.completed);
+  const lower = currentExercise.lower_is_better;
+  
+  if (newVal === 0) {
     document.getElementById('exo-form-exp').textContent = '+0 EXP';
     return;
   }
-  const cappedNew = Math.min(newVal, currentExercise.max_reps);
-  const delta = cappedNew - oldPr;
-  const expGain = Math.round(delta * currentExercise.exp_per_rep);
-  document.getElementById('exo-form-exp').textContent = `+${expGain} EXP`;
+  
+  // Skaičiuojam EXP pagal procentą nuo target
+  let newExp;
+  if (lower) {
+    if (newVal <= completed) {
+      newExp = 100;
+    } else {
+      newExp = Math.round((completed / newVal) * 100);
+    }
+  } else {
+    newExp = Math.min(100, Math.round((newVal / completed) * 100));
+  }
+  
+  // Skaičiuojam senąjį EXP
+  let oldExp = 0;
+  if (oldPr > 0) {
+    if (lower) {
+      oldExp = oldPr <= completed ? 100 : Math.round((completed / oldPr) * 100);
+    } else {
+      oldExp = Math.min(100, Math.round((oldPr / completed) * 100));
+    }
+  }
+  
+  // Delta
+  const delta = newExp - oldExp;
+  
+  // Tikrinam ar tai PR (geresnis rezultatas)
+  let isPR = false;
+  if (lower) {
+    isPR = oldPr === 0 || newVal < oldPr;
+  } else {
+    isPR = newVal > oldPr;
+  }
+  
+  if (!isPR) {
+    document.getElementById('exo-form-exp').textContent = '+0 EXP (ne PR)';
+    document.getElementById('exo-form-exp').style.color = 'var(--mut)';
+    return;
+  }
+  
+  // Medalio info
+  let medal = '';
+  if (newExp >= 100) medal = ' 🏆 LEGEND!';
+  else if (newExp >= parseFloat(t.gold) / completed * 100) medal = ' 🥇 Gold!';
+  else if (newExp >= parseFloat(t.silver) / completed * 100) medal = ' 🥈 Silver!';
+  else if (newExp >= parseFloat(t.bronze) / completed * 100) medal = ' 🥉 Bronze!';
+  
+  document.getElementById('exo-form-exp').textContent = `+${delta} EXP${medal}`;
+  document.getElementById('exo-form-exp').style.color = delta > 0 ? 'var(--grn)' : 'var(--mut)';
 }
 
 function closeExercises() {
@@ -3315,23 +3442,57 @@ function closeExercises() {
 }
 
 async function submitExerciseResult() {
-  if (!currentExercise) return;
-  const newVal = parseInt(document.getElementById('exo-form-new').value);
+  if (!currentExercise || !currentExercise.target) return;
+  const newVal = parseFloat(document.getElementById('exo-form-new').value);
   const comment = document.getElementById('exo-form-comment').value.trim();
-  const oldPr = currentExercise.current_pr;
+  const oldPr = currentExercise.current_pr || 0;
+  const lower = currentExercise.lower_is_better;
 
-  if (!newVal || newVal <= oldPr) {
-    showToast('❌ Rezultatas turi būti didesnis už PR', 'error');
+  if (!newVal) {
+    showToast('❌ Įvesk rezultatą', 'error');
     return;
   }
-  if (!currentKid?.trainer_id) {
+  
+  // Validuojam PR
+  let isPR = false;
+  if (lower) {
+    isPR = oldPr === 0 || newVal < oldPr;
+  } else {
+    isPR = newVal > oldPr;
+  }
+  
+  if (!isPR) {
+    showToast(lower ? '❌ Rezultatas turi būti mažesnis už PR' : '❌ Rezultatas turi būti didesnis už PR', 'error');
+    return;
+  }
+  
+  if (!currentKid?.assigned_trainer_id) {
     showToast('❌ Treneris dar nepriskirtas. Susisiek su klubu.', 'error', 4000);
     return;
   }
 
-  const cappedNew = Math.min(newVal, currentExercise.max_reps);
-  const delta = cappedNew - oldPr;
-  const expGain = Math.round(delta * currentExercise.exp_per_rep);
+  const t = currentExercise.target;
+  const completed = parseFloat(t.completed);
+  
+  // Skaičiuojam EXP procente nuo target
+  let newExp;
+  if (lower) {
+    newExp = newVal <= completed ? 100 : Math.round((completed / newVal) * 100);
+  } else {
+    newExp = Math.min(100, Math.round((newVal / completed) * 100));
+  }
+  
+  // Senasis EXP
+  let oldExp = 0;
+  if (oldPr > 0) {
+    if (lower) {
+      oldExp = oldPr <= completed ? 100 : Math.round((completed / oldPr) * 100);
+    } else {
+      oldExp = Math.min(100, Math.round((oldPr / completed) * 100));
+    }
+  }
+  
+  const expGain = Math.max(0, newExp - oldExp);
 
   const btn = document.getElementById('exo-form-submit');
   btn.disabled = true;
@@ -3342,9 +3503,10 @@ async function submitExerciseResult() {
     kid_id: currentUser.id,
     exercise_id: currentExercise.id,
     category_id: currentExercise.category_id,
-    trainer_id: currentKid.trainer_id,
+    trainer_id: currentKid.assigned_trainer_id,
     old_pr: oldPr,
     new_value: newVal,
+    value: newVal,
     exp_gain: expGain,
     comment: comment || null,
     status: 'pending'
