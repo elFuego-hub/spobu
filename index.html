@@ -3430,78 +3430,113 @@ async function loadTrainerGroups() {
   
   let html = '';
   
-  // Kiekvienai grupei rodome jos vaikus
+  // Kiekvienai grupei rodome jos vaikus (sutrauktą formą)
   groups.forEach(g => {
     const kidsInGroup = (kids || []).filter(k => k.group_id === g.id);
+    const groupColor = g.color || '#FF4D00';
+    
+    // Suskaičiuojam total EXP grupėje
+    const totalExp = kidsInGroup.reduce((sum, k) => sum + (k.total_exp || 0), 0);
     
     html += `
-      <div style="background:var(--card);border:.5px solid ${g.color || 'var(--bdr)'};border-left:4px solid ${g.color || 'var(--br)'};border-radius:14px;padding:14px;margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-          <div style="flex:1;">
+      <div style="background:var(--card);border:.5px solid ${groupColor};border-left:4px solid ${groupColor};border-radius:14px;margin-bottom:10px;overflow:hidden;">
+        <!-- Grupės antraštė (clickable) -->
+        <div onclick="toggleGroupExpand('${g.id}')" style="padding:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-              <div style="width:12px;height:12px;border-radius:50%;background:${g.color || 'var(--br)'};"></div>
+              <div style="width:10px;height:10px;border-radius:50%;background:${groupColor};flex-shrink:0;"></div>
               <div style="font-weight:900;font-size:15px;">${g.name}</div>
             </div>
-            ${g.description ? `<div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:4px;">${g.description}</div>` : ''}
-            <div style="font-size:11px;color:var(--mut);margin-top:6px;">
-              👥 <strong>${kidsInGroup.length}</strong> ${kidsInGroup.length === 1 ? 'narys' : 'nariai'}
+            ${g.description ? `<div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:2px;">${g.description}</div>` : ''}
+            <div style="font-size:11px;color:var(--mut);margin-top:6px;display:flex;gap:12px;">
+              <span>👥 <strong>${kidsInGroup.length}</strong> ${kidsInGroup.length === 1 ? 'narys' : 'nariai'}</span>
+              ${totalExp > 0 ? `<span>⚡ ${totalExp.toLocaleString()} EXP</span>` : ''}
             </div>
           </div>
-          <div style="display:flex;gap:6px;">
+          
+          <!-- Mygtukai -->
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;" onclick="event.stopPropagation();">
             <button onclick="openAssignKidsToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Priskirti vaikus">+👤</button>
             <button onclick="deleteGroup('${g.id}')" style="background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Ištrinti grupę">🗑️</button>
           </div>
+          
+          <!-- Strelytė -->
+          <div id="group-arrow-${g.id}" style="font-size:14px;color:var(--mut);transition:transform .2s;flex-shrink:0;">▼</div>
         </div>
         
-        ${kidsInGroup.length > 0 ? `
-          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
-            ${kidsInGroup.map(k => `
-              <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;">
-                <div style="width:34px;height:34px;border-radius:50%;background:${g.color || 'var(--br)'};display:flex;align-items:center;justify-content:center;color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${k.first_name?.[0]||'?'}</div>
-                <div style="flex:1;min-width:0;">
-                  <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
-                  <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
+        <!-- Vaikų sąrašas (slepiamas iš pradžių) -->
+        <div id="group-kids-${g.id}" style="display:none;padding:0 14px 14px;border-top:.5px solid var(--bdr);">
+          ${kidsInGroup.length > 0 ? `
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+              ${kidsInGroup.map(k => `
+                <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;">
+                  <div style="width:34px;height:34px;border-radius:50%;background:${groupColor};display:flex;align-items:center;justify-content:center;color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${k.first_name?.[0]||'?'}</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
+                    <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
+                  </div>
+                  <button onclick="removeKidFromGroup('${k.id}')" style="background:transparent;color:var(--mut);border:none;cursor:pointer;font-size:18px;padding:4px 8px;" title="Pašalinti iš grupės">✕</button>
                 </div>
-                <button onclick="removeKidFromGroup('${k.id}')" style="background:transparent;color:var(--mut);border:none;cursor:pointer;font-size:18px;padding:4px 8px;" title="Pašalinti iš grupės">✕</button>
-              </div>
-            `).join('')}
-          </div>
-        ` : `
-          <div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">
-            Grupė tuščia. Spauskime <strong>+👤</strong> kad priskirtum vaikus.
-          </div>
-        `}
+              `).join('')}
+            </div>
+          ` : `
+            <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;line-height:1.5;margin-top:10px;">
+              Grupė tuščia.<br>
+              Spauskime <strong style="color:var(--grn);">+👤</strong> kad priskirtum vaikus.
+            </div>
+          `}
+        </div>
       </div>
     `;
   });
   
-  // Vaikai BE grupės
+  // Vaikai BE grupės (visada matomi - todėl sutraukti, su strelyte)
   const ungroupedKids = (kids || []).filter(k => !k.group_id);
   if (ungroupedKids.length > 0) {
     html += `
-      <div style="background:rgba(255,255,255,.03);border:.5px dashed var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+      <div style="background:rgba(255,255,255,.03);border:.5px dashed var(--bdr);border-radius:14px;margin-bottom:10px;overflow:hidden;">
+        <div onclick="toggleGroupExpand('ungrouped')" style="padding:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
           <div>
             <div style="font-weight:900;font-size:14px;color:var(--mut);">👤 BE GRUPĖS</div>
-            <div style="font-size:11px;color:var(--mut);margin-top:4px;">${ungroupedKids.length} ${ungroupedKids.length === 1 ? 'vaikas' : 'vaikai'} laukia priskirimo</div>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          ${ungroupedKids.map(k => `
-            <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;">
-              <div style="width:34px;height:34px;border-radius:50%;background:var(--bdr);display:flex;align-items:center;justify-content:center;color:var(--mut);font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${k.first_name?.[0]||'?'}</div>
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
-                <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
-              </div>
+            <div style="font-size:11px;color:var(--mut);margin-top:4px;">
+              <strong>${ungroupedKids.length}</strong> ${ungroupedKids.length === 1 ? 'vaikas' : 'vaikai'} laukia priskirimo
             </div>
-          `).join('')}
+          </div>
+          <div id="group-arrow-ungrouped" style="font-size:14px;color:var(--mut);transition:transform .2s;">▼</div>
+        </div>
+        <div id="group-kids-ungrouped" style="display:none;padding:0 14px 14px;border-top:.5px solid var(--bdr);">
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+            ${ungroupedKids.map(k => `
+              <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;">
+                <div style="width:34px;height:34px;border-radius:50%;background:var(--bdr);display:flex;align-items:center;justify-content:center;color:var(--mut);font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${k.first_name?.[0]||'?'}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
+                  <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </div>
       </div>
     `;
   }
   
   content.innerHTML = html;
+}
+
+function toggleGroupExpand(groupId) {
+  const kidsList = document.getElementById(`group-kids-${groupId}`);
+  const arrow = document.getElementById(`group-arrow-${groupId}`);
+  
+  if (!kidsList) return;
+  
+  if (kidsList.style.display === 'none') {
+    kidsList.style.display = 'block';
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+  } else {
+    kidsList.style.display = 'none';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+  }
 }
 
 function openCreateGroupModal() {
