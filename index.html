@@ -915,6 +915,99 @@ select.inp option{background:#222;}
   </div>
 </div>
 
+<!-- ============================================ -->
+<!-- VAIKO DETALIŲ MODALAS (treneris mato pilną info) -->
+<!-- ============================================ -->
+<div id="kid-details-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:1000;overflow-y:auto;padding:20px;">
+  <div style="max-width:480px;margin:20px auto;background:var(--card);border-radius:20px;padding:0;border:.5px solid var(--bdr);overflow:hidden;">
+    
+    <!-- Header su gradient'u -->
+    <div id="kid-details-header" style="background:linear-gradient(135deg,var(--br),#FF6B35);padding:24px;color:white;position:relative;">
+      <button onclick="closeKidDetailsModal()" style="position:absolute;top:14px;right:14px;background:rgba(0,0,0,.3);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+      
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div id="kd-avatar" style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;flex-shrink:0;">?</div>
+        <div style="flex:1;min-width:0;">
+          <div id="kd-name" style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;line-height:1.1;">VAIKAS</div>
+          <div id="kd-subname" style="font-size:11px;opacity:.85;margin-top:4px;">– · –</div>
+        </div>
+      </div>
+      
+      <!-- EXP & Level -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px;">
+        <div style="text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:10px 6px;">
+          <div id="kd-exp" style="font-family:'Bebas Neue',sans-serif;font-size:20px;">0</div>
+          <div style="font-size:10px;opacity:.85;letter-spacing:1px;">EXP</div>
+        </div>
+        <div style="text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:10px 6px;">
+          <div id="kd-level" style="font-family:'Bebas Neue',sans-serif;font-size:20px;">1</div>
+          <div style="font-size:10px;opacity:.85;letter-spacing:1px;">LVL</div>
+        </div>
+        <div style="text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:10px 6px;">
+          <div id="kd-kyu" style="font-family:'Bebas Neue',sans-serif;font-size:20px;">10</div>
+          <div style="font-size:10px;opacity:.85;letter-spacing:1px;">KYU</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Content -->
+    <div style="padding:20px;max-height:60vh;overflow-y:auto;">
+      
+      <!-- Vaiko info -->
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">📋 VAIKO INFO</div>
+        <div id="kd-info" style="font-size:13px;line-height:1.7;">
+          <div style="text-align:center;color:var(--mut);">Kraunama...</div>
+        </div>
+      </div>
+      
+      <!-- Tėvai -->
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">👨‍👩‍👦 TĖVAI / GLOBĖJAI</div>
+        <div id="kd-parents" style="font-size:13px;line-height:1.7;">
+          <div style="text-align:center;color:var(--mut);">Kraunama...</div>
+        </div>
+      </div>
+      
+      <!-- EXP valdymas -->
+      <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--br);font-weight:800;letter-spacing:1px;margin-bottom:10px;">⚡ EXP UŽ ELGESĮ</div>
+        
+        <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">
+          Pridėk EXP už pasiekimus, dalyvavimą, gerą elgesį – arba atimk už drausmės pažeidimus.
+        </div>
+        
+        <!-- Greiti mygtukai -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+          <button onclick="quickAdjustExp(10, 'Aktyvus dalyvavimas')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">+10 Aktyvumas</button>
+          <button onclick="quickAdjustExp(25, 'Geras elgesys')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">+25 Geras elgesys</button>
+          <button onclick="quickAdjustExp(50, 'Pasiekimas treniruotėje')" style="background:rgba(34,197,94,.2);color:var(--grn);border:.5px solid rgba(34,197,94,.4);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">+50 Pasiekimas</button>
+          <button onclick="quickAdjustExp(-10, 'Drausmės pažeidimas')" style="background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">-10 Drausmė</button>
+        </div>
+        
+        <!-- Custom -->
+        <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;">
+          <div style="font-size:11px;color:var(--mut);font-weight:800;margin-bottom:8px;">CUSTOM:</div>
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:6px;margin-bottom:8px;">
+            <input type="number" class="inp" id="kd-custom-exp" placeholder="±EXP" style="margin:0;font-size:13px;" min="-1000" max="1000">
+            <input type="text" class="inp" id="kd-custom-reason" placeholder="Priežastis (privaloma)" style="margin:0;font-size:13px;" maxlength="100">
+          </div>
+          <button onclick="customAdjustExp()" style="width:100%;background:var(--br);color:white;border:none;padding:8px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">PRIDĖTI/ATIMTI</button>
+        </div>
+      </div>
+      
+      <!-- EXP istorija -->
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">📜 EXP ISTORIJA</div>
+        <div id="kd-exp-history" style="font-size:12px;line-height:1.6;max-height:200px;overflow-y:auto;">
+          <div style="text-align:center;color:var(--mut);">Kraunama...</div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
 <!-- TRENERIS – STATISTIKA -->
 <div class="sc" id="tr-stat">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
@@ -3469,13 +3562,13 @@ async function loadTrainerGroups() {
           ${kidsInGroup.length > 0 ? `
             <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
               ${kidsInGroup.map(k => `
-                <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;">
+                <div onclick="openKidDetailsModal('${k.id}')" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='${groupColor}';" onmouseout="this.style.borderColor='var(--bdr)';">
                   <div style="width:34px;height:34px;border-radius:50%;background:${groupColor};display:flex;align-items:center;justify-content:center;color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${k.first_name?.[0]||'?'}</div>
                   <div style="flex:1;min-width:0;">
                     <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
                     <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
                   </div>
-                  <button onclick="removeKidFromGroup('${k.id}')" style="background:transparent;color:var(--mut);border:none;cursor:pointer;font-size:18px;padding:4px 8px;" title="Pašalinti iš grupės">✕</button>
+                  <button onclick="event.stopPropagation(); removeKidFromGroup('${k.id}')" style="background:transparent;color:var(--mut);border:none;cursor:pointer;font-size:18px;padding:4px 8px;" title="Pašalinti iš grupės">✕</button>
                 </div>
               `).join('')}
             </div>
@@ -3507,7 +3600,7 @@ async function loadTrainerGroups() {
         <div id="group-kids-ungrouped" style="display:none;padding:0 14px 14px;border-top:.5px solid var(--bdr);">
           <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
             ${ungroupedKids.map(k => `
-              <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;">
+              <div onclick="openKidDetailsModal('${k.id}')" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--mut)';" onmouseout="this.style.borderColor='var(--bdr)';">
                 <div style="width:34px;height:34px;border-radius:50%;background:var(--bdr);display:flex;align-items:center;justify-content:center;color:var(--mut);font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${k.first_name?.[0]||'?'}</div>
                 <div style="flex:1;min-width:0;">
                   <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
@@ -3730,6 +3823,276 @@ async function submitAssignKids() {
     
   } catch (error) {
     console.error('submitAssignKids error:', error);
+    showToast('❌ Klaida: ' + error.message, 'error');
+  }
+}
+
+// ════════════════════════════════════════
+// VAIKO DETALIŲ MODALAS (treneris)
+// ════════════════════════════════════════
+
+let currentKidDetails = null;
+
+async function openKidDetailsModal(kidId) {
+  // Surandam vaiką iš allTrainerKids
+  const kid = allTrainerKids.find(k => k.id === kidId);
+  if (!kid) {
+    showToast('❌ Vaikas nerastas');
+    return;
+  }
+  
+  // Užkrauname pilną vaiko info iš DB (su sport_id, club info)
+  const { data: fullKid } = await sb.from('kids').select('*').eq('id', kidId).single();
+  if (!fullKid) {
+    showToast('❌ Klaida kraunant duomenis');
+    return;
+  }
+  
+  currentKidDetails = fullKid;
+  
+  // Apskaičiuojam amžių
+  const age = fullKid.birth_date ? calculateAge(fullKid.birth_date) : (new Date().getFullYear() - fullKid.birth_year);
+  const isUnder13 = age <= 12;
+  const genderName = fullKid.gender === 'male' ? 'Vaikinas' : 'Mergina';
+  const genderIcon = fullKid.gender === 'male' ? '👦' : '👧';
+  const groupName = isUnder13 ? `${fullKid.gender === 'male' ? 'Vaikinai' : 'Merginos'} 6-12m.` : `${fullKid.gender === 'male' ? 'Vaikinai' : 'Merginos'} 13+m.`;
+  
+  // Atnaujinam header
+  const fullName = `${fullKid.first_name || 'Vaikas'} ${fullKid.last_name || ''}`.trim();
+  document.getElementById('kd-name').textContent = fullName.toUpperCase();
+  document.getElementById('kd-subname').textContent = `${genderIcon} ${age} m. · ${groupName}`;
+  document.getElementById('kd-avatar').textContent = (fullKid.first_name?.[0] || '?').toUpperCase();
+  document.getElementById('kd-exp').textContent = (fullKid.total_exp || 0).toLocaleString();
+  document.getElementById('kd-level').textContent = fullKid.current_level || 1;
+  
+  // Kyu - rodome tik skaičių
+  const kyuMatch = (fullKid.kyu || '10 kyu').match(/(\d+)/);
+  document.getElementById('kd-kyu').textContent = kyuMatch ? kyuMatch[1] : '10';
+  
+  // Vaiko info
+  let birthDateText = '–';
+  if (fullKid.birth_date) {
+    const d = new Date(fullKid.birth_date);
+    birthDateText = `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`;
+  } else if (fullKid.birth_year) {
+    birthDateText = fullKid.birth_year + ' (tiksli data nenustatyta)';
+  }
+  
+  const hasAccount = !!fullKid.user_id;
+  
+  document.getElementById('kd-info').innerHTML = `
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;">
+      <div style="color:var(--mut);">Vardas:</div>
+      <div><strong>${fullKid.first_name || '–'} ${fullKid.last_name || ''}</strong></div>
+      <div style="color:var(--mut);">Lytis:</div>
+      <div>${genderName}</div>
+      <div style="color:var(--mut);">Gimimo data:</div>
+      <div>${birthDateText}</div>
+      <div style="color:var(--mut);">Amžius:</div>
+      <div><strong>${age} m.</strong></div>
+      <div style="color:var(--mut);">Grupė (varžybų):</div>
+      <div>${groupName}</div>
+      <div style="color:var(--mut);">Svorio intervalas:</div>
+      <div><strong>${fullKid.weight_range || '?'} kg</strong></div>
+      <div style="color:var(--mut);">Kyu lygis:</div>
+      <div><strong>${fullKid.kyu || '10 kyu'}</strong></div>
+      <div style="color:var(--mut);">Anonimiškumas:</div>
+      <div>${fullKid.is_anonymous ? '🔒 Slėpiamas' : '👁️ Matomas viešai'}</div>
+      <div style="color:var(--mut);">Paskyra:</div>
+      <div>${hasAccount ? '✅ Turi savo prisijungimą' : '⚪ Tik tėvų stebėjimas'}</div>
+    </div>
+  `;
+  
+  // Tėvai
+  await loadKidParents(kidId);
+  
+  // EXP istorija
+  await loadKidExpHistory(kidId);
+  
+  // Reset custom inputs
+  document.getElementById('kd-custom-exp').value = '';
+  document.getElementById('kd-custom-reason').value = '';
+  
+  document.getElementById('kid-details-modal').style.display = 'block';
+}
+
+function closeKidDetailsModal() {
+  document.getElementById('kid-details-modal').style.display = 'none';
+  currentKidDetails = null;
+}
+
+async function loadKidParents(kidId) {
+  const { data: links } = await sb.from('kid_parent_links')
+    .select('parent_id, is_primary')
+    .eq('kid_id', kidId);
+  
+  if (!links || links.length === 0) {
+    document.getElementById('kd-parents').innerHTML = 
+      '<div style="text-align:center;color:var(--mut);padding:8px;">Tėvai nepriskirti</div>';
+    return;
+  }
+  
+  const parentIds = links.map(l => l.parent_id);
+  
+  // Užkrauname tėvų profilius
+  const { data: parents } = await sb.from('profiles')
+    .select('id, first_name, last_name, phone')
+    .in('id', parentIds);
+  
+  if (!parents || parents.length === 0) {
+    document.getElementById('kd-parents').innerHTML = 
+      '<div style="text-align:center;color:var(--mut);padding:8px;">Tėvų info nerasta</div>';
+    return;
+  }
+  
+  // Užkrauname tėvų email'us (per RPC arba palieckim be email)
+  // (auth.users iš client'o nepasiekiamas)
+  
+  let html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+  parents.forEach(p => {
+    const link = links.find(l => l.parent_id === p.id);
+    const isPrimary = link?.is_primary;
+    
+    html += `
+      <div style="background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:13px;">
+              ${p.first_name || 'Tėvas'} ${p.last_name || ''}
+              ${isPrimary ? '<span style="font-size:10px;background:var(--br);color:white;padding:2px 6px;border-radius:99px;margin-left:6px;">PAGRINDINIS</span>' : ''}
+            </div>
+            ${p.phone ? `
+              <div style="font-size:12px;color:var(--mut);margin-top:4px;">
+                📱 <a href="tel:${p.phone}" style="color:var(--br);text-decoration:none;">${p.phone}</a>
+              </div>
+            ` : '<div style="font-size:11px;color:var(--mut);margin-top:4px;">📱 Telefono nėra</div>'}
+          </div>
+          ${p.phone ? `
+            <a href="tel:${p.phone}" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:6px 10px;border-radius:8px;font-size:11px;text-decoration:none;font-weight:700;flex-shrink:0;">📞 SKAMBINTI</a>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  
+  document.getElementById('kd-parents').innerHTML = html;
+}
+
+async function loadKidExpHistory(kidId) {
+  const { data: history } = await sb.from('kid_exp_adjustments')
+    .select('*')
+    .eq('kid_id', kidId)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  
+  const el = document.getElementById('kd-exp-history');
+  
+  if (!history || history.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:12px;font-size:11px;">Dar nėra korekcijų istorijoje</div>';
+    return;
+  }
+  
+  el.innerHTML = history.map(h => {
+    const isPositive = h.exp_change > 0;
+    const date = new Date(h.created_at);
+    const dateStr = `${date.getDate()}-${date.getMonth()+1} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+    
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid var(--bdr);gap:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;line-height:1.4;">${h.reason}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${dateStr}</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${isPositive ? 'var(--grn)' : '#EF4444'};flex-shrink:0;">
+          ${isPositive ? '+' : ''}${h.exp_change}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function quickAdjustExp(amount, reason) {
+  if (!currentKidDetails) return;
+  
+  const action = amount > 0 ? `Pridėti +${amount} EXP` : `Atimti ${amount} EXP`;
+  if (!confirm(`${action}?\n\nPriežastis: ${reason}\nVaikas: ${currentKidDetails.first_name} ${currentKidDetails.last_name}`)) return;
+  
+  await applyExpAdjustment(currentKidDetails.id, amount, reason);
+}
+
+async function customAdjustExp() {
+  if (!currentKidDetails) return;
+  
+  const expInput = document.getElementById('kd-custom-exp');
+  const reasonInput = document.getElementById('kd-custom-reason');
+  
+  const amount = parseInt(expInput.value);
+  const reason = reasonInput.value.trim();
+  
+  if (!amount || isNaN(amount)) {
+    showToast('❌ Įvesk EXP skaičių (gali būti neigiamas)', 'error');
+    return;
+  }
+  
+  if (Math.abs(amount) > 1000) {
+    showToast('❌ EXP korekcija turi būti tarp -1000 ir +1000', 'error');
+    return;
+  }
+  
+  if (!reason || reason.length < 3) {
+    showToast('❌ Privalom įvesti priežastį (min. 3 simboliai)', 'error');
+    return;
+  }
+  
+  await applyExpAdjustment(currentKidDetails.id, amount, reason);
+  
+  // Reset inputs
+  expInput.value = '';
+  reasonInput.value = '';
+}
+
+async function applyExpAdjustment(kidId, amount, reason) {
+  try {
+    // 1. Pridedam į kid_exp_adjustments lentelę
+    const { error: adjErr } = await sb.from('kid_exp_adjustments').insert({
+      kid_id: kidId,
+      trainer_id: currentUser.id,
+      exp_change: amount,
+      reason: reason
+    });
+    
+    if (adjErr) throw adjErr;
+    
+    // 2. Atnaujinam vaiko total_exp ir current_level
+    const newExp = Math.max(0, (currentKidDetails.total_exp || 0) + amount);
+    const newLevel = Math.min(36, 1 + Math.floor(newExp / 200));
+    
+    const { error: kidErr } = await sb.from('kids')
+      .update({ 
+        total_exp: newExp,
+        current_level: newLevel
+      })
+      .eq('id', kidId);
+    
+    if (kidErr) throw kidErr;
+    
+    // Lokaliai atnaujinam (kad UI iškart parodytų)
+    currentKidDetails.total_exp = newExp;
+    currentKidDetails.current_level = newLevel;
+    document.getElementById('kd-exp').textContent = newExp.toLocaleString();
+    document.getElementById('kd-level').textContent = newLevel;
+    
+    showToast(amount > 0 ? `✓ Pridėta +${amount} EXP` : `✓ Atimta ${amount} EXP`);
+    
+    // Atnaujinam istoriją
+    await loadKidExpHistory(kidId);
+    
+    // Atnaujinam grupių sąrašą (kad EXP atsinaujintų)
+    await loadTrainerGroups();
+    
+  } catch (error) {
+    console.error('applyExpAdjustment error:', error);
     showToast('❌ Klaida: ' + error.message, 'error');
   }
 }
