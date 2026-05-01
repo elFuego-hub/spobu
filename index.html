@@ -71,6 +71,7 @@ body.am{padding:20px 0;justify-content:flex-start;}
   .ds { width: 100% !important; border-radius: 0 !important; }
   .ph { width: 100% !important; min-height: 100vh !important; }
   .sc { min-height: 100vh !important; }
+  .sb { display: none !important; }  /* Slepiu fake status bar - tikras telefonas turi savo */
 }
 
 /* TOGGLE - pilna mobile peržiūra desktop'e */
@@ -79,6 +80,7 @@ body.full-mobile-preview .ds { width: 100% !important; border-radius: 0 !importa
 body.full-mobile-preview .ph { width: 100% !important; min-height: 100vh !important; }
 body.full-mobile-preview .sc { min-height: 100vh !important; }
 body.full-mobile-preview { padding: 0 !important; }
+body.full-mobile-preview .sb { display: none !important; }  /* Tas pats toggle režime */
 .sc{display:none;flex-direction:column;min-height:780px;}
 .sc.on{display:flex;}
 .sa{overflow-y:auto;flex:1;padding-bottom:8px;}
