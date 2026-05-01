@@ -63,6 +63,22 @@ body.am{padding:20px 0;justify-content:flex-start;}
 .df{width:390px;background:#0D0D0D;border-radius:48px;padding:12px;box-shadow:0 40px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06);}
 .ds{width:366px;border-radius:38px;overflow:hidden;background:var(--bg);}
 .ph{width:366px;min-height:780px;background:var(--bg);}
+
+/* MOBILE - pilnas viewport be ramelių */
+@media (max-width: 500px) {
+  body.am { padding: 0 !important; }
+  .df { width: 100vw !important; max-width: 100% !important; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: var(--bg) !important; }
+  .ds { width: 100% !important; border-radius: 0 !important; }
+  .ph { width: 100% !important; min-height: 100vh !important; }
+  .sc { min-height: 100vh !important; }
+}
+
+/* TOGGLE - pilna mobile peržiūra desktop'e */
+body.full-mobile-preview .df { width: 100vw !important; max-width: 100% !important; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: var(--bg) !important; }
+body.full-mobile-preview .ds { width: 100% !important; border-radius: 0 !important; }
+body.full-mobile-preview .ph { width: 100% !important; min-height: 100vh !important; }
+body.full-mobile-preview .sc { min-height: 100vh !important; }
+body.full-mobile-preview { padding: 0 !important; }
 .sc{display:none;flex-direction:column;min-height:780px;}
 .sc.on{display:flex;}
 .sa{overflow-y:auto;flex:1;padding-bottom:8px;}
@@ -192,6 +208,9 @@ select.inp option{background:#222;}
 </style>
 </head>
 <body>
+
+<!-- DESKTOP MOBILE PREVIEW TOGGLE -->
+<button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
 
 <!-- LOADING -->
 <div class="loading-screen" id="loading">
@@ -1454,6 +1473,33 @@ let currentUser = null;
 let currentProfile = null;
 let currentKid = null;
 let rejectTargetId = null;
+
+// Mobile preview toggle (matomas tik desktop'e)
+function toggleMobilePreview() {
+  document.body.classList.toggle('full-mobile-preview');
+  const btn = document.getElementById('mobile-preview-toggle');
+  if (btn) {
+    if (document.body.classList.contains('full-mobile-preview')) {
+      btn.textContent = '🖥️ DESKTOP';
+      btn.style.background = 'rgba(34,197,94,.2)';
+      btn.style.color = 'var(--grn)';
+      btn.style.borderColor = 'var(--grn)';
+    } else {
+      btn.textContent = '📱 PILNAS MOBILE';
+      btn.style.background = 'rgba(255,77,0,.2)';
+      btn.style.color = 'var(--br)';
+      btn.style.borderColor = 'var(--br)';
+    }
+  }
+}
+
+// Slėpti mygtuką ant tikro mobile (kur viewport jau mažas)
+if (window.innerWidth <= 500) {
+  setTimeout(() => {
+    const btn = document.getElementById('mobile-preview-toggle');
+    if (btn) btn.style.display = 'none';
+  }, 100);
+}
 
 // ════════════════════════════════════════
 // INICIALIZACIJA
@@ -3562,13 +3608,13 @@ async function loadTrainerGroups() {
           ${kidsInGroup.length > 0 ? `
             <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
               ${kidsInGroup.map(k => `
-                <div onclick="openKidDetailsModal('${k.id}')" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='${groupColor}';" onmouseout="this.style.borderColor='var(--bdr)';">
-                  <div style="width:34px;height:34px;border-radius:50%;background:${groupColor};display:flex;align-items:center;justify-content:center;color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${k.first_name?.[0]||'?'}</div>
-                  <div style="flex:1;min-width:0;">
+                <div onclick="openKidDetailsModal('${k.id}')" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+                  <div style="width:34px;height:34px;border-radius:50%;background:${groupColor};display:flex;align-items:center;justify-content:center;color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;pointer-events:none;">${k.first_name?.[0]||'?'}</div>
+                  <div style="flex:1;min-width:0;pointer-events:none;">
                     <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
                     <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
                   </div>
-                  <button onclick="event.stopPropagation(); removeKidFromGroup('${k.id}')" style="background:transparent;color:var(--mut);border:none;cursor:pointer;font-size:18px;padding:4px 8px;" title="Pašalinti iš grupės">✕</button>
+                  <button onclick="event.stopPropagation(); removeKidFromGroup('${k.id}')" style="background:transparent;color:var(--mut);border:none;cursor:pointer;font-size:18px;padding:8px 12px;flex-shrink:0;" title="Pašalinti iš grupės">✕</button>
                 </div>
               `).join('')}
             </div>
@@ -3600,9 +3646,9 @@ async function loadTrainerGroups() {
         <div id="group-kids-ungrouped" style="display:none;padding:0 14px 14px;border-top:.5px solid var(--bdr);">
           <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
             ${ungroupedKids.map(k => `
-              <div onclick="openKidDetailsModal('${k.id}')" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--mut)';" onmouseout="this.style.borderColor='var(--bdr)';">
-                <div style="width:34px;height:34px;border-radius:50%;background:var(--bdr);display:flex;align-items:center;justify-content:center;color:var(--mut);font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${k.first_name?.[0]||'?'}</div>
-                <div style="flex:1;min-width:0;">
+              <div onclick="openKidDetailsModal('${k.id}')" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .2s;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+                <div style="width:34px;height:34px;border-radius:50%;background:var(--bdr);display:flex;align-items:center;justify-content:center;color:var(--mut);font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;pointer-events:none;">${k.first_name?.[0]||'?'}</div>
+                <div style="flex:1;min-width:0;pointer-events:none;">
                   <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
                   <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
                 </div>
