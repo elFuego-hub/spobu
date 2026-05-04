@@ -7,8 +7,28 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF4D00">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
-<!-- SUPABASE SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- SUPABASE SDK - su fallback -->
+<script>
+// Bandysim ikrauti Supabase iš kelių CDN
+window.supabaseCDNAttempts = 0;
+window.tryLoadSupabase = function(cdnUrl, cdnName) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = cdnUrl;
+    script.onload = () => {
+      console.log('✅ Supabase užkrautas iš:', cdnName);
+      resolve();
+    };
+    script.onerror = () => {
+      console.error('❌ Nepavyko užkrauti iš:', cdnName);
+      reject(new Error('Failed: ' + cdnName));
+    };
+    document.head.appendChild(script);
+  });
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" 
+        onerror="document.write('<scr'+'ipt src=\'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js\'><\/scr'+'ipt>')"></script>
 <script>
 // GLOBAL ERROR CATCHER - rodo VISKĄ ant ekrano (debugging)
 window.addEventListener('error', function(e) {
