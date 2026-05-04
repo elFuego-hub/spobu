@@ -4,11 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Spobu</title>
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF4D00">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <!-- SUPABASE SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// GLOBAL ERROR CATCHER - rodo VISKĄ ant ekrano (debugging)
+window.addEventListener('error', function(e) {
+  const errDiv = document.createElement('div');
+  errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;z-index:99999;font-family:monospace;font-size:12px;white-space:pre-wrap;';
+  errDiv.textContent = '❌ JS KLAIDA: ' + e.message + '\nFAILAS: ' + e.filename + ':' + e.lineno;
+  document.body.appendChild(errDiv);
+});
+window.addEventListener('unhandledrejection', function(e) {
+  const errDiv = document.createElement('div');
+  errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:orange;color:white;padding:10px;z-index:99999;font-family:monospace;font-size:12px;white-space:pre-wrap;';
+  errDiv.textContent = '⚠️ PROMISE KLAIDA: ' + (e.reason?.message || e.reason);
+  document.body.appendChild(errDiv);
+});
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--br:#FF4D00;--br2:#FF7A33;--card:#1A1A1A;--bg:#111;--txt:#F5F2ED;--mut:#888;--bdr:rgba(255,255,255,0.08);--grn:#22C55E;--blu:#3B82F6;--pur:#A855F7;--gld:#FFD700;--r:18px;}
