@@ -5304,7 +5304,20 @@ function op(id){
   const loadingEl = document.getElementById('loading');
   if (loadingEl) loadingEl.style.display = 'none';
   
-  document.getElementById('ps').style.display='none';
+  // KRITIŠKAI SVARBU: pirmiausia paslėpti VISUS portal'us ir auth ekranus
+  ['auth-login','auth-register','auth-forgot','ps'].forEach(eid => {
+    const el = document.getElementById(eid);
+    if (el) el.style.display = 'none';
+  });
+  Object.values(portals).forEach(p => {
+    const el = document.getElementById(p);
+    if (el) el.style.display = 'none';
+  });
+  // Taip pat paslėpti pending approval ekraną jei egzistuoja
+  const pendingEl = document.getElementById('pending-approval-screen');
+  if (pendingEl) pendingEl.style.display = 'none';
+  
+  // Tada rodyti TIK pasirinktą portal'ą
   document.getElementById(portals[id]).style.display='';
   document.getElementById('sw').style.display='';
   document.body.classList.add('am');
