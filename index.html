@@ -1669,11 +1669,15 @@ async function checkApprovalStatus() {
 }
 
 async function afterLogin() {
+  console.log('🚀 [afterLogin] STARTAS, user:', currentUser?.email);
+  
   // Gauti profilį (BE clubs JOIN, kad neluštų jei nėra klubo)
+  console.log('🔍 [afterLogin] 1. Kraunam profile...');
   let { data: profile, error: profileErr } = await sb.from('profiles')
     .select('*')
     .eq('id', currentUser.id)
     .single();
+  console.log('📦 [afterLogin] profile:', profile, 'error:', profileErr);
 
   // Jei profile nėra - pabandykim sukurti (vaikams kurie turi auth.users bet ne profile)
   if (profileErr || !profile) {
@@ -1696,22 +1700,24 @@ async function afterLogin() {
   }
 
   if (profileErr || !profile) {
-    console.error('Profile error:', profileErr);
+    console.error('❌ [afterLogin] Profile error:', profileErr);
     showToast('❌ Paskyra nėra sukurta. Kreipkis į administratorių.', 'error', 6000);
     await sb.auth.signOut();
     return;
   }
 
   currentProfile = profile;
+  console.log('✅ [afterLogin] 2. Profile gautas. Rolė:', profile.role, 'Status:', profile.status);
   
   // PATIKRINIMAS: ar paskyra patvirtinta?
   if (profile.status === 'pending' && (profile.role === 'kid' || profile.role === 'parent')) {
-    // Rodyti "Laukia patvirtinimo" ekraną
+    console.log('⏳ [afterLogin] Pending approval ekranas');
     showPendingApprovalScreen(profile);
     return;
   }
   
   if (profile.status === 'suspended') {
+    console.log('🚫 [afterLogin] Suspended');
     showToast('❌ Tavo paskyra buvo atmesta. Kreipkis į trenerį.', 'error', 8000);
     await sb.auth.signOut();
     return;
@@ -1719,10 +1725,12 @@ async function afterLogin() {
   
   // Jei yra club_id – atskirai gauname klubą
   if (profile.club_id) {
-    const { data: club } = await sb.from('clubs')
+    console.log('🏢 [afterLogin] 3. Kraunam club_id:', profile.club_id);
+    const { data: club, error: clubErr } = await sb.from('clubs')
       .select('id, name, city')
       .eq('id', profile.club_id)
       .single();
+    console.log('📦 [afterLogin] club:', club, 'error:', clubErr);
     if (club) currentProfile.clubs = club;
   }
   
@@ -1733,40 +1741,51 @@ async function afterLogin() {
   const portal = autoPortal[profile.role];
 
   if (!portal) {
+    console.error('❌ [afterLogin] Nežinoma rolė:', profile.role);
     showToast('❌ Nežinoma paskyros rolė: ' + profile.role, 'error');
     return;
   }
 
+  console.log('🎯 [afterLogin] 4. Kraunam duomenis pagal rolę:', profile.role);
+
   // Pagal rolę krauname tinkamą duomenis
-  if (profile.role === 'admin') {
-    await loadAdminData();
-    op('a');
-  } else if (profile.role === 'club_admin') {
-    await loadClubData();
-    op('k');
-  } else if (profile.role === 'trainer') {
-    subscribeTrainerNotifications();
-    await loadTrainerData();
-    op('tr');
-  } else if (profile.role === 'kid') {
-    // Krauname kid duomenis - ieškom per user_id (NE per id, nes kids.id !== auth.users.id)
-    const { data: kidData } = await sb.from('kids')
-      .select('*').eq('user_id', currentUser.id).maybeSingle();
-    
-    if (!kidData) {
-      showToast('❌ Vaiko duomenys nerasti DB. Kreipkis į administratorių.', 'error', 8000);
-      await sb.auth.signOut();
-      return;
+  try {
+    if (profile.role === 'admin') {
+      await loadAdminData();
+      op('a');
+    } else if (profile.role === 'club_admin') {
+      console.log('🏢 [afterLogin] loadClubData()...');
+      await loadClubData();
+      console.log('✅ [afterLogin] loadClubData baigėsi, rodom portal k');
+      op('k');
+    } else if (profile.role === 'trainer') {
+      subscribeTrainerNotifications();
+      await loadTrainerData();
+      op('tr');
+    } else if (profile.role === 'kid') {
+      // Krauname kid duomenis - ieškom per user_id (NE per id, nes kids.id !== auth.users.id)
+      const { data: kidData } = await sb.from('kids')
+        .select('*').eq('user_id', currentUser.id).maybeSingle();
+      
+      if (!kidData) {
+        showToast('❌ Vaiko duomenys nerasti DB. Kreipkis į administratorių.', 'error', 8000);
+        await sb.auth.signOut();
+        return;
+      }
+      
+      currentKid = kidData;
+      subscribeKidNotifications();
+      await loadKidData();
+      op('v');
+    } else if (profile.role === 'parent') {
+      // Tėvų paskyra
+      await loadParentData();
+      op('t');
     }
-    
-    currentKid = kidData;
-    subscribeKidNotifications();
-    await loadKidData();
-    op('v');
-  } else if (profile.role === 'parent') {
-    // Tėvų paskyra
-    await loadParentData();
-    op('t');
+    console.log('🎉 [afterLogin] BAIGTA SĖKMINGAI');
+  } catch (e) {
+    console.error('❌ [afterLogin] EXCEPTION rolės kraunant:', e);
+    showToast('❌ Klaida kraunant duomenis: ' + e.message, 'error', 8000);
   }
 }
 
@@ -4431,20 +4450,25 @@ async function submitNewClub() {
 let currentClub = null;
 
 async function loadClubData() {
-  if (!currentProfile) return;
+  console.log('🏢 [loadClubData] STARTAS, user_id:', currentUser?.id);
+  if (!currentProfile) { console.warn('🚫 [loadClubData] Nėra currentProfile!'); return; }
 
   // Gaunam klubą, kuriam šis vartotojas yra admin
+  console.log('🔍 [loadClubData] 1. Ieškom klubo pagal admin_profile_id...');
   const { data: club, error } = await sb.from('clubs')
     .select('*, sports(name, icon)')
     .eq('admin_profile_id', currentUser.id)
     .single();
+  console.log('📦 [loadClubData] club:', club, 'error:', error);
 
   if (error || !club) {
+    console.error('❌ [loadClubData] Klubas nerastas!', error);
     showToast('❌ Šis klubas dar nepriskirtas. Susisiek su admin.', 'error', 5000);
     return;
   }
 
   currentClub = club;
+  console.log('✅ [loadClubData] 2. Klubas gautas:', club.name);
 
   // Atnaujinam UI
   document.getElementById('k-club-name').textContent = club.name.toUpperCase();
@@ -5275,6 +5299,11 @@ async function startPayment() {
 // ════════════════════════════════════════
 const portals={v:'pv',t:'pt',tr:'ptr',k:'pk',a:'pa'};
 function op(id){
+  console.log('🎬 [op] Atidarom portal:', id);
+  // Užtikrintai slėpiame loading
+  const loadingEl = document.getElementById('loading');
+  if (loadingEl) loadingEl.style.display = 'none';
+  
   document.getElementById('ps').style.display='none';
   document.getElementById(portals[id]).style.display='';
   document.getElementById('sw').style.display='';
