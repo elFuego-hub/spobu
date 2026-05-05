@@ -1594,9 +1594,14 @@ async function init() {
   }
   document.getElementById('loading').style.display = 'none';
 
-  // PWA service worker
+  // PWA service worker - LAIKINAI IŠJUNGTA + senų unregister
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(reg => {
+        console.log('🗑️ Naikinam senų service worker:', reg.scope);
+        reg.unregister();
+      });
+    }).catch(() => {});
   }
 
   // Realaus laiko prisijungimas
