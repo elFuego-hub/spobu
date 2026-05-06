@@ -2280,7 +2280,19 @@ async function akSubmit() {
     
     const kidId = newKid.id;
     
-    // 2. Susiejam su tėvais
+    // 2a. Sukuriam kid_trainers įrašą (M:N sistema – pagrindinis treneris)
+    const { error: ktError } = await sb.from('kid_trainers').insert({
+      kid_id: kidId,
+      trainer_id: akData.trainer_id,
+      role: 'primary',
+      assigned_by: currentUser.id
+    });
+    if (ktError) {
+      console.warn('⚠️ kid_trainers insert klaida (toleruojama):', ktError);
+      // Nelūštam – assigned_trainer_id jau įrašytas, sistema veiks legacy režimu
+    }
+    
+    // 2b. Susiejam su tėvais
     const { error: linkError } = await sb.from('kid_parent_links').insert({
       kid_id: kidId,
       parent_id: currentUser.id,
@@ -3361,6 +3373,30 @@ async function toggleAnon() {
 // ════════════════════════════════════════
 // TRENERIS
 // ════════════════════════════════════════
+
+// HELPER: Gauti VISUS šio trenerio vaikų ID (primary + assistant)
+// Su fallback į legacy assigned_trainer_id (jei kid_trainers tuščia)
+async function getMyKidIds(onlyPrimary = false) {
+  let query = sb.from('kid_trainers')
+    .select('kid_id')
+    .eq('trainer_id', currentUser.id);
+  if (onlyPrimary) query = query.eq('role', 'primary');
+  
+  const { data: ktLinks, error } = await query;
+  
+  if (error) {
+    console.warn('⚠️ kid_trainers query failed, fallback į assigned_trainer_id:', error);
+    return null; // null = naudoti legacy assigned_trainer_id
+  }
+  
+  if (!ktLinks || ktLinks.length === 0) {
+    // Galimai šis treneris dar M:N sistemoje neužregistruotas – fallback
+    return null;
+  }
+  
+  return ktLinks.map(l => l.kid_id);
+}
+
 async function loadTrainerData() {
   if (!currentProfile) return;
   const name = `${currentProfile.first_name} ${currentProfile.last_name}`.toUpperCase();
@@ -3374,12 +3410,33 @@ async function loadTrainerData() {
 }
 
 async function loadNewKids() {
-  // Naujieji vaikai laukia patvirtinimo (assigned_trainer_id = man, status='pending')
-  const { data: kids, error } = await sb.from('kids')
-    .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id')
-    .eq('assigned_trainer_id', currentUser.id)
-    .eq('approval_status', 'pending')
-    .order('created_at', { ascending: false });
+  // M:N sistema: tik PAGRINDINIS treneris (primary) tvirtina anketas
+  const myKidIds = await getMyKidIds(true); // onlyPrimary=true
+  
+  let kids = null, error = null;
+  
+  if (myKidIds === null) {
+    // Fallback į legacy assigned_trainer_id
+    const result = await sb.from('kids')
+      .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id')
+      .eq('assigned_trainer_id', currentUser.id)
+      .eq('approval_status', 'pending')
+      .order('created_at', { ascending: false });
+    kids = result.data;
+    error = result.error;
+  } else if (myKidIds.length > 0) {
+    // M:N kelias
+    const result = await sb.from('kids')
+      .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id')
+      .in('id', myKidIds)
+      .eq('approval_status', 'pending')
+      .order('created_at', { ascending: false });
+    kids = result.data;
+    error = result.error;
+  } else {
+    // Tuščias rezultatas
+    kids = [];
+  }
   
   if (error) {
     console.error('loadNewKids error:', error);
@@ -3589,12 +3646,31 @@ async function approveSubmission(subId) {
 }
 
 async function loadTrainerMembers() {
-  const { data: members } = await sb.from('kids')
-    .select('id, first_name, last_name, total_exp, current_level, group_id')
-    .eq('assigned_trainer_id', currentUser.id)
-    .eq('approval_status', 'approved')
-    .order('total_exp',{ascending:false})
-    .limit(5);
+  // M:N: rodom VISUS šio trenerio vaikus (primary + assistant)
+  const myKidIds = await getMyKidIds(false); // false = visi treneriai
+  
+  let members = null;
+  
+  if (myKidIds === null) {
+    // Legacy fallback
+    const result = await sb.from('kids')
+      .select('id, first_name, last_name, total_exp, current_level, group_id')
+      .eq('assigned_trainer_id', currentUser.id)
+      .eq('approval_status', 'approved')
+      .order('total_exp',{ascending:false})
+      .limit(5);
+    members = result.data;
+  } else if (myKidIds.length > 0) {
+    const result = await sb.from('kids')
+      .select('id, first_name, last_name, total_exp, current_level, group_id')
+      .in('id', myKidIds)
+      .eq('approval_status', 'approved')
+      .order('total_exp',{ascending:false})
+      .limit(5);
+    members = result.data;
+  } else {
+    members = [];
+  }
 
   if (!members?.length) {
     document.getElementById('tr-members-preview').innerHTML =
@@ -3637,12 +3713,26 @@ async function loadTrainerGroups() {
     return;
   }
   
-  // 2. Užkrauname visus trenerio vaikus (su jų group_id)
-  const { data: kids } = await sb.from('kids')
-    .select('id, first_name, last_name, total_exp, current_level, kyu, weight_range, group_id, gender, birth_date, birth_year')
-    .eq('assigned_trainer_id', currentUser.id)
-    .eq('approval_status', 'approved')
-    .order('first_name');
+  // 2. Užkrauname visus trenerio vaikus (M:N: visi primary + assistant)
+  const myKidIds = await getMyKidIds(false);
+  let kids = null;
+  if (myKidIds === null) {
+    const result = await sb.from('kids')
+      .select('id, first_name, last_name, total_exp, current_level, kyu, weight_range, group_id, gender, birth_date, birth_year')
+      .eq('assigned_trainer_id', currentUser.id)
+      .eq('approval_status', 'approved')
+      .order('first_name');
+    kids = result.data;
+  } else if (myKidIds.length > 0) {
+    const result = await sb.from('kids')
+      .select('id, first_name, last_name, total_exp, current_level, kyu, weight_range, group_id, gender, birth_date, birth_year')
+      .in('id', myKidIds)
+      .eq('approval_status', 'approved')
+      .order('first_name');
+    kids = result.data;
+  } else {
+    kids = [];
+  }
   
   allTrainerKids = kids || [];
   
@@ -4250,28 +4340,58 @@ async function applyExpAdjustment(kidId, amount, reason) {
 // ADMIN PASKYRA
 // ════════════════════════════════════════
 async function loadAdminData() {
-  if (!currentProfile) return;
+  console.log('👑 [loadAdminData] STARTAS, user:', currentUser?.email);
+  if (!currentProfile) { console.warn('🚫 [loadAdminData] Nėra currentProfile!'); return; }
+  
+  console.log('👑 [loadAdminData] 1. Atnaujinam UI laukus...');
   const name = `${currentProfile.first_name || 'Admin'} ${currentProfile.last_name || ''}`.toUpperCase();
-  document.getElementById('a-name').textContent = name;
-  document.getElementById('a-avatar').textContent = (currentProfile.first_name?.[0] || 'A').toUpperCase();
-  document.getElementById('a-prof-avatar').textContent = (currentProfile.first_name?.[0] || 'A').toUpperCase();
-  document.getElementById('a-prof-name').textContent = name;
+  
+  const aName = document.getElementById('a-name');
+  const aAvatar = document.getElementById('a-avatar');
+  const aProfAvatar = document.getElementById('a-prof-avatar');
+  const aProfName = document.getElementById('a-prof-name');
+  
+  if (!aName) console.error('❌ [loadAdminData] a-name elementas nerastas!');
+  if (!aAvatar) console.error('❌ [loadAdminData] a-avatar elementas nerastas!');
+  
+  if (aName) aName.textContent = name;
+  if (aAvatar) aAvatar.textContent = (currentProfile.first_name?.[0] || 'A').toUpperCase();
+  if (aProfAvatar) aProfAvatar.textContent = (currentProfile.first_name?.[0] || 'A').toUpperCase();
+  if (aProfName) aProfName.textContent = name;
 
+  console.log('👑 [loadAdminData] 2. Kraunam statistikas...');
   // Statistikos
-  const [clubsRes, trainersRes, kidsRes, parentsRes] = await Promise.all([
-    sb.from('clubs').select('id', { count: 'exact', head: true }),
-    sb.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'trainer'),
-    sb.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'kid'),
-    sb.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'parent')
-  ]);
+  try {
+    const [clubsRes, trainersRes, kidsRes, parentsRes] = await Promise.all([
+      sb.from('clubs').select('id', { count: 'exact', head: true }),
+      sb.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'trainer'),
+      sb.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'kid'),
+      sb.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'parent')
+    ]);
+    console.log('📊 [loadAdminData] Statistikos:', {
+      clubs: clubsRes.count, clubsErr: clubsRes.error,
+      trainers: trainersRes.count, trainersErr: trainersRes.error,
+      kids: kidsRes.count, kidsErr: kidsRes.error,
+      parents: parentsRes.count, parentsErr: parentsRes.error
+    });
 
-  document.getElementById('a-clubs-count').textContent = clubsRes.count || 0;
-  document.getElementById('a-trainers-count').textContent = trainersRes.count || 0;
-  document.getElementById('a-kids-count').textContent = kidsRes.count || 0;
-  document.getElementById('a-parents-count').textContent = parentsRes.count || 0;
+    const clubsCountEl = document.getElementById('a-clubs-count');
+    const trainersCountEl = document.getElementById('a-trainers-count');
+    const kidsCountEl = document.getElementById('a-kids-count');
+    const parentsCountEl = document.getElementById('a-parents-count');
+    
+    if (clubsCountEl) clubsCountEl.textContent = clubsRes.count || 0;
+    if (trainersCountEl) trainersCountEl.textContent = trainersRes.count || 0;
+    if (kidsCountEl) kidsCountEl.textContent = kidsRes.count || 0;
+    if (parentsCountEl) parentsCountEl.textContent = parentsRes.count || 0;
+  } catch (e) {
+    console.error('❌ [loadAdminData] Statistikų klaida:', e);
+  }
 
+  console.log('👑 [loadAdminData] 3. Kraunam klubų sąrašą...');
   // Klubų sąrašas
   await loadAdminClubs();
+  console.log('✅ [loadAdminData] BAIGTA');
 }
 
 async function loadAdminClubs() {
@@ -5212,7 +5332,25 @@ async function submitExerciseResult() {
     return;
   }
   
-  if (!currentKid?.assigned_trainer_id) {
+  // M:N: surasti trenerį per kid_trainers (primary), fallback į assigned_trainer_id
+  let trainerId = null;
+  const kidId = currentKid?.id || currentUser.id;
+  
+  // Bandom rasti per kid_trainers (paimame primary)
+  const { data: ktLink } = await sb.from('kid_trainers')
+    .select('trainer_id')
+    .eq('kid_id', kidId)
+    .eq('role', 'primary')
+    .maybeSingle();
+  
+  if (ktLink?.trainer_id) {
+    trainerId = ktLink.trainer_id;
+  } else if (currentKid?.assigned_trainer_id) {
+    // Fallback į legacy
+    trainerId = currentKid.assigned_trainer_id;
+  }
+  
+  if (!trainerId) {
     showToast('❌ Treneris dar nepriskirtas. Susisiek su klubu.', 'error', 4000);
     return;
   }
@@ -5246,10 +5384,10 @@ async function submitExerciseResult() {
   btn.style.opacity = '.6';
 
   const { error } = await sb.from('result_submissions').insert({
-    kid_id: currentKid?.id || currentUser.id,
+    kid_id: kidId,
     exercise_id: currentExercise.id,
     category_id: currentExercise.category_id,
-    trainer_id: currentKid.assigned_trainer_id,
+    trainer_id: trainerId,
     old_pr: oldPr,
     new_value: newVal,
     value: newVal,
