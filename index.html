@@ -1262,7 +1262,7 @@ select.inp option{background:#222;}
     <!-- ===== EKRANAS 3: KLUBAS + TRENERIS ===== -->
     <div id="ak-screen-3" style="display:none;">
       <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
-        Į kurį klubą priklausys vaikas?
+        Pasirink klubą ir trenerius
       </div>
       
       <label class="lbl">KLUBAS</label>
@@ -1270,12 +1270,37 @@ select.inp option{background:#222;}
         <option value="">Pasirinkti klubą...</option>
       </select>
       
-      <label class="lbl">TRENERIS</label>
-      <select class="inp" id="ak-trainer" style="margin-bottom:14px;" disabled>
+      <label class="lbl">PAGRINDINIS TRENERIS *</label>
+      <select class="inp" id="ak-trainer" style="margin-bottom:6px;" disabled onchange="akOnPrimaryTrainerChange()">
         <option value="">Pirma pasirink klubą...</option>
       </select>
       <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;">
-        💡 Treneris gaus pranešimą ir patvirtins vaiko paskyrą
+        💡 Tvirtina anketą, valdo EXP, gauna pranešimus
+      </div>
+      
+      <!-- Pavaduojantis 1 (atsiranda po pagrindinio) -->
+      <div id="ak-assistant-1-wrap" style="display:none;">
+        <label class="lbl" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>PAVADUOJANTIS TRENERIS 1</span>
+          <span style="font-size:10px;color:var(--mut);font-weight:400;">nebūtina</span>
+        </label>
+        <select class="inp" id="ak-assistant-1" style="margin-bottom:6px;" onchange="akOnAssistant1Change()">
+          <option value="">Be pavaduojančio</option>
+        </select>
+        <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;">
+          💡 Mato vaiką, gali skirti iššūkius, bet netvirtina anketos
+        </div>
+      </div>
+
+      <!-- Pavaduojantis 2 (atsiranda po pavaduojančio 1) -->
+      <div id="ak-assistant-2-wrap" style="display:none;">
+        <label class="lbl" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>PAVADUOJANTIS TRENERIS 2</span>
+          <span style="font-size:10px;color:var(--mut);font-weight:400;">nebūtina</span>
+        </label>
+        <select class="inp" id="ak-assistant-2" style="margin-bottom:14px;">
+          <option value="">Be antrojo pavaduojančio</option>
+        </select>
       </div>
       
       <button class="btn-auth" onclick="akNext(3)">TĘSTI →</button>
@@ -1903,6 +1928,10 @@ let akData = {
   club_name: null,
   trainer_id: null,
   trainer_name: null,
+  assistant_1_id: null,
+  assistant_1_name: null,
+  assistant_2_id: null,
+  assistant_2_name: null,
   has_phone: false,
   kid_email: null
 };
@@ -1913,7 +1942,10 @@ async function openAddKidWizard() {
     sport_id: null, sport_name: null, fname: '', lname: '', gender: 'male',
     birth_year: null, birth_month: null, birth_day: null, birth_date: null,
     weight_range: null, kyu: null, club_id: null, club_name: null,
-    trainer_id: null, trainer_name: null, has_phone: false, kid_email: null
+    trainer_id: null, trainer_name: null,
+    assistant_1_id: null, assistant_1_name: null,
+    assistant_2_id: null, assistant_2_name: null,
+    has_phone: false, kid_email: null
   };
   
   // Reset forms
@@ -2123,13 +2155,25 @@ async function akLoadClubs() {
   document.getElementById('ak-trainer').disabled = true;
 }
 
+// Globali kintamoji – išsaugom klubo trenerius pakartotiniam naudojimui
+let akClubTrainers = [];
+
 async function akLoadTrainers() {
   const clubId = document.getElementById('ak-club').value;
   const trainerSelect = document.getElementById('ak-trainer');
   
+  // Resetinam pavaduojančius dropdown'us
+  document.getElementById('ak-assistant-1-wrap').style.display = 'none';
+  document.getElementById('ak-assistant-2-wrap').style.display = 'none';
+  document.getElementById('ak-assistant-1').value = '';
+  document.getElementById('ak-assistant-2').value = '';
+  akData.assistant_1_id = null;
+  akData.assistant_2_id = null;
+  
   if (!clubId) {
     trainerSelect.innerHTML = '<option value="">Pirma pasirink klubą...</option>';
     trainerSelect.disabled = true;
+    akClubTrainers = [];
     return;
   }
   
@@ -2140,6 +2184,8 @@ async function akLoadTrainers() {
     .select('id, profiles!inner(first_name, last_name)')
     .eq('invited_by_club_id', clubId)
     .eq('is_active', true);
+  
+  akClubTrainers = trainers || [];
   
   if (!trainers || trainers.length === 0) {
     trainerSelect.innerHTML = '<option value="">Nėra registruotų trenerių...</option>';
@@ -2153,6 +2199,59 @@ async function akLoadTrainers() {
       return `<option value="${t.id}" data-name="${name}">${name}</option>`;
     }).join('');
   trainerSelect.disabled = false;
+}
+
+// Helper: užpildyti dropdown'ą su treneriais, IŠSKYRUS tam tikrus ID'us
+function akFillTrainerDropdown(selectEl, excludeIds, placeholder) {
+  const exclude = new Set(excludeIds.filter(Boolean));
+  const filtered = akClubTrainers.filter(t => !exclude.has(t.id));
+  
+  selectEl.innerHTML = `<option value="">${placeholder}</option>` +
+    filtered.map(t => {
+      const name = `${t.profiles?.first_name || 'Vardas'} ${t.profiles?.last_name || ''}`.trim();
+      return `<option value="${t.id}" data-name="${name}">${name}</option>`;
+    }).join('');
+}
+
+// Kai pasikeičia pagrindinis treneris – parodyti pavaduojančių 1 dropdown'ą
+function akOnPrimaryTrainerChange() {
+  const primaryId = document.getElementById('ak-trainer').value;
+  
+  // Resetinam pavaduojančius
+  document.getElementById('ak-assistant-1').value = '';
+  document.getElementById('ak-assistant-2').value = '';
+  document.getElementById('ak-assistant-2-wrap').style.display = 'none';
+  akData.assistant_1_id = null;
+  akData.assistant_2_id = null;
+  
+  if (!primaryId) {
+    document.getElementById('ak-assistant-1-wrap').style.display = 'none';
+    return;
+  }
+  
+  // Užpildyti pavaduojantis 1 dropdown'ą (be pagrindinio)
+  const sel1 = document.getElementById('ak-assistant-1');
+  akFillTrainerDropdown(sel1, [primaryId], 'Be pavaduojančio');
+  document.getElementById('ak-assistant-1-wrap').style.display = 'block';
+}
+
+// Kai pasikeičia pavaduojantis 1 – parodyti pavaduojančių 2 dropdown'ą
+function akOnAssistant1Change() {
+  const primaryId = document.getElementById('ak-trainer').value;
+  const assistant1Id = document.getElementById('ak-assistant-1').value;
+  
+  document.getElementById('ak-assistant-2').value = '';
+  akData.assistant_2_id = null;
+  
+  if (!assistant1Id) {
+    document.getElementById('ak-assistant-2-wrap').style.display = 'none';
+    return;
+  }
+  
+  // Užpildyti pavaduojantis 2 dropdown'ą (be pagrindinio ir pavaduojančio 1)
+  const sel2 = document.getElementById('ak-assistant-2');
+  akFillTrainerDropdown(sel2, [primaryId, assistant1Id], 'Be antrojo pavaduojančio');
+  document.getElementById('ak-assistant-2-wrap').style.display = 'block';
 }
 
 function akNext(currentScreen) {
@@ -2213,13 +2312,21 @@ function akNext(currentScreen) {
   else if (currentScreen === 3) {
     const clubId = document.getElementById('ak-club').value;
     const trainerId = document.getElementById('ak-trainer').value;
+    const assistant1Id = document.getElementById('ak-assistant-1').value || null;
+    const assistant2Id = document.getElementById('ak-assistant-2').value || null;
     
     if (!clubId) { showErr(errEl, 'Pasirink klubą'); return; }
-    if (!trainerId) { showErr(errEl, 'Pasirink trenerį'); return; }
+    if (!trainerId) { showErr(errEl, 'Pasirink pagrindinį trenerį'); return; }
     
     akData.club_id = clubId;
     akData.trainer_id = trainerId;
     akData.trainer_name = document.getElementById('ak-trainer').options[document.getElementById('ak-trainer').selectedIndex]?.dataset?.name || '';
+    
+    // M:N: pavaduojančių ID (gali būti null)
+    akData.assistant_1_id = assistant1Id;
+    akData.assistant_1_name = assistant1Id ? document.getElementById('ak-assistant-1').options[document.getElementById('ak-assistant-1').selectedIndex]?.dataset?.name || '' : null;
+    akData.assistant_2_id = assistant2Id;
+    akData.assistant_2_name = assistant2Id ? document.getElementById('ak-assistant-2').options[document.getElementById('ak-assistant-2').selectedIndex]?.dataset?.name || '' : null;
     
     akShowScreen(4);
   }
@@ -2280,16 +2387,40 @@ async function akSubmit() {
     
     const kidId = newKid.id;
     
-    // 2a. Sukuriam kid_trainers įrašą (M:N sistema – pagrindinis treneris)
-    const { error: ktError } = await sb.from('kid_trainers').insert({
-      kid_id: kidId,
-      trainer_id: akData.trainer_id,
-      role: 'primary',
-      assigned_by: currentUser.id
-    });
+    // 2a. Sukuriam kid_trainers įrašus (M:N sistema)
+    const trainerInserts = [
+      {
+        kid_id: kidId,
+        trainer_id: akData.trainer_id,
+        role: 'primary',
+        assigned_by: currentUser.id
+      }
+    ];
+    
+    // Pridėti pavaduojančius (jei pasirinkti)
+    if (akData.assistant_1_id) {
+      trainerInserts.push({
+        kid_id: kidId,
+        trainer_id: akData.assistant_1_id,
+        role: 'assistant',
+        assigned_by: currentUser.id
+      });
+    }
+    if (akData.assistant_2_id) {
+      trainerInserts.push({
+        kid_id: kidId,
+        trainer_id: akData.assistant_2_id,
+        role: 'assistant',
+        assigned_by: currentUser.id
+      });
+    }
+    
+    const { error: ktError } = await sb.from('kid_trainers').insert(trainerInserts);
     if (ktError) {
       console.warn('⚠️ kid_trainers insert klaida (toleruojama):', ktError);
       // Nelūštam – assigned_trainer_id jau įrašytas, sistema veiks legacy režimu
+    } else {
+      console.log(`✅ Sukurta ${trainerInserts.length} kid_trainers įrašų (1 primary + ${trainerInserts.length - 1} assistant)`);
     }
     
     // 2b. Susiejam su tėvais
@@ -2359,12 +2490,20 @@ async function akSubmit() {
     }
     
     // 4. Success
+    let trainersList = `<div style="font-size:11px;color:var(--mut);">Pagrindinis treneris: <strong style="color:var(--text);">${akData.trainer_name}</strong></div>`;
+    if (akData.assistant_1_name) {
+      trainersList += `<div style="font-size:11px;color:var(--mut);">Pavaduojantis: ${akData.assistant_1_name}</div>`;
+    }
+    if (akData.assistant_2_name) {
+      trainersList += `<div style="font-size:11px;color:var(--mut);">Pavaduojantis: ${akData.assistant_2_name}</div>`;
+    }
+    
     let successHTML = `
       <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
         <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">✓ Vaikas pridėtas</div>
         <div style="font-size:12px;">${akData.fname} ${akData.lname}</div>
         <div style="font-size:11px;color:var(--mut);margin-top:4px;">Klubas: ${akData.club_name}</div>
-        <div style="font-size:11px;color:var(--mut);">Treneris: ${akData.trainer_name}</div>
+        ${trainersList}
       </div>
     `;
     
@@ -2385,7 +2524,7 @@ async function akSubmit() {
       <div style="background:rgba(255,77,0,.1);border:.5px solid var(--br);border-radius:10px;padding:12px;">
         <div style="font-weight:900;color:var(--br);margin-bottom:6px;">⏳ Laukia trenerio patvirtinimo</div>
         <div style="font-size:12px;line-height:1.5;">
-          Treneris <strong>${akData.trainer_name}</strong> gaus pranešimą.<br>
+          Pagrindinis treneris <strong>${akData.trainer_name}</strong> gaus pranešimą ir patvirtins anketą.<br>
           Po patvirtinimo vaikas pilnai naudosis platforma.
         </div>
       </div>
