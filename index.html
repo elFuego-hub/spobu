@@ -4267,11 +4267,21 @@ async function submitAssignKids() {
 let currentKidDetails = null;
 
 async function openKidDetailsModal(kidId) {
+  console.log('🔵 [openKidDetailsModal] STARTAS, kidId:', kidId);
+  
   // Užkrauname pilną vaiko info iš DB
   const { data: fullKid, error: fkErr } = await sb.from('kids').select('*').eq('id', kidId).single();
   if (fkErr || !fullKid) {
-    console.error('openKidDetailsModal:', fkErr);
-    showToast('❌ Klaida kraunant duomenis');
+    console.error('❌ [openKidDetailsModal] DB klaida:', fkErr);
+    showToast('❌ Klaida kraunant duomenis: ' + (fkErr?.message || 'nežinoma'), 'error', 5000);
+    return;
+  }
+  console.log('✅ [openKidDetailsModal] Vaikas užkrautas:', fullKid.first_name);
+  
+  // Patikrinti ar reikalingas elementas egzistuoja
+  const modalEl = document.getElementById('kid-details-modal');
+  if (!modalEl) {
+    console.error('❌ [openKidDetailsModal] kid-details-modal elementas nerastas DOM\'e!');
     return;
   }
   
