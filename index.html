@@ -2387,7 +2387,20 @@ async function akSubmit() {
     
     const kidId = newKid.id;
     
-    // 2a. Sukuriam kid_trainers įrašus (M:N sistema)
+    // 2a. PIRMIAUSIA susiejam su tėvais (kad RLS leistų vėliau pridėti kid_trainers)
+    const { error: linkError } = await sb.from('kid_parent_links').insert({
+      kid_id: kidId,
+      parent_id: currentUser.id,
+      is_primary: true
+    });
+    
+    if (linkError) {
+      console.error('Link error:', linkError);
+      throw new Error('Susiejimo klaida: ' + linkError.message);
+    }
+    
+    // 2b. DABAR sukuriam kid_trainers įrašus (M:N sistema)
+    // RLS reikalauja kad kid_parent_links jau egzistuotų - todėl jis yra pirma
     const trainerInserts = [
       {
         kid_id: kidId,
@@ -2422,18 +2435,6 @@ async function akSubmit() {
       // Nelūštam – assigned_trainer_id jau įrašytas, sistema veiks legacy režimu
     } else {
       console.log(`✅ Sukurta ${trainerInserts.length} kid_trainers įrašų (1 primary + ${trainerInserts.length - 1} assistant)`);
-    }
-    
-    // 2b. Susiejam su tėvais
-    const { error: linkError } = await sb.from('kid_parent_links').insert({
-      kid_id: kidId,
-      parent_id: currentUser.id,
-      is_primary: true
-    });
-    
-    if (linkError) {
-      console.error('Link error:', linkError);
-      throw new Error('Susiejimo klaida: ' + linkError.message);
     }
     
     // 3. Jei turi telefoną – sukuriam vaiko auth paskyrą per ATSKIRĄ klientą
