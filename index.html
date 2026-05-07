@@ -2417,7 +2417,8 @@ async function akSubmit() {
     
     const { error: ktError } = await sb.from('kid_trainers').insert(trainerInserts);
     if (ktError) {
-      console.warn('⚠️ kid_trainers insert klaida (toleruojama):', ktError);
+      console.error('❌ kid_trainers insert KLAIDA:', ktError);
+      showToast('⚠️ Treneris(-iai) nesusieti su vaiku per M:N. Detalės Console.', 'error', 6000);
       // Nelūštam – assigned_trainer_id jau įrašytas, sistema veiks legacy režimu
     } else {
       console.log(`✅ Sukurta ${trainerInserts.length} kid_trainers įrašų (1 primary + ${trainerInserts.length - 1} assistant)`);
@@ -3513,27 +3514,26 @@ async function toggleAnon() {
 // TRENERIS
 // ════════════════════════════════════════
 
-// HELPER: Gauti VISUS šio trenerio vaikų ID (primary + assistant)
-// Su fallback į legacy assigned_trainer_id (jei kid_trainers tuščia)
+// HELPER: Gauti VISUS šio trenerio vaikų ID
+// Suvienija M:N (kid_trainers) + legacy (kids.assigned_trainer_id) sąrašus
 async function getMyKidIds(onlyPrimary = false) {
-  let query = sb.from('kid_trainers')
+  // 1. M:N kelias
+  let mnQuery = sb.from('kid_trainers')
     .select('kid_id')
     .eq('trainer_id', currentUser.id);
-  if (onlyPrimary) query = query.eq('role', 'primary');
+  if (onlyPrimary) mnQuery = mnQuery.eq('role', 'primary');
   
-  const { data: ktLinks, error } = await query;
+  const { data: ktLinks } = await mnQuery;
+  const mnKidIds = (ktLinks || []).map(l => l.kid_id);
   
-  if (error) {
-    console.warn('⚠️ kid_trainers query failed, fallback į assigned_trainer_id:', error);
-    return null; // null = naudoti legacy assigned_trainer_id
-  }
+  // 2. Legacy kelias - kids su assigned_trainer_id (jei not onlyPrimary, arba jei onlyPrimary - vis tiek imam, nes legacy yra primary funkcijoje)
+  const { data: legacyKids } = await sb.from('kids')
+    .select('id')
+    .eq('assigned_trainer_id', currentUser.id);
+  const legacyKidIds = (legacyKids || []).map(k => k.id);
   
-  if (!ktLinks || ktLinks.length === 0) {
-    // Galimai šis treneris dar M:N sistemoje neužregistruotas – fallback
-    return null;
-  }
-  
-  return ktLinks.map(l => l.kid_id);
+  // 3. Suvienyti unikalūs ID
+  return [...new Set([...mnKidIds, ...legacyKidIds])];
 }
 
 async function loadTrainerData() {
@@ -3550,30 +3550,34 @@ async function loadTrainerData() {
 
 async function loadNewKids() {
   // M:N sistema: tik PAGRINDINIS treneris (primary) tvirtina anketas
-  const myKidIds = await getMyKidIds(true); // onlyPrimary=true
+  // SVARBU: imam vaikus iš ABIEJŲ vietų (M:N + legacy assigned_trainer_id) ir suvienijame
+  
+  // 1. M:N kelias – kid_trainers kur primary
+  const { data: ktLinks } = await sb.from('kid_trainers')
+    .select('kid_id')
+    .eq('trainer_id', currentUser.id)
+    .eq('role', 'primary');
+  const mnKidIds = (ktLinks || []).map(l => l.kid_id);
+  
+  // 2. Legacy kelias – kids kur assigned_trainer_id
+  const { data: legacyKids } = await sb.from('kids')
+    .select('id')
+    .eq('assigned_trainer_id', currentUser.id);
+  const legacyKidIds = (legacyKids || []).map(k => k.id);
+  
+  // 3. Suvienijame ir gauname pending vaikus
+  const allKidIds = [...new Set([...mnKidIds, ...legacyKidIds])];
   
   let kids = null, error = null;
-  
-  if (myKidIds === null) {
-    // Fallback į legacy assigned_trainer_id
+  if (allKidIds.length > 0) {
     const result = await sb.from('kids')
       .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id')
-      .eq('assigned_trainer_id', currentUser.id)
-      .eq('approval_status', 'pending')
-      .order('created_at', { ascending: false });
-    kids = result.data;
-    error = result.error;
-  } else if (myKidIds.length > 0) {
-    // M:N kelias
-    const result = await sb.from('kids')
-      .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id')
-      .in('id', myKidIds)
+      .in('id', allKidIds)
       .eq('approval_status', 'pending')
       .order('created_at', { ascending: false });
     kids = result.data;
     error = result.error;
   } else {
-    // Tuščias rezultatas
     kids = [];
   }
   
@@ -3785,30 +3789,18 @@ async function approveSubmission(subId) {
 }
 
 async function loadTrainerMembers() {
-  // M:N: rodom VISUS šio trenerio vaikus (primary + assistant)
-  const myKidIds = await getMyKidIds(false); // false = visi treneriai
+  // M:N: rodom VISUS šio trenerio vaikus (primary + assistant + legacy)
+  const myKidIds = await getMyKidIds(false);
   
-  let members = null;
-  
-  if (myKidIds === null) {
-    // Legacy fallback
-    const result = await sb.from('kids')
-      .select('id, first_name, last_name, total_exp, current_level, group_id')
-      .eq('assigned_trainer_id', currentUser.id)
-      .eq('approval_status', 'approved')
-      .order('total_exp',{ascending:false})
-      .limit(5);
-    members = result.data;
-  } else if (myKidIds.length > 0) {
+  let members = [];
+  if (myKidIds.length > 0) {
     const result = await sb.from('kids')
       .select('id, first_name, last_name, total_exp, current_level, group_id')
       .in('id', myKidIds)
       .eq('approval_status', 'approved')
       .order('total_exp',{ascending:false})
       .limit(5);
-    members = result.data;
-  } else {
-    members = [];
+    members = result.data || [];
   }
 
   if (!members?.length) {
@@ -3852,28 +3844,19 @@ async function loadTrainerGroups() {
     return;
   }
   
-  // 2. Užkrauname visus trenerio vaikus (M:N: visi primary + assistant)
+  // 2. Užkrauname visus trenerio vaikus (M:N: visi primary + assistant + legacy)
   const myKidIds = await getMyKidIds(false);
-  let kids = null;
-  if (myKidIds === null) {
-    const result = await sb.from('kids')
-      .select('id, first_name, last_name, total_exp, current_level, kyu, weight_range, group_id, gender, birth_date, birth_year')
-      .eq('assigned_trainer_id', currentUser.id)
-      .eq('approval_status', 'approved')
-      .order('first_name');
-    kids = result.data;
-  } else if (myKidIds.length > 0) {
+  let kids = [];
+  if (myKidIds.length > 0) {
     const result = await sb.from('kids')
       .select('id, first_name, last_name, total_exp, current_level, kyu, weight_range, group_id, gender, birth_date, birth_year')
       .in('id', myKidIds)
       .eq('approval_status', 'approved')
       .order('first_name');
-    kids = result.data;
-  } else {
-    kids = [];
+    kids = result.data || [];
   }
   
-  allTrainerKids = kids || [];
+  allTrainerKids = kids;
   
   // Atnaujinam summary tr-main
   const totalGroups = (groups || []).length;
