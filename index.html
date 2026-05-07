@@ -1546,6 +1546,26 @@ select.inp option{background:#222;}
 </div>
 </div></div></div></div>
 
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- TRENERIO PASIRINKIMO MODAL'AS (vaikui kai >1 treneris) -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="trainer-select-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:340px;width:100%;padding:20px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:6px;text-align:center;">
+      KURIAM TRENERIUI?
+    </div>
+    <div style="font-size:12px;color:var(--mut);margin-bottom:18px;text-align:center;line-height:1.5;">
+      Pasirink kuriam treneriui siusti rezultatą
+    </div>
+    
+    <div id="trainer-select-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+      <!-- Trenerių sąrašas užpildomas dinamiškai -->
+    </div>
+    
+    <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);" onclick="closeTrainerSelectModal()">ATŠAUKTI</button>
+  </div>
+</div>
+
 <script>
 // ════════════════════════════════════════════════════════
 // SUPABASE KONFIGŪRACIJA
@@ -5455,29 +5475,78 @@ async function submitExerciseResult() {
     return;
   }
   
-  // M:N: surasti trenerį per kid_trainers (primary), fallback į assigned_trainer_id
-  let trainerId = null;
+  // M:N: surasti VISUS vaiko trenerius
   const kidId = currentKid?.id || currentUser.id;
   
-  // Bandom rasti per kid_trainers (paimame primary)
-  const { data: ktLink } = await sb.from('kid_trainers')
-    .select('trainer_id')
+  const { data: trainers } = await sb.from('kid_trainers')
+    .select('trainer_id, role, profiles!kid_trainers_trainer_id_fkey(first_name, last_name)')
     .eq('kid_id', kidId)
-    .eq('role', 'primary')
-    .maybeSingle();
+    .order('role'); // primary first
   
-  if (ktLink?.trainer_id) {
-    trainerId = ktLink.trainer_id;
-  } else if (currentKid?.assigned_trainer_id) {
-    // Fallback į legacy
-    trainerId = currentKid.assigned_trainer_id;
+  let trainersList = trainers || [];
+  
+  // Fallback į legacy jei kid_trainers tuščia
+  if (trainersList.length === 0 && currentKid?.assigned_trainer_id) {
+    trainersList = [{
+      trainer_id: currentKid.assigned_trainer_id,
+      role: 'primary',
+      profiles: null
+    }];
   }
   
-  if (!trainerId) {
+  if (trainersList.length === 0) {
     showToast('❌ Treneris dar nepriskirtas. Susisiek su klubu.', 'error', 4000);
     return;
   }
+  
+  // Jei tik 1 treneris - siunčiam tiesiai
+  if (trainersList.length === 1) {
+    await sendSubmissionToTrainer(trainersList[0].trainer_id, newVal, oldPr, comment, lower);
+    return;
+  }
+  
+  // Daugiau nei 1 treneris - rodom modal'ą su pasirinkimu
+  showTrainerSelectModal(trainersList, newVal, oldPr, comment, lower);
+}
 
+function showTrainerSelectModal(trainers, newVal, oldPr, comment, lower) {
+  const list = document.getElementById('trainer-select-list');
+  list.innerHTML = trainers.map(t => {
+    const name = t.profiles 
+      ? `${t.profiles.first_name || 'Vardas'} ${t.profiles.last_name || ''}`.trim()
+      : 'Treneris';
+    const isPrimary = t.role === 'primary';
+    const icon = isPrimary ? '⭐' : '👤';
+    const label = isPrimary ? 'pagrindinis' : 'pavaduojantis';
+    const labelColor = isPrimary ? 'var(--br)' : 'var(--mut)';
+    
+    return `
+      <button class="btn-auth" style="background:rgba(255,77,0,.05);border:.5px solid var(--bdr);padding:14px;text-align:left;display:flex;align-items:center;gap:12px;justify-content:flex-start;"
+              onclick="selectTrainerAndSubmit('${t.trainer_id}', ${newVal}, ${oldPr}, ${JSON.stringify(comment)}, ${lower})">
+        <div style="font-size:22px;">${icon}</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:800;color:var(--text);">${name}</div>
+          <div style="font-size:10px;color:${labelColor};text-transform:uppercase;letter-spacing:1px;margin-top:2px;">${label}</div>
+        </div>
+        <div style="font-size:18px;color:var(--mut);">→</div>
+      </button>
+    `;
+  }).join('');
+  
+  document.getElementById('trainer-select-modal').style.display = 'flex';
+}
+
+function closeTrainerSelectModal() {
+  document.getElementById('trainer-select-modal').style.display = 'none';
+}
+
+async function selectTrainerAndSubmit(trainerId, newVal, oldPr, comment, lower) {
+  closeTrainerSelectModal();
+  await sendSubmissionToTrainer(trainerId, newVal, oldPr, comment, lower);
+}
+
+async function sendSubmissionToTrainer(trainerId, newVal, oldPr, comment, lower) {
+  const kidId = currentKid?.id || currentUser.id;
   const t = currentExercise.target;
   const completed = parseFloat(t.completed);
   
