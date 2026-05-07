@@ -1052,6 +1052,30 @@ select.inp option{background:#222;}
         </div>
       </div>
       
+      <!-- TRENERIAI (M:N valdymas) -->
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;">🥋 TRENERIAI</div>
+        <div id="kd-trainers" style="font-size:13px;line-height:1.6;">
+          <div style="text-align:center;color:var(--mut);">Kraunama...</div>
+        </div>
+        <!-- Pridėjimo dropdown'as – matomas tik klubo admin'ui ir kai <3 treneriai -->
+        <div id="kd-add-trainer-section" style="display:none;margin-top:10px;">
+          <div id="kd-add-trainer-collapsed">
+            <button onclick="kdShowAddTrainerForm()" style="width:100%;background:rgba(255,77,0,.1);color:var(--br);border:.5px dashed rgba(255,77,0,.5);padding:10px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">+ PRIDĖTI PAVADUOJANTĮ</button>
+          </div>
+          <div id="kd-add-trainer-form" style="display:none;background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;">
+            <div style="font-size:11px;color:var(--mut);font-weight:800;margin-bottom:8px;">PASIRINK TRENERĮ:</div>
+            <select class="inp" id="kd-new-trainer-select" style="margin-bottom:8px;font-size:13px;">
+              <option value="">Pasirinkti...</option>
+            </select>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <button onclick="kdHideAddTrainerForm()" style="background:transparent;border:.5px solid var(--bdr);color:var(--mut);padding:8px;border-radius:8px;font-size:12px;cursor:pointer;">ATŠAUKTI</button>
+              <button onclick="kdSaveNewTrainer()" style="background:var(--br);color:white;border:none;padding:8px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">PRIDĖTI</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- EXP valdymas -->
       <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:12px;">
         <div style="font-size:11px;color:var(--br);font-weight:800;letter-spacing:1px;margin-bottom:10px;">⚡ EXP UŽ ELGESĮ</div>
@@ -4291,6 +4315,9 @@ async function openKidDetailsModal(kidId) {
   // EXP istorija
   await loadKidExpHistory(kidId);
   
+  // Treneriai (M:N)
+  await loadKidTrainers(kidId);
+  
   // Reset custom inputs
   document.getElementById('kd-custom-exp').value = '';
   document.getElementById('kd-custom-reason').value = '';
@@ -4301,6 +4328,169 @@ async function openKidDetailsModal(kidId) {
 function closeKidDetailsModal() {
   document.getElementById('kid-details-modal').style.display = 'none';
   currentKidDetails = null;
+  // Reset add-trainer formą
+  const addForm = document.getElementById('kd-add-trainer-form');
+  const addCollapsed = document.getElementById('kd-add-trainer-collapsed');
+  if (addForm) addForm.style.display = 'none';
+  if (addCollapsed) addCollapsed.style.display = '';
+}
+
+// ════════════════════════════════════════
+// TRENERIŲ M:N VALDYMAS modal'e
+// ════════════════════════════════════════
+async function loadKidTrainers(kidId) {
+  // 1. Užkrauti vaiko trenerius
+  const { data: kidTrainers, error } = await sb.from('kid_trainers')
+    .select('id, role, trainer_id, profiles!kid_trainers_trainer_id_fkey(first_name, last_name)')
+    .eq('kid_id', kidId)
+    .order('role'); // primary first
+  
+  if (error) {
+    console.error('loadKidTrainers error:', error);
+    document.getElementById('kd-trainers').innerHTML = 
+      '<div style="text-align:center;color:var(--mut);padding:8px;">Klaida kraunant</div>';
+    return;
+  }
+  
+  const trainers = kidTrainers || [];
+  
+  // 2. Patikrinti ar esamas vartotojas yra klubo admin (rodom valdymo mygtukus)
+  const isClubAdmin = currentProfile?.role === 'club_admin';
+  
+  if (trainers.length === 0) {
+    document.getElementById('kd-trainers').innerHTML = 
+      '<div style="text-align:center;color:var(--mut);padding:8px;">Treneriai nepriskirti</div>';
+  } else {
+    document.getElementById('kd-trainers').innerHTML = trainers.map(t => {
+      const name = t.profiles 
+        ? `${t.profiles.first_name || 'Vardas'} ${t.profiles.last_name || ''}`.trim()
+        : 'Treneris';
+      const isPrimary = t.role === 'primary';
+      const icon = isPrimary ? '⭐' : '👤';
+      const labelText = isPrimary ? 'PAGRINDINIS' : 'PAVADUOJANTIS';
+      const labelColor = isPrimary ? 'var(--br)' : 'var(--mut)';
+      
+      // Pavaduojančius klubas gali pašalinti
+      const removeBtn = (isClubAdmin && !isPrimary) 
+        ? `<button onclick="kdRemoveTrainer('${t.id}', '${name.replace(/'/g, "\\'")}')" style="background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;flex-shrink:0;">✕ Pašalinti</button>` 
+        : '';
+      
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.05);">
+          <div style="font-size:20px;flex-shrink:0;">${icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;">${name}</div>
+            <div style="font-size:10px;color:${labelColor};text-transform:uppercase;letter-spacing:1px;margin-top:2px;">${labelText}</div>
+          </div>
+          ${removeBtn}
+        </div>
+      `;
+    }).join('');
+  }
+  
+  // 3. Klubo admin: rodyti "Pridėti pavaduojantį" mygtuką jei <3 treneriai
+  const addSection = document.getElementById('kd-add-trainer-section');
+  if (isClubAdmin && trainers.length < 3) {
+    addSection.style.display = 'block';
+    document.getElementById('kd-add-trainer-form').style.display = 'none';
+    document.getElementById('kd-add-trainer-collapsed').style.display = '';
+  } else {
+    addSection.style.display = 'none';
+  }
+  
+  // Saugom dabartinius trener ID kad galėtumėm filtruoti dropdown'e
+  window._currentKidTrainerIds = trainers.map(t => t.trainer_id);
+}
+
+function kdShowAddTrainerForm() {
+  document.getElementById('kd-add-trainer-collapsed').style.display = 'none';
+  document.getElementById('kd-add-trainer-form').style.display = '';
+  
+  // Užpildyti dropdown'ą klubo treneriais (be jau pridėtų)
+  if (!currentClub?.id) {
+    showToast('❌ Klubas neidentifikuotas', 'error');
+    return;
+  }
+  
+  // Užkrauti klubo trenerius
+  sb.from('trainers')
+    .select('id, profiles!inner(first_name, last_name)')
+    .eq('invited_by_club_id', currentClub.id)
+    .eq('is_active', true)
+    .then(({ data: trainers, error }) => {
+      if (error) {
+        console.error('Klubo trenerių krovimo klaida:', error);
+        return;
+      }
+      
+      const excluded = new Set(window._currentKidTrainerIds || []);
+      const available = (trainers || []).filter(t => !excluded.has(t.id));
+      
+      const select = document.getElementById('kd-new-trainer-select');
+      if (available.length === 0) {
+        select.innerHTML = '<option value="">Visi treneriai jau pridėti</option>';
+      } else {
+        select.innerHTML = '<option value="">Pasirinkti...</option>' +
+          available.map(t => {
+            const name = `${t.profiles?.first_name || 'Vardas'} ${t.profiles?.last_name || ''}`.trim();
+            return `<option value="${t.id}">${name}</option>`;
+          }).join('');
+      }
+    });
+}
+
+function kdHideAddTrainerForm() {
+  document.getElementById('kd-add-trainer-form').style.display = 'none';
+  document.getElementById('kd-add-trainer-collapsed').style.display = '';
+}
+
+async function kdSaveNewTrainer() {
+  const trainerId = document.getElementById('kd-new-trainer-select').value;
+  if (!trainerId) {
+    showToast('❌ Pasirink trenerį', 'error');
+    return;
+  }
+  if (!currentKidDetails?.id) {
+    showToast('❌ Vaikas neidentifikuotas', 'error');
+    return;
+  }
+  
+  const { error } = await sb.from('kid_trainers').insert({
+    kid_id: currentKidDetails.id,
+    trainer_id: trainerId,
+    role: 'assistant',
+    assigned_by: currentUser.id
+  });
+  
+  if (error) {
+    console.error('Trenerio pridėjimo klaida:', error);
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    return;
+  }
+  
+  showToast('✅ Pavaduojantis treneris pridėtas', 'success');
+  
+  // Perkrauti trenerių sąrašą
+  await loadKidTrainers(currentKidDetails.id);
+}
+
+async function kdRemoveTrainer(ktId, trainerName) {
+  if (!confirm(`Ar tikrai pašalinti pavaduojantį trenerį "${trainerName}"?`)) {
+    return;
+  }
+  
+  const { error } = await sb.from('kid_trainers').delete().eq('id', ktId);
+  
+  if (error) {
+    console.error('Trenerio pašalinimo klaida:', error);
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    return;
+  }
+  
+  showToast('✅ Pavaduojantis pašalintas', 'success');
+  
+  // Perkrauti trenerių sąrašą
+  await loadKidTrainers(currentKidDetails.id);
 }
 
 async function loadKidParents(kidId) {
