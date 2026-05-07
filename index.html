@@ -5509,7 +5509,13 @@ async function submitExerciseResult() {
   showTrainerSelectModal(trainersList, newVal, oldPr, comment, lower);
 }
 
+// Globalus state - laukiantis submission'as kol vartotojas pasirenka trenerį
+let pendingSubmission = null;
+
 function showTrainerSelectModal(trainers, newVal, oldPr, comment, lower) {
+  // Išsaugom submission duomenis globaliai
+  pendingSubmission = { newVal, oldPr, comment, lower };
+  
   const list = document.getElementById('trainer-select-list');
   list.innerHTML = trainers.map(t => {
     const name = t.profiles 
@@ -5522,7 +5528,7 @@ function showTrainerSelectModal(trainers, newVal, oldPr, comment, lower) {
     
     return `
       <button class="btn-auth" style="background:rgba(255,77,0,.05);border:.5px solid var(--bdr);padding:14px;text-align:left;display:flex;align-items:center;gap:12px;justify-content:flex-start;"
-              onclick="selectTrainerAndSubmit('${t.trainer_id}', ${newVal}, ${oldPr}, ${JSON.stringify(comment)}, ${lower})">
+              onclick="selectTrainerAndSubmit('${t.trainer_id}')">
         <div style="font-size:22px;">${icon}</div>
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:800;color:var(--text);">${name}</div>
@@ -5538,10 +5544,20 @@ function showTrainerSelectModal(trainers, newVal, oldPr, comment, lower) {
 
 function closeTrainerSelectModal() {
   document.getElementById('trainer-select-modal').style.display = 'none';
+  pendingSubmission = null;
 }
 
-async function selectTrainerAndSubmit(trainerId, newVal, oldPr, comment, lower) {
-  closeTrainerSelectModal();
+async function selectTrainerAndSubmit(trainerId) {
+  if (!pendingSubmission) {
+    console.error('❌ pendingSubmission tuščias!');
+    closeTrainerSelectModal();
+    return;
+  }
+  
+  const { newVal, oldPr, comment, lower } = pendingSubmission;
+  document.getElementById('trainer-select-modal').style.display = 'none';
+  pendingSubmission = null;
+  
   await sendSubmissionToTrainer(trainerId, newVal, oldPr, comment, lower);
 }
 
