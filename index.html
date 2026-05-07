@@ -1571,6 +1571,33 @@ select.inp option{background:#222;}
 </div></div></div></div>
 
 <!-- ════════════════════════════════════════════════════════ -->
+<!-- TRENERIO VAIKŲ SĄRAŠO MODAL'AS (klubo admin'ui) -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="trainer-kids-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9998;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
+  <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:380px;width:100%;padding:0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
+    
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,var(--grn),#16a34a);padding:18px 20px;color:white;display:flex;align-items:center;gap:12px;">
+      <div id="trk-avatar" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:20px;flex-shrink:0;">T</div>
+      <div style="flex:1;min-width:0;">
+        <div id="trk-trainer-name" style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;line-height:1.1;">TRENERIS</div>
+        <div id="trk-trainer-email" style="font-size:11px;opacity:.85;margin-top:2px;">–</div>
+      </div>
+      <button onclick="closeTrainerKidsModal()" style="background:rgba(0,0,0,.2);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+    </div>
+    
+    <!-- Content -->
+    <div style="padding:14px 16px;overflow-y:auto;flex:1;">
+      <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;">🧒 VAIKAI</div>
+      <div id="trk-kids-list" style="display:flex;flex-direction:column;gap:6px;">
+        <div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
 <!-- TRENERIO PASIRINKIMO MODAL'AS (vaikui kai >1 treneris) -->
 <!-- ════════════════════════════════════════════════════════ -->
 <div id="trainer-select-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:20px;">
@@ -4240,16 +4267,10 @@ async function submitAssignKids() {
 let currentKidDetails = null;
 
 async function openKidDetailsModal(kidId) {
-  // Surandam vaiką iš allTrainerKids
-  const kid = allTrainerKids.find(k => k.id === kidId);
-  if (!kid) {
-    showToast('❌ Vaikas nerastas');
-    return;
-  }
-  
-  // Užkrauname pilną vaiko info iš DB (su sport_id, club info)
-  const { data: fullKid } = await sb.from('kids').select('*').eq('id', kidId).single();
-  if (!fullKid) {
+  // Užkrauname pilną vaiko info iš DB
+  const { data: fullKid, error: fkErr } = await sb.from('kids').select('*').eq('id', kidId).single();
+  if (fkErr || !fullKid) {
+    console.error('openKidDetailsModal:', fkErr);
     showToast('❌ Klaida kraunant duomenis');
     return;
   }
@@ -4971,7 +4992,9 @@ async function loadClubTrainers() {
     const p = t.profiles;
     const name = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Bevardis';
     const isActive = p.status === 'active';
-    return `<div class="cd" style="margin-bottom:12px;padding:14px;">
+    const trainerProfileId = t.id; // trainers.id = profile_id (FK)
+    return `<div class="cd" style="margin-bottom:12px;padding:14px;cursor:${isActive ? 'pointer' : 'default'};" 
+                  ${isActive ? `onclick="openTrainerKidsModal('${trainerProfileId}', '${name.replace(/'/g, "\\'")}')"` : ''}>
       <div style="display:flex;align-items:center;gap:12px;">
         <div class="av" style="background:var(--grn);">${name[0]?.toUpperCase() || 'T'}</div>
         <div style="flex:1;">
@@ -4979,11 +5002,103 @@ async function loadClubTrainers() {
           <div style="font-size:11px;color:var(--mut);">Kodas: ${t.trainer_code}</div>
         </div>
         <div class="bg ${isActive ? 'gn' : 'or'}">${isActive ? 'Aktyvus' : 'Laukia'}</div>
+        ${isActive ? '<div style="font-size:18px;color:var(--mut);">→</div>' : ''}
       </div>
     </div>`;
   }).join('');
 
   document.getElementById('k-trainers-list').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// TRENERIO VAIKŲ MODAL'AS (klubo admin'ui)
+// ════════════════════════════════════════
+async function openTrainerKidsModal(trainerProfileId, trainerName) {
+  // 1. Atidarom modal'ą
+  document.getElementById('trk-trainer-name').textContent = trainerName.toUpperCase();
+  document.getElementById('trk-avatar').textContent = (trainerName[0] || 'T').toUpperCase();
+  document.getElementById('trk-kids-list').innerHTML = 
+    '<div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div>';
+  document.getElementById('trainer-kids-modal').style.display = 'flex';
+  
+  // 2. Užkrauti trenerio email iš auth.users (jei galima)
+  const { data: profile } = await sb.from('profiles')
+    .select('phone')
+    .eq('id', trainerProfileId)
+    .maybeSingle();
+  document.getElementById('trk-trainer-email').textContent = profile?.phone || trainerName;
+  
+  // 3. Užkrauti VISUS trenerio vaikus (per kid_trainers + legacy)
+  const { data: ktLinks } = await sb.from('kid_trainers')
+    .select('kid_id, role')
+    .eq('trainer_id', trainerProfileId);
+  const mnKidIds = (ktLinks || []).map(l => l.kid_id);
+  const roleMap = {};
+  (ktLinks || []).forEach(l => { roleMap[l.kid_id] = l.role; });
+  
+  const { data: legacyKids } = await sb.from('kids')
+    .select('id')
+    .eq('assigned_trainer_id', trainerProfileId);
+  const legacyKidIds = (legacyKids || []).map(k => k.id);
+  
+  const allKidIds = [...new Set([...mnKidIds, ...legacyKidIds])];
+  
+  if (allKidIds.length === 0) {
+    document.getElementById('trk-kids-list').innerHTML = 
+      '<div style="text-align:center;color:var(--mut);padding:20px;">Šis treneris neturi vaikų</div>';
+    return;
+  }
+  
+  // 4. Gauti pilną info
+  const { data: kids, error } = await sb.from('kids')
+    .select('id, first_name, last_name, total_exp, current_level, approval_status, gender, birth_date, birth_year')
+    .in('id', allKidIds)
+    .order('first_name');
+  
+  if (error || !kids) {
+    document.getElementById('trk-kids-list').innerHTML = 
+      '<div style="text-align:center;color:#EF4444;padding:20px;">Klaida kraunant: ' + (error?.message || 'nežinoma') + '</div>';
+    return;
+  }
+  
+  // 5. Render
+  const html = kids.map(k => {
+    const name = `${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim();
+    const role = roleMap[k.id]; // primary, assistant, arba undefined (jei tik legacy)
+    const roleIcon = role === 'primary' ? '⭐' : (role === 'assistant' ? '👤' : '⚪');
+    const roleLabel = role === 'primary' ? 'PAGRINDINIS' : (role === 'assistant' ? 'PAVADUOJANTIS' : 'LEGACY');
+    const roleColor = role === 'primary' ? 'var(--br)' : 'var(--mut)';
+    const statusBadge = k.approval_status === 'pending' 
+      ? '<span style="font-size:9px;background:rgba(255,77,0,.2);color:var(--br);padding:2px 6px;border-radius:4px;letter-spacing:1px;">PENDING</span>' 
+      : '';
+    const age = k.birth_date ? calculateAge(k.birth_date) : (k.birth_year ? new Date().getFullYear() - k.birth_year : '?');
+    
+    return `
+      <div onclick="openKidFromTrainerModal('${k.id}')" style="background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+        <div style="font-size:18px;">${roleIcon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div style="font-size:13px;font-weight:700;">${name}</div>
+            ${statusBadge}
+          </div>
+          <div style="font-size:10px;color:${roleColor};letter-spacing:1px;margin-top:2px;">${roleLabel} · ${age} m. · ${(k.total_exp || 0)} EXP · ${k.current_level || 1} lvl</div>
+        </div>
+        <div style="font-size:16px;color:var(--mut);">→</div>
+      </div>
+    `;
+  }).join('');
+  
+  document.getElementById('trk-kids-list').innerHTML = html;
+}
+
+function closeTrainerKidsModal() {
+  document.getElementById('trainer-kids-modal').style.display = 'none';
+}
+
+// Tarpinė funkcija: spaudžiant ant vaiko trenerio modal'e, atidaro Kid Details modal'ą
+async function openKidFromTrainerModal(kidId) {
+  closeTrainerKidsModal();
+  await openKidDetailsModal(kidId);
 }
 
 // ════════════════════════════════════════
