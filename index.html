@@ -4487,12 +4487,12 @@ async function kdSaveNewTrainer() {
     return;
   }
   
-  const { error } = await sb.from('kid_trainers').insert({
+  const { data, error } = await sb.from('kid_trainers').insert({
     kid_id: currentKidDetails.id,
     trainer_id: trainerId,
     role: 'assistant',
     assigned_by: currentUser.id
-  });
+  }).select();
   
   if (error) {
     console.error('Trenerio pridėjimo klaida:', error);
@@ -4500,6 +4500,13 @@ async function kdSaveNewTrainer() {
     return;
   }
   
+  if (!data || data.length === 0) {
+    console.error('❌ INSERT nepridėjo nieko! RLS policy galimai atmetė.');
+    showToast('❌ Negalima pridėti - nepakanka teisių.', 'error', 6000);
+    return;
+  }
+  
+  console.log('✅ Pavaduojantis pridėtas:', data);
   showToast('✅ Pavaduojantis treneris pridėtas', 'success');
   
   // Perkrauti trenerių sąrašą
@@ -4511,7 +4518,11 @@ async function kdRemoveTrainer(ktId, trainerName) {
     return;
   }
   
-  const { error } = await sb.from('kid_trainers').delete().eq('id', ktId);
+  // .select() po .delete() grąžina ištrintus įrašus - jei tuščias array, RLS atmetė
+  const { data, error } = await sb.from('kid_trainers')
+    .delete()
+    .eq('id', ktId)
+    .select();
   
   if (error) {
     console.error('Trenerio pašalinimo klaida:', error);
@@ -4519,6 +4530,13 @@ async function kdRemoveTrainer(ktId, trainerName) {
     return;
   }
   
+  if (!data || data.length === 0) {
+    console.error('❌ DELETE neištrynė nieko! RLS policy galimai atmetė.', { ktId });
+    showToast('❌ Negalima pašalinti - nepakanka teisių. Susisiek su admin.', 'error', 6000);
+    return;
+  }
+  
+  console.log('✅ Pavaduojantis pašalintas iš DB:', data);
   showToast('✅ Pavaduojantis pašalintas', 'success');
   
   // Perkrauti trenerių sąrašą
