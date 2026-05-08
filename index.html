@@ -1215,6 +1215,87 @@ select.inp option{background:#222;}
       <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(3)">← Atgal</button>
     </div>
     
+    <!-- ============================================ -->
+    <!-- EKRANAS 3b: SVEIKATOS INFO + AVARINIS KONTAKTAS + MEDIA -->
+    <!-- ============================================ -->
+    <div id="ak-screen-3b" style="display:none;">
+      <div style="font-size:13px;color:var(--mut);margin-bottom:14px;line-height:1.5;">
+        Sveikatos info ir avarinis kontaktas (rekomenduojama, bet nebūtina)
+      </div>
+      
+      <!-- SVEIKATOS INFO -->
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;">🏥 SVEIKATOS INFO</div>
+        
+        <label class="lbl">ALERGIJOS</label>
+        <input class="inp" type="text" id="ak-allergies" placeholder="Pvz: riešutai, žiedadulkės. Arba 'nėra'">
+        
+        <label class="lbl" style="margin-top:8px;">VAISTAI</label>
+        <input class="inp" type="text" id="ak-medications" placeholder="Nuolatiniai vaistai. Arba palik tuščia.">
+        
+        <label class="lbl" style="margin-top:8px;">LIGOS / BŪKLĖS</label>
+        <input class="inp" type="text" id="ak-conditions" placeholder="Pvz: astma, diabetas. Arba palik tuščia.">
+        
+        <label class="lbl" style="margin-top:8px;">TRAUMOS (istorija)</label>
+        <input class="inp" type="text" id="ak-injuries" placeholder="Pvz: kelio operacija 2024. Arba palik tuščia.">
+        
+        <label class="lbl" style="margin-top:8px;">KITI PASTABOS</label>
+        <textarea class="inp" id="ak-health-notes" rows="2" placeholder="Bet kokia kita info treneriui..."></textarea>
+      </div>
+      
+      <!-- AVARINIS KONTAKTAS -->
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;">📞 AVARINIS KONTAKTAS</div>
+        <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-bottom:8px;">
+          Asmuo, kuriam skambinti jei nepasiekiamas vaiko tėvas/globėjas.
+        </div>
+        
+        <label class="lbl">VARDAS, PAVARDĖ</label>
+        <input class="inp" type="text" id="ak-emergency-name" placeholder="Pvz: Senelė Marija">
+        
+        <label class="lbl" style="margin-top:8px;">TELEFONAS</label>
+        <input class="inp" type="tel" id="ak-emergency-phone" placeholder="+370 6XX XXXXX">
+        
+        <label class="lbl" style="margin-top:8px;">RYŠYS</label>
+        <input class="inp" type="text" id="ak-emergency-relation" placeholder="Pvz: Senelė, Dėdė, Krikštatėvis">
+      </div>
+      
+      <!-- MEDIA SUTIKIMAS -->
+      <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--br);font-weight:800;letter-spacing:1px;margin-bottom:10px;">📷 SPOBU MEDIA SUTIKIMAS</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.5;margin-bottom:10px;">
+          Ar leidžiate Spobu naudoti vaiko nuotraukas/video savo platformoje, marketinge ir socialiniuose kanaluose (Instagram, Facebook, TikTok, reklamose)?
+        </div>
+        
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;margin-bottom:6px;">
+          <input type="radio" name="ak-media-consent" id="ak-media-no" value="false" checked style="margin-top:2px;flex-shrink:0;">
+          <div>
+            <div style="font-weight:800;font-size:13px;color:var(--text);">🚫 Ne, neleidžiu</div>
+            <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:2px;">
+              Vaiko medžiaga nebus naudojama Spobu marketinge.
+            </div>
+          </div>
+        </label>
+        
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;">
+          <input type="radio" name="ak-media-consent" id="ak-media-yes" value="true" style="margin-top:2px;flex-shrink:0;">
+          <div>
+            <div style="font-weight:800;font-size:13px;color:var(--text);">✅ Taip, leidžiu</div>
+            <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:2px;">
+              Spobu gali naudoti vaiko nuotraukas/video savo kanaluose.
+            </div>
+          </div>
+        </label>
+        
+        <div style="font-size:10px;color:var(--mut);margin-top:10px;line-height:1.4;">
+          ℹ️ Galite bet kada pakeisti šį pasirinkimą per vaiko nustatymus.
+        </div>
+      </div>
+      
+      <button class="btn-auth" onclick="akNext('3b')">TĘSTI →</button>
+      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev('3b')">← Atgal</button>
+    </div>
+    
     <!-- ===== EKRANAS 4: TELEFONAS ===== -->
     <div id="ak-screen-4" style="display:none;">
       <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
@@ -2005,7 +2086,19 @@ let akData = {
   assistant_2_id: null,
   assistant_2_name: null,
   has_phone: false,
-  kid_email: null
+  kid_email: null,
+  // Sveikatos info
+  health_allergies: null,
+  health_medications: null,
+  health_conditions: null,
+  health_injuries: null,
+  health_notes: null,
+  // Avarinis kontaktas
+  emergency_contact_name: null,
+  emergency_contact_phone: null,
+  emergency_contact_relation: null,
+  // Media sutikimas
+  media_consent: false
 };
 
 async function openAddKidWizard() {
@@ -2017,7 +2110,11 @@ async function openAddKidWizard() {
     trainer_id: null, trainer_name: null,
     assistant_1_id: null, assistant_1_name: null,
     assistant_2_id: null, assistant_2_name: null,
-    has_phone: false, kid_email: null
+    has_phone: false, kid_email: null,
+    health_allergies: null, health_medications: null, health_conditions: null,
+    health_injuries: null, health_notes: null,
+    emergency_contact_name: null, emergency_contact_phone: null, emergency_contact_relation: null,
+    media_consent: false
   };
   
   // Reset forms
@@ -2162,7 +2259,7 @@ function closeAddKidWizard() {
 }
 
 function akShowScreen(num) {
-  ['ak-screen-1', 'ak-screen-2', 'ak-screen-3', 'ak-screen-4', 'ak-screen-success'].forEach(id => {
+  ['ak-screen-1', 'ak-screen-2', 'ak-screen-3', 'ak-screen-3b', 'ak-screen-4', 'ak-screen-success'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -2173,11 +2270,13 @@ function akShowScreen(num) {
     document.getElementById(`ak-screen-${num}`).style.display = 'block';
   }
   
+  // Step indikatorius (3b traktuojam kaip 3, kad indikatorius nešoktų)
+  const stepNum = (num === '3b') ? 3 : (typeof num === 'number' ? num : 0);
   for (let i = 1; i <= 4; i++) {
     const el = document.getElementById(`ak-step-${i}`);
     if (el) {
-      if (i < num) el.className = 'rw-step done';
-      else if (i === num) el.className = 'rw-step on';
+      if (i < stepNum) el.className = 'rw-step done';
+      else if (i === stepNum) el.className = 'rw-step on';
       else el.className = 'rw-step';
     }
   }
@@ -2400,12 +2499,38 @@ function akNext(currentScreen) {
     akData.assistant_2_id = assistant2Id;
     akData.assistant_2_name = assistant2Id ? document.getElementById('ak-assistant-2').options[document.getElementById('ak-assistant-2').selectedIndex]?.dataset?.name || '' : null;
     
+    akShowScreen('3b');
+  }
+  
+  else if (currentScreen === '3b') {
+    // Sveikatos info, avarinis kontaktas, media sutikimas
+    akData.health_allergies = document.getElementById('ak-allergies').value.trim() || null;
+    akData.health_medications = document.getElementById('ak-medications').value.trim() || null;
+    akData.health_conditions = document.getElementById('ak-conditions').value.trim() || null;
+    akData.health_injuries = document.getElementById('ak-injuries').value.trim() || null;
+    akData.health_notes = document.getElementById('ak-health-notes').value.trim() || null;
+    
+    akData.emergency_contact_name = document.getElementById('ak-emergency-name').value.trim() || null;
+    akData.emergency_contact_phone = document.getElementById('ak-emergency-phone').value.trim() || null;
+    akData.emergency_contact_relation = document.getElementById('ak-emergency-relation').value.trim() || null;
+    
+    // Media sutikimas (radio button)
+    const mediaConsent = document.querySelector('input[name="ak-media-consent"]:checked');
+    akData.media_consent = mediaConsent ? mediaConsent.value === 'true' : false;
+    
     akShowScreen(4);
   }
 }
 
 function akPrev(currentScreen) {
-  akShowScreen(currentScreen - 1);
+  // 3b → 3, 4 → 3b, kiti tiesiog -1
+  if (currentScreen === '3b') {
+    akShowScreen(3);
+  } else if (currentScreen === 4) {
+    akShowScreen('3b');
+  } else {
+    akShowScreen(currentScreen - 1);
+  }
 }
 
 async function akSubmit() {
@@ -2449,7 +2574,19 @@ async function akSubmit() {
       has_phone: akData.has_phone,
       approval_status: 'pending',
       assigned_trainer_id: akData.trainer_id,
-      user_id: null
+      user_id: null,
+      // Sveikatos info
+      health_allergies: akData.health_allergies,
+      health_medications: akData.health_medications,
+      health_conditions: akData.health_conditions,
+      health_injuries: akData.health_injuries,
+      health_notes: akData.health_notes,
+      // Avarinis kontaktas
+      emergency_contact_name: akData.emergency_contact_name,
+      emergency_contact_phone: akData.emergency_contact_phone,
+      emergency_contact_relation: akData.emergency_contact_relation,
+      // Media sutikimas
+      media_consent: akData.media_consent
     }).select().single();
     
     if (kidError) {
@@ -2578,6 +2715,28 @@ async function akSubmit() {
         <div style="font-size:12px;">${akData.fname} ${akData.lname}</div>
         <div style="font-size:11px;color:var(--mut);margin-top:4px;">Klubas: ${akData.club_name}</div>
         ${trainersList}
+      </div>
+    `;
+    
+    // Sveikatos info / avarinis kontaktas (jei užpildyta)
+    const hasHealth = akData.health_allergies || akData.health_medications || akData.health_conditions || akData.health_injuries || akData.health_notes;
+    const hasEmergency = akData.emergency_contact_name || akData.emergency_contact_phone;
+    if (hasHealth || hasEmergency) {
+      successHTML += `<div style="background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:12px;margin-bottom:12px;">`;
+      if (hasHealth) {
+        successHTML += `<div style="font-weight:800;font-size:12px;margin-bottom:4px;">🏥 Sveikatos info užpildyta</div>`;
+      }
+      if (hasEmergency) {
+        successHTML += `<div style="font-weight:800;font-size:12px;margin-bottom:4px;">📞 Avarinis kontaktas: ${akData.emergency_contact_name || akData.emergency_contact_phone}</div>`;
+      }
+      successHTML += `<div style="font-size:11px;color:var(--mut);margin-top:4px;">Galima keisti per vaiko nustatymus.</div></div>`;
+    }
+    
+    // Media sutikimas
+    successHTML += `
+      <div style="background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:12px;margin-bottom:12px;">
+        <div style="font-weight:800;font-size:12px;">${akData.media_consent ? '📷 ✅ Spobu media: leidžiama' : '📷 🚫 Spobu media: neleidžiama'}</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:4px;">Galima bet kada keisti per nustatymus.</div>
       </div>
     `;
     
