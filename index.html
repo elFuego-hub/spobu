@@ -1620,6 +1620,72 @@ select.inp option{background:#222;}
         </div>
       </div>
       
+      <!-- SVEIKATOS INFO -->
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;">🏥 SVEIKATOS INFO</div>
+          <button id="kd-edit-health-btn" onclick="kdToggleHealthEdit()" style="display:none;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:700;">✏️ REDAGUOTI</button>
+        </div>
+        <div id="kd-health-display" style="font-size:13px;line-height:1.6;">
+          <div style="text-align:center;color:var(--mut);">Kraunama...</div>
+        </div>
+        <div id="kd-health-edit" style="display:none;">
+          <label class="lbl">ALERGIJOS</label>
+          <input class="inp" type="text" id="kd-edit-allergies" placeholder="Pvz: riešutai, žiedadulkės">
+          
+          <label class="lbl" style="margin-top:8px;">VAISTAI</label>
+          <input class="inp" type="text" id="kd-edit-medications">
+          
+          <label class="lbl" style="margin-top:8px;">LIGOS / BŪKLĖS</label>
+          <input class="inp" type="text" id="kd-edit-conditions" placeholder="Pvz: astma, diabetas">
+          
+          <label class="lbl" style="margin-top:8px;">TRAUMOS</label>
+          <input class="inp" type="text" id="kd-edit-injuries">
+          
+          <label class="lbl" style="margin-top:8px;">KITI PASTABOS</label>
+          <textarea class="inp" id="kd-edit-health-notes" rows="2"></textarea>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+            <button onclick="kdCancelHealthEdit()" style="background:transparent;border:.5px solid var(--bdr);color:var(--mut);padding:8px;border-radius:8px;font-size:12px;cursor:pointer;">ATŠAUKTI</button>
+            <button onclick="kdSaveHealth()" style="background:var(--br);color:white;border:none;padding:8px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">SAUGOTI</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- AVARINIS KONTAKTAS -->
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;">📞 AVARINIS KONTAKTAS</div>
+          <button id="kd-edit-emergency-btn" onclick="kdToggleEmergencyEdit()" style="display:none;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:700;">✏️ REDAGUOTI</button>
+        </div>
+        <div id="kd-emergency-display" style="font-size:13px;line-height:1.6;">
+          <div style="text-align:center;color:var(--mut);">Kraunama...</div>
+        </div>
+        <div id="kd-emergency-edit" style="display:none;">
+          <label class="lbl">VARDAS, PAVARDĖ</label>
+          <input class="inp" type="text" id="kd-edit-emergency-name" placeholder="Pvz: Senelė Marija">
+          
+          <label class="lbl" style="margin-top:8px;">TELEFONAS</label>
+          <input class="inp" type="tel" id="kd-edit-emergency-phone" placeholder="+370 6XX XXXXX">
+          
+          <label class="lbl" style="margin-top:8px;">RYŠYS</label>
+          <input class="inp" type="text" id="kd-edit-emergency-relation" placeholder="Pvz: Senelė, Dėdė">
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+            <button onclick="kdCancelEmergencyEdit()" style="background:transparent;border:.5px solid var(--bdr);color:var(--mut);padding:8px;border-radius:8px;font-size:12px;cursor:pointer;">ATŠAUKTI</button>
+            <button onclick="kdSaveEmergency()" style="background:var(--br);color:white;border:none;padding:8px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">SAUGOTI</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- MEDIA SUTIKIMAS -->
+      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;">📷 SPOBU MEDIA SUTIKIMAS</div>
+        <div id="kd-media-display" style="font-size:13px;line-height:1.6;">
+          <div style="text-align:center;color:var(--mut);">Kraunama...</div>
+        </div>
+      </div>
+      
       <!-- EXP valdymas -->
       <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:12px;">
         <div style="font-size:11px;color:var(--br);font-weight:800;letter-spacing:1px;margin-bottom:10px;">⚡ EXP UŽ ELGESĮ</div>
@@ -4522,6 +4588,11 @@ async function openKidDetailsModal(kidId) {
   // Treneriai (M:N)
   await loadKidTrainers(kidId);
   
+  // Sveikatos info, avarinis kontaktas, media sutikimas
+  await loadKidHealth(fullKid);
+  await loadKidEmergency(fullKid);
+  await loadKidMedia(fullKid);
+  
   // Reset custom inputs
   document.getElementById('kd-custom-exp').value = '';
   document.getElementById('kd-custom-reason').value = '';
@@ -4713,6 +4784,232 @@ async function kdRemoveTrainer(ktId, trainerName) {
   
   // Perkrauti trenerių sąrašą
   await loadKidTrainers(currentKidDetails.id);
+}
+
+// ════════════════════════════════════════
+// SVEIKATOS INFO + AVARINIS + MEDIA
+// ════════════════════════════════════════
+
+async function loadKidHealth(kid) {
+  const display = document.getElementById('kd-health-display');
+  const editBtn = document.getElementById('kd-edit-health-btn');
+  
+  // Tik tėvai gali redaguoti
+  const isParent = currentProfile?.role === 'parent';
+  if (isParent) {
+    // Patikrinti ar šis tėvas susietas su šiuo vaiku
+    const { data: link } = await sb.from('kid_parent_links')
+      .select('id')
+      .eq('kid_id', kid.id)
+      .eq('parent_id', currentUser.id)
+      .maybeSingle();
+    if (link) editBtn.style.display = 'inline-block';
+  }
+  
+  // Renderiname info
+  const items = [];
+  if (kid.health_allergies) items.push({ label: 'Alergijos', val: kid.health_allergies, color: '#EF4444' });
+  if (kid.health_medications) items.push({ label: 'Vaistai', val: kid.health_medications });
+  if (kid.health_conditions) items.push({ label: 'Ligos / Būklės', val: kid.health_conditions, color: '#EF4444' });
+  if (kid.health_injuries) items.push({ label: 'Traumos', val: kid.health_injuries });
+  if (kid.health_notes) items.push({ label: 'Pastabos', val: kid.health_notes });
+  
+  if (items.length === 0) {
+    display.innerHTML = '<div style="text-align:center;color:var(--mut);padding:8px;font-style:italic;">Sveikatos info neužpildyta</div>';
+    return;
+  }
+  
+  display.innerHTML = items.map(item => `
+    <div style="margin-bottom:6px;">
+      <span style="color:var(--mut);font-size:11px;">${item.label}:</span>
+      <span style="color:${item.color || 'var(--text)'};font-weight:${item.color ? '700' : '500'};margin-left:6px;">${item.val}</span>
+    </div>
+  `).join('');
+}
+
+function kdToggleHealthEdit() {
+  if (!currentKidDetails) return;
+  document.getElementById('kd-health-display').style.display = 'none';
+  document.getElementById('kd-edit-health-btn').style.display = 'none';
+  document.getElementById('kd-health-edit').style.display = 'block';
+  
+  document.getElementById('kd-edit-allergies').value = currentKidDetails.health_allergies || '';
+  document.getElementById('kd-edit-medications').value = currentKidDetails.health_medications || '';
+  document.getElementById('kd-edit-conditions').value = currentKidDetails.health_conditions || '';
+  document.getElementById('kd-edit-injuries').value = currentKidDetails.health_injuries || '';
+  document.getElementById('kd-edit-health-notes').value = currentKidDetails.health_notes || '';
+}
+
+function kdCancelHealthEdit() {
+  document.getElementById('kd-health-edit').style.display = 'none';
+  document.getElementById('kd-health-display').style.display = 'block';
+  document.getElementById('kd-edit-health-btn').style.display = 'inline-block';
+}
+
+async function kdSaveHealth() {
+  if (!currentKidDetails?.id) return;
+  
+  const updates = {
+    health_allergies: document.getElementById('kd-edit-allergies').value.trim() || null,
+    health_medications: document.getElementById('kd-edit-medications').value.trim() || null,
+    health_conditions: document.getElementById('kd-edit-conditions').value.trim() || null,
+    health_injuries: document.getElementById('kd-edit-injuries').value.trim() || null,
+    health_notes: document.getElementById('kd-edit-health-notes').value.trim() || null
+  };
+  
+  const { data, error } = await sb.from('kids').update(updates).eq('id', currentKidDetails.id).select();
+  
+  if (error) {
+    console.error('Sveikatos info klaida:', error);
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    return;
+  }
+  if (!data || data.length === 0) {
+    showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000);
+    return;
+  }
+  
+  Object.assign(currentKidDetails, updates);
+  showToast('✅ Sveikatos info atnaujinta', 'success');
+  kdCancelHealthEdit();
+  await loadKidHealth(currentKidDetails);
+}
+
+async function loadKidEmergency(kid) {
+  const display = document.getElementById('kd-emergency-display');
+  const editBtn = document.getElementById('kd-edit-emergency-btn');
+  
+  const isParent = currentProfile?.role === 'parent';
+  if (isParent) {
+    const { data: link } = await sb.from('kid_parent_links')
+      .select('id').eq('kid_id', kid.id).eq('parent_id', currentUser.id).maybeSingle();
+    if (link) editBtn.style.display = 'inline-block';
+  }
+  
+  if (!kid.emergency_contact_name && !kid.emergency_contact_phone) {
+    display.innerHTML = '<div style="text-align:center;color:var(--mut);padding:8px;font-style:italic;">Avarinis kontaktas neužpildytas</div>';
+    return;
+  }
+  
+  let html = '';
+  if (kid.emergency_contact_name) {
+    html += `<div style="font-weight:700;font-size:14px;margin-bottom:4px;">${kid.emergency_contact_name}</div>`;
+  }
+  if (kid.emergency_contact_relation) {
+    html += `<div style="font-size:11px;color:var(--mut);margin-bottom:6px;">${kid.emergency_contact_relation}</div>`;
+  }
+  if (kid.emergency_contact_phone) {
+    html += `<a href="tel:${kid.emergency_contact_phone}" style="display:inline-flex;align-items:center;gap:6px;background:var(--grn);color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;margin-top:4px;">📞 ${kid.emergency_contact_phone}</a>`;
+  }
+  display.innerHTML = html;
+}
+
+function kdToggleEmergencyEdit() {
+  if (!currentKidDetails) return;
+  document.getElementById('kd-emergency-display').style.display = 'none';
+  document.getElementById('kd-edit-emergency-btn').style.display = 'none';
+  document.getElementById('kd-emergency-edit').style.display = 'block';
+  
+  document.getElementById('kd-edit-emergency-name').value = currentKidDetails.emergency_contact_name || '';
+  document.getElementById('kd-edit-emergency-phone').value = currentKidDetails.emergency_contact_phone || '';
+  document.getElementById('kd-edit-emergency-relation').value = currentKidDetails.emergency_contact_relation || '';
+}
+
+function kdCancelEmergencyEdit() {
+  document.getElementById('kd-emergency-edit').style.display = 'none';
+  document.getElementById('kd-emergency-display').style.display = 'block';
+  document.getElementById('kd-edit-emergency-btn').style.display = 'inline-block';
+}
+
+async function kdSaveEmergency() {
+  if (!currentKidDetails?.id) return;
+  
+  const updates = {
+    emergency_contact_name: document.getElementById('kd-edit-emergency-name').value.trim() || null,
+    emergency_contact_phone: document.getElementById('kd-edit-emergency-phone').value.trim() || null,
+    emergency_contact_relation: document.getElementById('kd-edit-emergency-relation').value.trim() || null
+  };
+  
+  const { data, error } = await sb.from('kids').update(updates).eq('id', currentKidDetails.id).select();
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    return;
+  }
+  if (!data || data.length === 0) {
+    showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000);
+    return;
+  }
+  
+  Object.assign(currentKidDetails, updates);
+  showToast('✅ Avarinis kontaktas atnaujintas', 'success');
+  kdCancelEmergencyEdit();
+  await loadKidEmergency(currentKidDetails);
+}
+
+async function loadKidMedia(kid) {
+  const display = document.getElementById('kd-media-display');
+  
+  const isParent = currentProfile?.role === 'parent';
+  let canEdit = false;
+  if (isParent) {
+    const { data: link } = await sb.from('kid_parent_links')
+      .select('id').eq('kid_id', kid.id).eq('parent_id', currentUser.id).maybeSingle();
+    if (link) canEdit = true;
+  }
+  
+  const consent = !!kid.media_consent;
+  const icon = consent ? '✅' : '🚫';
+  const text = consent ? 'Leidžiama' : 'Neleidžiama';
+  const color = consent ? 'var(--grn)' : '#EF4444';
+  
+  let html = `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px;background:${consent ? 'rgba(34,197,94,.1)' : 'rgba(239,68,68,.1)'};border-radius:8px;border:.5px solid ${color};">
+      <div style="font-size:22px;">${icon}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;color:${color};font-size:13px;">${text}</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:2px;">
+          ${consent ? 'Spobu gali naudoti vaiko medžiagą' : 'Spobu negali naudoti vaiko medžiagos'}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  if (canEdit) {
+    html += `
+      <button onclick="kdToggleMediaConsent()" style="margin-top:10px;width:100%;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">
+        ${consent ? '🚫 PAKEISTI Į NELEIDŽIAMA' : '✅ PAKEISTI Į LEIDŽIAMA'}
+      </button>
+    `;
+  }
+  
+  display.innerHTML = html;
+}
+
+async function kdToggleMediaConsent() {
+  if (!currentKidDetails?.id) return;
+  
+  const newConsent = !currentKidDetails.media_consent;
+  const confirmText = newConsent 
+    ? 'Ar tikrai leidžiate Spobu naudoti vaiko medžiagą savo platformoje, marketinge ir socialiniuose kanaluose?'
+    : 'Ar tikrai uždraudžiate Spobu naudoti vaiko medžiagą?';
+  
+  if (!confirm(confirmText)) return;
+  
+  const { data, error } = await sb.from('kids').update({ media_consent: newConsent }).eq('id', currentKidDetails.id).select();
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    return;
+  }
+  if (!data || data.length === 0) {
+    showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000);
+    return;
+  }
+  
+  currentKidDetails.media_consent = newConsent;
+  showToast(newConsent ? '✅ Media sutikimas: leidžiama' : '🚫 Media sutikimas: neleidžiama', 'success');
+  await loadKidMedia(currentKidDetails);
 }
 
 async function loadKidParents(kidId) {
