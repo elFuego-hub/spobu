@@ -1320,12 +1320,18 @@ select.inp option{background:#222;}
       </div>
       <input type="hidden" id="ak-has-phone" value="false">
       
-      <!-- Vaiko email - tik jei turi telefoną -->
+      <!-- Vaiko email + telefonas - tik jei turi telefoną -->
       <div id="ak-kid-email-section" style="display:none;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;border:.5px solid var(--bdr);">
         <label class="lbl">VAIKO EL. PAŠTAS</label>
         <input class="inp" type="email" id="ak-kid-email" placeholder="vaikas@email.lt">
-        <div style="font-size:11px;color:var(--mut);line-height:1.4;">
+        <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-bottom:10px;">
           📧 Vaikas gaus laišką su slaptažodžio nustatymo nuoroda.
+        </div>
+        
+        <label class="lbl" style="margin-top:6px;">VAIKO TELEFONAS</label>
+        <input class="inp" type="tel" id="ak-kid-phone" placeholder="+370 6XX XXXXX">
+        <div style="font-size:11px;color:var(--mut);line-height:1.4;">
+          📱 Treneris galės su vaiku tiesiogiai susisiekti.
         </div>
       </div>
       
@@ -2087,6 +2093,7 @@ let akData = {
   assistant_2_name: null,
   has_phone: false,
   kid_email: null,
+  kid_phone: null,
   // Sveikatos info
   health_allergies: null,
   health_medications: null,
@@ -2110,7 +2117,7 @@ async function openAddKidWizard() {
     trainer_id: null, trainer_name: null,
     assistant_1_id: null, assistant_1_name: null,
     assistant_2_id: null, assistant_2_name: null,
-    has_phone: false, kid_email: null,
+    has_phone: false, kid_email: null, kid_phone: null,
     health_allergies: null, health_medications: null, health_conditions: null,
     health_injuries: null, health_notes: null,
     emergency_contact_name: null, emergency_contact_phone: null, emergency_contact_relation: null,
@@ -2121,6 +2128,7 @@ async function openAddKidWizard() {
   document.getElementById('ak-fname').value = '';
   document.getElementById('ak-lname').value = '';
   document.getElementById('ak-kid-email').value = '';
+  if (document.getElementById('ak-kid-phone')) document.getElementById('ak-kid-phone').value = '';
   document.getElementById('ak-weight').innerHTML = '<option value="">Pirma įvesk gimimo datą...</option>';
   
   // Init dienos (1-31)
@@ -2550,6 +2558,10 @@ async function akSubmit() {
       return;
     }
     akData.kid_email = kidEmail;
+    
+    // Vaiko telefonas (optional - bet jei užpildytas, saugom)
+    const kidPhone = document.getElementById('ak-kid-phone').value.trim();
+    akData.kid_phone = kidPhone || null;
   }
   
   const btn = document.getElementById('ak-submit-btn');
@@ -2572,6 +2584,7 @@ async function akSubmit() {
       wins: 0,
       losses: 0,
       has_phone: akData.has_phone,
+      kid_phone: akData.kid_phone,
       approval_status: 'pending',
       assigned_trainer_id: akData.trainer_id,
       user_id: null,
