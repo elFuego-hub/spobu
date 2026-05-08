@@ -4480,6 +4480,34 @@ async function loadTrainerMembers() {
 let currentGroupForAssign = null;
 let allTrainerKids = [];
 
+// Helper: Generuoja ikonėlių eilutę kiekvienam vaikui sąraše
+// Rodoma: 📷 media (✅/🚫), 📱 telefonas (jei turi), 🏥 sveikatos pastabos (jei yra)
+function renderKidIcons(kid) {
+  const icons = [];
+  
+  // Media sutikimas (visada rodom)
+  if (kid.media_consent) {
+    icons.push('<span title="Media leidžiama" style="font-size:14px;">📷✅</span>');
+  } else {
+    icons.push('<span title="Media neleidžiama" style="font-size:14px;">📷🚫</span>');
+  }
+  
+  // Telefonas (jei turi)
+  if (kid.has_phone || kid.kid_phone) {
+    icons.push('<span title="Turi telefoną" style="font-size:14px;">📱</span>');
+  }
+  
+  // Sveikatos pastabos (jei yra)
+  const hasHealth = kid.health_allergies || kid.health_medications || kid.health_conditions;
+  if (hasHealth) {
+    icons.push('<span title="Sveikatos pastabos" style="font-size:14px;">🏥</span>');
+  }
+  
+  return icons.length > 0 
+    ? `<div style="display:flex;gap:4px;flex-shrink:0;pointer-events:none;">${icons.join('')}</div>` 
+    : '';
+}
+
 async function loadTrainerGroups() {
   // 1. Užkrauname trenerio grupes
   const { data: groups, error } = await sb.from('groups')
@@ -4500,7 +4528,7 @@ async function loadTrainerGroups() {
   let kids = [];
   if (myKidIds.length > 0) {
     const result = await sb.from('kids')
-      .select('id, first_name, last_name, total_exp, current_level, kyu, weight_range, group_id, gender, birth_date, birth_year')
+      .select('id, first_name, last_name, total_exp, current_level, kyu, weight_range, group_id, gender, birth_date, birth_year, media_consent, has_phone, kid_phone, health_allergies, health_medications, health_conditions')
       .in('id', myKidIds)
       .eq('approval_status', 'approved')
       .order('first_name');
@@ -4580,6 +4608,7 @@ async function loadTrainerGroups() {
                     <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
                     <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
                   </div>
+                  ${renderKidIcons(k)}
                   <button onclick="event.stopPropagation(); removeKidFromGroup('${k.id}')" style="background:transparent;color:var(--mut);border:none;cursor:pointer;font-size:18px;padding:8px 12px;flex-shrink:0;" title="Pašalinti iš grupės">✕</button>
                 </div>
               `).join('')}
@@ -4618,6 +4647,7 @@ async function loadTrainerGroups() {
                   <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
                   <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg · ${(k.total_exp||0)} EXP</div>
                 </div>
+                ${renderKidIcons(k)}
               </div>
             `).join('')}
           </div>
