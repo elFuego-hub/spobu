@@ -3475,14 +3475,59 @@ async function showKidDetail(kidId) {
       <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.2);border-radius:14px;padding:14px;">
         <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">VEIKSMAI</div>
         <div style="font-size:12px;color:var(--mut);line-height:1.5;">
-          🎯 Karjera, statistikos, pasiekimai – ateityje.<br>
-          📊 Tu kaip tėvai stebi vaiko progresą.
+          📊 Statistika rodoma atskirame tabe viršuje.
         </div>
       </div>
     </div>
   `;
   
-  document.getElementById('t-kid-detail-content').innerHTML = html;
+  // Apvyniojam į 2 tab'ų struktūrą (INFO + STATISTIKA)
+  const finalHtml = `
+    <!-- Tab nav -->
+    <div style="display:flex;gap:6px;padding:0 16px;margin-bottom:14px;">
+      <button class="parent-kid-tab on" data-tab="info" onclick="switchParentKidTab('info')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">📋 INFO</button>
+      <button class="parent-kid-tab" data-tab="stats" onclick="switchParentKidTab('stats')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">📊 STATISTIKA</button>
+    </div>
+    
+    <!-- INFO tab -->
+    <div id="parent-kid-tab-info" class="parent-kid-tab-content">
+      ${html}
+    </div>
+    
+    <!-- STATISTIKA tab (toks pat UI kaip vaiko v-stat) -->
+    <div id="parent-kid-tab-stats" class="parent-kid-tab-content" style="display:none;">
+      <!-- Sezono filtras -->
+      <div style="display:flex;gap:6px;margin:0 16px 12px;">
+        <button class="parent-season-filter-btn on" data-filter="season" onclick="setParentStatSeasonFilter('season')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🔥 ŠIS SEZONAS</button>
+        <button class="parent-season-filter-btn" data-filter="all" onclick="setParentStatSeasonFilter('all')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🏆 VISŲ LAIKŲ</button>
+      </div>
+      
+      <!-- Tab nav (4 leaderboard'ai) -->
+      <div style="display:flex;gap:6px;margin:0 16px 14px;overflow-x:auto;padding-bottom:4px;">
+        <button class="parent-stat-tab on" data-tab="overall" onclick="switchParentStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
+        <button class="parent-stat-tab" data-tab="skills" onclick="switchParentStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
+        <button class="parent-stat-tab" data-tab="challenges" onclick="switchParentStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">⚡ IŠŠŪKIAI</button>
+        <button class="parent-stat-tab" data-tab="competitions" onclick="switchParentStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
+      </div>
+      
+      <div style="padding:0 16px;">
+        <div id="parent-stat-tab-overall" class="parent-stat-tab-content">
+          <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+        </div>
+        <div id="parent-stat-tab-skills" class="parent-stat-tab-content" style="display:none;">
+          <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+        </div>
+        <div id="parent-stat-tab-challenges" class="parent-stat-tab-content" style="display:none;">
+          <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+        </div>
+        <div id="parent-stat-tab-competitions" class="parent-stat-tab-content" style="display:none;">
+          <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('t-kid-detail-content').innerHTML = finalHtml;
   showTab('t', 't-kid-detail');
 }
 
@@ -6863,6 +6908,282 @@ async function loadChallengeStatTab() {
   const filtersHtml = renderFiltersUI('challenges');
   const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP');
   container.innerHTML = filtersHtml + leaderboardHtml;
+}
+
+// ════════════════════════════════════════
+// TĖVŲ STATISTIKA (pasirinkto vaiko)
+// ════════════════════════════════════════
+
+// Atskira state'as nuo vaiko (kad nesutaptu)
+let parentStatSeasonFilter = 'season';
+const parentStatFilters = {
+  gender: 'all',
+  ageGroup: 'all',
+  skillId: null,
+  scope: 'club',
+  weight: 'all'
+};
+
+// Perjungti INFO/STATISTIKA tab'ą
+function switchParentKidTab(tabName) {
+  document.querySelectorAll('.parent-kid-tab').forEach(btn => {
+    if (btn.dataset.tab === tabName) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--mut)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  
+  document.querySelectorAll('.parent-kid-tab-content').forEach(el => {
+    el.style.display = 'none';
+  });
+  
+  const activeTab = document.getElementById(`parent-kid-tab-${tabName}`);
+  if (activeTab) activeTab.style.display = 'block';
+  
+  // Jei statistika - užkrauti pradinį tab'ą
+  if (tabName === 'stats') {
+    loadParentOverallStatTab();
+  }
+}
+
+// Sezono filtras tėvų stat
+function setParentStatSeasonFilter(filter) {
+  parentStatSeasonFilter = filter;
+  
+  document.querySelectorAll('.parent-season-filter-btn').forEach(btn => {
+    if (btn.dataset.filter === filter) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--mut)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  
+  // Perkrauti aktyvų tab'ą
+  const activeTab = document.querySelector('.parent-stat-tab.on');
+  if (activeTab) switchParentStatTab(activeTab.dataset.tab);
+}
+
+// Filtras keičiasi
+function setParentStatFilter(key, value) {
+  parentStatFilters[key] = value;
+  const activeTab = document.querySelector('.parent-stat-tab.on');
+  if (activeTab) switchParentStatTab(activeTab.dataset.tab);
+}
+
+// Perjungti leaderboard tab'ą
+function switchParentStatTab(tabName) {
+  document.querySelectorAll('.parent-stat-tab').forEach(btn => {
+    if (btn.dataset.tab === tabName) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--mut)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  
+  document.querySelectorAll('.parent-stat-tab-content').forEach(el => {
+    el.style.display = 'none';
+  });
+  
+  const activeTab = document.getElementById(`parent-stat-tab-${tabName}`);
+  if (activeTab) activeTab.style.display = 'block';
+  
+  if (tabName === 'overall') loadParentOverallStatTab();
+  else if (tabName === 'skills') loadParentSkillsStatTab();
+  else if (tabName === 'challenges') loadParentChallengeStatTab();
+  else if (tabName === 'competitions') loadParentCompetitionsStatTab();
+}
+
+// Helper: gauti vaikų entries naudojant tėvų state'ą + vaiko klubą
+async function getParentFilteredKidEntries(scoreSource) {
+  if (!currentParentKid?.id) return [];
+  
+  // Gauti vaiko klubo ID per user_id -> profiles
+  let kidClubId = null;
+  if (currentParentKid.user_id) {
+    const { data: kidProfile } = await sb.from('profiles')
+      .select('club_id')
+      .eq('id', currentParentKid.user_id)
+      .maybeSingle();
+    kidClubId = kidProfile?.club_id || null;
+  }
+  
+  // Saugom dabartinius filtrus, perrašom su parent + kid club
+  const savedSeason = statSeasonFilter;
+  const savedFilters = { ...statFilters };
+  const savedProfile = currentProfile;
+  
+  statSeasonFilter = parentStatSeasonFilter;
+  Object.assign(statFilters, parentStatFilters);
+  
+  // Laikinai pakeičiam currentProfile.club_id į vaiko klubą
+  if (kidClubId) {
+    currentProfile = { ...currentProfile, club_id: kidClubId };
+  }
+  
+  const result = await getFilteredKidEntries(scoreSource);
+  
+  // Atkurti
+  statSeasonFilter = savedSeason;
+  Object.assign(statFilters, savedFilters);
+  currentProfile = savedProfile;
+  
+  return result;
+}
+
+// Filtrų UI render (tėvų versija)
+function renderParentFiltersUI(tabType) {
+  let html = '<div style="margin-bottom:14px;">';
+  
+  // Lyties chips
+  html += `
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <button onclick="setParentStatFilter('gender','all')" style="flex:1;${chipStyle(parentStatFilters.gender === 'all')}">Visi</button>
+      <button onclick="setParentStatFilter('gender','male')" style="flex:1;${chipStyle(parentStatFilters.gender === 'male')}">👦 Berniukai</button>
+      <button onclick="setParentStatFilter('gender','female')" style="flex:1;${chipStyle(parentStatFilters.gender === 'female')}">👧 Mergaitės</button>
+    </div>
+  `;
+  
+  // Amžiaus
+  html += `
+    <select onchange="setParentStatFilter('ageGroup',this.value)" class="inp" style="margin-bottom:8px;">
+      ${AGE_GROUPS.map(g => `<option value="${g.id}" ${parentStatFilters.ageGroup === g.id ? 'selected' : ''}>${g.label}</option>`).join('')}
+    </select>
+  `;
+  
+  // Karjera: skill
+  if (tabType === 'skills') {
+    html += `<select onchange="setParentStatFilter('skillId',this.value || null)" class="inp" style="margin-bottom:8px;" id="parent-skill-filter-select">
+      <option value="">Visi skill'ai</option>
+    </select>`;
+  }
+  
+  // Varžybos
+  if (tabType === 'competitions') {
+    html += `
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button onclick="setParentStatFilter('scope','club')" style="flex:1;${chipStyle(parentStatFilters.scope === 'club')}">🏢 Klubas</button>
+        <button onclick="setParentStatFilter('scope','federation')" style="flex:1;${chipStyle(parentStatFilters.scope === 'federation')}">🌐 Federacija</button>
+      </div>
+      <select onchange="setParentStatFilter('weight',this.value)" class="inp" style="margin-bottom:8px;" id="parent-weight-filter-select">
+        <option value="all">Visi svoriai</option>
+      </select>
+    `;
+  }
+  
+  html += '</div>';
+  return html;
+}
+
+// 📈 OVERALL TAB tėvams
+async function loadParentOverallStatTab() {
+  const container = document.getElementById('parent-stat-tab-overall');
+  if (!container || !currentParentKid?.id) return;
+  
+  parentStatFilters.skillId = null;
+  parentStatFilters.weight = 'all';
+  parentStatFilters.scope = 'club';
+  
+  let entries;
+  if (parentStatSeasonFilter === 'all') {
+    entries = await getParentFilteredKidEntries('total_exp');
+  } else {
+    const [skill, ch, comp] = await Promise.all([
+      getParentFilteredKidEntries('kid_records'),
+      getParentFilteredKidEntries('challenge_submissions'),
+      getParentFilteredKidEntries('competition_results')
+    ]);
+    const combined = {};
+    [...skill, ...ch, ...comp].forEach(e => {
+      if (!combined[e.kidId]) combined[e.kidId] = { ...e, score: 0 };
+      combined[e.kidId].score += e.score;
+    });
+    entries = Object.values(combined).filter(e => e.score > 0);
+  }
+  
+  container.innerHTML = renderParentFiltersUI('overall') + 
+    renderLeaderboardCard(entries, currentParentKid.id, 'EXP');
+}
+
+// 🏋️ SKILLS TAB tėvams
+async function loadParentSkillsStatTab() {
+  const container = document.getElementById('parent-stat-tab-skills');
+  if (!container || !currentParentKid?.id) return;
+  
+  parentStatFilters.weight = 'all';
+  parentStatFilters.scope = 'club';
+  
+  // Užkrauti skill'us
+  const { data: cats } = await sb.from('career_categories').select('id, name, icon').order('sort_order');
+  
+  const entries = await getParentFilteredKidEntries('kid_records');
+  
+  container.innerHTML = renderParentFiltersUI('skills') +
+    renderLeaderboardCard(entries, currentParentKid.id, 'EXP');
+  
+  // Užpildyti skill dropdown'ą
+  const skillSelect = document.getElementById('parent-skill-filter-select');
+  if (skillSelect && cats) {
+    skillSelect.innerHTML = '<option value="">Visi skill\'ai</option>' + 
+      cats.map(c => `<option value="${c.id}" ${parentStatFilters.skillId === c.id ? 'selected' : ''}>${c.icon || '💪'} ${c.name}</option>`).join('');
+  }
+}
+
+// ⚡ CHALLENGES TAB tėvams
+async function loadParentChallengeStatTab() {
+  const container = document.getElementById('parent-stat-tab-challenges');
+  if (!container || !currentParentKid?.id) return;
+  
+  parentStatFilters.skillId = null;
+  parentStatFilters.weight = 'all';
+  parentStatFilters.scope = 'club';
+  
+  const entries = await getParentFilteredKidEntries('challenge_submissions');
+  
+  container.innerHTML = renderParentFiltersUI('challenges') +
+    renderLeaderboardCard(entries, currentParentKid.id, 'EXP');
+}
+
+// 🥇 COMPETITIONS TAB tėvams
+async function loadParentCompetitionsStatTab() {
+  const container = document.getElementById('parent-stat-tab-competitions');
+  if (!container || !currentParentKid?.id) return;
+  
+  parentStatFilters.skillId = null;
+  
+  // Užkrauti svorius
+  let weightQuery = sb.from('kids').select('weight_range').eq('approval_status', 'approved').not('weight_range', 'is', null);
+  const { data: weightsData } = await weightQuery;
+  const uniqueWeights = [...new Set((weightsData || []).map(w => w.weight_range).filter(Boolean))].sort();
+  
+  const entries = await getParentFilteredKidEntries('competition_results');
+  
+  container.innerHTML = renderParentFiltersUI('competitions') +
+    renderLeaderboardCard(entries, currentParentKid.id, 'EXP');
+  
+  const weightSelect = document.getElementById('parent-weight-filter-select');
+  if (weightSelect) {
+    weightSelect.innerHTML = '<option value="all">Visi svoriai</option>' +
+      uniqueWeights.map(w => `<option value="${w}" ${parentStatFilters.weight === w ? 'selected' : ''}>${w}</option>`).join('');
+  }
 }
 
 
