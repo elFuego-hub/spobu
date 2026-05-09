@@ -571,14 +571,21 @@ select.inp option{background:#222;}
       <input type="hidden" id="crm-new-kyu" value="">
     </div>
     
-    <!-- TRENERIO PASIRINKIMAS -->
-    <label class="lbl">SIŲSTI TRENERIUI</label>
-    <select class="inp" id="crm-trainer" style="margin-bottom:14px;">
-      <option value="">Pasirink trenerį...</option>
-    </select>
+    <!-- TRENERIO PASIRINKIMAS (slepiama jei 'didnt_attend') -->
+    <div id="crm-trainer-section">
+      <label class="lbl">SIŲSTI TRENERIUI</label>
+      <select class="inp" id="crm-trainer" style="margin-bottom:14px;">
+        <option value="">Pasirink trenerį...</option>
+      </select>
+      
+      <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-bottom:14px;">
+        ℹ️ Rezultatas bus išsiųstas pasirinktam treneriui patvirtinimui. Po patvirtinimo gausi EXP ir medalį.
+      </div>
+    </div>
     
-    <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-bottom:14px;">
-      ℹ️ Rezultatas bus išsiųstas pasirinktam treneriui patvirtinimui. Po patvirtinimo gausi EXP ir medalį.
+    <!-- INFO ŽINUTĖ JEI 'NEBUVAU' -->
+    <div id="crm-didnt-attend-info" style="display:none;font-size:11px;color:var(--mut);line-height:1.4;margin-bottom:14px;background:rgba(239,68,68,.05);border:.5px solid rgba(239,68,68,.2);border-radius:10px;padding:10px;">
+      ℹ️ Pažymėsi kad nedalyvavai. Trenerio patvirtinimo nereikia, EXP/medalio negausi.
     </div>
     
     <button id="crm-submit-btn" class="btn btng" style="width:100%;" onclick="submitCompResult()">SIŲSTI</button>
@@ -6039,15 +6046,22 @@ function updateCrmFields() {
   const beltSection = document.getElementById('crm-belt-section');
   const nextKyuInfo = document.getElementById('crm-next-kyu-info');
   const newKyuInput = document.getElementById('crm-new-kyu');
+  const trainerSection = document.getElementById('crm-trainer-section');
+  const didntAttendInfo = document.getElementById('crm-didnt-attend-info');
   
   if (status === 'didnt_attend') {
     placementSection.style.display = 'none';
     kumiteSection.style.display = 'none';
     beltSection.style.display = 'none';
+    // Slėpti trenerio sekciją - nereikalinga kai nedalyvavo
+    if (trainerSection) trainerSection.style.display = 'none';
+    if (didntAttendInfo) didntAttendInfo.style.display = 'block';
   } else if (type === 'belt_test') {
     placementSection.style.display = 'none';
     kumiteSection.style.display = 'none';
     beltSection.style.display = 'block';
+    if (trainerSection) trainerSection.style.display = 'block';
+    if (didntAttendInfo) didntAttendInfo.style.display = 'none';
     
     // Auto apskaičiuoti kitą kyu
     const beltPassed = document.getElementById('crm-belt-passed').value === 'true';
@@ -6073,11 +6087,15 @@ function updateCrmFields() {
     placementSection.style.display = 'block';
     kumiteSection.style.display = 'block';
     beltSection.style.display = 'none';
+    if (trainerSection) trainerSection.style.display = 'block';
+    if (didntAttendInfo) didntAttendInfo.style.display = 'none';
   } else {
     // kata
     placementSection.style.display = 'block';
     kumiteSection.style.display = 'none';
     beltSection.style.display = 'none';
+    if (trainerSection) trainerSection.style.display = 'block';
+    if (didntAttendInfo) didntAttendInfo.style.display = 'none';
   }
 }
 
@@ -6100,7 +6118,8 @@ async function submitCompResult() {
   const type = currentCompetitionForResult.competition_type;
   
   // Validacija
-  if (!targetTrainerId) {
+  // Trenerio reikia tik jei dalyvavo (didnt_attend - auto-approved, nereikia trenerio)
+  if (status === 'participated' && !targetTrainerId) {
     showToast('❌ Pasirink trenerį, kuriam siunti', 'error');
     return;
   }
@@ -6118,7 +6137,8 @@ async function submitCompResult() {
     approval_status: status === 'didnt_attend' ? 'approved' : 'pending',
     submitted_by: currentUser.id,
     submitted_role: 'kid',
-    target_trainer_id: targetTrainerId
+    // didnt_attend - jokio trenerio (jam neaktualu)
+    target_trainer_id: status === 'didnt_attend' ? null : targetTrainerId
   };
   
   // didnt_attend - žymėti approved_at iškart (kad ne pending)
