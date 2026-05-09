@@ -4189,6 +4189,9 @@ async function loadKidData() {
   
   // Diržas (header)
   updateBeltDisplay();
+  
+  // Varžybų medaliai (Inventoriuje)
+  loadKidCompetitionMedals();
 
   // Klubas
   if (currentProfile.clubs) {
@@ -4856,6 +4859,176 @@ function updateBeltDisplay() {
     ${generateBeltSvg(kyu, { width: 100, height: 12 })}
     <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">${kyu.toUpperCase()}</div>
   `;
+}
+
+// ════════════════════════════════════════
+// VARŽYBŲ MEDALIAI (Inventoriuje)
+// ════════════════════════════════════════
+
+// SVG medalio generatorius - 3 lygiai × 3 vietos
+function generateMedalSvg(level, placement, size = 80) {
+  const colors = {
+    1: { fill: '#FFD700', stroke: '#B8860B', text: '#7B5A0F', name: 'Auksas' },
+    2: { fill: '#C0C0C0', stroke: '#666', text: '#222', name: 'Sidabras' },
+    3: { fill: '#CD7F32', stroke: '#8B4513', text: '#3F1B05', name: 'Bronza' }
+  };
+  
+  const c = colors[placement] || colors[3];
+  
+  if (level === 'local') {
+    // VIETINĖS - apskritimas su raudona juostele
+    return `<svg width="${size}" height="${size}" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="36" y="0" width="8" height="30" fill="#DC2626"/>
+      <polygon points="36,30 40,38 44,30" fill="#7F1D1D"/>
+      <circle cx="40" cy="60" r="22" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1"/>
+      <circle cx="40" cy="60" r="16" fill="none" stroke="${c.stroke}" stroke-width="0.5" opacity="0.5"/>
+      <text x="40" y="67" text-anchor="middle" font-family="serif" font-size="18" font-weight="700" fill="${c.text}">${placement}</text>
+    </svg>`;
+  } else if (level === 'medium') {
+    // VIDUTINĖS - skulptūra ant pjedestalo
+    return `<svg width="${size}" height="${size}" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="40,5 28,20 20,45 34,60 46,60 60,45 52,20" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1"/>
+      <rect x="34" y="60" width="12" height="22" fill="${c.fill}" stroke="${c.stroke}" stroke-width="0.5"/>
+      <rect x="26" y="82" width="28" height="8" fill="${c.stroke}" stroke="${c.text}" stroke-width="0.5"/>
+      <text x="40" y="40" text-anchor="middle" font-family="serif" font-size="16" font-weight="700" fill="#FFFFFF" stroke="${c.text}" stroke-width="0.3">${placement}</text>
+      <rect x="22" y="90" width="36" height="10" fill="${c.text}" stroke="${c.stroke}" stroke-width="0.3"/>
+    </svg>`;
+  } else {
+    // EUROPOS - taurė su žvaigžde + auselės
+    return `<svg width="${size}" height="${size}" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M 16,5 Q 16,25 26,38 L 26,65 L 17,65 L 17,85 L 63,85 L 63,65 L 54,65 L 54,38 Q 64,25 64,5 Z" fill="${c.fill}" stroke="${c.stroke}" stroke-width="1"/>
+      <path d="M 16,12 Q 4,12 4,22 Q 4,32 16,32" fill="none" stroke="${c.stroke}" stroke-width="2"/>
+      <path d="M 64,12 Q 76,12 76,22 Q 76,32 64,32" fill="none" stroke="${c.stroke}" stroke-width="2"/>
+      <polygon points="40,15 42,21 48,21 43,25 45,31 40,27 35,31 37,25 32,21 38,21" fill="#FFFFFF" stroke="${c.text}" stroke-width="0.3"/>
+      <text x="40" y="58" text-anchor="middle" font-family="serif" font-size="15" font-weight="700" fill="${c.text}">${placement}</text>
+      <rect x="12" y="85" width="56" height="10" fill="${c.text}" stroke="${c.stroke}" stroke-width="0.3"/>
+    </svg>`;
+  }
+}
+
+// Belt test sertifikatas (be vietos)
+function generateBeltCertificateSvg(passed, newKyu, size = 80) {
+  if (passed) {
+    const config = BELT_CONFIG[newKyu] || BELT_CONFIG['10 kyu'];
+    return `<svg width="${size}" height="${size}" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="15" width="60" height="60" rx="3" fill="#FFFFFF" stroke="#888" stroke-width="0.5"/>
+      <rect x="13" y="18" width="54" height="54" rx="2" fill="none" stroke="#888" stroke-width="0.3"/>
+      <text x="40" y="38" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="600" fill="#444">DIRŽO</text>
+      <text x="40" y="50" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="600" fill="#444">TESTAS</text>
+      <text x="40" y="62" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="#16A34A">✓ IŠLAIKĖ</text>
+      <rect x="8" y="75" width="64" height="8" fill="${config.color}" stroke="${config.stroke}" stroke-width="0.5"/>
+      ${config.stripe ? `<rect x="60" y="75" width="3" height="8" fill="${config.stripe}"/>` : ''}
+    </svg>`;
+  } else {
+    return `<svg width="${size}" height="${size}" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="15" width="60" height="60" rx="3" fill="#FFFFFF" stroke="#888" stroke-width="0.5" opacity="0.5"/>
+      <rect x="13" y="18" width="54" height="54" rx="2" fill="none" stroke="#888" stroke-width="0.3" opacity="0.5"/>
+      <text x="40" y="38" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="600" fill="#888">DIRŽO</text>
+      <text x="40" y="50" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="600" fill="#888">TESTAS</text>
+      <text x="40" y="62" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="#888">NEIŠLAIKĖ</text>
+      <rect x="8" y="75" width="64" height="8" fill="#888"/>
+    </svg>`;
+  }
+}
+
+// Užkrauti varžybų medalius vaiko Inventoriuje
+async function loadKidCompetitionMedals() {
+  const container = document.getElementById('v-comp-medals');
+  if (!container || !currentKid?.id) return;
+  
+  // Visi patvirtinti vaiko rezultatai
+  const { data: results, error } = await sb.from('competition_results')
+    .select('*')
+    .eq('kid_id', currentKid.id)
+    .eq('approval_status', 'approved')
+    .eq('status', 'participated')
+    .order('approved_at', { ascending: false });
+  
+  if (error) {
+    console.error('loadKidCompetitionMedals:', error);
+    container.innerHTML = '<div style="text-align:center;padding:14px;color:#EF4444;font-size:11px;">Klaida kraunant medalius</div>';
+    return;
+  }
+  
+  if (!results || results.length === 0) {
+    container.innerHTML = 'Dar nedalyvavai varžybose';
+    container.style.padding = '14px';
+    container.style.textAlign = 'center';
+    return;
+  }
+  
+  // Gauti varžybų info
+  const compIds = [...new Set(results.map(r => r.competition_id))];
+  const { data: comps } = await sb.from('competitions')
+    .select('id, title, competition_type, level, event_date')
+    .in('id', compIds);
+  
+  const compsMap = {};
+  (comps || []).forEach(c => { compsMap[c.id] = c; });
+  
+  // Filtruoti tik tuos, kurie davė medalį (1/2/3 vieta) arba belt_test
+  const medalResults = results.filter(r => {
+    const c = compsMap[r.competition_id];
+    if (!c) return false;
+    if (c.competition_type === 'belt_test') return true; // visi belt_test rodomi
+    return r.placement && r.placement >= 1 && r.placement <= 3; // tik medalininkai
+  });
+  
+  if (medalResults.length === 0) {
+    container.innerHTML = 'Dar neturėjai prizinių vietų ar diržo testų<br><br><span style="font-size:11px;opacity:.6;">Dalyvavimai matomi statistikoje</span>';
+    container.style.padding = '14px';
+    container.style.textAlign = 'center';
+    return;
+  }
+  
+  // Reset container styles
+  container.style.padding = '0';
+  container.style.background = 'transparent';
+  container.style.border = 'none';
+  container.style.textAlign = 'left';
+  
+  // Sukurti medalių grid'ą
+  const html = `
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+      ${medalResults.map(r => {
+        const c = compsMap[r.competition_id];
+        if (!c) return '';
+        
+        const year = new Date(c.event_date).getFullYear();
+        const month = new Date(c.event_date).toLocaleDateString('lt-LT', { month: 'short' }).replace('.', '');
+        
+        let svg = '';
+        let label = '';
+        
+        if (c.competition_type === 'belt_test') {
+          svg = generateBeltCertificateSvg(r.belt_passed, r.new_kyu, 70);
+          label = r.belt_passed ? `Diržas: ${r.new_kyu}` : 'Diržo testas';
+        } else {
+          svg = generateMedalSvg(c.level || 'local', r.placement, 70);
+          const placeNames = { 1: 'Auksas', 2: 'Sidabras', 3: 'Bronza' };
+          label = placeNames[r.placement] || 'Medalis';
+        }
+        
+        // Kovų rekordas (kumite)
+        let extraInfo = '';
+        if (c.competition_type === 'kumite' && (r.wins > 0 || r.losses > 0)) {
+          extraInfo = `<div style="font-size:9px;color:var(--mut);margin-top:2px;">${r.wins}W : ${r.losses}L</div>`;
+        }
+        
+        return `
+          <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:10px;text-align:center;">
+            <div style="display:flex;justify-content:center;margin-bottom:6px;">${svg}</div>
+            <div style="font-size:10px;font-weight:800;color:var(--text);margin-bottom:2px;letter-spacing:.5px;">${label}</div>
+            <div style="font-size:11px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:2px;">${c.title}</div>
+            <div style="font-size:9px;color:var(--mut);">${month} ${year}</div>
+            ${extraInfo}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  
+  container.innerHTML = html;
 }
 
 // ════════════════════════════════════════
