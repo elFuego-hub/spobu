@@ -986,6 +986,12 @@ select.inp option{background:#222;}
   <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">STATISTIKA</div></div>
   <div class="sa">
     
+    <!-- Sezono filtras -->
+    <div style="display:flex;gap:6px;margin:0 0 12px;">
+      <button class="season-filter-btn on" data-filter="season" onclick="setStatSeasonFilter('season')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🔥 ŠIS SEZONAS</button>
+      <button class="season-filter-btn" data-filter="all" onclick="setStatSeasonFilter('all')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🏆 VISŲ LAIKŲ</button>
+    </div>
+    
     <!-- Tab nav -->
     <div style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;padding-bottom:4px;">
       <button class="stat-tab on" data-tab="overall" onclick="switchStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
@@ -996,6 +1002,26 @@ select.inp option{background:#222;}
     
     <!-- TAB: BENDRAS LVL (jau veikiantis Hall of Fame) -->
     <div id="stat-tab-overall" class="stat-tab-content">
+      <!-- Sezono info užrašas -->
+      <div id="overall-season-label" style="text-align:center;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;margin-bottom:10px;"></div>
+      
+      <!-- EXP pasidalijimas -->
+      <div class="cd" style="margin-bottom:12px;padding:14px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">📊 EXP PASIDALIJIMAS</div>
+        <div id="overall-exp-breakdown">
+          <div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div>
+        </div>
+      </div>
+      
+      <!-- Lygio progresas -->
+      <div class="cd" style="margin-bottom:12px;padding:14px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">📈 LYGIO PROGRESAS</div>
+        <div id="overall-level-progress">
+          <div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div>
+        </div>
+      </div>
+      
+      <!-- Hall of Fame -->
       <div class="mr" id="v-my-rank">
         <div>
           <div style="font-size:11px;opacity:.8;font-weight:700;letter-spacing:1px;">MANO VIETA</div>
@@ -1012,19 +1038,10 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- TAB: SKILL'AI (placeholder - kita sesija) -->
+    <!-- TAB: SKILL'AI -->
     <div id="stat-tab-skills" class="stat-tab-content" style="display:none;">
-      <div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:14px;padding:30px 20px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:12px;">🚧</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:8px;">SKILL'Ų REITINGAS</div>
-        <div style="font-size:12px;color:var(--mut);line-height:1.5;">
-          Čia bus rodoma tavo vieta klube pagal kiekvieną skill'ą:<br>
-          💪 Jėga · 🏃 Ištvermė · ⚡ Greitis<br>
-          🤸 Lankstumas · 🎯 Technika · 🥋 Karatė atributika · 🧘 Drausmė
-        </div>
-        <div style="margin-top:14px;font-size:11px;color:var(--mut);font-style:italic;">
-          Bus pridėta artimiausioje sesijoje
-        </div>
+      <div id="skills-stat-content">
+        <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
       </div>
     </div>
     
@@ -1035,18 +1052,10 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- TAB: VARŽYBOS (placeholder - kita sesija) -->
+    <!-- TAB: VARŽYBOS -->
     <div id="stat-tab-competitions" class="stat-tab-content" style="display:none;">
-      <div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:14px;padding:30px 20px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:12px;">🚧</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:8px;">VARŽYBŲ REITINGAS</div>
-        <div style="font-size:12px;color:var(--mut);line-height:1.5;">
-          Čia bus rodomi tavo medaliai ir vieta klube<br>
-          🥇 Aukso · 🥈 Sidabro · 🥉 Bronzos
-        </div>
-        <div style="margin-top:14px;font-size:11px;color:var(--mut);font-style:italic;">
-          Varžybų sistema bus pridėta vėliau
-        </div>
+      <div id="competitions-stat-content">
+        <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
       </div>
     </div>
     
@@ -6355,6 +6364,76 @@ function closeChallengeLeaderboard() {
 // STATISTIKOS EKRANO TABŲ NAVIGACIJA
 // ════════════════════════════════════════
 
+// ════════════════════════════════════════
+// STATISTIKOS SEZONO FILTRAS + HELPER'IAI
+// ════════════════════════════════════════
+
+// Globalus state - kuris filtras aktyvus
+let statSeasonFilter = 'season'; // 'season' arba 'all'
+
+// Apskaičiuoti dabartinį sezoną (2025-09-01 → 2026-08-31)
+function getCurrentSeason() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-11
+  
+  let seasonStart, seasonEnd, seasonLabel;
+  
+  if (month >= 8) { // rugsėjis ir vėliau (8 = rugsėjis)
+    // Pradedasi šiais metais
+    seasonStart = new Date(year, 8, 1); // rugsėjo 1
+    seasonEnd = new Date(year + 1, 7, 31, 23, 59, 59); // sekančių metų rugpjūčio 31
+    seasonLabel = `${year}/${year + 1}`;
+  } else {
+    // Pradedasi praeitais metais
+    seasonStart = new Date(year - 1, 8, 1);
+    seasonEnd = new Date(year, 7, 31, 23, 59, 59);
+    seasonLabel = `${year - 1}/${year}`;
+  }
+  
+  return { start: seasonStart, end: seasonEnd, label: seasonLabel };
+}
+
+// Patikrinti ar data yra dabartiniame sezone
+function isInCurrentSeason(dateStr) {
+  if (!dateStr) return false;
+  const date = new Date(dateStr);
+  const season = getCurrentSeason();
+  return date >= season.start && date <= season.end;
+}
+
+// Filtruoti masyvą pagal sezono filtrą
+function filterBySeasonFilter(items, dateField) {
+  if (statSeasonFilter === 'all') return items;
+  return items.filter(item => isInCurrentSeason(item[dateField]));
+}
+
+// Perjungti sezono filtrą
+function setStatSeasonFilter(filter) {
+  statSeasonFilter = filter;
+  
+  // Atnaujinti UI mygtukus
+  document.querySelectorAll('.season-filter-btn').forEach(btn => {
+    if (btn.dataset.filter === filter) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--mut)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  
+  // Perkrauti aktyvų tabą
+  const activeTab = document.querySelector('.stat-tab.on');
+  if (activeTab) {
+    switchStatTab(activeTab.dataset.tab);
+  }
+}
+
 function switchStatTab(tabName) {
   // Pakeisti aktyvų tab mygtuką
   document.querySelectorAll('.stat-tab').forEach(btn => {
@@ -6382,10 +6461,330 @@ function switchStatTab(tabName) {
   
   // Užkrauti turinį pagal tabą
   if (tabName === 'overall') {
+    if (typeof loadOverallStatTab === 'function') loadOverallStatTab();
     if (typeof loadLeaderboard === 'function') loadLeaderboard();
+  } else if (tabName === 'skills') {
+    if (typeof loadSkillsStatTab === 'function') loadSkillsStatTab();
   } else if (tabName === 'challenges') {
-    loadChallengeStatTab();
+    if (typeof loadChallengeStatTab === 'function') loadChallengeStatTab();
+  } else if (tabName === 'competitions') {
+    if (typeof loadCompetitionsStatTab === 'function') loadCompetitionsStatTab();
   }
+}
+
+// ════════════════════════════════════════
+// STATISTIKOS TABO FUNKCIJOS - VAIKAS
+// ════════════════════════════════════════
+
+// 📈 OVERALL TAB - EXP pasidalijimas + lygio progresas
+async function loadOverallStatTab() {
+  if (!currentKid?.id) return;
+  
+  // Atnaujinti sezono label
+  const season = getCurrentSeason();
+  const labelEl = document.getElementById('overall-season-label');
+  if (labelEl) {
+    labelEl.textContent = statSeasonFilter === 'season' 
+      ? `🔥 SEZONAS ${season.label}` 
+      : '🏆 VISŲ LAIKŲ STATISTIKA';
+  }
+  
+  // Gauti visus EXP šaltinius
+  const [skillRes, challengeRes, compRes] = await Promise.all([
+    sb.from('kid_records').select('category_exp, created_at').eq('kid_id', currentKid.id),
+    sb.from('challenge_submissions').select('exp_gain, reviewed_at').eq('kid_id', currentKid.id).eq('status', 'approved'),
+    sb.from('competition_results').select('exp_gained, approved_at').eq('kid_id', currentKid.id).eq('approval_status', 'approved')
+  ]);
+  
+  // Filtruoti pagal sezoną
+  const skills = filterBySeasonFilter(skillRes.data || [], 'created_at');
+  const challenges = filterBySeasonFilter(challengeRes.data || [], 'reviewed_at');
+  const competitions = filterBySeasonFilter(compRes.data || [], 'approved_at');
+  
+  // Suskaičiuoti EXP
+  const skillExp = skills.reduce((s, r) => s + (r.category_exp || 0), 0);
+  const challengeExp = challenges.reduce((s, r) => s + (r.exp_gain || 0), 0);
+  const compExp = competitions.reduce((s, r) => s + (r.exp_gained || 0), 0);
+  const totalExp = skillExp + challengeExp + compExp;
+  
+  // Renderinti EXP pasidalijimą
+  renderExpBreakdown(skillExp, challengeExp, compExp, totalExp);
+  
+  // Lygio progresas
+  renderLevelProgress(totalExp);
+}
+
+function renderExpBreakdown(skillExp, challengeExp, compExp, totalExp) {
+  const container = document.getElementById('overall-exp-breakdown');
+  if (!container) return;
+  
+  if (totalExp === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Dar nėra EXP</div>';
+    return;
+  }
+  
+  const skillPct = (skillExp / totalExp) * 100;
+  const challengePct = (challengeExp / totalExp) * 100;
+  const compPct = (compExp / totalExp) * 100;
+  
+  // Donut chart kaip horizontalus stacked bar (mobile-friendly)
+  container.innerHTML = `
+    <div style="display:flex;height:24px;border-radius:12px;overflow:hidden;background:var(--bg);margin-bottom:10px;">
+      ${skillPct > 0 ? `<div style="width:${skillPct}%;background:#3B82F6;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:white;" title="Karjera">${skillPct >= 12 ? Math.round(skillPct) + '%' : ''}</div>` : ''}
+      ${challengePct > 0 ? `<div style="width:${challengePct}%;background:#F59E0B;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:white;" title="Iššūkiai">${challengePct >= 12 ? Math.round(challengePct) + '%' : ''}</div>` : ''}
+      ${compPct > 0 ? `<div style="width:${compPct}%;background:#EF4444;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:white;" title="Varžybos">${compPct >= 12 ? Math.round(compPct) + '%' : ''}</div>` : ''}
+    </div>
+    
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+      <div style="background:rgba(59,130,246,.1);border:.5px solid rgba(59,130,246,.3);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:.5px;">🏋️ KARJERA</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#3B82F6;margin-top:2px;">${skillExp}</div>
+        <div style="font-size:8px;color:var(--mut);">${Math.round(skillPct)}%</div>
+      </div>
+      <div style="background:rgba(245,158,11,.1);border:.5px solid rgba(245,158,11,.3);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:.5px;">⚡ IŠŠŪKIAI</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#F59E0B;margin-top:2px;">${challengeExp}</div>
+        <div style="font-size:8px;color:var(--mut);">${Math.round(challengePct)}%</div>
+      </div>
+      <div style="background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:.5px;">🥇 VARŽYBOS</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#EF4444;margin-top:2px;">${compExp}</div>
+        <div style="font-size:8px;color:var(--mut);">${Math.round(compPct)}%</div>
+      </div>
+    </div>
+    
+    <div style="margin-top:10px;text-align:center;font-size:11px;color:var(--mut);">
+      Bendras EXP: <span style="font-weight:800;color:var(--text);">${totalExp.toLocaleString()}</span>
+    </div>
+  `;
+}
+
+function renderLevelProgress(totalExp) {
+  const container = document.getElementById('overall-level-progress');
+  if (!container) return;
+  
+  // Lygio sistema: 200 EXP per lygį (paprasta formulė, gali keisti)
+  // L1: 0-200, L2: 200-400, L3: 400-600, ..., L10: 1800-2000
+  // Po L10: 500 per lygį
+  let level, expForLevel, currentLevelStart;
+  
+  if (totalExp < 2000) {
+    level = Math.floor(totalExp / 200) + 1;
+    currentLevelStart = (level - 1) * 200;
+    expForLevel = 200;
+  } else {
+    level = 10 + Math.floor((totalExp - 2000) / 500) + 1;
+    currentLevelStart = 2000 + (level - 11) * 500;
+    expForLevel = 500;
+  }
+  
+  const expInCurrentLevel = totalExp - currentLevelStart;
+  const progressPct = (expInCurrentLevel / expForLevel) * 100;
+  const expToNext = expForLevel - expInCurrentLevel;
+  
+  // Title pagal lygį
+  let title;
+  if (level >= 50) title = '🏆 LEGENDA';
+  else if (level >= 25) title = '🥇 EKSPERTAS';
+  else if (level >= 15) title = '⭐ MEISTRAS';
+  else if (level >= 10) title = '💪 KOVOTOJAS';
+  else if (level >= 5) title = '🥋 STUDENTAS';
+  else title = '🌱 NAUJOKAS';
+  
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div>
+        <div style="font-size:10px;color:var(--mut);font-weight:700;letter-spacing:1px;">DABARTINIS LYGIS</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--br);">LVL ${level}</div>
+        <div style="font-size:10px;color:var(--mut);">${title}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:9px;color:var(--mut);">Iki LVL ${level + 1}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">+${expToNext}</div>
+        <div style="font-size:9px;color:var(--mut);">EXP</div>
+      </div>
+    </div>
+    
+    <div style="background:var(--bg);height:10px;border-radius:5px;overflow:hidden;margin-bottom:6px;">
+      <div style="height:100%;background:linear-gradient(90deg,var(--br),#FF6B33);width:${progressPct}%;border-radius:5px;transition:width .3s;"></div>
+    </div>
+    
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mut);">
+      <span>${expInCurrentLevel} EXP</span>
+      <span>${expForLevel} EXP</span>
+    </div>
+  `;
+}
+
+// 🏆 SKILLS TAB - karjeros skill'ai (radar chart + sąrašas)
+async function loadSkillsStatTab() {
+  const container = document.getElementById('skills-stat-content');
+  if (!container || !currentKid?.id) return;
+  
+  // Visos kategorijos
+  const { data: cats } = await sb.from('career_categories')
+    .select('id, name, icon, sort_order')
+    .order('sort_order');
+  
+  if (!cats || cats.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Kategorijų nerasta</div>';
+    return;
+  }
+  
+  // Vaiko įrašai
+  const { data: records } = await sb.from('kid_records')
+    .select('category_id, category_exp, created_at')
+    .eq('kid_id', currentKid.id);
+  
+  // Filtruoti pagal sezoną
+  const filtered = filterBySeasonFilter(records || [], 'created_at');
+  
+  // Suskaičiuoti EXP pagal kategoriją
+  const expByCategory = {};
+  filtered.forEach(r => {
+    expByCategory[r.category_id] = (expByCategory[r.category_id] || 0) + (r.category_exp || 0);
+  });
+  
+  const totalSkillExp = Object.values(expByCategory).reduce((s, v) => s + v, 0);
+  
+  if (totalSkillExp === 0) {
+    container.innerHTML = `
+      <div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:14px;padding:40px 20px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">🌱</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:8px;">DAR NĖRA SKILL EXP</div>
+        <div style="font-size:12px;color:var(--mut);line-height:1.5;">
+          Pradėk fiksuoti pasiekimus karjeros skiltyje<br>
+          ir tavo skill'ai užsipildys čia
+        </div>
+      </div>
+    `;
+    return;
+  }
+  
+  // Surūšiuoti pagal EXP (didžiausias pirma)
+  const sortedCats = cats.map(c => ({
+    ...c,
+    exp: expByCategory[c.id] || 0
+  })).sort((a, b) => b.exp - a.exp);
+  
+  // Maksimalus EXP - normalizuoti radar
+  const maxExp = sortedCats[0]?.exp || 1;
+  
+  // Radar chart kampai
+  const numCats = sortedCats.length;
+  const angleStep = (2 * Math.PI) / numCats;
+  const centerX = 130, centerY = 130, maxRadius = 90;
+  
+  // Generuoti radar SVG points
+  const points = sortedCats.map((cat, i) => {
+    const angle = -Math.PI / 2 + i * angleStep; // pradedam viršuje
+    const ratio = cat.exp / maxExp;
+    const r = ratio * maxRadius;
+    return {
+      x: centerX + r * Math.cos(angle),
+      y: centerY + r * Math.sin(angle),
+      labelX: centerX + (maxRadius + 18) * Math.cos(angle),
+      labelY: centerY + (maxRadius + 18) * Math.sin(angle),
+      name: cat.name,
+      icon: cat.icon || '💪',
+      exp: cat.exp,
+      angle: angle
+    };
+  });
+  
+  const polygonPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+  
+  // Tinklo skritulį (3 lygiai)
+  const gridCircles = [0.33, 0.66, 1].map(ratio => {
+    const r = ratio * maxRadius;
+    return `<circle cx="${centerX}" cy="${centerY}" r="${r}" fill="none" stroke="var(--bdr)" stroke-width="0.5" opacity="0.3"/>`;
+  }).join('');
+  
+  // Linijos iš centro
+  const gridLines = points.map(p => {
+    const endX = centerX + maxRadius * Math.cos(p.angle);
+    const endY = centerY + maxRadius * Math.sin(p.angle);
+    return `<line x1="${centerX}" y1="${centerY}" x2="${endX}" y2="${endY}" stroke="var(--bdr)" stroke-width="0.5" opacity="0.3"/>`;
+  }).join('');
+  
+  // Label'iai
+  const labels = points.map(p => `
+    <text x="${p.labelX}" y="${p.labelY}" font-family="sans-serif" font-size="11" fill="var(--text)" text-anchor="middle" font-weight="600">
+      ${p.icon}
+    </text>
+  `).join('');
+  
+  // SVG radar
+  const radarSvg = `
+    <svg viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:280px;height:auto;display:block;margin:0 auto;">
+      ${gridCircles}
+      ${gridLines}
+      <polygon points="${polygonPoints}" fill="rgba(255,77,0,.2)" stroke="#FF4D00" stroke-width="2" stroke-linejoin="round"/>
+      ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#FF4D00"/>`).join('')}
+      ${labels}
+    </svg>
+  `;
+  
+  // Top 3 ir Bot 3
+  const top3 = sortedCats.slice(0, 3);
+  const bot3 = sortedCats.slice(-3).reverse(); // mažiausi pirmi
+  
+  container.innerHTML = `
+    <!-- Radar chart -->
+    <div class="cd" style="padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">🎯 SKILL'Ų RATAS</div>
+      ${radarSvg}
+      <div style="text-align:center;font-size:11px;color:var(--mut);margin-top:8px;">
+        Bendras skill EXP: <span style="font-weight:800;color:var(--text);">${totalSkillExp}</span>
+      </div>
+    </div>
+    
+    <!-- Visi skill'ai sąrašu -->
+    <div class="cd" style="padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">📊 VISI SKILL'AI</div>
+      ${sortedCats.map(cat => {
+        const pct = totalSkillExp > 0 ? (cat.exp / maxExp) * 100 : 0;
+        return `
+          <div style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:14px;">${cat.icon || '💪'}</span>
+                <span style="font-size:12px;font-weight:600;">${cat.name}</span>
+              </div>
+              <span style="font-size:11px;font-weight:800;color:var(--br);">${cat.exp} EXP</span>
+            </div>
+            <div style="background:var(--bg);height:6px;border-radius:3px;overflow:hidden;">
+              <div style="height:100%;background:linear-gradient(90deg,#FF4D00,#FF6B33);width:${pct}%;border-radius:3px;"></div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    
+    <!-- Top 3 + Bot 3 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="cd" style="padding:12px;">
+        <div style="font-size:10px;color:var(--grn);font-weight:700;letter-spacing:1px;margin-bottom:8px;">🔥 STIPRIAUSI</div>
+        ${top3.map((c, i) => `
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px;">
+            <span style="font-weight:800;color:var(--mut);">${i + 1}.</span>
+            <span>${c.icon || '💪'}</span>
+            <span style="flex:1;font-size:10px;">${c.name}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="cd" style="padding:12px;">
+        <div style="font-size:10px;color:#EF4444;font-weight:700;letter-spacing:1px;margin-bottom:8px;">📈 GERINTI</div>
+        ${bot3.map((c, i) => `
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px;">
+            <span style="font-weight:800;color:var(--mut);">${i + 1}.</span>
+            <span>${c.icon || '💪'}</span>
+            <span style="flex:1;font-size:10px;">${c.name}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
 }
 
 async function loadChallengeStatTab() {
@@ -6479,6 +6878,242 @@ async function loadChallengeStatTab() {
   }
   
   document.getElementById('stat-challenge-content').innerHTML = html;
+}
+
+// 🥇 COMPETITIONS TAB - varžybų statistika (medaliai, kovos, dalyvavimai)
+async function loadCompetitionsStatTab() {
+  const container = document.getElementById('competitions-stat-content');
+  if (!container || !currentKid?.id) return;
+  
+  // Visi patvirtinti rezultatai
+  const { data: results, error } = await sb.from('competition_results')
+    .select('*')
+    .eq('kid_id', currentKid.id)
+    .eq('approval_status', 'approved')
+    .order('approved_at', { ascending: false });
+  
+  if (error) {
+    console.error('loadCompetitionsStatTab:', error);
+    container.innerHTML = `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`;
+    return;
+  }
+  
+  // Filtruoti pagal sezoną
+  const filtered = filterBySeasonFilter(results || [], 'approved_at');
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:14px;padding:40px 20px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">🥇</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:8px;">DAR NĖRA VARŽYBŲ</div>
+        <div style="font-size:12px;color:var(--mut);line-height:1.5;">
+          ${statSeasonFilter === 'season' ? 'Šiame sezone dar nedalyvavai' : 'Dar nedalyvavai jokiose varžybose'}
+        </div>
+      </div>
+    `;
+    return;
+  }
+  
+  // Gauti varžybų info
+  const compIds = [...new Set(filtered.map(r => r.competition_id))];
+  const { data: comps } = await sb.from('competitions')
+    .select('id, title, competition_type, level, event_date')
+    .in('id', compIds);
+  
+  const compsMap = {};
+  (comps || []).forEach(c => { compsMap[c.id] = c; });
+  
+  // Skaičiuoti statistikas
+  const participated = filtered.filter(r => r.status === 'participated');
+  const didntAttend = filtered.filter(r => r.status === 'didnt_attend');
+  
+  // Medaliai pagal vietą (tik kumite/kata)
+  const medalRecords = participated.filter(r => {
+    const c = compsMap[r.competition_id];
+    return c && c.competition_type !== 'belt_test' && r.placement;
+  });
+  
+  const goldCount = medalRecords.filter(r => r.placement === 1).length;
+  const silverCount = medalRecords.filter(r => r.placement === 2).length;
+  const bronzeCount = medalRecords.filter(r => r.placement === 3).length;
+  const noMedalCount = participated.filter(r => {
+    const c = compsMap[r.competition_id];
+    return c && c.competition_type !== 'belt_test' && !r.placement;
+  }).length;
+  
+  // Belt testai
+  const beltTests = participated.filter(r => {
+    const c = compsMap[r.competition_id];
+    return c && c.competition_type === 'belt_test';
+  });
+  const beltPassed = beltTests.filter(r => r.belt_passed === true).length;
+  const beltFailed = beltTests.filter(r => r.belt_passed === false).length;
+  
+  // Kumite kovos
+  const kumiteResults = participated.filter(r => {
+    const c = compsMap[r.competition_id];
+    return c && c.competition_type === 'kumite';
+  });
+  const totalWins = kumiteResults.reduce((s, r) => s + (r.wins || 0), 0);
+  const totalLosses = kumiteResults.reduce((s, r) => s + (r.losses || 0), 0);
+  const totalFights = totalWins + totalLosses;
+  const winRate = totalFights > 0 ? Math.round((totalWins / totalFights) * 100) : 0;
+  
+  // Pagal lygį
+  const levelCounts = { local: 0, medium: 0, european: 0 };
+  participated.forEach(r => {
+    const c = compsMap[r.competition_id];
+    if (c && c.level) levelCounts[c.level] = (levelCounts[c.level] || 0) + 1;
+  });
+  
+  // Pagal tipą
+  const typeCounts = { kumite: 0, kata: 0, belt_test: 0 };
+  participated.forEach(r => {
+    const c = compsMap[r.competition_id];
+    if (c) typeCounts[c.competition_type] = (typeCounts[c.competition_type] || 0) + 1;
+  });
+  
+  // EXP iš varžybų
+  const totalCompExp = participated.reduce((s, r) => s + (r.exp_gained || 0), 0);
+  
+  container.innerHTML = `
+    <!-- Medaliai -->
+    <div class="cd" style="padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">🏆 MEDALIAI</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+        <div style="background:rgba(255,215,0,.1);border:.5px solid rgba(255,215,0,.3);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:28px;line-height:1;">🥇</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#FFD700;margin-top:4px;">${goldCount}</div>
+        </div>
+        <div style="background:rgba(192,192,192,.1);border:.5px solid rgba(192,192,192,.3);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:28px;line-height:1;">🥈</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#C0C0C0;margin-top:4px;">${silverCount}</div>
+        </div>
+        <div style="background:rgba(205,127,50,.1);border:.5px solid rgba(205,127,50,.3);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:28px;line-height:1;">🥉</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#CD7F32;margin-top:4px;">${bronzeCount}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border:.5px solid var(--bdr);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:24px;line-height:1;">⚪</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--mut);margin-top:4px;">${noMedalCount}</div>
+          <div style="font-size:8px;color:var(--mut);">Be vietos</div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--mut);margin-top:10px;">
+        Iš viso medalių: <span style="font-weight:800;color:var(--text);">${goldCount + silverCount + bronzeCount}</span>
+      </div>
+    </div>
+    
+    ${kumiteResults.length > 0 ? `
+    <!-- Kumite kovos -->
+    <div class="cd" style="padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">🥊 KUMITE KOVOS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+        <div style="background:rgba(34,197,94,.1);border:.5px solid rgba(34,197,94,.3);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">PERGALĖS</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--grn);margin-top:2px;">${totalWins}</div>
+        </div>
+        <div style="background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">PRALAIM.</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#EF4444;margin-top:2px;">${totalLosses}</div>
+        </div>
+        <div style="background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.3);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAIMĖJIMAI</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);margin-top:2px;">${winRate}%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg);height:8px;border-radius:4px;overflow:hidden;display:flex;">
+        ${totalWins > 0 ? `<div style="height:100%;background:var(--grn);width:${(totalWins / totalFights) * 100}%;"></div>` : ''}
+        ${totalLosses > 0 ? `<div style="height:100%;background:#EF4444;width:${(totalLosses / totalFights) * 100}%;"></div>` : ''}
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--mut);margin-top:6px;">
+        Iš viso kovų: <span style="font-weight:800;color:var(--text);">${totalFights}</span>
+      </div>
+    </div>
+    ` : ''}
+    
+    ${beltTests.length > 0 ? `
+    <!-- Diržo testai -->
+    <div class="cd" style="padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">🥋 DIRŽO TESTAI</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div style="background:rgba(34,197,94,.1);border:.5px solid rgba(34,197,94,.3);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">IŠLAIKĖ</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--grn);margin-top:2px;">${beltPassed}</div>
+        </div>
+        <div style="background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">NEIŠLAIKĖ</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#EF4444;margin-top:2px;">${beltFailed}</div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+    
+    <!-- Pagal lygį -->
+    ${(levelCounts.local + levelCounts.medium + levelCounts.european) > 0 ? `
+    <div class="cd" style="padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">🎚️ DALYVAVIMAI PAGAL LYGĮ</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+        <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:18px;">🏘️</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);">${levelCounts.local}</div>
+          <div style="font-size:9px;color:var(--mut);">Vietinės</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:18px;">🏙️</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);">${levelCounts.medium}</div>
+          <div style="font-size:9px;color:var(--mut);">Vidutinės</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:18px;">🌍</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);">${levelCounts.european}</div>
+          <div style="font-size:9px;color:var(--mut);">Europos</div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+    
+    <!-- Pagal tipą -->
+    <div class="cd" style="padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">📋 PAGAL TIPĄ</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+        <div style="background:rgba(239,68,68,.1);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:18px;">🥊</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EF4444;">${typeCounts.kumite}</div>
+          <div style="font-size:9px;color:var(--mut);">Kumite</div>
+        </div>
+        <div style="background:rgba(59,130,246,.1);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:18px;">🎭</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#3B82F6;">${typeCounts.kata}</div>
+          <div style="font-size:9px;color:var(--mut);">Kata</div>
+        </div>
+        <div style="background:rgba(168,85,247,.1);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:18px;">🥋</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#A855F7;">${typeCounts.belt_test}</div>
+          <div style="font-size:9px;color:var(--mut);">Diržo</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Apibendrinimas -->
+    <div class="cd" style="padding:14px;text-align:center;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">📊 APIBENDRINIMAS</div>
+      <div style="display:flex;justify-content:space-around;font-size:12px;">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);">${participated.length}</div>
+          <div style="font-size:9px;color:var(--mut);">Dalyvauta</div>
+        </div>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--mut);">${didntAttend.length}</div>
+          <div style="font-size:9px;color:var(--mut);">Nedalyvauta</div>
+        </div>
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);">${totalCompExp}</div>
+          <div style="font-size:9px;color:var(--mut);">EXP</div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 async function loadLeaderboard() {
@@ -10105,6 +10740,11 @@ function nv(p,el,sid){
   }
   if (sid === 'v-comp' && typeof loadKidCompetitions === 'function') {
     loadKidCompetitions();
+  }
+  if (sid === 'v-stat') {
+    // Pradžioje atnaujinti aktyvų tabą
+    if (typeof loadOverallStatTab === 'function') loadOverallStatTab();
+    if (typeof loadLeaderboard === 'function') loadLeaderboard();
   }
 }
 
