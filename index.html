@@ -6634,11 +6634,11 @@ async function getFilteredKidEntries(scoreSource, scoreField) {
   let scoresMap = {};
   
   if (scoreSource === 'kid_records') {
-    let q = sb.from('kid_records').select('kid_id, category_id, category_exp, created_at').in('kid_id', kidIds);
+    let q = sb.from('kid_records').select('kid_id, category_id, category_exp, updated_at').in('kid_id', kidIds);
     if (statFilters.skillId) q = q.eq('category_id', statFilters.skillId);
     const { data: records } = await q;
     
-    const filtered = filterBySeasonFilter(records || [], 'created_at');
+    const filtered = filterBySeasonFilter(records || [], 'updated_at');
     filtered.forEach(r => {
       scoresMap[r.kid_id] = (scoresMap[r.kid_id] || 0) + (r.category_exp || 0);
     });
