@@ -5839,6 +5839,15 @@ async function loadKidCompetitions() {
         statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">${resultText}${myResult.exp_gained ? ' (+' + myResult.exp_gained + ' EXP)' : ''}</span>`;
       } else if (myResult?.approval_status === 'rejected') {
         statusBadge = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">❌ Atmesta</span>`;
+        // Pridėti priežastį jei yra
+        if (myResult.rejection_reason) {
+          statusBadge += `<div style="font-size:10px;color:var(--mut);margin-top:4px;font-style:italic;">"${myResult.rejection_reason}"</div>`;
+        }
+        // Bandyti dar kartą mygtukas
+        actionButtons = `
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button onclick="openSubmitCompResult('${c.id}','participated')" style="flex:1;background:var(--br);color:white;border:none;padding:10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🔄 BANDYTI DAR KARTĄ</button>
+          </div>`;
       }
     }
     
