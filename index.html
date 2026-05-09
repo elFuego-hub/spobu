@@ -5235,6 +5235,16 @@ async function viewCompetitionParticipants(competitionId, title) {
     `;
   }
   
+  // CSV eksporto mygtukas (tik jei yra dalyvių)
+  if (results.length > 0) {
+    html += `
+      <button onclick="exportCompetitionCSV('${competitionId}', '${(comp.title || '').replace(/'/g, "\\'")}')" 
+              style="width:100%;background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:14px;letter-spacing:1px;">
+        📥 ATSISIŲSTI PILNĄ SĄRAŠĄ (CSV)
+      </button>
+    `;
+  }
+  
   // Vaiko kortelės helper
   function renderKidCard(result, label, color, bgColor) {
     const kid = kidsMap[result.kid_id];
@@ -5265,9 +5275,9 @@ async function viewCompetitionParticipants(competitionId, title) {
     `;
   }
   
-  // Rodom grupes
+  // Telefone rodom tik TOP medalininkus arba planavimo greitą peržiūrą
   if (isPast) {
-    // Pasibaigusios
+    // Pasibaigusios - tik TOP 3 medaliai
     if (place1.length > 0) {
       html += '<div style="font-size:11px;color:#FFD700;font-weight:800;letter-spacing:1px;margin:14px 0 6px;">🥇 1 VIETA</div>';
       html += place1.map(r => renderKidCard(r, '1', '#FFD700', 'rgba(255,215,0,.05)')).join('');
@@ -5284,35 +5294,160 @@ async function viewCompetitionParticipants(competitionId, title) {
       html += '<div style="font-size:11px;color:var(--grn);font-weight:800;letter-spacing:1px;margin:14px 0 6px;">🥋 IŠLAIKĖ</div>';
       html += beltPassed.map(r => renderKidCard(r, 'pass', '#22C55E', 'rgba(34,197,94,.05)')).join('');
     }
-    if (beltFailed.length > 0) {
-      html += '<div style="font-size:11px;color:#EF4444;font-weight:800;letter-spacing:1px;margin:14px 0 6px;">🥋 NEIŠLAIKĖ</div>';
-      html += beltFailed.map(r => renderKidCard(r, 'fail', '#EF4444', 'rgba(239,68,68,.05)')).join('');
+    
+    // Pranešimas apie CSV
+    const otherCount = placeOther.length + beltFailed.length + pending.length + didntAttend.length;
+    if (otherCount > 0) {
+      html += `<div style="text-align:center;font-size:11px;color:var(--mut);margin-top:14px;padding:10px;background:var(--bg);border-radius:8px;font-style:italic;">
+        Pilną sąrašą (${otherCount} kitų dalyvių) rasi CSV faile
+      </div>`;
     }
-    if (placeOther.length > 0) {
-      html += '<div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:14px 0 6px;">⚪ DALYVAVO (4+ vieta)</div>';
-      html += placeOther.map(r => renderKidCard(r, 'other', '#888888', 'rgba(255,255,255,.03)')).join('');
-    }
-    if (pending.length > 0) {
-      html += '<div style="font-size:11px;color:var(--br);font-weight:800;letter-spacing:1px;margin:14px 0 6px;">⏳ LAUKIA PATVIRTINIMO</div>';
-      html += pending.map(r => renderKidCard(r, 'pending', '#FF4D00', 'rgba(255,77,0,.05)')).join('');
-    }
-    if (didntAttend.length > 0) {
-      html += '<div style="font-size:11px;color:#EF4444;font-weight:800;letter-spacing:1px;margin:14px 0 6px;">🚫 NEBUVO</div>';
-      html += didntAttend.map(r => renderKidCard(r, 'didnt', '#EF4444', 'rgba(239,68,68,.03)')).join('');
+    
+    if (place1.length === 0 && place2.length === 0 && place3.length === 0 && beltPassed.length === 0) {
+      html += '<div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Dar nėra patvirtintų prizininkų</div>';
     }
   } else {
-    // Artėjančios
+    // Artėjančios - rodom kas ketina (kompaktiškas TOP 5)
     if (planning.length > 0) {
       html += '<div style="font-size:11px;color:var(--grn);font-weight:800;letter-spacing:1px;margin:14px 0 6px;">🎯 KETINA DALYVAUTI</div>';
-      html += planning.map(r => renderKidCard(r, 'planning', '#22C55E', 'rgba(34,197,94,.05)')).join('');
+      const showFirst = planning.slice(0, 5);
+      html += showFirst.map(r => renderKidCard(r, 'planning', '#22C55E', 'rgba(34,197,94,.05)')).join('');
+      
+      if (planning.length > 5) {
+        html += `<div style="text-align:center;font-size:11px;color:var(--mut);margin-top:6px;font-style:italic;">
+          ir dar ${planning.length - 5}... (CSV faile)
+        </div>`;
+      }
     }
     if (wontAttend.length > 0) {
-      html += '<div style="font-size:11px;color:#EF4444;font-weight:800;letter-spacing:1px;margin:14px 0 6px;">🚫 NEDALYVAUS</div>';
-      html += wontAttend.map(r => renderKidCard(r, 'wont', '#EF4444', 'rgba(239,68,68,.05)')).join('');
+      html += `<div style="text-align:center;font-size:11px;color:var(--mut);margin-top:14px;padding:10px;background:var(--bg);border-radius:8px;font-style:italic;">
+        ${wontAttend.length} dalyvis (-iai) pažymėjo "Nedalyvaus"
+      </div>`;
+    }
+    if (planning.length === 0 && wontAttend.length === 0) {
+      html += '<div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Dar niekas nepasirinko</div>';
     }
   }
   
   document.getElementById('cpm-list').innerHTML = html;
+}
+
+// CSV eksportas
+async function exportCompetitionCSV(competitionId, title) {
+  const { data: comp } = await sb.from('competitions')
+    .select('*')
+    .eq('id', competitionId)
+    .single();
+  
+  if (!comp) {
+    showToast('❌ Varžybos nerastos', 'error');
+    return;
+  }
+  
+  const { data: results } = await sb.from('competition_results')
+    .select('*')
+    .eq('competition_id', competitionId);
+  
+  if (!results || results.length === 0) {
+    showToast('❌ Nėra dalyvių', 'error');
+    return;
+  }
+  
+  const kidIds = [...new Set(results.map(r => r.kid_id))];
+  const { data: kidsData } = await sb.from('kids')
+    .select('id, first_name, last_name, gender, kyu, weight_category, birth_date')
+    .in('id', kidIds);
+  
+  const kidsMap = {};
+  (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
+  
+  const STATUS_LT = {
+    planning: 'Ketina dalyvauti',
+    wont_attend: 'Nedalyvaus',
+    participated: 'Dalyvavo',
+    didnt_attend: 'Nebuvo'
+  };
+  
+  const APPROVAL_LT = {
+    pending: 'Laukia',
+    approved: 'Patvirtinta',
+    rejected: 'Atmesta'
+  };
+  
+  const TYPE_LT = {
+    kumite: 'Kumite',
+    kata: 'Kata',
+    belt_test: 'Diržo testas'
+  };
+  
+  const LEVEL_LT = {
+    local: 'Vietinės',
+    medium: 'Vidutinės',
+    european: 'Europos'
+  };
+  
+  // CSV header su BOM (UTF-8) - kad Excel teisingai skaitytų lietuviškas raides
+  const BOM = '\uFEFF';
+  let csv = BOM;
+  
+  // Varžybų info
+  csv += `"Varžybos","${comp.title}"\n`;
+  csv += `"Tipas","${TYPE_LT[comp.competition_type] || comp.competition_type}"\n`;
+  if (comp.level) csv += `"Lygis","${LEVEL_LT[comp.level] || comp.level}"\n`;
+  csv += `"Data","${comp.event_date}"\n`;
+  if (comp.location) csv += `"Vieta","${comp.location}"\n`;
+  csv += `\n`;
+  
+  // Stulpelių antraštės
+  csv += `"Vardas","Pavardė","Lytis","Gimimo data","Kyu","Svorio kategorija","Statusas","Vieta","Pergalės","Pralaimėjimai","Diržas išlaikė","Naujas kyu","EXP","Patvirtinta"\n`;
+  
+  // Eilučių rūšiavimas: pirma 1 vietos, paskui 2, 3, kiti dalyvavę, planning, kiti
+  const sorted = [...results].sort((a, b) => {
+    const order = { participated: 0, planning: 1, didnt_attend: 2, wont_attend: 3 };
+    if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
+    if (a.placement && b.placement) return a.placement - b.placement;
+    if (a.placement) return -1;
+    if (b.placement) return 1;
+    return 0;
+  });
+  
+  sorted.forEach(r => {
+    const k = kidsMap[r.kid_id] || {};
+    const fname = (k.first_name || '').replace(/"/g, '""');
+    const lname = (k.last_name || '').replace(/"/g, '""');
+    const gender = k.gender === 'female' ? 'M' : (k.gender === 'male' ? 'V' : '');
+    const birthDate = k.birth_date || '';
+    const kyu = k.kyu || '';
+    const weight = k.weight_category || '';
+    const status = STATUS_LT[r.status] || r.status;
+    const placement = r.placement || '';
+    const wins = r.wins !== null && r.wins !== undefined ? r.wins : '';
+    const losses = r.losses !== null && r.losses !== undefined ? r.losses : '';
+    const beltPassed = r.belt_passed === true ? 'Taip' : (r.belt_passed === false ? 'Ne' : '');
+    const newKyu = r.new_kyu || '';
+    const exp = r.exp_gained || 0;
+    const approval = APPROVAL_LT[r.approval_status] || r.approval_status;
+    
+    csv += `"${fname}","${lname}","${gender}","${birthDate}","${kyu}","${weight}","${status}","${placement}","${wins}","${losses}","${beltPassed}","${newKyu}","${exp}","${approval}"\n`;
+  });
+  
+  // Atsisiuntimas
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  
+  // Failo pavadinimas: pavadinimas-data.csv
+  const safeTitle = (comp.title || 'varzybos').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const fileName = `${safeTitle}_${comp.event_date}.csv`;
+  
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  
+  showToast(`✅ CSV atsisiųstas: ${fileName}`, 'success', 4000);
 }
 
 function closeCompetitionParticipants() {
