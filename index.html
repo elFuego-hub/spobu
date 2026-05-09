@@ -5354,9 +5354,17 @@ async function exportCompetitionCSV(competitionId, title) {
   }
   
   const kidIds = [...new Set(results.map(r => r.kid_id))];
-  const { data: kidsData } = await sb.from('kids')
-    .select('id, first_name, last_name, gender, kyu, weight_category, birth_date')
+  const { data: kidsData, error: kidsError } = await sb.from('kids')
+    .select('id, first_name, last_name, gender, kyu, birth_date')
     .in('id', kidIds);
+  
+  if (kidsError) {
+    console.error('exportCompetitionCSV - kids fetch error:', kidsError);
+    showToast('❌ Klaida gaunant vaikų info: ' + kidsError.message, 'error', 5000);
+    return;
+  }
+  
+  console.log('CSV kids data:', kidsData);
   
   const kidsMap = {};
   (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
@@ -5399,7 +5407,7 @@ async function exportCompetitionCSV(competitionId, title) {
   csv += `\n`;
   
   // Stulpelių antraštės
-  csv += `"Vardas","Pavardė","Lytis","Gimimo data","Kyu","Svorio kategorija","Statusas","Vieta","Pergalės","Pralaimėjimai","Diržas išlaikė","Naujas kyu","EXP","Patvirtinta"\n`;
+  csv += `"Vardas","Pavardė","Lytis","Gimimo data","Kyu","Statusas","Vieta","Pergalės","Pralaimėjimai","Diržas išlaikė","Naujas kyu","EXP","Patvirtinta"\n`;
   
   // Eilučių rūšiavimas: pirma 1 vietos, paskui 2, 3, kiti dalyvavę, planning, kiti
   const sorted = [...results].sort((a, b) => {
@@ -5418,7 +5426,6 @@ async function exportCompetitionCSV(competitionId, title) {
     const gender = k.gender === 'female' ? 'M' : (k.gender === 'male' ? 'V' : '');
     const birthDate = k.birth_date || '';
     const kyu = k.kyu || '';
-    const weight = k.weight_category || '';
     const status = STATUS_LT[r.status] || r.status;
     const placement = r.placement || '';
     const wins = r.wins !== null && r.wins !== undefined ? r.wins : '';
@@ -5428,7 +5435,7 @@ async function exportCompetitionCSV(competitionId, title) {
     const exp = r.exp_gained || 0;
     const approval = APPROVAL_LT[r.approval_status] || r.approval_status;
     
-    csv += `"${fname}","${lname}","${gender}","${birthDate}","${kyu}","${weight}","${status}","${placement}","${wins}","${losses}","${beltPassed}","${newKyu}","${exp}","${approval}"\n`;
+    csv += `"${fname}","${lname}","${gender}","${birthDate}","${kyu}","${status}","${placement}","${wins}","${losses}","${beltPassed}","${newKyu}","${exp}","${approval}"\n`;
   });
   
   // Atsisiuntimas
