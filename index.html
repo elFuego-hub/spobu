@@ -6946,9 +6946,17 @@ async function loadCompetitionsStatTab() {
   statFilters.skillId = null;
   
   // Užkrauti svorio kategorijas (dinaminiai - registruotų vaikų svorius)
-  let weightQuery = sb.from('kids').select('weight_range').eq('approval_status', 'approved').not('weight_range', 'is', null);
+  let userIds = null;
   if (statFilters.scope === 'club' && currentProfile?.club_id) {
-    weightQuery = weightQuery.eq('profiles.club_id', currentProfile.club_id);
+    const { data: clubProfiles } = await sb.from('profiles')
+      .select('id')
+      .eq('club_id', currentProfile.club_id);
+    userIds = (clubProfiles || []).map(p => p.id);
+  }
+  
+  let weightQuery = sb.from('kids').select('weight_range').eq('approval_status', 'approved').not('weight_range', 'is', null);
+  if (userIds) {
+    weightQuery = weightQuery.in('user_id', userIds);
   }
   const { data: weightsData } = await weightQuery;
   const uniqueWeights = [...new Set((weightsData || []).map(w => w.weight_range).filter(Boolean))].sort();
