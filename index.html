@@ -7290,9 +7290,12 @@ const trainerStatFilters = {
   weight: 'all'
 };
 let trainerStatActiveTab = 'overall';
+let trainerStatPage = 1; // PUSLAPIAVIMAS
+const STAT_PAGE_SIZE = 10;
 
 function setTrainerSeasonFilter(filter) {
   trainerStatSeasonFilter = filter;
+  trainerStatPage = 1; // reset puslapio
   document.querySelectorAll('.trainer-season-filter-btn').forEach(btn => {
     if (btn.dataset.filter === filter) {
       btn.classList.add('on');
@@ -7311,6 +7314,12 @@ function setTrainerSeasonFilter(filter) {
 
 function setTrainerStatFilter(key, value) {
   trainerStatFilters[key] = value;
+  trainerStatPage = 1; // reset puslapio
+  switchTrainerStatTab(trainerStatActiveTab);
+}
+
+function setTrainerStatPage(page) {
+  trainerStatPage = page;
   switchTrainerStatTab(trainerStatActiveTab);
 }
 
@@ -7399,7 +7408,7 @@ function renderTrainerFiltersUI(tabType) {
   return html;
 }
 
-// Render visų vaikų sąrašas (be top 10 limit'o, be anonimų, treneris paryškina savus)
+// Render visų vaikų sąrašas su PUSLAPIAVIMU (10 puslapyje)
 async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId) {
   if (!entries || entries.length === 0) {
     return '<div class="cd" style="padding:30px;text-align:center;color:var(--mut);font-size:12px;">Pagal šiuos filtrus nėra rezultatų</div>';
@@ -7408,9 +7417,16 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
   // Surūšiuoti
   entries.sort((a, b) => (b.score || 0) - (a.score || 0));
   
+  // Paginacija
+  const totalPages = Math.ceil(entries.length / STAT_PAGE_SIZE);
+  const currentPage = Math.min(trainerStatPage, totalPages);
+  const startIdx = (currentPage - 1) * STAT_PAGE_SIZE;
+  const endIdx = startIdx + STAT_PAGE_SIZE;
+  const pageEntries = entries.slice(startIdx, endIdx);
+  
   // Treneris mato VISUS - reikia paimti `assigned_trainer_id` per atskira užklausą
-  // BET kadangi entries jau yra, tiesiog užklausiamas trainer info per visus vaikus
-  const kidIds = entries.map(e => e.kidId);
+  // PASTABA: užklausą darom TIK puslapio vaikams (greičiau)
+  const kidIds = pageEntries.map(e => e.kidId);
   const { data: kidsTrainers } = await sb.from('kids')
     .select('id, first_name, last_name, assigned_trainer_id, is_anonymous')
     .in('id', kidIds);
@@ -7424,8 +7440,8 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
     };
   });
   
-  const list = entries.map((e, i) => {
-    const rank = i + 1;
+  const list = pageEntries.map((e, i) => {
+    const rank = startIdx + i + 1; // tikra vieta visame sąraše
     const tInfo = trainerMap[e.kidId];
     const isMine = tInfo?.assigned_trainer_id === highlightTrainerId;
     
@@ -7453,6 +7469,20 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
     `;
   }).join('');
   
+  // Puslapiavimo navigacija
+  const prevDisabled = currentPage <= 1;
+  const nextDisabled = currentPage >= totalPages;
+  
+  const paginationHtml = totalPages > 1 ? `
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 0 4px;">
+      <button onclick="setTrainerStatPage(${currentPage - 1})" ${prevDisabled ? 'disabled' : ''} style="background:${prevDisabled ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDisabled ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDisabled ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:8px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDisabled ? 'not-allowed' : 'pointer'};opacity:${prevDisabled ? '.5' : '1'};">← Atgal</button>
+      <div style="font-size:13px;font-weight:800;color:var(--text);min-width:60px;text-align:center;">
+        ${currentPage} / ${totalPages}
+      </div>
+      <button onclick="setTrainerStatPage(${currentPage + 1})" ${nextDisabled ? 'disabled' : ''} style="background:${nextDisabled ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${nextDisabled ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${nextDisabled ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:8px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${nextDisabled ? 'not-allowed' : 'pointer'};opacity:${nextDisabled ? '.5' : '1'};">Toliau →</button>
+    </div>
+  ` : '';
+  
   return `
     <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">
       🏆 VISI DALYVIAI (${entries.length}) · ⭐ Mano vaikai
@@ -7460,6 +7490,7 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
     <div class="cd" style="padding:8px;">
       ${list}
     </div>
+    ${paginationHtml}
   `;
 }
 
@@ -7618,9 +7649,11 @@ const clubStatFilters = {
   weight: 'all'
 };
 let clubStatActiveTab = 'overall';
+let clubStatPage = 1; // PUSLAPIAVIMAS
 
 function setClubSeasonFilter(filter) {
   clubStatSeasonFilter = filter;
+  clubStatPage = 1;
   document.querySelectorAll('.club-season-filter-btn').forEach(btn => {
     if (btn.dataset.filter === filter) {
       btn.classList.add('on');
@@ -7639,6 +7672,12 @@ function setClubSeasonFilter(filter) {
 
 function setClubStatFilter(key, value) {
   clubStatFilters[key] = value;
+  clubStatPage = 1;
+  switchClubStatTab(clubStatActiveTab);
+}
+
+function setClubStatPage(page) {
+  clubStatPage = page;
   switchClubStatTab(clubStatActiveTab);
 }
 
@@ -7724,7 +7763,7 @@ function renderClubFiltersUI(tabType) {
   return html;
 }
 
-// Render klubo leaderboard'as (be paryškinimo, be anonimų)
+// Render klubo leaderboard'as (be paryškinimo, be anonimų) + PUSLAPIAVIMAS
 async function renderClubLeaderboard(entries, scoreLabel) {
   if (!entries || entries.length === 0) {
     return '<div class="cd" style="padding:30px;text-align:center;color:var(--mut);font-size:12px;">Pagal šiuos filtrus nėra rezultatų</div>';
@@ -7732,8 +7771,15 @@ async function renderClubLeaderboard(entries, scoreLabel) {
   
   entries.sort((a, b) => (b.score || 0) - (a.score || 0));
   
-  // Klubas mato TIKRUS vardus
-  const kidIds = entries.map(e => e.kidId);
+  // Paginacija
+  const totalPages = Math.ceil(entries.length / STAT_PAGE_SIZE);
+  const currentPage = Math.min(clubStatPage, totalPages);
+  const startIdx = (currentPage - 1) * STAT_PAGE_SIZE;
+  const endIdx = startIdx + STAT_PAGE_SIZE;
+  const pageEntries = entries.slice(startIdx, endIdx);
+  
+  // Klubas mato TIKRUS vardus - užklausa TIK puslapio vaikams
+  const kidIds = pageEntries.map(e => e.kidId);
   const { data: kidsRealNames } = await sb.from('kids')
     .select('id, first_name, last_name')
     .in('id', kidIds);
@@ -7743,8 +7789,8 @@ async function renderClubLeaderboard(entries, scoreLabel) {
     namesMap[k.id] = `${k.first_name || ''} ${k.last_name?.[0] || ''}.`.trim();
   });
   
-  const list = entries.map((e, i) => {
-    const rank = i + 1;
+  const list = pageEntries.map((e, i) => {
+    const rank = startIdx + i + 1;
     const realName = namesMap[e.kidId] || e.name;
     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
     
@@ -7760,9 +7806,24 @@ async function renderClubLeaderboard(entries, scoreLabel) {
     `;
   }).join('');
   
+  // Puslapiavimo navigacija
+  const prevDisabled = currentPage <= 1;
+  const nextDisabled = currentPage >= totalPages;
+  
+  const paginationHtml = totalPages > 1 ? `
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 0 4px;">
+      <button onclick="setClubStatPage(${currentPage - 1})" ${prevDisabled ? 'disabled' : ''} style="background:${prevDisabled ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDisabled ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDisabled ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:8px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDisabled ? 'not-allowed' : 'pointer'};opacity:${prevDisabled ? '.5' : '1'};">← Atgal</button>
+      <div style="font-size:13px;font-weight:800;color:var(--text);min-width:60px;text-align:center;">
+        ${currentPage} / ${totalPages}
+      </div>
+      <button onclick="setClubStatPage(${currentPage + 1})" ${nextDisabled ? 'disabled' : ''} style="background:${nextDisabled ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${nextDisabled ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${nextDisabled ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:8px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${nextDisabled ? 'not-allowed' : 'pointer'};opacity:${nextDisabled ? '.5' : '1'};">Toliau →</button>
+    </div>
+  ` : '';
+  
   return `
     <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">🏆 VISI DALYVIAI (${entries.length})</div>
     <div class="cd" style="padding:8px;">${list}</div>
+    ${paginationHtml}
   `;
 }
 
