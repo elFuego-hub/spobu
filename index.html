@@ -6114,11 +6114,17 @@ async function submitCompResult() {
     competition_id: currentCompetitionForResult.id,
     kid_id: currentKid.id,
     status,
-    approval_status: 'pending',
+    // didnt_attend - auto-approved (jokio EXP, jokio efekto)
+    approval_status: status === 'didnt_attend' ? 'approved' : 'pending',
     submitted_by: currentUser.id,
     submitted_role: 'kid',
     target_trainer_id: targetTrainerId
   };
+  
+  // didnt_attend - žymėti approved_at iškart (kad ne pending)
+  if (status === 'didnt_attend') {
+    insertData.approved_at = new Date().toISOString();
+  }
   
   if (status === 'participated') {
     if (type === 'belt_test') {
@@ -9337,12 +9343,13 @@ async function loadPendingCompetitionResults() {
   const trainerProfileId = currentUser?.id;
   if (!trainerProfileId) return;
   
-  // Pending varžybų rezultatai - TIK adresuoti šiam treneriui
+  // Pending varžybų rezultatai - TIK 'participated' adresuoti šiam treneriui
+  // 'didnt_attend' yra auto-approved (be EXP/medalio), nereikalauja patvirtinimo
   const { data: results, error } = await sb.from('competition_results')
     .select('*')
     .eq('target_trainer_id', trainerProfileId)
     .eq('approval_status', 'pending')
-    .in('status', ['participated', 'didnt_attend']) // tik kai vaikas pateikė rezultatą (ne planning)
+    .eq('status', 'participated')
     .order('created_at', { ascending: false });
   
   if (error) {
