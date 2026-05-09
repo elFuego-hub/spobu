@@ -6559,52 +6559,78 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel) {
 
 // Helper: gauti vaikų entries su filtrais (bendrai naudojama)
 async function getFilteredKidEntries(scoreSource, scoreField) {
-  // scoreSource: 'kids' | 'kid_records' | 'challenge_submissions' | 'competition_results'
-  // scoreField: stulpelis kurį sumuojam
+  // scoreSource: 'total_exp' | 'kid_records' | 'challenge_submissions' | 'competition_results'
   
-  // 1. Gauti visus vaikus (klubo arba federacijos)
+  // 1. Pirma gauti profilius (klubo arba visus)
+  let userIds = null;
+  
+  if (statFilters.scope === 'club' && currentProfile?.club_id) {
+    const { data: clubProfiles } = await sb.from('profiles')
+      .select('id')
+      .eq('club_id', currentProfile.club_id);
+    
+    userIds = (clubProfiles || []).map(p => p.id);
+    
+    if (userIds.length === 0) {
+      console.warn('Klube nėra profilių');
+      return [];
+    }
+  }
+  
+  // 2. Gauti vaikus
   let kidsQuery = sb.from('kids')
-    .select('id, first_name, last_name, gender, birth_date, kyu, weight_range, total_exp, is_anonymous, profiles(club_id)')
+    .select('id, first_name, last_name, gender, birth_date, kyu, weight_range, total_exp, is_anonymous, user_id')
     .eq('approval_status', 'approved');
   
-  // Federacijos toggle (tik competitions atveju)
-  if (statFilters.scope === 'club' && currentProfile?.club_id) {
-    kidsQuery = kidsQuery.eq('profiles.club_id', currentProfile.club_id);
+  if (userIds) {
+    kidsQuery = kidsQuery.in('user_id', userIds);
   }
   
   const { data: allKids, error } = await kidsQuery;
   
-  if (error || !allKids) {
-    console.error('getFilteredKidEntries:', error);
+  if (error) {
+    console.error('getFilteredKidEntries kids query:', error);
     return [];
   }
   
-  // 2. Filtruoti pagal lytį, amžių, svorį
-  let filteredKids = allKids.filter(k => {
+  if (!allKids || allKids.length === 0) {
+    console.warn('Nėra vaikų - gal approval_status filter? gal user_ids tušti?', { 
+      userIdsCount: userIds?.length, 
+      scope: statFilters.scope 
+    });
+    return [];
+  }
+  
+  console.log('🔍 getFilteredKidEntries:', { 
+    scoreSource,
+    totalKids: allKids.length, 
+    scope: statFilters.scope,
+    filters: statFilters 
+  });
+  
+  // 3. Filtruoti pagal lytį, amžių, svorį
+  const filteredKids = allKids.filter(k => {
     if (statFilters.gender !== 'all' && k.gender !== statFilters.gender) return false;
     if (!inAgeGroup(k.birth_date, statFilters.ageGroup)) return false;
     if (statFilters.weight !== 'all' && k.weight_range !== statFilters.weight) return false;
-    // Klubo filtras (kadangi join'inta per profiles)
-    if (statFilters.scope === 'club' && k.profiles?.club_id !== currentProfile?.club_id) return false;
     return true;
   });
   
-  // 3. Apskaičiuoti score kiekvienam pagal scoreSource
+  if (filteredKids.length === 0) return [];
+  
+  // 4. Apskaičiuoti score kiekvienam pagal scoreSource
   if (scoreSource === 'total_exp') {
-    // Tiesiogiai iš kids
     return filteredKids.map(k => ({
       kidId: k.id,
       name: k.is_anonymous ? 'Anonimas' : `${k.first_name} ${k.last_name?.[0] || ''}.`,
       kyu: k.kyu,
       score: k.total_exp || 0,
       isAnonymous: k.is_anonymous
-    }));
+    })).filter(e => e.score > 0);
   }
   
   // Kitos scoreSources reikalauja papildomas užklausų
   const kidIds = filteredKids.map(k => k.id);
-  if (kidIds.length === 0) return [];
-  
   let scoresMap = {};
   
   if (scoreSource === 'kid_records') {
@@ -6638,7 +6664,7 @@ async function getFilteredKidEntries(scoreSource, scoreField) {
     });
   }
   
-  // 4. Suformuoti entries (be 0 score)
+  // 5. Suformuoti entries (be 0 score)
   return filteredKids.map(k => ({
     kidId: k.id,
     name: k.is_anonymous ? 'Anonimas' : `${k.first_name} ${k.last_name?.[0] || ''}.`,
