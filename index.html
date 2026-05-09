@@ -508,6 +508,58 @@ select.inp option{background:#222;}
 </div>
 
 <!-- CREATE CHALLENGE MODAL -->
+<!-- VARŽYBŲ KŪRIMO MODAL'AS (klubo admin'ui) -->
+<div class="mo" id="kcmo">
+  <div class="mbox" style="max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="mt">NAUJOS VARŽYBOS</div>
+      <button class="bb" onclick="closeCreateCompetition()">✕</button>
+    </div>
+    
+    <label class="lbl">PAVADINIMAS</label>
+    <input class="inp" type="text" id="kc-title" placeholder="Pvz. Lietuvos taurės varžybos" maxlength="100">
+    
+    <!-- TIPAS -->
+    <label class="lbl">TIPAS</label>
+    <div class="chs" style="margin-bottom:14px;" id="kc-types">
+      <div class="ch on" onclick="selectCompType(this,'kumite')" data-type="kumite">🥊 Kumite</div>
+      <div class="ch" onclick="selectCompType(this,'kata')" data-type="kata">🎭 Kata</div>
+      <div class="ch" onclick="selectCompType(this,'belt_test')" data-type="belt_test">🥋 Diržo testas</div>
+    </div>
+    <input type="hidden" id="kc-type" value="kumite">
+    
+    <!-- LYGIS (tik kumite/kata) -->
+    <div id="kc-level-section">
+      <label class="lbl">REIKŠMĖ</label>
+      <div class="chs" style="margin-bottom:14px;" id="kc-levels">
+        <div class="ch on" onclick="selectCompLevel(this,'local')" data-level="local">🏘️ Vietinės</div>
+        <div class="ch" onclick="selectCompLevel(this,'medium')" data-level="medium">🏙️ Vidutinės</div>
+        <div class="ch" onclick="selectCompLevel(this,'european')" data-level="european">🌍 Europos</div>
+      </div>
+      <input type="hidden" id="kc-level" value="local">
+    </div>
+    
+    <!-- DATA -->
+    <label class="lbl">DATA</label>
+    <input class="inp" type="date" id="kc-date" style="margin-bottom:14px;">
+    
+    <!-- VIETA -->
+    <label class="lbl">VIETA / MIESTAS</label>
+    <input class="inp" type="text" id="kc-location" placeholder="Pvz. Vilnius, Sporto rūmai" maxlength="100" style="margin-bottom:14px;">
+    
+    <!-- REGISTRACIJOS NUORODA -->
+    <label class="lbl">REGISTRACIJOS NUORODA <span style="color:var(--mut);font-weight:400;">(neprivaloma)</span></label>
+    <input class="inp" type="url" id="kc-url" placeholder="https://..." style="margin-bottom:14px;">
+    
+    <!-- PAPILDOMA INFO -->
+    <label class="lbl">PAPILDOMA INFORMACIJA <span style="color:var(--mut);font-weight:400;">(neprivaloma)</span></label>
+    <textarea class="inp" id="kc-info" placeholder="Pvz. Reikalingi tokie dokumentai, mokestis, atvykimo laikas..." rows="3" style="resize:none;margin-bottom:14px;"></textarea>
+    
+    <button class="btn btng" id="kc-submit" style="margin:8px 0 0;width:100%;" onclick="submitNewCompetition()">SUKURTI VARŽYBAS</button>
+    <button class="btn btnd" style="margin:8px 0 0;width:100%;" onclick="closeCreateCompetition()">Atšaukti</button>
+  </div>
+</div>
+
 <div class="mo" id="ccmo">
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -1588,6 +1640,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni on" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -1606,11 +1659,35 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
 
 <!-- KLUBAS: PROFILIS -->
+<!-- KLUBO VARŽYBOS -->
+<div class="sc" id="k-comp">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('k','k-main')">←</div><div class="tt">VARŽYBOS</div>
+  <div style="background:var(--grn);color:white;font-size:16px;font-weight:800;padding:3px 10px;border-radius:99px;font-family:'Bebas Neue',sans-serif;" id="k-comp-count">0</div></div>
+  <div class="tabs">
+    <div class="tab on" onclick="switchKcTab(this,'upcoming')">🔜 Artėjančios <span id="k-comp-upcoming-count" style="opacity:.6;">0</span></div>
+    <div class="tab" onclick="switchKcTab(this,'past')">📦 Pasibaigusios <span id="k-comp-past-count" style="opacity:.6;">0</span></div>
+  </div>
+  <div class="sa">
+    <button onclick="openCreateCompetition()" id="k-new-comp-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJOS VARŽYBOS</button>
+    <div id="k-comp-content">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+
 <div class="sc" id="k-prof">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">PROFILIS</div></div>
@@ -1630,6 +1707,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -4668,6 +4746,284 @@ function updateBeltDisplay() {
     ${generateBeltSvg(kyu, { width: 100, height: 12 })}
     <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">${kyu.toUpperCase()}</div>
   `;
+}
+
+// ════════════════════════════════════════
+// VARŽYBŲ KŪRIMAS (klubo admin)
+// ════════════════════════════════════════
+
+const COMP_TYPE_LABELS = {
+  kumite: '🥊 Kumite',
+  kata: '🎭 Kata',
+  belt_test: '🥋 Diržo testas'
+};
+
+const COMP_LEVEL_LABELS = {
+  local: '🏘️ Vietinės',
+  medium: '🏙️ Vidutinės',
+  european: '🌍 Europos'
+};
+
+function openCreateCompetition() {
+  document.getElementById('kc-title').value = '';
+  document.getElementById('kc-type').value = 'kumite';
+  document.getElementById('kc-level').value = 'local';
+  document.getElementById('kc-date').value = '';
+  document.getElementById('kc-location').value = '';
+  document.getElementById('kc-url').value = '';
+  document.getElementById('kc-info').value = '';
+  
+  // Reset chips
+  document.querySelectorAll('#kcmo .chs .ch').forEach(c => c.classList.remove('on'));
+  document.querySelector('#kcmo [data-type="kumite"]').classList.add('on');
+  document.querySelector('#kcmo [data-level="local"]').classList.add('on');
+  
+  // Levelis matomas tik kumite/kata
+  document.getElementById('kc-level-section').style.display = 'block';
+  
+  // Min data - šiandien
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('kc-date').min = today;
+  
+  document.getElementById('kcmo').classList.add('open');
+}
+
+function closeCreateCompetition() {
+  document.getElementById('kcmo').classList.remove('open');
+}
+
+function selectCompType(el, type) {
+  el.parentElement.querySelectorAll('.ch').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('kc-type').value = type;
+  
+  // belt_test neturi level
+  const levelSection = document.getElementById('kc-level-section');
+  levelSection.style.display = type === 'belt_test' ? 'none' : 'block';
+}
+
+function selectCompLevel(el, level) {
+  el.parentElement.querySelectorAll('.ch').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('kc-level').value = level;
+}
+
+async function submitNewCompetition() {
+  const title = document.getElementById('kc-title').value.trim();
+  const type = document.getElementById('kc-type').value;
+  const level = document.getElementById('kc-level').value;
+  const date = document.getElementById('kc-date').value;
+  const location = document.getElementById('kc-location').value.trim();
+  const url = document.getElementById('kc-url').value.trim();
+  const info = document.getElementById('kc-info').value.trim();
+  
+  if (!title) { showToast('❌ Įvesk pavadinimą', 'error'); return; }
+  if (!date) { showToast('❌ Pasirink datą', 'error'); return; }
+  if (!location) { showToast('❌ Įvesk vietą', 'error'); return; }
+  
+  // Patikrinti klubo ID (admin)
+  const clubId = currentClub?.id;
+  if (!clubId) {
+    showToast('❌ Klubo info trūksta', 'error');
+    return;
+  }
+  
+  const btn = document.getElementById('kc-submit');
+  btn.disabled = true;
+  btn.textContent = 'KURIAMA...';
+  
+  const insertData = {
+    club_id: clubId,
+    title,
+    competition_type: type,
+    event_date: date,
+    location,
+    registration_url: url || null,
+    additional_info: info || null,
+    created_by: currentUser.id,
+    is_active: true
+  };
+  
+  // Level tik kumite/kata
+  if (type !== 'belt_test') {
+    insertData.level = level;
+  }
+  
+  const { data, error } = await sb.from('competitions').insert(insertData).select();
+  
+  btn.disabled = false;
+  btn.textContent = 'SUKURTI VARŽYBAS';
+  
+  if (error) {
+    console.error('submitNewCompetition error:', error);
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    return;
+  }
+  
+  if (!data || data.length === 0) {
+    showToast('❌ Nepavyko sukurti', 'error', 5000);
+    return;
+  }
+  
+  showToast(`✅ Varžybos sukurtos!\n\n${title}`, 'success');
+  closeCreateCompetition();
+  
+  // Perkrauti sąrašą
+  if (typeof loadClubCompetitions === 'function') {
+    await loadClubCompetitions();
+  }
+}
+
+// ════════════════════════════════════════
+// KLUBO VARŽYBŲ SĄRAŠAS
+// ════════════════════════════════════════
+
+let kcActiveTab = 'upcoming';
+
+function switchKcTab(el, tabName) {
+  el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  kcActiveTab = tabName;
+  
+  // Naujų varžybų mygtukas tik artėjančių tabe
+  const newBtn = document.getElementById('k-new-comp-btn');
+  if (newBtn) newBtn.style.display = tabName === 'upcoming' ? 'block' : 'none';
+  
+  loadClubCompetitions();
+}
+
+async function loadClubCompetitions() {
+  const clubId = currentClub?.id;
+  if (!clubId) {
+    document.getElementById('k-comp-content').innerHTML = 
+      '<div style="text-align:center;padding:40px;color:var(--mut);">Klubo info trūksta</div>';
+    return;
+  }
+  
+  const { data: competitions, error } = await sb.from('competitions')
+    .select('*')
+    .eq('club_id', clubId)
+    .order('event_date', { ascending: true });
+  
+  if (error) {
+    console.error('loadClubCompetitions error:', error);
+    document.getElementById('k-comp-content').innerHTML =
+      `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`;
+    return;
+  }
+  
+  // Atskirti į artėjančias / pasibaigusias pagal datą
+  const today = new Date().toISOString().split('T')[0];
+  const upcoming = (competitions || []).filter(c => c.event_date >= today);
+  const past = (competitions || []).filter(c => c.event_date < today);
+  
+  // Atnaujinti skaičiukus
+  document.getElementById('k-comp-upcoming-count').textContent = upcoming.length;
+  document.getElementById('k-comp-past-count').textContent = past.length;
+  document.getElementById('k-comp-count').textContent = upcoming.length;
+  
+  const compsToShow = kcActiveTab === 'upcoming' ? upcoming : past;
+  
+  if (!compsToShow.length) {
+    const message = kcActiveTab === 'upcoming' 
+      ? 'Dar nesukūrei varžybų.<br><br>Spausk + NAUJOS VARŽYBOS 🥇'
+      : 'Dar nėra pasibaigusių varžybų.';
+    document.getElementById('k-comp-content').innerHTML =
+      `<div style="text-align:center;padding:40px;color:var(--mut);">${message}</div>`;
+    return;
+  }
+  
+  // Skaičiuoti dalyvių skaičius (kiek pateikė rezultatus)
+  const compIds = compsToShow.map(c => c.id);
+  let resultsByComp = {};
+  if (compIds.length > 0) {
+    const { data: results } = await sb.from('competition_results')
+      .select('competition_id, status, approval_status')
+      .in('competition_id', compIds);
+    (results || []).forEach(r => {
+      if (!resultsByComp[r.competition_id]) resultsByComp[r.competition_id] = { total: 0, approved: 0, pending: 0 };
+      resultsByComp[r.competition_id].total++;
+      if (r.approval_status === 'approved') resultsByComp[r.competition_id].approved++;
+      if (r.approval_status === 'pending') resultsByComp[r.competition_id].pending++;
+    });
+  }
+  
+  const html = compsToShow.map(c => {
+    const stats = resultsByComp[c.id] || { total: 0, approved: 0, pending: 0 };
+    const isPast = c.event_date < today;
+    
+    // Countdown
+    let timeInfo = '';
+    if (!isPast) {
+      const days = Math.ceil((new Date(c.event_date) - new Date()) / 86400000);
+      if (days === 0) timeInfo = '🔥 Šiandien!';
+      else if (days === 1) timeInfo = '⏱️ Rytoj';
+      else timeInfo = `⏱️ Liko ${days} d.`;
+    } else {
+      const days = Math.ceil((new Date() - new Date(c.event_date)) / 86400000);
+      timeInfo = `📅 Prieš ${days} d.`;
+    }
+    
+    const typeLabel = COMP_TYPE_LABELS[c.competition_type] || c.competition_type;
+    const levelLabel = c.level ? COMP_LEVEL_LABELS[c.level] : '';
+    
+    const cardOpacity = isPast ? 'opacity:.85;' : '';
+    
+    return `<div class="cd" style="margin-bottom:12px;${cardOpacity}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${c.title}</div>
+          <div style="font-size:11px;color:var(--mut);">${typeLabel}${levelLabel ? ' · ' + levelLabel : ''}</div>
+        </div>
+        <div class="bg ${isPast ? '' : 'gn'}" style="${isPast ? 'background:rgba(255,255,255,.1);color:var(--mut);' : ''}">${timeInfo}</div>
+      </div>
+      
+      <div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:var(--mut);">
+        <div style="margin-bottom:4px;">📅 ${formatDateLT(c.event_date)}</div>
+        <div style="margin-bottom:4px;">📍 ${c.location || '–'}</div>
+        ${c.registration_url ? `<div style="margin-bottom:4px;"><a href="${c.registration_url}" target="_blank" style="color:var(--br);text-decoration:none;">🔗 Registracija</a></div>` : ''}
+        ${c.additional_info ? `<div style="margin-top:6px;color:var(--text);font-size:11px;">${c.additional_info}</div>` : ''}
+      </div>
+      
+      <!-- Statistikos -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px;">
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);">${stats.total}</div>
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">DALYVIAI</div>
+        </div>
+        <div style="background:rgba(34,197,94,.05);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">${stats.approved}</div>
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">PATVIRTINTA</div>
+        </div>
+        <div style="background:rgba(255,77,0,.05);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${stats.pending}</div>
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAUKIA</div>
+        </div>
+      </div>
+      
+      <button onclick="deleteCompetition('${c.id}', '${(c.title || '').replace(/'/g, "\\'")}')" style="width:100%;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+    </div>`;
+  }).join('');
+  
+  document.getElementById('k-comp-content').innerHTML = html;
+}
+
+async function deleteCompetition(id, title) {
+  if (!confirm(`Ar tikrai ištrinti "${title}"?\n\nVisi pateikti rezultatai bus IŠTRINTI!`)) return;
+  
+  const { error } = await sb.from('competitions').delete().eq('id', id);
+  if (error) { showToast('❌ ' + error.message, 'error'); return; }
+  
+  showToast('✅ Varžybos ištrintos', 'success');
+  await loadClubCompetitions();
+}
+
+// Pagalbinė funkcija data formatavimui
+function formatDateLT(dateStr) {
+  if (!dateStr) return '';
+  const months = ['sausio', 'vasario', 'kovo', 'balandžio', 'gegužės', 'birželio', 'liepos', 'rugpjūčio', 'rugsėjo', 'spalio', 'lapkričio', 'gruodžio'];
+  const d = new Date(dateStr);
+  return `${d.getFullYear()} m. ${months[d.getMonth()]} ${d.getDate()} d.`;
 }
 
 const CHALLENGE_TIERS = {
@@ -8388,6 +8744,12 @@ function nv(p,el,sid){
   // Special-case loaders
   if (sid === 'tr-challenges' && typeof loadTrainerOwnChallenges === 'function') {
     loadTrainerOwnChallenges();
+  }
+  if (sid === 'k-comp' && typeof loadClubCompetitions === 'function') {
+    loadClubCompetitions();
+  }
+  if (sid === 'v-comp' && typeof loadKidCompetitions === 'function') {
+    loadKidCompetitions();
   }
 }
 
