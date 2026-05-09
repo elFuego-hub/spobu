@@ -6671,7 +6671,7 @@ async function getFilteredKidEntries(scoreSource, scoreField) {
       kyu: k.kyu,
       score: k.total_exp || 0,
       isAnonymous: k.is_anonymous
-    })).filter(e => e.score > 0);
+    }));
   }
   
   // Kitos scoreSources reikalauja papildomas užklausų
@@ -6709,14 +6709,14 @@ async function getFilteredKidEntries(scoreSource, scoreField) {
     });
   }
   
-  // 5. Suformuoti entries (be 0 score)
+  // 5. Suformuoti entries (paliekam visus, net su 0 - kad vaikas matytų savo poziciją)
   return filteredKids.map(k => ({
     kidId: k.id,
     name: k.is_anonymous ? 'Anonimas' : `${k.first_name} ${k.last_name?.[0] || ''}.`,
     kyu: k.kyu,
     score: scoresMap[k.id] || 0,
     isAnonymous: k.is_anonymous
-  })).filter(e => e.score > 0);
+  }));
 }
 
 // Filtrų UI render (bendras helper)
@@ -6802,14 +6802,20 @@ async function loadOverallStatTab() {
     entries = await getFilteredKidEntries('total_exp');
   } else {
     // Sezono filtras - sumuojam iš trijų šaltinių
+    // Pradedam nuo VISŲ vaikų (su 0 EXP) - kad vaikas matytų savo poziciją
+    const allKidsBase = await getFilteredKidEntries('total_exp');
+    const combined = {};
+    allKidsBase.forEach(e => {
+      combined[e.kidId] = { ...e, score: 0 };
+    });
+    
+    // Pridedam EXP iš 3 šaltinių
     const [skillRes, challengeRes, compRes] = await Promise.all([
       getFilteredKidEntries('kid_records'),
       getFilteredKidEntries('challenge_submissions'),
       getFilteredKidEntries('competition_results')
     ]);
     
-    // Sumuojam scores iš 3 šaltinių
-    const combined = {};
     [...skillRes, ...challengeRes, ...compRes].forEach(e => {
       if (!combined[e.kidId]) {
         combined[e.kidId] = { ...e, score: 0 };
@@ -6817,7 +6823,7 @@ async function loadOverallStatTab() {
       combined[e.kidId].score += e.score;
     });
     
-    entries = Object.values(combined).filter(e => e.score > 0);
+    entries = Object.values(combined);
   }
   
   // Render result
@@ -7106,17 +7112,24 @@ async function loadParentOverallStatTab() {
   if (parentStatSeasonFilter === 'all') {
     entries = await getParentFilteredKidEntries('total_exp');
   } else {
+    // Pradedam nuo visų vaikų su 0 EXP
+    const allKidsBase = await getParentFilteredKidEntries('total_exp');
+    const combined = {};
+    allKidsBase.forEach(e => {
+      combined[e.kidId] = { ...e, score: 0 };
+    });
+    
     const [skill, ch, comp] = await Promise.all([
       getParentFilteredKidEntries('kid_records'),
       getParentFilteredKidEntries('challenge_submissions'),
       getParentFilteredKidEntries('competition_results')
     ]);
-    const combined = {};
+    
     [...skill, ...ch, ...comp].forEach(e => {
       if (!combined[e.kidId]) combined[e.kidId] = { ...e, score: 0 };
       combined[e.kidId].score += e.score;
     });
-    entries = Object.values(combined).filter(e => e.score > 0);
+    entries = Object.values(combined);
   }
   
   container.innerHTML = renderParentFiltersUI('overall') + 
