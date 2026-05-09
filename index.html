@@ -6531,20 +6531,25 @@ function switchStatTab(tabName) {
     el.style.display = 'none';
   });
   
-  // Parodyti pasirinktą
+  // Parodyti pasirinktą + loading spinner'į
   const activeTab = document.getElementById(`stat-tab-${tabName}`);
-  if (activeTab) activeTab.style.display = 'block';
-  
-  // Užkrauti turinį pagal tabą
-  if (tabName === 'overall') {
-    if (typeof loadOverallStatTab === 'function') loadOverallStatTab();
-  } else if (tabName === 'skills') {
-    if (typeof loadSkillsStatTab === 'function') loadSkillsStatTab();
-  } else if (tabName === 'challenges') {
-    if (typeof loadChallengeStatTab === 'function') loadChallengeStatTab();
-  } else if (tabName === 'competitions') {
-    if (typeof loadCompetitionsStatTab === 'function') loadCompetitionsStatTab();
+  if (activeTab) {
+    activeTab.style.display = 'block';
+    activeTab.innerHTML = loadingSpinnerHtml('Kraunama...');
   }
+  
+  // Užkrauti turinį pagal tabą (su debounce)
+  debouncedRun('stat-tab', () => {
+    if (tabName === 'overall') {
+      if (typeof loadOverallStatTab === 'function') loadOverallStatTab();
+    } else if (tabName === 'skills') {
+      if (typeof loadSkillsStatTab === 'function') loadSkillsStatTab();
+    } else if (tabName === 'challenges') {
+      if (typeof loadChallengeStatTab === 'function') loadChallengeStatTab();
+    } else if (tabName === 'competitions') {
+      if (typeof loadCompetitionsStatTab === 'function') loadCompetitionsStatTab();
+    }
+  }, 150);
 }
 
 // ════════════════════════════════════════
@@ -6673,7 +6678,71 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel) {
 }
 
 // Helper: gauti vaikų entries su filtrais (bendrai naudojama)
+// ════════════════════════════════════════
+// STATISTIKOS CACHE + LOADING HELPER'IAI
+// ════════════════════════════════════════
+
+const STAT_CACHE = new Map();
+const STAT_CACHE_TTL = 30000; // 30 sekundžių
+
+// Cache helper - grąžina iš cache arba kvieti fetch'ą
+async function statCacheGet(key, fetcher) {
+  const cached = STAT_CACHE.get(key);
+  if (cached && (Date.now() - cached.time < STAT_CACHE_TTL)) {
+    return cached.data;
+  }
+  const data = await fetcher();
+  STAT_CACHE.set(key, { time: Date.now(), data });
+  return data;
+}
+
+// Loading spinner SVG
+function loadingSpinnerHtml(text = 'Kraunama...') {
+  return `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;color:var(--mut);">
+      <div style="width:32px;height:32px;border:3px solid var(--bdr);border-top-color:var(--br);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px;"></div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:1px;">${text}</div>
+    </div>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+  `;
+}
+
+// Debouncing - paskutinis paspaudimas laimi
+const DEBOUNCE_TIMERS = {};
+function debouncedRun(key, fn, delay = 150) {
+  if (DEBOUNCE_TIMERS[key]) clearTimeout(DEBOUNCE_TIMERS[key]);
+  DEBOUNCE_TIMERS[key] = setTimeout(() => {
+    fn();
+    delete DEBOUNCE_TIMERS[key];
+  }, delay);
+}
+
+// Generuoti cache key iš filtrų
+function buildCacheKey(prefix, scope, season, filters) {
+  return `${prefix}::${scope}::${season}::${JSON.stringify(filters)}`;
+}
+
 async function getFilteredKidEntries(scoreSource, scoreField) {
+  // CACHE - tas pats užklausos derinys saugomas 30s
+  const cacheKey = buildCacheKey(
+    `entries:${scoreSource}`, 
+    statFilters.scope,
+    statSeasonFilter,
+    {
+      gender: statFilters.gender,
+      ageGroup: statFilters.ageGroup,
+      skillId: statFilters.skillId,
+      weight: statFilters.weight,
+      clubId: currentProfile?.club_id || 'all'
+    }
+  );
+  
+  return statCacheGet(cacheKey, async () => {
+    return await _getFilteredKidEntriesUncached(scoreSource, scoreField);
+  });
+}
+
+async function _getFilteredKidEntriesUncached(scoreSource, scoreField) {
   // scoreSource: 'total_exp' | 'kid_records' | 'challenge_submissions' | 'competition_results'
   
   // 1. Pirma gauti profilius (klubo arba visus)
@@ -7088,12 +7157,17 @@ function switchParentStatTab(tabName) {
   });
   
   const activeTab = document.getElementById(`parent-stat-tab-${tabName}`);
-  if (activeTab) activeTab.style.display = 'block';
+  if (activeTab) {
+    activeTab.style.display = 'block';
+    activeTab.innerHTML = loadingSpinnerHtml('Kraunama...');
+  }
   
-  if (tabName === 'overall') loadParentOverallStatTab();
-  else if (tabName === 'skills') loadParentSkillsStatTab();
-  else if (tabName === 'challenges') loadParentChallengeStatTab();
-  else if (tabName === 'competitions') loadParentCompetitionsStatTab();
+  debouncedRun('parent-stat-tab', () => {
+    if (tabName === 'overall') loadParentOverallStatTab();
+    else if (tabName === 'skills') loadParentSkillsStatTab();
+    else if (tabName === 'challenges') loadParentChallengeStatTab();
+    else if (tabName === 'competitions') loadParentCompetitionsStatTab();
+  }, 150);
 }
 
 // Helper: gauti vaikų entries naudojant tėvų state'ą + vaiko klubą
@@ -7340,12 +7414,19 @@ function switchTrainerStatTab(tabName) {
   });
   document.querySelectorAll('.trainer-stat-tab-content').forEach(el => el.style.display = 'none');
   const activeTab = document.getElementById(`trainer-stat-tab-${tabName}`);
-  if (activeTab) activeTab.style.display = 'block';
+  if (activeTab) {
+    activeTab.style.display = 'block';
+    // Iškart parodom loading spinner'į
+    activeTab.innerHTML = loadingSpinnerHtml('Kraunama statistika...');
+  }
   
-  if (tabName === 'overall') loadTrainerOverallStat();
-  else if (tabName === 'skills') loadTrainerSkillsStat();
-  else if (tabName === 'challenges') loadTrainerChallengesStat();
-  else if (tabName === 'competitions') loadTrainerCompetitionsStat();
+  // Debounce - jei greitai spaudžia kelis kartus, paskutinis laimi
+  debouncedRun('trainer-stat-tab', () => {
+    if (tabName === 'overall') loadTrainerOverallStat();
+    else if (tabName === 'skills') loadTrainerSkillsStat();
+    else if (tabName === 'challenges') loadTrainerChallengesStat();
+    else if (tabName === 'competitions') loadTrainerCompetitionsStat();
+  }, 150);
 }
 
 // Helper - getEntries naudojant trainer state'ą
@@ -7698,12 +7779,17 @@ function switchClubStatTab(tabName) {
   });
   document.querySelectorAll('.club-stat-tab-content').forEach(el => el.style.display = 'none');
   const activeTab = document.getElementById(`club-stat-tab-${tabName}`);
-  if (activeTab) activeTab.style.display = 'block';
+  if (activeTab) {
+    activeTab.style.display = 'block';
+    activeTab.innerHTML = loadingSpinnerHtml('Kraunama statistika...');
+  }
   
-  if (tabName === 'overall') loadClubOverallStat();
-  else if (tabName === 'skills') loadClubSkillsStat();
-  else if (tabName === 'challenges') loadClubChallengesStat();
-  else if (tabName === 'competitions') loadClubCompetitionsStat();
+  debouncedRun('club-stat-tab', () => {
+    if (tabName === 'overall') loadClubOverallStat();
+    else if (tabName === 'skills') loadClubSkillsStat();
+    else if (tabName === 'challenges') loadClubChallengesStat();
+    else if (tabName === 'competitions') loadClubCompetitionsStat();
+  }, 150);
 }
 
 async function getClubFilteredEntries(scoreSource) {
