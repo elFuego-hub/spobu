@@ -4885,9 +4885,8 @@ function openCreateCompetition() {
   // Levelis matomas tik kumite/kata
   document.getElementById('kc-level-section').style.display = 'block';
   
-  // Min data - šiandien
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('kc-date').min = today;
+  // Datos apribojimas pašalintas - galima kurti ir praeities varžybas (istoriniam įrašui)
+  document.getElementById('kc-date').removeAttribute('min');
   
   document.getElementById('kcmo').classList.add('open');
 }
