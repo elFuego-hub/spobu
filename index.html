@@ -794,6 +794,12 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">IŠŠŪKIAI</div></div>
   <div class="sa">
+    <!-- Tabai -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">⚡ AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
+      <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">📦 ATLIKTI <span id="v-completed-count" style="opacity:.7;">0</span></button>
+    </div>
+    
     <div id="v-challenges-list">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
@@ -1014,8 +1020,12 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div class="tb"><div class="bb" onclick="g('tr','tr-main')">←</div><div class="tt">MANO IŠŠŪKIAI</div>
   <div style="background:var(--grn);color:white;font-size:16px;font-weight:800;padding:3px 10px;border-radius:99px;font-family:'Bebas Neue',sans-serif;" id="tr-my-challenges-count">0</div></div>
+  <div class="tabs">
+    <div class="tab on" onclick="switchMyChallengesTab(this,'active')">⚡ Aktyvūs <span id="tr-active-count" style="opacity:.6;">0</span></div>
+    <div class="tab" onclick="switchMyChallengesTab(this,'completed')">📦 Pasibaigę <span id="tr-completed-count" style="opacity:.6;">0</span></div>
+  </div>
   <div class="sa">
-    <button onclick="openCreateChallenge()" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJAS IŠŠŪKIS</button>
+    <button onclick="openCreateChallenge()" id="tr-new-challenge-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJAS IŠŠŪKIS</button>
     <div id="tr-my-challenges-content">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
@@ -4217,6 +4227,25 @@ function spawnConfetti() {
   }
 }
 
+// State - kuris tab pasirinktas vaiko iššūkių ekrane
+let kidChallengesActiveTab = 'active';
+
+function switchKidChallengesTab(el, tabName) {
+  el.parentElement.querySelectorAll('.v-ch-tab').forEach(t => {
+    t.classList.remove('on');
+    t.style.background = 'transparent';
+    t.style.color = 'var(--mut)';
+    t.style.border = '.5px solid var(--bdr)';
+  });
+  el.classList.add('on');
+  el.style.background = 'rgba(255,77,0,.15)';
+  el.style.color = 'var(--br)';
+  el.style.border = '.5px solid rgba(255,77,0,.4)';
+  
+  kidChallengesActiveTab = tabName;
+  loadChallenges();
+}
+
 async function loadChallenges() {
   if (!currentKid?.id) {
     console.warn('loadChallenges: currentKid.id missing');
@@ -4224,11 +4253,9 @@ async function loadChallenges() {
   }
   
   // BUG FIX: Klubą gauname per vaiko trenerį (assigned_trainer_id arba kid_trainers)
-  // Vaiko profiles.club_id gali būti NULL, todėl negalim juo remtis
   let clubId = currentProfile?.club_id;
   
   if (!clubId) {
-    // Imam iš vaiko duomenų
     if (currentKid.assigned_trainer_id) {
       const { data: trainer } = await sb.from('profiles')
         .select('club_id')
@@ -4237,7 +4264,6 @@ async function loadChallenges() {
       clubId = trainer?.club_id;
     }
     
-    // Jei vis dar nėra - per kid_trainers
     if (!clubId) {
       const { data: kt } = await sb.from('kid_trainers')
         .select('trainer_id, profiles!kid_trainers_trainer_id_fkey(club_id)')
@@ -4254,13 +4280,11 @@ async function loadChallenges() {
     return;
   }
   
-  // 1. VISI aktyvūs iššūkiai klubo
-  const nowIso = new Date().toISOString();
+  // 1. VISI iššūkiai klubo (ir aktyvūs ir nebeaktyvūs)
+  // is_active filtras leidžia matyti ir užšaldytus, bet tik atliktus
   const { data: allChallenges, error } = await sb.from('challenges')
     .select('*')
     .eq('club_id', clubId)
-    .eq('is_active', true)
-    .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
     .order('created_at', { ascending: false });
   
   if (error) {
@@ -4270,78 +4294,138 @@ async function loadChallenges() {
     return;
   }
   
-  // 2. FILTRUOJAM pagal target_audience
+  // 2. FILTRUOJAM pagal target_audience (kam taikomas iššūkis)
   const myGroupId = currentKid.group_id;
   const myGender = currentKid.gender;
   const myKidId = currentKid.id;
   
-  const challenges = (allChallenges || []).filter(ch => {
+  const eligibleChallenges = (allChallenges || []).filter(ch => {
     const audience = ch.target_audience || 'group';
     
-    if (audience === 'all_club') {
-      // Visi klubo vaikai mato
-      return true;
-    }
-    if (audience === 'specific_kid') {
-      // Tik konkretus vaikas
-      return ch.target_kid_id === myKidId;
-    }
-    // Grupės iššūkiai - turi atitikti grupę
+    if (audience === 'all_club') return true;
+    if (audience === 'specific_kid') return ch.target_kid_id === myKidId;
+    
     if (!myGroupId || ch.group_id !== myGroupId) return false;
     
-    if (audience === 'group') return true; // visa grupė
+    if (audience === 'group') return true;
     if (audience === 'boys_in_group') return myGender === 'male';
     if (audience === 'girls_in_group') return myGender === 'female';
     
     return false;
   });
   
-  if (!challenges.length) {
-    document.getElementById('v-challenges-list').innerHTML =
-      '<div style="text-align:center;padding:40px;color:var(--mut);">Aktyvių iššūkių nėra</div>';
-    return;
+  // 3. Šio vaiko submission'ai
+  const allChallengeIds = eligibleChallenges.map(c => c.id);
+  let mySubs = [];
+  if (allChallengeIds.length > 0) {
+    const { data: subsData } = await sb.from('challenge_submissions')
+      .select('challenge_id, status, value, numeric_value, created_at')
+      .eq('kid_id', currentKid.id)
+      .in('challenge_id', allChallengeIds);
+    mySubs = subsData || [];
   }
   
-  // 3. Šio vaiko submission'ai
-  const challengeIds = challenges.map(c => c.id);
-  const { data: mySubs } = await sb.from('challenge_submissions')
-    .select('challenge_id, status, value, numeric_value')
-    .eq('kid_id', currentKid.id)
-    .in('challenge_id', challengeIds);
-  
   const subsByChallenge = {};
-  (mySubs || []).forEach(s => {
+  mySubs.forEach(s => {
     if (!subsByChallenge[s.challenge_id]) subsByChallenge[s.challenge_id] = [];
     subsByChallenge[s.challenge_id].push(s);
   });
   
+  // 4. Atskirti į AKTYVŪS / ATLIKTI
+  const now = new Date();
+  
+  const activeChallenges = [];
+  const completedChallenges = [];
+  
+  eligibleChallenges.forEach(ch => {
+    const subs = subsByChallenge[ch.id] || [];
+    const myApproved = subs.find(s => s.status === 'approved');
+    const isExpired = ch.expires_at && new Date(ch.expires_at) < now;
+    const isFrozen = !ch.is_active;
+    
+    // ATLIKTI grupė: 
+    // - Vaikas pats atliko (yra approved submission), IŠSKYRUS permanent (kuris kartojamas)
+    // - Iššūkis pasibaigė laikas
+    // - Iššūkis užšaldytas BET vaikas atliko anksčiau
+    
+    if (myApproved && ch.type !== 'permanent') {
+      completedChallenges.push(ch);
+    } else if (isExpired) {
+      // Pasibaigęs - į atliktus tik jei vaikas dalyvavo
+      if (subs.length > 0) {
+        completedChallenges.push(ch);
+      }
+      // Jei nedalyvavo ir pasibaigė - paslėpiam (nesvarbu)
+    } else if (isFrozen) {
+      // Užšaldytas - nematomas vaikui (nei aktyviuose, nei atliktuose)
+    } else {
+      // Aktyvus
+      activeChallenges.push(ch);
+    }
+  });
+  
+  // Atnaujinti tabų skaičiukus
+  document.getElementById('v-active-count').textContent = activeChallenges.length;
+  document.getElementById('v-completed-count').textContent = completedChallenges.length;
+  
+  // Pasirinkti rodymui
+  const challengesToShow = kidChallengesActiveTab === 'active' ? activeChallenges : completedChallenges;
+  
+  if (!challengesToShow.length) {
+    const message = kidChallengesActiveTab === 'active' 
+      ? 'Aktyvių iššūkių nėra'
+      : 'Dar nieko neatlikai';
+    document.getElementById('v-challenges-list').innerHTML =
+      `<div style="text-align:center;padding:40px;color:var(--mut);">${message}</div>`;
+    return;
+  }
+  
   const typeIcons = { daily: '☀️', weekly: '⚡', monthly: '🎯', one_time: '✨', permanent: '♾️' };
   const typeLabels = { daily: 'Kasdienis', weekly: 'Savaitinis', monthly: 'Mėnesinis', one_time: 'Vienkartinis', permanent: 'Nuolatinis' };
   
-  const html = challenges.map(ch => {
+  const html = challengesToShow.map(ch => {
     const subs = subsByChallenge[ch.id] || [];
     const approvedSub = subs.find(s => s.status === 'approved');
     const pendingSub = subs.find(s => s.status === 'pending');
+    const rejectedSub = subs.find(s => s.status === 'rejected');
+    const isExpired = ch.expires_at && new Date(ch.expires_at) < now;
+    const isCompletedTab = kidChallengesActiveTab === 'completed';
     
     let statusBadge = '';
     let actionButton = '';
     
     if (approvedSub) {
-      statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">✅ Atlikta: ${approvedSub.value}</span>`;
-      // Permanent iššūkiui - galima pakartoti
-      if (ch.type === 'permanent') {
+      statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">✅ Atlikta: ${approvedSub.value} ${ch.target_unit || ''}</span>`;
+      // Permanent ir aktyvių tabe - galima pakartoti
+      if (ch.type === 'permanent' && !isCompletedTab) {
         actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">PAKARTOTI</button>`;
       }
     } else if (pendingSub) {
       statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">⏳ Laukia patvirtinimo: ${pendingSub.value}</span>`;
-    } else {
+    } else if (rejectedSub) {
+      statusBadge = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">❌ Atmesta</span>`;
+      // Atmestus aktyvų tab'e galima bandyti dar kartą
+      if (!isExpired && !isCompletedTab) {
+        actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">BANDYTI DAR KARTĄ</button>`;
+      }
+    } else if (isExpired && isCompletedTab) {
+      // Pasibaigęs laikas, vaikas dalyvavo (kažkokia pendinga submission'as)
+      statusBadge = `<span class="bg" style="background:rgba(255,255,255,.1);color:var(--mut);padding:4px 10px;font-size:11px;">⏰ Pasibaigė laikas</span>`;
+    } else if (!isCompletedTab) {
+      // Aktyvūs - DALYVAUTI mygtukas
       actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">DALYVAUTI</button>`;
     }
     
     let timeInfo = '';
     if (ch.expires_at) {
-      const daysLeft = Math.max(0, Math.ceil((new Date(ch.expires_at) - new Date()) / 86400000));
-      timeInfo = `${daysLeft} d. liko`;
+      if (isExpired) {
+        timeInfo = '⏰ Pasibaigė';
+      } else {
+        const ms = new Date(ch.expires_at) - now;
+        const days = Math.floor(ms / 86400000);
+        const hours = Math.floor((ms % 86400000) / 3600000);
+        timeInfo = days > 0 ? `${days}d. ${hours}h. liko` : `${hours}h. liko`;
+      }
     } else {
       timeInfo = 'Be termino';
     }
@@ -4350,7 +4434,10 @@ async function loadChallenges() {
       ? `🎯 ${ch.target_value} ${ch.target_unit || ''}` 
       : '';
     
-    return `<div class="cd" style="margin-bottom:10px;">
+    // Atliktiems tabe - šiek tiek pritemdyti
+    const cardOpacity = isCompletedTab ? 'opacity:.85;' : '';
+    
+    return `<div class="cd" style="margin-bottom:10px;${cardOpacity}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
         <div style="flex:1;">
           <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${ch.icon || '⚡'} ${ch.title}</div>
@@ -4367,14 +4454,10 @@ async function loadChallenges() {
 
   document.getElementById('v-challenges-list').innerHTML = html;
   
-  // EXP suma už atliktus iššūkius
-  const totalChallengeExp = (mySubs || [])
-    .filter(s => s.status === 'approved')
-    .reduce((sum, s) => sum + 0, 0); // tikrasis EXP jau įtrauktas į total_exp
-  
+  // EXP skaičiukas pagrindinio ekrano
   const expEl = document.getElementById('v-challenges-exp');
   if (expEl) {
-    const approvedCount = (mySubs || []).filter(s => s.status === 'approved').length;
+    const approvedCount = mySubs.filter(s => s.status === 'approved').length;
     expEl.textContent = approvedCount;
   }
 }
@@ -7077,6 +7160,30 @@ async function submitNewChallenge() {
 // ════════════════════════════════════════
 // TRENERIO MANO IŠŠŪKIŲ SĄRAŠAS (su countdown + dalyviai + redaguoti)
 // ════════════════════════════════════════
+// State - kuris tab pasirinktas (active arba completed)
+let myChallengesActiveTab = 'active';
+
+function switchMyChallengesTab(el, tabName) {
+  el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  myChallengesActiveTab = tabName;
+  
+  // "+ Naujas iššūkis" mygtukas tik aktyvių tabe
+  const newBtn = document.getElementById('tr-new-challenge-btn');
+  if (newBtn) newBtn.style.display = tabName === 'active' ? 'block' : 'none';
+  
+  loadTrainerOwnChallenges();
+}
+
+// Funkcija nustato ar iššūkis "completed" (pasibaigęs)
+function isChallengeCompleted(ch, eligibleCount, approvedCount) {
+  // 1. Pasibaigė laikas
+  if (ch.expires_at && new Date(ch.expires_at) < new Date()) return true;
+  // 2. Visi atliko (ir yra bent 1 dalyvis)
+  if (eligibleCount > 0 && approvedCount >= eligibleCount) return true;
+  return false;
+}
+
 async function loadTrainerOwnChallenges() {
   console.log('🔍 [loadTrainerOwnChallenges] starting, user_id:', currentUser?.id);
   
@@ -7105,7 +7212,6 @@ async function loadTrainerOwnChallenges() {
   }
   
   // Apskaičiuoti eligible vaikų skaičių per iššūkį
-  // Imam visus trenerio vaikus + filtruojam pagal target_audience
   const myKidIds = await getMyKidIds();
   let allMyKids = [];
   if (myKidIds.length > 0) {
@@ -7116,7 +7222,27 @@ async function loadTrainerOwnChallenges() {
     allMyKids = kidsData || [];
   }
   
-  // Apskaičiuoti kiekvienam iššūkiui kiek vaikų gali dalyvauti
+  // Surinkti submission'ų info per vieną užklausą
+  const challengeIds = (challenges || []).map(c => c.id);
+  let allSubs = [];
+  if (challengeIds.length > 0) {
+    const { data: subsData } = await sb.from('challenge_submissions')
+      .select('challenge_id, status, kid_id')
+      .in('challenge_id', challengeIds);
+    allSubs = subsData || [];
+  }
+  
+  // Suskaičiuoti dalyvių per iššūkį + apskaičiuoti eligible
+  const subsByChallenge = {};
+  allSubs.forEach(s => {
+    if (!subsByChallenge[s.challenge_id]) subsByChallenge[s.challenge_id] = { total: 0, approved: 0, pending: 0, rejected: 0 };
+    subsByChallenge[s.challenge_id].total++;
+    if (s.status === 'approved') subsByChallenge[s.challenge_id].approved++;
+    if (s.status === 'pending') subsByChallenge[s.challenge_id].pending++;
+    if (s.status === 'rejected') subsByChallenge[s.challenge_id].rejected++;
+  });
+  
+  // Apskaičiuoti kiekvienam iššūkiui kiek vaikų gali dalyvauti + isCompleted
   (challenges || []).forEach(ch => {
     const audience = ch.target_audience || 'group';
     let eligible = allMyKids;
@@ -7133,35 +7259,35 @@ async function loadTrainerOwnChallenges() {
     
     ch._eligible_count = eligible.length;
     ch._eligible_kid_ids = eligible.map(k => k.id);
+    
+    // Ar pasibaigęs?
+    const stats = subsByChallenge[ch.id] || { approved: 0 };
+    ch._is_completed = isChallengeCompleted(ch, ch._eligible_count, stats.approved);
   });
   
-  // Atnaujinti skaičiuką
-  const activeCount = (challenges || []).filter(c => c.is_active && (!c.expires_at || new Date(c.expires_at) > new Date())).length;
-  document.getElementById('tr-my-challenges-count').textContent = activeCount;
+  // Atskirti į aktyvius ir pasibaigusius
+  const activeChallenges = (challenges || []).filter(c => !c._is_completed);
+  const completedChallenges = (challenges || []).filter(c => c._is_completed);
   
-  if (!challenges?.length) {
+  // Atnaujinti skaičiukus
+  document.getElementById('tr-active-count').textContent = activeChallenges.length;
+  document.getElementById('tr-completed-count').textContent = completedChallenges.length;
+  document.getElementById('tr-my-challenges-count').textContent = activeChallenges.length;
+  
+  // Pasirinkti rodymui
+  const challengesToShow = myChallengesActiveTab === 'active' ? activeChallenges : completedChallenges;
+  
+  if (!challengesToShow.length) {
+    const message = myChallengesActiveTab === 'active' 
+      ? 'Nėra aktyvių iššūkių.<br><br>Spausk + NAUJAS IŠŠŪKIS 💪'
+      : 'Nėra pasibaigusių iššūkių.';
     document.getElementById('tr-my-challenges-content').innerHTML =
-      '<div style="text-align:center;padding:40px;color:var(--mut);">Dar nesukūrei iššūkių.<br><br>Spausk + NAUJAS IŠŠŪKIS 💪</div>';
+      `<div style="text-align:center;padding:40px;color:var(--mut);">${message}</div>`;
     return;
   }
   
-  // Surinkti submission'ų info per vieną užklausą
-  const challengeIds = challenges.map(c => c.id);
-  const { data: subs } = await sb.from('challenge_submissions')
-    .select('challenge_id, status, kid_id')
-    .in('challenge_id', challengeIds);
-  
-  // Suskaičiuoti dalyvių per iššūkį
-  const subsByChallenge = {};
-  (subs || []).forEach(s => {
-    if (!subsByChallenge[s.challenge_id]) subsByChallenge[s.challenge_id] = { total: 0, approved: 0, pending: 0 };
-    subsByChallenge[s.challenge_id].total++;
-    if (s.status === 'approved') subsByChallenge[s.challenge_id].approved++;
-    if (s.status === 'pending') subsByChallenge[s.challenge_id].pending++;
-  });
-  
   // Surasti specific_kid vardus
-  const specificKidIds = challenges.filter(c => c.target_kid_id).map(c => c.target_kid_id);
+  const specificKidIds = challengesToShow.filter(c => c.target_kid_id).map(c => c.target_kid_id);
   let kidsMap = {};
   if (specificKidIds.length > 0) {
     const { data: kidsData } = await sb.from('kids')
@@ -7180,15 +7306,20 @@ async function loadTrainerOwnChallenges() {
   
   const typeLabels = { daily: 'Kasdien.', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
   
-  const html = challenges.map(ch => {
+  const html = challengesToShow.map(ch => {
     const stats = subsByChallenge[ch.id] || { total: 0, approved: 0, pending: 0 };
     
     // Statusas
     let statusBadge;
-    if (!ch.is_active) {
+    if (ch._is_completed) {
+      // Patikslintas pasibaigimo statusas
+      if (ch._eligible_count > 0 && stats.approved >= ch._eligible_count) {
+        statusBadge = '<span class="bg" style="background:rgba(34,197,94,.15);color:var(--grn);">🎉 Visi atliko</span>';
+      } else {
+        statusBadge = '<span class="bg" style="background:rgba(255,255,255,.1);color:var(--mut);">⏰ Pasibaigė laikas</span>';
+      }
+    } else if (!ch.is_active) {
       statusBadge = '<span class="bg" style="background:rgba(255,255,255,.1);color:var(--mut);">🚫 Užšaldytas</span>';
-    } else if (ch.expires_at && new Date(ch.expires_at) < new Date()) {
-      statusBadge = '<span class="bg" style="background:rgba(255,255,255,.1);color:var(--mut);">⏰ Pasibaigęs</span>';
     } else {
       statusBadge = '<span class="bg gn">✅ Aktyvus</span>';
     }
@@ -7221,7 +7352,29 @@ async function loadTrainerOwnChallenges() {
       audienceInfo += `: ${groupsMap[ch.group_id].name}`;
     }
     
-    return `<div class="cd" style="margin-bottom:12px;" id="own-ch-${ch.id}">
+    // Skirtingi mygtukai aktyviems vs pasibaigusiems
+    let actionButtons;
+    if (ch._is_completed) {
+      // Pasibaigę - tik žiūrėti dalyvius + ištrinti
+      actionButtons = `
+        <button onclick="deleteChallenge('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="width:100%;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+      `;
+    } else {
+      actionButtons = `
+        <div style="display:flex;gap:6px;">
+          ${ch.is_active ? 
+            `<button onclick="freezeChallenge('${ch.id}')" style="flex:1;background:rgba(255,255,255,.05);color:var(--mut);border:.5px solid var(--bdr);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Užšaldyti</button>` :
+            `<button onclick="unfreezeChallenge('${ch.id}')" style="flex:1;background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">▶️ Aktyvuoti</button>`
+          }
+          <button onclick="deleteChallenge('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+        </div>
+      `;
+    }
+    
+    // Pasibaigusiems iššūkiams sumažintas opacity
+    const cardOpacity = ch._is_completed ? 'opacity:.85;' : '';
+    
+    return `<div class="cd" style="margin-bottom:12px;${cardOpacity}" id="own-ch-${ch.id}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${ch.icon || '⚡'} ${ch.title}</div>
@@ -7251,20 +7404,12 @@ async function loadTrainerOwnChallenges() {
         </div>
       </div>
       
-      <!-- Žiūrėti vaikus mygtukas -->
       <button onclick="viewChallengeParticipants('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" 
               style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:8px;">
         👥 ŽIŪRĖTI DALYVIUS
       </button>
       
-      <!-- Veiksmai -->
-      <div style="display:flex;gap:6px;">
-        ${ch.is_active ? 
-          `<button onclick="freezeChallenge('${ch.id}')" style="flex:1;background:rgba(255,255,255,.05);color:var(--mut);border:.5px solid var(--bdr);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Užšaldyti</button>` :
-          `<button onclick="unfreezeChallenge('${ch.id}')" style="flex:1;background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">▶️ Aktyvuoti</button>`
-        }
-        <button onclick="deleteChallenge('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
-      </div>
+      ${actionButtons}
     </div>`;
   }).join('');
   
