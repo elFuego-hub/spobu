@@ -563,21 +563,12 @@ select.inp option{background:#222;}
         <option value="false">😔 Neišlaikiau</option>
       </select>
       
-      <label class="lbl">NAUJAS KYU</label>
-      <select class="inp" id="crm-new-kyu" style="margin-bottom:14px;">
-        <option value="">Pasirink kyu...</option>
-        <option value="10 kyu">10 kyu (oranžinis)</option>
-        <option value="9 kyu">9 kyu (oranž. + mėl.)</option>
-        <option value="8 kyu">8 kyu (mėlynas)</option>
-        <option value="7 kyu">7 kyu (mėl. + gelt.)</option>
-        <option value="6 kyu">6 kyu (geltonas)</option>
-        <option value="5 kyu">5 kyu (gelt. + žal.)</option>
-        <option value="4 kyu">4 kyu (žalias)</option>
-        <option value="3 kyu">3 kyu (žal. + rud.)</option>
-        <option value="2 kyu">2 kyu (rudas)</option>
-        <option value="1 kyu">1 kyu (rud. + juod.)</option>
-        <option value="1 dan">1 dan (juodas)</option>
-      </select>
+      <!-- Auto-rodom kitą kyu (read-only info) -->
+      <div id="crm-next-kyu-info" style="background:rgba(34,197,94,.05);border:.5px solid rgba(34,197,94,.3);border-radius:10px;padding:10px;margin-bottom:14px;display:none;">
+        <div style="font-size:10px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:4px;">PAKILSI Į</div>
+        <div id="crm-next-kyu-name" style="font-size:14px;font-weight:800;color:var(--grn);">7 kyu</div>
+      </div>
+      <input type="hidden" id="crm-new-kyu" value="">
     </div>
     
     <!-- TRENERIO PASIRINKIMAS -->
@@ -5986,6 +5977,30 @@ async function loadKidTrainersForCompResult() {
   }
 }
 
+// Kyu eilė nuo žemiausio iki aukščiausio
+const KYU_ORDER = [
+  'Mu kyu',  // baltas
+  '10 kyu',
+  '9 kyu',
+  '8 kyu',
+  '7 kyu',
+  '6 kyu',
+  '5 kyu',
+  '4 kyu',
+  '3 kyu',
+  '2 kyu',
+  '1 kyu',
+  '1 dan'
+];
+
+// Apskaičiuoti kitą kyu pagal dabartinį
+function getNextKyu(currentKyu) {
+  const idx = KYU_ORDER.indexOf(currentKyu);
+  if (idx === -1) return '10 kyu'; // jei nežinoma, pradedam nuo 10
+  if (idx >= KYU_ORDER.length - 1) return null; // jau aukščiausias
+  return KYU_ORDER[idx + 1];
+}
+
 function updateCrmFields() {
   if (!currentCompetitionForResult) return;
   
@@ -5996,6 +6011,8 @@ function updateCrmFields() {
   const placementSection = document.getElementById('crm-placement-section');
   const kumiteSection = document.getElementById('crm-kumite-section');
   const beltSection = document.getElementById('crm-belt-section');
+  const nextKyuInfo = document.getElementById('crm-next-kyu-info');
+  const newKyuInput = document.getElementById('crm-new-kyu');
   
   if (status === 'didnt_attend') {
     placementSection.style.display = 'none';
@@ -6005,6 +6022,27 @@ function updateCrmFields() {
     placementSection.style.display = 'none';
     kumiteSection.style.display = 'none';
     beltSection.style.display = 'block';
+    
+    // Auto apskaičiuoti kitą kyu
+    const beltPassed = document.getElementById('crm-belt-passed').value === 'true';
+    if (beltPassed) {
+      const currentKyu = currentKid?.kyu || 'Mu kyu';
+      const nextKyu = getNextKyu(currentKyu);
+      
+      if (nextKyu) {
+        document.getElementById('crm-next-kyu-name').textContent = nextKyu;
+        nextKyuInfo.style.display = 'block';
+        newKyuInput.value = nextKyu;
+      } else {
+        // Jau aukščiausias - negali kilti
+        document.getElementById('crm-next-kyu-name').textContent = 'Jau pasiekei aukščiausią!';
+        nextKyuInfo.style.display = 'block';
+        newKyuInput.value = currentKyu; // lieka tas pats
+      }
+    } else {
+      nextKyuInfo.style.display = 'none';
+      newKyuInput.value = '';
+    }
   } else if (type === 'kumite') {
     placementSection.style.display = 'block';
     kumiteSection.style.display = 'block';
