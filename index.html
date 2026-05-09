@@ -6105,6 +6105,7 @@ async function submitCompResult() {
       if (type === 'kumite') {
         insertData.wins = wins;
         insertData.losses = losses;
+        console.log('🥊 SUBMIT KUMITE:', { wins, losses, placement, type, insertData });
       }
     }
   }
