@@ -1296,9 +1296,35 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">STATISTIKA</div></div>
   <div class="sa">
-    <div class="cd" id="tr-stats-content">
+    
+    <!-- Sezono filtras -->
+    <div style="display:flex;gap:6px;margin:0 0 12px;">
+      <button class="trainer-season-filter-btn on" data-filter="season" onclick="setTrainerSeasonFilter('season')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🔥 ŠIS SEZONAS</button>
+      <button class="trainer-season-filter-btn" data-filter="all" onclick="setTrainerSeasonFilter('all')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🏆 VISŲ LAIKŲ</button>
+    </div>
+    
+    <!-- Tab nav (4 leaderboard'ai) -->
+    <div style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;padding-bottom:4px;">
+      <button class="trainer-stat-tab on" data-tab="overall" onclick="switchTrainerStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
+      <button class="trainer-stat-tab" data-tab="skills" onclick="switchTrainerStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
+      <button class="trainer-stat-tab" data-tab="challenges" onclick="switchTrainerStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">⚡ IŠŠŪKIAI</button>
+      <button class="trainer-stat-tab" data-tab="competitions" onclick="switchTrainerStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
+    </div>
+    
+    <!-- Tab content -->
+    <div id="trainer-stat-tab-overall" class="trainer-stat-tab-content">
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
+    <div id="trainer-stat-tab-skills" class="trainer-stat-tab-content" style="display:none;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <div id="trainer-stat-tab-challenges" class="trainer-stat-tab-content" style="display:none;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <div id="trainer-stat-tab-competitions" class="trainer-stat-tab-content" style="display:none;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -1700,7 +1726,7 @@ select.inp option{background:#222;}
     <div class="ni on" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
 
@@ -1719,7 +1745,7 @@ select.inp option{background:#222;}
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
 
@@ -1743,7 +1769,7 @@ select.inp option{background:#222;}
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
 
@@ -1767,7 +1793,51 @@ select.inp option{background:#222;}
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div><div class="ni on" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- KLUBAS: STATISTIKA -->
+<div class="sc" id="k-stat">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">STATISTIKA</div></div>
+  <div class="sa">
+    
+    <!-- Sezono filtras -->
+    <div style="display:flex;gap:6px;margin:0 0 12px;">
+      <button class="club-season-filter-btn on" data-filter="season" onclick="setClubSeasonFilter('season')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🔥 ŠIS SEZONAS</button>
+      <button class="club-season-filter-btn" data-filter="all" onclick="setClubSeasonFilter('all')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🏆 VISŲ LAIKŲ</button>
+    </div>
+    
+    <!-- Tab nav (4 leaderboard'ai) -->
+    <div style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;padding-bottom:4px;">
+      <button class="club-stat-tab on" data-tab="overall" onclick="switchClubStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
+      <button class="club-stat-tab" data-tab="skills" onclick="switchClubStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
+      <button class="club-stat-tab" data-tab="challenges" onclick="switchClubStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">⚡ IŠŠŪKIAI</button>
+      <button class="club-stat-tab" data-tab="competitions" onclick="switchClubStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
+    </div>
+    
+    <!-- Tab content -->
+    <div id="club-stat-tab-overall" class="club-stat-tab-content">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <div id="club-stat-tab-skills" class="club-stat-tab-content" style="display:none;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <div id="club-stat-tab-challenges" class="club-stat-tab-content" style="display:none;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <div id="club-stat-tab-competitions" class="club-stat-tab-content" style="display:none;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
 </div></div></div></div>
@@ -7199,6 +7269,638 @@ async function loadParentCompetitionsStatTab() {
   }
 }
 
+// ════════════════════════════════════════
+// TRENERIO STATISTIKA (visas klubas, savi paryškinti)
+// ════════════════════════════════════════
+
+let trainerStatSeasonFilter = 'season';
+const trainerStatFilters = {
+  gender: 'all',
+  ageGroup: 'all',
+  skillId: null,
+  scope: 'club',
+  weight: 'all'
+};
+let trainerStatActiveTab = 'overall';
+
+function setTrainerSeasonFilter(filter) {
+  trainerStatSeasonFilter = filter;
+  document.querySelectorAll('.trainer-season-filter-btn').forEach(btn => {
+    if (btn.dataset.filter === filter) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--mut)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  switchTrainerStatTab(trainerStatActiveTab);
+}
+
+function setTrainerStatFilter(key, value) {
+  trainerStatFilters[key] = value;
+  switchTrainerStatTab(trainerStatActiveTab);
+}
+
+function switchTrainerStatTab(tabName) {
+  trainerStatActiveTab = tabName;
+  document.querySelectorAll('.trainer-stat-tab').forEach(btn => {
+    if (btn.dataset.tab === tabName) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--mut)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  document.querySelectorAll('.trainer-stat-tab-content').forEach(el => el.style.display = 'none');
+  const activeTab = document.getElementById(`trainer-stat-tab-${tabName}`);
+  if (activeTab) activeTab.style.display = 'block';
+  
+  if (tabName === 'overall') loadTrainerOverallStat();
+  else if (tabName === 'skills') loadTrainerSkillsStat();
+  else if (tabName === 'challenges') loadTrainerChallengesStat();
+  else if (tabName === 'competitions') loadTrainerCompetitionsStat();
+}
+
+// Helper - getEntries naudojant trainer state'ą
+async function getTrainerFilteredEntries(scoreSource) {
+  const savedSeason = statSeasonFilter;
+  const savedFilters = { ...statFilters };
+  
+  statSeasonFilter = trainerStatSeasonFilter;
+  Object.assign(statFilters, trainerStatFilters);
+  
+  const result = await getFilteredKidEntries(scoreSource);
+  
+  statSeasonFilter = savedSeason;
+  Object.assign(statFilters, savedFilters);
+  
+  return result;
+}
+
+// Render filtrus + savi vaikai paryškinti + CSV mygtukas
+function renderTrainerFiltersUI(tabType) {
+  let html = '<div style="margin-bottom:14px;">';
+  
+  html += `
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <button onclick="setTrainerStatFilter('gender','all')" style="flex:1;${chipStyle(trainerStatFilters.gender === 'all')}">Visi</button>
+      <button onclick="setTrainerStatFilter('gender','male')" style="flex:1;${chipStyle(trainerStatFilters.gender === 'male')}">👦 Berniukai</button>
+      <button onclick="setTrainerStatFilter('gender','female')" style="flex:1;${chipStyle(trainerStatFilters.gender === 'female')}">👧 Mergaitės</button>
+    </div>
+    <select onchange="setTrainerStatFilter('ageGroup',this.value)" class="inp" style="margin-bottom:8px;">
+      ${AGE_GROUPS.map(g => `<option value="${g.id}" ${trainerStatFilters.ageGroup === g.id ? 'selected' : ''}>${g.label}</option>`).join('')}
+    </select>
+  `;
+  
+  if (tabType === 'skills') {
+    html += `<select onchange="setTrainerStatFilter('skillId',this.value || null)" class="inp" style="margin-bottom:8px;" id="trainer-skill-select">
+      <option value="">Visi skill'ai</option>
+    </select>`;
+  }
+  
+  if (tabType === 'competitions') {
+    html += `
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button onclick="setTrainerStatFilter('scope','club')" style="flex:1;${chipStyle(trainerStatFilters.scope === 'club')}">🏢 Klubas</button>
+        <button onclick="setTrainerStatFilter('scope','federation')" style="flex:1;${chipStyle(trainerStatFilters.scope === 'federation')}">🌐 Federacija</button>
+      </div>
+      <select onchange="setTrainerStatFilter('weight',this.value)" class="inp" style="margin-bottom:8px;" id="trainer-weight-select">
+        <option value="all">Visi svoriai</option>
+      </select>
+    `;
+  }
+  
+  // CSV eksporto mygtukas
+  html += `
+    <button onclick="exportTrainerStatCSV('${tabType}')" style="width:100%;background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;">
+      📥 EKSPORTUOTI Į CSV
+    </button>
+  `;
+  
+  html += '</div>';
+  return html;
+}
+
+// Render visų vaikų sąrašas (be top 10 limit'o, be anonimų, treneris paryškina savus)
+async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId) {
+  if (!entries || entries.length === 0) {
+    return '<div class="cd" style="padding:30px;text-align:center;color:var(--mut);font-size:12px;">Pagal šiuos filtrus nėra rezultatų</div>';
+  }
+  
+  // Surūšiuoti
+  entries.sort((a, b) => (b.score || 0) - (a.score || 0));
+  
+  // Treneris mato VISUS - reikia paimti `assigned_trainer_id` per atskira užklausą
+  // BET kadangi entries jau yra, tiesiog užklausiamas trainer info per visus vaikus
+  const kidIds = entries.map(e => e.kidId);
+  const { data: kidsTrainers } = await sb.from('kids')
+    .select('id, first_name, last_name, assigned_trainer_id, is_anonymous')
+    .in('id', kidIds);
+  
+  const trainerMap = {};
+  (kidsTrainers || []).forEach(k => {
+    trainerMap[k.id] = {
+      assigned_trainer_id: k.assigned_trainer_id,
+      first_name: k.first_name,
+      last_name: k.last_name
+    };
+  });
+  
+  const list = entries.map((e, i) => {
+    const rank = i + 1;
+    const tInfo = trainerMap[e.kidId];
+    const isMine = tInfo?.assigned_trainer_id === highlightTrainerId;
+    
+    // Treneris mato TIKRUS vardus (be anonimo)
+    const realName = tInfo ? `${tInfo.first_name || ''} ${tInfo.last_name?.[0] || ''}.`.trim() : e.name;
+    
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+    
+    // Savi vaikai - aukso juosta
+    const bgStyle = isMine 
+      ? 'background:rgba(255,215,0,.12);border-left:3px solid #FFD700;' 
+      : 'background:var(--bg);';
+    
+    return `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;${bgStyle}border-radius:8px;margin-bottom:4px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${isMine ? '#FFD700' : 'var(--mut)'};min-width:32px;">${medal || '#' + rank}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:${isMine ? '800' : '600'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${isMine ? '⭐ ' : ''}${realName}
+          </div>
+          <div style="font-size:9px;color:var(--mut);">${e.kyu || 'Mu kyu'}</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${e.score.toLocaleString()}</div>
+      </div>
+    `;
+  }).join('');
+  
+  return `
+    <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">
+      🏆 VISI DALYVIAI (${entries.length}) · ⭐ Mano vaikai
+    </div>
+    <div class="cd" style="padding:8px;">
+      ${list}
+    </div>
+  `;
+}
+
+// CSV eksportas
+window._trainerLastEntries = []; // saugom entries CSV'iui
+
+async function exportTrainerStatCSV(tabType) {
+  const entries = window._trainerLastEntries || [];
+  if (entries.length === 0) {
+    showToast('❌ Nėra duomenų eksportui', 'error');
+    return;
+  }
+  
+  const trainerProfileId = currentUser?.id;
+  
+  // Gauti pilną info
+  const kidIds = entries.map(e => e.kidId);
+  const { data: kids } = await sb.from('kids')
+    .select('id, first_name, last_name, gender, birth_date, kyu, weight_range, assigned_trainer_id, is_anonymous')
+    .in('id', kidIds);
+  
+  const kidsMap = {};
+  (kids || []).forEach(k => { kidsMap[k.id] = k; });
+  
+  // CSV header'is + eilutės
+  let csv = 'Vieta,Vardas,Pavardė,Lytis,Amžius,Kyu,Svorio kategorija,EXP,Mano vaikas\n';
+  
+  entries.sort((a, b) => (b.score || 0) - (a.score || 0));
+  entries.forEach((e, i) => {
+    const k = kidsMap[e.kidId] || {};
+    const age = k.birth_date ? Math.floor((Date.now() - new Date(k.birth_date)) / (365.25 * 24 * 60 * 60 * 1000)) : '';
+    const isMine = k.assigned_trainer_id === trainerProfileId ? 'Taip' : 'Ne';
+    
+    csv += `${i + 1},"${k.first_name || ''}","${k.last_name || ''}",${k.gender === 'male' ? 'V' : 'M'},${age},"${k.kyu || ''}","${k.weight_range || ''}",${e.score},${isMine}\n`;
+  });
+  
+  // Atsisiusti
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `statistika_${tabType}_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  
+  showToast('✅ CSV eksportuotas', 'success');
+}
+
+async function loadTrainerOverallStat() {
+  const container = document.getElementById('trainer-stat-tab-overall');
+  if (!container) return;
+  
+  trainerStatFilters.skillId = null;
+  trainerStatFilters.weight = 'all';
+  trainerStatFilters.scope = 'club';
+  
+  let entries;
+  if (trainerStatSeasonFilter === 'all') {
+    entries = await getTrainerFilteredEntries('total_exp');
+  } else {
+    const allKids = await getTrainerFilteredEntries('total_exp');
+    const combined = {};
+    allKids.forEach(e => { combined[e.kidId] = { ...e, score: 0 }; });
+    
+    const [s, c, p] = await Promise.all([
+      getTrainerFilteredEntries('kid_records'),
+      getTrainerFilteredEntries('challenge_submissions'),
+      getTrainerFilteredEntries('competition_results')
+    ]);
+    [...s, ...c, ...p].forEach(e => {
+      if (!combined[e.kidId]) combined[e.kidId] = { ...e, score: 0 };
+      combined[e.kidId].score += e.score;
+    });
+    entries = Object.values(combined);
+  }
+  
+  window._trainerLastEntries = entries;
+  
+  const filtersHtml = renderTrainerFiltersUI('overall');
+  const leaderHtml = await renderTrainerLeaderboard(entries, 'EXP', currentUser?.id);
+  container.innerHTML = filtersHtml + leaderHtml;
+}
+
+async function loadTrainerSkillsStat() {
+  const container = document.getElementById('trainer-stat-tab-skills');
+  if (!container) return;
+  
+  trainerStatFilters.weight = 'all';
+  trainerStatFilters.scope = 'club';
+  
+  const { data: cats } = await sb.from('career_categories').select('id, name, icon').order('sort_order');
+  const entries = await getTrainerFilteredEntries('kid_records');
+  
+  window._trainerLastEntries = entries;
+  
+  const filtersHtml = renderTrainerFiltersUI('skills');
+  const leaderHtml = await renderTrainerLeaderboard(entries, 'EXP', currentUser?.id);
+  container.innerHTML = filtersHtml + leaderHtml;
+  
+  const skillSelect = document.getElementById('trainer-skill-select');
+  if (skillSelect && cats) {
+    skillSelect.innerHTML = '<option value="">Visi skill\'ai</option>' + 
+      cats.map(c => `<option value="${c.id}" ${trainerStatFilters.skillId === c.id ? 'selected' : ''}>${c.icon || '💪'} ${c.name}</option>`).join('');
+  }
+}
+
+async function loadTrainerChallengesStat() {
+  const container = document.getElementById('trainer-stat-tab-challenges');
+  if (!container) return;
+  
+  trainerStatFilters.skillId = null;
+  trainerStatFilters.weight = 'all';
+  trainerStatFilters.scope = 'club';
+  
+  const entries = await getTrainerFilteredEntries('challenge_submissions');
+  window._trainerLastEntries = entries;
+  
+  const filtersHtml = renderTrainerFiltersUI('challenges');
+  const leaderHtml = await renderTrainerLeaderboard(entries, 'EXP', currentUser?.id);
+  container.innerHTML = filtersHtml + leaderHtml;
+}
+
+async function loadTrainerCompetitionsStat() {
+  const container = document.getElementById('trainer-stat-tab-competitions');
+  if (!container) return;
+  
+  trainerStatFilters.skillId = null;
+  
+  const { data: weightsData } = await sb.from('kids').select('weight_range').not('weight_range', 'is', null);
+  const uniqueWeights = [...new Set((weightsData || []).map(w => w.weight_range).filter(Boolean))].sort();
+  
+  const entries = await getTrainerFilteredEntries('competition_results');
+  window._trainerLastEntries = entries;
+  
+  const filtersHtml = renderTrainerFiltersUI('competitions');
+  const leaderHtml = await renderTrainerLeaderboard(entries, 'EXP', currentUser?.id);
+  container.innerHTML = filtersHtml + leaderHtml;
+  
+  const weightSelect = document.getElementById('trainer-weight-select');
+  if (weightSelect) {
+    weightSelect.innerHTML = '<option value="all">Visi svoriai</option>' +
+      uniqueWeights.map(w => `<option value="${w}" ${trainerStatFilters.weight === w ? 'selected' : ''}>${w}</option>`).join('');
+  }
+}
+
+// ════════════════════════════════════════
+// KLUBO STATISTIKA (be paryškinimo)
+// ════════════════════════════════════════
+
+let clubStatSeasonFilter = 'season';
+const clubStatFilters = {
+  gender: 'all',
+  ageGroup: 'all',
+  skillId: null,
+  scope: 'club',
+  weight: 'all'
+};
+let clubStatActiveTab = 'overall';
+
+function setClubSeasonFilter(filter) {
+  clubStatSeasonFilter = filter;
+  document.querySelectorAll('.club-season-filter-btn').forEach(btn => {
+    if (btn.dataset.filter === filter) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--mut)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  switchClubStatTab(clubStatActiveTab);
+}
+
+function setClubStatFilter(key, value) {
+  clubStatFilters[key] = value;
+  switchClubStatTab(clubStatActiveTab);
+}
+
+function switchClubStatTab(tabName) {
+  clubStatActiveTab = tabName;
+  document.querySelectorAll('.club-stat-tab').forEach(btn => {
+    if (btn.dataset.tab === tabName) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--mut)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  document.querySelectorAll('.club-stat-tab-content').forEach(el => el.style.display = 'none');
+  const activeTab = document.getElementById(`club-stat-tab-${tabName}`);
+  if (activeTab) activeTab.style.display = 'block';
+  
+  if (tabName === 'overall') loadClubOverallStat();
+  else if (tabName === 'skills') loadClubSkillsStat();
+  else if (tabName === 'challenges') loadClubChallengesStat();
+  else if (tabName === 'competitions') loadClubCompetitionsStat();
+}
+
+async function getClubFilteredEntries(scoreSource) {
+  const savedSeason = statSeasonFilter;
+  const savedFilters = { ...statFilters };
+  
+  statSeasonFilter = clubStatSeasonFilter;
+  Object.assign(statFilters, clubStatFilters);
+  
+  const result = await getFilteredKidEntries(scoreSource);
+  
+  statSeasonFilter = savedSeason;
+  Object.assign(statFilters, savedFilters);
+  
+  return result;
+}
+
+function renderClubFiltersUI(tabType) {
+  let html = '<div style="margin-bottom:14px;">';
+  
+  html += `
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <button onclick="setClubStatFilter('gender','all')" style="flex:1;${chipStyle(clubStatFilters.gender === 'all')}">Visi</button>
+      <button onclick="setClubStatFilter('gender','male')" style="flex:1;${chipStyle(clubStatFilters.gender === 'male')}">👦 Berniukai</button>
+      <button onclick="setClubStatFilter('gender','female')" style="flex:1;${chipStyle(clubStatFilters.gender === 'female')}">👧 Mergaitės</button>
+    </div>
+    <select onchange="setClubStatFilter('ageGroup',this.value)" class="inp" style="margin-bottom:8px;">
+      ${AGE_GROUPS.map(g => `<option value="${g.id}" ${clubStatFilters.ageGroup === g.id ? 'selected' : ''}>${g.label}</option>`).join('')}
+    </select>
+  `;
+  
+  if (tabType === 'skills') {
+    html += `<select onchange="setClubStatFilter('skillId',this.value || null)" class="inp" style="margin-bottom:8px;" id="club-skill-select">
+      <option value="">Visi skill'ai</option>
+    </select>`;
+  }
+  
+  if (tabType === 'competitions') {
+    html += `
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button onclick="setClubStatFilter('scope','club')" style="flex:1;${chipStyle(clubStatFilters.scope === 'club')}">🏢 Klubas</button>
+        <button onclick="setClubStatFilter('scope','federation')" style="flex:1;${chipStyle(clubStatFilters.scope === 'federation')}">🌐 Federacija</button>
+      </div>
+      <select onchange="setClubStatFilter('weight',this.value)" class="inp" style="margin-bottom:8px;" id="club-weight-select">
+        <option value="all">Visi svoriai</option>
+      </select>
+    `;
+  }
+  
+  html += `
+    <button onclick="exportClubStatCSV('${tabType}')" style="width:100%;background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;">
+      📥 EKSPORTUOTI Į CSV
+    </button>
+  `;
+  
+  html += '</div>';
+  return html;
+}
+
+// Render klubo leaderboard'as (be paryškinimo, be anonimų)
+async function renderClubLeaderboard(entries, scoreLabel) {
+  if (!entries || entries.length === 0) {
+    return '<div class="cd" style="padding:30px;text-align:center;color:var(--mut);font-size:12px;">Pagal šiuos filtrus nėra rezultatų</div>';
+  }
+  
+  entries.sort((a, b) => (b.score || 0) - (a.score || 0));
+  
+  // Klubas mato TIKRUS vardus
+  const kidIds = entries.map(e => e.kidId);
+  const { data: kidsRealNames } = await sb.from('kids')
+    .select('id, first_name, last_name')
+    .in('id', kidIds);
+  
+  const namesMap = {};
+  (kidsRealNames || []).forEach(k => {
+    namesMap[k.id] = `${k.first_name || ''} ${k.last_name?.[0] || ''}.`.trim();
+  });
+  
+  const list = entries.map((e, i) => {
+    const rank = i + 1;
+    const realName = namesMap[e.kidId] || e.name;
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+    
+    return `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:4px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);min-width:32px;">${medal || '#' + rank}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${realName}</div>
+          <div style="font-size:9px;color:var(--mut);">${e.kyu || 'Mu kyu'}</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${e.score.toLocaleString()}</div>
+      </div>
+    `;
+  }).join('');
+  
+  return `
+    <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">🏆 VISI DALYVIAI (${entries.length})</div>
+    <div class="cd" style="padding:8px;">${list}</div>
+  `;
+}
+
+window._clubLastEntries = [];
+
+async function exportClubStatCSV(tabType) {
+  const entries = window._clubLastEntries || [];
+  if (entries.length === 0) {
+    showToast('❌ Nėra duomenų eksportui', 'error');
+    return;
+  }
+  
+  const kidIds = entries.map(e => e.kidId);
+  const { data: kids } = await sb.from('kids')
+    .select('id, first_name, last_name, gender, birth_date, kyu, weight_range, assigned_trainer_id')
+    .in('id', kidIds);
+  
+  const kidsMap = {};
+  (kids || []).forEach(k => { kidsMap[k.id] = k; });
+  
+  // Gauti trenerių vardus
+  const trainerIds = [...new Set((kids || []).map(k => k.assigned_trainer_id).filter(Boolean))];
+  const { data: trainers } = await sb.from('profiles').select('id, first_name, last_name').in('id', trainerIds);
+  const trainersMap = {};
+  (trainers || []).forEach(t => {
+    trainersMap[t.id] = `${t.first_name || ''} ${t.last_name || ''}`.trim();
+  });
+  
+  let csv = 'Vieta,Vardas,Pavardė,Lytis,Amžius,Kyu,Svorio kategorija,EXP,Treneris\n';
+  
+  entries.sort((a, b) => (b.score || 0) - (a.score || 0));
+  entries.forEach((e, i) => {
+    const k = kidsMap[e.kidId] || {};
+    const age = k.birth_date ? Math.floor((Date.now() - new Date(k.birth_date)) / (365.25 * 24 * 60 * 60 * 1000)) : '';
+    const trainerName = trainersMap[k.assigned_trainer_id] || '';
+    
+    csv += `${i + 1},"${k.first_name || ''}","${k.last_name || ''}",${k.gender === 'male' ? 'V' : 'M'},${age},"${k.kyu || ''}","${k.weight_range || ''}",${e.score},"${trainerName}"\n`;
+  });
+  
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `klubo_statistika_${tabType}_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  
+  showToast('✅ CSV eksportuotas', 'success');
+}
+
+async function loadClubOverallStat() {
+  const container = document.getElementById('club-stat-tab-overall');
+  if (!container) return;
+  
+  clubStatFilters.skillId = null;
+  clubStatFilters.weight = 'all';
+  clubStatFilters.scope = 'club';
+  
+  let entries;
+  if (clubStatSeasonFilter === 'all') {
+    entries = await getClubFilteredEntries('total_exp');
+  } else {
+    const allKids = await getClubFilteredEntries('total_exp');
+    const combined = {};
+    allKids.forEach(e => { combined[e.kidId] = { ...e, score: 0 }; });
+    
+    const [s, c, p] = await Promise.all([
+      getClubFilteredEntries('kid_records'),
+      getClubFilteredEntries('challenge_submissions'),
+      getClubFilteredEntries('competition_results')
+    ]);
+    [...s, ...c, ...p].forEach(e => {
+      if (!combined[e.kidId]) combined[e.kidId] = { ...e, score: 0 };
+      combined[e.kidId].score += e.score;
+    });
+    entries = Object.values(combined);
+  }
+  
+  window._clubLastEntries = entries;
+  
+  const filtersHtml = renderClubFiltersUI('overall');
+  const leaderHtml = await renderClubLeaderboard(entries, 'EXP');
+  container.innerHTML = filtersHtml + leaderHtml;
+}
+
+async function loadClubSkillsStat() {
+  const container = document.getElementById('club-stat-tab-skills');
+  if (!container) return;
+  
+  clubStatFilters.weight = 'all';
+  clubStatFilters.scope = 'club';
+  
+  const { data: cats } = await sb.from('career_categories').select('id, name, icon').order('sort_order');
+  const entries = await getClubFilteredEntries('kid_records');
+  window._clubLastEntries = entries;
+  
+  const filtersHtml = renderClubFiltersUI('skills');
+  const leaderHtml = await renderClubLeaderboard(entries, 'EXP');
+  container.innerHTML = filtersHtml + leaderHtml;
+  
+  const skillSelect = document.getElementById('club-skill-select');
+  if (skillSelect && cats) {
+    skillSelect.innerHTML = '<option value="">Visi skill\'ai</option>' + 
+      cats.map(c => `<option value="${c.id}" ${clubStatFilters.skillId === c.id ? 'selected' : ''}>${c.icon || '💪'} ${c.name}</option>`).join('');
+  }
+}
+
+async function loadClubChallengesStat() {
+  const container = document.getElementById('club-stat-tab-challenges');
+  if (!container) return;
+  
+  clubStatFilters.skillId = null;
+  clubStatFilters.weight = 'all';
+  clubStatFilters.scope = 'club';
+  
+  const entries = await getClubFilteredEntries('challenge_submissions');
+  window._clubLastEntries = entries;
+  
+  const filtersHtml = renderClubFiltersUI('challenges');
+  const leaderHtml = await renderClubLeaderboard(entries, 'EXP');
+  container.innerHTML = filtersHtml + leaderHtml;
+}
+
+async function loadClubCompetitionsStat() {
+  const container = document.getElementById('club-stat-tab-competitions');
+  if (!container) return;
+  
+  clubStatFilters.skillId = null;
+  
+  const { data: weightsData } = await sb.from('kids').select('weight_range').not('weight_range', 'is', null);
+  const uniqueWeights = [...new Set((weightsData || []).map(w => w.weight_range).filter(Boolean))].sort();
+  
+  const entries = await getClubFilteredEntries('competition_results');
+  window._clubLastEntries = entries;
+  
+  const filtersHtml = renderClubFiltersUI('competitions');
+  const leaderHtml = await renderClubLeaderboard(entries, 'EXP');
+  container.innerHTML = filtersHtml + leaderHtml;
+  
+  const weightSelect = document.getElementById('club-weight-select');
+  if (weightSelect) {
+    weightSelect.innerHTML = '<option value="all">Visi svoriai</option>' +
+      uniqueWeights.map(w => `<option value="${w}" ${clubStatFilters.weight === w ? 'selected' : ''}>${w}</option>`).join('');
+  }
+}
+
 
 async function loadLeaderboard() {
   // Gauti top 10 pagal EXP tame pačiame klube
@@ -10828,6 +11530,12 @@ function nv(p,el,sid){
   if (sid === 'v-stat') {
     // Pradžioje atnaujinti aktyvų tabą
     if (typeof loadOverallStatTab === 'function') loadOverallStatTab();
+  }
+  if (sid === 'tr-stat' && typeof loadTrainerOverallStat === 'function') {
+    loadTrainerOverallStat();
+  }
+  if (sid === 'k-stat' && typeof loadClubOverallStat === 'function') {
+    loadClubOverallStat();
   }
 }
 
