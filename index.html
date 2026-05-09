@@ -1000,63 +1000,24 @@ select.inp option{background:#222;}
       <button class="stat-tab" data-tab="competitions" onclick="switchStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
     </div>
     
-    <!-- TAB: BENDRAS LVL (jau veikiantis Hall of Fame) -->
+    <!-- TAB: BENDRAS LVL (leaderboard) -->
     <div id="stat-tab-overall" class="stat-tab-content">
-      <!-- Sezono info užrašas -->
-      <div id="overall-season-label" style="text-align:center;font-size:10px;color:var(--mut);font-weight:600;letter-spacing:1px;margin-bottom:10px;"></div>
-      
-      <!-- EXP pasidalijimas -->
-      <div class="cd" style="margin-bottom:12px;padding:14px;">
-        <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">📊 EXP PASIDALIJIMAS</div>
-        <div id="overall-exp-breakdown">
-          <div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div>
-        </div>
-      </div>
-      
-      <!-- Lygio progresas -->
-      <div class="cd" style="margin-bottom:12px;padding:14px;">
-        <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">📈 LYGIO PROGRESAS</div>
-        <div id="overall-level-progress">
-          <div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div>
-        </div>
-      </div>
-      
-      <!-- Hall of Fame -->
-      <div class="mr" id="v-my-rank">
-        <div>
-          <div style="font-size:11px;opacity:.8;font-weight:700;letter-spacing:1px;">MANO VIETA</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;" id="v-rank-num">#–</div>
-          <div style="font-size:11px;opacity:.8;" id="v-rank-total">iš 0</div>
-        </div>
-        <div style="margin-left:auto;text-align:right;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-stat-exp">0 EXP</div>
-        </div>
-      </div>
-      <div class="st">TOP 10 (ANONIMIŠKAI)</div>
-      <div class="cd" id="v-leaderboard">
-        <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
-      </div>
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
     
-    <!-- TAB: SKILL'AI -->
+    <!-- TAB: SKILL'AI (leaderboard) -->
     <div id="stat-tab-skills" class="stat-tab-content" style="display:none;">
-      <div id="skills-stat-content">
-        <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
-      </div>
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
     
-    <!-- TAB: IŠŠŪKIAI (klubo iššūkių reitingas) -->
+    <!-- TAB: IŠŠŪKIAI (leaderboard) -->
     <div id="stat-tab-challenges" class="stat-tab-content" style="display:none;">
-      <div id="stat-challenge-content">
-        <div style="text-align:center;padding:20px;color:var(--mut);">Spausk tabą...</div>
-      </div>
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
     
-    <!-- TAB: VARŽYBOS -->
+    <!-- TAB: VARŽYBOS (leaderboard) -->
     <div id="stat-tab-competitions" class="stat-tab-content" style="display:none;">
-      <div id="competitions-stat-content">
-        <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
-      </div>
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
     
   </div>
@@ -6462,7 +6423,6 @@ function switchStatTab(tabName) {
   // Užkrauti turinį pagal tabą
   if (tabName === 'overall') {
     if (typeof loadOverallStatTab === 'function') loadOverallStatTab();
-    if (typeof loadLeaderboard === 'function') loadLeaderboard();
   } else if (tabName === 'skills') {
     if (typeof loadSkillsStatTab === 'function') loadSkillsStatTab();
   } else if (tabName === 'challenges') {
@@ -6476,645 +6436,409 @@ function switchStatTab(tabName) {
 // STATISTIKOS TABO FUNKCIJOS - VAIKAS
 // ════════════════════════════════════════
 
-// 📈 OVERALL TAB - EXP pasidalijimas + lygio progresas
-async function loadOverallStatTab() {
-  if (!currentKid?.id) return;
-  
-  // Atnaujinti sezono label
-  const season = getCurrentSeason();
-  const labelEl = document.getElementById('overall-season-label');
-  if (labelEl) {
-    labelEl.textContent = statSeasonFilter === 'season' 
-      ? `🔥 SEZONAS ${season.label}` 
-      : '🏆 VISŲ LAIKŲ STATISTIKA';
-  }
-  
-  // Gauti visus EXP šaltinius
-  const [skillRes, challengeRes, compRes] = await Promise.all([
-    sb.from('kid_records').select('category_exp, created_at').eq('kid_id', currentKid.id),
-    sb.from('challenge_submissions').select('exp_gain, reviewed_at').eq('kid_id', currentKid.id).eq('status', 'approved'),
-    sb.from('competition_results').select('exp_gained, approved_at').eq('kid_id', currentKid.id).eq('approval_status', 'approved')
-  ]);
-  
-  // Filtruoti pagal sezoną
-  const skills = filterBySeasonFilter(skillRes.data || [], 'created_at');
-  const challenges = filterBySeasonFilter(challengeRes.data || [], 'reviewed_at');
-  const competitions = filterBySeasonFilter(compRes.data || [], 'approved_at');
-  
-  // Suskaičiuoti EXP
-  const skillExp = skills.reduce((s, r) => s + (r.category_exp || 0), 0);
-  const challengeExp = challenges.reduce((s, r) => s + (r.exp_gain || 0), 0);
-  const compExp = competitions.reduce((s, r) => s + (r.exp_gained || 0), 0);
-  const totalExp = skillExp + challengeExp + compExp;
-  
-  // Renderinti EXP pasidalijimą
-  renderExpBreakdown(skillExp, challengeExp, compExp, totalExp);
-  
-  // Lygio progresas
-  renderLevelProgress(totalExp);
+
+// ════════════════════════════════════════
+// STATISTIKOS TABO FUNKCIJOS - VAIKAS
+// (Visi tabai = leaderboard'ai su filtrais)
+// ════════════════════════════════════════
+
+// Globalūs filtrai (atnaujinami kai pasirenki)
+const statFilters = {
+  gender: 'all',     // 'all', 'male', 'female'
+  ageGroup: 'all',   // 'all', '0-7', '8-10', '11-13', '14-15', '16+'
+  skillId: null,     // karjeros tab'e
+  scope: 'club',     // 'club' | 'federation' (varžybose)
+  weight: 'all'      // 'all' | konkretus weight_range
+};
+
+// Amžiaus grupės
+const AGE_GROUPS = [
+  { id: 'all', label: 'Visos', min: 0, max: 999 },
+  { id: '0-7', label: '0-7 m.', min: 0, max: 7 },
+  { id: '8-10', label: '8-10 m.', min: 8, max: 10 },
+  { id: '11-13', label: '11-13 m.', min: 11, max: 13 },
+  { id: '14-15', label: '14-15 m.', min: 14, max: 15 },
+  { id: '16+', label: '16+ m.', min: 16, max: 999 }
+];
+
+// Helper: apskaičiuoti vaiko amžių
+function calculateAge(birthDate) {
+  if (!birthDate) return null;
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
 }
 
-function renderExpBreakdown(skillExp, challengeExp, compExp, totalExp) {
-  const container = document.getElementById('overall-exp-breakdown');
-  if (!container) return;
-  
-  if (totalExp === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Dar nėra EXP</div>';
-    return;
-  }
-  
-  const skillPct = (skillExp / totalExp) * 100;
-  const challengePct = (challengeExp / totalExp) * 100;
-  const compPct = (compExp / totalExp) * 100;
-  
-  // Donut chart kaip horizontalus stacked bar (mobile-friendly)
-  container.innerHTML = `
-    <div style="display:flex;height:24px;border-radius:12px;overflow:hidden;background:var(--bg);margin-bottom:10px;">
-      ${skillPct > 0 ? `<div style="width:${skillPct}%;background:#3B82F6;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:white;" title="Karjera">${skillPct >= 12 ? Math.round(skillPct) + '%' : ''}</div>` : ''}
-      ${challengePct > 0 ? `<div style="width:${challengePct}%;background:#F59E0B;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:white;" title="Iššūkiai">${challengePct >= 12 ? Math.round(challengePct) + '%' : ''}</div>` : ''}
-      ${compPct > 0 ? `<div style="width:${compPct}%;background:#EF4444;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:white;" title="Varžybos">${compPct >= 12 ? Math.round(compPct) + '%' : ''}</div>` : ''}
-    </div>
-    
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-      <div style="background:rgba(59,130,246,.1);border:.5px solid rgba(59,130,246,.3);border-radius:8px;padding:8px;text-align:center;">
-        <div style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:.5px;">🏋️ KARJERA</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#3B82F6;margin-top:2px;">${skillExp}</div>
-        <div style="font-size:8px;color:var(--mut);">${Math.round(skillPct)}%</div>
-      </div>
-      <div style="background:rgba(245,158,11,.1);border:.5px solid rgba(245,158,11,.3);border-radius:8px;padding:8px;text-align:center;">
-        <div style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:.5px;">⚡ IŠŠŪKIAI</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#F59E0B;margin-top:2px;">${challengeExp}</div>
-        <div style="font-size:8px;color:var(--mut);">${Math.round(challengePct)}%</div>
-      </div>
-      <div style="background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);border-radius:8px;padding:8px;text-align:center;">
-        <div style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:.5px;">🥇 VARŽYBOS</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#EF4444;margin-top:2px;">${compExp}</div>
-        <div style="font-size:8px;color:var(--mut);">${Math.round(compPct)}%</div>
-      </div>
-    </div>
-    
-    <div style="margin-top:10px;text-align:center;font-size:11px;color:var(--mut);">
-      Bendras EXP: <span style="font-weight:800;color:var(--text);">${totalExp.toLocaleString()}</span>
-    </div>
-  `;
+// Helper: ar vaikas patenka į amžiaus grupę
+function inAgeGroup(birthDate, groupId) {
+  if (groupId === 'all') return true;
+  const age = calculateAge(birthDate);
+  if (age === null) return false;
+  const group = AGE_GROUPS.find(g => g.id === groupId);
+  if (!group) return true;
+  return age >= group.min && age <= group.max;
 }
 
-function renderLevelProgress(totalExp) {
-  const container = document.getElementById('overall-level-progress');
-  if (!container) return;
-  
-  // Lygio sistema: 200 EXP per lygį (paprasta formulė, gali keisti)
-  // L1: 0-200, L2: 200-400, L3: 400-600, ..., L10: 1800-2000
-  // Po L10: 500 per lygį
-  let level, expForLevel, currentLevelStart;
-  
-  if (totalExp < 2000) {
-    level = Math.floor(totalExp / 200) + 1;
-    currentLevelStart = (level - 1) * 200;
-    expForLevel = 200;
-  } else {
-    level = 10 + Math.floor((totalExp - 2000) / 500) + 1;
-    currentLevelStart = 2000 + (level - 11) * 500;
-    expForLevel = 500;
+// Helper: render leaderboard kortelės (top 10 + mano pozicija)
+function renderLeaderboardCard(entries, currentKidId, scoreLabel) {
+  if (!entries || entries.length === 0) {
+    return '<div class="cd" style="padding:30px;text-align:center;color:var(--mut);font-size:12px;">Pagal šiuos filtrus dar nėra rezultatų</div>';
   }
   
-  const expInCurrentLevel = totalExp - currentLevelStart;
-  const progressPct = (expInCurrentLevel / expForLevel) * 100;
-  const expToNext = expForLevel - expInCurrentLevel;
+  // Surūšiuoti pagal score
+  entries.sort((a, b) => (b.score || 0) - (a.score || 0));
   
-  // Title pagal lygį
-  let title;
-  if (level >= 50) title = '🏆 LEGENDA';
-  else if (level >= 25) title = '🥇 EKSPERTAS';
-  else if (level >= 15) title = '⭐ MEISTRAS';
-  else if (level >= 10) title = '💪 KOVOTOJAS';
-  else if (level >= 5) title = '🥋 STUDENTAS';
-  else title = '🌱 NAUJOKAS';
+  // Surasti dabartinio vaiko poziciją
+  const myIndex = entries.findIndex(e => e.kidId === currentKidId);
+  const myEntry = myIndex >= 0 ? entries[myIndex] : null;
+  const myRank = myIndex >= 0 ? myIndex + 1 : null;
+  const totalCount = entries.length;
   
-  container.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <div>
-        <div style="font-size:10px;color:var(--mut);font-weight:700;letter-spacing:1px;">DABARTINIS LYGIS</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--br);">LVL ${level}</div>
-        <div style="font-size:10px;color:var(--mut);">${title}</div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-size:9px;color:var(--mut);">Iki LVL ${level + 1}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">+${expToNext}</div>
-        <div style="font-size:9px;color:var(--mut);">EXP</div>
-      </div>
-    </div>
-    
-    <div style="background:var(--bg);height:10px;border-radius:5px;overflow:hidden;margin-bottom:6px;">
-      <div style="height:100%;background:linear-gradient(90deg,var(--br),#FF6B33);width:${progressPct}%;border-radius:5px;transition:width .3s;"></div>
-    </div>
-    
-    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mut);">
-      <span>${expInCurrentLevel} EXP</span>
-      <span>${expForLevel} EXP</span>
-    </div>
-  `;
-}
-
-// 🏆 SKILLS TAB - karjeros skill'ai (radar chart + sąrašas)
-async function loadSkillsStatTab() {
-  const container = document.getElementById('skills-stat-content');
-  if (!container || !currentKid?.id) return;
+  // Top 10
+  const top10 = entries.slice(0, 10);
   
-  // Visos kategorijos
-  const { data: cats } = await sb.from('career_categories')
-    .select('id, name, icon, sort_order')
-    .order('sort_order');
-  
-  if (!cats || cats.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Kategorijų nerasta</div>';
-    return;
-  }
-  
-  // Vaiko įrašai
-  const { data: records } = await sb.from('kid_records')
-    .select('category_id, category_exp, created_at')
-    .eq('kid_id', currentKid.id);
-  
-  // Filtruoti pagal sezoną
-  const filtered = filterBySeasonFilter(records || [], 'created_at');
-  
-  // Suskaičiuoti EXP pagal kategoriją
-  const expByCategory = {};
-  filtered.forEach(r => {
-    expByCategory[r.category_id] = (expByCategory[r.category_id] || 0) + (r.category_exp || 0);
-  });
-  
-  const totalSkillExp = Object.values(expByCategory).reduce((s, v) => s + v, 0);
-  
-  if (totalSkillExp === 0) {
-    container.innerHTML = `
-      <div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:14px;padding:40px 20px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:12px;">🌱</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:8px;">DAR NĖRA SKILL EXP</div>
-        <div style="font-size:12px;color:var(--mut);line-height:1.5;">
-          Pradėk fiksuoti pasiekimus karjeros skiltyje<br>
-          ir tavo skill'ai užsipildys čia
+  // Mano pozicija kortelė (tik jei vaikas yra rezultatuose)
+  let myCard = '';
+  if (myEntry && myRank) {
+    myCard = `
+      <div style="background:linear-gradient(135deg,var(--br),#FF6B33);color:white;padding:14px;border-radius:12px;margin-bottom:14px;box-shadow:0 4px 12px rgba(255,77,0,.3);">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;opacity:.85;margin-bottom:4px;">MANO POZICIJA</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;line-height:1;">#${myRank}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${myEntry.name}</div>
+              <div style="font-size:10px;opacity:.8;">${myEntry.kyu || 'Mu kyu'}</div>
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1;">${myEntry.score.toLocaleString()}</div>
+            <div style="font-size:9px;opacity:.8;">${scoreLabel}</div>
+          </div>
         </div>
+        <div style="font-size:10px;opacity:.7;margin-top:6px;text-align:center;">iš ${totalCount} dalyvių</div>
       </div>
     `;
-    return;
+  } else {
+    myCard = `
+      <div style="background:rgba(255,255,255,.05);border:.5px solid var(--bdr);padding:14px;border-radius:12px;margin-bottom:14px;text-align:center;color:var(--mut);font-size:11px;">
+        Tu nesi šiame leaderboard'e (pagal pasirinktus filtrus)
+      </div>
+    `;
   }
   
-  // Surūšiuoti pagal EXP (didžiausias pirma)
-  const sortedCats = cats.map(c => ({
-    ...c,
-    exp: expByCategory[c.id] || 0
-  })).sort((a, b) => b.exp - a.exp);
-  
-  // Maksimalus EXP - normalizuoti radar
-  const maxExp = sortedCats[0]?.exp || 1;
-  
-  // Radar chart kampai
-  const numCats = sortedCats.length;
-  const angleStep = (2 * Math.PI) / numCats;
-  const centerX = 130, centerY = 130, maxRadius = 90;
-  
-  // Generuoti radar SVG points
-  const points = sortedCats.map((cat, i) => {
-    const angle = -Math.PI / 2 + i * angleStep; // pradedam viršuje
-    const ratio = cat.exp / maxExp;
-    const r = ratio * maxRadius;
-    return {
-      x: centerX + r * Math.cos(angle),
-      y: centerY + r * Math.sin(angle),
-      labelX: centerX + (maxRadius + 18) * Math.cos(angle),
-      labelY: centerY + (maxRadius + 18) * Math.sin(angle),
-      name: cat.name,
-      icon: cat.icon || '💪',
-      exp: cat.exp,
-      angle: angle
-    };
-  });
-  
-  const polygonPoints = points.map(p => `${p.x},${p.y}`).join(' ');
-  
-  // Tinklo skritulį (3 lygiai)
-  const gridCircles = [0.33, 0.66, 1].map(ratio => {
-    const r = ratio * maxRadius;
-    return `<circle cx="${centerX}" cy="${centerY}" r="${r}" fill="none" stroke="var(--bdr)" stroke-width="0.5" opacity="0.3"/>`;
+  // Top 10 sąrašas
+  const topList = top10.map((e, i) => {
+    const rank = i + 1;
+    const isMe = e.kidId === currentKidId;
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+    
+    return `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;${isMe ? 'background:rgba(255,77,0,.08);border-left:2px solid var(--br);' : 'background:var(--bg);'}border-radius:8px;margin-bottom:4px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${isMe ? 'var(--br)' : 'var(--mut)'};min-width:28px;">${medal || '#' + rank}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:${isMe ? '800' : '600'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isMe ? 'var(--br)' : 'var(--text)'};">${e.name}</div>
+          <div style="font-size:9px;color:var(--mut);">${e.kyu || 'Mu kyu'}</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${isMe ? 'var(--br)' : 'var(--text)'};flex-shrink:0;">${e.score.toLocaleString()}</div>
+      </div>
+    `;
   }).join('');
   
-  // Linijos iš centro
-  const gridLines = points.map(p => {
-    const endX = centerX + maxRadius * Math.cos(p.angle);
-    const endY = centerY + maxRadius * Math.sin(p.angle);
-    return `<line x1="${centerX}" y1="${centerY}" x2="${endX}" y2="${endY}" stroke="var(--bdr)" stroke-width="0.5" opacity="0.3"/>`;
-  }).join('');
-  
-  // Label'iai
-  const labels = points.map(p => `
-    <text x="${p.labelX}" y="${p.labelY}" font-family="sans-serif" font-size="11" fill="var(--text)" text-anchor="middle" font-weight="600">
-      ${p.icon}
-    </text>
-  `).join('');
-  
-  // SVG radar
-  const radarSvg = `
-    <svg viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:280px;height:auto;display:block;margin:0 auto;">
-      ${gridCircles}
-      ${gridLines}
-      <polygon points="${polygonPoints}" fill="rgba(255,77,0,.2)" stroke="#FF4D00" stroke-width="2" stroke-linejoin="round"/>
-      ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#FF4D00"/>`).join('')}
-      ${labels}
-    </svg>
-  `;
-  
-  // Top 3 ir Bot 3
-  const top3 = sortedCats.slice(0, 3);
-  const bot3 = sortedCats.slice(-3).reverse(); // mažiausi pirmi
-  
-  container.innerHTML = `
-    <!-- Radar chart -->
-    <div class="cd" style="padding:14px;margin-bottom:12px;">
-      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">🎯 SKILL'Ų RATAS</div>
-      ${radarSvg}
-      <div style="text-align:center;font-size:11px;color:var(--mut);margin-top:8px;">
-        Bendras skill EXP: <span style="font-weight:800;color:var(--text);">${totalSkillExp}</span>
-      </div>
-    </div>
-    
-    <!-- Visi skill'ai sąrašu -->
-    <div class="cd" style="padding:14px;margin-bottom:12px;">
-      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">📊 VISI SKILL'AI</div>
-      ${sortedCats.map(cat => {
-        const pct = totalSkillExp > 0 ? (cat.exp / maxExp) * 100 : 0;
-        return `
-          <div style="margin-bottom:8px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span style="font-size:14px;">${cat.icon || '💪'}</span>
-                <span style="font-size:12px;font-weight:600;">${cat.name}</span>
-              </div>
-              <span style="font-size:11px;font-weight:800;color:var(--br);">${cat.exp} EXP</span>
-            </div>
-            <div style="background:var(--bg);height:6px;border-radius:3px;overflow:hidden;">
-              <div style="height:100%;background:linear-gradient(90deg,#FF4D00,#FF6B33);width:${pct}%;border-radius:3px;"></div>
-            </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-    
-    <!-- Top 3 + Bot 3 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div class="cd" style="padding:12px;">
-        <div style="font-size:10px;color:var(--grn);font-weight:700;letter-spacing:1px;margin-bottom:8px;">🔥 STIPRIAUSI</div>
-        ${top3.map((c, i) => `
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px;">
-            <span style="font-weight:800;color:var(--mut);">${i + 1}.</span>
-            <span>${c.icon || '💪'}</span>
-            <span style="flex:1;font-size:10px;">${c.name}</span>
-          </div>
-        `).join('')}
-      </div>
-      <div class="cd" style="padding:12px;">
-        <div style="font-size:10px;color:#EF4444;font-weight:700;letter-spacing:1px;margin-bottom:8px;">📈 GERINTI</div>
-        ${bot3.map((c, i) => `
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px;">
-            <span style="font-weight:800;color:var(--mut);">${i + 1}.</span>
-            <span>${c.icon || '💪'}</span>
-            <span style="flex:1;font-size:10px;">${c.name}</span>
-          </div>
-        `).join('')}
-      </div>
+  return `
+    ${myCard}
+    <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">🏆 TOP 10</div>
+    <div class="cd" style="padding:8px;">
+      ${topList}
     </div>
   `;
 }
 
-async function loadChallengeStatTab() {
-  if (!currentProfile?.club_id) {
-    document.getElementById('stat-challenge-content').innerHTML = 
-      '<div style="text-align:center;padding:20px;color:var(--mut);">Klubas nepriskirtas</div>';
-    return;
+// Helper: gauti vaikų entries su filtrais (bendrai naudojama)
+async function getFilteredKidEntries(scoreSource, scoreField) {
+  // scoreSource: 'kids' | 'kid_records' | 'challenge_submissions' | 'competition_results'
+  // scoreField: stulpelis kurį sumuojam
+  
+  // 1. Gauti visus vaikus (klubo arba federacijos)
+  let kidsQuery = sb.from('kids')
+    .select('id, first_name, last_name, gender, birth_date, kyu, weight_range, total_exp, is_anonymous, profiles(club_id)')
+    .eq('approval_status', 'approved');
+  
+  // Federacijos toggle (tik competitions atveju)
+  if (statFilters.scope === 'club' && currentProfile?.club_id) {
+    kidsQuery = kidsQuery.eq('profiles.club_id', currentProfile.club_id);
   }
   
-  document.getElementById('stat-challenge-content').innerHTML = 
-    '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
+  const { data: allKids, error } = await kidsQuery;
   
-  // Gauti vaiko statistiką
-  const { data: myEntry } = await sb.from('club_challenge_leaderboard')
-    .select('*')
-    .eq('kid_id', currentKid?.id)
-    .maybeSingle();
-  
-  // Gauti TOP 10
-  const { data: leaderboard, error } = await sb.from('club_challenge_leaderboard')
-    .select('*')
-    .eq('club_id', currentProfile.club_id)
-    .order('club_rank')
-    .limit(10);
-  
-  if (error) {
-    document.getElementById('stat-challenge-content').innerHTML = 
-      `<div style="text-align:center;padding:20px;color:#EF4444;">Klaida: ${error.message}</div>`;
-    return;
+  if (error || !allKids) {
+    console.error('getFilteredKidEntries:', error);
+    return [];
   }
   
-  const myExp = myEntry?.challenge_exp || 0;
-  const myRank = myEntry?.club_rank || null;
-  const myCompleted = myEntry?.completed_count || 0;
-  const myTier = getChallengeTier(myExp);
+  // 2. Filtruoti pagal lytį, amžių, svorį
+  let filteredKids = allKids.filter(k => {
+    if (statFilters.gender !== 'all' && k.gender !== statFilters.gender) return false;
+    if (!inAgeGroup(k.birth_date, statFilters.ageGroup)) return false;
+    if (statFilters.weight !== 'all' && k.weight_range !== statFilters.weight) return false;
+    // Klubo filtras (kadangi join'inta per profiles)
+    if (statFilters.scope === 'club' && k.profiles?.club_id !== currentProfile?.club_id) return false;
+    return true;
+  });
   
-  // Mano kortelė
-  let html = `
-    <div class="mr" style="background:linear-gradient(135deg,${myTier.color}33,${myTier.color}11);border:1px solid ${myTier.borderColor};">
-      <div>
-        <div style="font-size:11px;opacity:.8;font-weight:700;letter-spacing:1px;">MANO VIETA KLUBE</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;color:${myTier.color};">${myRank ? '#' + myRank : '#–'}</div>
-        <div style="font-size:11px;opacity:.8;color:${myTier.color};">${myTier.icon} ${myTier.name}</div>
-      </div>
-      <div style="margin-left:auto;text-align:right;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:${myTier.color};">${myExp} EXP</div>
-        <div style="font-size:11px;color:var(--mut);margin-top:2px;">${myCompleted} iššūkių</div>
-      </div>
-    </div>
-    
-    <div class="st">KLUBO TOP 10</div>
-  `;
+  // 3. Apskaičiuoti score kiekvienam pagal scoreSource
+  if (scoreSource === 'total_exp') {
+    // Tiesiogiai iš kids
+    return filteredKids.map(k => ({
+      kidId: k.id,
+      name: k.is_anonymous ? 'Anonimas' : `${k.first_name} ${k.last_name?.[0] || ''}.`,
+      kyu: k.kyu,
+      score: k.total_exp || 0,
+      isAnonymous: k.is_anonymous
+    }));
+  }
   
-  if (!leaderboard || leaderboard.length === 0) {
-    html += '<div class="cd" style="text-align:center;padding:30px;color:var(--mut);">Dar nė vienas neatliko iššūkių klube.<br><br>Būk pirmas! 💪</div>';
-  } else {
-    const myKidId = currentKid?.id;
+  // Kitos scoreSources reikalauja papildomas užklausų
+  const kidIds = filteredKids.map(k => k.id);
+  if (kidIds.length === 0) return [];
+  
+  let scoresMap = {};
+  
+  if (scoreSource === 'kid_records') {
+    let q = sb.from('kid_records').select('kid_id, category_id, category_exp, created_at').in('kid_id', kidIds);
+    if (statFilters.skillId) q = q.eq('category_id', statFilters.skillId);
+    const { data: records } = await q;
     
-    html += '<div class="cd" style="padding:8px;">';
-    leaderboard.forEach(entry => {
-      const isMe = entry.kid_id === myKidId;
-      const name = entry.is_anonymous && !isMe 
-        ? `Anonimas #${entry.club_rank}` 
-        : `${entry.first_name || 'Vardas'} ${entry.last_name?.[0] || ''}.`;
-      
-      const tier = CHALLENGE_TIERS[entry.tier] || CHALLENGE_TIERS.bronze;
-      
-      let rankIcon = '';
-      if (entry.club_rank === 1) rankIcon = '🥇';
-      else if (entry.club_rank === 2) rankIcon = '🥈';
-      else if (entry.club_rank === 3) rankIcon = '🥉';
-      else rankIcon = `${entry.club_rank}.`;
-      
-      const bgStyle = isMe 
-        ? `background:rgba(255,77,0,.15);border:1px solid var(--br);`
-        : `background:transparent;border:.5px solid var(--bdr);`;
-      
-      html += `
-        <div style="${bgStyle}border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-          <div style="font-size:16px;width:28px;text-align:center;flex-shrink:0;font-weight:800;">${rankIcon}</div>
-          <div style="font-size:20px;flex-shrink:0;">${tier.icon}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;font-size:13px;${isMe ? 'color:var(--br);' : ''}">${name}${isMe ? ' (TU)' : ''}</div>
-            <div style="font-size:10px;color:${tier.color};letter-spacing:1px;font-weight:700;margin-top:2px;">${tier.name} · ${entry.completed_count}</div>
-          </div>
-          <div style="font-weight:900;color:${tier.color};font-size:13px;font-family:'Bebas Neue',sans-serif;">${entry.challenge_exp}</div>
-        </div>
-      `;
+    const filtered = filterBySeasonFilter(records || [], 'created_at');
+    filtered.forEach(r => {
+      scoresMap[r.kid_id] = (scoresMap[r.kid_id] || 0) + (r.category_exp || 0);
     });
-    html += '</div>';
+  } else if (scoreSource === 'challenge_submissions') {
+    const { data: subs } = await sb.from('challenge_submissions')
+      .select('kid_id, exp_gain, reviewed_at')
+      .in('kid_id', kidIds)
+      .eq('status', 'approved');
+    
+    const filtered = filterBySeasonFilter(subs || [], 'reviewed_at');
+    filtered.forEach(r => {
+      scoresMap[r.kid_id] = (scoresMap[r.kid_id] || 0) + (r.exp_gain || 0);
+    });
+  } else if (scoreSource === 'competition_results') {
+    const { data: results } = await sb.from('competition_results')
+      .select('kid_id, exp_gained, approved_at')
+      .in('kid_id', kidIds)
+      .eq('approval_status', 'approved');
+    
+    const filtered = filterBySeasonFilter(results || [], 'approved_at');
+    filtered.forEach(r => {
+      scoresMap[r.kid_id] = (scoresMap[r.kid_id] || 0) + (r.exp_gained || 0);
+    });
   }
   
-  document.getElementById('stat-challenge-content').innerHTML = html;
+  // 4. Suformuoti entries (be 0 score)
+  return filteredKids.map(k => ({
+    kidId: k.id,
+    name: k.is_anonymous ? 'Anonimas' : `${k.first_name} ${k.last_name?.[0] || ''}.`,
+    kyu: k.kyu,
+    score: scoresMap[k.id] || 0,
+    isAnonymous: k.is_anonymous
+  })).filter(e => e.score > 0);
 }
 
-// 🥇 COMPETITIONS TAB - varžybų statistika (medaliai, kovos, dalyvavimai)
-async function loadCompetitionsStatTab() {
-  const container = document.getElementById('competitions-stat-content');
-  if (!container || !currentKid?.id) return;
+// Filtrų UI render (bendras helper)
+function renderFiltersUI(tabType) {
+  // tabType: 'overall' | 'skills' | 'challenges' | 'competitions'
   
-  // Visi patvirtinti rezultatai
-  const { data: results, error } = await sb.from('competition_results')
-    .select('*')
-    .eq('kid_id', currentKid.id)
-    .eq('approval_status', 'approved')
-    .order('approved_at', { ascending: false });
+  let html = '<div style="margin-bottom:14px;">';
   
-  if (error) {
-    console.error('loadCompetitionsStatTab:', error);
-    container.innerHTML = `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`;
-    return;
-  }
-  
-  // Filtruoti pagal sezoną
-  const filtered = filterBySeasonFilter(results || [], 'approved_at');
-  
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:14px;padding:40px 20px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:12px;">🥇</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:8px;">DAR NĖRA VARŽYBŲ</div>
-        <div style="font-size:12px;color:var(--mut);line-height:1.5;">
-          ${statSeasonFilter === 'season' ? 'Šiame sezone dar nedalyvavai' : 'Dar nedalyvavai jokiose varžybose'}
-        </div>
-      </div>
-    `;
-    return;
-  }
-  
-  // Gauti varžybų info
-  const compIds = [...new Set(filtered.map(r => r.competition_id))];
-  const { data: comps } = await sb.from('competitions')
-    .select('id, title, competition_type, level, event_date')
-    .in('id', compIds);
-  
-  const compsMap = {};
-  (comps || []).forEach(c => { compsMap[c.id] = c; });
-  
-  // Skaičiuoti statistikas
-  const participated = filtered.filter(r => r.status === 'participated');
-  const didntAttend = filtered.filter(r => r.status === 'didnt_attend');
-  
-  // Medaliai pagal vietą (tik kumite/kata)
-  const medalRecords = participated.filter(r => {
-    const c = compsMap[r.competition_id];
-    return c && c.competition_type !== 'belt_test' && r.placement;
-  });
-  
-  const goldCount = medalRecords.filter(r => r.placement === 1).length;
-  const silverCount = medalRecords.filter(r => r.placement === 2).length;
-  const bronzeCount = medalRecords.filter(r => r.placement === 3).length;
-  const noMedalCount = participated.filter(r => {
-    const c = compsMap[r.competition_id];
-    return c && c.competition_type !== 'belt_test' && !r.placement;
-  }).length;
-  
-  // Belt testai
-  const beltTests = participated.filter(r => {
-    const c = compsMap[r.competition_id];
-    return c && c.competition_type === 'belt_test';
-  });
-  const beltPassed = beltTests.filter(r => r.belt_passed === true).length;
-  const beltFailed = beltTests.filter(r => r.belt_passed === false).length;
-  
-  // Kumite kovos
-  const kumiteResults = participated.filter(r => {
-    const c = compsMap[r.competition_id];
-    return c && c.competition_type === 'kumite';
-  });
-  const totalWins = kumiteResults.reduce((s, r) => s + (r.wins || 0), 0);
-  const totalLosses = kumiteResults.reduce((s, r) => s + (r.losses || 0), 0);
-  const totalFights = totalWins + totalLosses;
-  const winRate = totalFights > 0 ? Math.round((totalWins / totalFights) * 100) : 0;
-  
-  // Pagal lygį
-  const levelCounts = { local: 0, medium: 0, european: 0 };
-  participated.forEach(r => {
-    const c = compsMap[r.competition_id];
-    if (c && c.level) levelCounts[c.level] = (levelCounts[c.level] || 0) + 1;
-  });
-  
-  // Pagal tipą
-  const typeCounts = { kumite: 0, kata: 0, belt_test: 0 };
-  participated.forEach(r => {
-    const c = compsMap[r.competition_id];
-    if (c) typeCounts[c.competition_type] = (typeCounts[c.competition_type] || 0) + 1;
-  });
-  
-  // EXP iš varžybų
-  const totalCompExp = participated.reduce((s, r) => s + (r.exp_gained || 0), 0);
-  
-  container.innerHTML = `
-    <!-- Medaliai -->
-    <div class="cd" style="padding:14px;margin-bottom:12px;">
-      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">🏆 MEDALIAI</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
-        <div style="background:rgba(255,215,0,.1);border:.5px solid rgba(255,215,0,.3);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:28px;line-height:1;">🥇</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#FFD700;margin-top:4px;">${goldCount}</div>
-        </div>
-        <div style="background:rgba(192,192,192,.1);border:.5px solid rgba(192,192,192,.3);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:28px;line-height:1;">🥈</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#C0C0C0;margin-top:4px;">${silverCount}</div>
-        </div>
-        <div style="background:rgba(205,127,50,.1);border:.5px solid rgba(205,127,50,.3);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:28px;line-height:1;">🥉</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#CD7F32;margin-top:4px;">${bronzeCount}</div>
-        </div>
-        <div style="background:rgba(255,255,255,.05);border:.5px solid var(--bdr);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:24px;line-height:1;">⚪</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--mut);margin-top:4px;">${noMedalCount}</div>
-          <div style="font-size:8px;color:var(--mut);">Be vietos</div>
-        </div>
-      </div>
-      <div style="text-align:center;font-size:11px;color:var(--mut);margin-top:10px;">
-        Iš viso medalių: <span style="font-weight:800;color:var(--text);">${goldCount + silverCount + bronzeCount}</span>
-      </div>
-    </div>
-    
-    ${kumiteResults.length > 0 ? `
-    <!-- Kumite kovos -->
-    <div class="cd" style="padding:14px;margin-bottom:12px;">
-      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">🥊 KUMITE KOVOS</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
-        <div style="background:rgba(34,197,94,.1);border:.5px solid rgba(34,197,94,.3);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">PERGALĖS</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--grn);margin-top:2px;">${totalWins}</div>
-        </div>
-        <div style="background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">PRALAIM.</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#EF4444;margin-top:2px;">${totalLosses}</div>
-        </div>
-        <div style="background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.3);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAIMĖJIMAI</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);margin-top:2px;">${winRate}%</div>
-        </div>
-      </div>
-      <div style="background:var(--bg);height:8px;border-radius:4px;overflow:hidden;display:flex;">
-        ${totalWins > 0 ? `<div style="height:100%;background:var(--grn);width:${(totalWins / totalFights) * 100}%;"></div>` : ''}
-        ${totalLosses > 0 ? `<div style="height:100%;background:#EF4444;width:${(totalLosses / totalFights) * 100}%;"></div>` : ''}
-      </div>
-      <div style="text-align:center;font-size:11px;color:var(--mut);margin-top:6px;">
-        Iš viso kovų: <span style="font-weight:800;color:var(--text);">${totalFights}</span>
-      </div>
-    </div>
-    ` : ''}
-    
-    ${beltTests.length > 0 ? `
-    <!-- Diržo testai -->
-    <div class="cd" style="padding:14px;margin-bottom:12px;">
-      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">🥋 DIRŽO TESTAI</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <div style="background:rgba(34,197,94,.1);border:.5px solid rgba(34,197,94,.3);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">IŠLAIKĖ</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--grn);margin-top:2px;">${beltPassed}</div>
-        </div>
-        <div style="background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">NEIŠLAIKĖ</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#EF4444;margin-top:2px;">${beltFailed}</div>
-        </div>
-      </div>
-    </div>
-    ` : ''}
-    
-    <!-- Pagal lygį -->
-    ${(levelCounts.local + levelCounts.medium + levelCounts.european) > 0 ? `
-    <div class="cd" style="padding:14px;margin-bottom:12px;">
-      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">🎚️ DALYVAVIMAI PAGAL LYGĮ</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-        <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:18px;">🏘️</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);">${levelCounts.local}</div>
-          <div style="font-size:9px;color:var(--mut);">Vietinės</div>
-        </div>
-        <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:18px;">🏙️</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);">${levelCounts.medium}</div>
-          <div style="font-size:9px;color:var(--mut);">Vidutinės</div>
-        </div>
-        <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:18px;">🌍</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);">${levelCounts.european}</div>
-          <div style="font-size:9px;color:var(--mut);">Europos</div>
-        </div>
-      </div>
-    </div>
-    ` : ''}
-    
-    <!-- Pagal tipą -->
-    <div class="cd" style="padding:14px;margin-bottom:12px;">
-      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:10px;">📋 PAGAL TIPĄ</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-        <div style="background:rgba(239,68,68,.1);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:18px;">🥊</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EF4444;">${typeCounts.kumite}</div>
-          <div style="font-size:9px;color:var(--mut);">Kumite</div>
-        </div>
-        <div style="background:rgba(59,130,246,.1);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:18px;">🎭</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#3B82F6;">${typeCounts.kata}</div>
-          <div style="font-size:9px;color:var(--mut);">Kata</div>
-        </div>
-        <div style="background:rgba(168,85,247,.1);border-radius:10px;padding:10px;text-align:center;">
-          <div style="font-size:18px;">🥋</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#A855F7;">${typeCounts.belt_test}</div>
-          <div style="font-size:9px;color:var(--mut);">Diržo</div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Apibendrinimas -->
-    <div class="cd" style="padding:14px;text-align:center;">
-      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">📊 APIBENDRINIMAS</div>
-      <div style="display:flex;justify-content:space-around;font-size:12px;">
-        <div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);">${participated.length}</div>
-          <div style="font-size:9px;color:var(--mut);">Dalyvauta</div>
-        </div>
-        <div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--mut);">${didntAttend.length}</div>
-          <div style="font-size:9px;color:var(--mut);">Nedalyvauta</div>
-        </div>
-        <div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);">${totalCompExp}</div>
-          <div style="font-size:9px;color:var(--mut);">EXP</div>
-        </div>
-      </div>
+  // Lyties chips
+  html += `
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <button onclick="setStatFilter('gender','all')" class="stat-filter-chip ${statFilters.gender === 'all' ? 'on' : ''}" style="flex:1;${chipStyle(statFilters.gender === 'all')}">Visi</button>
+      <button onclick="setStatFilter('gender','male')" class="stat-filter-chip ${statFilters.gender === 'male' ? 'on' : ''}" style="flex:1;${chipStyle(statFilters.gender === 'male')}">👦 Berniukai</button>
+      <button onclick="setStatFilter('gender','female')" class="stat-filter-chip ${statFilters.gender === 'female' ? 'on' : ''}" style="flex:1;${chipStyle(statFilters.gender === 'female')}">👧 Mergaitės</button>
     </div>
   `;
+  
+  // Amžiaus grupė (dropdown)
+  html += `
+    <select onchange="setStatFilter('ageGroup',this.value)" class="inp" style="margin-bottom:8px;">
+      ${AGE_GROUPS.map(g => `<option value="${g.id}" ${statFilters.ageGroup === g.id ? 'selected' : ''}>${g.label}</option>`).join('')}
+    </select>
+  `;
+  
+  // Karjera: skill'o pasirinkimas
+  if (tabType === 'skills') {
+    html += `<select onchange="setStatFilter('skillId',this.value || null)" class="inp" style="margin-bottom:8px;" id="skill-filter-select">
+      <option value="">Visi skill'ai</option>
+    </select>`;
+  }
+  
+  // Varžybos: klubas/federacija + svoris
+  if (tabType === 'competitions') {
+    html += `
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button onclick="setStatFilter('scope','club')" style="flex:1;${chipStyle(statFilters.scope === 'club')}">🏢 Mano klubas</button>
+        <button onclick="setStatFilter('scope','federation')" style="flex:1;${chipStyle(statFilters.scope === 'federation')}">🌐 Federacija</button>
+      </div>
+      <select onchange="setStatFilter('weight',this.value)" class="inp" style="margin-bottom:8px;" id="weight-filter-select">
+        <option value="all">Visi svoriai</option>
+      </select>
+    `;
+  }
+  
+  html += '</div>';
+  return html;
 }
+
+function chipStyle(active) {
+  if (active) {
+    return 'background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;';
+  }
+  return 'background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;';
+}
+
+// Filtras keičiasi - perkrauti aktyvų taba
+function setStatFilter(key, value) {
+  statFilters[key] = value;
+  
+  // Perkrauti aktyvų taba
+  const activeTab = document.querySelector('.stat-tab.on');
+  if (activeTab) switchStatTab(activeTab.dataset.tab);
+}
+
+// 📈 OVERALL TAB - bendras leaderboard'as
+async function loadOverallStatTab() {
+  const container = document.getElementById('stat-tab-overall');
+  if (!container) return;
+  
+  // Render filtrai + placeholder
+  container.innerHTML = renderFiltersUI('overall') + '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
+  
+  // Reset skill filter (tik karjeroje)
+  statFilters.skillId = null;
+  statFilters.weight = 'all';
+  statFilters.scope = 'club';
+  
+  // Bendras LVL = total_exp tiesiogiai iš kids (be sezono filtravimo nes total_exp yra all-time)
+  // Bet jei pasirinktas "Šis sezonas" - tada reikia skaičiuoti iš kid_records + challenges + comps
+  let entries;
+  
+  if (statSeasonFilter === 'all') {
+    entries = await getFilteredKidEntries('total_exp');
+  } else {
+    // Sezono filtras - sumuojam iš trijų šaltinių
+    const [skillRes, challengeRes, compRes] = await Promise.all([
+      getFilteredKidEntries('kid_records'),
+      getFilteredKidEntries('challenge_submissions'),
+      getFilteredKidEntries('competition_results')
+    ]);
+    
+    // Sumuojam scores iš 3 šaltinių
+    const combined = {};
+    [...skillRes, ...challengeRes, ...compRes].forEach(e => {
+      if (!combined[e.kidId]) {
+        combined[e.kidId] = { ...e, score: 0 };
+      }
+      combined[e.kidId].score += e.score;
+    });
+    
+    entries = Object.values(combined).filter(e => e.score > 0);
+  }
+  
+  // Render result
+  const filtersHtml = renderFiltersUI('overall');
+  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP');
+  container.innerHTML = filtersHtml + leaderboardHtml;
+}
+
+// 🏋️ SKILLS TAB - karjeros leaderboard'as pagal skill
+async function loadSkillsStatTab() {
+  const container = document.getElementById('stat-tab-skills');
+  if (!container) return;
+  
+  container.innerHTML = renderFiltersUI('skills') + '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
+  
+  // Reset
+  statFilters.weight = 'all';
+  statFilters.scope = 'club';
+  
+  // Užkrauti skill'us į dropdown'ą
+  const { data: cats } = await sb.from('career_categories').select('id, name, icon').order('sort_order');
+  const skillSelect = document.getElementById('skill-filter-select');
+  if (skillSelect && cats) {
+    skillSelect.innerHTML = '<option value="">Visi skill\'ai</option>' + 
+      cats.map(c => `<option value="${c.id}" ${statFilters.skillId === c.id ? 'selected' : ''}>${c.icon || '💪'} ${c.name}</option>`).join('');
+  }
+  
+  const entries = await getFilteredKidEntries('kid_records');
+  
+  const filtersHtml = renderFiltersUI('skills');
+  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP');
+  container.innerHTML = filtersHtml + leaderboardHtml;
+  
+  // Re-populate skill dropdown (po innerHTML reset'o)
+  const skillSelect2 = document.getElementById('skill-filter-select');
+  if (skillSelect2 && cats) {
+    skillSelect2.innerHTML = '<option value="">Visi skill\'ai</option>' + 
+      cats.map(c => `<option value="${c.id}" ${statFilters.skillId === c.id ? 'selected' : ''}>${c.icon || '💪'} ${c.name}</option>`).join('');
+  }
+}
+
+// 🥇 COMPETITIONS TAB - varžybų leaderboard'as
+async function loadCompetitionsStatTab() {
+  const container = document.getElementById('stat-tab-competitions');
+  if (!container) return;
+  
+  container.innerHTML = renderFiltersUI('competitions') + '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
+  
+  // Reset skill
+  statFilters.skillId = null;
+  
+  // Užkrauti svorio kategorijas (dinaminiai - registruotų vaikų svorius)
+  let weightQuery = sb.from('kids').select('weight_range').eq('approval_status', 'approved').not('weight_range', 'is', null);
+  if (statFilters.scope === 'club' && currentProfile?.club_id) {
+    weightQuery = weightQuery.eq('profiles.club_id', currentProfile.club_id);
+  }
+  const { data: weightsData } = await weightQuery;
+  const uniqueWeights = [...new Set((weightsData || []).map(w => w.weight_range).filter(Boolean))].sort();
+  
+  const entries = await getFilteredKidEntries('competition_results');
+  
+  const filtersHtml = renderFiltersUI('competitions');
+  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP');
+  container.innerHTML = filtersHtml + leaderboardHtml;
+  
+  // Užpildyti svorio dropdown'ą
+  const weightSelect = document.getElementById('weight-filter-select');
+  if (weightSelect) {
+    weightSelect.innerHTML = '<option value="all">Visi svoriai</option>' +
+      uniqueWeights.map(w => `<option value="${w}" ${statFilters.weight === w ? 'selected' : ''}>${w}</option>`).join('');
+  }
+}
+
+// ⚡ CHALLENGES TAB - iššūkių leaderboard'as
+async function loadChallengeStatTab() {
+  const container = document.getElementById('stat-tab-challenges');
+  if (!container) return;
+  
+  container.innerHTML = renderFiltersUI('challenges') + '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
+  
+  // Reset
+  statFilters.skillId = null;
+  statFilters.weight = 'all';
+  statFilters.scope = 'club';
+  
+  const entries = await getFilteredKidEntries('challenge_submissions');
+  
+  const filtersHtml = renderFiltersUI('challenges');
+  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP');
+  container.innerHTML = filtersHtml + leaderboardHtml;
+}
+
 
 async function loadLeaderboard() {
   // Gauti top 10 pagal EXP tame pačiame klube
@@ -10744,7 +10468,6 @@ function nv(p,el,sid){
   if (sid === 'v-stat') {
     // Pradžioje atnaujinti aktyvų tabą
     if (typeof loadOverallStatTab === 'function') loadOverallStatTab();
-    if (typeof loadLeaderboard === 'function') loadLeaderboard();
   }
 }
 
