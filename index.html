@@ -580,8 +580,14 @@ select.inp option{background:#222;}
       </select>
     </div>
     
+    <!-- TRENERIO PASIRINKIMAS -->
+    <label class="lbl">SIŲSTI TRENERIUI</label>
+    <select class="inp" id="crm-trainer" style="margin-bottom:14px;">
+      <option value="">Pasirink trenerį...</option>
+    </select>
+    
     <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-bottom:14px;">
-      ℹ️ Rezultatas bus išsiųstas treneriui patvirtinimui. Po patvirtinimo gausi EXP ir medalį.
+      ℹ️ Rezultatas bus išsiųstas pasirinktam treneriui patvirtinimui. Po patvirtinimo gausi EXP ir medalį.
     </div>
     
     <button id="crm-submit-btn" class="btn btng" style="width:100%;" onclick="submitCompResult()">SIŲSTI</button>
@@ -5749,10 +5755,62 @@ async function openSubmitCompResult(competitionId, defaultStatus) {
   document.getElementById('crm-belt-passed').value = 'true';
   document.getElementById('crm-new-kyu').value = '';
   
+  // Užkrauti vaiko trenerius
+  await loadKidTrainersForCompResult();
+  
   // Skirtingi laukai pagal varžybų tipą ir status'ą
   updateCrmFields();
   
   document.getElementById('crmo').classList.add('open');
+}
+
+// Užkrauti vaiko trenerius į dropdown'ą
+async function loadKidTrainersForCompResult() {
+  const select = document.getElementById('crm-trainer');
+  select.innerHTML = '<option value="">Kraunama...</option>';
+  
+  if (!currentKid?.id) {
+    select.innerHTML = '<option value="">Nėra trenerių</option>';
+    return;
+  }
+  
+  const trainerIds = new Set();
+  
+  // Pagrindinis treneris
+  if (currentKid.assigned_trainer_id) {
+    trainerIds.add(currentKid.assigned_trainer_id);
+  }
+  
+  // M:N treneriai
+  const { data: mnTrainers } = await sb.from('kid_trainers')
+    .select('trainer_id')
+    .eq('kid_id', currentKid.id);
+  
+  (mnTrainers || []).forEach(t => trainerIds.add(t.trainer_id));
+  
+  if (trainerIds.size === 0) {
+    select.innerHTML = '<option value="">Nėra priskirtų trenerių</option>';
+    return;
+  }
+  
+  // Gauti trenerių vardus
+  const { data: trainers } = await sb.from('profiles')
+    .select('id, first_name, last_name')
+    .in('id', Array.from(trainerIds));
+  
+  let html = '<option value="">Pasirink trenerį...</option>';
+  (trainers || []).forEach(t => {
+    const name = `${t.first_name} ${t.last_name || ''}`.trim();
+    const isPrimary = t.id === currentKid.assigned_trainer_id;
+    html += `<option value="${t.id}">${isPrimary ? '⭐ ' : ''}${name}${isPrimary ? ' (pagrindinis)' : ''}</option>`;
+  });
+  
+  select.innerHTML = html;
+  
+  // Auto-pasirinkti pagrindinį
+  if (currentKid.assigned_trainer_id) {
+    select.value = currentKid.assigned_trainer_id;
+  }
 }
 
 function updateCrmFields() {
@@ -5800,10 +5858,16 @@ async function submitCompResult() {
   const losses = parseInt(document.getElementById('crm-losses').value) || 0;
   const beltPassed = document.getElementById('crm-belt-passed').value === 'true';
   const newKyu = document.getElementById('crm-new-kyu').value;
+  const targetTrainerId = document.getElementById('crm-trainer').value;
   
   const type = currentCompetitionForResult.competition_type;
   
   // Validacija
+  if (!targetTrainerId) {
+    showToast('❌ Pasirink trenerį, kuriam siunti', 'error');
+    return;
+  }
+  
   if (status === 'participated' && type === 'belt_test' && beltPassed && !newKyu) {
     showToast('❌ Pasirink naują kyu', 'error');
     return;
@@ -5815,7 +5879,8 @@ async function submitCompResult() {
     status,
     approval_status: 'pending',
     submitted_by: currentUser.id,
-    submitted_role: 'kid'
+    submitted_role: 'kid',
+    target_trainer_id: targetTrainerId
   };
   
   if (status === 'participated') {
@@ -9034,30 +9099,10 @@ async function loadPendingCompetitionResults() {
   const trainerProfileId = currentUser?.id;
   if (!trainerProfileId) return;
   
-  // Gauti vaikus, priskirtus šiam treneriui (primary + M:N)
-  const { data: primaryKids } = await sb.from('kids')
-    .select('id')
-    .eq('assigned_trainer_id', trainerProfileId);
-  
-  const { data: mnKids } = await sb.from('kid_trainers')
-    .select('kid_id')
-    .eq('trainer_id', trainerProfileId);
-  
-  const myKidIds = new Set();
-  (primaryKids || []).forEach(k => myKidIds.add(k.id));
-  (mnKids || []).forEach(k => myKidIds.add(k.kid_id));
-  
-  if (myKidIds.size === 0) {
-    document.getElementById('tr-competition-submissions-list').innerHTML =
-      '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra priskirtų vaikų</div>';
-    document.getElementById('tr-competitions-count').textContent = '0';
-    return;
-  }
-  
-  // Pending varžybų rezultatai
+  // Pending varžybų rezultatai - TIK adresuoti šiam treneriui
   const { data: results, error } = await sb.from('competition_results')
     .select('*')
-    .in('kid_id', Array.from(myKidIds))
+    .eq('target_trainer_id', trainerProfileId)
     .eq('approval_status', 'pending')
     .in('status', ['participated', 'didnt_attend']) // tik kai vaikas pateikė rezultatą (ne planning)
     .order('created_at', { ascending: false });
