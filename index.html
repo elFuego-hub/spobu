@@ -1932,6 +1932,28 @@ select.inp option{background:#222;}
 
 <!-- TRENERIO VAIKŲ SĄRAŠO MODAL'AS (klubo admin'ui) -->
 <!-- ════════════════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- IŠŠŪKIO DALYVIŲ MODAL'AS (treneriui) -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="cp-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10001;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
+  <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:380px;width:100%;padding:0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(135deg,var(--br),#FF6B33);padding:16px 18px;color:white;display:flex;align-items:center;gap:10px;">
+      <div style="font-size:24px;">⚡</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;opacity:.9;">DALYVIAI</div>
+        <div id="cp-title" style="font-size:14px;line-height:1.2;font-weight:700;margin-top:2px;">Iššūkis</div>
+      </div>
+      <button onclick="closeChallengeParticipants()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+    </div>
+    <div id="cp-list" style="padding:14px;overflow-y:auto;flex:1;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- TRENERIO VAIKŲ SĄRAŠO MODAL'AS (klubo admin'ui) -->
+<!-- ════════════════════════════════════════════════════════ -->
 <div id="trainer-kids-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9998;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
   <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:380px;width:100%;padding:0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
     
@@ -7082,6 +7104,37 @@ async function loadTrainerOwnChallenges() {
     (groupsData || []).forEach(g => { groupsMap[g.id] = g; });
   }
   
+  // Apskaičiuoti eligible vaikų skaičių per iššūkį
+  // Imam visus trenerio vaikus + filtruojam pagal target_audience
+  const myKidIds = await getMyKidIds();
+  let allMyKids = [];
+  if (myKidIds.length > 0) {
+    const { data: kidsData } = await sb.from('kids')
+      .select('id, gender, group_id')
+      .in('id', myKidIds)
+      .eq('approval_status', 'approved');
+    allMyKids = kidsData || [];
+  }
+  
+  // Apskaičiuoti kiekvienam iššūkiui kiek vaikų gali dalyvauti
+  (challenges || []).forEach(ch => {
+    const audience = ch.target_audience || 'group';
+    let eligible = allMyKids;
+    
+    if (audience === 'specific_kid') {
+      eligible = allMyKids.filter(k => k.id === ch.target_kid_id);
+    } else if (audience === 'group') {
+      eligible = allMyKids.filter(k => k.group_id === ch.group_id);
+    } else if (audience === 'boys_in_group') {
+      eligible = allMyKids.filter(k => k.group_id === ch.group_id && k.gender === 'male');
+    } else if (audience === 'girls_in_group') {
+      eligible = allMyKids.filter(k => k.group_id === ch.group_id && k.gender === 'female');
+    }
+    
+    ch._eligible_count = eligible.length;
+    ch._eligible_kid_ids = eligible.map(k => k.id);
+  });
+  
   // Atnaujinti skaičiuką
   const activeCount = (challenges || []).filter(c => c.is_active && (!c.expires_at || new Date(c.expires_at) > new Date())).length;
   document.getElementById('tr-my-challenges-count').textContent = activeCount;
@@ -7183,20 +7236,26 @@ async function loadTrainerOwnChallenges() {
       </div>
       
       <!-- Statistikos -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px;">
         <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);">${stats.total}</div>
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">DALYVIŲ</div>
-        </div>
-        <div style="background:rgba(34,197,94,.05);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">${stats.approved}</div>
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">ATLIKTA</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);">${stats.approved}/${ch._eligible_count || '?'}</div>
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">ATLIKO</div>
         </div>
         <div style="background:rgba(255,77,0,.05);border-radius:8px;padding:8px;text-align:center;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${stats.pending}</div>
           <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAUKIA</div>
         </div>
+        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);">${(ch._eligible_count || 0) - stats.approved - stats.pending}</div>
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">NEDALYVAVO</div>
+        </div>
       </div>
+      
+      <!-- Žiūrėti vaikus mygtukas -->
+      <button onclick="viewChallengeParticipants('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" 
+              style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:8px;">
+        👥 ŽIŪRĖTI DALYVIUS
+      </button>
       
       <!-- Veiksmai -->
       <div style="display:flex;gap:6px;">
@@ -7242,6 +7301,133 @@ async function deleteChallenge(challengeId, title) {
   
   showToast('✅ Iššūkis ištrintas', 'success');
   await loadTrainerOwnChallenges();
+}
+
+// Žiūrėti iššūkio dalyvius (kas atliko, kas dar ne)
+async function viewChallengeParticipants(challengeId, title) {
+  document.getElementById('cp-title').textContent = title;
+  document.getElementById('cp-list').innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
+  document.getElementById('cp-modal').style.display = 'flex';
+  
+  // 1. Iššūkio info
+  const { data: ch } = await sb.from('challenges')
+    .select('*')
+    .eq('id', challengeId)
+    .single();
+  
+  if (!ch) {
+    document.getElementById('cp-list').innerHTML = '<div style="text-align:center;padding:20px;color:#EF4444;">Iššūkis nerastas</div>';
+    return;
+  }
+  
+  // 2. Apskaičiuoti eligible vaikus pagal target_audience
+  const myKidIds = await getMyKidIds();
+  const { data: allKids } = await sb.from('kids')
+    .select('id, first_name, last_name, gender, group_id, is_anonymous')
+    .in('id', myKidIds)
+    .eq('approval_status', 'approved');
+  
+  const audience = ch.target_audience || 'group';
+  let eligibleKids = allKids || [];
+  
+  if (audience === 'specific_kid') {
+    eligibleKids = eligibleKids.filter(k => k.id === ch.target_kid_id);
+  } else if (audience === 'group') {
+    eligibleKids = eligibleKids.filter(k => k.group_id === ch.group_id);
+  } else if (audience === 'boys_in_group') {
+    eligibleKids = eligibleKids.filter(k => k.group_id === ch.group_id && k.gender === 'male');
+  } else if (audience === 'girls_in_group') {
+    eligibleKids = eligibleKids.filter(k => k.group_id === ch.group_id && k.gender === 'female');
+  }
+  
+  // 3. Submission'us per vaiką
+  const { data: subs } = await sb.from('challenge_submissions')
+    .select('kid_id, status, value, numeric_value, created_at')
+    .eq('challenge_id', challengeId);
+  
+  const subsByKid = {};
+  (subs || []).forEach(s => { subsByKid[s.kid_id] = s; });
+  
+  if (eligibleKids.length === 0) {
+    document.getElementById('cp-list').innerHTML = 
+      '<div style="text-align:center;padding:20px;color:var(--mut);">Nėra dalyvių pagal kriterijus</div>';
+    return;
+  }
+  
+  // 4. Surūšiuoti: pirma atlikę, paskui laukia, paskui nedalyvavę
+  eligibleKids.sort((a, b) => {
+    const sa = subsByKid[a.id]?.status;
+    const sb = subsByKid[b.id]?.status;
+    const order = { approved: 0, pending: 1, rejected: 2 };
+    const oa = sa ? order[sa] : 3;
+    const ob = sb ? order[sb] : 3;
+    if (oa !== ob) return oa - ob;
+    return (a.first_name || '').localeCompare(b.first_name || '');
+  });
+  
+  const html = eligibleKids.map(k => {
+    const sub = subsByKid[k.id];
+    const name = `${k.first_name || 'Vaikas'} ${k.last_name?.[0] || ''}.`;
+    
+    let statusBadge, bgColor, borderColor;
+    if (sub?.status === 'approved') {
+      statusBadge = `<span style="font-size:10px;background:rgba(34,197,94,.15);color:var(--grn);padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:1px;">✅ ATLIKO: ${sub.value || sub.numeric_value} ${ch.target_unit || ''}</span>`;
+      bgColor = 'rgba(34,197,94,.05)';
+      borderColor = 'rgba(34,197,94,.3)';
+    } else if (sub?.status === 'pending') {
+      statusBadge = `<span style="font-size:10px;background:rgba(255,77,0,.15);color:var(--br);padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:1px;">⏳ LAUKIA: ${sub.value || sub.numeric_value} ${ch.target_unit || ''}</span>`;
+      bgColor = 'rgba(255,77,0,.05)';
+      borderColor = 'rgba(255,77,0,.3)';
+    } else if (sub?.status === 'rejected') {
+      statusBadge = `<span style="font-size:10px;background:rgba(239,68,68,.15);color:#EF4444;padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:1px;">❌ ATMESTA</span>`;
+      bgColor = 'rgba(239,68,68,.05)';
+      borderColor = 'rgba(239,68,68,.3)';
+    } else {
+      statusBadge = `<span style="font-size:10px;background:rgba(255,255,255,.05);color:var(--mut);padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:1px;">⚪ NEDALYVAVO</span>`;
+      bgColor = 'rgba(255,255,255,.02)';
+      borderColor = 'var(--bdr)';
+    }
+    
+    const genderIcon = k.gender === 'male' ? '👦' : '👧';
+    
+    return `
+      <div style="background:${bgColor};border:.5px solid ${borderColor};border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <div style="font-size:18px;flex-shrink:0;">${genderIcon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:13px;">${name}</div>
+          <div style="margin-top:4px;">${statusBadge}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  // Pridedam summary viršuje
+  const approvedCount = eligibleKids.filter(k => subsByKid[k.id]?.status === 'approved').length;
+  const pendingCount = eligibleKids.filter(k => subsByKid[k.id]?.status === 'pending').length;
+  const notParticipated = eligibleKids.length - approvedCount - pendingCount;
+  
+  const summary = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;">
+      <div style="background:rgba(34,197,94,.05);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">${approvedCount}</div>
+        <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">ATLIKO</div>
+      </div>
+      <div style="background:rgba(255,77,0,.05);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${pendingCount}</div>
+        <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAUKIA</div>
+      </div>
+      <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);">${notParticipated}</div>
+        <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">NEDALYVAVO</div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('cp-list').innerHTML = summary + html;
+}
+
+function closeChallengeParticipants() {
+  document.getElementById('cp-modal').style.display = 'none';
 }
 
 async function loadPendingChallengeSubmissions() {
