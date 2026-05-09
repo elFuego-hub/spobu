@@ -1068,9 +1068,12 @@ select.inp option{background:#222;}
     </div>
     <div class="st">PRIVATUMO NUSTATYMAI</div>
     <div class="cd">
-      <div class="tgr">
-        <div><div style="font-size:13px;font-weight:800;">Anonimas statistikoje</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Kiti matys „Anonimas"</div></div>
-        <button class="tg" id="v-anon-toggle" onclick="toggleAnon()"></button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:24px;" id="v-anon-icon">👤</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:800;" id="v-anon-status">Statistikoje matomas vardu</div>
+          <div style="font-size:11px;color:var(--mut);margin-top:2px;">Šį nustatymą valdo tavo tėvai 👨‍👩‍👦</div>
+        </div>
       </div>
     </div>
     <div class="st">PRENUMERATA</div>
@@ -3456,6 +3459,18 @@ async function showKidDetail(kidId) {
         </div>
       </div>
       
+      <!-- Privatumo nustatymai -->
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;">🔒 PRIVATUMAS</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:800;">Anonimas statistikoje</div>
+            <div style="font-size:11px;color:var(--mut);margin-top:2px;line-height:1.4;">Kiti klubo nariai matys „Anonimas" vietoj vardo</div>
+          </div>
+          <button class="tg ${kid.is_anonymous ? 'on' : ''}" id="t-anon-toggle-${kidId}" onclick="toggleKidAnonymity('${kidId}')"></button>
+        </div>
+      </div>
+      
       <!-- Vaiko prieiga -->
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
         <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">VAIKO PRIEIGA</div>
@@ -4284,9 +4299,18 @@ async function loadKidData() {
   // EXP baras
   updateExpBar(currentKid.total_exp || 0, currentKid.current_level || 1);
 
-  // Anonimiškumo toggle
-  const tg = document.getElementById('v-anon-toggle');
-  if (currentKid.is_anonymous) tg.classList.add('on');
+  // Anonimiškumo display (read-only)
+  const anonIcon = document.getElementById('v-anon-icon');
+  const anonStatus = document.getElementById('v-anon-status');
+  if (anonIcon && anonStatus) {
+    if (currentKid.is_anonymous) {
+      anonIcon.textContent = '🥷';
+      anonStatus.textContent = 'Statistikoje rodomas kaip „Anonimas"';
+    } else {
+      anonIcon.textContent = '👤';
+      anonStatus.textContent = 'Statistikoje matomas vardu';
+    }
+  }
 
   // Kategorijos
   await loadCategories();
@@ -8170,11 +8194,51 @@ function loadSubscriptionCard() {
 }
 
 async function toggleAnon() {
+  // Vaiko UI'je toggle pašalintas - bet funkcija paliekama saugumui
   const tg = document.getElementById('v-anon-toggle');
+  if (!tg) return; // Nėra mygtuko - vaikai nebevaldo
   const newVal = !tg.classList.contains('on');
   tg.classList.toggle('on');
   await sb.from('kids').update({is_anonymous: newVal}).eq('id', currentKid?.id || currentUser.id);
   showToast(newVal ? '👤 Anoniminis' : '📛 Vardas rodomas', 'success');
+}
+
+// Tėvų toggle - jie valdo vaiko anonimiškumą
+async function toggleKidAnonymity(kidId) {
+  const tg = document.getElementById(`t-anon-toggle-${kidId}`);
+  if (!tg) return;
+  const newVal = !tg.classList.contains('on');
+  
+  // Disable button kol vyksta užklausa
+  tg.style.opacity = '0.5';
+  tg.style.pointerEvents = 'none';
+  
+  const { error } = await sb.from('kids')
+    .update({ is_anonymous: newVal })
+    .eq('id', kidId);
+  
+  tg.style.opacity = '1';
+  tg.style.pointerEvents = 'auto';
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error');
+    return;
+  }
+  
+  // Atnaujinti UI
+  tg.classList.toggle('on');
+  
+  // Jei currentParentKid yra šis vaikas - atnaujinam state'ą
+  if (currentParentKid?.id === kidId) {
+    currentParentKid.is_anonymous = newVal;
+  }
+  
+  // Išvalyti statistikos cache (kad rodymas atsinaujintų)
+  if (typeof STAT_CACHE !== 'undefined') {
+    STAT_CACHE.clear();
+  }
+  
+  showToast(newVal ? '🥷 Vaiko statistika anoniminė' : '👤 Vaiko vardas matomas', 'success');
 }
 
 // ════════════════════════════════════════
