@@ -1212,6 +1212,7 @@ select.inp option{background:#222;}
   <div class="tabs">
     <div class="tab on" onclick="switchTrTab(this,'career')">🏋️ Karjera <span id="tr-career-count" style="opacity:.6;">0</span></div>
     <div class="tab" onclick="switchTrTab(this,'challenges')">⚡ Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
+    <div class="tab" onclick="switchTrTab(this,'competitions')">🥇 Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
   </div>
   <div class="sa">
     <!-- Karjeros pateikimai -->
@@ -1220,6 +1221,10 @@ select.inp option{background:#222;}
     </div>
     <!-- Iššūkių pateikimai (paslėpti pradžioje) -->
     <div id="tr-challenge-submissions-list" style="display:none;">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <!-- Varžybų rezultatai (paslėpti pradžioje) -->
+    <div id="tr-competition-submissions-list" style="display:none;">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
   </div>
@@ -6302,6 +6307,7 @@ async function loadTrainerData() {
   await loadNewKids();
   await loadPendingSubmissions();
   await loadPendingChallengeSubmissions();
+  await loadPendingCompetitionResults();
   await loadTrainerMembers();
   await loadTrainerGroups();
 }
@@ -8174,14 +8180,22 @@ function switchTrTab(el, type) {
   
   const careerList = document.getElementById('tr-submissions-list');
   const challengesList = document.getElementById('tr-challenge-submissions-list');
+  const competitionsList = document.getElementById('tr-competition-submissions-list');
   
   if (type === 'career') {
     careerList.style.display = 'block';
     challengesList.style.display = 'none';
+    if (competitionsList) competitionsList.style.display = 'none';
   } else if (type === 'challenges') {
     careerList.style.display = 'none';
     challengesList.style.display = 'block';
+    if (competitionsList) competitionsList.style.display = 'none';
     loadPendingChallengeSubmissions();
+  } else if (type === 'competitions') {
+    careerList.style.display = 'none';
+    challengesList.style.display = 'none';
+    if (competitionsList) competitionsList.style.display = 'block';
+    loadPendingCompetitionResults();
   }
 }
 
@@ -9011,6 +9025,200 @@ async function rejectChallengeSubmission(subId) {
   }
   showToast('Atmesta', 'error');
   loadPendingChallengeSubmissions();
+}
+
+
+// ════════════════════════════════════════
+// VARŽYBŲ REZULTATŲ PATVIRTINIMAS (treneris)
+// ════════════════════════════════════════
+async function loadPendingCompetitionResults() {
+  const trainerProfileId = currentUser?.id;
+  if (!trainerProfileId) return;
+  
+  // Gauti vaikus, priskirtus šiam treneriui (primary + M:N)
+  const { data: primaryKids } = await sb.from('kids')
+    .select('id')
+    .eq('assigned_trainer_id', trainerProfileId);
+  
+  const { data: mnKids } = await sb.from('kid_trainers')
+    .select('kid_id')
+    .eq('trainer_id', trainerProfileId);
+  
+  const myKidIds = new Set();
+  (primaryKids || []).forEach(k => myKidIds.add(k.id));
+  (mnKids || []).forEach(k => myKidIds.add(k.kid_id));
+  
+  if (myKidIds.size === 0) {
+    document.getElementById('tr-competition-submissions-list').innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra priskirtų vaikų</div>';
+    document.getElementById('tr-competitions-count').textContent = '0';
+    return;
+  }
+  
+  // Pending varžybų rezultatai
+  const { data: results, error } = await sb.from('competition_results')
+    .select('*')
+    .in('kid_id', Array.from(myKidIds))
+    .eq('approval_status', 'pending')
+    .in('status', ['participated', 'didnt_attend']) // tik kai vaikas pateikė rezultatą (ne planning)
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('loadPendingCompetitionResults:', error);
+    document.getElementById('tr-competition-submissions-list').innerHTML =
+      `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`;
+    return;
+  }
+  
+  document.getElementById('tr-competitions-count').textContent = (results || []).length;
+  
+  // Atnaujinti pagrindinį badge
+  updateTrainerPendingBadge();
+  
+  if (!results || results.length === 0) {
+    document.getElementById('tr-competition-submissions-list').innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra laukiančių varžybų rezultatų</div>';
+    return;
+  }
+  
+  // Gauti vaikų ir varžybų info
+  const kidIds = [...new Set(results.map(r => r.kid_id))];
+  const compIds = [...new Set(results.map(r => r.competition_id))];
+  
+  const { data: kidsData } = await sb.from('kids')
+    .select('id, first_name, last_name, gender, kyu')
+    .in('id', kidIds);
+  
+  const { data: compsData } = await sb.from('competitions')
+    .select('id, title, competition_type, level, event_date, location')
+    .in('id', compIds);
+  
+  const kidsMap = {};
+  (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
+  const compsMap = {};
+  (compsData || []).forEach(c => { compsMap[c.id] = c; });
+  
+  const html = results.map(r => {
+    const kid = kidsMap[r.kid_id];
+    const comp = compsMap[r.competition_id];
+    if (!kid || !comp) return '';
+    
+    const kidName = `${kid.first_name} ${kid.last_name || ''}`.trim();
+    const genderIcon = kid.gender === 'female' ? '👧' : '👦';
+    const typeLabel = COMP_TYPE_LABELS[comp.competition_type] || comp.competition_type;
+    const levelLabel = comp.level ? COMP_LEVEL_LABELS[comp.level] : '';
+    
+    // Rezultato aprašymas
+    let resultDesc = '';
+    if (r.status === 'didnt_attend') {
+      resultDesc = '🚫 <b>Nedalyvavo</b>';
+    } else if (comp.competition_type === 'belt_test') {
+      if (r.belt_passed) {
+        resultDesc = `🥋 <b>Išlaikė!</b> Naujas kyu: <b>${r.new_kyu}</b>`;
+      } else {
+        resultDesc = '🥋 <b>Neišlaikė</b>';
+      }
+    } else {
+      let placeText = '';
+      if (r.placement === 1) placeText = '🥇 1 vieta';
+      else if (r.placement === 2) placeText = '🥈 2 vieta';
+      else if (r.placement === 3) placeText = '🥉 3 vieta';
+      else placeText = '⚪ Dalyvavo (4+ vieta)';
+      
+      resultDesc = `<b>${placeText}</b>`;
+      
+      if (comp.competition_type === 'kumite' && (r.wins > 0 || r.losses > 0)) {
+        resultDesc += ` · ${r.wins}W : ${r.losses}L`;
+      }
+    }
+    
+    const dateStr = formatDateLT(r.created_at);
+    
+    return `<div class="cd" id="comp-result-${r.id}" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:900;margin-bottom:2px;">${genderIcon} ${kidName}</div>
+          <div style="font-size:11px;color:var(--mut);">${kid.kyu || 'Mu kyu'}</div>
+        </div>
+        <div class="bg or" style="padding:3px 8px;font-size:10px;">⏳ Laukia</div>
+      </div>
+      
+      <div style="background:var(--bg);border-radius:8px;padding:10px;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;">${comp.title}</div>
+        <div style="font-size:11px;color:var(--mut);margin-bottom:8px;">${typeLabel}${levelLabel ? ' · ' + levelLabel : ''} · 📅 ${formatDateLT(comp.event_date)}</div>
+        <div style="font-size:13px;color:var(--text);padding-top:6px;border-top:.5px solid var(--bdr);">${resultDesc}</div>
+      </div>
+      
+      <div style="display:flex;gap:6px;">
+        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveCompetitionResult('${r.id}')">✓ Patvirtinti</button>
+        <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="rejectCompetitionResult('${r.id}')">✗ Atmesti</button>
+      </div>
+    </div>`;
+  }).join('');
+  
+  document.getElementById('tr-competition-submissions-list').innerHTML = html;
+}
+
+async function approveCompetitionResult(resultId) {
+  const { error } = await sb.from('competition_results')
+    .update({ 
+      approval_status: 'approved',
+      approved_by: currentUser.id,
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', resultId);
+  
+  if (error) {
+    console.error('approveCompetitionResult:', error);
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    return;
+  }
+  
+  const el = document.getElementById(`comp-result-${resultId}`);
+  if (el) {
+    el.style.opacity = '.3';
+    el.style.pointerEvents = 'none';
+  }
+  showToast('✅ Patvirtinta! EXP pridėtas vaikui.', 'success', 4000);
+  loadPendingCompetitionResults();
+}
+
+async function rejectCompetitionResult(resultId) {
+  const reason = prompt('Atmetimo priežastis (neprivaloma):') || 'Neteisingas rezultatas';
+  
+  const { error } = await sb.from('competition_results')
+    .update({ 
+      approval_status: 'rejected',
+      rejection_reason: reason,
+      approved_by: currentUser.id,
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', resultId);
+  
+  if (error) {
+    console.error('rejectCompetitionResult:', error);
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    return;
+  }
+  
+  const el = document.getElementById(`comp-result-${resultId}`);
+  if (el) {
+    el.style.opacity = '.3';
+    el.style.pointerEvents = 'none';
+  }
+  showToast('Atmesta', 'error');
+  loadPendingCompetitionResults();
+}
+
+// Atnaujinti trenerio bendrą pending badge'ą
+async function updateTrainerPendingBadge() {
+  const careerCount = parseInt(document.getElementById('tr-career-count').textContent) || 0;
+  const challengesCount = parseInt(document.getElementById('tr-challenges-count').textContent) || 0;
+  const compCount = parseInt(document.getElementById('tr-competitions-count').textContent) || 0;
+  
+  const total = careerCount + challengesCount + compCount;
+  const badge = document.getElementById('tr-pending-badge');
+  if (badge) badge.textContent = total;
 }
 
 
