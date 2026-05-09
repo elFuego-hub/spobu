@@ -516,16 +516,41 @@ select.inp option{background:#222;}
     </div>
     
     <label class="lbl">PAVADINIMAS</label>
-    <input class="inp" type="text" id="cc-title" placeholder="Pvz. Atlik 50 burpees per dieną" maxlength="80">
+    <input class="inp" type="text" id="cc-title" placeholder="Pvz. 50 atsispaudimų" maxlength="80">
     
     <label class="lbl">APRAŠYMAS / INSTRUKCIJOS</label>
     <textarea class="inp" id="cc-description" placeholder="Detalesnis aprašymas vaikams..." rows="3" style="resize:none;"></textarea>
     
-    <label class="lbl">TIPAS</label>
-    <div class="chs" style="margin-bottom:14px;">
-      <div class="ch on" onclick="selectChallengeType(this,'weekly')" data-type="weekly">⚡ Savaitinis</div>
-      <div class="ch" onclick="selectChallengeType(this,'monthly')" data-type="monthly">🎯 Mėnesinis</div>
-      <div class="ch" onclick="selectChallengeType(this,'oneoff')" data-type="oneoff">✨ Vienkartinis</div>
+    <!-- TURINIO TIPAS -->
+    <label class="lbl">TURINIO TIPAS</label>
+    <div class="chs" style="margin-bottom:6px;" id="cc-content-types">
+      <div class="ch on" onclick="selectChallengeContentType(this,'achievement')" data-content="achievement">💪 Pasiekimas</div>
+      <div class="ch" onclick="selectChallengeContentType(this,'distance')" data-content="distance">🏃 Distancija</div>
+      <div class="ch" onclick="selectChallengeContentType(this,'attendance')" data-content="attendance">📅 Lankymas</div>
+      <div class="ch" onclick="selectChallengeContentType(this,'competition')" data-content="competition">🏆 Varžybos</div>
+    </div>
+    <input type="hidden" id="cc-content-type" value="achievement">
+    <div id="cc-content-help" style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;">
+      💪 Pasiekimas: kartų skaičius (atsispaudimai, pritupimai)
+    </div>
+    
+    <!-- TIKSLAS -->
+    <div id="cc-target-section">
+      <label class="lbl">TIKSLAS</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <input class="inp" type="number" id="cc-target-value" placeholder="Skaičius" min="0" step="any">
+        <input class="inp" type="text" id="cc-target-unit" placeholder="Vienetai (kartai, km)" readonly style="background:var(--bg2);">
+      </div>
+    </div>
+    
+    <!-- TRUKMĖS TIPAS -->
+    <label class="lbl">TRUKMĖ</label>
+    <div class="chs" style="margin-bottom:14px;" id="cc-types">
+      <div class="ch" onclick="selectChallengeType(this,'daily')" data-type="daily">☀️ Kasdienis (24h)</div>
+      <div class="ch on" onclick="selectChallengeType(this,'weekly')" data-type="weekly">⚡ Savaitinis (7d)</div>
+      <div class="ch" onclick="selectChallengeType(this,'monthly')" data-type="monthly">🎯 Mėnesinis (30d)</div>
+      <div class="ch" onclick="selectChallengeType(this,'one_time')" data-type="one_time">✨ Vienkartinis</div>
+      <div class="ch" onclick="selectChallengeType(this,'permanent')" data-type="permanent">♾️ Be termino</div>
     </div>
     <input type="hidden" id="cc-type" value="weekly">
     
@@ -763,20 +788,71 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">STATISTIKA</div></div>
   <div class="sa">
-    <div class="mr" id="v-my-rank">
-      <div>
-        <div style="font-size:11px;opacity:.8;font-weight:700;letter-spacing:1px;">MANO VIETA</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;" id="v-rank-num">#–</div>
-        <div style="font-size:11px;opacity:.8;" id="v-rank-total">iš 0</div>
+    
+    <!-- Tab nav -->
+    <div style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;padding-bottom:4px;">
+      <button class="stat-tab on" data-tab="overall" onclick="switchStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
+      <button class="stat-tab" data-tab="skills" onclick="switchStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
+      <button class="stat-tab" data-tab="challenges" onclick="switchStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">⚡ IŠŠŪKIAI</button>
+      <button class="stat-tab" data-tab="competitions" onclick="switchStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
+    </div>
+    
+    <!-- TAB: BENDRAS LVL (jau veikiantis Hall of Fame) -->
+    <div id="stat-tab-overall" class="stat-tab-content">
+      <div class="mr" id="v-my-rank">
+        <div>
+          <div style="font-size:11px;opacity:.8;font-weight:700;letter-spacing:1px;">MANO VIETA</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;" id="v-rank-num">#–</div>
+          <div style="font-size:11px;opacity:.8;" id="v-rank-total">iš 0</div>
+        </div>
+        <div style="margin-left:auto;text-align:right;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-stat-exp">0 EXP</div>
+        </div>
       </div>
-      <div style="margin-left:auto;text-align:right;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-stat-exp">0 EXP</div>
+      <div class="st">TOP 10 (ANONIMIŠKAI)</div>
+      <div class="cd" id="v-leaderboard">
+        <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
       </div>
     </div>
-    <div class="st">TOP 10 (ANONIMIŠKAI)</div>
-    <div class="cd" id="v-leaderboard">
-      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    
+    <!-- TAB: SKILL'AI (placeholder - kita sesija) -->
+    <div id="stat-tab-skills" class="stat-tab-content" style="display:none;">
+      <div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:14px;padding:30px 20px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">🚧</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:8px;">SKILL'Ų REITINGAS</div>
+        <div style="font-size:12px;color:var(--mut);line-height:1.5;">
+          Čia bus rodoma tavo vieta klube pagal kiekvieną skill'ą:<br>
+          💪 Jėga · 🏃 Ištvermė · ⚡ Greitis<br>
+          🤸 Lankstumas · 🎯 Technika · 🥋 Karatė atributika · 🧘 Drausmė
+        </div>
+        <div style="margin-top:14px;font-size:11px;color:var(--mut);font-style:italic;">
+          Bus pridėta artimiausioje sesijoje
+        </div>
+      </div>
     </div>
+    
+    <!-- TAB: IŠŠŪKIAI (klubo iššūkių reitingas) -->
+    <div id="stat-tab-challenges" class="stat-tab-content" style="display:none;">
+      <div id="stat-challenge-content">
+        <div style="text-align:center;padding:20px;color:var(--mut);">Spausk tabą...</div>
+      </div>
+    </div>
+    
+    <!-- TAB: VARŽYBOS (placeholder - kita sesija) -->
+    <div id="stat-tab-competitions" class="stat-tab-content" style="display:none;">
+      <div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:14px;padding:30px 20px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">🚧</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:8px;">VARŽYBŲ REITINGAS</div>
+        <div style="font-size:12px;color:var(--mut);line-height:1.5;">
+          Čia bus rodomi tavo medaliai ir vieta klube<br>
+          🥇 Aukso · 🥈 Sidabro · 🥉 Bronzos
+        </div>
+        <div style="margin-top:14px;font-size:11px;color:var(--mut);font-style:italic;">
+          Varžybų sistema bus pridėta vėliau
+        </div>
+      </div>
+    </div>
+    
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -810,6 +886,13 @@ select.inp option{background:#222;}
       <div id="v-skill-badges" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
         <div style="text-align:center;padding:20px 0;color:var(--mut);font-size:12px;grid-column:span 4;">Kraunama...</div>
       </div>
+      
+      <!-- IŠŠŪKIŲ BADGE (su tier sistema, unlimited EXP) -->
+      <div style="font-size:11px;font-weight:800;color:var(--mut);margin:18px 0 12px;letter-spacing:1px;">⚡ IŠŠŪKIŲ MEISTRAS</div>
+      <div id="v-challenge-badge" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;padding:14px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);" onclick="openClubChallengeLeaderboard()">
+        <div style="text-align:center;padding:12px 0;color:var(--mut);font-size:12px;">Kraunama...</div>
+      </div>
+      
       <div style="font-size:11px;font-weight:800;color:var(--mut);margin:18px 0 12px;letter-spacing:1px;">🥇 VARŽYBŲ MEDALIAI</div>
       <div id="v-comp-medals" style="text-align:center;padding:14px;color:var(--mut);font-size:12px;background:var(--bg);border-radius:12px;border:.5px dashed var(--bdr);">
         Dar nedalyvavai varžybose
@@ -1740,6 +1823,62 @@ select.inp option{background:#222;}
         </div>
       </div>
       
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- VAIKO IŠŠŪKIO PATEIKIMO MODAL'AS -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="vsc-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10001;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:380px;width:100%;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">PATEIK REZULTATĄ</div>
+      <button onclick="closeSubmitChallenge()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+    
+    <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div id="vsc-icon" style="font-size:32px;">⚡</div>
+        <div style="flex:1;">
+          <div id="vsc-title" style="font-size:16px;font-weight:900;">Iššūkio pavadinimas</div>
+          <div id="vsc-exp" style="font-size:11px;color:var(--br);font-weight:700;letter-spacing:1px;margin-top:2px;">+10 EXP</div>
+        </div>
+      </div>
+      <div id="vsc-target" style="font-size:13px;color:var(--br);font-weight:700;margin-bottom:6px;"></div>
+      <div id="vsc-description" style="font-size:12px;color:var(--mut);line-height:1.5;"></div>
+    </div>
+    
+    <label class="lbl">TAVO REZULTATAS</label>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <input class="inp" type="number" id="vsc-result" placeholder="Skaičius" min="0" step="any" style="flex:1;">
+      <div id="vsc-unit" style="display:flex;align-items:center;padding:0 14px;background:var(--bg2);border:.5px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--mut);font-weight:700;">vienetai</div>
+    </div>
+    
+    <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-bottom:14px;">
+      ℹ️ Rezultatas bus išsiųstas treneriui patvirtinimui. Po patvirtinimo gausi EXP.
+    </div>
+    
+    <button id="vsc-submit-btn" class="btn btng" style="width:100%;" onclick="submitChallengeResult()">SIŲSTI</button>
+    <button class="btn btnd" style="width:100%;margin-top:8px;" onclick="closeSubmitChallenge()">Atšaukti</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- IŠŠŪKIO LEADERBOARD'O MODAL'AS -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="vlb-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10001;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
+  <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:380px;width:100%;padding:0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
+    <div style="background:linear-gradient(135deg,var(--br),#FFD700);padding:18px 20px;color:white;display:flex;align-items:center;gap:10px;">
+      <div style="font-size:28px;">🏆</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;opacity:.9;">KLUBO REITINGAS</div>
+        <div id="vlb-title" style="font-size:13px;line-height:1.2;font-weight:700;margin-top:2px;">Iššūkis</div>
+      </div>
+      <button onclick="closeChallengeLeaderboard()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+    </div>
+    <div id="vlb-list" style="padding:14px;overflow-y:auto;flex:1;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
   </div>
 </div>
@@ -3778,6 +3917,9 @@ async function loadKidData() {
   // Badge inventorius
   await loadBadges();
   
+  // Iššūkių badge (tier sistema)
+  await loadChallengeBadge();
+  
   // Patikrinam ar yra naujų pasiekimų (po pirmo užkrovimo, kitu kartu rodys popup)
   await checkForNewAchievements();
 }
@@ -4007,38 +4149,505 @@ function spawnConfetti() {
 }
 
 async function loadChallenges() {
-  const { data: challenges } = await sb.from('challenges')
-    .select('*, challenge_submissions(status,value)')
+  if (!currentKid?.id) {
+    console.warn('loadChallenges: currentKid.id missing');
+    return;
+  }
+  
+  const clubId = currentProfile?.club_id;
+  if (!clubId) {
+    document.getElementById('v-challenges-list').innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--mut);">Klubas nepriskirtas</div>';
+    return;
+  }
+  
+  // 1. Aktyvūs iššūkiai klubo
+  const nowIso = new Date().toISOString();
+  const { data: challenges, error } = await sb.from('challenges')
+    .select('*')
+    .eq('club_id', clubId)
     .eq('is_active', true)
-    .or(`club_id.eq.${currentProfile?.club_id},group_id.eq.${currentKid?.group_id}`)
-    .gt('expires_at', new Date().toISOString())
-    .limit(10);
-
+    .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('loadChallenges error:', error);
+    document.getElementById('v-challenges-list').innerHTML =
+      '<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ' + error.message + '</div>';
+    return;
+  }
+  
   if (!challenges?.length) {
     document.getElementById('v-challenges-list').innerHTML =
       '<div style="text-align:center;padding:40px;color:var(--mut);">Aktyvių iššūkių nėra</div>';
     return;
   }
-
+  
+  // 2. Šio vaiko submission'ai
+  const challengeIds = challenges.map(c => c.id);
+  const { data: mySubs } = await sb.from('challenge_submissions')
+    .select('challenge_id, status, value, numeric_value')
+    .eq('kid_id', currentKid.id)
+    .in('challenge_id', challengeIds);
+  
+  const subsByChallenge = {};
+  (mySubs || []).forEach(s => {
+    if (!subsByChallenge[s.challenge_id]) subsByChallenge[s.challenge_id] = [];
+    subsByChallenge[s.challenge_id].push(s);
+  });
+  
+  const typeIcons = { daily: '☀️', weekly: '⚡', monthly: '🎯', one_time: '✨', permanent: '♾️' };
+  const typeLabels = { daily: 'Kasdienis', weekly: 'Savaitinis', monthly: 'Mėnesinis', one_time: 'Vienkartinis', permanent: 'Nuolatinis' };
+  
   const html = challenges.map(ch => {
-    const sub = ch.challenge_submissions?.[0];
-    const statusBadge = sub ? (sub.status==='approved'?'<span class="bg gn">✓ Atlikta</span>':'<span class="bg or">Laukia</span>') : '';
-    const daysLeft = Math.max(0,Math.ceil((new Date(ch.expires_at)-new Date())/86400000));
-    const typeIcons = {weekly:'⚡',monthly:'🎯',oneoff:'✨'};
-    return `<div class="cd" style="cursor:pointer;" onclick="submitChallenge('${ch.id}','${ch.title}','${ch.proof_type}')">
+    const subs = subsByChallenge[ch.id] || [];
+    const approvedSub = subs.find(s => s.status === 'approved');
+    const pendingSub = subs.find(s => s.status === 'pending');
+    
+    let statusBadge = '';
+    let actionButton = '';
+    
+    if (approvedSub) {
+      statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">✅ Atlikta: ${approvedSub.value}</span>`;
+      // Permanent iššūkiui - galima pakartoti
+      if (ch.type === 'permanent') {
+        actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">PAKARTOTI</button>`;
+      }
+    } else if (pendingSub) {
+      statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">⏳ Laukia patvirtinimo: ${pendingSub.value}</span>`;
+    } else {
+      actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">DALYVAUTI</button>`;
+    }
+    
+    let timeInfo = '';
+    if (ch.expires_at) {
+      const daysLeft = Math.max(0, Math.ceil((new Date(ch.expires_at) - new Date()) / 86400000));
+      timeInfo = `${daysLeft} d. liko`;
+    } else {
+      timeInfo = 'Be termino';
+    }
+    
+    const target = ch.target_value 
+      ? `🎯 ${ch.target_value} ${ch.target_unit || ''}` 
+      : '';
+    
+    return `<div class="cd" style="margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-        <div><div style="font-size:15px;font-weight:900;">${typeIcons[ch.type]||'⚡'} ${ch.title}</div>
-        <div style="font-size:11px;color:var(--mut);margin-top:2px;">${daysLeft} d. liko</div></div>
-        <div class="bg bl" style="padding:6px 12px;font-size:13px;">+${ch.exp_reward} EXP</div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${ch.icon || '⚡'} ${ch.title}</div>
+          <div style="font-size:11px;color:var(--mut);margin-bottom:6px;">${typeIcons[ch.type] || '⚡'} ${typeLabels[ch.type] || ch.type} · ${timeInfo}</div>
+          ${target ? `<div style="font-size:12px;color:var(--br);font-weight:700;margin-bottom:4px;">${target}</div>` : ''}
+          ${ch.description ? `<div style="font-size:12px;color:var(--mut);line-height:1.4;">${ch.description}</div>` : ''}
+        </div>
+        <div class="bg bl" style="padding:6px 12px;font-size:13px;flex-shrink:0;margin-left:8px;">+${ch.exp_reward} EXP</div>
       </div>
       ${statusBadge}
+      ${actionButton}
     </div>`;
   }).join('');
 
   document.getElementById('v-challenges-list').innerHTML = html;
-  document.getElementById('v-challenges-exp').textContent =
-    challenges.filter(c=>c.challenge_submissions?.[0]?.status==='approved')
-      .reduce((s,c)=>s+c.exp_reward,0);
+  
+  // EXP suma už atliktus iššūkius
+  const totalChallengeExp = (mySubs || [])
+    .filter(s => s.status === 'approved')
+    .reduce((sum, s) => sum + 0, 0); // tikrasis EXP jau įtrauktas į total_exp
+  
+  const expEl = document.getElementById('v-challenges-exp');
+  if (expEl) {
+    const approvedCount = (mySubs || []).filter(s => s.status === 'approved').length;
+    expEl.textContent = approvedCount;
+  }
+}
+
+// ════════════════════════════════════════
+// VAIKO SUBMISSION FLOW
+// ════════════════════════════════════════
+
+let currentChallengeForSubmission = null;
+
+async function openSubmitChallenge(challengeId) {
+  const { data: challenge, error } = await sb.from('challenges')
+    .select('*')
+    .eq('id', challengeId)
+    .single();
+  
+  if (error || !challenge) {
+    showToast('❌ Iššūkis nerastas', 'error');
+    return;
+  }
+  
+  currentChallengeForSubmission = challenge;
+  
+  // Užpildyti modal'o turinį
+  document.getElementById('vsc-icon').textContent = challenge.icon || '⚡';
+  document.getElementById('vsc-title').textContent = challenge.title;
+  document.getElementById('vsc-target').textContent = challenge.target_value 
+    ? `🎯 Tikslas: ${challenge.target_value} ${challenge.target_unit || ''}`
+    : '';
+  document.getElementById('vsc-exp').textContent = `+${challenge.exp_reward} EXP`;
+  document.getElementById('vsc-description').textContent = challenge.description || '';
+  document.getElementById('vsc-result').value = '';
+  document.getElementById('vsc-result').placeholder = `Pvz. ${challenge.target_value || '20'}`;
+  document.getElementById('vsc-unit').textContent = challenge.target_unit || '';
+  
+  document.getElementById('vsc-modal').style.display = 'flex';
+}
+
+function closeSubmitChallenge() {
+  document.getElementById('vsc-modal').style.display = 'none';
+  currentChallengeForSubmission = null;
+}
+
+async function submitChallengeResult() {
+  if (!currentChallengeForSubmission || !currentKid?.id) return;
+  
+  const resultStr = document.getElementById('vsc-result').value.trim();
+  const numericValue = parseFloat(resultStr);
+  
+  if (!resultStr) {
+    showToast('❌ Įvesk rezultatą', 'error');
+    return;
+  }
+  if (isNaN(numericValue) || numericValue < 0) {
+    showToast('❌ Neteisingas skaičius', 'error');
+    return;
+  }
+  
+  // Įsitikinti, kad pasiektas tikslas (jei yra)
+  if (currentChallengeForSubmission.target_value && numericValue < currentChallengeForSubmission.target_value) {
+    if (!confirm(`Tikslas - ${currentChallengeForSubmission.target_value} ${currentChallengeForSubmission.target_unit || ''}, o tu pateiki ${numericValue}. Vis tiek siusti?`)) {
+      return;
+    }
+  }
+  
+  const btn = document.getElementById('vsc-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'SIUNČIAMA...';
+  
+  // Trenerio ID iš primary trenerio (ar kid_trainers)
+  let trainerId = null;
+  const { data: kt } = await sb.from('kid_trainers')
+    .select('trainer_id')
+    .eq('kid_id', currentKid.id)
+    .eq('role', 'primary')
+    .maybeSingle();
+  trainerId = kt?.trainer_id || currentKid.assigned_trainer_id || null;
+  
+  const { data, error } = await sb.from('challenge_submissions').insert({
+    challenge_id: currentChallengeForSubmission.id,
+    kid_id: currentKid.id,
+    trainer_id: trainerId,
+    value: resultStr,
+    numeric_value: numericValue,
+    status: 'pending'
+  }).select();
+  
+  btn.disabled = false;
+  btn.textContent = 'SIŲSTI';
+  
+  if (error) {
+    console.error('Challenge submission error:', error);
+    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    return;
+  }
+  
+  if (!data || data.length === 0) {
+    showToast('❌ Nepavyko išsiųsti', 'error', 5000);
+    return;
+  }
+  
+  showToast('✅ Rezultatas išsiųstas treneriui patvirtinimui!', 'success', 4000);
+  closeSubmitChallenge();
+  await loadChallenges(); // perkrauti
+}
+
+// ════════════════════════════════════════
+// IŠŠŪKIŲ TIER SISTEMA + KLUBO LEADERBOARD'AS
+// ════════════════════════════════════════
+
+const CHALLENGE_TIERS = {
+  bronze: { min: 0, max: 499, icon: '🥉', name: 'BRONZE', color: '#CD7F32', bgColor: 'rgba(205,127,50,.1)', borderColor: 'rgba(205,127,50,.5)' },
+  silver: { min: 500, max: 1999, icon: '🥈', name: 'SILVER', color: '#C0C0C0', bgColor: 'rgba(192,192,192,.1)', borderColor: 'rgba(192,192,192,.5)' },
+  gold: { min: 2000, max: 4999, icon: '🥇', name: 'GOLD', color: '#FFD700', bgColor: 'rgba(255,215,0,.1)', borderColor: 'rgba(255,215,0,.5)' },
+  legend: { min: 5000, max: Infinity, icon: '🏆', name: 'LEGEND', color: '#FF4D00', bgColor: 'rgba(255,77,0,.15)', borderColor: 'rgba(255,77,0,.6)' }
+};
+
+function getChallengeTier(exp) {
+  if (exp >= 5000) return CHALLENGE_TIERS.legend;
+  if (exp >= 2000) return CHALLENGE_TIERS.gold;
+  if (exp >= 500) return CHALLENGE_TIERS.silver;
+  return CHALLENGE_TIERS.bronze;
+}
+
+function getNextTier(exp) {
+  if (exp < 500) return CHALLENGE_TIERS.silver;
+  if (exp < 2000) return CHALLENGE_TIERS.gold;
+  if (exp < 5000) return CHALLENGE_TIERS.legend;
+  return null; // jau Legend
+}
+
+async function loadChallengeBadge() {
+  if (!currentKid?.id) return;
+  
+  // Gauti vaiko challenge_exp ir poziciją klube
+  const { data: leaderboard } = await sb.from('club_challenge_leaderboard')
+    .select('*')
+    .eq('kid_id', currentKid.id)
+    .maybeSingle();
+  
+  // Jei nėra įrašo (nei vienas iššūkis dar neatliktas), default 0
+  const exp = leaderboard?.challenge_exp || 0;
+  const rank = leaderboard?.club_rank || null;
+  const completedCount = leaderboard?.completed_count || 0;
+  
+  const tier = getChallengeTier(exp);
+  const nextTier = getNextTier(exp);
+  
+  let progressBar = '';
+  if (nextTier) {
+    const progress = ((exp - tier.min) / (nextTier.min - tier.min)) * 100;
+    const remaining = nextTier.min - exp;
+    progressBar = `
+      <div style="margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut);margin-bottom:4px;">
+          <span>${tier.icon} ${tier.name}</span>
+          <span>${nextTier.icon} ${nextTier.name}</span>
+        </div>
+        <div style="background:rgba(255,255,255,.05);height:8px;border-radius:4px;overflow:hidden;">
+          <div style="background:linear-gradient(90deg,${tier.color},${nextTier.color});height:100%;width:${progress.toFixed(1)}%;border-radius:4px;transition:width .3s;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--mut);margin-top:4px;text-align:center;">
+          Iki ${nextTier.name}: <span style="color:${nextTier.color};font-weight:700;">${remaining} EXP</span>
+        </div>
+      </div>
+    `;
+  } else {
+    progressBar = `
+      <div style="margin-top:12px;background:linear-gradient(135deg,rgba(255,77,0,.1),rgba(255,215,0,.1));border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:8px;text-align:center;">
+        <div style="font-size:11px;color:var(--br);font-weight:800;letter-spacing:1px;">⭐ MAKSIMALUS LYGIS PASIEKTAS! ⭐</div>
+      </div>
+    `;
+  }
+  
+  const rankText = rank 
+    ? `<div style="font-size:10px;color:var(--mut);margin-top:2px;">Klubo vieta: <span style="color:${tier.color};font-weight:800;">#${rank}</span></div>`
+    : '';
+  
+  document.getElementById('v-challenge-badge').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:60px;height:60px;border-radius:50%;background:${tier.bgColor};border:2px solid ${tier.borderColor};display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;">
+        ${tier.icon}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:${tier.color};line-height:1.1;">${tier.name}</div>
+        <div style="font-size:13px;font-weight:800;margin-top:2px;">${exp} EXP</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:2px;">Atlikta: ${completedCount} iššūkių</div>
+        ${rankText}
+      </div>
+      <div style="font-size:18px;color:var(--mut);">→</div>
+    </div>
+    ${progressBar}
+    <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:10px;font-style:italic;">Spausk peržiūrėti klubo reitingą</div>
+  `;
+}
+
+async function openClubChallengeLeaderboard() {
+  if (!currentProfile?.club_id) {
+    showToast('❌ Klubas nepriskirtas', 'error');
+    return;
+  }
+  
+  document.getElementById('vlb-title').textContent = 'KLUBO REITINGAS';
+  document.getElementById('vlb-list').innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
+  document.getElementById('vlb-modal').style.display = 'flex';
+  
+  const { data: leaderboard, error } = await sb.from('club_challenge_leaderboard')
+    .select('*')
+    .eq('club_id', currentProfile.club_id)
+    .order('club_rank')
+    .limit(20);
+  
+  if (error) {
+    document.getElementById('vlb-list').innerHTML =
+      `<div style="text-align:center;padding:20px;color:#EF4444;">Klaida: ${error.message}</div>`;
+    return;
+  }
+  
+  if (!leaderboard || leaderboard.length === 0) {
+    document.getElementById('vlb-list').innerHTML =
+      '<div style="text-align:center;padding:30px;color:var(--mut);">Dar nė vienas neatliko iššūkių klube.<br><br>Būk pirmas! 💪</div>';
+    return;
+  }
+  
+  const myKidId = currentKid?.id;
+  
+  const html = leaderboard.map(entry => {
+    const isMe = entry.kid_id === myKidId;
+    const name = entry.is_anonymous && !isMe 
+      ? `Anonimas #${entry.club_rank}` 
+      : `${entry.first_name || 'Vardas'} ${entry.last_name?.[0] || ''}.`;
+    
+    const tier = CHALLENGE_TIERS[entry.tier] || CHALLENGE_TIERS.bronze;
+    
+    let rankIcon = '';
+    if (entry.club_rank === 1) rankIcon = '🥇';
+    else if (entry.club_rank === 2) rankIcon = '🥈';
+    else if (entry.club_rank === 3) rankIcon = '🥉';
+    else rankIcon = `${entry.club_rank}.`;
+    
+    const bgStyle = isMe 
+      ? `background:rgba(255,77,0,.15);border:1px solid var(--br);`
+      : `background:${tier.bgColor};border:.5px solid ${tier.borderColor};`;
+    
+    return `
+      <div style="${bgStyle}border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <div style="font-size:18px;width:32px;text-align:center;flex-shrink:0;font-weight:800;">${rankIcon}</div>
+        <div style="font-size:24px;flex-shrink:0;">${tier.icon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:13px;${isMe ? 'color:var(--br);' : ''}">${name}${isMe ? ' (TU)' : ''}</div>
+          <div style="font-size:10px;color:${tier.color};letter-spacing:1px;font-weight:700;margin-top:2px;">${tier.name} · ${entry.completed_count} iššūkių</div>
+        </div>
+        <div style="font-weight:900;color:${tier.color};font-size:14px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">${entry.challenge_exp}</div>
+      </div>
+    `;
+  }).join('');
+  
+  document.getElementById('vlb-list').innerHTML = html;
+}
+
+function closeChallengeLeaderboard() {
+  document.getElementById('vlb-modal').style.display = 'none';
+}
+
+// ════════════════════════════════════════
+// STATISTIKOS EKRANO TABŲ NAVIGACIJA
+// ════════════════════════════════════════
+
+function switchStatTab(tabName) {
+  // Pakeisti aktyvų tab mygtuką
+  document.querySelectorAll('.stat-tab').forEach(btn => {
+    if (btn.dataset.tab === tabName) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--mut)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  
+  // Paslėpti visus tab content
+  document.querySelectorAll('.stat-tab-content').forEach(el => {
+    el.style.display = 'none';
+  });
+  
+  // Parodyti pasirinktą
+  const activeTab = document.getElementById(`stat-tab-${tabName}`);
+  if (activeTab) activeTab.style.display = 'block';
+  
+  // Užkrauti turinį pagal tabą
+  if (tabName === 'overall') {
+    if (typeof loadLeaderboard === 'function') loadLeaderboard();
+  } else if (tabName === 'challenges') {
+    loadChallengeStatTab();
+  }
+}
+
+async function loadChallengeStatTab() {
+  if (!currentProfile?.club_id) {
+    document.getElementById('stat-challenge-content').innerHTML = 
+      '<div style="text-align:center;padding:20px;color:var(--mut);">Klubas nepriskirtas</div>';
+    return;
+  }
+  
+  document.getElementById('stat-challenge-content').innerHTML = 
+    '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
+  
+  // Gauti vaiko statistiką
+  const { data: myEntry } = await sb.from('club_challenge_leaderboard')
+    .select('*')
+    .eq('kid_id', currentKid?.id)
+    .maybeSingle();
+  
+  // Gauti TOP 10
+  const { data: leaderboard, error } = await sb.from('club_challenge_leaderboard')
+    .select('*')
+    .eq('club_id', currentProfile.club_id)
+    .order('club_rank')
+    .limit(10);
+  
+  if (error) {
+    document.getElementById('stat-challenge-content').innerHTML = 
+      `<div style="text-align:center;padding:20px;color:#EF4444;">Klaida: ${error.message}</div>`;
+    return;
+  }
+  
+  const myExp = myEntry?.challenge_exp || 0;
+  const myRank = myEntry?.club_rank || null;
+  const myCompleted = myEntry?.completed_count || 0;
+  const myTier = getChallengeTier(myExp);
+  
+  // Mano kortelė
+  let html = `
+    <div class="mr" style="background:linear-gradient(135deg,${myTier.color}33,${myTier.color}11);border:1px solid ${myTier.borderColor};">
+      <div>
+        <div style="font-size:11px;opacity:.8;font-weight:700;letter-spacing:1px;">MANO VIETA KLUBE</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;color:${myTier.color};">${myRank ? '#' + myRank : '#–'}</div>
+        <div style="font-size:11px;opacity:.8;color:${myTier.color};">${myTier.icon} ${myTier.name}</div>
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:${myTier.color};">${myExp} EXP</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:2px;">${myCompleted} iššūkių</div>
+      </div>
+    </div>
+    
+    <div class="st">KLUBO TOP 10</div>
+  `;
+  
+  if (!leaderboard || leaderboard.length === 0) {
+    html += '<div class="cd" style="text-align:center;padding:30px;color:var(--mut);">Dar nė vienas neatliko iššūkių klube.<br><br>Būk pirmas! 💪</div>';
+  } else {
+    const myKidId = currentKid?.id;
+    
+    html += '<div class="cd" style="padding:8px;">';
+    leaderboard.forEach(entry => {
+      const isMe = entry.kid_id === myKidId;
+      const name = entry.is_anonymous && !isMe 
+        ? `Anonimas #${entry.club_rank}` 
+        : `${entry.first_name || 'Vardas'} ${entry.last_name?.[0] || ''}.`;
+      
+      const tier = CHALLENGE_TIERS[entry.tier] || CHALLENGE_TIERS.bronze;
+      
+      let rankIcon = '';
+      if (entry.club_rank === 1) rankIcon = '🥇';
+      else if (entry.club_rank === 2) rankIcon = '🥈';
+      else if (entry.club_rank === 3) rankIcon = '🥉';
+      else rankIcon = `${entry.club_rank}.`;
+      
+      const bgStyle = isMe 
+        ? `background:rgba(255,77,0,.15);border:1px solid var(--br);`
+        : `background:transparent;border:.5px solid var(--bdr);`;
+      
+      html += `
+        <div style="${bgStyle}border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="font-size:16px;width:28px;text-align:center;flex-shrink:0;font-weight:800;">${rankIcon}</div>
+          <div style="font-size:20px;flex-shrink:0;">${tier.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13px;${isMe ? 'color:var(--br);' : ''}">${name}${isMe ? ' (TU)' : ''}</div>
+            <div style="font-size:10px;color:${tier.color};letter-spacing:1px;font-weight:700;margin-top:2px;">${tier.name} · ${entry.completed_count}</div>
+          </div>
+          <div style="font-weight:900;color:${tier.color};font-size:13px;font-family:'Bebas Neue',sans-serif;">${entry.challenge_exp}</div>
+        </div>
+      `;
+    });
+    html += '</div>';
+  }
+  
+  document.getElementById('stat-challenge-content').innerHTML = html;
 }
 
 async function loadLeaderboard() {
@@ -6081,8 +6690,47 @@ function switchTrTab(el, type) {
 }
 
 // EXP ribos pagal tipą
-const CHALLENGE_EXP_LIMITS = { weekly: 25, monthly: 50, oneoff: 10 };
-const CHALLENGE_EXPIRY_DAYS = { weekly: 7, monthly: 30, oneoff: 365 };
+// Iššūkių EXP limitai pagal trukmę
+const CHALLENGE_EXP_LIMITS = { 
+  daily: 10,        // kasdienis - 10 EXP max
+  weekly: 25,       // savaitinis - 25 EXP max
+  monthly: 50,      // mėnesinis - 50 EXP max  
+  one_time: 30,     // vienkartinis - 30 EXP max
+  permanent: 15     // be termino - 15 EXP max (kartotinis)
+};
+
+// Iššūkių galiojimo dienos
+const CHALLENGE_EXPIRY_DAYS = { 
+  daily: 1,
+  weekly: 7,
+  monthly: 30,
+  one_time: 365,    // vienkartinis - 1 metai 
+  permanent: null   // be termino - NULL expires_at
+};
+
+// Turinio tipų konfigūracija
+const CHALLENGE_CONTENT_CONFIG = {
+  achievement: { 
+    label: '💪 Pasiekimas: kartų skaičius (atsispaudimai, pritupimai)', 
+    unit: 'kartai',
+    placeholder: 'Pvz. 50' 
+  },
+  distance: { 
+    label: '🏃 Distancija: bėgimo / plaukimo / važiavimo km', 
+    unit: 'km',
+    placeholder: 'Pvz. 5' 
+  },
+  attendance: { 
+    label: '📅 Lankymas: treniruočių / sesijų skaičius', 
+    unit: 'sesijos',
+    placeholder: 'Pvz. 8' 
+  },
+  competition: { 
+    label: '🏆 Varžybos: dalyvavimas (1 = atvyko)', 
+    unit: 'kartai',
+    placeholder: '1' 
+  }
+};
 
 function openCreateChallenge() {
   document.getElementById('cc-title').value = '';
@@ -6090,10 +6738,20 @@ function openCreateChallenge() {
   document.getElementById('cc-exp').value = '10';
   document.getElementById('cc-type').value = 'weekly';
   document.getElementById('cc-icon').value = '⚡';
+  document.getElementById('cc-content-type').value = 'achievement';
+  document.getElementById('cc-target-value').value = '';
+  document.getElementById('cc-target-unit').value = CHALLENGE_CONTENT_CONFIG.achievement.unit;
+  
   // Reset chips
   document.querySelectorAll('#ccmo .chs .ch').forEach(c => c.classList.remove('on'));
   document.querySelector('#ccmo [data-type="weekly"]').classList.add('on');
+  document.querySelector('#ccmo [data-content="achievement"]').classList.add('on');
   document.querySelector('#cc-icons .ch').classList.add('on');
+  
+  // Pradinė help žinutė
+  document.getElementById('cc-content-help').textContent = CHALLENGE_CONTENT_CONFIG.achievement.label;
+  document.getElementById('cc-target-value').placeholder = CHALLENGE_CONTENT_CONFIG.achievement.placeholder;
+  
   validateChallengeExp();
   document.getElementById('ccmo').classList.add('open');
 }
@@ -6115,6 +6773,22 @@ function selectChallengeType(el, type) {
   const current = parseInt(document.getElementById('cc-exp').value) || 0;
   if (current > max) document.getElementById('cc-exp').value = max;
   validateChallengeExp();
+}
+
+function selectChallengeContentType(el, contentType) {
+  el.parentElement.querySelectorAll('.ch').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('cc-content-type').value = contentType;
+  
+  const config = CHALLENGE_CONTENT_CONFIG[contentType];
+  document.getElementById('cc-content-help').textContent = config.label;
+  document.getElementById('cc-target-unit').value = config.unit;
+  document.getElementById('cc-target-value').placeholder = config.placeholder;
+  
+  // Varžybos - automatiškai 1
+  if (contentType === 'competition') {
+    document.getElementById('cc-target-value').value = '1';
+  }
 }
 
 function selectChallengeIcon(el, icon) {
@@ -6141,34 +6815,44 @@ async function submitNewChallenge() {
   const title = document.getElementById('cc-title').value.trim();
   const desc = document.getElementById('cc-description').value.trim();
   const type = document.getElementById('cc-type').value;
+  const contentType = document.getElementById('cc-content-type').value;
+  const targetValue = parseFloat(document.getElementById('cc-target-value').value);
+  const targetUnit = document.getElementById('cc-target-unit').value;
   const exp = parseInt(document.getElementById('cc-exp').value);
   const icon = document.getElementById('cc-icon').value;
   
   if (!title) { showToast('❌ Įvesk pavadinimą', 'error'); return; }
+  if (!targetValue || targetValue <= 0) { showToast('❌ Įvesk tikslą (skaičių)', 'error'); return; }
   if (!exp || exp < 1) { showToast('❌ Įvesk EXP atlygį', 'error'); return; }
   
   const max = CHALLENGE_EXP_LIMITS[type];
   if (exp > max) { showToast(`❌ Max EXP: ${max}`, 'error'); return; }
   
+  // Apskaičiuoti expires_at
   const expiryDays = CHALLENGE_EXPIRY_DAYS[type];
-  const expiresAt = new Date(Date.now() + expiryDays * 86400 * 1000).toISOString();
+  const expiresAt = expiryDays === null 
+    ? null   // be termino
+    : new Date(Date.now() + expiryDays * 86400 * 1000).toISOString();
   
   const btn = document.getElementById('cc-submit');
   btn.disabled = true;
   btn.textContent = 'KURIAMA...';
   
-  const { error } = await sb.from('challenges').insert({
+  const { data, error } = await sb.from('challenges').insert({
     trainer_id: currentUser.id,
     club_id: currentProfile?.club_id,
     title,
     description: desc || null,
     instructions: desc || null,
     type,
+    content_type: contentType,
+    target_value: targetValue,
+    target_unit: targetUnit,
     exp_reward: exp,
     icon,
     is_active: true,
     expires_at: expiresAt
-  });
+  }).select();
   
   btn.disabled = false;
   btn.textContent = 'SUKURTI IŠŠŪKĮ';
@@ -6179,17 +6863,37 @@ async function submitNewChallenge() {
     return;
   }
   
-  showToast(`✅ Iššūkis sukurtas!\n\n${title}\n+${exp} EXP`, 'success');
+  if (!data || data.length === 0) {
+    showToast('❌ Iššūkis nepavyko sukurti - nepakanka teisių', 'error', 5000);
+    return;
+  }
+  
+  showToast(`✅ Iššūkis sukurtas!\n\n${title}\nTikslas: ${targetValue} ${targetUnit}\n+${exp} EXP`, 'success');
   closeCreateChallenge();
+  
+  // Perkrauti sąrašą
+  if (typeof loadTrainerChallenges === 'function') {
+    await loadTrainerChallenges();
+  }
 }
 
 async function loadPendingChallengeSubmissions() {
+  // M:N: Surasti VISUS šio trenerio vaikus
+  const myKidIds = await getMyKidIds(); // helper iš ankstesnės sesijos
+  
+  if (!myKidIds || myKidIds.length === 0) {
+    document.getElementById('tr-challenges-count').textContent = '0';
+    document.getElementById('tr-challenge-submissions-list').innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--mut);">🎉 Iššūkių pateikimų nėra</div>';
+    return;
+  }
+  
   const { data: subs, error } = await sb.from('challenge_submissions')
-    .select('*, challenges(title, icon, type, exp_reward)')
+    .select('*, challenges(title, icon, type, exp_reward, target_value, target_unit, content_type)')
     .eq('status', 'pending')
-    .eq('trainer_id', currentUser.id)
+    .in('kid_id', myKidIds)
     .order('created_at', { ascending: false })
-    .limit(20);
+    .limit(50);
   
   if (error) {
     console.error('loadPendingChallengeSubmissions:', error);
@@ -6198,11 +6902,11 @@ async function loadPendingChallengeSubmissions() {
     return;
   }
   
-  // Atskirai gauname vaikų vardus
+  // Vaikų vardai iš kids lentelės (NE profiles!)
   const kidIds = [...new Set((subs || []).map(s => s.kid_id))];
   let kidsMap = {};
   if (kidIds.length > 0) {
-    const { data: kidsData } = await sb.from('profiles')
+    const { data: kidsData } = await sb.from('kids')
       .select('id, first_name, last_name')
       .in('id', kidIds);
     (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
@@ -6211,9 +6915,12 @@ async function loadPendingChallengeSubmissions() {
   // Atnaujinam skaičiukus
   document.getElementById('tr-challenges-count').textContent = subs?.length || 0;
   
-  // Bendras skaičiukas (karjera + iššūkiai)
-  const careerCount = parseInt(document.getElementById('tr-career-count').textContent) || 0;
-  document.getElementById('tr-pending-badge').textContent = careerCount + (subs?.length || 0);
+  const careerEl = document.getElementById('tr-career-count');
+  const pendingBadgeEl = document.getElementById('tr-pending-badge');
+  if (careerEl && pendingBadgeEl) {
+    const careerCount = parseInt(careerEl.textContent) || 0;
+    pendingBadgeEl.textContent = careerCount + (subs?.length || 0);
+  }
   
   if (!subs?.length) {
     document.getElementById('tr-challenge-submissions-list').innerHTML =
@@ -6221,12 +6928,17 @@ async function loadPendingChallengeSubmissions() {
     return;
   }
   
-  const typeLabels = { weekly: 'Sav.', monthly: 'Mėn.', oneoff: 'Vnk.' };
+  const typeLabels = { daily: 'Kasdien.', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
   
   const html = subs.map(s => {
     const kid = kidsMap[s.kid_id];
     const kidName = kid ? `${kid.first_name} ${kid.last_name}` : 'Nežinomas';
     const ch = s.challenges;
+    const targetText = ch?.target_value 
+      ? `🎯 Tikslas: ${ch.target_value} ${ch.target_unit || ''}` 
+      : '';
+    const meetsTarget = ch?.target_value && parseFloat(s.value) >= ch.target_value;
+    
     return `<div class="cd" style="margin-bottom:12px;" id="csub-${s.id}">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
         <div class="av" style="width:36px;height:36px;font-size:14px;background:var(--br);">${kid?.first_name?.[0]||'?'}</div>
@@ -6234,13 +6946,22 @@ async function loadPendingChallengeSubmissions() {
           <div style="font-size:13px;font-weight:900;">${kidName}</div>
           <div style="font-size:11px;color:var(--mut);">${ch?.icon||'⚡'} ${ch?.title||'Iššūkis'}</div>
         </div>
-        <div class="bg or">${typeLabels[ch?.type]||''}</div>
+        <div class="bg or">${typeLabels[ch?.type]||ch?.type||''}</div>
       </div>
-      ${s.value ? `<div style="font-size:12px;color:var(--mut);margin-bottom:10px;background:var(--bg);padding:8px 12px;border-radius:10px;">💬 ${s.value}</div>` : ''}
-      <div style="background:var(--bg);border-radius:12px;padding:10px;margin-bottom:10px;text-align:center;">
-        <div style="font-size:10px;color:var(--mut);">EXP ATLYGIS</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--br);">+${ch?.exp_reward||0} EXP</div>
+      
+      ${targetText ? `<div style="font-size:11px;color:var(--mut);margin-bottom:8px;">${targetText}</div>` : ''}
+      
+      <div style="background:${meetsTarget ? 'rgba(34,197,94,.1)' : 'var(--bg)'};border:.5px solid ${meetsTarget ? 'var(--grn)' : 'var(--bdr)'};border-radius:10px;padding:12px;margin-bottom:10px;text-align:center;">
+        <div style="font-size:10px;color:var(--mut);letter-spacing:1px;">PATEIKTAS REZULTATAS</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${meetsTarget ? 'var(--grn)' : 'var(--text)'};margin:4px 0;">${s.value || '?'} ${ch?.target_unit || ''}</div>
+        ${meetsTarget ? '<div style="font-size:10px;color:var(--grn);font-weight:700;">✓ TIKSLAS PASIEKTAS</div>' : '<div style="font-size:10px;color:var(--mut);">Tikslas nepasiektas</div>'}
       </div>
+      
+      <div style="background:var(--bg);border-radius:10px;padding:8px 10px;margin-bottom:10px;text-align:center;">
+        <div style="font-size:10px;color:var(--mut);">EXP ATLYGIS PATVIRTINUS</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);">+${ch?.exp_reward||0} EXP</div>
+      </div>
+      
       <div style="display:flex;gap:8px;">
         <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveChallengeSubmission('${s.id}')">✓ Patvirtinti</button>
         <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="rejectChallengeSubmission('${s.id}')">✗ Atmesti</button>
