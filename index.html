@@ -4990,15 +4990,31 @@ async function loadKidCompetitionMedals() {
         
         let svg = '';
         let label = '';
+        let typeBadge = '';
+        let typeLabel = '';
+        let typeColor = '';
         
         if (c.competition_type === 'belt_test') {
           svg = generateBeltCertificateSvg(r.belt_passed, r.new_kyu, 50);
           label = r.belt_passed ? r.new_kyu : 'Diržo testas';
-        } else {
+          typeLabel = '🥋 DIRŽAS';
+          typeColor = '#A855F7';
+        } else if (c.competition_type === 'kumite') {
           svg = generateMedalSvg(c.level || 'local', r.placement, 50);
           const placeNames = { 1: 'Auksas', 2: 'Sidabras', 3: 'Bronza' };
           label = placeNames[r.placement] || 'Medalis';
+          typeLabel = '🥊 KUMITE';
+          typeColor = '#EF4444';
+        } else {
+          // kata
+          svg = generateMedalSvg(c.level || 'local', r.placement, 50);
+          const placeNames = { 1: 'Auksas', 2: 'Sidabras', 3: 'Bronza' };
+          label = placeNames[r.placement] || 'Medalis';
+          typeLabel = '🎭 KATA';
+          typeColor = '#3B82F6';
         }
+        
+        typeBadge = `<div style="position:absolute;top:4px;right:4px;background:${typeColor};color:white;font-size:7px;font-weight:800;padding:2px 5px;border-radius:99px;letter-spacing:.5px;">${typeLabel}</div>`;
         
         // Kovų rekordas (kumite)
         let extraInfo = '';
@@ -5007,8 +5023,9 @@ async function loadKidCompetitionMedals() {
         }
         
         return `
-          <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:8px 6px;text-align:center;">
-            <div style="display:flex;justify-content:center;margin-bottom:4px;">${svg}</div>
+          <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:8px 6px;text-align:center;position:relative;">
+            ${typeBadge}
+            <div style="display:flex;justify-content:center;margin-bottom:4px;margin-top:6px;">${svg}</div>
             <div style="font-size:9px;font-weight:800;color:var(--text);margin-bottom:1px;letter-spacing:.3px;">${label}</div>
             <div style="font-size:9px;color:var(--text);line-height:1.2;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.title}</div>
             <div style="font-size:8px;color:var(--mut);">${month} ${year}</div>
