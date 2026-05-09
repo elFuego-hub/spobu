@@ -509,6 +509,86 @@ select.inp option{background:#222;}
 
 <!-- CREATE CHALLENGE MODAL -->
 <!-- VARŽYBŲ KŪRIMO MODAL'AS (klubo admin'ui) -->
+<!-- VAIKO REZULTATO PATEIKIMO MODAL'AS -->
+<div class="mo" id="crmo">
+  <div class="mbox" style="max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="mt">PATEIK REZULTATĄ</div>
+      <button class="bb" onclick="closeSubmitCompResult()">✕</button>
+    </div>
+    
+    <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div id="crm-title" style="font-size:16px;font-weight:900;margin-bottom:4px;">Varžybos</div>
+      <div id="crm-type" style="font-size:11px;color:var(--mut);">Tipas</div>
+    </div>
+    
+    <!-- Statusas: dalyvavo / nedalyvavo -->
+    <label class="lbl">AR DALYVAVAI?</label>
+    <select class="inp" id="crm-status" onchange="updateCrmFields()" style="margin-bottom:14px;">
+      <option value="participated">✅ Dalyvavau</option>
+      <option value="didnt_attend">🚫 Nebuvau</option>
+    </select>
+    
+    <!-- Vieta (kumite/kata) -->
+    <div id="crm-placement-section">
+      <label class="lbl">VIETA</label>
+      <select class="inp" id="crm-placement" style="margin-bottom:14px;">
+        <option value="">Dalyvavau (4+ vieta)</option>
+        <option value="1">🥇 1 vieta</option>
+        <option value="2">🥈 2 vieta</option>
+        <option value="3">🥉 3 vieta</option>
+      </select>
+    </div>
+    
+    <!-- Kumite kovos -->
+    <div id="crm-kumite-section" style="display:none;">
+      <label class="lbl">KOVŲ REKORDAS</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div>
+          <input class="inp" type="number" id="crm-wins" placeholder="0" min="0" max="20" value="0">
+          <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:2px;">Pergalės</div>
+        </div>
+        <div>
+          <input class="inp" type="number" id="crm-losses" placeholder="0" min="0" max="20" value="0">
+          <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:2px;">Pralaimėjimai</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Diržo testas -->
+    <div id="crm-belt-section" style="display:none;">
+      <label class="lbl">REZULTATAS</label>
+      <select class="inp" id="crm-belt-passed" onchange="updateCrmFields()" style="margin-bottom:14px;">
+        <option value="true">🥋 Išlaikiau!</option>
+        <option value="false">😔 Neišlaikiau</option>
+      </select>
+      
+      <label class="lbl">NAUJAS KYU</label>
+      <select class="inp" id="crm-new-kyu" style="margin-bottom:14px;">
+        <option value="">Pasirink kyu...</option>
+        <option value="10 kyu">10 kyu (oranžinis)</option>
+        <option value="9 kyu">9 kyu (oranž. + mėl.)</option>
+        <option value="8 kyu">8 kyu (mėlynas)</option>
+        <option value="7 kyu">7 kyu (mėl. + gelt.)</option>
+        <option value="6 kyu">6 kyu (geltonas)</option>
+        <option value="5 kyu">5 kyu (gelt. + žal.)</option>
+        <option value="4 kyu">4 kyu (žalias)</option>
+        <option value="3 kyu">3 kyu (žal. + rud.)</option>
+        <option value="2 kyu">2 kyu (rudas)</option>
+        <option value="1 kyu">1 kyu (rud. + juod.)</option>
+        <option value="1 dan">1 dan (juodas)</option>
+      </select>
+    </div>
+    
+    <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-bottom:14px;">
+      ℹ️ Rezultatas bus išsiųstas treneriui patvirtinimui. Po patvirtinimo gausi EXP ir medalį.
+    </div>
+    
+    <button id="crm-submit-btn" class="btn btng" style="width:100%;" onclick="submitCompResult()">SIŲSTI</button>
+    <button class="btn btnd" style="width:100%;margin-top:8px;" onclick="closeSubmitCompResult()">Atšaukti</button>
+  </div>
+</div>
+
 <div class="mo" id="kcmo">
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -5024,6 +5104,401 @@ function formatDateLT(dateStr) {
   const months = ['sausio', 'vasario', 'kovo', 'balandžio', 'gegužės', 'birželio', 'liepos', 'rugpjūčio', 'rugsėjo', 'spalio', 'lapkričio', 'gruodžio'];
   const d = new Date(dateStr);
   return `${d.getFullYear()} m. ${months[d.getMonth()]} ${d.getDate()} d.`;
+}
+
+// ════════════════════════════════════════
+// VAIKO VARŽYBOS
+// ════════════════════════════════════════
+
+let vcActiveTab = 'upcoming';
+
+function switchVcTab(el, tabName) {
+  el.parentElement.querySelectorAll('.vc-tab').forEach(t => {
+    t.classList.remove('on');
+    t.style.background = 'transparent';
+    t.style.color = 'var(--mut)';
+    t.style.border = '.5px solid var(--bdr)';
+  });
+  el.classList.add('on');
+  el.style.background = 'rgba(255,77,0,.15)';
+  el.style.color = 'var(--br)';
+  el.style.border = '.5px solid rgba(255,77,0,.4)';
+  
+  vcActiveTab = tabName;
+  loadKidCompetitions();
+}
+
+async function loadKidCompetitions() {
+  if (!currentKid?.id) return;
+  
+  // Klubo ID per trenerį (kaip ir iššūkiams)
+  let clubId = currentProfile?.club_id;
+  if (!clubId && currentKid.assigned_trainer_id) {
+    const { data: trainer } = await sb.from('profiles')
+      .select('club_id')
+      .eq('id', currentKid.assigned_trainer_id)
+      .maybeSingle();
+    clubId = trainer?.club_id;
+  }
+  
+  if (!clubId) {
+    document.getElementById('v-comp-list').innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--mut);">Klubas nepriskirtas</div>';
+    return;
+  }
+  
+  // Visos klubo varžybos
+  const { data: competitions, error } = await sb.from('competitions')
+    .select('*')
+    .eq('club_id', clubId)
+    .eq('is_active', true)
+    .order('event_date', { ascending: true });
+  
+  if (error) {
+    console.error('loadKidCompetitions error:', error);
+    document.getElementById('v-comp-list').innerHTML =
+      `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`;
+    return;
+  }
+  
+  // Visi šio vaiko rezultatai
+  const { data: myResults } = await sb.from('competition_results')
+    .select('*')
+    .eq('kid_id', currentKid.id);
+  
+  const resultsByComp = {};
+  (myResults || []).forEach(r => { resultsByComp[r.competition_id] = r; });
+  
+  // Atskirti į 3 grupes
+  const today = new Date().toISOString().split('T')[0];
+  const upcoming = []; // ateina + nepateikė rezultato
+  const pending = [];  // praėjo + dar nepateikė rezultato (arba planning)
+  const completed = []; // pateikė rezultatą (participated/didnt_attend)
+  
+  (competitions || []).forEach(c => {
+    const isPast = c.event_date < today;
+    const myResult = resultsByComp[c.id];
+    
+    // Pateiktas galutinis rezultatas (participated/didnt_attend)?
+    const isFinalized = myResult && (myResult.status === 'participated' || myResult.status === 'didnt_attend');
+    
+    if (isFinalized) {
+      completed.push(c);
+    } else if (isPast) {
+      pending.push(c);
+    } else {
+      upcoming.push(c);
+    }
+  });
+  
+  // Atnaujinti skaičiukus
+  document.getElementById('vc-upcoming-count').textContent = upcoming.length;
+  document.getElementById('vc-pending-count').textContent = pending.length;
+  document.getElementById('vc-completed-count').textContent = completed.length;
+  
+  // Pasirinkti rodomam tabui
+  let compsToShow = [];
+  if (vcActiveTab === 'upcoming') compsToShow = upcoming;
+  else if (vcActiveTab === 'pending') compsToShow = pending;
+  else compsToShow = completed;
+  
+  if (!compsToShow.length) {
+    let msg = 'Nieko nėra.';
+    if (vcActiveTab === 'upcoming') msg = 'Artėjančių varžybų nėra.';
+    else if (vcActiveTab === 'pending') msg = 'Nieko nelaukia rezultato.';
+    else msg = 'Dar nesi dalyvavęs varžybose.';
+    
+    document.getElementById('v-comp-list').innerHTML =
+      `<div style="text-align:center;padding:40px;color:var(--mut);">${msg}</div>`;
+    return;
+  }
+  
+  const html = compsToShow.map(c => {
+    const myResult = resultsByComp[c.id];
+    const isPast = c.event_date < today;
+    
+    // Countdown
+    let timeInfo = '';
+    if (!isPast) {
+      const days = Math.ceil((new Date(c.event_date) - new Date()) / 86400000);
+      if (days === 0) timeInfo = '🔥 Šiandien!';
+      else if (days === 1) timeInfo = '⏱️ Rytoj';
+      else timeInfo = `⏱️ Liko ${days} d.`;
+    } else {
+      const days = Math.ceil((new Date() - new Date(c.event_date)) / 86400000);
+      timeInfo = `📅 Prieš ${days} d.`;
+    }
+    
+    const typeLabel = COMP_TYPE_LABELS[c.competition_type] || c.competition_type;
+    const levelLabel = c.level ? COMP_LEVEL_LABELS[c.level] : '';
+    
+    // Mygtukų logika pagal status'ą
+    let statusBadge = '';
+    let actionButtons = '';
+    
+    if (vcActiveTab === 'upcoming') {
+      // Dar nepasirinko - rodom mygtukus
+      if (myResult?.status === 'planning') {
+        statusBadge = '<span class="bg gn" style="padding:4px 10px;font-size:11px;margin-bottom:8px;display:inline-block;">🎯 Planuoju dalyvauti</span>';
+        actionButtons = `
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button onclick="setKidIntent('${c.id}','wont_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Persigalvojau</button>
+          </div>`;
+      } else if (myResult?.status === 'wont_attend') {
+        statusBadge = '<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;margin-bottom:8px;display:inline-block;">🚫 Nedalyvausiu</span>';
+        actionButtons = `
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button onclick="setKidIntent('${c.id}','planning')" style="flex:1;background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🎯 Persigalvojau</button>
+          </div>`;
+      } else {
+        actionButtons = `
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button onclick="setKidIntent('${c.id}','planning')" style="flex:1;background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🎯 Ketinu dalyvauti</button>
+            <button onclick="setKidIntent('${c.id}','wont_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Nedalyvausiu</button>
+          </div>`;
+      }
+    } else if (vcActiveTab === 'pending') {
+      // Praėjo - rodom rezultato įvedimą
+      actionButtons = `
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button onclick="openSubmitCompResult('${c.id}','participated')" style="flex:1;background:var(--grn);color:white;border:none;padding:10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">✅ Dalyvavau</button>
+          <button onclick="openSubmitCompResult('${c.id}','didnt_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Nebuvau</button>
+        </div>`;
+    } else {
+      // Completed - rodom rezultatą
+      if (myResult?.status === 'didnt_attend') {
+        statusBadge = '<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">🚫 Nebuvau</span>';
+      } else if (myResult?.approval_status === 'pending') {
+        const placeText = myResult.placement ? `${myResult.placement} vieta` : 'Dalyvavau';
+        statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">⏳ Laukia patvirtinimo: ${placeText}</span>`;
+      } else if (myResult?.approval_status === 'approved') {
+        let resultText = '';
+        if (myResult.placement === 1) resultText = '🥇 1 vieta';
+        else if (myResult.placement === 2) resultText = '🥈 2 vieta';
+        else if (myResult.placement === 3) resultText = '🥉 3 vieta';
+        else resultText = '✅ Dalyvavau';
+        
+        if (c.competition_type === 'belt_test') {
+          resultText = myResult.belt_passed ? `🥋 Išlaikiau (${myResult.new_kyu})` : '🥋 Neišlaikiau';
+        }
+        
+        statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">${resultText}${myResult.exp_gained ? ' (+' + myResult.exp_gained + ' EXP)' : ''}</span>`;
+      } else if (myResult?.approval_status === 'rejected') {
+        statusBadge = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">❌ Atmesta</span>`;
+      }
+    }
+    
+    const cardOpacity = vcActiveTab === 'completed' ? 'opacity:.85;' : '';
+    
+    return `<div class="cd" style="margin-bottom:12px;${cardOpacity}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${c.title}</div>
+          <div style="font-size:11px;color:var(--mut);">${typeLabel}${levelLabel ? ' · ' + levelLabel : ''}</div>
+        </div>
+        <div class="bg ${isPast ? '' : 'gn'}" style="${isPast ? 'background:rgba(255,255,255,.1);color:var(--mut);' : ''}">${timeInfo}</div>
+      </div>
+      
+      <div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:var(--mut);">
+        <div style="margin-bottom:4px;">📅 ${formatDateLT(c.event_date)}</div>
+        <div style="margin-bottom:4px;">📍 ${c.location || '–'}</div>
+        ${c.registration_url ? `<div style="margin-bottom:4px;"><a href="${c.registration_url}" target="_blank" style="color:var(--br);text-decoration:none;">🔗 Registracija</a></div>` : ''}
+        ${c.additional_info ? `<div style="margin-top:6px;color:var(--text);font-size:11px;">${c.additional_info}</div>` : ''}
+      </div>
+      
+      ${statusBadge}
+      ${actionButtons}
+    </div>`;
+  }).join('');
+  
+  document.getElementById('v-comp-list').innerHTML = html;
+}
+
+// Vaikas pažymi ketinimą (planning/wont_attend)
+async function setKidIntent(competitionId, intent) {
+  if (!currentKid?.id) return;
+  
+  // Tikrinti ar jau yra įrašas
+  const { data: existing } = await sb.from('competition_results')
+    .select('id, status')
+    .eq('competition_id', competitionId)
+    .eq('kid_id', currentKid.id)
+    .maybeSingle();
+  
+  let result;
+  if (existing) {
+    // Update
+    result = await sb.from('competition_results')
+      .update({ status: intent })
+      .eq('id', existing.id)
+      .select();
+  } else {
+    // Insert
+    result = await sb.from('competition_results').insert({
+      competition_id: competitionId,
+      kid_id: currentKid.id,
+      status: intent,
+      approval_status: 'pending',
+      submitted_by: currentUser.id,
+      submitted_role: 'kid'
+    }).select();
+  }
+  
+  if (result.error) {
+    console.error('setKidIntent error:', result.error);
+    showToast('❌ Klaida: ' + result.error.message, 'error', 5000);
+    return;
+  }
+  
+  showToast(intent === 'planning' ? '🎯 Pažymėta!' : '🚫 Nedalyvausiu', 'success');
+  await loadKidCompetitions();
+}
+
+// Vaiko rezultato pateikimas (po varžybų)
+let currentCompetitionForResult = null;
+
+async function openSubmitCompResult(competitionId, defaultStatus) {
+  const { data: comp } = await sb.from('competitions')
+    .select('*')
+    .eq('id', competitionId)
+    .single();
+  
+  if (!comp) {
+    showToast('❌ Varžybos nerastos', 'error');
+    return;
+  }
+  
+  currentCompetitionForResult = comp;
+  
+  // Užpildyti modal'o turinį
+  document.getElementById('crm-title').textContent = comp.title;
+  document.getElementById('crm-type').textContent = COMP_TYPE_LABELS[comp.competition_type] || comp.competition_type;
+  document.getElementById('crm-status').value = defaultStatus;
+  
+  // Reset state
+  document.getElementById('crm-placement').value = '';
+  document.getElementById('crm-wins').value = '0';
+  document.getElementById('crm-losses').value = '0';
+  document.getElementById('crm-belt-passed').value = 'true';
+  document.getElementById('crm-new-kyu').value = '';
+  
+  // Skirtingi laukai pagal varžybų tipą ir status'ą
+  updateCrmFields();
+  
+  document.getElementById('crmo').classList.add('open');
+}
+
+function updateCrmFields() {
+  if (!currentCompetitionForResult) return;
+  
+  const type = currentCompetitionForResult.competition_type;
+  const status = document.getElementById('crm-status').value;
+  
+  // Sekcijų rodymas/slėpimas
+  const placementSection = document.getElementById('crm-placement-section');
+  const kumiteSection = document.getElementById('crm-kumite-section');
+  const beltSection = document.getElementById('crm-belt-section');
+  
+  if (status === 'didnt_attend') {
+    placementSection.style.display = 'none';
+    kumiteSection.style.display = 'none';
+    beltSection.style.display = 'none';
+  } else if (type === 'belt_test') {
+    placementSection.style.display = 'none';
+    kumiteSection.style.display = 'none';
+    beltSection.style.display = 'block';
+  } else if (type === 'kumite') {
+    placementSection.style.display = 'block';
+    kumiteSection.style.display = 'block';
+    beltSection.style.display = 'none';
+  } else {
+    // kata
+    placementSection.style.display = 'block';
+    kumiteSection.style.display = 'none';
+    beltSection.style.display = 'none';
+  }
+}
+
+function closeSubmitCompResult() {
+  document.getElementById('crmo').classList.remove('open');
+  currentCompetitionForResult = null;
+}
+
+async function submitCompResult() {
+  if (!currentCompetitionForResult || !currentKid?.id) return;
+  
+  const status = document.getElementById('crm-status').value;
+  const placement = document.getElementById('crm-placement').value;
+  const wins = parseInt(document.getElementById('crm-wins').value) || 0;
+  const losses = parseInt(document.getElementById('crm-losses').value) || 0;
+  const beltPassed = document.getElementById('crm-belt-passed').value === 'true';
+  const newKyu = document.getElementById('crm-new-kyu').value;
+  
+  const type = currentCompetitionForResult.competition_type;
+  
+  // Validacija
+  if (status === 'participated' && type === 'belt_test' && beltPassed && !newKyu) {
+    showToast('❌ Pasirink naują kyu', 'error');
+    return;
+  }
+  
+  const insertData = {
+    competition_id: currentCompetitionForResult.id,
+    kid_id: currentKid.id,
+    status,
+    approval_status: 'pending',
+    submitted_by: currentUser.id,
+    submitted_role: 'kid'
+  };
+  
+  if (status === 'participated') {
+    if (type === 'belt_test') {
+      insertData.belt_passed = beltPassed;
+      insertData.new_kyu = beltPassed ? newKyu : null;
+    } else {
+      // kumite arba kata - placement
+      insertData.placement = placement ? parseInt(placement) : null;
+      
+      if (type === 'kumite') {
+        insertData.wins = wins;
+        insertData.losses = losses;
+      }
+    }
+  }
+  
+  const btn = document.getElementById('crm-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'SIUNČIAMA...';
+  
+  // Patikrinti ar jau yra įrašas (planning/wont_attend update'as)
+  const { data: existing } = await sb.from('competition_results')
+    .select('id')
+    .eq('competition_id', currentCompetitionForResult.id)
+    .eq('kid_id', currentKid.id)
+    .maybeSingle();
+  
+  let result;
+  if (existing) {
+    result = await sb.from('competition_results')
+      .update(insertData)
+      .eq('id', existing.id)
+      .select();
+  } else {
+    result = await sb.from('competition_results').insert(insertData).select();
+  }
+  
+  btn.disabled = false;
+  btn.textContent = 'SIŲSTI';
+  
+  if (result.error) {
+    console.error('submitCompResult error:', result.error);
+    showToast('❌ Klaida: ' + result.error.message, 'error', 5000);
+    return;
+  }
+  
+  showToast('✅ Rezultatas išsiųstas treneriui!', 'success', 4000);
+  closeSubmitCompResult();
+  await loadKidCompetitions();
 }
 
 const CHALLENGE_TIERS = {
