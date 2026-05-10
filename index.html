@@ -1145,6 +1145,20 @@ select.inp option{background:#222;}
       </div>
     </div>
     
+    <!-- PRANEŠIMAI sekcija (treneriui) -->
+    <div style="margin:0 0 12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="background:var(--br);color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;padding:3px 10px;border-radius:99px;letter-spacing:1px;display:none;" id="tr-announcements-badge">0</div>
+          <button onclick="openAllAnnouncements()" id="tr-announcements-all-btn" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;display:none;">VISI</button>
+        </div>
+      </div>
+      <div id="tr-announcements-list">
+        <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
+      </div>
+    </div>
+    
     <!-- Naujos vaikų paskyros laukia patvirtinimo -->
     <div class="cd" id="tr-new-kids-card" style="background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);display:none;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -12254,10 +12268,8 @@ async function loadConversationsList() {
     });
   }
   
-  // Tėvams ir vaikams - paslėpti announcement'us (jie turi savo sekciją pagrindiniame ekrane)
-  if (currentProfile?.role === 'parent' || currentProfile?.role === 'kid') {
-    filtered = filtered.filter(m => m.conversations?.type !== 'announcement');
-  }
+  // Visiems - paslėpti announcement'us (jie turi savo PRANEŠIMŲ sekciją)
+  filtered = filtered.filter(m => m.conversations?.type !== 'announcement');
   
   if (filtered.length === 0) {
     container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--mut);font-size:13px;">${msgFilter === 'unread' ? '✅ Visos žinutės perskaitytos' : 'Nėra pokalbių'}</div>`;
@@ -13097,11 +13109,21 @@ const ANNOUNCEMENT_CATEGORIES = {
 };
 
 async function loadAnnouncements(showAll = false) {
-  // Detektuoti kuriame ekrane esame (tėvų ar vaikų)
-  const isKid = currentProfile?.role === 'kid';
-  const containerId = isKid ? 'v-announcements-list' : 't-announcements-list';
-  const badgeId = isKid ? 'v-announcements-badge' : 't-announcements-badge';
-  const allBtnId = isKid ? 'v-announcements-all-btn' : 't-announcements-all-btn';
+  // Detektuoti kuriame ekrane esame
+  let containerId, badgeId, allBtnId;
+  if (currentProfile?.role === 'kid') {
+    containerId = 'v-announcements-list';
+    badgeId = 'v-announcements-badge';
+    allBtnId = 'v-announcements-all-btn';
+  } else if (currentProfile?.role === 'trainer') {
+    containerId = 'tr-announcements-list';
+    badgeId = 'tr-announcements-badge';
+    allBtnId = 'tr-announcements-all-btn';
+  } else {
+    containerId = 't-announcements-list';
+    badgeId = 't-announcements-badge';
+    allBtnId = 't-announcements-all-btn';
+  }
   
   const container = document.getElementById(containerId);
   const badge = document.getElementById(badgeId);
@@ -13522,8 +13544,8 @@ async function updateUnreadBadge() {
     }
   });
   
-  // Taip pat atnaujinti pranešimus (tėvams ir vaikams)
-  if (typeof loadAnnouncements === 'function' && (currentProfile?.role === 'parent' || currentProfile?.role === 'kid')) {
+  // Taip pat atnaujinti pranešimus (visiems)
+  if (typeof loadAnnouncements === 'function' && (currentProfile?.role === 'parent' || currentProfile?.role === 'kid' || currentProfile?.role === 'trainer')) {
     loadAnnouncements();
   }
 }
