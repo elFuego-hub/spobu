@@ -1480,6 +1480,16 @@ select.inp option{background:#222;}
       <div id="msg-compose-about" style="font-size:11px;color:var(--mut);margin-top:4px;display:none;">–</div>
     </div>
     
+    <!-- Auditorija (tik klubui) -->
+    <div id="msg-compose-audience-section" style="display:none;margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">KAM</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+        <button class="msg-aud-btn on" data-aud="parents" onclick="setComposeAudience('parents')" style="background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">👨‍👩‍👦<br>Tėvams</button>
+        <button class="msg-aud-btn" data-aud="trainers" onclick="setComposeAudience('trainers')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">🥋<br>Treneriams</button>
+        <button class="msg-aud-btn" data-aud="all" onclick="setComposeAudience('all')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">👥<br>Visiems</button>
+      </div>
+    </div>
+    
     <!-- Tipo pasirinkimas (tik grupei/broadcast) -->
     <div id="msg-compose-mode-section" style="display:none;margin-bottom:14px;">
       <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">TIPAS</div>
@@ -1876,7 +1886,7 @@ select.inp option{background:#222;}
     
     <div class="st">VEIKSMAI</div>
     <div class="cd" style="padding:12px;">
-      <button class="btn" style="margin:0 0 8px 0;width:100%;background:#6366f1;color:white;" onclick="composeMessageToClub()">📢 PRANEŠIMAS VISIEMS TĖVAMS</button>
+      <button class="btn" style="margin:0 0 8px 0;width:100%;background:#6366f1;color:white;" onclick="composeMessageToClub()">📢 PRANEŠIMAS</button>
       <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openInviteTrainer()">➕ Pakviesti trenerį</button>
       <button class="btn btnd" style="margin:0;width:100%;" onclick="g('k','k-trainers')">🥋 Valdyti trenerius</button>
     </div>
@@ -12642,12 +12652,23 @@ function openComposeModal(context) {
   
   // Tipo pasirinkimas - tik grupei ir broadcast
   const modeSection = document.getElementById('msg-compose-mode-section');
-  if (composeContext.type === 'group' || composeContext.type === 'broadcast') {
+  const audienceSection = document.getElementById('msg-compose-audience-section');
+  
+  if (composeContext.type === 'broadcast') {
+    // Klubo broadcast - rodyti audience pasirinkimą
+    if (audienceSection) audienceSection.style.display = '';
     modeSection.style.display = '';
-    setComposeMode('announcement'); // default - pranešimas
-    setComposeCategory('general'); // default kategorija
+    setComposeMode('announcement');
+    setComposeCategory('general');
+    setComposeAudience(composeContext.audience || 'parents');
+  } else if (composeContext.type === 'group') {
+    if (audienceSection) audienceSection.style.display = 'none';
+    modeSection.style.display = '';
+    setComposeMode('announcement');
+    setComposeCategory('general');
   } else {
     // Direct - visada pokalbis, be kategorijos
+    if (audienceSection) audienceSection.style.display = 'none';
     modeSection.style.display = 'none';
     composeContext.mode = 'chat';
     document.getElementById('msg-compose-title-section').style.display = 'none';
@@ -12718,6 +12739,33 @@ function setComposeCategory(cat) {
   });
 }
 
+// Pasirinkti auditoriją (klubo broadcast'ams)
+function setComposeAudience(aud) {
+  composeContext.audience = aud;
+  
+  document.querySelectorAll('.msg-aud-btn').forEach(btn => {
+    if (btn.dataset.aud === aud) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  
+  // Atnaujinti label'ą
+  const recipientEl = document.getElementById('msg-compose-recipient');
+  if (recipientEl) {
+    if (aud === 'parents') recipientEl.textContent = 'Visi klubo tėvai';
+    else if (aud === 'trainers') recipientEl.textContent = 'Visi klubo treneriai';
+    else if (aud === 'all') recipientEl.textContent = 'Visi (tėvai + treneriai)';
+  }
+}
+
 // Uždaryti modal
 function closeComposeModal() {
   document.getElementById('msg-compose-modal').style.display = 'none';
@@ -12786,6 +12834,7 @@ async function composeMessageToClub() {
     type: 'broadcast',
     kidId: null,
     title: 'Klubo pranešimas',
+    audience: 'parents',  // default - tėvams
     recipientLabel: 'Visi klubo tėvai'
   });
 }
@@ -12884,18 +12933,23 @@ async function submitComposeMessage() {
         });
       }
     } else if (composeContext.type === 'broadcast') {
-      // Pridėti visus klubo tėvus
+      // Pridėti narius pagal audience
+      const audience = composeContext.audience || 'parents';
+      let rolesFilter = ['parent'];
+      if (audience === 'trainers') rolesFilter = ['trainer'];
+      else if (audience === 'all') rolesFilter = ['parent', 'trainer'];
+      
       const { data: clubProfiles } = await sb.from('profiles')
         .select('id, role')
         .eq('club_id', currentProfile?.club_id)
-        .eq('role', 'parent')
+        .in('role', rolesFilter)
         .neq('id', currentUser.id);
       
       (clubProfiles || []).forEach(p => {
         memberInserts.push({
           conversation_id: conv.id,
           user_id: p.id,
-          role: 'parent'
+          role: p.role
         });
       });
     }
