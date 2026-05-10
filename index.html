@@ -1438,11 +1438,16 @@ select.inp option{background:#222;}
   </div>
   
   <!-- Įvestis -->
-  <div style="border-top:.5px solid var(--bdr);padding:12px;background:var(--card);">
+  <div id="msg-input-wrapper" style="border-top:.5px solid var(--bdr);padding:12px;background:var(--card);">
     <div style="display:flex;gap:8px;align-items:flex-end;">
       <textarea id="msg-input" placeholder="Rašyti..." rows="1" style="flex:1;background:var(--bg);color:var(--text);border:.5px solid var(--bdr);border-radius:14px;padding:10px 14px;font-size:14px;resize:none;max-height:100px;font-family:inherit;"></textarea>
       <button onclick="sendMessage()" style="background:var(--br);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;flex-shrink:0;">➤</button>
     </div>
+  </div>
+  
+  <!-- Read-only pranešimas (announcement'ams) -->
+  <div id="msg-readonly-notice" style="display:none;border-top:.5px solid var(--bdr);padding:14px;background:rgba(255,77,0,.05);text-align:center;color:var(--mut);font-size:12px;">
+    📣 Tai vienkartinis pranešimas – atrašyti negalima
   </div>
 </div>
 
@@ -1459,6 +1464,25 @@ select.inp option{background:#222;}
       <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:4px;">KAM</div>
       <div id="msg-compose-recipient" style="font-size:14px;font-weight:800;color:#6366f1;">–</div>
       <div id="msg-compose-about" style="font-size:11px;color:var(--mut);margin-top:4px;display:none;">–</div>
+    </div>
+    
+    <!-- Tipo pasirinkimas (tik grupei/broadcast) -->
+    <div id="msg-compose-mode-section" style="display:none;margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">TIPAS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button class="msg-mode-btn on" data-mode="announcement" onclick="setComposeMode('announcement')" style="background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:14px 8px;border-radius:12px;font-size:11px;font-weight:800;cursor:pointer;text-align:center;line-height:1.3;">
+          📣<br>PRANEŠIMAS<br><span style="font-weight:600;font-size:10px;opacity:.8;">(jie tik skaito)</span>
+        </button>
+        <button class="msg-mode-btn" data-mode="chat" onclick="setComposeMode('chat')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:14px 8px;border-radius:12px;font-size:11px;font-weight:800;cursor:pointer;text-align:center;line-height:1.3;">
+          💬<br>POKALBIS<br><span style="font-weight:600;font-size:10px;opacity:.8;">(visi gali rašyti)</span>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Pavadinimas (jei pokalbis - kad būtų suprantama) -->
+    <div id="msg-compose-title-section" style="display:none;margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">POKALBIO PAVADINIMAS</div>
+      <input id="msg-compose-title-input" class="inp" placeholder="Pvz. 'Šeštadienio varžybos'" />
     </div>
     
     <!-- Žinutės įvestis -->
@@ -12337,7 +12361,9 @@ async function loadConversationHeader(convId) {
   } else if (conv.type === 'group') {
     title = `👥 ${conv.title || 'Grupinis'}`;
   } else if (conv.type === 'broadcast') {
-    title = `📢 ${conv.title || 'Klubo pranešimas'}`;
+    title = `📢 ${conv.title || 'Klubo pokalbis'}`;
+  } else if (conv.type === 'announcement') {
+    title = `📣 ${conv.title || 'Pranešimas'}`;
   }
   
   // Konteksto vaikas
@@ -12354,6 +12380,20 @@ async function loadConversationHeader(convId) {
   
   titleEl.textContent = title;
   subtitleEl.textContent = subtitle;
+  
+  // Announcement - slėpti inputą jei aš ne kūrėjas
+  const inputWrapper = document.getElementById('msg-input-wrapper');
+  const readonlyNotice = document.getElementById('msg-readonly-notice');
+  const isAnnouncement = conv.type === 'announcement';
+  const isCreator = conv.created_by === currentUser.id;
+  
+  if (isAnnouncement && !isCreator) {
+    if (inputWrapper) inputWrapper.style.display = 'none';
+    if (readonlyNotice) readonlyNotice.style.display = '';
+  } else {
+    if (inputWrapper) inputWrapper.style.display = '';
+    if (readonlyNotice) readonlyNotice.style.display = 'none';
+  }
 }
 
 // UŽKRAUTI ŽINUTES
@@ -12541,7 +12581,7 @@ function openComposeModal(context) {
     titleEl.textContent = 'RAŠYTI GRUPĖS TĖVAMS';
     recipientEl.textContent = composeContext.recipientLabel || 'Grupės tėvai';
   } else if (composeContext.type === 'broadcast') {
-    titleEl.textContent = 'PRANEŠIMAS VISIEMS';
+    titleEl.textContent = 'RAŠYTI VISIEMS';
     recipientEl.textContent = 'Visi klubo tėvai';
   }
   
@@ -12555,9 +12595,49 @@ function openComposeModal(context) {
   
   // Reset įvestis
   document.getElementById('msg-compose-body').value = '';
+  document.getElementById('msg-compose-title-input').value = '';
+  
+  // Tipo pasirinkimas - tik grupei ir broadcast
+  const modeSection = document.getElementById('msg-compose-mode-section');
+  if (composeContext.type === 'group' || composeContext.type === 'broadcast') {
+    modeSection.style.display = '';
+    setComposeMode('announcement'); // default - vienkartinis
+  } else {
+    // Direct - visada pokalbis
+    modeSection.style.display = 'none';
+    composeContext.mode = 'chat';
+    document.getElementById('msg-compose-title-section').style.display = 'none';
+  }
   
   // Rodyti modal
   document.getElementById('msg-compose-modal').style.display = 'flex';
+}
+
+// Pasirinkti tipą (announcement / chat)
+function setComposeMode(mode) {
+  composeContext.mode = mode;
+  
+  document.querySelectorAll('.msg-mode-btn').forEach(btn => {
+    if (btn.dataset.mode === mode) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  
+  // Pavadinimas - tik pokalbiui
+  const titleSection = document.getElementById('msg-compose-title-section');
+  if (mode === 'chat') {
+    titleSection.style.display = '';
+  } else {
+    titleSection.style.display = 'none';
+  }
 }
 
 // Uždaryti modal
@@ -12645,10 +12725,25 @@ async function submitComposeMessage() {
   submitBtn.textContent = 'SIUNČIAMA...';
   
   try {
+    // Nustatyti DB tipą pagal mode
+    let dbType = composeContext.type;
+    if ((composeContext.type === 'group' || composeContext.type === 'broadcast') && composeContext.mode === 'announcement') {
+      dbType = 'announcement';
+    }
+    
+    // Pavadinimas - jei pokalbis, naudoti įvestą
+    let title = composeContext.title || null;
+    if (composeContext.mode === 'chat' && composeContext.type !== 'direct') {
+      const titleInput = document.getElementById('msg-compose-title-input').value.trim();
+      title = titleInput || (composeContext.type === 'group' ? 'Grupės pokalbis' : 'Klubo pokalbis');
+    } else if (dbType === 'announcement') {
+      title = composeContext.type === 'broadcast' ? 'Klubo pranešimas' : 'Pranešimas grupei';
+    }
+    
     // 1. Sukurti pokalbį
     const convData = {
-      type: composeContext.type,
-      title: composeContext.title || null,
+      type: dbType,
+      title: title,
       kid_id: composeContext.kidId || null,
       club_id: currentProfile?.club_id,
       created_by: currentUser.id
