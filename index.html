@@ -12091,10 +12091,15 @@ function setMsgFilter(filter) {
 
 // UŽKRAUTI POKALBIŲ SĄRAŠĄ
 async function loadConversationsList() {
+  console.log('🔵 loadConversationsList() called');
   const container = document.getElementById('msg-conversations-list');
-  if (!container) return;
+  if (!container) {
+    console.error('❌ msg-conversations-list nerastas');
+    return;
+  }
   
   // Gauti pokalbius kuriuose esu narys
+  console.log('🔵 Užklausa: conversation_members user_id=', currentUser.id);
   const { data: memberships, error } = await sb.from('conversation_members')
     .select(`
       conversation_id,
@@ -12108,8 +12113,11 @@ async function loadConversationsList() {
     .eq('user_id', currentUser.id)
     .order('conversations(last_message_at)', { ascending: false });
   
+  console.log('🔵 Memberships:', memberships, 'Error:', error);
+  
   if (error) {
-    container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--br);">Klaida: ${error.message}</div>`;
+    console.error('❌ loadConversationsList klaida:', error);
+    container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--br);">Klaida: ${error.message}<br><br><small>${error.code || ''}</small></div>`;
     return;
   }
   
