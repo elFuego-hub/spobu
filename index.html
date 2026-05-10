@@ -1401,7 +1401,7 @@ select.inp option{background:#222;}
 <!-- ════════════════════════════════════════ -->
 
 <!-- ŽINUČIŲ SĄRAŠAS -->
-<div class="sc" id="msg-list" style="display:none;">
+<div class="sc" id="msg-list">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;">
     <button onclick="goBackFromMessages()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
@@ -1423,7 +1423,7 @@ select.inp option{background:#222;}
 </div>
 
 <!-- ATIDARYTAS POKALBIS -->
-<div class="sc" id="msg-conv" style="display:none;">
+<div class="sc" id="msg-conv">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:.5px solid var(--bdr);">
     <button onclick="closeConversation()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
@@ -1448,7 +1448,7 @@ select.inp option{background:#222;}
 </div>
 
 <!-- NAUJAS POKALBIS (tik treneriui/klubui) -->
-<div class="sc" id="msg-new" style="display:none;">
+<div class="sc" id="msg-new">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;">
     <button onclick="closeNewMessage()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
@@ -12019,27 +12019,48 @@ let newMsgState = {
 
 // ATIDARYTI ŽINUČIŲ EKRANĄ
 function openMessages() {
-  console.log('🔵 openMessages() called');
+  console.log('🔵 openMessages() called, role:', currentProfile?.role);
   
-  // Slėpti VISUS ekranus
-  document.querySelectorAll('.sc').forEach(el => {
-    el.classList.remove('on');
-    el.style.display = 'none';
+  // Nustatyti tinkamą portalą pagal rolę
+  let targetPortal;
+  if (currentProfile?.role === 'trainer') targetPortal = 'ptr';
+  else if (currentProfile?.role === 'club_admin') targetPortal = 'pk';
+  else targetPortal = 'pt';
+  
+  // 1. Slėpti VISUS kitus portalus
+  ['pv', 'pt', 'ptr', 'pk', 'pa'].forEach(pid => {
+    const p = document.getElementById(pid);
+    if (p && pid !== targetPortal) p.style.display = 'none';
   });
-  console.log('🔵 Visi ekranai paslepti');
   
-  // Rodyti msg-list
+  // 2. Rodyti tinkamą portalą
+  const portalEl = document.getElementById(targetPortal);
+  if (portalEl) portalEl.style.display = '';
+  
+  // 3. PERKELTI msg-list į teisingą portalą (jei dar ne ten)
   const msgList = document.getElementById('msg-list');
-  console.log('🔵 msg-list elementas:', msgList);
+  const msgConv = document.getElementById('msg-conv');
+  const msgNew = document.getElementById('msg-new');
   
-  if (!msgList) {
-    alert('❌ ERROR: msg-list neegzistuoja DOM\'e!');
-    return;
+  if (portalEl && msgList && !portalEl.contains(msgList)) {
+    // Surasti `.ph` (page holder) konteinerį portale
+    const phContainer = portalEl.querySelector('.ph') || portalEl;
+    phContainer.appendChild(msgList);
+    if (msgConv) phContainer.appendChild(msgConv);
+    if (msgNew) phContainer.appendChild(msgNew);
+    console.log('🔵 Žinučių ekranai perkelti į portalą:', targetPortal);
   }
   
-  msgList.style.display = 'flex';
+  // 4. Slėpti visus ekranus tame portale
+  if (portalEl) {
+    portalEl.querySelectorAll('.sc').forEach(el => {
+      el.classList.remove('on');
+    });
+  }
+  
+  // 5. Rodyti msg-list
   msgList.classList.add('on');
-  console.log('🔵 msg-list display dabar:', msgList.style.display, 'computed:', window.getComputedStyle(msgList).display);
+  console.log('🔵 msg-list display:', window.getComputedStyle(msgList).display);
   
   // Slėpti naują pokalbį (rodyti tik treneriui/klubui)
   const newBtn = document.getElementById('msg-new-btn');
@@ -12054,20 +12075,21 @@ function openMessages() {
 // Grįžti į pagrindinį ekraną
 function goBackFromMessages() {
   unsubscribeFromConversations();
-  document.querySelectorAll('.sc').forEach(el => {
-    el.classList.remove('on');
-    el.style.display = 'none';
+  
+  // Slėpti msg ekranus
+  ['msg-list', 'msg-conv', 'msg-new'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('on');
   });
   
-  let mainScreen;
-  if (currentProfile?.role === 'trainer') mainScreen = document.getElementById('tr-main');
-  else if (currentProfile?.role === 'club_admin') mainScreen = document.getElementById('k-main');
-  else mainScreen = document.getElementById('t-main');
+  // Rodyti pagrindinį ekraną
+  let mainScreenId;
+  if (currentProfile?.role === 'trainer') mainScreenId = 'tr-main';
+  else if (currentProfile?.role === 'club_admin') mainScreenId = 'k-main';
+  else mainScreenId = 't-main';
   
-  if (mainScreen) {
-    mainScreen.style.display = 'flex';
-    mainScreen.classList.add('on');
-  }
+  const mainScreen = document.getElementById(mainScreenId);
+  if (mainScreen) mainScreen.classList.add('on');
 }
 
 // FILTRAS (visi/neperskaityti)
@@ -12268,13 +12290,12 @@ async function openConversation(convId) {
   currentConversationId = convId;
   
   // Slėpti msg-list, rodyti msg-conv
-  document.querySelectorAll('.sc').forEach(el => {
-    el.classList.remove('on');
-    el.style.display = 'none';
+  ['msg-list', 'msg-new'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('on');
   });
   const conv = document.getElementById('msg-conv');
-  conv.style.display = 'flex';
-  conv.classList.add('on');
+  if (conv) conv.classList.add('on');
   
   // Pažymėti kaip perskaitytą
   await sb.from('conversation_members')
@@ -12497,26 +12518,24 @@ function closeConversation() {
   unsubscribeFromMessages();
   currentConversationId = null;
   
-  document.querySelectorAll('.sc').forEach(el => {
-    el.classList.remove('on');
-    el.style.display = 'none';
+  ['msg-conv', 'msg-new'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('on');
   });
   const msgList = document.getElementById('msg-list');
-  msgList.style.display = 'flex';
-  msgList.classList.add('on');
+  if (msgList) msgList.classList.add('on');
   
   loadConversationsList();
 }
 
 // NAUJAS POKALBIS - ATIDARYMAS
 async function openNewMessage() {
-  document.querySelectorAll('.sc').forEach(el => {
-    el.classList.remove('on');
-    el.style.display = 'none';
+  ['msg-list', 'msg-conv'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('on');
   });
   const newMsg = document.getElementById('msg-new');
-  newMsg.style.display = 'flex';
-  newMsg.classList.add('on');
+  if (newMsg) newMsg.classList.add('on');
   
   // Reset state
   newMsgState = { type: 'direct', recipientId: null, kidId: null, title: '', body: '' };
@@ -12676,13 +12695,10 @@ async function loadKidOptions() {
 
 // UŽDARYTI NAUJĄ POKALBĮ
 function closeNewMessage() {
-  document.querySelectorAll('.sc').forEach(el => {
-    el.classList.remove('on');
-    el.style.display = 'none';
-  });
+  const msgNew = document.getElementById('msg-new');
+  if (msgNew) msgNew.classList.remove('on');
   const msgList = document.getElementById('msg-list');
-  msgList.style.display = 'flex';
-  msgList.classList.add('on');
+  if (msgList) msgList.classList.add('on');
 }
 
 // SUKURTI POKALBĮ
