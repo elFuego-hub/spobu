@@ -12734,14 +12734,23 @@ async function submitComposeMessage() {
     
     if (msgErr) throw msgErr;
     
-    showToast('✅ Žinutė išsiųsta!', 'success');
+    // 1. Iškart uždarom VISUS modal'us
     closeComposeModal();
     
-    // Pereiti į pokalbį
+    // 2. Uždarom kid-details modal'ą jei atidarytas
+    const kidModal = document.getElementById('kid-details-modal');
+    if (kidModal && kidModal.style.display !== 'none') {
+      kidModal.style.display = 'none';
+    }
+    
+    // 3. Parodom toast
+    showToast('✅ Žinutė išsiųsta!', 'success');
+    
+    // 4. Pereiti į žinutes ir atidaryti naują pokalbį
     setTimeout(() => {
       openMessages();
-      setTimeout(() => openConversation(conv.id), 200);
-    }, 300);
+      setTimeout(() => openConversation(conv.id), 300);
+    }, 200);
     
   } catch (e) {
     console.error('submitComposeMessage error:', e);
