@@ -13007,21 +13007,34 @@ async function submitComposeMessage() {
           });
         }
         
-        // Pridėti vaikus jei reikia (kids.user_id = vaiko auth.users id)
+        // Pridėti vaikus jei reikia (TIK tuos kur user_id egzistuoja profiles lentelėje)
         if (audience === 'kids' || audience === 'all') {
-          const kidUserIds = (groupKids || [])
+          const candidateUserIds = (groupKids || [])
             .map(k => k.user_id)
-            .filter(Boolean);
+            .filter(uid => uid && uid !== currentUser.id);
           
-          kidUserIds.forEach(uid => {
-            if (uid !== currentUser.id) {
+          if (candidateUserIds.length > 0) {
+            // Patikrinti kurie iš jų TIKRAI yra profiles lentelėje su role='kid'
+            const { data: validKidProfiles } = await sb.from('profiles')
+              .select('id')
+              .in('id', candidateUserIds)
+              .eq('role', 'kid');
+            
+            const validIds = (validKidProfiles || []).map(p => p.id);
+            
+            validIds.forEach(uid => {
               memberInserts.push({
                 conversation_id: conv.id,
                 user_id: uid,
                 role: 'kid'
               });
+            });
+            
+            // Jei buvo audience='kids' bet nė vienas vaikas neturi paskyros - klaida
+            if (audience === 'kids' && validIds.length === 0) {
+              throw new Error('Šios grupės vaikai dar neturi savo paskyrų. Pranešimą galima siųsti tik per tėvus.');
             }
-          });
+          }
         }
       }
     } else if (composeContext.type === 'broadcast') {
