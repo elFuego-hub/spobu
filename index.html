@@ -12350,6 +12350,18 @@ function escapeHtml(text) {
 
 // ATIDARYTI POKALBĮ
 async function openConversation(convId) {
+  // Patikrinti ar tai announcement - jei taip, atidaryti kaip notification modal
+  const { data: convCheck } = await sb.from('conversations')
+    .select('type')
+    .eq('id', convId)
+    .single();
+  
+  if (convCheck?.type === 'announcement') {
+    // Atidaryti kaip notification (kaip tėvams)
+    openAnnouncement(convId);
+    return;
+  }
+  
   currentConversationId = convId;
   
   // Slėpti msg-list, rodyti msg-conv
