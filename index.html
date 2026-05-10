@@ -4519,11 +4519,25 @@ async function loadKidData() {
   
   // Detektuoti LEVEL UP (palyginti su paskutiniu žinomu lygiu)
   const newLevel = currentKid.current_level || 1;
-  const lastKnown = window._lastKnownLevel;
-  if (lastKnown !== undefined && newLevel > lastKnown) {
-    setTimeout(() => showLevelUpCelebration(newLevel, lastKnown), 800);
+  const lastKnownLevel = window._lastKnownLevel;
+  if (lastKnownLevel !== undefined && newLevel > lastKnownLevel) {
+    setTimeout(() => showLevelUpCelebration(newLevel, lastKnownLevel), 800);
   }
   window._lastKnownLevel = newLevel;
+  
+  // Detektuoti DIRŽO PAKEITIMĄ (kyu)
+  const newKyu = currentKid.kyu || '10 kyu';
+  const lastKnownKyu = window._lastKnownKyu;
+  if (lastKnownKyu !== undefined && lastKnownKyu !== newKyu) {
+    setTimeout(() => showBeltCelebration(newKyu, lastKnownKyu), 1200);
+  }
+  window._lastKnownKyu = newKyu;
+  
+  // Detektuoti naujus medalius (1, 2, 3 vieta)
+  detectNewMedals();
+  
+  // Detektuoti naujus įveiktus iššūkius
+  detectNewChallenges();
 
   // Anonimiškumo display (read-only)
   const anonIcon = document.getElementById('v-anon-icon');
@@ -4703,6 +4717,436 @@ function closeLevelUpCelebration() {
 window.testLevelUp = function(newLevel = 5) {
   showLevelUpCelebration(newLevel, newLevel - 1);
 };
+
+// ════════════════════════════════════════
+// 🥇 VARŽYBŲ MEDALIS CELEBRATION
+// ════════════════════════════════════════
+
+const COMPETITION_REWARDS = {
+  1: { 
+    icon: '🥇', 
+    title: 'AUKSO MEDALIS!', 
+    bgGradient: 'linear-gradient(135deg, #FFD700, #FFA500)',
+    message: 'Tu kovojai už savo svajonę – ir laimėjai! Tikras karatietis nesustoja iki pergalės.'
+  },
+  2: { 
+    icon: '🥈', 
+    title: 'SIDABRO MEDALIS!', 
+    bgGradient: 'linear-gradient(135deg, #C0C0C0, #808080)',
+    message: 'Antroji vieta yra įrodymas, kad tu - vienas geriausių. Toliau dirbk – auksas laukia!'
+  },
+  3: { 
+    icon: '🥉', 
+    title: 'BRONZOS MEDALIS!', 
+    bgGradient: 'linear-gradient(135deg, #CD7F32, #8B4513)',
+    message: 'Trečioji vieta - tai pamoka, kad gali dar daugiau. Tu ant pjedestalo – tu jau čempionas.'
+  }
+};
+
+function showCompetitionCelebration(placement, competitionTitle = '', expEarned = 0) {
+  const reward = COMPETITION_REWARDS[placement];
+  if (!reward) return; // tik 1, 2, 3 vietos
+  
+  let modal = document.getElementById('comp-celebration-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'comp-celebration-modal';
+    modal.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;
+      display:flex;align-items:center;justify-content:center;padding:20px;
+      opacity:0;transition:opacity .3s;
+    `;
+    document.body.appendChild(modal);
+  }
+  
+  modal.innerHTML = `
+    <div style="
+      max-width:380px;width:100%;
+      background:${reward.bgGradient};
+      border-radius:24px;padding:32px 24px;text-align:center;
+      box-shadow:0 20px 60px rgba(255,215,0,.4);
+      transform:scale(.7);transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+      position:relative;overflow:hidden;
+    " id="comp-celebration-content">
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.2) 0%, transparent 50%);pointer-events:none;"></div>
+      
+      <div style="font-size:11px;color:rgba(255,255,255,.9);font-weight:800;letter-spacing:3px;margin-bottom:12px;">
+        🏆 PERGALĖ! 🏆
+      </div>
+      
+      <div style="font-size:96px;margin:14px 0;line-height:1;animation:bounce 1.5s infinite;">${reward.icon}</div>
+      
+      ${competitionTitle ? `<div style="font-size:13px;color:rgba(255,255,255,.85);margin-bottom:8px;font-weight:700;">${escapeHtml(competitionTitle)}</div>` : ''}
+      
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;color:white;margin-bottom:12px;line-height:1.1;text-shadow:0 4px 20px rgba(0,0,0,.3);">
+        ${reward.title}
+      </div>
+      
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;margin-bottom:14px;">
+        ${placement}-A VIETA
+      </div>
+      
+      ${expEarned > 0 ? `<div style="display:inline-block;background:rgba(0,0,0,.3);padding:6px 16px;border-radius:99px;font-size:12px;color:white;font-weight:800;letter-spacing:1px;margin-bottom:14px;">⚡ +${expEarned} EXP</div>` : ''}
+      
+      <div style="font-size:13px;color:rgba(255,255,255,.95);line-height:1.5;margin-bottom:20px;font-style:italic;padding:0 10px;">
+        "${reward.message}"
+      </div>
+      
+      <button onclick="closeCompetitionCelebration()" style="
+        background:white;color:#333;border:none;
+        padding:14px 32px;border-radius:99px;
+        font-size:14px;font-weight:900;letter-spacing:1px;
+        cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.2);
+      ">
+        TĘSTI! ⚔️
+      </button>
+    </div>
+  `;
+  
+  modal.style.display = 'flex';
+  setTimeout(() => {
+    modal.style.opacity = '1';
+    const content = document.getElementById('comp-celebration-content');
+    if (content) content.style.transform = 'scale(1)';
+  }, 50);
+  
+  triggerConfetti();
+}
+
+function closeCompetitionCelebration() {
+  const modal = document.getElementById('comp-celebration-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+window.testCompetition = function(placement = 1) {
+  showCompetitionCelebration(placement, 'ŠIAULIŲ TURNYRAS', 500);
+};
+
+// ════════════════════════════════════════
+// 🎽 NAUJAS DIRŽAS CELEBRATION
+// ════════════════════════════════════════
+
+const BELT_REWARDS = {
+  '10 kyu': { color: '#FFFFFF', name: 'Baltas diržas', desc: 'Pradedantysis', icon: '⚪' },
+  '9 kyu':  { color: '#FFA500', name: 'Oranžinis diržas', desc: 'Pažengęs pradedantysis', icon: '🟠' },
+  '8 kyu':  { color: '#0066CC', name: 'Mėlynas diržas', desc: 'Pradedantis sportininkas', icon: '🔵' },
+  '7 kyu':  { color: '#FFD700', name: 'Geltonas diržas', desc: 'Pažengęs sportininkas', icon: '🟡' },
+  '6 kyu':  { color: '#22C55E', name: 'Žalias diržas', desc: 'Patyręs sportininkas', icon: '🟢' },
+  '5 kyu':  { color: '#22C55E', name: 'Žalias diržas (2)', desc: 'Aukštesnis lygis', icon: '🟢' },
+  '4 kyu':  { color: '#8B4513', name: 'Rudas diržas', desc: 'Beveik meistras', icon: '🟤' },
+  '3 kyu':  { color: '#8B4513', name: 'Rudas diržas (2)', desc: 'Aukštas lygis', icon: '🟤' },
+  '2 kyu':  { color: '#8B4513', name: 'Rudas diržas (3)', desc: 'Aukštesnis lygis', icon: '🟤' },
+  '1 kyu':  { color: '#8B4513', name: 'Rudas diržas (4)', desc: 'Beveik dan', icon: '🟤' },
+  '1 dan':  { color: '#000000', name: 'Juodas diržas', desc: 'MEISTRAS', icon: '⚫' },
+  '2 dan':  { color: '#000000', name: 'Juodas diržas (2)', desc: 'Vyresnis meistras', icon: '⚫' },
+  '3 dan':  { color: '#000000', name: 'Juodas diržas (3)', desc: 'Aukštas meistras', icon: '⚫' }
+};
+
+const BELT_MESSAGES = {
+  '10 kyu': 'Sveikas atvykęs į karatė kelią! Šis baltas diržas yra tavo švari pradžia.',
+  '9 kyu':  'Tu praeini pirmą egzaminą! Oranžinis diržas - tavo darbo simbolis.',
+  '8 kyu':  'Mėlynas kaip dangus, gylus kaip jūra. Tavo žinios auga.',
+  '7 kyu':  'Geltonas kaip saulė. Tu spindi savo darbu ir užsispyrimu.',
+  '6 kyu':  'Žalias kaip gyvybė. Tu vis stiprėsi su kiekvienu egzaminu.',
+  '5 kyu':  'Žalias kaip atkaklumas. Tu nesustok!',
+  '4 kyu':  'Rudas kaip žemė - stiprus pagrindas tavo žinioms.',
+  '3 kyu':  'Tavo technika tobulinasi. Pasiekei didelį lygį.',
+  '2 kyu':  'Beveik tave laikys juodadiržiu. Toliau!',
+  '1 kyu':  'Paskutinis žingsnis prieš juodą diržą. Esi labai arti!',
+  '1 dan':  'JUODAS DIRŽAS! Tu pasiekei tai, ko siekė tūkstančiai. Tu - meistras.',
+  '2 dan':  'Aukštesnis meistro lygis. Tu jau mokytojas kitiems.',
+  '3 dan':  'Tavo žinios neribotos. Tu - karatė pasaulio dalis.'
+};
+
+function showBeltCelebration(newKyu, oldKyu = '') {
+  const belt = BELT_REWARDS[newKyu];
+  if (!belt) return;
+  
+  const message = BELT_MESSAGES[newKyu] || 'Tu pasiekei naują lygį! Tavo darbas - akivaizdus.';
+  
+  let modal = document.getElementById('belt-celebration-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'belt-celebration-modal';
+    modal.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;
+      display:flex;align-items:center;justify-content:center;padding:20px;
+      opacity:0;transition:opacity .3s;
+    `;
+    document.body.appendChild(modal);
+  }
+  
+  // Specialus juodam diržui (1 dan+) - auksinis kraštas
+  const isBlackBelt = newKyu.includes('dan');
+  const bgGradient = isBlackBelt 
+    ? `linear-gradient(135deg, #1a1a1a, #4a4a4a)`
+    : `linear-gradient(135deg, ${belt.color}, ${belt.color}aa)`;
+  const textColor = (newKyu === '10 kyu' || newKyu === '7 kyu') ? '#333' : 'white';
+  
+  modal.innerHTML = `
+    <div style="
+      max-width:380px;width:100%;
+      background:${bgGradient};
+      border-radius:24px;padding:32px 24px;text-align:center;
+      box-shadow:0 20px 60px rgba(0,0,0,.5);
+      transform:scale(.7);transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+      position:relative;overflow:hidden;
+      ${isBlackBelt ? 'border:3px solid #FFD700;' : ''}
+    " id="belt-celebration-content">
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.15) 0%, transparent 50%);pointer-events:none;"></div>
+      
+      <div style="font-size:11px;color:${textColor === 'white' ? 'rgba(255,255,255,.9)' : 'rgba(0,0,0,.7)'};font-weight:800;letter-spacing:3px;margin-bottom:12px;">
+        ✨ EGZAMINAS IŠLAIKYTAS! ✨
+      </div>
+      
+      <!-- Diržo vizualizacija -->
+      <div style="margin:14px auto;width:200px;height:30px;background:${belt.color};border-radius:6px;border:2px solid rgba(0,0,0,.3);box-shadow:0 4px 15px rgba(0,0,0,.3);position:relative;">
+        ${isBlackBelt ? '<div style="position:absolute;bottom:0;left:10%;right:10%;height:6px;background:#FFD700;border-radius:0 0 4px 4px;"></div>' : ''}
+      </div>
+      
+      ${oldKyu ? `<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:18px 0;font-family:'Bebas Neue',sans-serif;color:${textColor};">
+        <span style="font-size:20px;opacity:.5;">${oldKyu}</span>
+        <span style="font-size:20px;opacity:.7;">→</span>
+        <span style="font-size:36px;text-shadow:0 4px 20px rgba(0,0,0,.3);">${newKyu}</span>
+      </div>` : `<div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:${textColor};margin:18px 0;">${newKyu}</div>`}
+      
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:${textColor};margin-bottom:8px;">
+        ${belt.name.toUpperCase()}
+      </div>
+      
+      <div style="font-size:12px;color:${textColor === 'white' ? 'rgba(255,255,255,.85)' : 'rgba(0,0,0,.7)'};font-weight:700;margin-bottom:14px;letter-spacing:1px;">
+        ${belt.desc}
+      </div>
+      
+      <div style="font-size:13px;color:${textColor === 'white' ? 'rgba(255,255,255,.95)' : 'rgba(0,0,0,.85)'};line-height:1.5;margin-bottom:20px;font-style:italic;padding:0 10px;">
+        "${message}"
+      </div>
+      
+      <button onclick="closeBeltCelebration()" style="
+        background:${textColor === 'white' ? 'white' : '#333'};
+        color:${textColor === 'white' ? '#333' : 'white'};
+        border:none;padding:14px 32px;border-radius:99px;
+        font-size:14px;font-weight:900;letter-spacing:1px;
+        cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.2);
+      ">
+        SUPER! 🥋
+      </button>
+    </div>
+  `;
+  
+  modal.style.display = 'flex';
+  setTimeout(() => {
+    modal.style.opacity = '1';
+    const content = document.getElementById('belt-celebration-content');
+    if (content) content.style.transform = 'scale(1)';
+  }, 50);
+  
+  triggerConfetti();
+}
+
+function closeBeltCelebration() {
+  const modal = document.getElementById('belt-celebration-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+window.testBelt = function(newKyu = '9 kyu') {
+  showBeltCelebration(newKyu, '10 kyu');
+};
+
+// ════════════════════════════════════════
+// ⚡ IŠŠŪKIO ĮVEIKIMO CELEBRATION
+// ════════════════════════════════════════
+
+function showChallengeCelebration(challengeName, expEarned = 0) {
+  let modal = document.getElementById('challenge-celebration-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'challenge-celebration-modal';
+    modal.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;
+      display:flex;align-items:center;justify-content:center;padding:20px;
+      opacity:0;transition:opacity .3s;
+    `;
+    document.body.appendChild(modal);
+  }
+  
+  const motivations = [
+    'Tu pakėlei sau lūpą ir įveikei – štai kas nuvedė nuo paprasto į meistrišką.',
+    'Iššūkis kuris neveikė tave silpnesniu - padarė tave stipresniu.',
+    'Tu žengei žingsnį iš komfortzonos. Štai čia gimsta čempionai.',
+    'Kiekvienas iššūkis - tai investicija į ateitį. Tu - jau pelnas.',
+    'Stiprybė ateina iš to, kad nesustoji kai sunku.',
+  ];
+  const message = motivations[Math.floor(Math.random() * motivations.length)];
+  
+  modal.innerHTML = `
+    <div style="
+      max-width:380px;width:100%;
+      background:linear-gradient(135deg,#FCD34D,#F59E0B);
+      border-radius:24px;padding:32px 24px;text-align:center;
+      box-shadow:0 20px 60px rgba(252,211,77,.5);
+      transform:scale(.7);transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+      position:relative;overflow:hidden;
+    " id="challenge-celebration-content">
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.2) 0%, transparent 50%);pointer-events:none;"></div>
+      
+      <div style="font-size:11px;color:rgba(0,0,0,.7);font-weight:800;letter-spacing:3px;margin-bottom:12px;">
+        ⚡ IŠŠŪKIS ĮVEIKTAS! ⚡
+      </div>
+      
+      <div style="font-size:80px;margin:14px 0;line-height:1;animation:bounce 1.5s infinite;">💪</div>
+      
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:#333;margin-bottom:12px;line-height:1.2;padding:0 10px;">
+        ${escapeHtml(challengeName)}
+      </div>
+      
+      ${expEarned > 0 ? `<div style="display:inline-block;background:rgba(0,0,0,.2);padding:6px 16px;border-radius:99px;font-size:12px;color:#333;font-weight:800;letter-spacing:1px;margin-bottom:14px;">⚡ +${expEarned} EXP</div>` : ''}
+      
+      <div style="font-size:13px;color:rgba(0,0,0,.8);line-height:1.5;margin-bottom:20px;font-style:italic;padding:0 10px;">
+        "${message}"
+      </div>
+      
+      <button onclick="closeChallengeCelebration()" style="
+        background:#333;color:white;border:none;
+        padding:14px 32px;border-radius:99px;
+        font-size:14px;font-weight:900;letter-spacing:1px;
+        cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.2);
+      ">
+        TOLYN! ⚡
+      </button>
+    </div>
+  `;
+  
+  modal.style.display = 'flex';
+  setTimeout(() => {
+    modal.style.opacity = '1';
+    const content = document.getElementById('challenge-celebration-content');
+    if (content) content.style.transform = 'scale(1)';
+  }, 50);
+  
+  triggerConfetti();
+}
+
+function closeChallengeCelebration() {
+  const modal = document.getElementById('challenge-celebration-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+window.testChallenge = function(name = '100 atsispaudimų') {
+  showChallengeCelebration(name, 50);
+};
+
+// ════════════════════════════════════════
+// Auto-detect naujų medalių (varžybose 1-3 vieta)
+// ════════════════════════════════════════
+async function detectNewMedals() {
+  if (!currentKid?.id) return;
+  
+  // Gauti naujausius patvirtintus medalininkus
+  const { data: results } = await sb.from('competition_results')
+    .select('id, placement, competition_id, approved_at, exp_earned')
+    .eq('kid_id', currentKid.id)
+    .eq('approval_status', 'approved')
+    .gte('placement', 1)
+    .lte('placement', 3)
+    .order('approved_at', { ascending: false })
+    .limit(5);
+  
+  if (!results || results.length === 0) return;
+  
+  // Paskutinis žinomas medalio ID
+  const lastKnownMedalId = window._lastKnownMedalId;
+  
+  if (lastKnownMedalId === undefined) {
+    // Pirmas kartas - tik nustato latest, neparodo
+    window._lastKnownMedalId = results[0].id;
+    return;
+  }
+  
+  // Surasti naujus medalius (po paskutinio žinomo)
+  const lastKnownIdx = results.findIndex(r => r.id === lastKnownMedalId);
+  const newMedals = lastKnownIdx === -1 
+    ? results.slice(0, 1)  // jei nerandam - tik naujausią
+    : results.slice(0, lastKnownIdx);  // visi prieš paskutinį žinomą
+  
+  if (newMedals.length === 0) return;
+  
+  // Atnaujinti latest
+  window._lastKnownMedalId = results[0].id;
+  
+  // Gauti varžybų pavadinimą
+  const compIds = newMedals.map(m => m.competition_id);
+  const { data: comps } = await sb.from('competitions')
+    .select('id, title')
+    .in('id', compIds);
+  
+  const compsMap = {};
+  (comps || []).forEach(c => { compsMap[c.id] = c; });
+  
+  // Parodyti celebration kiekvienam (skylant 2s vienas po kito)
+  newMedals.forEach((medal, idx) => {
+    setTimeout(() => {
+      const comp = compsMap[medal.competition_id];
+      showCompetitionCelebration(
+        medal.placement,
+        comp?.title || 'Varžybos',
+        medal.exp_earned || 0
+      );
+    }, 1500 + idx * 500);
+  });
+}
+
+// ════════════════════════════════════════
+// Auto-detect naujų įveiktų iššūkių
+// ════════════════════════════════════════
+async function detectNewChallenges() {
+  if (!currentKid?.id) return;
+  
+  // Gauti paskutinius įveiktus iššūkius (priklauso nuo lentelės)
+  const { data: completions } = await sb.from('challenge_completions')
+    .select('id, challenge_id, completed_at, exp_earned, approved_at')
+    .eq('kid_id', currentKid.id)
+    .eq('approval_status', 'approved')
+    .order('approved_at', { ascending: false })
+    .limit(5);
+  
+  if (!completions || completions.length === 0) return;
+  
+  const lastKnownChallengeId = window._lastKnownChallengeId;
+  
+  if (lastKnownChallengeId === undefined) {
+    window._lastKnownChallengeId = completions[0].id;
+    return;
+  }
+  
+  const lastIdx = completions.findIndex(c => c.id === lastKnownChallengeId);
+  const newCompletions = lastIdx === -1 
+    ? completions.slice(0, 1) 
+    : completions.slice(0, lastIdx);
+  
+  if (newCompletions.length === 0) return;
+  
+  window._lastKnownChallengeId = completions[0].id;
+  
+  // Gauti iššūkių pavadinimus
+  const challengeIds = newCompletions.map(c => c.challenge_id);
+  const { data: challenges } = await sb.from('challenges')
+    .select('id, title')
+    .in('id', challengeIds);
+  
+  const challengesMap = {};
+  (challenges || []).forEach(c => { challengesMap[c.id] = c; });
+  
+  newCompletions.forEach((comp, idx) => {
+    setTimeout(() => {
+      const ch = challengesMap[comp.challenge_id];
+      showChallengeCelebration(
+        ch?.title || 'Iššūkis',
+        comp.exp_earned || 0
+      );
+    }, 2000 + idx * 500);
+  });
+}
 
 // Confetti animacija (tikras CSS sparkle)
 function triggerConfetti() {
