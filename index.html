@@ -1119,6 +1119,17 @@ select.inp option{background:#222;}
       </div>
     </div>
     
+    <!-- ŽINUTĖS kortelė -->
+    <div class="cd" style="background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.3);cursor:pointer;" onclick="openMessages()">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:14px;font-weight:900;color:#6366f1;">💬 Žinutės</div>
+          <div style="font-size:12px;color:#6366f1;opacity:.8;margin-top:2px;" id="tr-msg-preview">Kraunama...</div>
+        </div>
+        <div style="background:#6366f1;color:white;font-family:'Bebas Neue',sans-serif;font-size:20px;padding:6px 14px;border-radius:99px;letter-spacing:1px;display:none;" id="tr-msg-badge">0</div>
+      </div>
+    </div>
+    
     <!-- Naujos vaikų paskyros laukia patvirtinimo -->
     <div class="cd" id="tr-new-kids-card" style="background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);display:none;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -1351,6 +1362,17 @@ select.inp option{background:#222;}
     <div style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--br);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);" id="t-avatar">T</div>
   </div>
   <div class="sa">
+    <!-- ŽINUTĖS kortelė -->
+    <div class="cd" style="background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.3);cursor:pointer;margin:0 16px 12px;" onclick="openMessages()">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:14px;font-weight:900;color:#6366f1;">💬 Žinutės</div>
+          <div style="font-size:12px;color:#6366f1;opacity:.8;margin-top:2px;" id="t-msg-preview">Kraunama...</div>
+        </div>
+        <div style="background:#6366f1;color:white;font-family:'Bebas Neue',sans-serif;font-size:20px;padding:6px 14px;border-radius:99px;letter-spacing:1px;display:none;" id="t-msg-badge">0</div>
+      </div>
+    </div>
+    
     <!-- Mano vaikai -->
     <div style="padding:12px 16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -1371,6 +1393,111 @@ select.inp option{background:#222;}
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- ŽINUTĖS - bendri ekranai visiems vartotojams -->
+<!-- ════════════════════════════════════════ -->
+
+<!-- ŽINUČIŲ SĄRAŠAS -->
+<div class="sc" id="msg-list" style="display:none;">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;">
+    <button onclick="goBackFromMessages()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
+    <div style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">ŽINUTĖS</div>
+    <button id="msg-new-btn" onclick="openNewMessage()" style="background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">+ Naujas</button>
+  </div>
+  <div class="sa">
+    <!-- Filtrai -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button class="msg-filter-btn on" data-filter="all" onclick="setMsgFilter('all')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">VISI</button>
+      <button class="msg-filter-btn" data-filter="unread" onclick="setMsgFilter('unread')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🔴 NEPERSKAITYTI</button>
+    </div>
+    
+    <!-- Pokalbių sąrašas -->
+    <div id="msg-conversations-list">
+      <div style="text-align:center;padding:30px;color:var(--mut);">Kraunama...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ATIDARYTAS POKALBIS -->
+<div class="sc" id="msg-conv" style="display:none;">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:.5px solid var(--bdr);">
+    <button onclick="closeConversation()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
+    <div style="flex:1;min-width:0;">
+      <div id="msg-conv-title" style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pokalbis</div>
+      <div id="msg-conv-subtitle" style="font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+    </div>
+  </div>
+  
+  <!-- Žinučių srautas -->
+  <div id="msg-thread" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;">
+    <div style="text-align:center;padding:30px;color:var(--mut);">Kraunama...</div>
+  </div>
+  
+  <!-- Įvestis -->
+  <div style="border-top:.5px solid var(--bdr);padding:12px;background:var(--card);">
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <textarea id="msg-input" placeholder="Rašyti..." rows="1" style="flex:1;background:var(--bg);color:var(--text);border:.5px solid var(--bdr);border-radius:14px;padding:10px 14px;font-size:14px;resize:none;max-height:100px;font-family:inherit;"></textarea>
+      <button onclick="sendMessage()" style="background:var(--br);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;flex-shrink:0;">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAUJAS POKALBIS (tik treneriui/klubui) -->
+<div class="sc" id="msg-new" style="display:none;">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;">
+    <button onclick="closeNewMessage()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
+    <div style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">NAUJAS POKALBIS</div>
+  </div>
+  <div class="sa">
+    
+    <!-- Tipo pasirinkimas -->
+    <div class="st">POKALBIO TIPAS</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+      <button class="msg-type-btn on" data-type="direct" onclick="setNewMsgType('direct')" style="background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:14px;border-radius:14px;font-size:13px;font-weight:800;text-align:left;cursor:pointer;">
+        👤 1-on-1 su tėvais
+      </button>
+      <button class="msg-type-btn" data-type="group" onclick="setNewMsgType('group')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:14px;border-radius:14px;font-size:13px;font-weight:800;text-align:left;cursor:pointer;">
+        👥 Grupinis (visiems grupės tėvams)
+      </button>
+      <button id="msg-broadcast-btn" class="msg-type-btn" data-type="broadcast" onclick="setNewMsgType('broadcast')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:14px;border-radius:14px;font-size:13px;font-weight:800;text-align:left;cursor:pointer;display:none;">
+        📢 Klubo pranešimas (visiems)
+      </button>
+    </div>
+    
+    <!-- Gavėjas (priklauso nuo tipo) -->
+    <div id="msg-recipient-section">
+      <div class="st">KAM</div>
+      <select id="msg-recipient-select" class="inp" style="margin-bottom:14px;">
+        <option value="">Pasirinkti...</option>
+      </select>
+    </div>
+    
+    <!-- Apie kurį vaiką (nebūtina) -->
+    <div id="msg-kid-section">
+      <div class="st">APIE KURĮ VAIKĄ (NEBŪTINA)</div>
+      <select id="msg-kid-select" class="inp" style="margin-bottom:14px;">
+        <option value="">Bendras pokalbis (be vaiko)</option>
+      </select>
+    </div>
+    
+    <!-- Tema (grupiniam) -->
+    <div id="msg-title-section" style="display:none;">
+      <div class="st">POKALBIO PAVADINIMAS</div>
+      <input id="msg-title-input" class="inp" placeholder="Pvz. 'Antradienių 17:00 grupė'" style="margin-bottom:14px;" />
+    </div>
+    
+    <!-- Pirmoji žinutė -->
+    <div class="st">ŽINUTĖ</div>
+    <textarea id="msg-first-message" class="inp" rows="4" placeholder="Rašyti..." style="margin-bottom:14px;font-family:inherit;resize:vertical;"></textarea>
+    
+    <button onclick="createConversation()" style="width:100%;background:var(--br);color:#fff;border:none;padding:14px;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;">SIŲSTI ŽINUTĘ</button>
+    
   </div>
 </div>
 
@@ -1714,6 +1841,17 @@ select.inp option{background:#222;}
         <div style="font-size:22px;margin-bottom:4px;">⚡</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--br);" id="k-kids-count">0</div>
         <div style="font-size:10px;color:var(--mut);font-weight:700;">VAIKAI</div>
+      </div>
+    </div>
+    
+    <!-- ŽINUTĖS kortelė -->
+    <div class="cd" style="background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.3);cursor:pointer;margin:0 16px 12px;" onclick="openMessages()">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:14px;font-weight:900;color:#6366f1;">💬 Žinutės</div>
+          <div style="font-size:12px;color:#6366f1;opacity:.8;margin-top:2px;" id="k-msg-preview">Kraunama...</div>
+        </div>
+        <div style="background:#6366f1;color:white;font-family:'Bebas Neue',sans-serif;font-size:20px;padding:6px 14px;border-radius:99px;letter-spacing:1px;display:none;" id="k-msg-badge">0</div>
       </div>
     </div>
     
@@ -2456,6 +2594,19 @@ async function afterLogin() {
   }
 
   currentProfile = profile;
+  
+  // Inicijuoti žinučių badge atnaujinimą (kas 30s)
+  setTimeout(() => {
+    if (typeof updateUnreadBadge === 'function') {
+      updateUnreadBadge();
+      // Periodiškai
+      if (!window._msgBadgeInterval) {
+        window._msgBadgeInterval = setInterval(() => {
+          if (currentUser) updateUnreadBadge();
+        }, 30000);
+      }
+    }
+  }, 1000);
   
   // Patikrinam ar yra pending marketing consent (iš registracijos)
   try {
@@ -11849,6 +12000,855 @@ function showToast(msg, type='', duration=null){
 function ts(el){el.closest('div').querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
 function tf(id){document.getElementById(id).classList.toggle('open');}
 function fc(el){el.closest('.chs').querySelectorAll('.ch').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
+
+// ════════════════════════════════════════
+// ŽINUTĖS - PILNA SISTEMA
+// ════════════════════════════════════════
+
+let currentConversationId = null;
+let messageRealtimeChannel = null;
+let messageListRealtimeChannel = null;
+let msgFilter = 'all';
+let newMsgState = {
+  type: 'direct',
+  recipientId: null,
+  kidId: null,
+  title: '',
+  body: ''
+};
+
+// ATIDARYTI ŽINUČIŲ EKRANĄ
+function openMessages() {
+  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  const msgList = document.getElementById('msg-list');
+  msgList.style.display = '';
+  msgList.classList.add('on');
+  
+  // Slėpti naują pokalbį (rodyti tik treneriui/klubui)
+  const newBtn = document.getElementById('msg-new-btn');
+  if (newBtn) {
+    newBtn.style.display = (currentProfile?.role === 'trainer' || currentProfile?.role === 'club_admin') ? '' : 'none';
+  }
+  
+  loadConversationsList();
+  subscribeToConversationsUpdates();
+}
+
+// Grįžti į pagrindinį ekraną
+function goBackFromMessages() {
+  unsubscribeFromConversations();
+  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  
+  let mainScreen;
+  if (currentProfile?.role === 'trainer') mainScreen = document.getElementById('tr-main');
+  else if (currentProfile?.role === 'club_admin') mainScreen = document.getElementById('k-main');
+  else mainScreen = document.getElementById('t-main');
+  
+  if (mainScreen) {
+    mainScreen.style.display = '';
+    mainScreen.classList.add('on');
+  }
+}
+
+// FILTRAS (visi/neperskaityti)
+function setMsgFilter(filter) {
+  msgFilter = filter;
+  document.querySelectorAll('.msg-filter-btn').forEach(btn => {
+    if (btn.dataset.filter === filter) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--mut)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  loadConversationsList();
+}
+
+// UŽKRAUTI POKALBIŲ SĄRAŠĄ
+async function loadConversationsList() {
+  const container = document.getElementById('msg-conversations-list');
+  if (!container) return;
+  
+  // Gauti pokalbius kuriuose esu narys
+  const { data: memberships, error } = await sb.from('conversation_members')
+    .select(`
+      conversation_id,
+      last_read_at,
+      conversations (
+        id, type, title, kid_id, created_by,
+        last_message_at, last_message_preview, last_message_sender_id,
+        archived_at
+      )
+    `)
+    .eq('user_id', currentUser.id)
+    .order('conversations(last_message_at)', { ascending: false });
+  
+  if (error) {
+    container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--br);">Klaida: ${error.message}</div>`;
+    return;
+  }
+  
+  if (!memberships || memberships.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;color:var(--mut);">
+        <div style="font-size:48px;margin-bottom:14px;">💬</div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Dar nėra žinučių</div>
+        <div style="font-size:11px;line-height:1.5;">${currentProfile?.role === 'parent' ? 'Treneris/klubas atrašys jums kai bus reikalas.' : 'Pradėkite naują pokalbį su mygtuku „+ Naujas".'}</div>
+      </div>
+    `;
+    return;
+  }
+  
+  // Surinkti visus user_id'us iš dalyvių (kad gautume jų vardus)
+  const convIds = memberships.map(m => m.conversation_id);
+  const { data: allMembers } = await sb.from('conversation_members')
+    .select('conversation_id, user_id, role')
+    .in('conversation_id', convIds);
+  
+  const memberUserIds = [...new Set((allMembers || []).map(m => m.user_id))];
+  const { data: profilesData } = await sb.from('profiles')
+    .select('id, first_name, last_name, role')
+    .in('id', memberUserIds);
+  
+  const profilesMap = {};
+  (profilesData || []).forEach(p => { profilesMap[p.id] = p; });
+  
+  // Vaikų info (jei pokalbiai apie vaikus)
+  const kidIds = [...new Set(memberships.map(m => m.conversations?.kid_id).filter(Boolean))];
+  let kidsMap = {};
+  if (kidIds.length > 0) {
+    const { data: kidsData } = await sb.from('kids')
+      .select('id, first_name, last_name')
+      .in('id', kidIds);
+    (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
+  }
+  
+  // Filtras: neperskaityti
+  let filtered = memberships;
+  if (msgFilter === 'unread') {
+    filtered = memberships.filter(m => {
+      const conv = m.conversations;
+      if (!conv) return false;
+      const lastMsg = new Date(conv.last_message_at);
+      const lastRead = m.last_read_at ? new Date(m.last_read_at) : new Date(0);
+      // Neperskaitytas jei paskutinė žinutė vėlesnė nei mano paskutinis perskaitymas
+      // IR aš nesu paskutinis siuntėjas
+      return lastMsg > lastRead && conv.last_message_sender_id !== currentUser.id;
+    });
+  }
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--mut);font-size:13px;">${msgFilter === 'unread' ? '✅ Visos žinutės perskaitytos' : 'Nėra pokalbių'}</div>`;
+    return;
+  }
+  
+  const html = filtered.map(m => {
+    const conv = m.conversations;
+    if (!conv) return '';
+    
+    // Pokalbio pavadinimas
+    let title = '';
+    let subtitle = '';
+    
+    if (conv.type === 'direct') {
+      // 1-on-1: rodyti kito vartotojo vardą
+      const otherMembers = (allMembers || []).filter(am => 
+        am.conversation_id === conv.id && am.user_id !== currentUser.id
+      );
+      const otherProfile = otherMembers.length > 0 ? profilesMap[otherMembers[0].user_id] : null;
+      if (otherProfile) {
+        title = `${otherProfile.first_name || ''} ${otherProfile.last_name || ''}`.trim() || 'Vartotojas';
+        if (otherProfile.role === 'trainer') title += ' (treneris)';
+      } else {
+        title = 'Vartotojas';
+      }
+    } else if (conv.type === 'group') {
+      title = `👥 ${conv.title || 'Grupinis pokalbis'}`;
+    } else if (conv.type === 'broadcast') {
+      title = `📢 ${conv.title || 'Klubo pranešimas'}`;
+    }
+    
+    // Konteksto vaikas
+    if (conv.kid_id && kidsMap[conv.kid_id]) {
+      const kid = kidsMap[conv.kid_id];
+      subtitle = `Apie: ${kid.first_name} ${kid.last_name?.[0] || ''}.`;
+    }
+    
+    // Last message
+    const lastSender = profilesMap[conv.last_message_sender_id];
+    const senderPrefix = lastSender 
+      ? (lastSender.id === currentUser.id ? 'Tu: ' : `${lastSender.first_name || 'Kažkas'}: `)
+      : '';
+    const preview = conv.last_message_preview 
+      ? `${senderPrefix}${conv.last_message_preview}` 
+      : '(nėra žinučių)';
+    
+    // Neperskaitytas?
+    const lastMsg = new Date(conv.last_message_at);
+    const lastRead = m.last_read_at ? new Date(m.last_read_at) : new Date(0);
+    const isUnread = lastMsg > lastRead && conv.last_message_sender_id !== currentUser.id;
+    
+    // Laikas
+    const timeStr = formatMessageTime(conv.last_message_at);
+    
+    return `
+      <div onclick="openConversation('${conv.id}')" style="background:${isUnread ? 'rgba(99,102,241,.08)' : 'var(--card)'};border:.5px solid ${isUnread ? 'rgba(99,102,241,.3)' : 'var(--bdr)'};border-radius:14px;padding:12px;margin-bottom:8px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div style="font-size:13px;font-weight:${isUnread ? '900' : '700'};color:${isUnread ? '#6366f1' : 'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
+            <div style="font-size:10px;color:var(--mut);flex-shrink:0;margin-left:8px;">${timeStr}</div>
+          </div>
+          ${subtitle ? `<div style="font-size:10px;color:var(--mut);margin-bottom:3px;">${subtitle}</div>` : ''}
+          <div style="font-size:12px;color:${isUnread ? 'var(--text)' : 'var(--mut)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(preview)}</div>
+        </div>
+        ${isUnread ? '<div style="width:10px;height:10px;border-radius:50%;background:#6366f1;flex-shrink:0;margin-top:6px;"></div>' : ''}
+      </div>
+    `;
+  }).join('');
+  
+  container.innerHTML = html;
+}
+
+// FORMAT LAIKAS
+function formatMessageTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const now = new Date();
+  const diffMin = Math.floor((now - d) / 60000);
+  
+  if (diffMin < 1) return 'dabar';
+  if (diffMin < 60) return `prieš ${diffMin} min`;
+  if (diffMin < 24 * 60) return `prieš ${Math.floor(diffMin / 60)} val`;
+  if (diffMin < 48 * 60) return 'vakar';
+  if (diffMin < 7 * 24 * 60) return `prieš ${Math.floor(diffMin / (24 * 60))} d`;
+  return d.toLocaleDateString('lt-LT');
+}
+
+// ESCAPE HTML
+function escapeHtml(text) {
+  if (!text) return '';
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ATIDARYTI POKALBĮ
+async function openConversation(convId) {
+  currentConversationId = convId;
+  
+  // Slėpti msg-list, rodyti msg-conv
+  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  const conv = document.getElementById('msg-conv');
+  conv.style.display = '';
+  conv.classList.add('on');
+  
+  // Pažymėti kaip perskaitytą
+  await sb.from('conversation_members')
+    .update({ last_read_at: new Date().toISOString() })
+    .eq('conversation_id', convId)
+    .eq('user_id', currentUser.id);
+  
+  // Užkrauti pokalbio info
+  await loadConversationHeader(convId);
+  
+  // Užkrauti žinutes
+  await loadMessages(convId);
+  
+  // Subscribe į real-time
+  subscribeToMessages(convId);
+}
+
+// UŽKRAUTI POKALBIO ANTRAŠTĘ
+async function loadConversationHeader(convId) {
+  const { data: conv } = await sb.from('conversations')
+    .select('*')
+    .eq('id', convId)
+    .single();
+  
+  if (!conv) return;
+  
+  const titleEl = document.getElementById('msg-conv-title');
+  const subtitleEl = document.getElementById('msg-conv-subtitle');
+  
+  let title = '';
+  let subtitle = '';
+  
+  if (conv.type === 'direct') {
+    const { data: members } = await sb.from('conversation_members')
+      .select('user_id, role')
+      .eq('conversation_id', convId)
+      .neq('user_id', currentUser.id);
+    
+    if (members && members[0]) {
+      const { data: prof } = await sb.from('profiles')
+        .select('first_name, last_name, role')
+        .eq('id', members[0].user_id)
+        .single();
+      
+      if (prof) {
+        title = `${prof.first_name || ''} ${prof.last_name || ''}`.trim() || 'Vartotojas';
+        if (prof.role === 'trainer') subtitle = 'Treneris';
+        else if (prof.role === 'parent') subtitle = 'Tėvai';
+        else if (prof.role === 'club_admin') subtitle = 'Klubo administracija';
+      }
+    }
+  } else if (conv.type === 'group') {
+    title = `👥 ${conv.title || 'Grupinis'}`;
+  } else if (conv.type === 'broadcast') {
+    title = `📢 ${conv.title || 'Klubo pranešimas'}`;
+  }
+  
+  // Konteksto vaikas
+  if (conv.kid_id) {
+    const { data: kid } = await sb.from('kids')
+      .select('first_name, last_name')
+      .eq('id', conv.kid_id)
+      .single();
+    if (kid) {
+      const kidName = `${kid.first_name} ${kid.last_name?.[0] || ''}.`;
+      subtitle = subtitle ? `${subtitle} · Apie: ${kidName}` : `Apie: ${kidName}`;
+    }
+  }
+  
+  titleEl.textContent = title;
+  subtitleEl.textContent = subtitle;
+}
+
+// UŽKRAUTI ŽINUTES
+async function loadMessages(convId) {
+  const thread = document.getElementById('msg-thread');
+  
+  const { data: messages, error } = await sb.from('messages')
+    .select('*')
+    .eq('conversation_id', convId)
+    .is('deleted_at', null)
+    .order('sent_at', { ascending: true });
+  
+  if (error) {
+    thread.innerHTML = `<div style="text-align:center;color:var(--br);">Klaida: ${error.message}</div>`;
+    return;
+  }
+  
+  if (!messages || messages.length === 0) {
+    thread.innerHTML = `<div style="text-align:center;color:var(--mut);padding:30px;font-size:13px;">Pokalbis tuščias. Pradėk rašyti!</div>`;
+    return;
+  }
+  
+  // Gauti siuntėjų vardus
+  const senderIds = [...new Set(messages.map(m => m.sender_id).filter(Boolean))];
+  const { data: senders } = await sb.from('profiles')
+    .select('id, first_name, last_name, role')
+    .in('id', senderIds);
+  
+  const sendersMap = {};
+  (senders || []).forEach(s => { sendersMap[s.id] = s; });
+  
+  thread.innerHTML = messages.map(m => renderMessage(m, sendersMap)).join('');
+  
+  // Scroll į apačią
+  thread.scrollTop = thread.scrollHeight;
+}
+
+// RENDER ŽINUTĘ
+function renderMessage(msg, sendersMap) {
+  const isMine = msg.sender_id === currentUser.id;
+  const sender = sendersMap[msg.sender_id];
+  const senderName = sender ? `${sender.first_name || ''} ${sender.last_name?.[0] || ''}.`.trim() : '';
+  const time = formatMessageTime(msg.sent_at);
+  
+  if (msg.message_type === 'system') {
+    return `<div style="text-align:center;color:var(--mut);font-size:10px;margin:10px 0;">${escapeHtml(msg.body)}</div>`;
+  }
+  
+  return `
+    <div style="display:flex;flex-direction:column;align-items:${isMine ? 'flex-end' : 'flex-start'};">
+      ${!isMine && senderName ? `<div style="font-size:10px;color:var(--mut);margin-bottom:2px;padding:0 6px;">${senderName}</div>` : ''}
+      <div style="background:${isMine ? '#6366f1' : 'var(--card)'};color:${isMine ? '#fff' : 'var(--text)'};padding:10px 14px;border-radius:18px;max-width:78%;font-size:13px;line-height:1.4;word-wrap:break-word;border:${isMine ? 'none' : '.5px solid var(--bdr)'};">
+        ${escapeHtml(msg.body).replace(/\n/g, '<br>')}
+      </div>
+      <div style="font-size:9px;color:var(--mut);margin-top:2px;padding:0 6px;">${time}</div>
+    </div>
+  `;
+}
+
+// SIŲSTI ŽINUTĘ
+async function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const body = input.value.trim();
+  
+  if (!body) return;
+  if (!currentConversationId) {
+    showToast('❌ Nėra pokalbio', 'error');
+    return;
+  }
+  
+  // Disable input
+  input.disabled = true;
+  
+  const { error } = await sb.from('messages').insert({
+    conversation_id: currentConversationId,
+    sender_id: currentUser.id,
+    body: body,
+    message_type: 'text'
+  });
+  
+  input.disabled = false;
+  
+  if (error) {
+    showToast('❌ Nepavyko siųsti: ' + error.message, 'error');
+    return;
+  }
+  
+  input.value = '';
+  input.style.height = 'auto';
+  // Real-time subscription perkraus žinutes
+}
+
+// REAL-TIME SUBSCRIPTION (žinutės pokalbyje)
+function subscribeToMessages(convId) {
+  unsubscribeFromMessages();
+  
+  messageRealtimeChannel = sb
+    .channel(`messages:${convId}`)
+    .on('postgres_changes', 
+      { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${convId}` },
+      async (payload) => {
+        // Nauja žinutė - perkrauti
+        await loadMessages(convId);
+        
+        // Pažymėti kaip perskaitytą jei aš ne siuntėjas
+        if (payload.new.sender_id !== currentUser.id) {
+          await sb.from('conversation_members')
+            .update({ last_read_at: new Date().toISOString() })
+            .eq('conversation_id', convId)
+            .eq('user_id', currentUser.id);
+        }
+      }
+    )
+    .subscribe();
+}
+
+function unsubscribeFromMessages() {
+  if (messageRealtimeChannel) {
+    sb.removeChannel(messageRealtimeChannel);
+    messageRealtimeChannel = null;
+  }
+}
+
+// REAL-TIME SUBSCRIPTION (pokalbių sąrašas)
+function subscribeToConversationsUpdates() {
+  unsubscribeFromConversations();
+  
+  messageListRealtimeChannel = sb
+    .channel('conversations:list')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'messages' },
+      () => {
+        loadConversationsList();
+        updateUnreadBadge();
+      }
+    )
+    .subscribe();
+}
+
+function unsubscribeFromConversations() {
+  if (messageListRealtimeChannel) {
+    sb.removeChannel(messageListRealtimeChannel);
+    messageListRealtimeChannel = null;
+  }
+}
+
+// UŽDARYTI POKALBĮ
+function closeConversation() {
+  unsubscribeFromMessages();
+  currentConversationId = null;
+  
+  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  const msgList = document.getElementById('msg-list');
+  msgList.style.display = '';
+  msgList.classList.add('on');
+  
+  loadConversationsList();
+}
+
+// NAUJAS POKALBIS - ATIDARYMAS
+async function openNewMessage() {
+  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  const newMsg = document.getElementById('msg-new');
+  newMsg.style.display = '';
+  newMsg.classList.add('on');
+  
+  // Reset state
+  newMsgState = { type: 'direct', recipientId: null, kidId: null, title: '', body: '' };
+  document.getElementById('msg-first-message').value = '';
+  document.getElementById('msg-title-input').value = '';
+  
+  // Rodyti broadcast tik klubui
+  const broadcastBtn = document.getElementById('msg-broadcast-btn');
+  if (broadcastBtn) {
+    broadcastBtn.style.display = (currentProfile?.role === 'club_admin') ? '' : 'none';
+  }
+  
+  setNewMsgType('direct');
+}
+
+// NAUJAS POKALBIS - TIPO PASIRINKIMAS
+async function setNewMsgType(type) {
+  newMsgState.type = type;
+  
+  document.querySelectorAll('.msg-type-btn').forEach(btn => {
+    if (btn.dataset.type === type) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
+  
+  // Title section (tik group/broadcast)
+  document.getElementById('msg-title-section').style.display = (type === 'group' || type === 'broadcast') ? '' : 'none';
+  
+  // Recipient section (visada)
+  await loadRecipientOptions(type);
+  
+  // Kid section (tik direct, nebūtina)
+  document.getElementById('msg-kid-section').style.display = (type === 'direct') ? '' : 'none';
+  if (type === 'direct') {
+    await loadKidOptions();
+  }
+}
+
+// UŽKRAUTI GAVĖJŲ SĄRAŠĄ
+async function loadRecipientOptions(type) {
+  const select = document.getElementById('msg-recipient-select');
+  const section = document.getElementById('msg-recipient-section');
+  
+  if (type === 'broadcast') {
+    // Klubo broadcast - automatinis
+    section.style.display = 'none';
+    return;
+  }
+  
+  section.style.display = '';
+  
+  if (type === 'direct') {
+    // 1-on-1: parodyti tėvus (treneriui) arba trenerius (klubui)
+    section.querySelector('.st').textContent = 'TĖVAI';
+    
+    if (currentProfile?.role === 'trainer') {
+      // Gauti trenerio vaikų tėvus
+      const { data: myKidIds } = await sb.from('kids')
+        .select('id')
+        .eq('assigned_trainer_id', currentUser.id);
+      const kidIds = (myKidIds || []).map(k => k.id);
+      
+      if (kidIds.length === 0) {
+        select.innerHTML = '<option value="">Nėra priskirtų vaikų</option>';
+        return;
+      }
+      
+      const { data: parentLinks } = await sb.from('kid_parent_links')
+        .select('parent_id, kid_id, kids!inner(first_name, last_name)')
+        .in('kid_id', kidIds);
+      
+      const parentIds = [...new Set((parentLinks || []).map(l => l.parent_id))];
+      
+      const { data: parents } = await sb.from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', parentIds);
+      
+      // Sumuojam vaikus per tėvus
+      const parentMap = {};
+      (parents || []).forEach(p => { 
+        parentMap[p.id] = { ...p, kids: [] }; 
+      });
+      (parentLinks || []).forEach(l => {
+        if (parentMap[l.parent_id] && l.kids) {
+          parentMap[l.parent_id].kids.push(`${l.kids.first_name} ${l.kids.last_name?.[0] || ''}.`);
+        }
+      });
+      
+      const options = Object.values(parentMap).map(p => 
+        `<option value="${p.id}">${p.first_name || ''} ${p.last_name || ''} (${p.kids.join(', ') || 'be vaikų'})</option>`
+      ).join('');
+      
+      select.innerHTML = '<option value="">Pasirinkti...</option>' + options;
+    } else if (currentProfile?.role === 'club_admin') {
+      // Klubas mato visus klubo trenerius
+      const { data: trainers } = await sb.from('profiles')
+        .select('id, first_name, last_name')
+        .eq('role', 'trainer')
+        .eq('club_id', currentProfile?.club_id);
+      
+      const options = (trainers || []).map(t => 
+        `<option value="${t.id}">${t.first_name || ''} ${t.last_name || ''}</option>`
+      ).join('');
+      
+      select.innerHTML = '<option value="">Pasirinkti...</option>' + options;
+    }
+  } else if (type === 'group') {
+    // Grupinis: pasirinkti grupę
+    section.querySelector('.st').textContent = 'GRUPĖ';
+    
+    if (currentProfile?.role === 'trainer') {
+      const { data: groups } = await sb.from('trainer_groups')
+        .select('id, name, schedule')
+        .eq('trainer_id', currentUser.id);
+      
+      const options = (groups || []).map(g => 
+        `<option value="${g.id}">${g.name || g.schedule || 'Grupė'}</option>`
+      ).join('');
+      
+      select.innerHTML = options.length > 0 
+        ? '<option value="">Pasirinkti...</option>' + options 
+        : '<option value="">Nėra grupių</option>';
+    } else {
+      select.innerHTML = '<option value="">Tik treneris kuria grupinius pokalbius</option>';
+    }
+  }
+}
+
+// UŽKRAUTI VAIKŲ SĄRAŠĄ (treneriui)
+async function loadKidOptions() {
+  const select = document.getElementById('msg-kid-select');
+  if (!select) return;
+  
+  if (currentProfile?.role === 'trainer') {
+    const { data: kids } = await sb.from('kids')
+      .select('id, first_name, last_name')
+      .eq('assigned_trainer_id', currentUser.id)
+      .eq('approval_status', 'approved');
+    
+    const options = (kids || []).map(k => 
+      `<option value="${k.id}">${k.first_name} ${k.last_name?.[0] || ''}.</option>`
+    ).join('');
+    
+    select.innerHTML = '<option value="">Bendras pokalbis (be vaiko)</option>' + options;
+  } else {
+    select.innerHTML = '<option value="">Bendras pokalbis (be vaiko)</option>';
+  }
+}
+
+// UŽDARYTI NAUJĄ POKALBĮ
+function closeNewMessage() {
+  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  const msgList = document.getElementById('msg-list');
+  msgList.style.display = '';
+  msgList.classList.add('on');
+}
+
+// SUKURTI POKALBĮ
+async function createConversation() {
+  const type = newMsgState.type;
+  const recipientId = document.getElementById('msg-recipient-select')?.value;
+  const kidId = document.getElementById('msg-kid-select')?.value || null;
+  const title = document.getElementById('msg-title-input')?.value?.trim();
+  const body = document.getElementById('msg-first-message').value.trim();
+  
+  if (!body) {
+    showToast('❌ Įvesk žinutę', 'error');
+    return;
+  }
+  
+  if (type !== 'broadcast' && !recipientId) {
+    showToast('❌ Pasirink gavėją', 'error');
+    return;
+  }
+  
+  if ((type === 'group' || type === 'broadcast') && !title) {
+    showToast('❌ Įvesk pokalbio pavadinimą', 'error');
+    return;
+  }
+  
+  // Kurti pokalbį
+  const convData = {
+    type,
+    title: title || null,
+    kid_id: kidId,
+    club_id: currentProfile?.club_id,
+    created_by: currentUser.id
+  };
+  
+  const { data: conv, error: convErr } = await sb.from('conversations')
+    .insert(convData)
+    .select()
+    .single();
+  
+  if (convErr) {
+    showToast('❌ Klaida kuriant: ' + convErr.message, 'error');
+    return;
+  }
+  
+  // Pridėti narius
+  let memberInserts = [];
+  
+  // Aš (kūrėjas)
+  memberInserts.push({
+    conversation_id: conv.id,
+    user_id: currentUser.id,
+    role: currentProfile?.role === 'trainer' ? 'trainer' : (currentProfile?.role === 'club_admin' ? 'club_admin' : 'parent')
+  });
+  
+  if (type === 'direct') {
+    // Pridėti gavėją
+    const { data: recipientProf } = await sb.from('profiles')
+      .select('role')
+      .eq('id', recipientId)
+      .single();
+    
+    memberInserts.push({
+      conversation_id: conv.id,
+      user_id: recipientId,
+      role: recipientProf?.role || 'parent'
+    });
+  } else if (type === 'group') {
+    // Pridėti visus grupės tėvus
+    // recipientId čia yra group_id
+    const { data: groupKids } = await sb.from('group_members')
+      .select('kid_id')
+      .eq('group_id', recipientId);
+    
+    const groupKidIds = (groupKids || []).map(g => g.kid_id);
+    
+    if (groupKidIds.length > 0) {
+      const { data: parentLinks } = await sb.from('kid_parent_links')
+        .select('parent_id')
+        .in('kid_id', groupKidIds);
+      
+      const uniqueParentIds = [...new Set((parentLinks || []).map(l => l.parent_id))];
+      
+      uniqueParentIds.forEach(pid => {
+        memberInserts.push({
+          conversation_id: conv.id,
+          user_id: pid,
+          role: 'parent'
+        });
+      });
+    }
+  } else if (type === 'broadcast') {
+    // Pridėti visus klubo tėvus
+    const { data: clubProfiles } = await sb.from('profiles')
+      .select('id, role')
+      .eq('club_id', currentProfile?.club_id)
+      .neq('id', currentUser.id);
+    
+    (clubProfiles || []).forEach(p => {
+      memberInserts.push({
+        conversation_id: conv.id,
+        user_id: p.id,
+        role: p.role || 'parent'
+      });
+    });
+  }
+  
+  const { error: memErr } = await sb.from('conversation_members').insert(memberInserts);
+  
+  if (memErr) {
+    showToast('❌ Klaida pridedant narius: ' + memErr.message, 'error');
+    return;
+  }
+  
+  // Siųsti pirmąją žinutę
+  const { error: msgErr } = await sb.from('messages').insert({
+    conversation_id: conv.id,
+    sender_id: currentUser.id,
+    body: body,
+    message_type: 'text'
+  });
+  
+  if (msgErr) {
+    showToast('❌ Klaida siunčiant: ' + msgErr.message, 'error');
+    return;
+  }
+  
+  showToast('✅ Žinutė išsiųsta!', 'success');
+  
+  // Atidaryti pokalbį
+  openConversation(conv.id);
+}
+
+// ATNAUJINTI BADGE'us VISUS
+async function updateUnreadBadge() {
+  if (!currentUser) return;
+  
+  // Gauti visus pokalbius su last_read_at
+  const { data: memberships } = await sb.from('conversation_members')
+    .select('conversation_id, last_read_at, conversations(last_message_at, last_message_sender_id, last_message_preview)')
+    .eq('user_id', currentUser.id);
+  
+  if (!memberships) return;
+  
+  let unreadCount = 0;
+  let lastPreview = '';
+  let lastMsgTime = null;
+  
+  memberships.forEach(m => {
+    if (!m.conversations) return;
+    const lastMsg = new Date(m.conversations.last_message_at);
+    const lastRead = m.last_read_at ? new Date(m.last_read_at) : new Date(0);
+    
+    if (lastMsg > lastRead && m.conversations.last_message_sender_id !== currentUser.id) {
+      unreadCount++;
+    }
+    
+    if (!lastMsgTime || lastMsg > lastMsgTime) {
+      lastMsgTime = lastMsg;
+      lastPreview = m.conversations.last_message_preview || '';
+    }
+  });
+  
+  // Atnaujinti badge'us
+  ['tr', 't', 'k'].forEach(prefix => {
+    const badge = document.getElementById(`${prefix}-msg-badge`);
+    const preview = document.getElementById(`${prefix}-msg-preview`);
+    
+    if (badge) {
+      if (unreadCount > 0) {
+        badge.style.display = '';
+        badge.textContent = unreadCount;
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+    
+    if (preview) {
+      if (unreadCount > 0) {
+        preview.textContent = `🔴 ${unreadCount} ${unreadCount === 1 ? 'naujas' : 'nauji'}`;
+      } else if (lastPreview) {
+        preview.textContent = lastPreview.substring(0, 50) + (lastPreview.length > 50 ? '...' : '');
+      } else {
+        preview.textContent = 'Nėra naujų';
+      }
+    }
+  });
+}
+
+// Auto-grow textarea
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('msg-input');
+  if (input) {
+    input.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+    });
+    
+    // Enter = send (Shift+Enter = new line)
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  }
+});
 
 // ════════════════════════════════════════
 // PALEISTI
