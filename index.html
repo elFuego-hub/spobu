@@ -1406,7 +1406,6 @@ select.inp option{background:#222;}
   <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;">
     <button onclick="goBackFromMessages()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
     <div style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">ŽINUTĖS</div>
-    <button id="msg-new-btn" onclick="openNewMessage()" style="background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">+ Naujas</button>
   </div>
   <div class="sa">
     <!-- Filtrai -->
@@ -1447,57 +1446,26 @@ select.inp option{background:#222;}
   </div>
 </div>
 
-<!-- NAUJAS POKALBIS (tik treneriui/klubui) -->
-<div class="sc" id="msg-new">
-  <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;">
-    <button onclick="closeNewMessage()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
-    <div style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">NAUJAS POKALBIS</div>
-  </div>
-  <div class="sa">
-    
-    <!-- Tipo pasirinkimas -->
-    <div class="st">POKALBIO TIPAS</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-      <button class="msg-type-btn on" data-type="direct" onclick="setNewMsgType('direct')" style="background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:14px;border-radius:14px;font-size:13px;font-weight:800;text-align:left;cursor:pointer;">
-        👤 1-on-1 su tėvais
-      </button>
-      <button class="msg-type-btn" data-type="group" onclick="setNewMsgType('group')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:14px;border-radius:14px;font-size:13px;font-weight:800;text-align:left;cursor:pointer;">
-        👥 Grupinis (visiems grupės tėvams)
-      </button>
-      <button id="msg-broadcast-btn" class="msg-type-btn" data-type="broadcast" onclick="setNewMsgType('broadcast')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:14px;border-radius:14px;font-size:13px;font-weight:800;text-align:left;cursor:pointer;display:none;">
-        📢 Klubo pranešimas (visiems)
-      </button>
+<!-- ŽINUTĖS RAŠYMO MODAL'AS (kontekstinis) -->
+<div id="msg-compose-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:18px;padding:20px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div id="msg-compose-title" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">RAŠYTI ŽINUTĘ</div>
+      <button onclick="closeComposeModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">×</button>
     </div>
     
-    <!-- Gavėjas (priklauso nuo tipo) -->
-    <div id="msg-recipient-section">
-      <div class="st">KAM</div>
-      <select id="msg-recipient-select" class="inp" style="margin-bottom:14px;">
-        <option value="">Pasirinkti...</option>
-      </select>
+    <!-- Kontekstas (kam, apie ką) -->
+    <div id="msg-compose-context" style="background:rgba(99,102,241,.08);border:.5px solid rgba(99,102,241,.3);border-radius:12px;padding:12px;margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:4px;">KAM</div>
+      <div id="msg-compose-recipient" style="font-size:14px;font-weight:800;color:#6366f1;">–</div>
+      <div id="msg-compose-about" style="font-size:11px;color:var(--mut);margin-top:4px;display:none;">–</div>
     </div>
     
-    <!-- Apie kurį vaiką (nebūtina) -->
-    <div id="msg-kid-section">
-      <div class="st">APIE KURĮ VAIKĄ (NEBŪTINA)</div>
-      <select id="msg-kid-select" class="inp" style="margin-bottom:14px;">
-        <option value="">Bendras pokalbis (be vaiko)</option>
-      </select>
-    </div>
+    <!-- Žinutės įvestis -->
+    <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">ŽINUTĖ</div>
+    <textarea id="msg-compose-body" class="inp" rows="5" placeholder="Rašyti..." style="margin-bottom:14px;font-family:inherit;resize:vertical;"></textarea>
     
-    <!-- Tema (grupiniam) -->
-    <div id="msg-title-section" style="display:none;">
-      <div class="st">POKALBIO PAVADINIMAS</div>
-      <input id="msg-title-input" class="inp" placeholder="Pvz. 'Antradienių 17:00 grupė'" style="margin-bottom:14px;" />
-    </div>
-    
-    <!-- Pirmoji žinutė -->
-    <div class="st">ŽINUTĖ</div>
-    <textarea id="msg-first-message" class="inp" rows="4" placeholder="Rašyti..." style="margin-bottom:14px;font-family:inherit;resize:vertical;"></textarea>
-    
-    <button onclick="createConversation()" style="width:100%;background:var(--br);color:#fff;border:none;padding:14px;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;">SIŲSTI ŽINUTĘ</button>
-    
+    <button onclick="submitComposeMessage()" id="msg-compose-submit" style="width:100%;background:var(--br);color:#fff;border:none;padding:14px;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;">SIŲSTI ŽINUTĘ</button>
   </div>
 </div>
 
@@ -1857,6 +1825,7 @@ select.inp option{background:#222;}
     
     <div class="st">VEIKSMAI</div>
     <div class="cd" style="padding:12px;">
+      <button class="btn" style="margin:0 0 8px 0;width:100%;background:#6366f1;color:white;" onclick="composeMessageToClub()">📢 PRANEŠIMAS VISIEMS TĖVAMS</button>
       <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openInviteTrainer()">➕ Pakviesti trenerį</button>
       <button class="btn btnd" style="margin:0;width:100%;" onclick="g('k','k-trainers')">🥋 Valdyti trenerius</button>
     </div>
@@ -2098,6 +2067,13 @@ select.inp option{background:#222;}
           <div id="kd-name" style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;line-height:1.1;">VAIKAS</div>
           <div id="kd-subname" style="font-size:11px;opacity:.85;margin-top:4px;">– · –</div>
         </div>
+      </div>
+      
+      <!-- Veiksmų mygtukai (treneriui/klubui) -->
+      <div id="kd-actions" style="display:none;margin-top:14px;">
+        <button onclick="composeMessageToKidParents(currentKidDetails?.id)" style="width:100%;background:rgba(255,255,255,.2);border:.5px solid rgba(255,255,255,.3);color:white;padding:10px;border-radius:10px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">
+          💬 RAŠYTI TĖVAMS
+        </button>
       </div>
       
       <!-- EXP & Level -->
@@ -8821,6 +8797,7 @@ async function loadTrainerGroups() {
           
           <!-- Mygtukai -->
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;" onclick="event.stopPropagation();">
+            <button onclick="composeMessageToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="background:rgba(99,102,241,.15);color:#6366f1;border:.5px solid rgba(99,102,241,.3);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Rašyti grupės tėvams">💬</button>
             <button onclick="openAssignKidsToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Priskirti vaikus">+👤</button>
             <button onclick="deleteGroup('${g.id}')" style="background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Ištrinti grupę">🗑️</button>
           </div>
@@ -9198,6 +9175,16 @@ async function openKidDetailsModal(kidId) {
   // Reset custom inputs
   document.getElementById('kd-custom-exp').value = '';
   document.getElementById('kd-custom-reason').value = '';
+  
+  // Rodyti veiksmų mygtukus tik treneriui/klubui
+  const actionsEl = document.getElementById('kd-actions');
+  if (actionsEl) {
+    if (currentProfile?.role === 'trainer' || currentProfile?.role === 'club_admin') {
+      actionsEl.style.display = '';
+    } else {
+      actionsEl.style.display = 'none';
+    }
+  }
   
   document.getElementById('kid-details-modal').style.display = 'block';
 }
@@ -12528,307 +12515,248 @@ function closeConversation() {
   loadConversationsList();
 }
 
-// NAUJAS POKALBIS - ATIDARYMAS
-async function openNewMessage() {
-  ['msg-list', 'msg-conv'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('on');
-  });
-  const newMsg = document.getElementById('msg-new');
-  if (newMsg) newMsg.classList.add('on');
+// ŽINUČIŲ MODAL - kontekstinis
+let composeContext = {
+  type: 'direct',  // 'direct' | 'group' | 'broadcast'
+  parentIds: [],   // Tėvų ID sąrašas (direct)
+  groupId: null,   // Grupės ID (group)
+  kidId: null,     // Vaiko ID (jei kontekstas)
+  title: '',       // Pokalbio pavadinimas (group/broadcast)
+  recipientLabel: '' // UI label
+};
+
+// Atidaryti modal'ą su pre-set'intu kontekstu
+function openComposeModal(context) {
+  composeContext = { ...composeContext, ...context };
   
-  // Reset state
-  newMsgState = { type: 'direct', recipientId: null, kidId: null, title: '', body: '' };
-  document.getElementById('msg-first-message').value = '';
-  document.getElementById('msg-title-input').value = '';
+  // Antraštė
+  const titleEl = document.getElementById('msg-compose-title');
+  const recipientEl = document.getElementById('msg-compose-recipient');
+  const aboutEl = document.getElementById('msg-compose-about');
   
-  // Rodyti broadcast tik klubui
-  const broadcastBtn = document.getElementById('msg-broadcast-btn');
-  if (broadcastBtn) {
-    broadcastBtn.style.display = (currentProfile?.role === 'club_admin') ? '' : 'none';
+  if (composeContext.type === 'direct') {
+    titleEl.textContent = 'RAŠYTI TĖVAMS';
+    recipientEl.textContent = composeContext.recipientLabel || 'Tėvai';
+  } else if (composeContext.type === 'group') {
+    titleEl.textContent = 'RAŠYTI GRUPĖS TĖVAMS';
+    recipientEl.textContent = composeContext.recipientLabel || 'Grupės tėvai';
+  } else if (composeContext.type === 'broadcast') {
+    titleEl.textContent = 'PRANEŠIMAS VISIEMS';
+    recipientEl.textContent = 'Visi klubo tėvai';
   }
   
-  setNewMsgType('direct');
-}
-
-// NAUJAS POKALBIS - TIPO PASIRINKIMAS
-async function setNewMsgType(type) {
-  newMsgState.type = type;
-  
-  document.querySelectorAll('.msg-type-btn').forEach(btn => {
-    if (btn.dataset.type === type) {
-      btn.classList.add('on');
-      btn.style.background = 'rgba(255,77,0,.15)';
-      btn.style.color = 'var(--br)';
-      btn.style.border = '.5px solid rgba(255,77,0,.4)';
-    } else {
-      btn.classList.remove('on');
-      btn.style.background = 'transparent';
-      btn.style.color = 'var(--text)';
-      btn.style.border = '.5px solid var(--bdr)';
-    }
-  });
-  
-  // Title section (tik group/broadcast)
-  document.getElementById('msg-title-section').style.display = (type === 'group' || type === 'broadcast') ? '' : 'none';
-  
-  // Recipient section (visada)
-  await loadRecipientOptions(type);
-  
-  // Kid section (tik direct, nebūtina)
-  document.getElementById('msg-kid-section').style.display = (type === 'direct') ? '' : 'none';
-  if (type === 'direct') {
-    await loadKidOptions();
+  // "Apie vaiką" info (jei yra)
+  if (composeContext.kidName) {
+    aboutEl.style.display = '';
+    aboutEl.textContent = `Apie: ${composeContext.kidName}`;
+  } else {
+    aboutEl.style.display = 'none';
   }
+  
+  // Reset įvestis
+  document.getElementById('msg-compose-body').value = '';
+  
+  // Rodyti modal
+  document.getElementById('msg-compose-modal').style.display = 'flex';
 }
 
-// UŽKRAUTI GAVĖJŲ SĄRAŠĄ
-async function loadRecipientOptions(type) {
-  const select = document.getElementById('msg-recipient-select');
-  const section = document.getElementById('msg-recipient-section');
+// Uždaryti modal
+function closeComposeModal() {
+  document.getElementById('msg-compose-modal').style.display = 'none';
+}
+
+// Treneris/klubas spaudžia "Rašyti tėvams" iš vaiko profilio
+async function composeMessageToKidParents(kidId) {
+  // Gauti vaiko info ir tėvų sąrašą
+  const { data: kid } = await sb.from('kids')
+    .select('id, first_name, last_name')
+    .eq('id', kidId)
+    .single();
   
-  if (type === 'broadcast') {
-    // Klubo broadcast - automatinis
-    section.style.display = 'none';
+  if (!kid) {
+    showToast('❌ Vaikas nerastas', 'error');
     return;
   }
   
-  section.style.display = '';
+  // Gauti tėvų ID iš kid_parent_links
+  const { data: links } = await sb.from('kid_parent_links')
+    .select('parent_id')
+    .eq('kid_id', kidId);
   
-  if (type === 'direct') {
-    // 1-on-1: parodyti tėvus (treneriui) arba trenerius (klubui)
-    section.querySelector('.st').textContent = 'TĖVAI';
-    
-    if (currentProfile?.role === 'trainer') {
-      // Gauti trenerio vaikų tėvus
-      const { data: myKidIds } = await sb.from('kids')
-        .select('id')
-        .eq('assigned_trainer_id', currentUser.id);
-      const kidIds = (myKidIds || []).map(k => k.id);
-      
-      if (kidIds.length === 0) {
-        select.innerHTML = '<option value="">Nėra priskirtų vaikų</option>';
-        return;
-      }
-      
-      const { data: parentLinks } = await sb.from('kid_parent_links')
-        .select('parent_id, kid_id, kids!inner(first_name, last_name)')
-        .in('kid_id', kidIds);
-      
-      const parentIds = [...new Set((parentLinks || []).map(l => l.parent_id))];
-      
-      const { data: parents } = await sb.from('profiles')
-        .select('id, first_name, last_name')
-        .in('id', parentIds);
-      
-      // Sumuojam vaikus per tėvus
-      const parentMap = {};
-      (parents || []).forEach(p => { 
-        parentMap[p.id] = { ...p, kids: [] }; 
-      });
-      (parentLinks || []).forEach(l => {
-        if (parentMap[l.parent_id] && l.kids) {
-          parentMap[l.parent_id].kids.push(`${l.kids.first_name} ${l.kids.last_name?.[0] || ''}.`);
-        }
-      });
-      
-      const options = Object.values(parentMap).map(p => 
-        `<option value="${p.id}">${p.first_name || ''} ${p.last_name || ''} (${p.kids.join(', ') || 'be vaikų'})</option>`
-      ).join('');
-      
-      select.innerHTML = '<option value="">Pasirinkti...</option>' + options;
-    } else if (currentProfile?.role === 'club_admin') {
-      // Klubas mato visus klubo trenerius
-      const { data: trainers } = await sb.from('profiles')
-        .select('id, first_name, last_name')
-        .eq('role', 'trainer')
-        .eq('club_id', currentProfile?.club_id);
-      
-      const options = (trainers || []).map(t => 
-        `<option value="${t.id}">${t.first_name || ''} ${t.last_name || ''}</option>`
-      ).join('');
-      
-      select.innerHTML = '<option value="">Pasirinkti...</option>' + options;
-    }
-  } else if (type === 'group') {
-    // Grupinis: pasirinkti grupę
-    section.querySelector('.st').textContent = 'GRUPĖ';
-    
-    if (currentProfile?.role === 'trainer') {
-      const { data: groups } = await sb.from('trainer_groups')
-        .select('id, name, schedule')
-        .eq('trainer_id', currentUser.id);
-      
-      const options = (groups || []).map(g => 
-        `<option value="${g.id}">${g.name || g.schedule || 'Grupė'}</option>`
-      ).join('');
-      
-      select.innerHTML = options.length > 0 
-        ? '<option value="">Pasirinkti...</option>' + options 
-        : '<option value="">Nėra grupių</option>';
-    } else {
-      select.innerHTML = '<option value="">Tik treneris kuria grupinius pokalbius</option>';
-    }
+  const parentIds = (links || []).map(l => l.parent_id);
+  
+  if (parentIds.length === 0) {
+    showToast('❌ Šis vaikas neturi tėvų paskyrų', 'error');
+    return;
   }
+  
+  // Gauti tėvų vardus
+  const { data: parents } = await sb.from('profiles')
+    .select('id, first_name, last_name')
+    .in('id', parentIds);
+  
+  const parentNames = (parents || []).map(p => `${p.first_name || ''} ${p.last_name || ''}`.trim()).filter(Boolean);
+  
+  openComposeModal({
+    type: 'direct',
+    parentIds: parentIds,
+    kidId: kidId,
+    kidName: `${kid.first_name} ${kid.last_name?.[0] || ''}.`,
+    recipientLabel: parentNames.length > 1 ? parentNames.join(', ') : (parentNames[0] || 'Tėvai')
+  });
 }
 
-// UŽKRAUTI VAIKŲ SĄRAŠĄ (treneriui)
-async function loadKidOptions() {
-  const select = document.getElementById('msg-kid-select');
-  if (!select) return;
-  
-  if (currentProfile?.role === 'trainer') {
-    const { data: kids } = await sb.from('kids')
-      .select('id, first_name, last_name')
-      .eq('assigned_trainer_id', currentUser.id)
-      .eq('approval_status', 'approved');
-    
-    const options = (kids || []).map(k => 
-      `<option value="${k.id}">${k.first_name} ${k.last_name?.[0] || ''}.</option>`
-    ).join('');
-    
-    select.innerHTML = '<option value="">Bendras pokalbis (be vaiko)</option>' + options;
-  } else {
-    select.innerHTML = '<option value="">Bendras pokalbis (be vaiko)</option>';
+// Treneris spaudžia "Rašyti grupės tėvams"
+async function composeMessageToGroup(groupId, groupName) {
+  openComposeModal({
+    type: 'group',
+    groupId: groupId,
+    kidId: null,
+    title: groupName || 'Grupės pokalbis',
+    recipientLabel: groupName ? `Grupė: ${groupName}` : 'Grupės tėvai'
+  });
+}
+
+// Klubas spaudžia "Pranešimas visiems"
+async function composeMessageToClub() {
+  if (currentProfile?.role !== 'club_admin') {
+    showToast('❌ Tik klubo admin gali siųsti broadcast', 'error');
+    return;
   }
-}
-
-// UŽDARYTI NAUJĄ POKALBĮ
-function closeNewMessage() {
-  const msgNew = document.getElementById('msg-new');
-  if (msgNew) msgNew.classList.remove('on');
-  const msgList = document.getElementById('msg-list');
-  if (msgList) msgList.classList.add('on');
-}
-
-// SUKURTI POKALBĮ
-async function createConversation() {
-  const type = newMsgState.type;
-  const recipientId = document.getElementById('msg-recipient-select')?.value;
-  const kidId = document.getElementById('msg-kid-select')?.value || null;
-  const title = document.getElementById('msg-title-input')?.value?.trim();
-  const body = document.getElementById('msg-first-message').value.trim();
   
+  openComposeModal({
+    type: 'broadcast',
+    kidId: null,
+    title: 'Klubo pranešimas',
+    recipientLabel: 'Visi klubo tėvai'
+  });
+}
+
+// Siųsti žinutę iš modal'o
+async function submitComposeMessage() {
+  const body = document.getElementById('msg-compose-body').value.trim();
   if (!body) {
     showToast('❌ Įvesk žinutę', 'error');
     return;
   }
   
-  if (type !== 'broadcast' && !recipientId) {
-    showToast('❌ Pasirink gavėją', 'error');
-    return;
-  }
+  const submitBtn = document.getElementById('msg-compose-submit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'SIUNČIAMA...';
   
-  if ((type === 'group' || type === 'broadcast') && !title) {
-    showToast('❌ Įvesk pokalbio pavadinimą', 'error');
-    return;
-  }
-  
-  // Kurti pokalbį
-  const convData = {
-    type,
-    title: title || null,
-    kid_id: kidId,
-    club_id: currentProfile?.club_id,
-    created_by: currentUser.id
-  };
-  
-  const { data: conv, error: convErr } = await sb.from('conversations')
-    .insert(convData)
-    .select()
-    .single();
-  
-  if (convErr) {
-    showToast('❌ Klaida kuriant: ' + convErr.message, 'error');
-    return;
-  }
-  
-  // Pridėti narius
-  let memberInserts = [];
-  
-  // Aš (kūrėjas)
-  memberInserts.push({
-    conversation_id: conv.id,
-    user_id: currentUser.id,
-    role: currentProfile?.role === 'trainer' ? 'trainer' : (currentProfile?.role === 'club_admin' ? 'club_admin' : 'parent')
-  });
-  
-  if (type === 'direct') {
-    // Pridėti gavėją
-    const { data: recipientProf } = await sb.from('profiles')
-      .select('role')
-      .eq('id', recipientId)
+  try {
+    // 1. Sukurti pokalbį
+    const convData = {
+      type: composeContext.type,
+      title: composeContext.title || null,
+      kid_id: composeContext.kidId || null,
+      club_id: currentProfile?.club_id,
+      created_by: currentUser.id
+    };
+    
+    const { data: conv, error: convErr } = await sb.from('conversations')
+      .insert(convData)
+      .select()
       .single();
     
+    if (convErr) throw convErr;
+    
+    // 2. Pridėti narius
+    const memberInserts = [];
+    
+    // Aš (kūrėjas)
     memberInserts.push({
       conversation_id: conv.id,
-      user_id: recipientId,
-      role: recipientProf?.role || 'parent'
+      user_id: currentUser.id,
+      role: currentProfile?.role === 'trainer' ? 'trainer' : (currentProfile?.role === 'club_admin' ? 'club_admin' : 'parent')
     });
-  } else if (type === 'group') {
-    // Pridėti visus grupės tėvus
-    // recipientId čia yra group_id
-    const { data: groupKids } = await sb.from('group_members')
-      .select('kid_id')
-      .eq('group_id', recipientId);
     
-    const groupKidIds = (groupKids || []).map(g => g.kid_id);
-    
-    if (groupKidIds.length > 0) {
-      const { data: parentLinks } = await sb.from('kid_parent_links')
-        .select('parent_id')
-        .in('kid_id', groupKidIds);
+    if (composeContext.type === 'direct') {
+      // Pridėti VISUS vaiko tėvus
+      composeContext.parentIds.forEach(pid => {
+        if (pid !== currentUser.id) {
+          memberInserts.push({
+            conversation_id: conv.id,
+            user_id: pid,
+            role: 'parent'
+          });
+        }
+      });
+    } else if (composeContext.type === 'group') {
+      // Pridėti visus grupės vaikų tėvus
+      const { data: groupKids } = await sb.from('group_members')
+        .select('kid_id')
+        .eq('group_id', composeContext.groupId);
       
-      const uniqueParentIds = [...new Set((parentLinks || []).map(l => l.parent_id))];
+      const groupKidIds = (groupKids || []).map(g => g.kid_id);
       
-      uniqueParentIds.forEach(pid => {
+      if (groupKidIds.length > 0) {
+        const { data: parentLinks } = await sb.from('kid_parent_links')
+          .select('parent_id')
+          .in('kid_id', groupKidIds);
+        
+        const uniqueParentIds = [...new Set((parentLinks || []).map(l => l.parent_id))];
+        
+        uniqueParentIds.forEach(pid => {
+          if (pid !== currentUser.id) {
+            memberInserts.push({
+              conversation_id: conv.id,
+              user_id: pid,
+              role: 'parent'
+            });
+          }
+        });
+      }
+    } else if (composeContext.type === 'broadcast') {
+      // Pridėti visus klubo tėvus
+      const { data: clubProfiles } = await sb.from('profiles')
+        .select('id, role')
+        .eq('club_id', currentProfile?.club_id)
+        .eq('role', 'parent')
+        .neq('id', currentUser.id);
+      
+      (clubProfiles || []).forEach(p => {
         memberInserts.push({
           conversation_id: conv.id,
-          user_id: pid,
+          user_id: p.id,
           role: 'parent'
         });
       });
     }
-  } else if (type === 'broadcast') {
-    // Pridėti visus klubo tėvus
-    const { data: clubProfiles } = await sb.from('profiles')
-      .select('id, role')
-      .eq('club_id', currentProfile?.club_id)
-      .neq('id', currentUser.id);
     
-    (clubProfiles || []).forEach(p => {
-      memberInserts.push({
-        conversation_id: conv.id,
-        user_id: p.id,
-        role: p.role || 'parent'
-      });
+    if (memberInserts.length < 2) {
+      throw new Error('Nėra gavėjų pokalbiui');
+    }
+    
+    const { error: memErr } = await sb.from('conversation_members').insert(memberInserts);
+    if (memErr) throw memErr;
+    
+    // 3. Siųsti pirmąją žinutę
+    const { error: msgErr } = await sb.from('messages').insert({
+      conversation_id: conv.id,
+      sender_id: currentUser.id,
+      body: body,
+      message_type: 'text'
     });
+    
+    if (msgErr) throw msgErr;
+    
+    showToast('✅ Žinutė išsiųsta!', 'success');
+    closeComposeModal();
+    
+    // Pereiti į pokalbį
+    setTimeout(() => {
+      openMessages();
+      setTimeout(() => openConversation(conv.id), 200);
+    }, 300);
+    
+  } catch (e) {
+    console.error('submitComposeMessage error:', e);
+    showToast('❌ Klaida: ' + (e.message || 'Nežinoma'), 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'SIŲSTI ŽINUTĘ';
   }
-  
-  const { error: memErr } = await sb.from('conversation_members').insert(memberInserts);
-  
-  if (memErr) {
-    showToast('❌ Klaida pridedant narius: ' + memErr.message, 'error');
-    return;
-  }
-  
-  // Siųsti pirmąją žinutę
-  const { error: msgErr } = await sb.from('messages').insert({
-    conversation_id: conv.id,
-    sender_id: currentUser.id,
-    body: body,
-    message_type: 'text'
-  });
-  
-  if (msgErr) {
-    showToast('❌ Klaida siunčiant: ' + msgErr.message, 'error');
-    return;
-  }
-  
-  showToast('✅ Žinutė išsiųsta!', 'success');
-  
-  // Atidaryti pokalbį
-  openConversation(conv.id);
 }
 
 // ATNAUJINTI BADGE'us VISUS
