@@ -12699,7 +12699,6 @@ function openComposeModal(context) {
     // Klubo broadcast - 4 audience mygtukai
     if (audienceButtons) {
       audienceButtons.style.gridTemplateColumns = 'repeat(4,1fr)';
-      // Visus mygtukus rodyti
       audienceButtons.querySelectorAll('.msg-aud-btn').forEach(btn => btn.style.display = '');
     }
     if (audienceSection) audienceSection.style.display = '';
@@ -12708,17 +12707,12 @@ function openComposeModal(context) {
     setComposeCategory('general');
     setComposeAudience(composeContext.audience || 'parents');
   } else if (composeContext.type === 'group') {
-    // Trenerio grupė - 3 audience mygtukai (tėvai/vaikai/abi)
+    // Trenerio grupė - tik 3 mygtukai (tėvai/vaikai/abi), be 'trainers'
     if (audienceButtons) {
       audienceButtons.style.gridTemplateColumns = 'repeat(3,1fr)';
-      // Tik 3 mygtukai: parents, kids, all (slėpti trainers)
       audienceButtons.querySelectorAll('.msg-aud-btn').forEach(btn => {
         const aud = btn.dataset.aud;
-        if (aud === 'trainers') {
-          btn.style.display = 'none';
-        } else {
-          btn.style.display = '';
-        }
+        btn.style.display = (aud === 'trainers') ? 'none' : '';
       });
     }
     if (audienceSection) audienceSection.style.display = '';
@@ -12735,8 +12729,38 @@ function openComposeModal(context) {
     document.getElementById('msg-compose-category-section').style.display = 'none';
   }
   
+  // Treneris NEGALI kurti pokalbio - tik pranešimą
+  // Klubas NEGALI kurti pokalbio jei audience yra trainers ar kids
+  updateChatModeAvailability();
+  
   // Rodyti modal
   document.getElementById('msg-compose-modal').style.display = 'flex';
+}
+
+// Patikrinti ar pokalbio režimas leidžiamas pagal audience/role
+function updateChatModeAvailability() {
+  const chatBtn = document.querySelector('.msg-mode-btn[data-mode="chat"]');
+  if (!chatBtn) return;
+  
+  // Treneriui - chat NIEKADA (tik announcement)
+  if (currentProfile?.role === 'trainer') {
+    chatBtn.style.display = 'none';
+    if (composeContext.mode === 'chat') setComposeMode('announcement');
+    return;
+  }
+  
+  // Klubui - chat tik audience='parents'
+  if (currentProfile?.role === 'club_admin' && composeContext.type === 'broadcast') {
+    if (composeContext.audience === 'parents') {
+      chatBtn.style.display = '';
+    } else {
+      chatBtn.style.display = 'none';
+      if (composeContext.mode === 'chat') setComposeMode('announcement');
+    }
+    return;
+  }
+  
+  chatBtn.style.display = '';
 }
 
 // Pasirinkti tipą (announcement / chat)
@@ -12832,6 +12856,11 @@ function setComposeAudience(aud) {
       else if (aud === 'all') recipientEl.textContent = 'Visi (tėvai + treneriai + vaikai)';
     }
   }
+  
+  // Atnaujinti chat mygtuko availability (klubui)
+  if (typeof updateChatModeAvailability === 'function') {
+    updateChatModeAvailability();
+  }
 }
 
 // Uždaryti modal
@@ -12921,6 +12950,17 @@ async function submitComposeMessage() {
   submitBtn.textContent = 'SIUNČIAMA...';
   
   try {
+    // Validacija: treneris negali kurti pokalbio
+    if (currentProfile?.role === 'trainer' && composeContext.mode === 'chat' && composeContext.type === 'group') {
+      throw new Error('Treneris gali siųsti tik pranešimus, ne pokalbius');
+    }
+    
+    // Klubas negali kurti pokalbio su treneriais ar vaikais
+    if (currentProfile?.role === 'club_admin' && composeContext.type === 'broadcast' 
+        && composeContext.mode === 'chat' && composeContext.audience !== 'parents') {
+      throw new Error('Pokalbį galima kurti tik su tėvais. Treneriams ir vaikams - tik pranešimai.');
+    }
+    
     // Patikrinti pavadinimą jei announcement
     const titleInput = document.getElementById('msg-compose-title-input').value.trim();
     if ((composeContext.type === 'group' || composeContext.type === 'broadcast') && !titleInput) {
