@@ -12087,6 +12087,8 @@ let currentConversationId = null;
 let messageRealtimeChannel = null;
 let messageListRealtimeChannel = null;
 let msgFilter = 'all';
+let msgPage = 1;
+const MSG_PAGE_SIZE = 10;
 let newMsgState = {
   type: 'direct',
   recipientId: null,
@@ -12173,6 +12175,7 @@ function goBackFromMessages() {
 // FILTRAS (visi/neperskaityti)
 function setMsgFilter(filter) {
   msgFilter = filter;
+  msgPage = 1;  // Reset puslapį
   document.querySelectorAll('.msg-filter-btn').forEach(btn => {
     if (btn.dataset.filter === filter) {
       btn.classList.add('on');
@@ -12186,6 +12189,11 @@ function setMsgFilter(filter) {
       btn.style.border = '.5px solid var(--bdr)';
     }
   });
+  loadConversationsList();
+}
+
+function loadMoreConversations() {
+  msgPage++;
   loadConversationsList();
 }
 
@@ -12239,9 +12247,13 @@ async function loadConversationsList() {
     .in('conversation_id', convIds);
   
   const memberUserIds = [...new Set((allMembers || []).map(m => m.user_id))];
+  // Pridėti created_by user'ių
+  const creatorIds = memberships.map(m => m.conversations?.created_by).filter(Boolean);
+  const allUserIds = [...new Set([...memberUserIds, ...creatorIds])];
+  
   const { data: profilesData } = await sb.from('profiles')
     .select('id, first_name, last_name, role')
-    .in('id', memberUserIds);
+    .in('id', allUserIds);
   
   const profilesMap = {};
   (profilesData || []).forEach(p => { profilesMap[p.id] = p; });
@@ -12276,7 +12288,13 @@ async function loadConversationsList() {
     return;
   }
   
-  const html = filtered.map(m => {
+  // Puslapiavimas - rodyti tik msgPage * MSG_PAGE_SIZE
+  const totalCount = filtered.length;
+  const visibleCount = msgPage * MSG_PAGE_SIZE;
+  const displayList = filtered.slice(0, visibleCount);
+  const hasMore = totalCount > visibleCount;
+  
+  const html = displayList.map(m => {
     const conv = m.conversations;
     if (!conv) return '';
     
@@ -12297,9 +12315,32 @@ async function loadConversationsList() {
         title = 'Vartotojas';
       }
     } else if (conv.type === 'group') {
-      title = `👥 ${conv.title || 'Grupinis pokalbis'}`;
+      // Sukūrėjo info
+      const creator = profilesMap[conv.created_by];
+      let creatorLabel = '';
+      if (creator) {
+        if (creator.id === currentUser.id) {
+          creatorLabel = ' (tavo)';
+        } else if (creator.role === 'trainer') {
+          creatorLabel = ` · 🥋 ${creator.first_name || 'Treneris'}`;
+        } else if (creator.role === 'club_admin') {
+          creatorLabel = ` · 🏢 Klubas`;
+        }
+      }
+      title = `👥 ${conv.title || 'Grupinis pokalbis'}${creatorLabel}`;
     } else if (conv.type === 'broadcast') {
-      title = `📢 ${conv.title || 'Klubo pokalbis'}`;
+      const creator = profilesMap[conv.created_by];
+      let creatorLabel = '';
+      if (creator) {
+        if (creator.id === currentUser.id) {
+          creatorLabel = ' (tavo)';
+        } else if (creator.role === 'club_admin') {
+          creatorLabel = ` · 🏢 Klubas`;
+        } else if (creator.role === 'trainer') {
+          creatorLabel = ` · 🥋 ${creator.first_name || 'Treneris'}`;
+        }
+      }
+      title = `📢 ${conv.title || 'Klubo pokalbis'}${creatorLabel}`;
     } else if (conv.type === 'announcement') {
       const cat = ANNOUNCEMENT_CATEGORIES[conv.category] || ANNOUNCEMENT_CATEGORIES.general;
       title = `${cat.icon} ${conv.title || cat.name}`;
@@ -12352,10 +12393,22 @@ async function loadConversationsList() {
     `;
   }).join('');
   
-  container.innerHTML = html;
+  // Pridėti "DAUGIAU" mygtuką jei yra daugiau
+  let footer = '';
+  if (hasMore) {
+    footer = `
+      <div style="text-align:center;padding:14px;">
+        <button onclick="loadMoreConversations()" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 24px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">
+          DAUGIAU (${totalCount - visibleCount})
+        </button>
+      </div>
+    `;
+  } else if (totalCount > MSG_PAGE_SIZE) {
+    footer = `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Viskas — ${totalCount} pokalbių</div>`;
+  }
+  
+  container.innerHTML = html + footer;
 }
-
-// FORMAT LAIKAS
 function formatMessageTime(ts) {
   if (!ts) return '';
   const d = new Date(ts);
