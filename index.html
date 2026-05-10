@@ -12019,16 +12019,27 @@ let newMsgState = {
 
 // ATIDARYTI ŽINUČIŲ EKRANĄ
 function openMessages() {
+  console.log('🔵 openMessages() called');
+  
   // Slėpti VISUS ekranus
   document.querySelectorAll('.sc').forEach(el => {
     el.classList.remove('on');
     el.style.display = 'none';
   });
+  console.log('🔵 Visi ekranai paslepti');
   
   // Rodyti msg-list
   const msgList = document.getElementById('msg-list');
+  console.log('🔵 msg-list elementas:', msgList);
+  
+  if (!msgList) {
+    alert('❌ ERROR: msg-list neegzistuoja DOM\'e!');
+    return;
+  }
+  
   msgList.style.display = 'flex';
   msgList.classList.add('on');
+  console.log('🔵 msg-list display dabar:', msgList.style.display, 'computed:', window.getComputedStyle(msgList).display);
   
   // Slėpti naują pokalbį (rodyti tik treneriui/klubui)
   const newBtn = document.getElementById('msg-new-btn');
