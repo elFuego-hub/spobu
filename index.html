@@ -865,6 +865,21 @@ select.inp option{background:#222;}
         <div style="font-size:10px;color:rgba(255,255,255,.65);" id="v-next-txt"></div>
       </div>
     </div>
+    
+    <!-- PRANEŠIMAI sekcija (vaikams) -->
+    <div style="margin:12px 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="background:var(--br);color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;padding:3px 10px;border-radius:99px;letter-spacing:1px;display:none;" id="v-announcements-badge">0</div>
+          <button onclick="openAllAnnouncements()" id="v-announcements-all-btn" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;display:none;">VISI</button>
+        </div>
+      </div>
+      <div id="v-announcements-list">
+        <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
+      </div>
+    </div>
+    
     <div class="st">GREITA APŽVALGA</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px;">
       <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px 10px;text-align:center;cursor:pointer;" onclick="g('v','v-kar')">
@@ -1483,9 +1498,10 @@ select.inp option{background:#222;}
     <!-- Auditorija (tik klubui) -->
     <div id="msg-compose-audience-section" style="display:none;margin-bottom:14px;">
       <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">KAM</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-        <button class="msg-aud-btn on" data-aud="parents" onclick="setComposeAudience('parents')" style="background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">👨‍👩‍👦<br>Tėvams</button>
-        <button class="msg-aud-btn" data-aud="trainers" onclick="setComposeAudience('trainers')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">🥋<br>Treneriams</button>
+      <div id="msg-compose-audience-buttons" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+        <button class="msg-aud-btn on" data-aud="parents" onclick="setComposeAudience('parents')" style="background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">👨‍👩‍👦<br>Tėvai</button>
+        <button class="msg-aud-btn" data-aud="trainers" onclick="setComposeAudience('trainers')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">🥋<br>Treneriai</button>
+        <button class="msg-aud-btn" data-aud="kids" onclick="setComposeAudience('kids')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">🥷<br>Vaikai</button>
         <button class="msg-aud-btn" data-aud="all" onclick="setComposeAudience('all')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">👥<br>Visiems</button>
       </div>
     </div>
@@ -12238,8 +12254,8 @@ async function loadConversationsList() {
     });
   }
   
-  // Tėvams - paslėpti announcement'us (jie turi savo sekciją pagrindiniame ekrane)
-  if (currentProfile?.role === 'parent') {
+  // Tėvams ir vaikams - paslėpti announcement'us (jie turi savo sekciją pagrindiniame ekrane)
+  if (currentProfile?.role === 'parent' || currentProfile?.role === 'kid') {
     filtered = filtered.filter(m => m.conversations?.type !== 'announcement');
   }
   
@@ -12665,19 +12681,39 @@ function openComposeModal(context) {
   // Tipo pasirinkimas - tik grupei ir broadcast
   const modeSection = document.getElementById('msg-compose-mode-section');
   const audienceSection = document.getElementById('msg-compose-audience-section');
+  const audienceButtons = document.getElementById('msg-compose-audience-buttons');
   
   if (composeContext.type === 'broadcast') {
-    // Klubo broadcast - rodyti audience pasirinkimą
+    // Klubo broadcast - 4 audience mygtukai
+    if (audienceButtons) {
+      audienceButtons.style.gridTemplateColumns = 'repeat(4,1fr)';
+      // Visus mygtukus rodyti
+      audienceButtons.querySelectorAll('.msg-aud-btn').forEach(btn => btn.style.display = '');
+    }
     if (audienceSection) audienceSection.style.display = '';
     modeSection.style.display = '';
     setComposeMode('announcement');
     setComposeCategory('general');
     setComposeAudience(composeContext.audience || 'parents');
   } else if (composeContext.type === 'group') {
-    if (audienceSection) audienceSection.style.display = 'none';
+    // Trenerio grupė - 3 audience mygtukai (tėvai/vaikai/abi)
+    if (audienceButtons) {
+      audienceButtons.style.gridTemplateColumns = 'repeat(3,1fr)';
+      // Tik 3 mygtukai: parents, kids, all (slėpti trainers)
+      audienceButtons.querySelectorAll('.msg-aud-btn').forEach(btn => {
+        const aud = btn.dataset.aud;
+        if (aud === 'trainers') {
+          btn.style.display = 'none';
+        } else {
+          btn.style.display = '';
+        }
+      });
+    }
+    if (audienceSection) audienceSection.style.display = '';
     modeSection.style.display = '';
     setComposeMode('announcement');
     setComposeCategory('general');
+    setComposeAudience(composeContext.audience || 'parents');
   } else {
     // Direct - visada pokalbis, be kategorijos
     if (audienceSection) audienceSection.style.display = 'none';
@@ -12772,9 +12808,17 @@ function setComposeAudience(aud) {
   // Atnaujinti label'ą
   const recipientEl = document.getElementById('msg-compose-recipient');
   if (recipientEl) {
-    if (aud === 'parents') recipientEl.textContent = 'Visi klubo tėvai';
-    else if (aud === 'trainers') recipientEl.textContent = 'Visi klubo treneriai';
-    else if (aud === 'all') recipientEl.textContent = 'Visi (tėvai + treneriai)';
+    if (composeContext.type === 'group') {
+      const groupName = composeContext.title || 'Grupė';
+      if (aud === 'parents') recipientEl.textContent = `${groupName} - tėvai`;
+      else if (aud === 'kids') recipientEl.textContent = `${groupName} - vaikai`;
+      else if (aud === 'all') recipientEl.textContent = `${groupName} - tėvai + vaikai`;
+    } else if (composeContext.type === 'broadcast') {
+      if (aud === 'parents') recipientEl.textContent = 'Visi klubo tėvai';
+      else if (aud === 'trainers') recipientEl.textContent = 'Visi klubo treneriai';
+      else if (aud === 'kids') recipientEl.textContent = 'Visi klubo vaikai';
+      else if (aud === 'all') recipientEl.textContent = 'Visi (tėvai + treneriai + vaikai)';
+    }
   }
 }
 
@@ -12830,6 +12874,7 @@ async function composeMessageToGroup(groupId, groupName) {
     type: 'group',
     groupId: groupId,
     kidId: null,
+    audience: 'parents',  // default - tėvams
     title: groupName || 'Grupės pokalbis',
     recipientLabel: groupName ? `Grupė: ${groupName}` : 'Grupės tėvai'
   });
@@ -12920,36 +12965,60 @@ async function submitComposeMessage() {
         }
       });
     } else if (composeContext.type === 'group') {
-      // Pridėti visus grupės vaikų tėvus
+      // Pridėti narius pagal audience
+      const audience = composeContext.audience || 'parents';
+      
+      // Gauti grupės vaikus
       const { data: groupKids } = await sb.from('kids')
-        .select('id')
+        .select('id, profile_id')
         .eq('group_id', composeContext.groupId);
       
       const groupKidIds = (groupKids || []).map(g => g.id);
       
       if (groupKidIds.length > 0) {
-        const { data: parentLinks } = await sb.from('kid_parent_links')
-          .select('parent_id')
-          .in('kid_id', groupKidIds);
+        // Pridėti tėvus jei reikia
+        if (audience === 'parents' || audience === 'all') {
+          const { data: parentLinks } = await sb.from('kid_parent_links')
+            .select('parent_id')
+            .in('kid_id', groupKidIds);
+          
+          const uniqueParentIds = [...new Set((parentLinks || []).map(l => l.parent_id))];
+          
+          uniqueParentIds.forEach(pid => {
+            if (pid !== currentUser.id) {
+              memberInserts.push({
+                conversation_id: conv.id,
+                user_id: pid,
+                role: 'parent'
+              });
+            }
+          });
+        }
         
-        const uniqueParentIds = [...new Set((parentLinks || []).map(l => l.parent_id))];
-        
-        uniqueParentIds.forEach(pid => {
-          if (pid !== currentUser.id) {
-            memberInserts.push({
-              conversation_id: conv.id,
-              user_id: pid,
-              role: 'parent'
-            });
-          }
-        });
+        // Pridėti vaikus jei reikia (kid.profile_id - vaiko sąsaja su profiles)
+        if (audience === 'kids' || audience === 'all') {
+          const kidProfileIds = (groupKids || [])
+            .map(k => k.profile_id)
+            .filter(Boolean);
+          
+          kidProfileIds.forEach(pid => {
+            if (pid !== currentUser.id) {
+              memberInserts.push({
+                conversation_id: conv.id,
+                user_id: pid,
+                role: 'kid'
+              });
+            }
+          });
+        }
       }
     } else if (composeContext.type === 'broadcast') {
       // Pridėti narius pagal audience
       const audience = composeContext.audience || 'parents';
       let rolesFilter = ['parent'];
       if (audience === 'trainers') rolesFilter = ['trainer'];
-      else if (audience === 'all') rolesFilter = ['parent', 'trainer'];
+      else if (audience === 'kids') rolesFilter = ['kid'];
+      else if (audience === 'all') rolesFilter = ['parent', 'trainer', 'kid'];
       
       const { data: clubProfiles } = await sb.from('profiles')
         .select('id, role')
@@ -13028,9 +13097,15 @@ const ANNOUNCEMENT_CATEGORIES = {
 };
 
 async function loadAnnouncements(showAll = false) {
-  const container = document.getElementById('t-announcements-list');
-  const badge = document.getElementById('t-announcements-badge');
-  const allBtn = document.getElementById('t-announcements-all-btn');
+  // Detektuoti kuriame ekrane esame (tėvų ar vaikų)
+  const isKid = currentProfile?.role === 'kid';
+  const containerId = isKid ? 'v-announcements-list' : 't-announcements-list';
+  const badgeId = isKid ? 'v-announcements-badge' : 't-announcements-badge';
+  const allBtnId = isKid ? 'v-announcements-all-btn' : 't-announcements-all-btn';
+  
+  const container = document.getElementById(containerId);
+  const badge = document.getElementById(badgeId);
+  const allBtn = document.getElementById(allBtnId);
   if (!container) return;
   
   const { data: memberships, error } = await sb.from('conversation_members')
@@ -13447,8 +13522,8 @@ async function updateUnreadBadge() {
     }
   });
   
-  // Taip pat atnaujinti pranešimus (tėvams)
-  if (typeof loadAnnouncements === 'function' && currentProfile?.role === 'parent') {
+  // Taip pat atnaujinti pranešimus (tėvams ir vaikams)
+  if (typeof loadAnnouncements === 'function' && (currentProfile?.role === 'parent' || currentProfile?.role === 'kid')) {
     loadAnnouncements();
   }
 }
