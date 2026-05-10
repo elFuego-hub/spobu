@@ -12853,6 +12853,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // ════════════════════════════════════════
 // PALEISTI
 // ════════════════════════════════════════
+// Iškelti žinučių modal į body lygmenį (kad veiktų visuose portaluose)
+(function lifMsgModalToBody() {
+  const modal = document.getElementById('msg-compose-modal');
+  if (modal && modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+    console.log('✅ msg-compose-modal perkeltas į body');
+  }
+})();
+
 init();
 </script>
 </body>
