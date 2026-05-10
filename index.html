@@ -853,16 +853,70 @@ select.inp option{background:#222;}
         <div class="nd2" id="v-notif-dot" style="display:none;"></div>
       </div>
     </div>
-    <div class="hero" style="background:linear-gradient(135deg,var(--br),var(--br2));">
-      <div class="hbrand">SPOBU · EXP</div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-        <span style="font-size:12px;color:rgba(255,255,255,.75);">Bendras EXP</span>
-        <span style="font-size:13px;font-weight:800;" id="v-exp-txt">0 / 1000</span>
+    <!-- KARATEKOS KELIAS - hero su figūra + atributais -->
+    <div class="hero" style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px;">
+      <div class="hbrand" style="color:rgba(255,255,255,.5);">SPOBU · KARATEKOS KELIAS</div>
+      
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px;">
+        <!-- Karatekos figūra (kairėje) -->
+        <div id="v-karateka-figure" style="width:90px;height:120px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.05);border-radius:12px;border:.5px solid rgba(255,255,255,.1);">
+          <!-- SVG bus inject'inamas per JS -->
+        </div>
+        
+        <!-- Info (dešinėje) -->
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;line-height:1;color:white;" id="v-level-num">1</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6);" id="v-level-rank">lv.</div>
+          </div>
+          <div style="font-size:13px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:8px;" id="v-level-txt">Naujokas</div>
+          
+          <div class="ebt" style="background:rgba(255,255,255,.15);"><div class="ebf" id="v-exp-bar" style="width:0%;background:var(--br);"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span style="font-size:10px;color:rgba(255,255,255,.6);" id="v-exp-txt">0 / 1000 EXP</span>
+            <span style="font-size:10px;color:rgba(255,255,255,.5);" id="v-next-txt"></span>
+          </div>
+        </div>
       </div>
-      <div class="ebt"><div class="ebf" id="v-exp-bar" style="width:0%"></div></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-        <div class="lc"><div class="ld"></div><span id="v-level-txt">Naujokas · 1 lv.</span></div>
-        <div style="font-size:10px;color:rgba(255,255,255,.65);" id="v-next-txt"></div>
+      
+      <!-- RPG atributai -->
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px;padding-top:14px;border-top:.5px solid rgba(255,255,255,.1);">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;">
+            <span>⚡ STIPRUMAS</span>
+            <span id="v-attr-strength">10</span>
+          </div>
+          <div style="height:5px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;">
+            <div id="v-attr-strength-bar" style="height:100%;background:#FF4D00;width:10%;transition:width .5s;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;">
+            <span>🛡️ GYNYBA</span>
+            <span id="v-attr-defense">10</span>
+          </div>
+          <div style="height:5px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;">
+            <div id="v-attr-defense-bar" style="height:100%;background:#3B82F6;width:10%;transition:width .5s;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;">
+            <span>💨 GREITIS</span>
+            <span id="v-attr-speed">10</span>
+          </div>
+          <div style="height:5px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;">
+            <div id="v-attr-speed-bar" style="height:100%;background:#10B981;width:10%;transition:width .5s;"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;">
+            <span>🧠 DVASIA</span>
+            <span id="v-attr-spirit">10</span>
+          </div>
+          <div style="height:5px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;">
+            <div id="v-attr-spirit-bar" style="height:100%;background:#A855F7;width:10%;transition:width .5s;"></div>
+          </div>
+        </div>
       </div>
     </div>
     
@@ -4516,6 +4570,9 @@ async function loadKidData() {
 
   // EXP baras
   updateExpBar(currentKid.total_exp || 0, currentKid.current_level || 1);
+  
+  // Karatekos figūra + atributai
+  updateKaratekaDisplay(currentKid);
 
   // Anonimiškumo display (read-only)
   const anonIcon = document.getElementById('v-anon-icon');
@@ -4569,9 +4626,205 @@ function updateExpBar(totalExp, level) {
     'Pažengęs','Pažengęs','Pažengęs','Pažengęs','Pažengęs','Patyręs'];
 
   document.getElementById('v-exp-bar').style.width = pct + '%';
-  document.getElementById('v-exp-txt').textContent = `${totalExp} / ${next?.req || '∞'}`;
-  document.getElementById('v-level-txt').textContent = `${names[level]||'Naujokas'} · ${level} lv.`;
-  if (next) document.getElementById('v-next-txt').textContent = `Iki kito: +${next.req-totalExp}`;
+  
+  // Naujasis UI - level-num + level-txt
+  const levelNumEl = document.getElementById('v-level-num');
+  if (levelNumEl) levelNumEl.textContent = level;
+  
+  const levelTxtEl = document.getElementById('v-level-txt');
+  if (levelTxtEl) levelTxtEl.textContent = names[level] || 'Naujokas';
+  
+  document.getElementById('v-exp-txt').textContent = `${totalExp} / ${next?.req || '∞'} EXP`;
+  if (next) document.getElementById('v-next-txt').textContent = `+${next.req-totalExp} iki kito`;
+  else document.getElementById('v-next-txt').textContent = 'MAX';
+}
+
+// Atnaujinti karatekos figūrą + atributus
+function updateKaratekaDisplay(kid) {
+  if (!kid) return;
+  
+  // Figūra
+  const figContainer = document.getElementById('v-karateka-figure');
+  if (figContainer) {
+    figContainer.innerHTML = renderKaratekaSVG(
+      kid.current_level || 1,
+      kid.gender || 'male',
+      kid.kyu || '10 kyu'
+    );
+  }
+  
+  // Atributai
+  const maxAttr = 100;
+  ['strength', 'defense', 'speed', 'spirit'].forEach(attr => {
+    const val = Math.min(maxAttr, kid[attr] || 10);
+    const valEl = document.getElementById(`v-attr-${attr}`);
+    const barEl = document.getElementById(`v-attr-${attr}-bar`);
+    if (valEl) valEl.textContent = val;
+    if (barEl) barEl.style.width = `${(val / maxAttr) * 100}%`;
+  });
+}
+
+// SVG karatekos figūra pagal lygį + lytį + diržo spalvą
+function renderKaratekaSVG(level, gender, kyu) {
+  // Diržo spalva pagal kyu
+  const beltColors = {
+    '10 kyu': '#FFFFFF',
+    '9 kyu': '#FFA500',
+    '8 kyu': '#0066CC',
+    '7 kyu': '#FFD700',
+    '6 kyu': '#22C55E',
+    '5 kyu': '#22C55E',
+    '4 kyu': '#8B4513',
+    '3 kyu': '#8B4513',
+    '2 kyu': '#8B4513',
+    '1 kyu': '#8B4513',
+    '1 dan': '#000000',
+    '2 dan': '#000000',
+    '3 dan': '#000000'
+  };
+  const beltColor = beltColors[kyu] || '#FFFFFF';
+  
+  // Pose pagal lygį (5 evoliucijos)
+  let pose = 'beginner';
+  if (level >= 30) pose = 'master';
+  else if (level >= 20) pose = 'advanced';
+  else if (level >= 10) pose = 'intermediate';
+  else if (level >= 5) pose = 'student';
+  
+  // Skin color (paprasta)
+  const skinColor = '#FFD7B5';
+  const hairColor = gender === 'male' ? '#3D2817' : '#5D3917';
+  
+  // Pozos: kiekvienas pose'as turi skirtingą SVG
+  const poses = {
+    // Pradedantysis - stovi tiesiai, kuklus
+    beginner: `
+      <svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+        <!-- Galva -->
+        <circle cx="50" cy="20" r="10" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <!-- Plaukai -->
+        <path d="M40 17 Q50 5 60 17 L60 14 Q50 8 40 14 Z" fill="${hairColor}"/>
+        <!-- Akys -->
+        <circle cx="46" cy="20" r="0.8" fill="#000"/>
+        <circle cx="54" cy="20" r="0.8" fill="#000"/>
+        <!-- Šypsena -->
+        <path d="M46 25 Q50 27 54 25" fill="none" stroke="#000" stroke-width="0.8" stroke-linecap="round"/>
+        <!-- Kimono viršus -->
+        <path d="M35 32 L65 32 L62 75 L38 75 Z" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <!-- V-iškirpė -->
+        <path d="M50 32 L46 50 L50 55 L54 50 Z" fill="#333"/>
+        <!-- Diržas -->
+        <rect x="36" y="65" width="28" height="6" fill="${beltColor}" stroke="#333" stroke-width="0.5"/>
+        <!-- Rankos (žemyn) -->
+        <path d="M35 35 L28 65 L30 68 L37 38" fill="${skinColor}" stroke="#333" stroke-width="0.3"/>
+        <path d="M65 35 L72 65 L70 68 L63 38" fill="${skinColor}" stroke="#333" stroke-width="0.3"/>
+        <!-- Kelnes -->
+        <path d="M38 75 L35 120 L42 120 L46 75" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <path d="M62 75 L65 120 L58 120 L54 75" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+      </svg>
+    `,
+    
+    // Mokinys - rankos bandymo pozoje
+    student: `
+      <svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="20" r="10" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <path d="M40 17 Q50 5 60 17 L60 13 Q50 7 40 13 Z" fill="${hairColor}"/>
+        <circle cx="46" cy="20" r="0.8" fill="#000"/>
+        <circle cx="54" cy="20" r="0.8" fill="#000"/>
+        <path d="M47 25 L53 25" fill="none" stroke="#000" stroke-width="0.8" stroke-linecap="round"/>
+        <path d="M35 32 L65 32 L62 75 L38 75 Z" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <path d="M50 32 L46 50 L50 55 L54 50 Z" fill="#333"/>
+        <rect x="36" y="65" width="28" height="6" fill="${beltColor}" stroke="#333" stroke-width="0.5"/>
+        <!-- Kairė ranka kumštis priekyje -->
+        <path d="M35 35 L25 50 L28 55 L40 45" fill="${skinColor}" stroke="#333" stroke-width="0.3"/>
+        <circle cx="25" cy="52" r="4" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <!-- Dešinė ranka prie šono -->
+        <path d="M65 35 L72 65 L70 68 L63 38" fill="${skinColor}" stroke="#333" stroke-width="0.3"/>
+        <path d="M38 75 L35 120 L42 120 L46 75" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <path d="M62 75 L65 120 L58 120 L54 75" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+      </svg>
+    `,
+    
+    // Pažengęs - kovinis pozas
+    intermediate: `
+      <svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="20" r="10" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <path d="M40 16 Q50 4 60 16 L60 12 Q50 6 40 12 Z" fill="${hairColor}"/>
+        <!-- Surauktos akys (ryžtas) -->
+        <path d="M44 19 L48 21" stroke="#000" stroke-width="1" stroke-linecap="round"/>
+        <path d="M52 21 L56 19" stroke="#000" stroke-width="1" stroke-linecap="round"/>
+        <path d="M47 26 L53 26" fill="none" stroke="#000" stroke-width="1" stroke-linecap="round"/>
+        <!-- Kimono su kova pozos -->
+        <path d="M33 32 L67 32 L62 75 L38 75 Z" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <path d="M50 32 L45 50 L50 55 L55 50 Z" fill="#333"/>
+        <rect x="36" y="65" width="28" height="6" fill="${beltColor}" stroke="#333" stroke-width="0.5"/>
+        <!-- Abi rankos kumštyje -->
+        <path d="M33 35 L20 45 L23 50 L38 42" fill="${skinColor}" stroke="#333" stroke-width="0.3"/>
+        <circle cx="20" cy="47" r="5" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <path d="M67 35 L80 45 L77 50 L62 42" fill="${skinColor}" stroke="#333" stroke-width="0.3"/>
+        <circle cx="80" cy="47" r="5" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <!-- Kelnės atsisėdusios kova pozoj -->
+        <path d="M38 75 L33 120 L42 120 L46 75" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <path d="M62 75 L67 120 L58 120 L54 75" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+      </svg>
+    `,
+    
+    // Patyręs - aukšto smūgio pozas
+    advanced: `
+      <svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="22" r="10" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <path d="M40 18 Q50 4 60 18 L60 13 Q50 7 40 13 Z" fill="${hairColor}"/>
+        <path d="M44 21 L48 23" stroke="#000" stroke-width="1" stroke-linecap="round"/>
+        <path d="M52 23 L56 21" stroke="#000" stroke-width="1" stroke-linecap="round"/>
+        <path d="M47 28 L53 28" fill="none" stroke="#000" stroke-width="1" stroke-linecap="round"/>
+        <!-- Kimono dynaminis -->
+        <path d="M30 34 L70 34 L60 77 L40 77 Z" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <path d="M50 34 L45 52 L50 57 L55 52 Z" fill="#333"/>
+        <rect x="38" y="67" width="24" height="6" fill="${beltColor}" stroke="#333" stroke-width="0.5"/>
+        <!-- Smūgio rankos -->
+        <path d="M70 36 L92 28 L94 33 L72 41" fill="${skinColor}" stroke="#333" stroke-width="0.3"/>
+        <circle cx="92" cy="30" r="5" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <path d="M30 36 L20 60 L24 64 L34 40" fill="${skinColor}" stroke="#333" stroke-width="0.3"/>
+        <!-- Pakelta koja smūgiui -->
+        <path d="M40 77 L20 90 L25 95 L45 80" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <path d="M60 77 L60 120 L52 120 L52 77" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+      </svg>
+    `,
+    
+    // Meistras - sensei pozas
+    master: `
+      <svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+        <!-- Galva su barzdele -->
+        <circle cx="50" cy="20" r="10" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <path d="M40 16 Q50 4 60 16 L60 12 Q50 6 40 12 Z" fill="${hairColor}"/>
+        <!-- Barzda -->
+        <path d="M45 28 Q50 32 55 28 L54 32 Q50 34 46 32 Z" fill="${hairColor}"/>
+        <!-- Užtikrintos akys -->
+        <path d="M44 20 L48 21" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M52 21 L56 20" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+        <!-- Kimono - dynamic stance -->
+        <path d="M30 34 L70 34 L62 76 L38 76 Z" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <path d="M50 34 L45 52 L50 57 L55 52 Z" fill="#333"/>
+        <!-- Juodas diržas -->
+        <rect x="36" y="66" width="28" height="7" fill="${beltColor}" stroke="#333" stroke-width="0.5"/>
+        <!-- Aukso linija ant diržo (master pozos) -->
+        <line x1="36" y1="69" x2="64" y2="69" stroke="#FFD700" stroke-width="0.5"/>
+        <!-- Open hands (sensei) -->
+        <path d="M30 36 L15 50 L18 56 L33 42" fill="${skinColor}" stroke="#333" stroke-width="0.3"/>
+        <path d="M70 36 L85 50 L82 56 L67 42" fill="${skinColor}" stroke="#333" stroke-width="0.3"/>
+        <!-- Atviri kumščiai -->
+        <circle cx="15" cy="52" r="5" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <circle cx="85" cy="52" r="5" fill="${skinColor}" stroke="#333" stroke-width="0.5"/>
+        <!-- Stance kelnes -->
+        <path d="M38 76 L30 120 L40 120 L46 76" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <path d="M62 76 L70 120 L60 120 L54 76" fill="#FFFFFF" stroke="#333" stroke-width="0.5"/>
+        <!-- Aura -->
+        <circle cx="50" cy="65" r="55" fill="none" stroke="#FFD700" stroke-width="0.3" opacity="0.3"/>
+      </svg>
+    `
+  };
+  
+  return poses[pose] || poses.beginner;
 }
 
 async function loadCategories() {
