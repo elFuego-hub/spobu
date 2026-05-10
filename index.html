@@ -4517,21 +4517,28 @@ async function loadKidData() {
   // EXP baras
   updateExpBar(currentKid.total_exp || 0, currentKid.current_level || 1);
   
-  // Detektuoti LEVEL UP (palyginti su paskutiniu žinomu lygiu)
+  // localStorage key (kid-specific)
+  const lsKey = (k) => `spobu_kid_${currentKid.id}_${k}`;
+  
+  // Detektuoti LEVEL UP
   const newLevel = currentKid.current_level || 1;
-  const lastKnownLevel = window._lastKnownLevel;
-  if (lastKnownLevel !== undefined && newLevel > lastKnownLevel) {
+  const lastKnownLevel = parseInt(localStorage.getItem(lsKey('lastLevel')) || '0');
+  console.log('🔵 [celebrations] Level - lastKnown:', lastKnownLevel, 'new:', newLevel);
+  if (lastKnownLevel > 0 && newLevel > lastKnownLevel) {
+    console.log('🎉 LEVEL UP detected!');
     setTimeout(() => showLevelUpCelebration(newLevel, lastKnownLevel), 800);
   }
-  window._lastKnownLevel = newLevel;
+  localStorage.setItem(lsKey('lastLevel'), newLevel);
   
   // Detektuoti DIRŽO PAKEITIMĄ (kyu)
   const newKyu = currentKid.kyu || '10 kyu';
-  const lastKnownKyu = window._lastKnownKyu;
-  if (lastKnownKyu !== undefined && lastKnownKyu !== newKyu) {
+  const lastKnownKyu = localStorage.getItem(lsKey('lastKyu'));
+  console.log('🔵 [celebrations] Kyu - lastKnown:', lastKnownKyu, 'new:', newKyu);
+  if (lastKnownKyu && lastKnownKyu !== newKyu) {
+    console.log('🥋 BELT CHANGE detected!');
     setTimeout(() => showBeltCelebration(newKyu, lastKnownKyu), 1200);
   }
-  window._lastKnownKyu = newKyu;
+  localStorage.setItem(lsKey('lastKyu'), newKyu);
   
   // Detektuoti naujus medalius (1, 2, 3 vieta)
   detectNewMedals();
@@ -5042,7 +5049,8 @@ window.testChallenge = function(name = '100 atsispaudimų') {
 async function detectNewMedals() {
   if (!currentKid?.id) return;
   
-  // Gauti naujausius patvirtintus medalininkus
+  const lsKey = `spobu_kid_${currentKid.id}_lastMedalId`;
+  
   const { data: results } = await sb.from('competition_results')
     .select('id, placement, competition_id, approved_at, exp_earned')
     .eq('kid_id', currentKid.id)
@@ -5052,27 +5060,30 @@ async function detectNewMedals() {
     .order('approved_at', { ascending: false })
     .limit(5);
   
+  console.log('🔵 [medals] gautų rezultatų:', results?.length || 0);
+  
   if (!results || results.length === 0) return;
   
-  // Paskutinis žinomas medalio ID
-  const lastKnownMedalId = window._lastKnownMedalId;
+  const lastKnownMedalId = localStorage.getItem(lsKey);
+  console.log('🔵 [medals] lastKnown:', lastKnownMedalId);
   
-  if (lastKnownMedalId === undefined) {
-    // Pirmas kartas - tik nustato latest, neparodo
-    window._lastKnownMedalId = results[0].id;
+  if (!lastKnownMedalId) {
+    // Pirmas kartas - tik nustato baseline, neparodo
+    localStorage.setItem(lsKey, results[0].id);
     return;
   }
   
   // Surasti naujus medalius (po paskutinio žinomo)
   const lastKnownIdx = results.findIndex(r => r.id === lastKnownMedalId);
   const newMedals = lastKnownIdx === -1 
-    ? results.slice(0, 1)  // jei nerandam - tik naujausią
-    : results.slice(0, lastKnownIdx);  // visi prieš paskutinį žinomą
+    ? results.slice(0, 1) 
+    : results.slice(0, lastKnownIdx);
+  
+  console.log('🔵 [medals] naujų medalių:', newMedals.length);
   
   if (newMedals.length === 0) return;
   
-  // Atnaujinti latest
-  window._lastKnownMedalId = results[0].id;
+  localStorage.setItem(lsKey, results[0].id);
   
   // Gauti varžybų pavadinimą
   const compIds = newMedals.map(m => m.competition_id);
@@ -5083,7 +5094,6 @@ async function detectNewMedals() {
   const compsMap = {};
   (comps || []).forEach(c => { compsMap[c.id] = c; });
   
-  // Parodyti celebration kiekvienam (skylant 2s vienas po kito)
   newMedals.forEach((medal, idx) => {
     setTimeout(() => {
       const comp = compsMap[medal.competition_id];
@@ -5102,7 +5112,8 @@ async function detectNewMedals() {
 async function detectNewChallenges() {
   if (!currentKid?.id) return;
   
-  // Gauti paskutinius įveiktus iššūkius (priklauso nuo lentelės)
+  const lsKey = `spobu_kid_${currentKid.id}_lastChallengeId`;
+  
   const { data: completions } = await sb.from('challenge_completions')
     .select('id, challenge_id, completed_at, exp_earned, approved_at')
     .eq('kid_id', currentKid.id)
@@ -5110,12 +5121,14 @@ async function detectNewChallenges() {
     .order('approved_at', { ascending: false })
     .limit(5);
   
+  console.log('🔵 [challenges] gautų:', completions?.length || 0);
+  
   if (!completions || completions.length === 0) return;
   
-  const lastKnownChallengeId = window._lastKnownChallengeId;
+  const lastKnownChallengeId = localStorage.getItem(lsKey);
   
-  if (lastKnownChallengeId === undefined) {
-    window._lastKnownChallengeId = completions[0].id;
+  if (!lastKnownChallengeId) {
+    localStorage.setItem(lsKey, completions[0].id);
     return;
   }
   
@@ -5126,9 +5139,8 @@ async function detectNewChallenges() {
   
   if (newCompletions.length === 0) return;
   
-  window._lastKnownChallengeId = completions[0].id;
+  localStorage.setItem(lsKey, completions[0].id);
   
-  // Gauti iššūkių pavadinimus
   const challengeIds = newCompletions.map(c => c.challenge_id);
   const { data: challenges } = await sb.from('challenges')
     .select('id, title')
