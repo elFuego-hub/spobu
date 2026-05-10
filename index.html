@@ -12661,15 +12661,8 @@ async function submitComposeMessage() {
     
     if (convErr) throw convErr;
     
-    // 2. Pridėti narius
+    // 2. Pridėti narius (trigger jau pridėjo kūrėją - tik gavėjus reikia)
     const memberInserts = [];
-    
-    // Aš (kūrėjas)
-    memberInserts.push({
-      conversation_id: conv.id,
-      user_id: currentUser.id,
-      role: currentProfile?.role === 'trainer' ? 'trainer' : (currentProfile?.role === 'club_admin' ? 'club_admin' : 'parent')
-    });
     
     if (composeContext.type === 'direct') {
       // Pridėti VISUS vaiko tėvus
@@ -12724,7 +12717,7 @@ async function submitComposeMessage() {
       });
     }
     
-    if (memberInserts.length < 2) {
+    if (memberInserts.length < 1) {
       throw new Error('Nėra gavėjų pokalbiui');
     }
     
