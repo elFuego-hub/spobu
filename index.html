@@ -12982,7 +12982,7 @@ async function submitComposeMessage() {
       
       // Gauti grupės vaikus
       const { data: groupKids } = await sb.from('kids')
-        .select('id, profile_id')
+        .select('id, user_id')
         .eq('group_id', composeContext.groupId);
       
       const groupKidIds = (groupKids || []).map(g => g.id);
@@ -13007,17 +13007,17 @@ async function submitComposeMessage() {
           });
         }
         
-        // Pridėti vaikus jei reikia (kid.profile_id - vaiko sąsaja su profiles)
+        // Pridėti vaikus jei reikia (kids.user_id = vaiko auth.users id)
         if (audience === 'kids' || audience === 'all') {
-          const kidProfileIds = (groupKids || [])
-            .map(k => k.profile_id)
+          const kidUserIds = (groupKids || [])
+            .map(k => k.user_id)
             .filter(Boolean);
           
-          kidProfileIds.forEach(pid => {
-            if (pid !== currentUser.id) {
+          kidUserIds.forEach(uid => {
+            if (uid !== currentUser.id) {
               memberInserts.push({
                 conversation_id: conv.id,
-                user_id: pid,
+                user_id: uid,
                 role: 'kid'
               });
             }
