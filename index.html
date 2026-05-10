@@ -1373,6 +1373,17 @@ select.inp option{background:#222;}
       </div>
     </div>
     
+    <!-- PRANEŠIMAI sekcija -->
+    <div style="margin:0 16px 12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
+        <div style="background:var(--br);color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;padding:3px 10px;border-radius:99px;letter-spacing:1px;display:none;" id="t-announcements-badge">0</div>
+      </div>
+      <div id="t-announcements-list">
+        <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
+      </div>
+    </div>
+    
     <!-- Mano vaikai -->
     <div style="padding:12px 16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -1479,9 +1490,22 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- Pavadinimas (jei pokalbis - kad būtų suprantama) -->
+    <!-- Kategorija (tik announcement) -->
+    <div id="msg-compose-category-section" style="display:none;margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">KATEGORIJA</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+        <button class="msg-cat-btn" data-cat="competitions" onclick="setComposeCategory('competitions')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">🥇<br>Varžybos</button>
+        <button class="msg-cat-btn" data-cat="schedule" onclick="setComposeCategory('schedule')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">📅<br>Tvarkaraštis</button>
+        <button class="msg-cat-btn" data-cat="payments" onclick="setComposeCategory('payments')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">💰<br>Mokėjimai</button>
+        <button class="msg-cat-btn" data-cat="events" onclick="setComposeCategory('events')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">🏖️<br>Renginiai</button>
+        <button class="msg-cat-btn" data-cat="urgent" onclick="setComposeCategory('urgent')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">⚠️<br>Skubu</button>
+        <button class="msg-cat-btn on" data-cat="general" onclick="setComposeCategory('general')" style="background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">📢<br>Bendra</button>
+      </div>
+    </div>
+    
+    <!-- Pavadinimas (visada announcement, opciškai chat) -->
     <div id="msg-compose-title-section" style="display:none;margin-bottom:14px;">
-      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">POKALBIO PAVADINIMAS</div>
+      <div id="msg-compose-title-label" style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">POKALBIO PAVADINIMAS</div>
       <input id="msg-compose-title-input" class="inp" placeholder="Pvz. 'Šeštadienio varžybos'" />
     </div>
     
@@ -12596,17 +12620,20 @@ function openComposeModal(context) {
   // Reset įvestis
   document.getElementById('msg-compose-body').value = '';
   document.getElementById('msg-compose-title-input').value = '';
+  composeContext.category = 'general';
   
   // Tipo pasirinkimas - tik grupei ir broadcast
   const modeSection = document.getElementById('msg-compose-mode-section');
   if (composeContext.type === 'group' || composeContext.type === 'broadcast') {
     modeSection.style.display = '';
-    setComposeMode('announcement'); // default - vienkartinis
+    setComposeMode('announcement'); // default - pranešimas
+    setComposeCategory('general'); // default kategorija
   } else {
-    // Direct - visada pokalbis
+    // Direct - visada pokalbis, be kategorijos
     modeSection.style.display = 'none';
     composeContext.mode = 'chat';
     document.getElementById('msg-compose-title-section').style.display = 'none';
+    document.getElementById('msg-compose-category-section').style.display = 'none';
   }
   
   // Rodyti modal
@@ -12631,13 +12658,46 @@ function setComposeMode(mode) {
     }
   });
   
-  // Pavadinimas - tik pokalbiui
-  const titleSection = document.getElementById('msg-compose-title-section');
-  if (mode === 'chat') {
-    titleSection.style.display = '';
+  // Kategorija - tik announcement
+  const catSection = document.getElementById('msg-compose-category-section');
+  if (mode === 'announcement') {
+    catSection.style.display = '';
   } else {
-    titleSection.style.display = 'none';
+    catSection.style.display = 'none';
   }
+  
+  // Pavadinimas - skirtingas tekstas
+  const titleSection = document.getElementById('msg-compose-title-section');
+  const titleLabel = document.getElementById('msg-compose-title-label');
+  
+  if (mode === 'announcement') {
+    titleSection.style.display = '';
+    titleLabel.textContent = 'PRANEŠIMO PAVADINIMAS';
+    document.getElementById('msg-compose-title-input').placeholder = "Pvz. 'Treniruotė atšaukta'";
+  } else if (mode === 'chat') {
+    titleSection.style.display = '';
+    titleLabel.textContent = 'POKALBIO PAVADINIMAS';
+    document.getElementById('msg-compose-title-input').placeholder = "Pvz. 'Šeštadienio varžybos'";
+  }
+}
+
+// Pasirinkti kategoriją
+function setComposeCategory(cat) {
+  composeContext.category = cat;
+  
+  document.querySelectorAll('.msg-cat-btn').forEach(btn => {
+    if (btn.dataset.cat === cat) {
+      btn.classList.add('on');
+      btn.style.background = 'rgba(255,77,0,.15)';
+      btn.style.color = 'var(--br)';
+      btn.style.border = '.5px solid rgba(255,77,0,.4)';
+    } else {
+      btn.classList.remove('on');
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text)';
+      btn.style.border = '.5px solid var(--bdr)';
+    }
+  });
 }
 
 // Uždaryti modal
@@ -12725,25 +12785,35 @@ async function submitComposeMessage() {
   submitBtn.textContent = 'SIUNČIAMA...';
   
   try {
+    // Patikrinti pavadinimą jei announcement
+    const titleInput = document.getElementById('msg-compose-title-input').value.trim();
+    if ((composeContext.type === 'group' || composeContext.type === 'broadcast') && !titleInput) {
+      showToast('❌ Įveskite pavadinimą', 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'SIŲSTI ŽINUTĘ';
+      return;
+    }
+    
     // Nustatyti DB tipą pagal mode
     let dbType = composeContext.type;
     if ((composeContext.type === 'group' || composeContext.type === 'broadcast') && composeContext.mode === 'announcement') {
       dbType = 'announcement';
     }
     
-    // Pavadinimas - jei pokalbis, naudoti įvestą
-    let title = composeContext.title || null;
-    if (composeContext.mode === 'chat' && composeContext.type !== 'direct') {
-      const titleInput = document.getElementById('msg-compose-title-input').value.trim();
-      title = titleInput || (composeContext.type === 'group' ? 'Grupės pokalbis' : 'Klubo pokalbis');
-    } else if (dbType === 'announcement') {
-      title = composeContext.type === 'broadcast' ? 'Klubo pranešimas' : 'Pranešimas grupei';
+    // Pavadinimas
+    let title = titleInput || composeContext.title || null;
+    if (!title && composeContext.type === 'direct') {
+      title = null; // Direct'ams nereikia
     }
+    
+    // Kategorija - tik announcement'ams
+    const category = (dbType === 'announcement') ? (composeContext.category || 'general') : null;
     
     // 1. Sukurti pokalbį
     const convData = {
       type: dbType,
       title: title,
+      category: category,
       kid_id: composeContext.kidId || null,
       club_id: currentProfile?.club_id,
       created_by: currentUser.id
@@ -12856,6 +12926,195 @@ async function submitComposeMessage() {
   }
 }
 
+// ════════════════════════════════════════
+// PRANEŠIMAI (announcement'ai)
+// ════════════════════════════════════════
+
+const ANNOUNCEMENT_CATEGORIES = {
+  competitions: { icon: '🥇', name: 'Varžybos', color: '#FFD700' },
+  schedule: { icon: '📅', name: 'Tvarkaraštis', color: '#3B82F6' },
+  payments: { icon: '💰', name: 'Mokėjimai', color: '#10B981' },
+  events: { icon: '🏖️', name: 'Renginiai', color: '#A855F7' },
+  urgent: { icon: '⚠️', name: 'Skubu', color: '#EF4444' },
+  general: { icon: '📢', name: 'Bendra', color: '#6366f1' }
+};
+
+async function loadAnnouncements() {
+  const container = document.getElementById('t-announcements-list');
+  const badge = document.getElementById('t-announcements-badge');
+  if (!container) return;
+  
+  const { data: memberships, error } = await sb.from('conversation_members')
+    .select(`
+      conversation_id,
+      last_read_at,
+      conversations (
+        id, type, title, category,
+        last_message_at, last_message_preview, last_message_sender_id,
+        created_at
+      )
+    `)
+    .eq('user_id', currentUser.id)
+    .order('conversations(last_message_at)', { ascending: false })
+    .limit(20);
+  
+  if (error) {
+    console.error('loadAnnouncements:', error);
+    container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Klaida</div>`;
+    return;
+  }
+  
+  const announcements = (memberships || []).filter(m => 
+    m.conversations && m.conversations.type === 'announcement'
+  );
+  
+  if (announcements.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;line-height:1.5;">
+        🔕 Šiuo metu pranešimų nėra
+      </div>
+    `;
+    if (badge) badge.style.display = 'none';
+    return;
+  }
+  
+  let unread = 0;
+  announcements.forEach(m => {
+    const lastMsg = new Date(m.conversations.last_message_at);
+    const lastRead = m.last_read_at ? new Date(m.last_read_at) : new Date(0);
+    if (lastMsg > lastRead) unread++;
+  });
+  
+  if (badge) {
+    if (unread > 0) {
+      badge.style.display = '';
+      badge.textContent = unread;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  
+  const html = announcements.map(m => {
+    const conv = m.conversations;
+    const cat = ANNOUNCEMENT_CATEGORIES[conv.category] || ANNOUNCEMENT_CATEGORIES.general;
+    const lastMsg = new Date(conv.last_message_at);
+    const lastRead = m.last_read_at ? new Date(m.last_read_at) : new Date(0);
+    const isUnread = lastMsg > lastRead;
+    const time = formatMessageTime(conv.last_message_at);
+    
+    return `
+      <div onclick="openAnnouncement('${conv.id}')" style="background:${isUnread ? 'rgba(255,77,0,.05)' : 'var(--card)'};border:.5px solid ${isUnread ? 'rgba(255,77,0,.3)' : 'var(--bdr)'};border-left:4px solid ${cat.color};border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+        <div style="font-size:24px;flex-shrink:0;">${cat.icon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px;">
+            <div style="font-size:10px;color:${cat.color};font-weight:800;letter-spacing:1px;text-transform:uppercase;">${cat.name}</div>
+            <div style="font-size:10px;color:var(--mut);flex-shrink:0;">${time}</div>
+          </div>
+          <div style="font-size:13px;font-weight:${isUnread ? '900' : '700'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">
+            ${escapeHtml(conv.title || cat.name)}
+          </div>
+          <div style="font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(conv.last_message_preview || '')}</div>
+        </div>
+        ${isUnread ? `<div style="width:8px;height:8px;border-radius:50%;background:${cat.color};flex-shrink:0;"></div>` : ''}
+      </div>
+    `;
+  }).join('');
+  
+  container.innerHTML = html;
+}
+
+async function openAnnouncement(convId) {
+  const { data: conv } = await sb.from('conversations')
+    .select('*')
+    .eq('id', convId)
+    .single();
+  
+  if (!conv) {
+    showToast('❌ Pranešimas nerastas', 'error');
+    return;
+  }
+  
+  const { data: messages } = await sb.from('messages')
+    .select('*')
+    .eq('conversation_id', convId)
+    .is('deleted_at', null)
+    .order('sent_at', { ascending: true });
+  
+  await sb.from('conversation_members')
+    .update({ last_read_at: new Date().toISOString() })
+    .eq('conversation_id', convId)
+    .eq('user_id', currentUser.id);
+  
+  const { data: sender } = await sb.from('profiles')
+    .select('first_name, last_name, role')
+    .eq('id', conv.created_by)
+    .single();
+  
+  const cat = ANNOUNCEMENT_CATEGORIES[conv.category] || ANNOUNCEMENT_CATEGORIES.general;
+  let senderLabel = 'Klubas';
+  if (sender?.role === 'trainer') {
+    senderLabel = `${sender.first_name || ''} ${sender.last_name || ''} (treneris)`.trim();
+  } else if (sender?.role === 'club_admin') {
+    senderLabel = 'Klubo administracija';
+  }
+  
+  const dateStr = new Date(conv.created_at).toLocaleString('lt-LT', { 
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+  });
+  
+  const messagesHtml = (messages || []).map(m => `
+    <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:10px;line-height:1.5;font-size:14px;white-space:pre-wrap;word-wrap:break-word;">
+      ${escapeHtml(m.body)}
+    </div>
+  `).join('');
+  
+  let modal = document.getElementById('announcement-view-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'announcement-view-modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;overflow-y:auto;padding:20px;';
+    document.body.appendChild(modal);
+  }
+  
+  modal.innerHTML = `
+    <div style="max-width:480px;margin:20px auto;background:var(--card);border-radius:18px;border:.5px solid var(--bdr);overflow:hidden;">
+      <div style="background:linear-gradient(135deg, ${cat.color}, ${cat.color}cc);padding:24px;color:white;position:relative;">
+        <button onclick="closeAnnouncement()" style="position:absolute;top:14px;right:14px;background:rgba(0,0,0,.3);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">×</button>
+        
+        <div style="font-size:48px;margin-bottom:8px;">${cat.icon}</div>
+        <div style="font-size:11px;opacity:.85;letter-spacing:2px;font-weight:800;text-transform:uppercase;margin-bottom:6px;">${cat.name}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;line-height:1.2;">${escapeHtml(conv.title || cat.name)}</div>
+      </div>
+      
+      <div style="padding:18px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mut);margin-bottom:14px;padding-bottom:14px;border-bottom:.5px solid var(--bdr);">
+          <span>👤 ${escapeHtml(senderLabel)}</span>
+          <span>·</span>
+          <span>${dateStr}</span>
+        </div>
+        
+        ${messagesHtml || '<div style="color:var(--mut);text-align:center;padding:20px;">(Nėra turinio)</div>'}
+        
+        <button onclick="closeAnnouncement()" style="width:100%;background:${cat.color};color:white;border:none;padding:14px;border-radius:12px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;margin-top:14px;">
+          ✓ PERSKAITYTA
+        </button>
+      </div>
+    </div>
+  `;
+  
+  modal.style.display = 'block';
+  
+  setTimeout(() => {
+    loadAnnouncements();
+    updateUnreadBadge();
+  }, 500);
+}
+
+function closeAnnouncement() {
+  const modal = document.getElementById('announcement-view-modal');
+  if (modal) modal.style.display = 'none';
+}
+
 // ATNAUJINTI BADGE'us VISUS
 async function updateUnreadBadge() {
   if (!currentUser) return;
@@ -12926,6 +13185,11 @@ async function updateUnreadBadge() {
       }
     }
   });
+  
+  // Taip pat atnaujinti pranešimus (tėvams)
+  if (typeof loadAnnouncements === 'function' && currentProfile?.role === 'parent') {
+    loadAnnouncements();
+  }
 }
 
 // Auto-grow textarea
