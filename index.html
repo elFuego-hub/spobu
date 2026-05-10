@@ -12019,9 +12019,15 @@ let newMsgState = {
 
 // ATIDARYTI ŽINUČIŲ EKRANĄ
 function openMessages() {
-  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  // Slėpti VISUS ekranus
+  document.querySelectorAll('.sc').forEach(el => {
+    el.classList.remove('on');
+    el.style.display = 'none';
+  });
+  
+  // Rodyti msg-list
   const msgList = document.getElementById('msg-list');
-  msgList.style.display = '';
+  msgList.style.display = 'flex';
   msgList.classList.add('on');
   
   // Slėpti naują pokalbį (rodyti tik treneriui/klubui)
@@ -12037,7 +12043,10 @@ function openMessages() {
 // Grįžti į pagrindinį ekraną
 function goBackFromMessages() {
   unsubscribeFromConversations();
-  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.sc').forEach(el => {
+    el.classList.remove('on');
+    el.style.display = 'none';
+  });
   
   let mainScreen;
   if (currentProfile?.role === 'trainer') mainScreen = document.getElementById('tr-main');
@@ -12045,7 +12054,7 @@ function goBackFromMessages() {
   else mainScreen = document.getElementById('t-main');
   
   if (mainScreen) {
-    mainScreen.style.display = '';
+    mainScreen.style.display = 'flex';
     mainScreen.classList.add('on');
   }
 }
@@ -12240,9 +12249,12 @@ async function openConversation(convId) {
   currentConversationId = convId;
   
   // Slėpti msg-list, rodyti msg-conv
-  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.sc').forEach(el => {
+    el.classList.remove('on');
+    el.style.display = 'none';
+  });
   const conv = document.getElementById('msg-conv');
-  conv.style.display = '';
+  conv.style.display = 'flex';
   conv.classList.add('on');
   
   // Pažymėti kaip perskaitytą
@@ -12466,9 +12478,12 @@ function closeConversation() {
   unsubscribeFromMessages();
   currentConversationId = null;
   
-  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.sc').forEach(el => {
+    el.classList.remove('on');
+    el.style.display = 'none';
+  });
   const msgList = document.getElementById('msg-list');
-  msgList.style.display = '';
+  msgList.style.display = 'flex';
   msgList.classList.add('on');
   
   loadConversationsList();
@@ -12476,9 +12491,12 @@ function closeConversation() {
 
 // NAUJAS POKALBIS - ATIDARYMAS
 async function openNewMessage() {
-  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.sc').forEach(el => {
+    el.classList.remove('on');
+    el.style.display = 'none';
+  });
   const newMsg = document.getElementById('msg-new');
-  newMsg.style.display = '';
+  newMsg.style.display = 'flex';
   newMsg.classList.add('on');
   
   // Reset state
@@ -12639,9 +12657,12 @@ async function loadKidOptions() {
 
 // UŽDARYTI NAUJĄ POKALBĮ
 function closeNewMessage() {
-  document.querySelectorAll('.sc.on').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.sc').forEach(el => {
+    el.classList.remove('on');
+    el.style.display = 'none';
+  });
   const msgList = document.getElementById('msg-list');
-  msgList.style.display = '';
+  msgList.style.display = 'flex';
   msgList.classList.add('on');
 }
 
@@ -12779,12 +12800,28 @@ async function createConversation() {
 async function updateUnreadBadge() {
   if (!currentUser) return;
   
+  // Default - "Nėra žinučių"
+  ['tr', 't', 'k'].forEach(prefix => {
+    const preview = document.getElementById(`${prefix}-msg-preview`);
+    if (preview && preview.textContent === 'Kraunama...') {
+      preview.textContent = 'Nėra žinučių';
+    }
+  });
+  
   // Gauti visus pokalbius su last_read_at
-  const { data: memberships } = await sb.from('conversation_members')
+  const { data: memberships, error } = await sb.from('conversation_members')
     .select('conversation_id, last_read_at, conversations(last_message_at, last_message_sender_id, last_message_preview)')
     .eq('user_id', currentUser.id);
   
-  if (!memberships) return;
+  if (error) {
+    console.warn('updateUnreadBadge error:', error);
+    return;
+  }
+  
+  if (!memberships || memberships.length === 0) {
+    // Nieko - default jau nustatytas
+    return;
+  }
   
   let unreadCount = 0;
   let lastPreview = '';
@@ -12825,7 +12862,7 @@ async function updateUnreadBadge() {
       } else if (lastPreview) {
         preview.textContent = lastPreview.substring(0, 50) + (lastPreview.length > 50 ? '...' : '');
       } else {
-        preview.textContent = 'Nėra naujų';
+        preview.textContent = 'Nėra žinučių';
       }
     }
   });
