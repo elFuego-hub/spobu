@@ -853,62 +853,16 @@ select.inp option{background:#222;}
         <div class="nd2" id="v-notif-dot" style="display:none;"></div>
       </div>
     </div>
-    <!-- KARATEKOS KELIAS - hero su EXP + atributais -->
-    <div class="hero" style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px;">
-      <div class="hbrand" style="color:rgba(255,255,255,.5);">SPOBU · KARATEKOS KELIAS</div>
-      
-      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;margin-top:12px;">
-        <div style="display:flex;align-items:baseline;gap:10px;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:1px;line-height:1;color:white;" id="v-level-num">1</div>
-          <div style="font-size:14px;color:rgba(255,255,255,.85);font-weight:700;" id="v-level-txt">Naujokas</div>
-        </div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);">lv.</div>
+    <div class="hero" style="background:linear-gradient(135deg,var(--br),var(--br2));">
+      <div class="hbrand">SPOBU · EXP</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:12px;color:rgba(255,255,255,.75);">Bendras EXP</span>
+        <span style="font-size:13px;font-weight:800;" id="v-exp-txt">0 / 1000</span>
       </div>
-      
-      <div class="ebt" style="background:rgba(255,255,255,.15);margin-top:8px;"><div class="ebf" id="v-exp-bar" style="width:0%;background:var(--br);"></div></div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px;">
-        <span style="font-size:11px;color:rgba(255,255,255,.7);" id="v-exp-txt">0 / 1000 EXP</span>
-        <span style="font-size:11px;color:rgba(255,255,255,.5);" id="v-next-txt"></span>
-      </div>
-      
-      <!-- RPG atributai -->
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:18px;padding-top:14px;border-top:.5px solid rgba(255,255,255,.1);">
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;">
-            <span>⚡ STIPRUMAS</span>
-            <span id="v-attr-strength">10</span>
-          </div>
-          <div style="height:5px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;">
-            <div id="v-attr-strength-bar" style="height:100%;background:#FF4D00;width:10%;transition:width .5s;"></div>
-          </div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;">
-            <span>🛡️ GYNYBA</span>
-            <span id="v-attr-defense">10</span>
-          </div>
-          <div style="height:5px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;">
-            <div id="v-attr-defense-bar" style="height:100%;background:#3B82F6;width:10%;transition:width .5s;"></div>
-          </div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;">
-            <span>💨 GREITIS</span>
-            <span id="v-attr-speed">10</span>
-          </div>
-          <div style="height:5px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;">
-            <div id="v-attr-speed-bar" style="height:100%;background:#10B981;width:10%;transition:width .5s;"></div>
-          </div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.7);margin-bottom:3px;">
-            <span>🧠 DVASIA</span>
-            <span id="v-attr-spirit">10</span>
-          </div>
-          <div style="height:5px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;">
-            <div id="v-attr-spirit-bar" style="height:100%;background:#A855F7;width:10%;transition:width .5s;"></div>
-          </div>
-        </div>
+      <div class="ebt"><div class="ebf" id="v-exp-bar" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+        <div class="lc"><div class="ld"></div><span id="v-level-txt">Naujokas · 1 lv.</span></div>
+        <div style="font-size:10px;color:rgba(255,255,255,.65);" id="v-next-txt"></div>
       </div>
     </div>
     
@@ -4567,13 +4521,9 @@ async function loadKidData() {
   const newLevel = currentKid.current_level || 1;
   const lastKnown = window._lastKnownLevel;
   if (lastKnown !== undefined && newLevel > lastKnown) {
-    // Pakilo lygiu! Parodyti celebration
     setTimeout(() => showLevelUpCelebration(newLevel, lastKnown), 800);
   }
   window._lastKnownLevel = newLevel;
-  
-  // Karatekos atributai
-  updateKaratekaDisplay(currentKid);
 
   // Anonimiškumo display (read-only)
   const anonIcon = document.getElementById('v-anon-icon');
@@ -4627,32 +4577,9 @@ function updateExpBar(totalExp, level) {
     'Pažengęs','Pažengęs','Pažengęs','Pažengęs','Pažengęs','Patyręs'];
 
   document.getElementById('v-exp-bar').style.width = pct + '%';
-  
-  // Naujasis UI - level-num + level-txt
-  const levelNumEl = document.getElementById('v-level-num');
-  if (levelNumEl) levelNumEl.textContent = level;
-  
-  const levelTxtEl = document.getElementById('v-level-txt');
-  if (levelTxtEl) levelTxtEl.textContent = names[level] || 'Naujokas';
-  
-  document.getElementById('v-exp-txt').textContent = `${totalExp} / ${next?.req || '∞'} EXP`;
-  if (next) document.getElementById('v-next-txt').textContent = `+${next.req-totalExp} iki kito`;
-  else document.getElementById('v-next-txt').textContent = 'MAX';
-}
-
-// Atnaujinti atributus
-function updateKaratekaDisplay(kid) {
-  if (!kid) return;
-  
-  // Atributai
-  const maxAttr = 100;
-  ['strength', 'defense', 'speed', 'spirit'].forEach(attr => {
-    const val = Math.min(maxAttr, kid[attr] || 10);
-    const valEl = document.getElementById(`v-attr-${attr}`);
-    const barEl = document.getElementById(`v-attr-${attr}-bar`);
-    if (valEl) valEl.textContent = val;
-    if (barEl) barEl.style.width = `${(val / maxAttr) * 100}%`;
-  });
+  document.getElementById('v-exp-txt').textContent = `${totalExp} / ${next?.req || '∞'}`;
+  document.getElementById('v-level-txt').textContent = `${names[level]||'Naujokas'} · ${level} lv.`;
+  if (next) document.getElementById('v-next-txt').textContent = `Iki kito: +${next.req-totalExp}`;
 }
 
 // LEVEL UP CELEBRATION - ekranas kai pasieki naują lygį
