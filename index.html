@@ -12677,11 +12677,11 @@ async function submitComposeMessage() {
       });
     } else if (composeContext.type === 'group') {
       // Pridėti visus grupės vaikų tėvus
-      const { data: groupKids } = await sb.from('group_members')
-        .select('kid_id')
+      const { data: groupKids } = await sb.from('kids')
+        .select('id')
         .eq('group_id', composeContext.groupId);
       
-      const groupKidIds = (groupKids || []).map(g => g.kid_id);
+      const groupKidIds = (groupKids || []).map(g => g.id);
       
       if (groupKidIds.length > 0) {
         const { data: parentLinks } = await sb.from('kid_parent_links')
