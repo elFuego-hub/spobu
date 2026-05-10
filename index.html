@@ -5056,7 +5056,7 @@ async function detectNewMedals() {
   const lsKey = `spobu_kid_${currentKid.id}_lastMedalId`;
   
   const { data: results } = await sb.from('competition_results')
-    .select('id, placement, competition_id, approved_at, exp_earned')
+    .select('id, placement, competition_id, approved_at, exp_gained')
     .eq('kid_id', currentKid.id)
     .eq('approval_status', 'approved')
     .gte('placement', 1)
@@ -5104,7 +5104,7 @@ async function detectNewMedals() {
       showCompetitionCelebration(
         medal.placement,
         comp?.title || 'Varžybos',
-        medal.exp_earned || 0
+        medal.exp_gained || 0
       );
     }, 1500 + idx * 500);
   });
