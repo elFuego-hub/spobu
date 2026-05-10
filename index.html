@@ -4835,34 +4835,38 @@ window.testCompetition = function(placement = 1) {
 
 const BELT_REWARDS = {
   '10 kyu': { color: '#FFFFFF', name: 'Baltas diržas', desc: 'Pradedantysis', icon: '⚪' },
-  '9 kyu':  { color: '#FFA500', name: 'Oranžinis diržas', desc: 'Pažengęs pradedantysis', icon: '🟠' },
-  '8 kyu':  { color: '#0066CC', name: 'Mėlynas diržas', desc: 'Pradedantis sportininkas', icon: '🔵' },
-  '7 kyu':  { color: '#FFD700', name: 'Geltonas diržas', desc: 'Pažengęs sportininkas', icon: '🟡' },
-  '6 kyu':  { color: '#22C55E', name: 'Žalias diržas', desc: 'Patyręs sportininkas', icon: '🟢' },
-  '5 kyu':  { color: '#22C55E', name: 'Žalias diržas (2)', desc: 'Aukštesnis lygis', icon: '🟢' },
-  '4 kyu':  { color: '#8B4513', name: 'Rudas diržas', desc: 'Beveik meistras', icon: '🟤' },
-  '3 kyu':  { color: '#8B4513', name: 'Rudas diržas (2)', desc: 'Aukštas lygis', icon: '🟤' },
-  '2 kyu':  { color: '#8B4513', name: 'Rudas diržas (3)', desc: 'Aukštesnis lygis', icon: '🟤' },
-  '1 kyu':  { color: '#8B4513', name: 'Rudas diržas (4)', desc: 'Beveik dan', icon: '🟤' },
-  '1 dan':  { color: '#000000', name: 'Juodas diržas', desc: 'MEISTRAS', icon: '⚫' },
-  '2 dan':  { color: '#000000', name: 'Juodas diržas (2)', desc: 'Vyresnis meistras', icon: '⚫' },
-  '3 dan':  { color: '#000000', name: 'Juodas diržas (3)', desc: 'Aukštas meistras', icon: '⚫' }
+  '9 kyu':  { color: '#FFA500', name: 'Oranžinis diržas', desc: 'Pradedančiojo I lygis', icon: '🟠' },
+  '8 kyu':  { color: '#FFA500', name: 'Oranžinis diržas (2)', desc: 'Pradedančiojo II lygis', icon: '🟠' },
+  '7 kyu':  { color: '#0066CC', name: 'Mėlynas diržas', desc: 'Pradedantis sportininkas I', icon: '🔵' },
+  '6 kyu':  { color: '#0066CC', name: 'Mėlynas diržas (2)', desc: 'Pradedantis sportininkas II', icon: '🔵' },
+  '5 kyu':  { color: '#FFD700', name: 'Geltonas diržas', desc: 'Pažengęs sportininkas I', icon: '🟡' },
+  '4 kyu':  { color: '#FFD700', name: 'Geltonas diržas (2)', desc: 'Pažengęs sportininkas II', icon: '🟡' },
+  '3 kyu':  { color: '#22C55E', name: 'Žalias diržas', desc: 'Patyręs sportininkas I', icon: '🟢' },
+  '2 kyu':  { color: '#22C55E', name: 'Žalias diržas (2)', desc: 'Patyręs sportininkas II', icon: '🟢' },
+  '1 kyu':  { color: '#8B4513', name: 'Rudas diržas', desc: 'Beveik meistras', icon: '🟤' },
+  '1 dan':  { color: '#000000', name: 'Juodas diržas', desc: 'MEISTRAS · Shodan', icon: '⚫' },
+  '2 dan':  { color: '#000000', name: 'Juodas diržas (2)', desc: 'Vyresnis meistras · Nidan', icon: '⚫' },
+  '3 dan':  { color: '#000000', name: 'Juodas diržas (3)', desc: 'Aukštas meistras · Sandan', icon: '⚫' },
+  '4 dan':  { color: '#000000', name: 'Juodas diržas (4)', desc: 'Yondan', icon: '⚫' },
+  '5 dan':  { color: '#000000', name: 'Juodas diržas (5)', desc: 'Godan', icon: '⚫' }
 };
 
 const BELT_MESSAGES = {
-  '10 kyu': 'Sveikas atvykęs į karatė kelią! Šis baltas diržas yra tavo švari pradžia.',
-  '9 kyu':  'Tu praeini pirmą egzaminą! Oranžinis diržas - tavo darbo simbolis.',
-  '8 kyu':  'Mėlynas kaip dangus, gylus kaip jūra. Tavo žinios auga.',
-  '7 kyu':  'Geltonas kaip saulė. Tu spindi savo darbu ir užsispyrimu.',
-  '6 kyu':  'Žalias kaip gyvybė. Tu vis stiprėsi su kiekvienu egzaminu.',
-  '5 kyu':  'Žalias kaip atkaklumas. Tu nesustok!',
-  '4 kyu':  'Rudas kaip žemė - stiprus pagrindas tavo žinioms.',
-  '3 kyu':  'Tavo technika tobulinasi. Pasiekei didelį lygį.',
-  '2 kyu':  'Beveik tave laikys juodadiržiu. Toliau!',
-  '1 kyu':  'Paskutinis žingsnis prieš juodą diržą. Esi labai arti!',
-  '1 dan':  'JUODAS DIRŽAS! Tu pasiekei tai, ko siekė tūkstančiai. Tu - meistras.',
-  '2 dan':  'Aukštesnis meistro lygis. Tu jau mokytojas kitiems.',
-  '3 dan':  'Tavo žinios neribotos. Tu - karatė pasaulio dalis.'
+  '10 kyu': 'Sveikas atvykęs į karatė kelią! Baltas diržas - švari pradžia.',
+  '9 kyu':  'Pirmas egzaminas išlaikytas! Oranžinis diržas - tavo darbo įrodymas.',
+  '8 kyu':  'Antrasis oranžinis lygis - tu jau įsisavinai bazę. Toliau!',
+  '7 kyu':  'Mėlynas kaip dangus - tavo žinios plečiasi.',
+  '6 kyu':  'Antrasis mėlynas lygis - tu jau pažengęs ne tik teorijoje.',
+  '5 kyu':  'Geltonas kaip saulė - tu spindi savo darbu ir užsispyrimu.',
+  '4 kyu':  'Antrasis geltonas - artėji prie viduriniojo lygio. Tu - pavyzdys jaunesniems.',
+  '3 kyu':  'Žalias kaip gyvybė - tu pasiekei svarbų lygį.',
+  '2 kyu':  'Antrasis žalias - tavo technika tobulinasi kasdien.',
+  '1 kyu':  'Rudas kaip žemė - paskutinis žingsnis prieš juodą diržą!',
+  '1 dan':  'JUODAS DIRŽAS! Shodan - tu pasiekei tai, ko siekė tūkstančiai. Tu - meistras.',
+  '2 dan':  'Nidan - aukštesnis meistro lygis. Tu jau mokytojas kitiems.',
+  '3 dan':  'Sandan - tavo žinios neribotos. Tu - karatė pasaulio dalis.',
+  '4 dan':  'Yondan - tu - tradicijos saugotojas.',
+  '5 dan':  'Godan - aukščiausias lygis tarp aktyvių. Tu pasiekei tai, ko nedaugelis sapnuoja.'
 };
 
 function showBeltCelebration(newKyu, oldKyu = '') {
