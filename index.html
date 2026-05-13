@@ -848,9 +848,16 @@ select.inp option{background:#222;}
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;" id="v-name">SPORTUOTOJAS 🥋</div>
       <div id="v-belt-display" style="margin-top:4px;display:flex;align-items:center;gap:8px;"></div>
       </div>
-      <div style="position:relative;cursor:pointer;" onclick="g('v','v-prof')">
-        <div style="width:44px;height:44px;border-radius:50%;background:var(--br);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:white;" id="v-avatar">?</div>
-        <div class="nd2" id="v-notif-dot" style="display:none;"></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <!-- VARPELIO MYGTUKAS -->
+        <div style="position:relative;cursor:pointer;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:18px;" onclick="toggleNotifications()" id="v-notif-btn">
+          🔔
+          <div id="v-notif-badge-count" style="display:none;position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#FF4D00;border-radius:50%;border:2px solid var(--bg);color:white;font-size:10px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(255,77,0,.6);">0</div>
+        </div>
+        <!-- AVATARAS -->
+        <div style="position:relative;cursor:pointer;" onclick="g('v','v-prof')">
+          <div style="width:42px;height:42px;border-radius:50%;background:var(--br);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:white;" id="v-avatar">?</div>
+        </div>
       </div>
     </div>
     <div class="hero" style="background:linear-gradient(135deg,var(--br),var(--br2));">
@@ -866,12 +873,12 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- PRANEŠIMAI sekcija (vaikams) -->
-    <div style="margin:12px 16px;">
+    <!-- PRANEŠIMAI - paslėpti (atidaromi varpeliu) -->
+    <div style="margin:12px 16px;display:none;" id="v-announcements-section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="background:var(--br);color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;padding:3px 10px;border-radius:99px;letter-spacing:1px;display:none;" id="v-announcements-badge">0</div>
+          <button onclick="toggleNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
           <button onclick="openAllAnnouncements()" id="v-announcements-all-btn" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;display:none;">VISI</button>
         </div>
       </div>
@@ -880,25 +887,109 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <div class="st">GREITA APŽVALGA</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px;">
-      <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px 10px;text-align:center;cursor:pointer;" onclick="g('v','v-kar')">
-        <div style="font-size:20px;margin-bottom:6px;">🏋️</div>
-        <div style="font-size:10px;font-weight:700;color:var(--mut);">Karjera</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--br);" id="v-career-exp">0</div>
+    <!-- 🔥 STREAKAI -->
+    <div class="st">🔥 STREAK'AI</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 16px;">
+      <div id="v-home-streak-training" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 6px;text-align:center;">
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;">🔥</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF8C00;line-height:1;text-shadow:0 0 6px rgba(255,140,0,.4);" id="v-home-streak-train-num">0</div>
+        <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;margin-top:3px;text-transform:uppercase;">Treniruotės</div>
       </div>
-      <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px 10px;text-align:center;cursor:pointer;" onclick="g('v','v-ish')">
-        <div style="font-size:20px;margin-bottom:6px;">🎯</div>
-        <div style="font-size:10px;font-weight:700;color:var(--mut);">Iššūkiai</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--br);" id="v-challenges-exp">0</div>
+      <div id="v-home-streak-weekly" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 6px;text-align:center;">
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;">📅</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF8C00;line-height:1;text-shadow:0 0 6px rgba(255,140,0,.4);" id="v-home-streak-week-num">0</div>
+        <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;margin-top:3px;text-transform:uppercase;">Savaitės</div>
       </div>
-      <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px 10px;text-align:center;">
-        <div style="font-size:20px;margin-bottom:6px;">🏆</div>
-        <div style="font-size:10px;font-weight:700;color:var(--mut);">Varžybos</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--br);" id="v-comp-exp">0</div>
+      <div id="v-home-streak-monthly" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 6px;text-align:center;">
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;">🏆</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF8C00;line-height:1;text-shadow:0 0 6px rgba(255,140,0,.4);" id="v-home-streak-month-num">0</div>
+        <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;margin-top:3px;text-transform:uppercase;">Mėnesiai</div>
       </div>
     </div>
-    <div class="st">LAUKIA PATVIRTINIMO</div>
+    
+    <!-- 🎯 SAVAITĖS TIKSLAS -->
+    <div style="margin:12px 16px;padding:12px;background:linear-gradient(135deg, rgba(79,195,247,.12), rgba(79,195,247,.04));border: 1px solid rgba(79,195,247,.25);border-radius:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-size:11px;color:#4FC3F7;font-weight:800;letter-spacing:1px;">🎯 ŠIOS SAVAITĖS TIKSLAS</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-week-goal-exp">0 / 200 EXP</div>
+      </div>
+      <div style="height:6px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;background:linear-gradient(90deg,#4FC3F7,#29B6F6);box-shadow:0 0 8px rgba(79,195,247,.5);border-radius:3px;width:0%;" id="v-week-goal-bar"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--mut);">
+        <span id="v-week-goal-pct">0% atlikta</span>
+        <span id="v-week-goal-days">7 dienos liko</span>
+      </div>
+    </div>
+    
+    <!-- 📆 MĖNESIO TIKSLAS -->
+    <div style="margin:6px 16px;padding:12px;background:linear-gradient(135deg, rgba(186,104,200,.12), rgba(186,104,200,.04));border: 1px solid rgba(186,104,200,.25);border-radius:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-size:11px;color:#BA68C8;font-weight:800;letter-spacing:1px;">📆 ŠIO MĖNESIO TIKSLAS</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-month-goal-exp">0 / 1000 EXP</div>
+      </div>
+      <div style="height:6px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;background:linear-gradient(90deg,#BA68C8,#8E24AA);box-shadow:0 0 8px rgba(186,104,200,.5);border-radius:3px;width:0%;" id="v-month-goal-bar"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--mut);">
+        <span id="v-month-goal-pct">0% atlikta</span>
+        <span id="v-month-goal-days">30 dienų liko</span>
+      </div>
+    </div>
+    
+    <!-- 📊 REITINGAI -->
+    <div class="st">📊 MANO REITINGAI</div>
+    <div style="margin:0 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">
+      <div style="display:flex;align-items:center;padding:10px 14px;border-bottom:.5px solid var(--bdr);gap:12px;cursor:pointer;" onclick="g('v','v-comp')">
+        <div style="font-size:22px;line-height:1;width:28px;text-align:center;">🏆</div>
+        <div style="flex:1;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:700;text-transform:uppercase;">Pagal varžybas</div>
+          <div style="font-size:12px;color:white;font-weight:700;margin-top:2px;" id="v-rank-comp-info">Klube</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#FFD700;text-shadow:0 0 10px rgba(255,215,0,.4);line-height:1;" id="v-rank-comp">#–</div>
+      </div>
+      <div style="display:flex;align-items:center;padding:10px 14px;border-bottom:.5px solid var(--bdr);gap:12px;cursor:pointer;" onclick="g('v','v-stat')">
+        <div style="font-size:22px;line-height:1;width:28px;text-align:center;">⚡</div>
+        <div style="flex:1;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:700;text-transform:uppercase;">Pagal bendrą EXP</div>
+          <div style="font-size:12px;color:white;font-weight:700;margin-top:2px;" id="v-rank-exp-info">0 EXP</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#C0C0C0;text-shadow:0 0 10px rgba(192,192,192,.4);line-height:1;" id="v-rank-exp">#–</div>
+      </div>
+      <div style="display:flex;align-items:center;padding:10px 14px;border-bottom:.5px solid var(--bdr);gap:12px;cursor:pointer;" onclick="g('v','v-ish')">
+        <div style="font-size:22px;line-height:1;width:28px;text-align:center;">🎯</div>
+        <div style="flex:1;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:700;text-transform:uppercase;">Pagal iššūkius</div>
+          <div style="font-size:12px;color:white;font-weight:700;margin-top:2px;" id="v-rank-ish-info">0 įveikta</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#CD7F32;text-shadow:0 0 10px rgba(205,127,50,.4);line-height:1;" id="v-rank-ish">#–</div>
+      </div>
+      <div style="display:flex;align-items:center;padding:10px 14px;gap:12px;cursor:pointer;" onclick="g('v','v-kar')">
+        <div style="font-size:22px;line-height:1;width:28px;text-align:center;">🥋</div>
+        <div style="flex:1;">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:700;text-transform:uppercase;">Aukščiausias skillas</div>
+          <div style="font-size:12px;color:white;font-weight:700;margin-top:2px;" id="v-top-skill">–</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#FF4D00;text-shadow:0 0 10px rgba(255,77,0,.4);line-height:1;" id="v-top-skill-tier">–</div>
+      </div>
+      <button onclick="g('v','v-stat')" style="width:100%;padding:10px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:none;border-top:.5px solid rgba(255,77,0,.2);color:#FF8C00;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;">VISA STATISTIKA →</button>
+    </div>
+    
+    <!-- 📅 ARTIMIAUSIA VARŽYBA -->
+    <div id="v-next-event" style="margin:12px 16px;padding:12px;background:linear-gradient(135deg, rgba(255,215,0,.12), rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.3);border-radius:14px;display:none;align-items:center;gap:12px;">
+      <div style="font-size:28px;line-height:1;">🏆</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:800;color:white;margin-bottom:2px;" id="v-next-event-name">–</div>
+        <div style="font-size:10px;color:rgba(255,215,0,.8);font-weight:700;" id="v-next-event-meta">–</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#FFD700;line-height:1;text-shadow:0 0 8px rgba(255,215,0,.5);" id="v-next-event-days">–</div>
+        <div style="font-size:8px;color:var(--mut);letter-spacing:1px;">DIENOS</div>
+      </div>
+    </div>
+    
+    <!-- ⏳ LAUKIA PATVIRTINIMO -->
+    <div class="st">⏳ LAUKIA PATVIRTINIMO</div>
     <div class="cd" id="v-pending-list">
       <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Nėra laukiančių pateikimų</div>
     </div>
@@ -4817,11 +4908,9 @@ function renderBeltCertificate(kyu, isCurrent) {
   }
   
   const danGlow = isDan ? 'box-shadow:0 8px 30px rgba(255,215,0,.4),inset 0 0 30px rgba(0,0,0,.3);' : '';
-  const tavoBadge = isCurrent ? '<div style="position:absolute;top:8px;right:8px;background:#FF4D00;color:white;font-size:8px;font-weight:800;padding:3px 6px;border-radius:4px;letter-spacing:1px;box-shadow:0 2px 8px rgba(255,77,0,.5);z-index:5;">⭐ TAVO</div>' : '';
   
   return `
     <div style="border-radius:12px;padding:16px;position:relative;border:2px solid ${info.accentColor};background:linear-gradient(135deg,${info.accentColor}22,${info.accentColor}05);${danGlow}overflow:hidden;">
-      ${tavoBadge}
       <div style="position:absolute;top:6px;left:6px;width:16px;height:16px;border-top:2px solid ${info.accentColor};border-left:2px solid ${info.accentColor};"></div>
       <div style="position:absolute;bottom:6px;right:6px;width:16px;height:16px;border-bottom:2px solid ${info.accentColor};border-right:2px solid ${info.accentColor};"></div>
       <div style="font-family:'Noto Serif JP','Hiragino Mincho ProN',serif;font-size:48px;font-weight:900;text-align:center;line-height:1;margin-bottom:10px;color:${info.accentColor};text-shadow:0 0 20px ${info.accentColor}80;">${info.kanji}</div>
