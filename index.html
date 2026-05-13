@@ -5700,37 +5700,35 @@ let lastKnownTiers = {}; // { categoryId: 'bronze' }
 async function checkForNewStreakBonuses() {
   if (!currentKid?.id) return;
   
-  const lsKey = `spobu_kid_${currentKid.id}_last_streak_bonus_id`;
-  const lastSeenId = localStorage.getItem(lsKey);
+  const lsKey = `spobu_kid_${currentKid.id}_seen_streak_bonus_ids`;
+  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
   
-  // Užkrauname naujausius bonus log'us
+  // Užkrauname VISUS bonus log'us (naujausi pirma)
   const { data: bonuses } = await sb.from('streak_bonus_log')
-    .select('*')
+    .select('*, challenge_submissions(exp_gain, challenges(title))')
     .eq('kid_id', currentKid.id)
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(20);
   
   if (!bonuses || bonuses.length === 0) return;
   
-  // Surandam naujus (po lastSeenId)
-  let newBonuses = bonuses;
-  if (lastSeenId) {
-    const lastIdx = bonuses.findIndex(b => b.id === lastSeenId);
-    if (lastIdx > 0) {
-      newBonuses = bonuses.slice(0, lastIdx);
-    } else if (lastIdx === 0) {
-      newBonuses = [];
-    }
+  // Surandam NEMATYTUS
+  const newBonuses = bonuses.filter(b => !seenIds.has(b.id));
+  
+  if (newBonuses.length === 0) {
+    console.log('[streak popup] Nėra naujų bonus\'ų');
+    return;
   }
   
-  if (newBonuses.length === 0) return;
+  console.log(`[streak popup] Rodome ${newBonuses.length} naujų bonus'ų`);
   
-  // Atnaujint lastSeenId iš karto (kad nebenuolat rodytų)
-  localStorage.setItem(lsKey, bonuses[0].id);
+  // Pažymėt VISUS kaip matytus (kad nebepasirodytų)
+  bonuses.forEach(b => seenIds.add(b.id));
+  localStorage.setItem(lsKey, JSON.stringify([...seenIds]));
   
-  // Rodyti popup'us su delay
+  // Rodyti popup'us - nuo seniausio (chronologinė tvarka)
   newBonuses.reverse().forEach((bonus, idx) => {
-    setTimeout(() => showStreakBonusPopup(bonus), idx * 800);
+    setTimeout(() => showStreakBonusPopup(bonus), idx * 600 + 500);
   });
 }
 
@@ -5743,6 +5741,11 @@ function showStreakBonusPopup(bonus) {
   
   const cfg = typeConfig[bonus.streak_type] || typeConfig.training;
   
+  // Iššūkio info (jei yra)
+  const challengeTitle = bonus.challenge_submissions?.challenges?.title || 'Iššūkis';
+  const baseExp = bonus.challenge_submissions?.exp_gain || 0;
+  const totalExp = baseExp + bonus.exp_awarded;
+  
   // Sukuriam popup'ą
   const popup = document.createElement('div');
   popup.style.cssText = `
@@ -5753,9 +5756,9 @@ function showStreakBonusPopup(bonus) {
     background: linear-gradient(135deg, rgba(20,20,20,.98), rgba(10,10,10,.98));
     border: 2px solid ${cfg.color};
     border-radius: 24px;
-    padding: 30px;
+    padding: 24px;
     z-index: 999999;
-    max-width: 300px;
+    max-width: 320px;
     width: 90%;
     text-align: center;
     box-shadow: 0 20px 60px rgba(0,0,0,.7), 0 0 60px ${cfg.color}44;
@@ -5764,13 +5767,37 @@ function showStreakBonusPopup(bonus) {
   `;
   
   popup.innerHTML = `
-    <div style="font-size:64px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 0 16px ${cfg.color});">${cfg.icon}</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;color:${cfg.color};margin-bottom:4px;">${cfg.label} STREAK</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:white;line-height:1;letter-spacing:2px;text-shadow:0 0 20px ${cfg.color};">${bonus.streak_count}</div>
-    <div style="height:1px;background:linear-gradient(90deg,transparent,${cfg.color},transparent);margin:16px 0;"></div>
-    <div style="font-size:12px;color:rgba(255,255,255,.7);letter-spacing:1px;font-weight:700;text-transform:uppercase;margin-bottom:8px;">Streak Bonus</div>
-    <div style="display:inline-block;padding:8px 20px;background:${cfg.gradient};border-radius:99px;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:white;box-shadow:0 4px 16px ${cfg.color}66;">+${bonus.exp_awarded} EXP</div>
-    <div style="margin-top:14px;font-size:11px;color:rgba(255,255,255,.5);line-height:1.4;">Tęsk - kuo ilgesnis streak,<br>tuo daugiau EXP gausi!</div>
+    <!-- ✅ TRENERIO PATVIRTINIMAS -->
+    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">✓ TRENERIS PATVIRTINO</div>
+    
+    <!-- IŠŠŪKIO PAVADINIMAS -->
+    <div style="font-size:13px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:14px;line-height:1.3;">${challengeTitle}</div>
+    
+    <!-- DIDELIS ICON + STREAK COUNT -->
+    <div style="font-size:56px;line-height:1;margin-bottom:4px;filter:drop-shadow(0 0 16px ${cfg.color});">${cfg.icon}</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:3px;color:${cfg.color};margin-bottom:2px;">${cfg.label} STREAK</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:white;line-height:1;letter-spacing:2px;text-shadow:0 0 20px ${cfg.color};">${bonus.streak_count}</div>
+    
+    <div style="height:1px;background:linear-gradient(90deg,transparent,${cfg.color},transparent);margin:14px 0;"></div>
+    
+    <!-- EXP BREAKDOWN -->
+    ${baseExp > 0 ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:rgba(255,255,255,.05);border-radius:10px;margin-bottom:6px;">
+      <span style="font-size:11px;color:rgba(255,255,255,.7);font-weight:700;">💎 Iššūkio EXP</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:white;">+${baseExp}</span>
+    </div>
+    ` : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:${cfg.color}22;border-radius:10px;margin-bottom:10px;border:1px solid ${cfg.color}66;">
+      <span style="font-size:11px;color:${cfg.color};font-weight:800;">${cfg.icon} Streak bonus</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${cfg.color};text-shadow:0 0 8px ${cfg.color}66;">+${bonus.exp_awarded}</span>
+    </div>
+    
+    <!-- TOTAL EXP -->
+    <div style="display:inline-block;padding:10px 22px;background:${cfg.gradient};border-radius:99px;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:white;box-shadow:0 4px 16px ${cfg.color}66;">
+      VISO +${totalExp} EXP
+    </div>
+    
+    <div style="margin-top:12px;font-size:10px;color:rgba(255,255,255,.5);line-height:1.4;">Spauskit kad uždaryti</div>
   `;
   
   document.body.appendChild(popup);
@@ -5781,16 +5808,17 @@ function showStreakBonusPopup(bonus) {
     popup.style.transform = 'translate(-50%, -50%) scale(1)';
   });
   
-  // Auto-close po 3.5s
-  setTimeout(() => {
+  // Auto-close po 5s
+  const autoClose = setTimeout(() => {
     popup.style.opacity = '0';
     popup.style.transform = 'translate(-50%, -50%) scale(0.8)';
     setTimeout(() => popup.remove(), 400);
-  }, 3500);
+  }, 5000);
   
   // Click - close
   popup.style.cursor = 'pointer';
   popup.onclick = () => {
+    clearTimeout(autoClose);
     popup.style.opacity = '0';
     popup.style.transform = 'translate(-50%, -50%) scale(0.8)';
     setTimeout(() => popup.remove(), 400);
