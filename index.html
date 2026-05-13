@@ -7795,34 +7795,110 @@ async function loadNextEvent() {
   if (countdownEl) countdownEl.style.display = 'block';
 }
 
+// ════════════════════════════════════════
+// STREAK EXP SKAIČIAVIMAS
+// ════════════════════════════════════════
+const STREAK_BASES = {
+  training: 3,   // 🔥 Treniruočių
+  weekly: 7,    // 📅 Savaitinis
+  monthly: 12   // 🏆 Mėnesinis
+};
+
+// EXP už kiekvieną streak'o žingsnį (compound)
+// Streak 1 = 0 EXP (nėra streak)
+// Streak 2+ = bazė × 1.1^(streak-1), apvalintas
+function calculateStreakExp(type, streakCount) {
+  if (streakCount < 2) return 0;
+  const base = STREAK_BASES[type] || 3;
+  return Math.round(base * Math.pow(1.1, streakCount - 1));
+}
+
+// Visas EXP iš streak'o nuo 2 iki streakCount (suma)
+function calculateTotalStreakBonus(type, streakCount) {
+  if (streakCount < 2) return 0;
+  let total = 0;
+  for (let i = 2; i <= streakCount; i++) {
+    total += calculateStreakExp(type, i);
+  }
+  return total;
+}
+
 async function loadStreaks() {
   if (!currentKid?.id) return;
   
-  // Užkrauname DB streaks (vienkartiniai - visiems vietoms)
+  // ════════════════════════════════════════
+  // STREAK SKAIČIAVIMAS REAL-TIME iš submissions
+  // (vietoje statinio kid_streaks lentelės)
+  // ════════════════════════════════════════
+  
+  // Užkrauname iššūkius + jų submissions
+  const [allSubsRes, allChallengesRes] = await Promise.all([
+    sb.from('challenge_submissions')
+      .select('challenge_id, status, reviewed_at, created_at')
+      .eq('kid_id', currentKid.id)
+      .order('created_at', { ascending: true }),
+    sb.from('challenges')
+      .select('id, type, deadline, created_at')
+      .eq('club_id', currentKid.club_id)
+  ]);
+  
+  const allSubs = allSubsRes.data || [];
+  const allChallenges = allChallengesRes.data || [];
+  
+  // Iššūkių tipo lookup
+  const challengeTypes = {};
+  allChallenges.forEach(c => { challengeTypes[c.id] = c.type; });
+  
+  // Skaičiuojam streakus pagal tipą
+  const calculateStreak = (type) => {
+    // Imam VISUS approved submissions šio tipo, surūšiuotus pagal datą
+    const relevantSubs = allSubs
+      .filter(s => challengeTypes[s.challenge_id] === type && s.status === 'approved')
+      .sort((a, b) => new Date(b.reviewed_at || b.created_at) - new Date(a.reviewed_at || a.created_at));
+    
+    // Skaičiuojam streak nuo naujausiu atgal
+    let streak = relevantSubs.length;
+    return streak;
+  };
+  
+  const trainingStreak = calculateStreak('training');
+  const weeklyStreak = calculateStreak('weekly');
+  const monthlyStreak = calculateStreak('monthly');
+  
+  console.log('[loadStreaks] training:', trainingStreak, 'weekly:', weeklyStreak, 'monthly:', monthlyStreak);
+  
+  // ⭐ PAGRINDINIO LANGO streak'ai
+  const homeTraining = document.getElementById('v-home-streak-train-num');
+  const homeWeekly = document.getElementById('v-home-streak-week-num');
+  const homeMonthly = document.getElementById('v-home-streak-month-num');
+  if (homeTraining) homeTraining.textContent = trainingStreak;
+  if (homeWeekly) homeWeekly.textContent = weeklyStreak;
+  if (homeMonthly) homeMonthly.textContent = monthlyStreak;
+  
+  // Highlight aktyvius streakus (≥2 = streak prasidėjęs)
+  const trainCard = document.getElementById('v-home-streak-training');
+  const weekCard = document.getElementById('v-home-streak-weekly');
+  const monthCard = document.getElementById('v-home-streak-monthly');
+  if (trainCard) trainCard.style.background = trainingStreak >= 2 ? 'linear-gradient(135deg, rgba(255,77,0,.2), rgba(255,128,0,.05))' : '';
+  if (weekCard) weekCard.style.background = weeklyStreak >= 2 ? 'linear-gradient(135deg, rgba(255,77,0,.2), rgba(255,128,0,.05))' : '';
+  if (monthCard) monthCard.style.background = monthlyStreak >= 2 ? 'linear-gradient(135deg, rgba(255,77,0,.2), rgba(255,128,0,.05))' : '';
+  
+  // PROFILIO langas (jei yra senas v-streaks container)
+  const container = document.getElementById('v-streaks');
+  if (!container) return;
+  
+  // Old DB streaks fallback (profilyje)
   const { data: streaks } = await sb.from('kid_streaks')
     .select('*')
     .eq('kid_id', currentKid.id)
     .maybeSingle();
   
   const s = streaks || {
-    training_current: 0, training_best: 0, training_bonuses_earned: 0,
-    weekly_current: 0, weekly_best: 0, weekly_bonuses_earned: 0,
-    monthly_current: 0, monthly_best: 0, monthly_bonuses_earned: 0,
+    training_current: trainingStreak, training_best: trainingStreak, training_bonuses_earned: 0,
+    weekly_current: weeklyStreak, weekly_best: weeklyStreak, weekly_bonuses_earned: 0,
+    monthly_current: monthlyStreak, monthly_best: monthlyStreak, monthly_bonuses_earned: 0,
     total_streak_exp: 0
   };
-  
-  // ⭐ PAGRINDINIO LANGO streak'ai (kompaktiškas variantas)
-  const homeTraining = document.getElementById('v-home-streak-train-num');
-  const homeWeekly = document.getElementById('v-home-streak-week-num');
-  const homeMonthly = document.getElementById('v-home-streak-month-num');
-  if (homeTraining) homeTraining.textContent = s.training_current || 0;
-  if (homeWeekly) homeWeekly.textContent = s.weekly_current || 0;
-  if (homeMonthly) homeMonthly.textContent = s.monthly_current || 0;
-  
-  // PROFILIO langas (jei yra)
-  const container = document.getElementById('v-streaks');
-  if (!container) return;
-  
   // 3 streak konfigūracijos
   const streakConfigs = [
     {
