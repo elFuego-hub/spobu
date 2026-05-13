@@ -1079,8 +1079,10 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- DIRŽO JUOSTA - subtle dekoracija (parodo vaiko esamą kyu) -->
-    <div id="v-prof-belt-strip" style="height:5px;margin:8px 16px 0;border-radius:3px;background:linear-gradient(90deg,#fff,#e0e0e0);box-shadow:0 2px 8px rgba(0,0,0,.3);transition:background .5s;"></div>
+    <!-- DIRŽO SERTIFIKATAS - kyokushin stilius -->
+    <div id="v-prof-belt-cert" style="margin:8px 16px;">
+      <!-- Renderinama JS -->
+    </div>
     <div style="display:flex;gap:1px;background:var(--bdr);border-radius:16px;overflow:hidden;margin:12px 16px 12px;">
       <div style="flex:1;background:var(--card);padding:12px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-prof-exp">0</div><div style="font-size:10px;color:var(--mut);font-weight:700;margin-top:2px;">EXP</div></div>
       <div style="flex:1;background:var(--card);padding:12px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-prof-level">1</div><div style="font-size:10px;color:var(--mut);font-weight:700;margin-top:2px;">Lygis</div></div>
@@ -4590,11 +4592,10 @@ async function loadKidData() {
       : `Iki LVL ${stageInfo.globalLevel + 1}: +${stageInfo.expToNextLevel} EXP`;
   }
   
-  // Diržo juosta apačioje (pagal vaiko esamą kyu)
-  const beltStrip = document.getElementById('v-prof-belt-strip');
-  if (beltStrip) {
-    const beltGradient = getBeltColorByKyu(currentKid.kyu) || stage.beltGradient;
-    beltStrip.style.background = beltGradient;
+  // Diržo sertifikatas (Kyokushin stilius)
+  const beltCert = document.getElementById('v-prof-belt-cert');
+  if (beltCert) {
+    beltCert.innerHTML = renderBeltCertificate(currentKid.kyu, true);
   }
   
   // Diržas (header)
@@ -4758,18 +4759,79 @@ function getAvatarUrl(gender, totalExp) {
   return `${SUPABASE_URL}/storage/v1/object/public/avatars/${genderFolder}/stage-${stageIdx+1}-${stageName}.jpg`;
 }
 
-// Diržo gradient pagal kyu (Kyokushin sistema)
+// Diržo informacija pagal kyu (TIKRA Kyokushin sistema)
+function getBeltInfo(kyu) {
+  if (!kyu) return { name: 'Mu Kyu', color: 'BALTAS', kanji: '無', mainGradient: 'linear-gradient(180deg, #FFFFFF 0%, #E0E0E0 100%)', accentColor: '#FFFFFF', textColor: '#FFFFFF', stripe: null };
+  const k = String(kyu).toLowerCase().trim();
+  
+  // Pirma patikrina DAN
+  if (k.includes('10') && k.includes('dan')) return { name: '10 Dan', color: 'JUODAS', kanji: '十段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 10, color: 'gold' } };
+  if (k.includes('9') && k.includes('dan')) return { name: '9 Dan', color: 'JUODAS', kanji: '九段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 9, color: 'gold' } };
+  if (k.includes('8') && k.includes('dan')) return { name: '8 Dan', color: 'JUODAS', kanji: '八段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 8, color: 'gold' } };
+  if (k.includes('7') && k.includes('dan')) return { name: '7 Dan', color: 'JUODAS', kanji: '七段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 7, color: 'gold' } };
+  if (k.includes('6') && k.includes('dan')) return { name: '6 Dan', color: 'JUODAS', kanji: '六段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 6, color: 'gold' } };
+  if (k.includes('5') && k.includes('dan')) return { name: '5 Dan', color: 'JUODAS', kanji: '五段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 5, color: 'gold' } };
+  if (k.includes('4') && k.includes('dan')) return { name: '4 Dan', color: 'JUODAS', kanji: '四段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 4, color: 'gold' } };
+  if (k.includes('3') && k.includes('dan')) return { name: '3 Dan', color: 'JUODAS', kanji: '三段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 3, color: 'gold' } };
+  if (k.includes('2') && k.includes('dan')) return { name: '2 Dan', color: 'JUODAS', kanji: '二段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 2, color: 'gold' } };
+  if (k.includes('1') && k.includes('dan')) return { name: '1 Dan', color: 'JUODAS', kanji: '初段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 1, color: 'gold' } };
+  
+  // KYU lygiai (Kyokushin)
+  if (k.includes('1 kyu') || k === '1') return { name: '1 Kyu', color: 'RUDAS', kanji: '一', mainGradient: 'linear-gradient(180deg, #A1693B 0%, #8B4513 50%, #4A2304 100%)', accentColor: '#CD7F32', textColor: '#CD7F32', stripe: { type: 'single', color: 'linear-gradient(180deg, #2c2c2c, #000)' } };
+  if (k.includes('2 kyu') || k === '2') return { name: '2 Kyu', color: 'RUDAS', kanji: '二', mainGradient: 'linear-gradient(180deg, #A1693B 0%, #8B4513 50%, #4A2304 100%)', accentColor: '#CD7F32', textColor: '#CD7F32', stripe: null };
+  if (k.includes('3 kyu') || k === '3') return { name: '3 Kyu', color: 'ŽALIAS', kanji: '三', mainGradient: 'linear-gradient(180deg, #66BB6A 0%, #4CAF50 50%, #1B5E20 100%)', accentColor: '#66BB6A', textColor: '#66BB6A', stripe: { type: 'single', color: 'linear-gradient(180deg, #A1693B, #5D2906)' } };
+  if (k.includes('4 kyu') || k === '4') return { name: '4 Kyu', color: 'ŽALIAS', kanji: '四', mainGradient: 'linear-gradient(180deg, #66BB6A 0%, #4CAF50 50%, #1B5E20 100%)', accentColor: '#66BB6A', textColor: '#66BB6A', stripe: null };
+  if (k.includes('5 kyu') || k === '5') return { name: '5 Kyu', color: 'GELTONAS', kanji: '五', mainGradient: 'linear-gradient(180deg, #FFE600 0%, #FFD700 50%, #B8860B 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'single', color: 'linear-gradient(180deg, #66BB6A, #2E7D32)' } };
+  if (k.includes('6 kyu') || k === '6') return { name: '6 Kyu', color: 'GELTONAS', kanji: '六', mainGradient: 'linear-gradient(180deg, #FFE600 0%, #FFD700 50%, #B8860B 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: null };
+  if (k.includes('7 kyu') || k === '7') return { name: '7 Kyu', color: 'MĖLYNAS', kanji: '七', mainGradient: 'linear-gradient(180deg, #2E5C8A 0%, #1E3A5F 50%, #0F1E33 100%)', accentColor: '#4FC3F7', textColor: '#4FC3F7', stripe: { type: 'single', color: 'linear-gradient(180deg, #FFE600, #DAA520)' } };
+  if (k.includes('8 kyu') || k === '8') return { name: '8 Kyu', color: 'MĖLYNAS', kanji: '八', mainGradient: 'linear-gradient(180deg, #2E5C8A 0%, #1E3A5F 50%, #0F1E33 100%)', accentColor: '#4FC3F7', textColor: '#4FC3F7', stripe: null };
+  if (k.includes('9 kyu') || k === '9') return { name: '9 Kyu', color: 'ORANŽINIS', kanji: '九', mainGradient: 'linear-gradient(180deg, #FFA500 0%, #FF8C00 50%, #E65100 100%)', accentColor: '#FF8C00', textColor: '#FF8C00', stripe: { type: 'single', color: 'linear-gradient(180deg, #4A90E2, #1E3A5F)' } };
+  if (k.includes('10 kyu') || k === '10') return { name: '10 Kyu', color: 'ORANŽINIS', kanji: '十', mainGradient: 'linear-gradient(180deg, #FFA500 0%, #FF8C00 50%, #E65100 100%)', accentColor: '#FF8C00', textColor: '#FF8C00', stripe: null };
+  
+  // Mu Kyu (default - baltas)
+  return { name: 'Mu Kyu', color: 'BALTAS', kanji: '無', mainGradient: 'linear-gradient(180deg, #FFFFFF 0%, #E0E0E0 100%)', accentColor: '#FFFFFF', textColor: '#FFFFFF', stripe: null };
+}
+
+// Diržo gradient pagal kyu (UŽ kompatibilumas - naudoja getBeltInfo)
 function getBeltColorByKyu(kyu) {
-  if (!kyu) return 'linear-gradient(90deg,#fff,#e0e0e0)';
-  const k = String(kyu).toLowerCase();
-  if (k.includes('10')) return 'linear-gradient(90deg,#fff,#e0e0e0)';                            // baltas
-  if (k.includes('9') || k.includes('8')) return 'linear-gradient(90deg,#FF8C00,#FF6B00)';      // oranžinis (I, II)
-  if (k.includes('7') || k.includes('6')) return 'linear-gradient(90deg,#4A90E2,#2E5C8A)';      // mėlynas (I, II)
-  if (k.includes('5') || k.includes('4')) return 'linear-gradient(90deg,#FFD700,#DAA520)';      // geltonas (I, II)
-  if (k.includes('3') || k.includes('2')) return 'linear-gradient(90deg,#4CAF50,#2E7D32)';      // žalias (I, II)
-  if (k.includes('1 kyu')) return 'linear-gradient(90deg,#8B4513,#5D2906)';                     // rudas
-  if (k.includes('dan')) return 'linear-gradient(90deg,#1a1a1a,#000)';                          // juodas
-  return 'linear-gradient(90deg,#fff,#e0e0e0)';
+  const info = getBeltInfo(kyu);
+  // Konvertuoja vertikalų gradient'ą į horizontalų (90deg)
+  return info.mainGradient.replace('180deg', '90deg');
+}
+
+// Sukuria sertifikato HTML pagal kyu
+function renderBeltCertificate(kyu, isCurrent) {
+  const info = getBeltInfo(kyu);
+  const isDan = info.name.toLowerCase().includes('dan');
+  
+  let stripeHtml = '';
+  if (info.stripe) {
+    if (info.stripe.type === 'single') {
+      stripeHtml = `<div style="position:absolute;right:8%;top:0;bottom:0;width:5px;background:${info.stripe.color};box-shadow:inset 0 0 2px rgba(0,0,0,.4);"></div>`;
+    } else if (info.stripe.type === 'multi') {
+      const stripes = Array.from({length: info.stripe.count}).map(() => 
+        '<div style="width:3px;height:80%;background:linear-gradient(180deg,#FFE600,#DAA520);box-shadow:0 0 4px rgba(255,215,0,.7);"></div>'
+      ).join('');
+      stripeHtml = `<div style="position:absolute;right:8%;top:0;bottom:0;display:flex;gap:3px;align-items:center;">${stripes}</div>`;
+    }
+  }
+  
+  const danGlow = isDan ? 'box-shadow:0 8px 30px rgba(255,215,0,.4),inset 0 0 30px rgba(0,0,0,.3);' : '';
+  const tavoBadge = isCurrent ? '<div style="position:absolute;top:8px;right:8px;background:#FF4D00;color:white;font-size:8px;font-weight:800;padding:3px 6px;border-radius:4px;letter-spacing:1px;box-shadow:0 2px 8px rgba(255,77,0,.5);z-index:5;">⭐ TAVO</div>' : '';
+  
+  return `
+    <div style="border-radius:12px;padding:16px;position:relative;border:2px solid ${info.accentColor};background:linear-gradient(135deg,${info.accentColor}22,${info.accentColor}05);${danGlow}overflow:hidden;">
+      ${tavoBadge}
+      <div style="position:absolute;top:6px;left:6px;width:16px;height:16px;border-top:2px solid ${info.accentColor};border-left:2px solid ${info.accentColor};"></div>
+      <div style="position:absolute;bottom:6px;right:6px;width:16px;height:16px;border-bottom:2px solid ${info.accentColor};border-right:2px solid ${info.accentColor};"></div>
+      <div style="font-family:'Noto Serif JP','Hiragino Mincho ProN',serif;font-size:48px;font-weight:900;text-align:center;line-height:1;margin-bottom:10px;color:${info.accentColor};text-shadow:0 0 20px ${info.accentColor}80;">${info.kanji}</div>
+      <div style="height:18px;border-radius:3px;margin:8px 0;position:relative;box-shadow:inset 0 2px 4px rgba(255,255,255,.3),inset 0 -2px 4px rgba(0,0,0,.4);overflow:hidden;background:${info.mainGradient};">
+        ${stripeHtml}
+      </div>
+      <div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;margin-top:6px;color:${info.textColor};">${info.name.toUpperCase()}</div>
+      <div style="text-align:center;font-size:10px;margin-top:3px;letter-spacing:1px;opacity:.7;color:${info.textColor};">${info.color}</div>
+    </div>
+  `;
 }
 
 function updateExpBar(totalExp, level) {
