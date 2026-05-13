@@ -695,8 +695,8 @@ select.inp option{background:#222;}
     
     <label class="lbl">IKONA</label>
     <div class="chs" style="margin-bottom:14px;" id="cc-icons">
-      <div class="ch on" onclick="selectChallengeIcon(this,'⚡')">⚡</div>
-      <div class="ch" onclick="selectChallengeIcon(this,'🎯')">🎯</div>
+      <div class="ch on" onclick="selectChallengeIcon(this,'🎯')">🎯</div>
+      <div class="ch" onclick="selectChallengeIcon(this,'🔥')">🔥</div>
       <div class="ch" onclick="selectChallengeIcon(this,'🔥')">🔥</div>
       <div class="ch" onclick="selectChallengeIcon(this,'💪')">💪</div>
       <div class="ch" onclick="selectChallengeIcon(this,'🏃')">🏃</div>
@@ -704,7 +704,7 @@ select.inp option{background:#222;}
       <div class="ch" onclick="selectChallengeIcon(this,'🧘')">🧘</div>
       <div class="ch" onclick="selectChallengeIcon(this,'🥋')">🥋</div>
     </div>
-    <input type="hidden" id="cc-icon" value="⚡">
+    <input type="hidden" id="cc-icon" value="🎯">
     
     <!-- GAVĖJAI -->
     <label class="lbl">KAM SKIRTAS?</label>
@@ -888,7 +888,7 @@ select.inp option{background:#222;}
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--br);" id="v-career-exp">0</div>
       </div>
       <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px 10px;text-align:center;cursor:pointer;" onclick="g('v','v-ish')">
-        <div style="font-size:20px;margin-bottom:6px;">⚡</div>
+        <div style="font-size:20px;margin-bottom:6px;">🎯</div>
         <div style="font-size:10px;font-weight:700;color:var(--mut);">Iššūkiai</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--br);" id="v-challenges-exp">0</div>
       </div>
@@ -907,7 +907,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni on" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic">🏋️</span><span class="lb">Karjera</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-stat')"><span class="ic">📊</span><span class="lb">Statistika</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -937,7 +937,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('v',this,'v-kar')"><span class="ic">🏋️</span><span class="lb">Karjera</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-stat')"><span class="ic">📊</span><span class="lb">Statistika</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -951,7 +951,7 @@ select.inp option{background:#222;}
   <div class="sa">
     <!-- Tabai -->
     <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">⚡ AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
+      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🎯 AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
       <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">📦 ATLIKTI <span id="v-completed-count" style="opacity:.7;">0</span></button>
     </div>
     
@@ -962,7 +962,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic">🏋️</span><span class="lb">Karjera</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('v',this,'v-ish')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('v',this,'v-ish')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-stat')"><span class="ic">📊</span><span class="lb">Statistika</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -989,7 +989,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic">🏋️</span><span class="lb">Karjera</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('v',this,'v-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-stat')"><span class="ic">📊</span><span class="lb">Statistika</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -1011,7 +1011,7 @@ select.inp option{background:#222;}
     <div style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;padding-bottom:4px;">
       <button class="stat-tab on" data-tab="overall" onclick="switchStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
       <button class="stat-tab" data-tab="skills" onclick="switchStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
-      <button class="stat-tab" data-tab="challenges" onclick="switchStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">⚡ IŠŠŪKIAI</button>
+      <button class="stat-tab" data-tab="challenges" onclick="switchStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
       <button class="stat-tab" data-tab="competitions" onclick="switchStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
     </div>
     
@@ -1039,7 +1039,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic">🏋️</span><span class="lb">Karjera</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('v',this,'v-stat')"><span class="ic">📊</span><span class="lb">Statistika</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -1100,7 +1100,7 @@ select.inp option{background:#222;}
       </div>
       
       <!-- IŠŠŪKIŲ BADGE (su tier sistema, unlimited EXP) -->
-      <div style="font-size:11px;font-weight:800;color:var(--mut);margin:18px 0 12px;letter-spacing:1px;">⚡ IŠŠŪKIŲ MEISTRAS</div>
+      <div style="font-size:11px;font-weight:800;color:var(--mut);margin:18px 0 12px;letter-spacing:1px;">🎯 IŠŠŪKIŲ MEISTRAS</div>
       <div id="v-challenge-badge" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;padding:14px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);" onclick="openClubChallengeLeaderboard()">
         <div style="text-align:center;padding:12px 0;color:var(--mut);font-size:12px;">Kraunama...</div>
       </div>
@@ -1129,7 +1129,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic">🏋️</span><span class="lb">Karjera</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-stat')"><span class="ic">📊</span><span class="lb">Statistika</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('v',this,'v-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -1220,7 +1220,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni on" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
   </div>
@@ -1232,7 +1232,7 @@ select.inp option{background:#222;}
   <div class="tb"><div class="bb" onclick="g('tr','tr-main')">←</div><div class="tt">MANO IŠŠŪKIAI</div>
   <div style="background:var(--grn);color:white;font-size:16px;font-weight:800;padding:3px 10px;border-radius:99px;font-family:'Bebas Neue',sans-serif;" id="tr-my-challenges-count">0</div></div>
   <div class="tabs">
-    <div class="tab on" onclick="switchMyChallengesTab(this,'active')">⚡ Aktyvūs <span id="tr-active-count" style="opacity:.6;">0</span></div>
+    <div class="tab on" onclick="switchMyChallengesTab(this,'active')">🎯 Aktyvūs <span id="tr-active-count" style="opacity:.6;">0</span></div>
     <div class="tab" onclick="switchMyChallengesTab(this,'completed')">📦 Pasibaigę <span id="tr-completed-count" style="opacity:.6;">0</span></div>
   </div>
   <div class="sa">
@@ -1244,7 +1244,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('tr',this,'tr-challenges')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
   </div>
@@ -1257,7 +1257,7 @@ select.inp option{background:#222;}
   <div style="background:var(--br);color:white;font-size:16px;font-weight:800;padding:3px 10px;border-radius:99px;font-family:'Bebas Neue',sans-serif;" id="tr-pending-badge">0</div></div>
   <div class="tabs">
     <div class="tab on" onclick="switchTrTab(this,'career')">🏋️ Karjera <span id="tr-career-count" style="opacity:.6;">0</span></div>
-    <div class="tab" onclick="switchTrTab(this,'challenges')">⚡ Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
+    <div class="tab" onclick="switchTrTab(this,'challenges')">🎯 Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
     <div class="tab" onclick="switchTrTab(this,'competitions')">🥇 Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
   </div>
   <div class="sa">
@@ -1277,7 +1277,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
   </div>
@@ -1296,7 +1296,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
   </div>
@@ -1379,7 +1379,7 @@ select.inp option{background:#222;}
     <div style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;padding-bottom:4px;">
       <button class="trainer-stat-tab on" data-tab="overall" onclick="switchTrainerStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
       <button class="trainer-stat-tab" data-tab="skills" onclick="switchTrainerStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
-      <button class="trainer-stat-tab" data-tab="challenges" onclick="switchTrainerStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">⚡ IŠŠŪKIAI</button>
+      <button class="trainer-stat-tab" data-tab="challenges" onclick="switchTrainerStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
       <button class="trainer-stat-tab" data-tab="competitions" onclick="switchTrainerStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
     </div>
     
@@ -1401,7 +1401,7 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">⚡</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('tr',this,'tr-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
   </div>
@@ -1926,7 +1926,7 @@ select.inp option{background:#222;}
         <div style="font-size:10px;color:var(--mut);font-weight:700;">TRENERIAI</div>
       </div>
       <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
-        <div style="font-size:22px;margin-bottom:4px;">⚡</div>
+        <div style="font-size:22px;margin-bottom:4px;">🎯</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--br);" id="k-kids-count">0</div>
         <div style="font-size:10px;color:var(--mut);font-weight:700;">VAIKAI</div>
       </div>
@@ -2043,7 +2043,7 @@ select.inp option{background:#222;}
     <div style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;padding-bottom:4px;">
       <button class="club-stat-tab on" data-tab="overall" onclick="switchClubStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
       <button class="club-stat-tab" data-tab="skills" onclick="switchClubStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
-      <button class="club-stat-tab" data-tab="challenges" onclick="switchClubStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">⚡ IŠŠŪKIAI</button>
+      <button class="club-stat-tab" data-tab="challenges" onclick="switchClubStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
       <button class="club-stat-tab" data-tab="competitions" onclick="switchClubStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
     </div>
     
@@ -2097,7 +2097,7 @@ select.inp option{background:#222;}
         <div style="font-size:10px;color:var(--mut);font-weight:700;">TRENERIAI</div>
       </div>
       <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
-        <div style="font-size:22px;margin-bottom:4px;">⚡</div>
+        <div style="font-size:22px;margin-bottom:4px;">🎯</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--br);" id="a-kids-count">0</div>
         <div style="font-size:10px;color:var(--mut);font-weight:700;">VAIKAI</div>
       </div>
@@ -3838,7 +3838,7 @@ async function showKidDetail(kidId) {
       <div style="display:flex;gap:6px;margin:0 16px 14px;overflow-x:auto;padding-bottom:4px;">
         <button class="parent-stat-tab on" data-tab="overall" onclick="switchParentStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
         <button class="parent-stat-tab" data-tab="skills" onclick="switchParentStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
-        <button class="parent-stat-tab" data-tab="challenges" onclick="switchParentStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">⚡ IŠŠŪKIAI</button>
+        <button class="parent-stat-tab" data-tab="challenges" onclick="switchParentStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
         <button class="parent-stat-tab" data-tab="competitions" onclick="switchParentStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
       </div>
       
@@ -4992,7 +4992,7 @@ function showCompetitionCelebration(placement, competitionTitle = '', expEarned 
         ${placement}-A VIETA
       </div>
       
-      ${expEarned > 0 ? `<div style="display:inline-block;background:rgba(0,0,0,.3);padding:6px 16px;border-radius:99px;font-size:12px;color:white;font-weight:800;letter-spacing:1px;margin-bottom:14px;">⚡ +${expEarned} EXP</div>` : ''}
+      ${expEarned > 0 ? `<div style="display:inline-block;background:rgba(0,0,0,.3);padding:6px 16px;border-radius:99px;font-size:12px;color:white;font-weight:800;letter-spacing:1px;margin-bottom:14px;">🎯 +${expEarned} EXP</div>` : ''}
       
       <div style="font-size:13px;color:rgba(255,255,255,.95);line-height:1.5;margin-bottom:20px;font-style:italic;padding:0 10px;">
         "${reward.message}"
@@ -5164,7 +5164,7 @@ window.testBelt = function(newKyu = '9 kyu') {
 };
 
 // ════════════════════════════════════════
-// ⚡ IŠŠŪKIO ĮVEIKIMO CELEBRATION
+// 🎯 IŠŠŪKIO ĮVEIKIMO CELEBRATION
 // ════════════════════════════════════════
 
 function showChallengeCelebration(challengeName, expEarned = 0) {
@@ -5201,7 +5201,7 @@ function showChallengeCelebration(challengeName, expEarned = 0) {
       <div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.2) 0%, transparent 50%);pointer-events:none;"></div>
       
       <div style="font-size:11px;color:rgba(0,0,0,.7);font-weight:800;letter-spacing:3px;margin-bottom:12px;">
-        ⚡ IŠŠŪKIS ĮVEIKTAS! ⚡
+        🎯 IŠŠŪKIS ĮVEIKTAS! 🎯
       </div>
       
       <div style="font-size:80px;margin:14px 0;line-height:1;animation:bounce 1.5s infinite;">💪</div>
@@ -5210,7 +5210,7 @@ function showChallengeCelebration(challengeName, expEarned = 0) {
         ${escapeHtml(challengeName)}
       </div>
       
-      ${expEarned > 0 ? `<div style="display:inline-block;background:rgba(0,0,0,.2);padding:6px 16px;border-radius:99px;font-size:12px;color:#333;font-weight:800;letter-spacing:1px;margin-bottom:14px;">⚡ +${expEarned} EXP</div>` : ''}
+      ${expEarned > 0 ? `<div style="display:inline-block;background:rgba(0,0,0,.2);padding:6px 16px;border-radius:99px;font-size:12px;color:#333;font-weight:800;letter-spacing:1px;margin-bottom:14px;">🎯 +${expEarned} EXP</div>` : ''}
       
       <div style="font-size:13px;color:rgba(0,0,0,.8);line-height:1.5;margin-bottom:20px;font-style:italic;padding:0 10px;">
         "${message}"
@@ -5222,7 +5222,7 @@ function showChallengeCelebration(challengeName, expEarned = 0) {
         font-size:14px;font-weight:900;letter-spacing:1px;
         cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.2);
       ">
-        TOLYN! ⚡
+        TOLYN! 🎯
       </button>
     </div>
   `;
@@ -5437,7 +5437,7 @@ async function loadCategories() {
     const pct = Math.min(100, cappedExp / 600 * 100);
     
     return `<div class="ri" style="cursor:pointer;" onclick="showExercises('${cat.id}','${cat.name}')">
-      <div style="font-size:18px;">${cat.icon||'💪'}</div>
+      <div style="font-size:18px;">${CATEGORY_ICONS[cat.name] || '💪'}</div>
       <div style="flex:1;"><div style="display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:800;">${cat.name}</span><span style="font-size:11px;color:var(--mut);">${cappedExp}/600</span></div>
       <div class="pb2"><div class="pf" style="width:${pct}%;background:var(--br);"></div></div></div>
       <div class="bg ${badgeClass}">${badge}</div>
@@ -5460,6 +5460,8 @@ const CATEGORY_ICONS = {
   'Lankstumas': '🤸',
   'Greitis': '⚡',
   'Karate atributika': '🎓',
+  'Atributika': '🎓',
+  'Karate Atributika': '🎓',
   'Drausmė': '🧘'
 };
 
@@ -5506,7 +5508,7 @@ async function loadBadges() {
   const html = cats.map(cat => {
     const exp = Math.min(expByCategory[cat.id] || 0, 600);
     const tier = getTierFromExp(exp);
-    const icon = CATEGORY_ICONS[cat.name] || cat.icon || '💪';
+    const icon = CATEGORY_ICONS[cat.name] || '💪';
     return `<div class="skb skb-${tier}" title="${cat.name}: ${exp}/600 EXP">
       <div class="skb-circle">${icon}</div>
       <div class="skb-name">${cat.name}</div>
@@ -5812,7 +5814,7 @@ async function loadChallenges() {
     return `<div class="cd" style="margin-bottom:10px;${cardOpacity}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
         <div style="flex:1;">
-          <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${ch.icon || '⚡'} ${ch.title}</div>
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${ch.icon || '🎯'} ${ch.title}</div>
           <div style="font-size:11px;color:var(--mut);margin-bottom:6px;">${typeIcons[ch.type] || '⚡'} ${typeLabels[ch.type] || ch.type} · ${timeInfo}</div>
           ${target ? `<div style="font-size:12px;color:var(--br);font-weight:700;margin-bottom:4px;">${target}</div>` : ''}
           ${ch.description ? `<div style="font-size:12px;color:var(--mut);line-height:1.4;">${ch.description}</div>` : ''}
@@ -5854,7 +5856,7 @@ async function openSubmitChallenge(challengeId) {
   currentChallengeForSubmission = challenge;
   
   // Užpildyti modal'o turinį
-  document.getElementById('vsc-icon').textContent = challenge.icon || '⚡';
+  document.getElementById('vsc-icon').textContent = challenge.icon || '🎯';
   document.getElementById('vsc-title').textContent = challenge.title;
   document.getElementById('vsc-target').textContent = challenge.target_value 
     ? `🎯 Tikslas: ${challenge.target_value} ${challenge.target_unit || ''}`
@@ -8220,7 +8222,7 @@ async function loadCompetitionsStatTab() {
   }
 }
 
-// ⚡ CHALLENGES TAB - iššūkių leaderboard'as
+// 🎯 CHALLENGES TAB - iššūkių leaderboard'as
 async function loadChallengeStatTab() {
   const container = document.getElementById('stat-tab-challenges');
   if (!container) return;
@@ -8488,7 +8490,7 @@ async function loadParentSkillsStatTab() {
   }
 }
 
-// ⚡ CHALLENGES TAB tėvams
+// 🎯 CHALLENGES TAB tėvams
 async function loadParentChallengeStatTab() {
   const container = document.getElementById('parent-stat-tab-challenges');
   if (!container || !currentParentKid?.id) return;
@@ -11378,7 +11380,7 @@ async function openCreateChallenge() {
   document.getElementById('cc-description').value = '';
   document.getElementById('cc-exp').value = '10';
   document.getElementById('cc-type').value = 'weekly';
-  document.getElementById('cc-icon').value = '⚡';
+  document.getElementById('cc-icon').value = '🎯';
   document.getElementById('cc-content-type').value = 'achievement';
   document.getElementById('cc-target-value').value = '';
   document.getElementById('cc-target-unit').value = CHALLENGE_CONTENT_CONFIG.achievement.unit;
@@ -11821,7 +11823,7 @@ async function loadTrainerOwnChallenges() {
     return `<div class="cd" style="margin-bottom:12px;${cardOpacity}" id="own-ch-${ch.id}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${ch.icon || '⚡'} ${ch.title}</div>
+          <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${ch.icon || '🎯'} ${ch.title}</div>
           <div style="font-size:11px;color:var(--mut);">${typeLabels[ch.type] || ch.type} · 🎯 ${ch.target_value || '?'} ${ch.target_unit || ''} · +${ch.exp_reward} EXP</div>
         </div>
         ${statusBadge}
@@ -12086,7 +12088,7 @@ async function loadPendingChallengeSubmissions() {
         <div class="av" style="width:36px;height:36px;font-size:14px;background:var(--br);">${kid?.first_name?.[0]||'?'}</div>
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:900;">${kidName}</div>
-          <div style="font-size:11px;color:var(--mut);">${ch?.icon||'⚡'} ${ch?.title||'Iššūkis'}</div>
+          <div style="font-size:11px;color:var(--mut);">${ch?.icon||'🎯'} ${ch?.title||'Iššūkis'}</div>
         </div>
         <div class="bg or">${typeLabels[ch?.type]||ch?.type||''}</div>
       </div>
