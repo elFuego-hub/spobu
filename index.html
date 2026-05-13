@@ -6,7 +6,7 @@
 <title>Spobu</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FF4D00">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;800;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
 <!-- GLOBAL ERROR CATCHER - rodo VISKĄ ant ekrano (debugging) -->
 <script>
 window.addEventListener('error', function(e) {
@@ -1051,13 +1051,36 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">PROFILIS</div></div>
   <div class="sa">
-    <div class="hero" style="background:linear-gradient(135deg,var(--br),var(--br2));">
-      <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;margin:0 auto 10px;" id="v-prof-avatar">?</div>
-      <div style="text-align:center;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="v-prof-name">–</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px;" id="v-prof-club">–</div>
+    <div class="hero" id="v-prof-hero" style="background:linear-gradient(135deg,var(--br),var(--br2));padding:24px 16px;border-radius:24px;text-align:center;position:relative;overflow:hidden;">
+      <!-- KANJI + PROGRESS RING -->
+      <div style="position:relative;width:220px;height:220px;margin:0 auto 14px;">
+        <svg id="v-prof-progress-ring" style="position:absolute;inset:0;transform:rotate(-90deg);" viewBox="0 0 220 220">
+          <circle cx="110" cy="110" r="100" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/>
+          <circle id="v-prof-progress-circle" cx="110" cy="110" r="100" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-dasharray="628" stroke-dashoffset="628" style="transition:stroke-dashoffset .8s ease-out;"/>
+        </svg>
+        <div style="position:absolute;inset:18px;border-radius:50%;background:rgba(0,0,0,.4);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 40px rgba(0,0,0,.4), 0 8px 32px rgba(0,0,0,.3);" id="v-prof-kanji-circle">
+          <div id="v-prof-kanji" style="font-family:'Noto Serif JP', 'Hiragino Mincho ProN', serif;font-size:100px;font-weight:900;line-height:1;text-shadow:0 4px 12px rgba(0,0,0,.4);margin-bottom:4px;color:#FFFFFF;">始</div>
+          <div id="v-prof-lvl-num" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:white;line-height:1;">LVL 1</div>
+          <div id="v-prof-lvl-exp" style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:700;margin-top:2px;">0 EXP</div>
+        </div>
+      </div>
+      
+      <!-- STADIJOS ANTRASTĖ -->
+      <div style="text-align:center;margin-bottom:4px;">
+        <div id="v-prof-stage-title" style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:4px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.3);color:white;">🌱 NAUJOKAS</div>
+        <div id="v-prof-stage-meaning" style="font-size:10px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:700;margin-top:6px;">PRADŽIA · KELIO RADIMAS</div>
+        <div id="v-prof-stage-next" style="font-size:10px;color:rgba(255,255,255,.6);margin-top:4px;">Iki LVL 2: +100 EXP</div>
+      </div>
+      
+      <!-- VARDAS IR KLUBAS -->
+      <div style="text-align:center;border-top:.5px solid rgba(255,255,255,.2);padding-top:12px;margin-top:14px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;" id="v-prof-name">–</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px;" id="v-prof-club">–</div>
       </div>
     </div>
+    
+    <!-- DIRŽO JUOSTA - subtle dekoracija (parodo vaiko esamą kyu) -->
+    <div id="v-prof-belt-strip" style="height:5px;margin:8px 16px 0;border-radius:3px;background:linear-gradient(90deg,#fff,#e0e0e0);box-shadow:0 2px 8px rgba(0,0,0,.3);transition:background .5s;"></div>
     <div style="display:flex;gap:1px;background:var(--bdr);border-radius:16px;overflow:hidden;margin:12px 16px 12px;">
       <div style="flex:1;background:var(--card);padding:12px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-prof-exp">0</div><div style="font-size:10px;color:var(--mut);font-weight:700;margin-top:2px;">EXP</div></div>
       <div style="flex:1;background:var(--card);padding:12px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-prof-level">1</div><div style="font-size:10px;color:var(--mut);font-weight:700;margin-top:2px;">Lygis</div></div>
@@ -4504,10 +4527,75 @@ async function loadKidData() {
   document.getElementById('v-name').textContent = name + ' 🥋';
   document.getElementById('v-avatar').textContent = currentProfile.first_name?.[0] || '?';
   document.getElementById('v-prof-name').textContent = name;
-  document.getElementById('v-prof-avatar').textContent = currentProfile.first_name?.[0] || '?';
   document.getElementById('v-prof-exp').textContent = (currentKid.total_exp || 0).toLocaleString();
   document.getElementById('v-prof-level').textContent = currentKid.current_level || 1;
   document.getElementById('v-prof-record').textContent = `${currentKid.wins||0}–${currentKid.losses||0}`;
+  
+  // 🎨 KANJI + PROGRESS RING - profilyje
+  const totalExp = currentKid.total_exp || 0;
+  const stageInfo = getStageInfo(totalExp);
+  const stageIdx = STAGES.findIndex(s => s.name === stageInfo.stage);
+  const stage = STAGES[stageIdx] || STAGES[0];
+  
+  // Hero fonas
+  const profHero = document.getElementById('v-prof-hero');
+  if (profHero) profHero.style.background = stage.bgGradient;
+  
+  // Kanji
+  const kanjiEl = document.getElementById('v-prof-kanji');
+  if (kanjiEl) {
+    kanjiEl.textContent = stage.kanji;
+    kanjiEl.style.color = stage.color;
+    // Glow efektai Legendai/Drakonui/HoF
+    if (stageIdx >= 5) {
+      kanjiEl.style.textShadow = `0 0 20px ${stage.color}`;
+    } else {
+      kanjiEl.style.textShadow = '0 4px 12px rgba(0,0,0,.4)';
+    }
+  }
+  
+  // Progress ring
+  const progressCircle = document.getElementById('v-prof-progress-circle');
+  if (progressCircle) {
+    const circumference = 628; // 2 * PI * 100
+    const offset = circumference - (stageInfo.progressPercent / 100) * circumference;
+    progressCircle.style.strokeDashoffset = offset;
+    progressCircle.setAttribute('stroke', stage.color);
+    if (stageIdx >= 5) {
+      progressCircle.style.filter = `drop-shadow(0 0 8px ${stage.color})`;
+    } else {
+      progressCircle.style.filter = 'none';
+    }
+  }
+  
+  // LVL + EXP centre
+  const lvlNumEl = document.getElementById('v-prof-lvl-num');
+  const lvlExpEl = document.getElementById('v-prof-lvl-exp');
+  if (lvlNumEl) lvlNumEl.textContent = `LVL ${stageInfo.globalLevel}`;
+  if (lvlExpEl) lvlExpEl.textContent = stageInfo.isHallOfFame ? '⭐ MAX ⭐' : `${totalExp.toLocaleString()} EXP`;
+  
+  // Stadijos antraste
+  const stageTitleEl = document.getElementById('v-prof-stage-title');
+  const stageMeaningEl = document.getElementById('v-prof-stage-meaning');
+  const stageNextEl = document.getElementById('v-prof-stage-next');
+  if (stageTitleEl) {
+    stageTitleEl.textContent = `${stage.emoji} ${stage.name.toUpperCase()}`;
+    stageTitleEl.style.color = stageIdx >= 5 ? stage.color : 'white';
+    if (stageIdx >= 5) stageTitleEl.style.textShadow = `0 0 12px ${stage.color}`;
+  }
+  if (stageMeaningEl) stageMeaningEl.textContent = stage.meaning;
+  if (stageNextEl) {
+    stageNextEl.textContent = stageInfo.isHallOfFame 
+      ? '⭐ MAKSIMALUS LYGIS' 
+      : `Iki LVL ${stageInfo.globalLevel + 1}: +${stageInfo.expToNextLevel} EXP`;
+  }
+  
+  // Diržo juosta apačioje (pagal vaiko esamą kyu)
+  const beltStrip = document.getElementById('v-prof-belt-strip');
+  if (beltStrip) {
+    const beltGradient = getBeltColorByKyu(currentKid.kyu) || stage.beltGradient;
+    beltStrip.style.background = beltGradient;
+  }
   
   // Diržas (header)
   updateBeltDisplay();
@@ -4597,14 +4685,14 @@ async function loadKidData() {
 // STADIJŲ SISTEMA - 99 lvl iki Hall of Fame
 // ════════════════════════════════════════
 const STAGES = [
-  { name: 'Naujokas',     emoji: '🌱', minExp: 0,     maxExp: 999    },
-  { name: 'Pažengęs',     emoji: '💪', minExp: 1000,  maxExp: 2499   },
-  { name: 'Patyręs',      emoji: '🥋', minExp: 2500,  maxExp: 4999   },
-  { name: 'Ekspertas',    emoji: '⚔️', minExp: 5000,  maxExp: 8999   },
-  { name: 'Čempionas',    emoji: '🏆', minExp: 9000,  maxExp: 14499  },
-  { name: 'Legenda',      emoji: '👑', minExp: 14500, maxExp: 20999  },
-  { name: 'Drakonas',     emoji: '🐉', minExp: 21000, maxExp: 29999  },
-  { name: 'Hall of Fame', emoji: '✨', minExp: 30000, maxExp: Infinity }
+  { name: 'Naujokas',     emoji: '🌱', kanji: '始', meaning: 'PRADŽIA · KELIO RADIMAS',     color: '#FFFFFF', bgGradient: 'linear-gradient(135deg, #2C3E50, #4A6172)', beltGradient: 'linear-gradient(90deg,#fff,#e0e0e0)',          minExp: 0,     maxExp: 999    },
+  { name: 'Pažengęs',     emoji: '💪', kanji: '力', meaning: 'JĖGA · POTENCIALAS',          color: '#FF8C00', bgGradient: 'linear-gradient(135deg, #5C2E00, #8B4500)', beltGradient: 'linear-gradient(90deg,#FF8C00,#FF6B00)',      minExp: 1000,  maxExp: 2499   },
+  { name: 'Patyręs',      emoji: '🥋', kanji: '武', meaning: 'KARYS · TECHNIKA',            color: '#4FC3F7', bgGradient: 'linear-gradient(135deg, #1E3A5F, #2E5C8A)', beltGradient: 'linear-gradient(90deg,#4A90E2,#2E5C8A)',      minExp: 2500,  maxExp: 4999   },
+  { name: 'Ekspertas',    emoji: '⚔️', kanji: '戦', meaning: 'KOVA · MEISTRIŠKUMAS',        color: '#66BB6A', bgGradient: 'linear-gradient(135deg, #1E4D1E, #2E7D32)', beltGradient: 'linear-gradient(90deg,#4CAF50,#2E7D32)',      minExp: 5000,  maxExp: 8999   },
+  { name: 'Čempionas',    emoji: '🏆', kanji: '勝', meaning: 'PERGALĖ · TURNYRŲ KARYS',     color: '#D4A056', bgGradient: 'linear-gradient(135deg, #4A2C00, #6B3C00)', beltGradient: 'linear-gradient(90deg,#8B4513,#5D2906)',      minExp: 9000,  maxExp: 14499  },
+  { name: 'Legenda',      emoji: '👑', kanji: '王', meaning: 'KARALIUS · ŠVENTAS KELIAS',   color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',         minExp: 14500, maxExp: 20999  },
+  { name: 'Drakonas',     emoji: '🐉', kanji: '龍', meaning: 'ŽVĖRIES DVASIA · UGNIS',       color: '#FF4500', bgGradient: 'linear-gradient(135deg, #2D0000, #5D0000)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',         minExp: 21000, maxExp: 29999  },
+  { name: 'Hall of Fame', emoji: '✨', kanji: '聖', meaning: 'ŠVENTAS · AMŽINOJI ŠLOVĖ',     color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#FFD700,#FFA500)',      minExp: 30000, maxExp: Infinity }
 ];
 
 // EXP slenksčiai kiekvienam lvl (atitinka DB level_thresholds)
@@ -4656,6 +4744,32 @@ function getStageInfo(totalExp) {
     currentLevelExp,
     isHallOfFame: globalLevel === 99
   };
+}
+
+// Gauti avataro URL pagal lytį ir EXP
+function getAvatarUrl(gender, totalExp) {
+  const stageFileNames = ['naujokas', 'pazenges', 'patyres', 'ekspertas',
+                          'cempionas', 'legenda', 'drakonas', 'hof'];
+  const info = getStageInfo(totalExp);
+  const stageIdx = STAGES.findIndex(s => s.name === info.stage);
+  const stageName = stageFileNames[stageIdx] || 'naujokas';
+  const genderFolder = gender === 'female' ? 'girl' : 'boy';
+  
+  return `${SUPABASE_URL}/storage/v1/object/public/avatars/${genderFolder}/stage-${stageIdx+1}-${stageName}.jpg`;
+}
+
+// Diržo gradient pagal kyu (Kyokushin sistema)
+function getBeltColorByKyu(kyu) {
+  if (!kyu) return 'linear-gradient(90deg,#fff,#e0e0e0)';
+  const k = String(kyu).toLowerCase();
+  if (k.includes('10')) return 'linear-gradient(90deg,#fff,#e0e0e0)';                            // baltas
+  if (k.includes('9') || k.includes('8')) return 'linear-gradient(90deg,#FF8C00,#FF6B00)';      // oranžinis (I, II)
+  if (k.includes('7') || k.includes('6')) return 'linear-gradient(90deg,#4A90E2,#2E5C8A)';      // mėlynas (I, II)
+  if (k.includes('5') || k.includes('4')) return 'linear-gradient(90deg,#FFD700,#DAA520)';      // geltonas (I, II)
+  if (k.includes('3') || k.includes('2')) return 'linear-gradient(90deg,#4CAF50,#2E7D32)';      // žalias (I, II)
+  if (k.includes('1 kyu')) return 'linear-gradient(90deg,#8B4513,#5D2906)';                     // rudas
+  if (k.includes('dan')) return 'linear-gradient(90deg,#1a1a1a,#000)';                          // juodas
+  return 'linear-gradient(90deg,#fff,#e0e0e0)';
 }
 
 function updateExpBar(totalExp, level) {
