@@ -682,7 +682,7 @@ select.inp option{background:#222;}
     <!-- TRUKMĖS TIPAS -->
     <label class="lbl">TRUKMĖ</label>
     <div class="chs" style="margin-bottom:14px;" id="cc-types">
-      <div class="ch" onclick="selectChallengeType(this,'daily')" data-type="daily">☀️ Kasdienis (24h)</div>
+      <div class="ch" onclick="selectChallengeType(this,'training')" data-type="training">🏋️ Treniruotės (per treniruotę)</div>
       <div class="ch on" onclick="selectChallengeType(this,'weekly')" data-type="weekly">⚡ Savaitinis (7d)</div>
       <div class="ch" onclick="selectChallengeType(this,'monthly')" data-type="monthly">🎯 Mėnesinis (30d)</div>
       <div class="ch" onclick="selectChallengeType(this,'one_time')" data-type="one_time">✨ Vienkartinis</div>
@@ -855,14 +855,14 @@ select.inp option{background:#222;}
     </div>
     <div class="hero" style="background:linear-gradient(135deg,var(--br),var(--br2));">
       <div class="hbrand">SPOBU · EXP</div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-        <span style="font-size:12px;color:rgba(255,255,255,.75);">Bendras EXP</span>
-        <span style="font-size:13px;font-weight:800;" id="v-exp-txt">0 / 1000</span>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1.5px;color:white;margin:6px 0 8px;line-height:1.2;" id="v-level-txt">🌱 NAUJOKAS · LVL 1</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:11px;color:rgba(255,255,255,.75);font-weight:700;letter-spacing:1px;">EXP</span>
+        <span style="font-size:12px;font-weight:800;" id="v-exp-txt">0 / 100</span>
       </div>
       <div class="ebt"><div class="ebf" id="v-exp-bar" style="width:0%"></div></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-        <div class="lc"><div class="ld"></div><span id="v-level-txt">Naujokas · 1 lv.</span></div>
-        <div style="font-size:10px;color:rgba(255,255,255,.65);" id="v-next-txt"></div>
+      <div style="display:flex;justify-content:flex-end;align-items:center;margin-top:8px;">
+        <div style="font-size:10px;color:rgba(255,255,255,.85);font-weight:700;" id="v-next-txt"></div>
       </div>
     </div>
     
@@ -1068,6 +1068,12 @@ select.inp option{background:#222;}
       <div style="font-size:11px;font-weight:800;color:var(--mut);margin-bottom:12px;letter-spacing:1px;">🏆 SKILL BADGES</div>
       <div id="v-skill-badges" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
         <div style="text-align:center;padding:20px 0;color:var(--mut);font-size:12px;grid-column:span 4;">Kraunama...</div>
+      </div>
+      
+      <!-- 🔥 STREAK SEKCIJA - rodo 3 streak progresus -->
+      <div style="font-size:11px;font-weight:800;color:var(--mut);margin:18px 0 12px;letter-spacing:1px;">🔥 STREAK'AI</div>
+      <div id="v-streaks" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
+        <div style="text-align:center;padding:12px 0;color:var(--mut);font-size:12px;">Kraunama...</div>
       </div>
       
       <!-- IŠŠŪKIŲ BADGE (su tier sistema, unlimited EXP) -->
@@ -4580,27 +4586,106 @@ async function loadKidData() {
   // Iššūkių badge (tier sistema)
   await loadChallengeBadge();
   
+  // 🔥 Streak'ai
+  await loadStreaks();
+  
   // Patikrinam ar yra naujų pasiekimų (po pirmo užkrovimo, kitu kartu rodys popup)
   await checkForNewAchievements();
 }
 
-function updateExpBar(totalExp, level) {
-  // Surasti lygių ribas
-  const levels = [
-    {l:1,req:0},{l:2,req:200},{l:3,req:400},{l:4,req:600},{l:5,req:800},
-    {l:6,req:1000},{l:7,req:1300},{l:8,req:1600},{l:9,req:2000},{l:10,req:2400},
-    {l:11,req:3000}
-  ];
-  const curr = levels.find(x=>x.l===level) || levels[0];
-  const next = levels.find(x=>x.l===level+1);
-  const pct = next ? Math.min(100, (totalExp-curr.req)/(next.req-curr.req)*100) : 100;
-  const names = ['','Naujokas','Naujokas','Naujokas','Naujokas','Naujokas',
-    'Pažengęs','Pažengęs','Pažengęs','Pažengęs','Pažengęs','Patyręs'];
+// ════════════════════════════════════════
+// STADIJŲ SISTEMA - 99 lvl iki Hall of Fame
+// ════════════════════════════════════════
+const STAGES = [
+  { name: 'Naujokas',     emoji: '🌱', minExp: 0,     maxExp: 999    },
+  { name: 'Pažengęs',     emoji: '💪', minExp: 1000,  maxExp: 2499   },
+  { name: 'Patyręs',      emoji: '🥋', minExp: 2500,  maxExp: 4999   },
+  { name: 'Ekspertas',    emoji: '⚔️', minExp: 5000,  maxExp: 8999   },
+  { name: 'Čempionas',    emoji: '🏆', minExp: 9000,  maxExp: 14499  },
+  { name: 'Legenda',      emoji: '👑', minExp: 14500, maxExp: 20999  },
+  { name: 'Drakonas',     emoji: '🐉', minExp: 21000, maxExp: 29999  },
+  { name: 'Hall of Fame', emoji: '✨', minExp: 30000, maxExp: Infinity }
+];
 
-  document.getElementById('v-exp-bar').style.width = pct + '%';
-  document.getElementById('v-exp-txt').textContent = `${totalExp} / ${next?.req || '∞'}`;
-  document.getElementById('v-level-txt').textContent = `${names[level]||'Naujokas'} · ${level} lv.`;
-  if (next) document.getElementById('v-next-txt').textContent = `Iki kito: +${next.req-totalExp}`;
+// EXP slenksčiai kiekvienam lvl (atitinka DB level_thresholds)
+const LEVEL_THRESHOLDS = [
+  0,100,200,300,400,500,600,700,800,900,                          // 1-10 Naujokas (po 100)
+  1000,1150,1300,1450,1600,1750,1900,2050,2200,2350,              // 11-20 Pažengęs (po 150)
+  2500,2667,2834,3001,3168,3335,3502,3669,3836,4003,4170,4337,4504,4671,4838, // 21-35 Patyręs (po 167)
+  5000,5267,5534,5801,6068,6335,6602,6869,7136,7403,7670,7937,8204,8471,8738, // 36-50 Ekspertas (po 267)
+  9000,9367,9734,10101,10468,10835,11202,11569,11936,12303,12670,13037,13404,13771,14138, // 51-65 Čempionas (po 367)
+  14500,15000,15500,16000,16500,17000,17500,18000,18500,19000,19500,20000,20500, // 66-78 Legenda (po 500)
+  21000,21450,21900,22350,22800,23250,23700,24150,24600,25050,25500,25950,26400,26850,27300,27750,28200,28650,29100,29550, // 79-98 Drakonas (po 450)
+  30000  // 99 Hall of Fame
+];
+
+// Gauti stadiją pagal total EXP
+function getStageInfo(totalExp) {
+  const exp = totalExp || 0;
+  const stage = STAGES.find(s => exp >= s.minExp && exp <= s.maxExp) || STAGES[0];
+  
+  // Globalus lvl (1-99) - randame pagal LEVEL_THRESHOLDS
+  let globalLevel = 1;
+  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (exp >= LEVEL_THRESHOLDS[i]) {
+      globalLevel = i + 1;
+      break;
+    }
+  }
+  
+  // EXP iki kito lvl
+  const nextLevelExp = globalLevel < 99 ? LEVEL_THRESHOLDS[globalLevel] : null;
+  const currentLevelExp = LEVEL_THRESHOLDS[globalLevel - 1] || 0;
+  const expToNextLevel = nextLevelExp ? nextLevelExp - exp : 0;
+  
+  // Progress % iki kito lvl
+  const levelSpan = nextLevelExp ? nextLevelExp - currentLevelExp : 1;
+  const progressPercent = nextLevelExp 
+    ? Math.min(100, ((exp - currentLevelExp) / levelSpan) * 100)
+    : 100;
+  
+  return {
+    stage: stage.name,
+    stageEmoji: stage.emoji,
+    stageMinExp: stage.minExp,
+    stageMaxExp: stage.maxExp,
+    globalLevel,
+    expToNextLevel,
+    progressPercent,
+    nextLevelExp,
+    currentLevelExp,
+    isHallOfFame: globalLevel === 99
+  };
+}
+
+function updateExpBar(totalExp, level) {
+  const info = getStageInfo(totalExp);
+  
+  // Atnaujinti UI - stadija + globalus lvl + progress bar
+  const expBar = document.getElementById('v-exp-bar');
+  const expTxt = document.getElementById('v-exp-txt');
+  const lvlTxt = document.getElementById('v-level-txt');
+  const nextTxt = document.getElementById('v-next-txt');
+  
+  if (expBar) expBar.style.width = info.progressPercent.toFixed(1) + '%';
+  
+  if (expTxt) {
+    expTxt.textContent = info.isHallOfFame 
+      ? `${totalExp.toLocaleString()} EXP`
+      : `${totalExp.toLocaleString()} / ${info.nextLevelExp.toLocaleString()}`;
+  }
+  
+  if (lvlTxt) {
+    lvlTxt.textContent = info.isHallOfFame
+      ? `${info.stageEmoji} ${info.stage.toUpperCase()}`
+      : `${info.stageEmoji} ${info.stage.toUpperCase()} · LVL ${info.globalLevel}`;
+  }
+  
+  if (nextTxt) {
+    nextTxt.textContent = info.isHallOfFame 
+      ? '⭐ MAKSIMALUS LYGIS' 
+      : `Iki LVL ${info.globalLevel + 1}: +${info.expToNextLevel} EXP`;
+  }
 }
 
 // LEVEL UP CELEBRATION - ekranas kai pasieki naują lygį
@@ -5553,8 +5638,8 @@ async function loadChallenges() {
     return;
   }
   
-  const typeIcons = { daily: '☀️', weekly: '⚡', monthly: '🎯', one_time: '✨', permanent: '♾️' };
-  const typeLabels = { daily: 'Kasdienis', weekly: 'Savaitinis', monthly: 'Mėnesinis', one_time: 'Vienkartinis', permanent: 'Nuolatinis' };
+  const typeIcons = { training: '🏋️', weekly: '⚡', monthly: '🎯', one_time: '✨', permanent: '♾️' };
+  const typeLabels = { training: 'Treniruotės', weekly: 'Savaitinis', monthly: 'Mėnesinis', one_time: 'Vienkartinis', permanent: 'Nuolatinis' };
   
   const html = challengesToShow.map(ch => {
     const subs = subsByChallenge[ch.id] || [];
@@ -7228,6 +7313,120 @@ async function loadChallengeBadge() {
     </div>
     ${progressBar}
     <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:10px;font-style:italic;">Spausk peržiūrėti klubo reitingą</div>
+  `;
+}
+
+// ════════════════════════════════════════
+// 🔥 STREAK SISTEMA - rodyti 3 streak'us
+// ════════════════════════════════════════
+async function loadStreaks() {
+  if (!currentKid?.id) return;
+  const container = document.getElementById('v-streaks');
+  if (!container) return;
+  
+  const { data: streaks, error } = await sb.from('kid_streaks')
+    .select('*')
+    .eq('kid_id', currentKid.id)
+    .maybeSingle();
+  
+  if (error) {
+    console.error('loadStreaks:', error);
+    container.innerHTML = '<div style="text-align:center;padding:10px;color:var(--mut);font-size:11px;">Streak\'ai dar nepasiekti</div>';
+    return;
+  }
+  
+  const s = streaks || {
+    training_current: 0, training_best: 0, training_bonuses_earned: 0,
+    weekly_current: 0, weekly_best: 0, weekly_bonuses_earned: 0,
+    monthly_current: 0, monthly_best: 0, monthly_bonuses_earned: 0,
+    total_streak_exp: 0
+  };
+  
+  // 3 streak konfigūracijos
+  const streakConfigs = [
+    {
+      icon: '🏋️',
+      name: 'Treniruotės',
+      current: s.training_current || 0,
+      best: s.training_best || 0,
+      bonusesEarned: s.training_bonuses_earned || 0,
+      target: 5,
+      bonusExp: 30,
+      color: '#FF4D00',
+      bgColor: 'rgba(255,77,0,.08)',
+      borderColor: 'rgba(255,77,0,.3)',
+      description: '5 treniruotės iš eilės'
+    },
+    {
+      icon: '⚡',
+      name: 'Savaitinis',
+      current: s.weekly_current || 0,
+      best: s.weekly_best || 0,
+      bonusesEarned: s.weekly_bonuses_earned || 0,
+      target: 4,
+      bonusExp: 100,
+      color: '#FFD700',
+      bgColor: 'rgba(255,215,0,.08)',
+      borderColor: 'rgba(255,215,0,.3)',
+      description: '4 savaitės iš eilės'
+    },
+    {
+      icon: '🎯',
+      name: 'Mėnesinis',
+      current: s.monthly_current || 0,
+      best: s.monthly_best || 0,
+      bonusesEarned: s.monthly_bonuses_earned || 0,
+      target: 3,
+      bonusExp: 200,
+      color: '#A855F7',
+      bgColor: 'rgba(168,85,247,.08)',
+      borderColor: 'rgba(168,85,247,.3)',
+      description: '3 mėnesiai iš eilės'
+    }
+  ];
+  
+  const streakHtml = streakConfigs.map(sc => {
+    const progress = Math.min(100, (sc.current / sc.target) * 100);
+    const remaining = Math.max(0, sc.target - sc.current);
+    const isComplete = sc.current >= sc.target;
+    
+    return `
+      <div style="background:${sc.bgColor};border:.5px solid ${sc.borderColor};border-radius:10px;padding:10px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="font-size:20px;">${sc.icon}</div>
+            <div>
+              <div style="font-size:12px;font-weight:800;color:${sc.color};letter-spacing:.5px;">${sc.name.toUpperCase()}</div>
+              <div style="font-size:9px;color:var(--mut);">${sc.description}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${sc.color};line-height:1;">${sc.current}/${sc.target}</div>
+            <div style="font-size:9px;color:var(--mut);margin-top:1px;">+${sc.bonusExp} EXP</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);height:5px;border-radius:3px;overflow:hidden;">
+          <div style="background:${sc.color};height:100%;width:${progress.toFixed(1)}%;border-radius:3px;transition:width .3s;"></div>
+        </div>
+        ${sc.bonusesEarned > 0 ? `
+          <div style="font-size:9px;color:var(--mut);text-align:right;margin-top:4px;">
+            Pasiekei ${sc.bonusesEarned}× · Geriausias: ${sc.best}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+  
+  const totalStreakExp = s.total_streak_exp || 0;
+  
+  container.innerHTML = `
+    ${streakHtml}
+    ${totalStreakExp > 0 ? `
+      <div style="margin-top:10px;padding-top:10px;border-top:.5px dashed var(--bdr);text-align:center;">
+        <div style="font-size:10px;color:var(--mut);letter-spacing:1px;">VISI STREAK BONUS'AI</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);letter-spacing:1px;margin-top:2px;">+${totalStreakExp.toLocaleString()} EXP</div>
+      </div>
+    ` : ''}
   `;
 }
 
@@ -11020,16 +11219,16 @@ function switchTrTab(el, type) {
 // EXP ribos pagal tipą
 // Iššūkių EXP limitai pagal trukmę
 const CHALLENGE_EXP_LIMITS = { 
-  daily: 10,        // kasdienis - 10 EXP max
-  weekly: 25,       // savaitinis - 25 EXP max
-  monthly: 50,      // mėnesinis - 50 EXP max  
-  one_time: 30,     // vienkartinis - 30 EXP max
-  permanent: 15     // be termino - 15 EXP max (kartotinis)
+  training: 15,     // treniruotės iššūkis - 15 EXP max
+  weekly: 30,       // savaitinis - 30 EXP max
+  monthly: 100,     // mėnesinis - 100 EXP max  
+  one_time: 75,     // vienkartinis - 75 EXP max
+  permanent: 10     // be termino - 10 EXP max (anti-farming)
 };
 
 // Iššūkių galiojimo dienos
 const CHALLENGE_EXPIRY_DAYS = { 
-  daily: 1,
+  training: 1,      // treniruotės metu - 1 diena
   weekly: 7,
   monthly: 30,
   one_time: 365,    // vienkartinis - 1 metai 
@@ -11423,7 +11622,7 @@ async function loadTrainerOwnChallenges() {
     specific_kid: '🎯 Konkretus vaikas'
   };
   
-  const typeLabels = { daily: 'Kasdien.', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
+  const typeLabels = { training: 'Treniruotė', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
   
   const html = challengesToShow.map(ch => {
     const stats = subsByChallenge[ch.id] || { total: 0, approved: 0, pending: 0 };
@@ -11757,7 +11956,7 @@ async function loadPendingChallengeSubmissions() {
     return;
   }
   
-  const typeLabels = { daily: 'Kasdien.', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
+  const typeLabels = { training: 'Treniruotė', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
   
   const html = subs.map(s => {
     const kid = kidsMap[s.kid_id];
