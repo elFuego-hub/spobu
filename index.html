@@ -871,7 +871,7 @@ select.inp option{background:#222;}
           <span style="font-size:11px;color:rgba(255,255,255,.75);font-weight:700;letter-spacing:1px;">EXP</span>
           <span style="font-size:12px;font-weight:800;" id="v-exp-txt">0 / 100</span>
         </div>
-        <div class="ebt"><div class="ebf" id="v-exp-bar" style="width:0%"></div></div>
+        <div class="ebt"><div class="ebf" id="v-exp-bar"></div></div>
         <div style="display:flex;justify-content:flex-end;align-items:center;margin-top:8px;">
           <div style="font-size:10px;color:rgba(255,255,255,.85);font-weight:700;" id="v-next-txt"></div>
         </div>
@@ -4936,12 +4936,15 @@ function renderBeltCertificate(kyu, isCurrent) {
 
 function updateExpBar(totalExp, level) {
   const info = getStageInfo(totalExp);
+  console.log('[updateExpBar] totalExp:', totalExp, 'info:', info);
   
   // Atnaujinti UI - stadija + globalus lvl + progress bar
   const expBar = document.getElementById('v-exp-bar');
   const expTxt = document.getElementById('v-exp-txt');
   const lvlTxt = document.getElementById('v-level-txt');
   const nextTxt = document.getElementById('v-next-txt');
+  
+  console.log('[updateExpBar] elements:', { expBar: !!expBar, expTxt: !!expTxt, lvlTxt: !!lvlTxt, nextTxt: !!nextTxt });
   
   if (expBar) expBar.style.width = info.progressPercent.toFixed(1) + '%';
   
