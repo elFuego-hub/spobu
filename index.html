@@ -942,42 +942,40 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- 📊 REITINGAI -->
+    <!-- 📊 REITINGAI - kompaktiški kvadratai 2x2 -->
     <div class="st">📊 MANO REITINGAI</div>
-    <div style="margin:0 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">
-      <div style="display:flex;align-items:center;padding:10px 14px;border-bottom:.5px solid var(--bdr);gap:12px;cursor:pointer;" onclick="g('v','v-comp')">
-        <div style="font-size:22px;line-height:1;width:28px;text-align:center;">🏆</div>
-        <div style="flex:1;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:700;text-transform:uppercase;">Pagal varžybas</div>
-          <div style="font-size:12px;color:white;font-weight:700;margin-top:2px;" id="v-rank-comp-info">Klube</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 16px;">
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="g('v','v-comp')">
+        <div style="font-size:24px;line-height:1;">🏆</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;text-transform:uppercase;line-height:1.1;">Varžybos</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FFD700;text-shadow:0 0 8px rgba(255,215,0,.4);line-height:1;margin-top:2px;" id="v-rank-comp">#–</div>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#FFD700;text-shadow:0 0 10px rgba(255,215,0,.4);line-height:1;" id="v-rank-comp">#–</div>
       </div>
-      <div style="display:flex;align-items:center;padding:10px 14px;border-bottom:.5px solid var(--bdr);gap:12px;cursor:pointer;" onclick="g('v','v-stat')">
-        <div style="font-size:22px;line-height:1;width:28px;text-align:center;">⚡</div>
-        <div style="flex:1;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:700;text-transform:uppercase;">Pagal bendrą EXP</div>
-          <div style="font-size:12px;color:white;font-weight:700;margin-top:2px;" id="v-rank-exp-info">0 EXP</div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="g('v','v-stat')">
+        <div style="font-size:24px;line-height:1;">⚡</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;text-transform:uppercase;line-height:1.1;">EXP</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#C0C0C0;text-shadow:0 0 8px rgba(192,192,192,.4);line-height:1;margin-top:2px;" id="v-rank-exp">#–</div>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#C0C0C0;text-shadow:0 0 10px rgba(192,192,192,.4);line-height:1;" id="v-rank-exp">#–</div>
       </div>
-      <div style="display:flex;align-items:center;padding:10px 14px;border-bottom:.5px solid var(--bdr);gap:12px;cursor:pointer;" onclick="g('v','v-ish')">
-        <div style="font-size:22px;line-height:1;width:28px;text-align:center;">🎯</div>
-        <div style="flex:1;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:700;text-transform:uppercase;">Pagal iššūkius</div>
-          <div style="font-size:12px;color:white;font-weight:700;margin-top:2px;" id="v-rank-ish-info">0 įveikta</div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="g('v','v-ish')">
+        <div style="font-size:24px;line-height:1;">🎯</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;text-transform:uppercase;line-height:1.1;">Iššūkiai</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#CD7F32;text-shadow:0 0 8px rgba(205,127,50,.4);line-height:1;margin-top:2px;" id="v-rank-ish">#–</div>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#CD7F32;text-shadow:0 0 10px rgba(205,127,50,.4);line-height:1;" id="v-rank-ish">#–</div>
       </div>
-      <div style="display:flex;align-items:center;padding:10px 14px;gap:12px;cursor:pointer;" onclick="g('v','v-kar')">
-        <div style="font-size:22px;line-height:1;width:28px;text-align:center;">🥋</div>
-        <div style="flex:1;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:700;text-transform:uppercase;">Aukščiausias skillas</div>
-          <div style="font-size:12px;color:white;font-weight:700;margin-top:2px;" id="v-top-skill">–</div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="g('v','v-kar')">
+        <div style="font-size:24px;line-height:1;">🥋</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;text-transform:uppercase;line-height:1.1;">TOP skillas</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF4D00;text-shadow:0 0 8px rgba(255,77,0,.4);line-height:1;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="v-top-skill">–</div>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#FF4D00;text-shadow:0 0 10px rgba(255,77,0,.4);line-height:1;" id="v-top-skill-tier">–</div>
       </div>
-      <button onclick="g('v','v-stat')" style="width:100%;padding:10px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:none;border-top:.5px solid rgba(255,77,0,.2);color:#FF8C00;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;">VISA STATISTIKA →</button>
+    </div>
+    <div style="padding:6px 16px 0;">
+      <button onclick="g('v','v-stat')" style="width:100%;padding:8px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:10px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:10px;">VISA STATISTIKA →</button>
     </div>
     
     <!-- 📅 ARTIMIAUSIA VARŽYBA -->
