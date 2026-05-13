@@ -5703,36 +5703,69 @@ async function checkForNewStreakBonuses() {
   const lsKey = `spobu_kid_${currentKid.id}_seen_streak_bonus_ids`;
   const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
   
-  // Užkrauname VISUS bonus log'us (naujausi pirma)
-  const { data: bonuses } = await sb.from('streak_bonus_log')
-    .select('*, challenge_submissions(exp_gain, challenges(title))')
+  // 1) Užkrauname VISUS bonus log'us (naujausi pirma)
+  const { data: bonuses, error: bErr } = await sb.from('streak_bonus_log')
+    .select('*')
     .eq('kid_id', currentKid.id)
     .order('created_at', { ascending: false })
     .limit(20);
+  
+  if (bErr) {
+    console.error('[streak popup] Klaida kraunant bonusus:', bErr);
+    return;
+  }
+  
+  console.log('[streak popup] Bonus log iš DB:', bonuses?.length || 0);
   
   if (!bonuses || bonuses.length === 0) return;
   
   // Surandam NEMATYTUS
   const newBonuses = bonuses.filter(b => !seenIds.has(b.id));
   
-  if (newBonuses.length === 0) {
-    console.log('[streak popup] Nėra naujų bonus\'ų');
-    return;
+  console.log(`[streak popup] Naujų bonus'ų: ${newBonuses.length}, jau matytų: ${seenIds.size}`);
+  
+  if (newBonuses.length === 0) return;
+  
+  // 2) Užkrauname submissions detales (atskirai - vengiam JOIN)
+  const submissionIds = newBonuses.map(b => b.submission_id).filter(Boolean);
+  const submissionsMap = {};
+  
+  if (submissionIds.length > 0) {
+    const { data: subs } = await sb.from('challenge_submissions')
+      .select('id, exp_gain, challenge_id')
+      .in('id', submissionIds);
+    
+    const challengeIds = [...new Set((subs || []).map(s => s.challenge_id))];
+    const challengesMap = {};
+    
+    if (challengeIds.length > 0) {
+      const { data: challenges } = await sb.from('challenges')
+        .select('id, title')
+        .in('id', challengeIds);
+      
+      (challenges || []).forEach(c => { challengesMap[c.id] = c; });
+    }
+    
+    (subs || []).forEach(s => {
+      submissionsMap[s.id] = {
+        ...s,
+        challengeTitle: challengesMap[s.challenge_id]?.title || 'Iššūkis'
+      };
+    });
   }
   
-  console.log(`[streak popup] Rodome ${newBonuses.length} naujų bonus'ų`);
-  
-  // Pažymėt VISUS kaip matytus (kad nebepasirodytų)
+  // Pažymėt VISUS kaip matytus
   bonuses.forEach(b => seenIds.add(b.id));
   localStorage.setItem(lsKey, JSON.stringify([...seenIds]));
   
   // Rodyti popup'us - nuo seniausio (chronologinė tvarka)
   newBonuses.reverse().forEach((bonus, idx) => {
-    setTimeout(() => showStreakBonusPopup(bonus), idx * 600 + 500);
+    const submissionInfo = bonus.submission_id ? submissionsMap[bonus.submission_id] : null;
+    setTimeout(() => showStreakBonusPopup(bonus, submissionInfo), idx * 600 + 500);
   });
 }
 
-function showStreakBonusPopup(bonus) {
+function showStreakBonusPopup(bonus, submissionInfo) {
   const typeConfig = {
     training: { icon: '🔥', label: 'TRENIRUOČIŲ', color: '#FF4D00', gradient: 'linear-gradient(135deg, #FF4D00, #FF8000)' },
     weekly: { icon: '📅', label: 'SAVAITINIS', color: '#4FC3F7', gradient: 'linear-gradient(135deg, #4FC3F7, #29B6F6)' },
@@ -5742,8 +5775,8 @@ function showStreakBonusPopup(bonus) {
   const cfg = typeConfig[bonus.streak_type] || typeConfig.training;
   
   // Iššūkio info (jei yra)
-  const challengeTitle = bonus.challenge_submissions?.challenges?.title || 'Iššūkis';
-  const baseExp = bonus.challenge_submissions?.exp_gain || 0;
+  const challengeTitle = submissionInfo?.challengeTitle || 'Iššūkis';
+  const baseExp = submissionInfo?.exp_gain || 0;
   const totalExp = baseExp + bonus.exp_awarded;
   
   // Sukuriam popup'ą
