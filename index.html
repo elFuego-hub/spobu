@@ -7685,29 +7685,52 @@ async function loadRankings() {
   if (!currentKid?.id || !currentProfile?.club_id) return;
   console.log('[loadRankings] start, club_id:', currentProfile.club_id);
   
-  // Visi vaikai šio klubo
+  // 1) Surasti VISUS vaikus klube (per profiles lentelę)
+  const { data: clubProfiles } = await sb.from('profiles')
+    .select('id')
+    .eq('club_id', currentProfile.club_id)
+    .eq('role', 'kid');
+  
+  if (!clubProfiles || clubProfiles.length === 0) {
+    console.log('[loadRankings] nera vaiku klube');
+    return;
+  }
+  
+  const kidIds = clubProfiles.map(p => p.id);
+  
+  // 2) Užkrauti TIK egzistuojančius stulpelius iš kids
   const { data: kids } = await sb.from('kids')
-    .select('id, total_exp, wins')
-    .eq('club_id', currentProfile.club_id);
+    .select('id, total_exp')
+    .in('id', kidIds);
   
   console.log('[loadRankings] klubo vaikai:', kids?.length || 0);
   
   if (!kids || kids.length === 0) return;
   
-  // Visi iššūkių submissions (suskaičiuot kiekvienam vaikui)
-  const kidIds = kids.map(k => k.id);
-  const { data: allSubs } = await sb.from('challenge_submissions')
-    .select('kid_id')
-    .in('kid_id', kidIds)
-    .eq('status', 'approved');
+  // 3) Užkrauti varžybų rezultatus - skaičiuoti pergales (1 vieta) ir iššūkių submissions
+  const [winsRes, ishRes] = await Promise.all([
+    sb.from('competition_results')
+      .select('kid_id, placement')
+      .in('kid_id', kidIds)
+      .eq('approval_status', 'approved'),
+    sb.from('challenge_submissions')
+      .select('kid_id')
+      .in('kid_id', kidIds)
+      .eq('status', 'approved')
+  ]);
+  
+  const winsCount = {};
+  (winsRes.data || []).forEach(r => {
+    if (r.placement === 1) winsCount[r.kid_id] = (winsCount[r.kid_id] || 0) + 1;
+  });
   
   const ishCount = {};
-  (allSubs || []).forEach(s => {
+  (ishRes.data || []).forEach(s => {
     ishCount[s.kid_id] = (ishCount[s.kid_id] || 0) + 1;
   });
   
-  // 1) Pagal varžybas (wins)
-  const sortedByWins = [...kids].sort((a, b) => (b.wins || 0) - (a.wins || 0));
+  // 1) Pagal varžybas (1 vietos = wins)
+  const sortedByWins = [...kids].sort((a, b) => (winsCount[b.id] || 0) - (winsCount[a.id] || 0));
   const compRank = sortedByWins.findIndex(k => k.id === currentKid.id) + 1;
   
   // 2) Pagal bendrą EXP
@@ -7838,7 +7861,7 @@ async function loadStreaks() {
       .eq('kid_id', currentKid.id)
       .order('created_at', { ascending: true }),
     sb.from('challenges')
-      .select('id, type, deadline, created_at')
+      .select('id, type')
       .eq('club_id', currentProfile.club_id)
   ]);
   
