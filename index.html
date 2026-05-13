@@ -12690,7 +12690,10 @@ async function loadPendingChallengeSubmissions() {
 
 async function approveChallengeSubmission(subId) {
   const { error } = await sb.from('challenge_submissions')
-    .update({ status: 'approved' })
+    .update({ 
+      status: 'approved',
+      reviewed_at: new Date().toISOString()
+    })
     .eq('id', subId);
   
   if (error) {
