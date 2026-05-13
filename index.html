@@ -7608,6 +7608,7 @@ async function loadChallengeBadge() {
 
 async function loadGoals() {
   if (!currentKid?.id) return;
+  console.log('[loadGoals] start, kidId:', currentKid.id);
   
   // Savaitės EXP tikslas (default 200, mėnesio 1000)
   const WEEK_GOAL = 200;
@@ -7652,6 +7653,8 @@ async function loadGoals() {
     if (c.approved_at && new Date(c.approved_at) >= weekStart) weekExp += exp;
   });
   
+  console.log('[loadGoals] subs:', subs.data?.length || 0, 'comps:', comps.data?.length || 0, 'weekExp:', weekExp, 'monthExp:', monthExp);
+  
   // Savaitės UI
   const weekPct = Math.min(100, (weekExp / WEEK_GOAL) * 100);
   const daysLeft = 7 - diff;
@@ -7680,11 +7683,14 @@ async function loadGoals() {
 
 async function loadRankings() {
   if (!currentKid?.id || !currentKid?.club_id) return;
+  console.log('[loadRankings] start, club_id:', currentKid.club_id);
   
   // Visi vaikai šio klubo
   const { data: kids } = await sb.from('kids')
     .select('id, total_exp, wins')
     .eq('club_id', currentKid.club_id);
+  
+  console.log('[loadRankings] klubo vaikai:', kids?.length || 0);
   
   if (!kids || kids.length === 0) return;
   
