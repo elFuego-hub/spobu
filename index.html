@@ -7629,26 +7629,27 @@ async function loadGoals() {
   // Surinkti šios savaitės ir mėnesio EXP iš submissions + competitions
   const [subs, comps] = await Promise.all([
     sb.from('challenge_submissions')
-      .select('exp_earned, approved_at')
+      .select('exp_gain, reviewed_at')
       .eq('kid_id', currentKid.id)
       .eq('status', 'approved')
-      .gte('approved_at', monthStart.toISOString()),
+      .gte('reviewed_at', monthStart.toISOString()),
     sb.from('competition_results')
-      .select('exp_earned, created_at')
+      .select('exp_gained, approved_at')
       .eq('kid_id', currentKid.id)
-      .gte('created_at', monthStart.toISOString())
+      .eq('approval_status', 'approved')
+      .gte('approved_at', monthStart.toISOString())
   ]);
   
   let weekExp = 0, monthExp = 0;
   (subs.data || []).forEach(s => {
-    const exp = s.exp_earned || 0;
+    const exp = s.exp_gain || 0;
     monthExp += exp;
-    if (s.approved_at && new Date(s.approved_at) >= weekStart) weekExp += exp;
+    if (s.reviewed_at && new Date(s.reviewed_at) >= weekStart) weekExp += exp;
   });
   (comps.data || []).forEach(c => {
-    const exp = c.exp_earned || 0;
+    const exp = c.exp_gained || 0;
     monthExp += exp;
-    if (c.created_at && new Date(c.created_at) >= weekStart) weekExp += exp;
+    if (c.approved_at && new Date(c.approved_at) >= weekStart) weekExp += exp;
   });
   
   // Savaitės UI
@@ -7757,12 +7758,12 @@ async function loadNextEvent() {
   if (!currentKid?.club_id) return;
   
   // Surasti artimiausią būsimą varžybą
-  const now = new Date().toISOString();
+  const today = new Date().toISOString().split('T')[0];
   const { data: events } = await sb.from('competitions')
     .select('*')
     .eq('club_id', currentKid.club_id)
-    .gte('date', now)
-    .order('date', { ascending: true })
+    .gte('event_date', today)
+    .order('event_date', { ascending: true })
     .limit(1);
   
   const nameEl = document.getElementById('v-next-event-name');
@@ -7778,12 +7779,12 @@ async function loadNextEvent() {
   }
   
   const e = events[0];
-  const days = Math.ceil((new Date(e.date) - new Date()) / (1000 * 60 * 60 * 24));
+  const days = Math.max(0, Math.ceil((new Date(e.event_date) - new Date()) / (1000 * 60 * 60 * 24)));
   const levelLabels = { local: '🏘️ Vietinė', medium: '🏙️ Vidutinė', european: '🌍 Europos' };
-  const levelLabel = levelLabels[e.level] || e.level;
+  const levelLabel = levelLabels[e.level] || e.level || '';
   
-  if (nameEl) nameEl.textContent = e.name || 'Varžybos';
-  if (metaEl) metaEl.textContent = `📅 ${new Date(e.date).toLocaleDateString('lt-LT')} · ${levelLabel}`;
+  if (nameEl) nameEl.textContent = e.title || 'Varžybos';
+  if (metaEl) metaEl.textContent = `📅 ${new Date(e.event_date).toLocaleDateString('lt-LT')}${levelLabel ? ' · ' + levelLabel : ''}`;
   if (daysEl) daysEl.textContent = days;
   if (countdownEl) countdownEl.style.display = 'block';
 }
