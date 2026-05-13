@@ -844,10 +844,9 @@ select.inp option{background:#222;}
 <div class="sc on" id="v-main">
   <div class="sb"><span id="v-time">9:41</span><span>📶 🔋</span></div>
   <div class="sa">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px;">
-      <div><div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">SVEIKI SUGRĮŽĘ,</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;" id="v-name">SPORTUOTOJAS 🥋</div>
-      </div>
+    <!-- TOP BAR: tik SPOBU logo + ikonos -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px 12px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;">SPO<span style="color:var(--br);">BU</span><span style="color:var(--br);">.</span></div>
       <div style="display:flex;gap:6px;align-items:center;">
         <!-- VARPELIO MYGTUKAS -->
         <div style="position:relative;cursor:pointer;width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:16px;" onclick="toggleNotifications()" id="v-notif-btn">
@@ -858,22 +857,24 @@ select.inp option{background:#222;}
         <div style="position:relative;cursor:pointer;width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:16px;" onclick="openKidSettings()" id="v-settings-btn">
           ⚙️
         </div>
-        <!-- AVATARAS -->
-        <div style="position:relative;cursor:pointer;" onclick="g('v','v-prof')">
-          <div style="width:38px;height:38px;border-radius:50%;background:var(--br);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;" id="v-avatar">?</div>
-        </div>
       </div>
     </div>
-    <div class="hero" style="background:linear-gradient(135deg,var(--br),var(--br2));">
-      <div class="hbrand">SPOBU · EXP</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1.5px;color:white;margin:6px 0 8px;line-height:1.2;" id="v-level-txt">🌱 NAUJOKAS · LVL 1</div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-        <span style="font-size:11px;color:rgba(255,255,255,.75);font-weight:700;letter-spacing:1px;">EXP</span>
-        <span style="font-size:12px;font-weight:800;" id="v-exp-txt">0 / 100</span>
-      </div>
-      <div class="ebt"><div class="ebf" id="v-exp-bar" style="width:0%"></div></div>
-      <div style="display:flex;justify-content:flex-end;align-items:center;margin-top:8px;">
-        <div style="font-size:10px;color:rgba(255,255,255,.85);font-weight:700;" id="v-next-txt"></div>
+    
+    <!-- ORANGE WELCOME HERO -->
+    <div class="hero" style="background:linear-gradient(135deg,var(--br),var(--br2));position:relative;overflow:hidden;">
+      <div style="position:absolute;font-size:140px;right:-30px;top:-30px;opacity:.1;">🥋</div>
+      <div style="position:relative;z-index:1;">
+        <div style="font-size:11px;color:rgba(255,255,255,.85);letter-spacing:1px;font-weight:800;text-transform:uppercase;">SVEIKA</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:white;line-height:1.1;margin-top:2px;" id="v-name">SPORTUOTOJA! 🥋</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;margin:8px 0;line-height:1.2;" id="v-level-txt">🌱 NAUJOKAS · LVL 1</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:11px;color:rgba(255,255,255,.75);font-weight:700;letter-spacing:1px;">EXP</span>
+          <span style="font-size:12px;font-weight:800;" id="v-exp-txt">0 / 100</span>
+        </div>
+        <div class="ebt"><div class="ebf" id="v-exp-bar" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:flex-end;align-items:center;margin-top:8px;">
+          <div style="font-size:10px;color:rgba(255,255,255,.85);font-weight:700;" id="v-next-txt"></div>
+        </div>
       </div>
     </div>
     
@@ -4620,13 +4621,13 @@ async function loadKidData() {
   
   if (!currentKid) return;
 
-  // Vardas ir avataris (saugus - su null check'ais)
-  const name = `${currentProfile.first_name} ${currentProfile.last_name}`.toUpperCase();
+  // Vardas hero kortelėje (tik pirmasis vardas + jaustukas)
+  const firstName = (currentProfile.first_name || 'SPORTUOTOJA').toUpperCase();
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   
-  setText('v-name', name + ' 🥋');
+  setText('v-name', `${firstName}! 🥋`);
   setText('v-avatar', currentProfile.first_name?.[0] || '?');
-  setText('v-prof-name', name);
+  setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
   setText('v-prof-exp', (currentKid.total_exp || 0).toLocaleString());
   setText('v-prof-level', currentKid.current_level || 1);
   setText('v-prof-record', `${currentKid.wins||0}–${currentKid.losses||0}`);
