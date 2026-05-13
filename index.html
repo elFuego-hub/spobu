@@ -4775,6 +4775,11 @@ async function loadKidData() {
   // 🔥 Streak'ai
   await loadStreaks();
   
+  // 🆕 Pagrindinio lango duomenys (tikslai, reitingai, artimiausia varžyba)
+  await loadGoals().catch(e => console.error('loadGoals:', e));
+  await loadRankings().catch(e => console.error('loadRankings:', e));
+  await loadNextEvent().catch(e => console.error('loadNextEvent:', e));
+  
   // Patikrinam ar yra naujų pasiekimų (po pirmo užkrovimo, kitu kartu rodys popup)
   await checkForNewAchievements();
 }
@@ -7594,21 +7599,200 @@ async function loadChallengeBadge() {
 // ════════════════════════════════════════
 // 🔥 STREAK SISTEMA - rodyti 3 streak'us
 // ════════════════════════════════════════
+// ════════════════════════════════════════
+// PAGRINDINIO LANGO DUOMENYS - tikslai, reitingai, next event
+// ════════════════════════════════════════
+
+async function loadGoals() {
+  if (!currentKid?.id) return;
+  
+  // Savaitės EXP tikslas (default 200, mėnesio 1000)
+  const WEEK_GOAL = 200;
+  const MONTH_GOAL = 1000;
+  
+  const now = new Date();
+  
+  // Savaitės pradžia (pirmadienis)
+  const weekStart = new Date(now);
+  const day = weekStart.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  weekStart.setDate(weekStart.getDate() - diff);
+  weekStart.setHours(0, 0, 0, 0);
+  
+  // Mėnesio pradžia
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  monthStart.setHours(0, 0, 0, 0);
+  
+  // Surinkti šios savaitės ir mėnesio EXP iš submissions + competitions
+  const [subs, comps] = await Promise.all([
+    sb.from('challenge_submissions')
+      .select('exp_earned, approved_at')
+      .eq('kid_id', currentKid.id)
+      .eq('status', 'approved')
+      .gte('approved_at', monthStart.toISOString()),
+    sb.from('competition_results')
+      .select('exp_earned, created_at')
+      .eq('kid_id', currentKid.id)
+      .gte('created_at', monthStart.toISOString())
+  ]);
+  
+  let weekExp = 0, monthExp = 0;
+  (subs.data || []).forEach(s => {
+    const exp = s.exp_earned || 0;
+    monthExp += exp;
+    if (s.approved_at && new Date(s.approved_at) >= weekStart) weekExp += exp;
+  });
+  (comps.data || []).forEach(c => {
+    const exp = c.exp_earned || 0;
+    monthExp += exp;
+    if (c.created_at && new Date(c.created_at) >= weekStart) weekExp += exp;
+  });
+  
+  // Savaitės UI
+  const weekPct = Math.min(100, (weekExp / WEEK_GOAL) * 100);
+  const daysLeft = 7 - diff;
+  const weekExpEl = document.getElementById('v-week-goal-exp');
+  const weekBarEl = document.getElementById('v-week-goal-bar');
+  const weekPctEl = document.getElementById('v-week-goal-pct');
+  const weekDaysEl = document.getElementById('v-week-goal-days');
+  if (weekExpEl) weekExpEl.textContent = `${weekExp} / ${WEEK_GOAL} EXP`;
+  if (weekBarEl) weekBarEl.style.width = weekPct + '%';
+  if (weekPctEl) weekPctEl.textContent = `${Math.round(weekPct)}% atlikta`;
+  if (weekDaysEl) weekDaysEl.textContent = `${daysLeft} d. liko`;
+  
+  // Mėnesio UI
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const monthDaysLeft = Math.max(0, monthEnd.getDate() - now.getDate());
+  const monthPct = Math.min(100, (monthExp / MONTH_GOAL) * 100);
+  const monthExpEl = document.getElementById('v-month-goal-exp');
+  const monthBarEl = document.getElementById('v-month-goal-bar');
+  const monthPctEl = document.getElementById('v-month-goal-pct');
+  const monthDaysEl = document.getElementById('v-month-goal-days');
+  if (monthExpEl) monthExpEl.textContent = `${monthExp} / ${MONTH_GOAL} EXP`;
+  if (monthBarEl) monthBarEl.style.width = monthPct + '%';
+  if (monthPctEl) monthPctEl.textContent = `${Math.round(monthPct)}% atlikta`;
+  if (monthDaysEl) monthDaysEl.textContent = `${monthDaysLeft} d. liko`;
+}
+
+async function loadRankings() {
+  if (!currentKid?.id || !currentKid?.club_id) return;
+  
+  // Visi vaikai šio klubo
+  const { data: kids } = await sb.from('kids')
+    .select('id, total_exp, wins')
+    .eq('club_id', currentKid.club_id);
+  
+  if (!kids || kids.length === 0) return;
+  
+  // Visi iššūkių submissions (suskaičiuot kiekvienam vaikui)
+  const kidIds = kids.map(k => k.id);
+  const { data: allSubs } = await sb.from('challenge_submissions')
+    .select('kid_id')
+    .in('kid_id', kidIds)
+    .eq('status', 'approved');
+  
+  const ishCount = {};
+  (allSubs || []).forEach(s => {
+    ishCount[s.kid_id] = (ishCount[s.kid_id] || 0) + 1;
+  });
+  
+  // 1) Pagal varžybas (wins)
+  const sortedByWins = [...kids].sort((a, b) => (b.wins || 0) - (a.wins || 0));
+  const compRank = sortedByWins.findIndex(k => k.id === currentKid.id) + 1;
+  
+  // 2) Pagal bendrą EXP
+  const sortedByExp = [...kids].sort((a, b) => (b.total_exp || 0) - (a.total_exp || 0));
+  const expRank = sortedByExp.findIndex(k => k.id === currentKid.id) + 1;
+  
+  // 3) Pagal iššūkius
+  const sortedByIsh = [...kids].sort((a, b) => (ishCount[b.id] || 0) - (ishCount[a.id] || 0));
+  const ishRank = sortedByIsh.findIndex(k => k.id === currentKid.id) + 1;
+  
+  // Atnaujint UI
+  const setRank = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ? `#${val}` : '#–'; };
+  setRank('v-rank-comp', compRank);
+  setRank('v-rank-exp', expRank);
+  setRank('v-rank-ish', ishRank);
+  
+  // 4) Aukščiausias skillas (iš kid_records)
+  const { data: records } = await sb.from('kid_records')
+    .select('category_id, category_exp, career_categories(name)')
+    .eq('kid_id', currentKid.id);
+  
+  if (records && records.length > 0) {
+    // Suma per kategoriją
+    const expByCategory = {};
+    const nameByCategory = {};
+    records.forEach(r => {
+      expByCategory[r.category_id] = (expByCategory[r.category_id] || 0) + (r.category_exp || 0);
+      if (r.career_categories?.name) nameByCategory[r.category_id] = r.career_categories.name;
+    });
+    
+    // Surasti aukščiausią
+    let topCatId = null, topExp = 0;
+    Object.keys(expByCategory).forEach(catId => {
+      if (expByCategory[catId] > topExp) {
+        topExp = expByCategory[catId];
+        topCatId = catId;
+      }
+    });
+    
+    const topSkillEl = document.getElementById('v-top-skill');
+    if (topSkillEl && topCatId && nameByCategory[topCatId]) {
+      const catName = nameByCategory[topCatId];
+      let tier = 'PRADINIS';
+      if (topExp >= 600) tier = '🏆 MAX';
+      else if (topExp >= 500) tier = '🥇 GOLD';
+      else if (topExp >= 300) tier = '🥈 SILVER';
+      else if (topExp >= 100) tier = '🥉 BRONZE';
+      topSkillEl.textContent = `${catName.toUpperCase()} · ${tier}`;
+    }
+  }
+}
+
+async function loadNextEvent() {
+  if (!currentKid?.club_id) return;
+  
+  // Surasti artimiausią būsimą varžybą
+  const now = new Date().toISOString();
+  const { data: events } = await sb.from('competitions')
+    .select('*')
+    .eq('club_id', currentKid.club_id)
+    .gte('date', now)
+    .order('date', { ascending: true })
+    .limit(1);
+  
+  const nameEl = document.getElementById('v-next-event-name');
+  const metaEl = document.getElementById('v-next-event-meta');
+  const daysEl = document.getElementById('v-next-event-days');
+  const countdownEl = document.getElementById('v-next-event-countdown');
+  
+  if (!events || events.length === 0) {
+    if (nameEl) nameEl.textContent = 'Nėra suplanuotų varžybų';
+    if (metaEl) metaEl.textContent = 'Treneris pridės kai bus žinoma';
+    if (countdownEl) countdownEl.style.display = 'none';
+    return;
+  }
+  
+  const e = events[0];
+  const days = Math.ceil((new Date(e.date) - new Date()) / (1000 * 60 * 60 * 24));
+  const levelLabels = { local: '🏘️ Vietinė', medium: '🏙️ Vidutinė', european: '🌍 Europos' };
+  const levelLabel = levelLabels[e.level] || e.level;
+  
+  if (nameEl) nameEl.textContent = e.name || 'Varžybos';
+  if (metaEl) metaEl.textContent = `📅 ${new Date(e.date).toLocaleDateString('lt-LT')} · ${levelLabel}`;
+  if (daysEl) daysEl.textContent = days;
+  if (countdownEl) countdownEl.style.display = 'block';
+}
+
 async function loadStreaks() {
   if (!currentKid?.id) return;
-  const container = document.getElementById('v-streaks');
-  if (!container) return;
   
-  const { data: streaks, error } = await sb.from('kid_streaks')
+  // Užkrauname DB streaks (vienkartiniai - visiems vietoms)
+  const { data: streaks } = await sb.from('kid_streaks')
     .select('*')
     .eq('kid_id', currentKid.id)
     .maybeSingle();
-  
-  if (error) {
-    console.error('loadStreaks:', error);
-    container.innerHTML = '<div style="text-align:center;padding:10px;color:var(--mut);font-size:11px;">Streak\'ai dar nepasiekti</div>';
-    return;
-  }
   
   const s = streaks || {
     training_current: 0, training_best: 0, training_bonuses_earned: 0,
@@ -7616,6 +7800,18 @@ async function loadStreaks() {
     monthly_current: 0, monthly_best: 0, monthly_bonuses_earned: 0,
     total_streak_exp: 0
   };
+  
+  // ⭐ PAGRINDINIO LANGO streak'ai (kompaktiškas variantas)
+  const homeTraining = document.getElementById('v-home-streak-train-num');
+  const homeWeekly = document.getElementById('v-home-streak-week-num');
+  const homeMonthly = document.getElementById('v-home-streak-month-num');
+  if (homeTraining) homeTraining.textContent = s.training_current || 0;
+  if (homeWeekly) homeWeekly.textContent = s.weekly_current || 0;
+  if (homeMonthly) homeMonthly.textContent = s.monthly_current || 0;
+  
+  // PROFILIO langas (jei yra)
+  const container = document.getElementById('v-streaks');
+  if (!container) return;
   
   // 3 streak konfigūracijos
   const streakConfigs = [
