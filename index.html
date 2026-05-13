@@ -4781,10 +4781,11 @@ async function loadKidData() {
   await loadNextEvent().catch(e => console.error('loadNextEvent:', e));
   
   // Patikrinam ar yra naujų pasiekimų (po pirmo užkrovimo, kitu kartu rodys popup)
-  await checkForNewAchievements();
+  await checkForNewAchievements().catch(e => console.error('checkForNewAchievements:', e));
   
   // 🔥 Patikrinam streak bonus'us (po naujų submissions)
-  await checkForNewStreakBonuses();
+  console.log('🔥 Kviečiam checkForNewStreakBonuses...');
+  await checkForNewStreakBonuses().catch(e => console.error('checkForNewStreakBonuses:', e));
 }
 
 // ════════════════════════════════════════
