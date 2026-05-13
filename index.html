@@ -7682,13 +7682,13 @@ async function loadGoals() {
 }
 
 async function loadRankings() {
-  if (!currentKid?.id || !currentKid?.club_id) return;
-  console.log('[loadRankings] start, club_id:', currentKid.club_id);
+  if (!currentKid?.id || !currentProfile?.club_id) return;
+  console.log('[loadRankings] start, club_id:', currentProfile.club_id);
   
   // Visi vaikai šio klubo
   const { data: kids } = await sb.from('kids')
     .select('id, total_exp, wins')
-    .eq('club_id', currentKid.club_id);
+    .eq('club_id', currentProfile.club_id);
   
   console.log('[loadRankings] klubo vaikai:', kids?.length || 0);
   
@@ -7761,13 +7761,13 @@ async function loadRankings() {
 }
 
 async function loadNextEvent() {
-  if (!currentKid?.club_id) return;
+  if (!currentProfile?.club_id) return;
   
   // Surasti artimiausią būsimą varžybą
   const today = new Date().toISOString().split('T')[0];
   const { data: events } = await sb.from('competitions')
     .select('*')
-    .eq('club_id', currentKid.club_id)
+    .eq('club_id', currentProfile.club_id)
     .gte('event_date', today)
     .order('event_date', { ascending: true })
     .limit(1);
@@ -7839,7 +7839,7 @@ async function loadStreaks() {
       .order('created_at', { ascending: true }),
     sb.from('challenges')
       .select('id, type, deadline, created_at')
-      .eq('club_id', currentKid.club_id)
+      .eq('club_id', currentProfile.club_id)
   ]);
   
   const allSubs = allSubsRes.data || [];
@@ -12937,7 +12937,7 @@ async function showExercises(categoryId, categoryName) {
 
   currentExerciseList = exercises.map(ex => {
     const exTargets = (targets || []).filter(t => t.exercise_id === ex.id);
-    const target = exTargets.find(t => t.club_id === currentKid.club_id) 
+    const target = exTargets.find(t => t.club_id === currentProfile.club_id) 
                 || exTargets.find(t => t.club_id === null);
     
     const rec = records?.find(r => r.exercise_id === ex.id);
