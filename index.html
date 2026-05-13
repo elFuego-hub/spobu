@@ -4615,14 +4615,16 @@ async function loadKidData() {
   
   if (!currentKid) return;
 
-  // Vardas ir avataris
+  // Vardas ir avataris (saugus - su null check'ais)
   const name = `${currentProfile.first_name} ${currentProfile.last_name}`.toUpperCase();
-  document.getElementById('v-name').textContent = name + ' 🥋';
-  document.getElementById('v-avatar').textContent = currentProfile.first_name?.[0] || '?';
-  document.getElementById('v-prof-name').textContent = name;
-  document.getElementById('v-prof-exp').textContent = (currentKid.total_exp || 0).toLocaleString();
-  document.getElementById('v-prof-level').textContent = currentKid.current_level || 1;
-  document.getElementById('v-prof-record').textContent = `${currentKid.wins||0}–${currentKid.losses||0}`;
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  
+  setText('v-name', name + ' 🥋');
+  setText('v-avatar', currentProfile.first_name?.[0] || '?');
+  setText('v-prof-name', name);
+  setText('v-prof-exp', (currentKid.total_exp || 0).toLocaleString());
+  setText('v-prof-level', currentKid.current_level || 1);
+  setText('v-prof-record', `${currentKid.wins||0}–${currentKid.losses||0}`);
   
   // 🎨 KANJI + PROGRESS RING - profilyje
   const totalExp = currentKid.total_exp || 0;
@@ -5596,7 +5598,9 @@ async function loadCategories() {
   }).join('');
 
   document.getElementById('v-categories-list').innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--mut);">Kategorijų nerasta</div>';
-  document.getElementById('v-career-exp').textContent = totalCareerExp;
+  // v-career-exp pašalintas iš pagrindinio, dabar tik v-kar-total
+  const careerExpEl = document.getElementById('v-career-exp');
+  if (careerExpEl) careerExpEl.textContent = totalCareerExp;
   document.getElementById('v-kar-total').textContent = `${totalCareerExp} / 4200`;
   document.getElementById('v-kar-bar').style.width = Math.min(100, totalCareerExp/4200*100) + '%';
 }
@@ -9429,11 +9433,13 @@ async function loadKidPendingSubmissions() {
   if (!subs?.length) {
     document.getElementById('v-pending-list').innerHTML =
       '<div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Nėra laukiančių pateikimų</div>';
-    document.getElementById('v-notif-dot').style.display = 'none';
+    const notifDot = document.getElementById('v-notif-dot');
+    if (notifDot) notifDot.style.display = 'none';
     return;
   }
 
-  document.getElementById('v-notif-dot').style.display = 'block';
+  const notifDot = document.getElementById('v-notif-dot');
+  if (notifDot) notifDot.style.display = 'block';
 
   // Pagalbinė funkcija – kiek laiko praėjo
   const timeAgo = (dateStr) => {
@@ -14387,6 +14393,19 @@ async function loadAnnouncements(showAll = false) {
     }
   }
   
+  // Atnaujinti varpelio badge (naujas elementas pagrindiniame lange)
+  if (currentProfile?.role === 'kid') {
+    const notifBadgeCount = document.getElementById('v-notif-badge-count');
+    if (notifBadgeCount) {
+      if (unread > 0) {
+        notifBadgeCount.style.display = 'flex';
+        notifBadgeCount.textContent = unread;
+      } else {
+        notifBadgeCount.style.display = 'none';
+      }
+    }
+  }
+  
   // Užkrauti siuntėjų info
   const senderIds = [...new Set(announcements.map(m => m.conversations.created_by).filter(Boolean))];
   let sendersMap = {};
@@ -14533,6 +14552,22 @@ function closeAnnouncement() {
 }
 
 // Atidaryti VISŲ pranešimų modal'ą
+// Pranešimų sekcijos perjungimas pagrindiniame lange (vaiko)
+function toggleNotifications() {
+  const section = document.getElementById('v-announcements-section');
+  if (!section) return;
+  
+  if (section.style.display === 'none' || section.style.display === '') {
+    section.style.display = 'block';
+    // Užkrauti pranešimus
+    if (typeof loadAnnouncements === 'function') {
+      loadAnnouncements();
+    }
+  } else {
+    section.style.display = 'none';
+  }
+}
+
 function openAllAnnouncements() {
   let modal = document.getElementById('all-announcements-modal');
   if (!modal) {
