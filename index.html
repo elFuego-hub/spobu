@@ -5759,14 +5759,24 @@ async function checkForNewStreakBonuses() {
   bonuses.forEach(b => seenIds.add(b.id));
   localStorage.setItem(lsKey, JSON.stringify([...seenIds]));
   
-  // Rodyti popup'us - nuo seniausio (chronologinė tvarka)
-  newBonuses.reverse().forEach((bonus, idx) => {
-    const submissionInfo = bonus.submission_id ? submissionsMap[bonus.submission_id] : null;
-    setTimeout(() => showStreakBonusPopup(bonus, submissionInfo), idx * 600 + 500);
-  });
+  // Rodyti popup'us PO VIENĄ - chronologine tvarka (queue)
+  newBonuses.reverse();
+  
+  async function showQueue() {
+    for (const bonus of newBonuses) {
+      const submissionInfo = bonus.submission_id ? submissionsMap[bonus.submission_id] : null;
+      await new Promise(resolve => {
+        showStreakBonusPopup(bonus, submissionInfo, resolve);
+      });
+      // Mažas tarpas tarp popup'ų
+      await new Promise(r => setTimeout(r, 200));
+    }
+  }
+  
+  setTimeout(showQueue, 500); // Pradedam po 500ms
 }
 
-function showStreakBonusPopup(bonus, submissionInfo) {
+function showStreakBonusPopup(bonus, submissionInfo, onClose) {
   const typeConfig = {
     training: { icon: '🔥', label: 'TRENIRUOČIŲ', color: '#FF4D00', gradient: 'linear-gradient(135deg, #FF4D00, #FF8000)' },
     weekly: { icon: '📅', label: 'SAVAITINIS', color: '#4FC3F7', gradient: 'linear-gradient(135deg, #4FC3F7, #29B6F6)' },
@@ -5842,20 +5852,23 @@ function showStreakBonusPopup(bonus, submissionInfo) {
     popup.style.transform = 'translate(-50%, -50%) scale(1)';
   });
   
-  // Auto-close po 5s
-  const autoClose = setTimeout(() => {
+  // Auto-close po 8s
+  const closePopup = () => {
     popup.style.opacity = '0';
     popup.style.transform = 'translate(-50%, -50%) scale(0.8)';
-    setTimeout(() => popup.remove(), 400);
-  }, 5000);
+    setTimeout(() => {
+      popup.remove();
+      if (onClose) onClose(); // ← Pradedam kitą popup queue
+    }, 400);
+  };
   
-  // Click - close
+  const autoClose = setTimeout(closePopup, 8000);
+  
+  // Click - close iškart
   popup.style.cursor = 'pointer';
   popup.onclick = () => {
     clearTimeout(autoClose);
-    popup.style.opacity = '0';
-    popup.style.transform = 'translate(-50%, -50%) scale(0.8)';
-    setTimeout(() => popup.remove(), 400);
+    closePopup();
   };
 }
 
