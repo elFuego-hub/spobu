@@ -8881,13 +8881,8 @@ const STAT_CACHE_TTL = 5000; // 5 sekundžių (anksčiau buvo 30s - per ilgai, v
 
 // Cache helper - grąžina iš cache arba kvieti fetch'ą
 async function statCacheGet(key, fetcher) {
-  const cached = STAT_CACHE.get(key);
-  if (cached && (Date.now() - cached.time < STAT_CACHE_TTL)) {
-    return cached.data;
-  }
-  const data = await fetcher();
-  STAT_CACHE.set(key, { time: Date.now(), data });
-  return data;
+  // CACHE ATJUNGTAS - visada fresh data (kad EXP sutaptų po streak bonusų)
+  return await fetcher();
 }
 
 // Cache išvalymo funkcija (kviečiama po duomenų pakeitimo)
