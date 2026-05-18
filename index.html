@@ -893,39 +893,44 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- 🔔 PRANEŠIMAI MODAL -->
-    <div style="margin:12px 16px;display:none;" id="v-announcements-section">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
-        <button onclick="toggleNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
-      </div>
-      
-      <!-- 4 TABAI -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px;">
-        <button class="notif-tab" data-tab="system" onclick="switchNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <span>🤖</span>
-          <span>Sistema <span id="v-notif-count-system" style="opacity:.7;"></span></span>
-        </button>
-        <button class="notif-tab" data-tab="challenges" onclick="switchNotifTab('challenges')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <span>🎯</span>
-          <span>Iššūkiai <span id="v-notif-count-challenges" style="opacity:.7;"></span></span>
-        </button>
-        <button class="notif-tab" data-tab="competitions" onclick="switchNotifTab('competitions')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <span>🏆</span>
-          <span>Varžybos <span id="v-notif-count-competitions" style="opacity:.7;"></span></span>
-        </button>
-        <button class="notif-tab" data-tab="messages" onclick="switchNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <span>💬</span>
-          <span>Žinutės <span id="v-notif-count-messages" style="opacity:.7;"></span></span>
-        </button>
-      </div>
-      
-      <div id="v-notif-list" style="max-height:400px;overflow-y:auto;">
-        <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
-      </div>
-      
-      <div style="margin-top:10px;display:flex;gap:6px;">
-        <button onclick="markAllNotifRead()" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;">✓ Žymėti visus skaitytus</button>
+    <!-- 🔔 PRANEŠIMAI MODAL - pilnas ekranas -->
+    <div style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.85);align-items:flex-end;justify-content:center;" id="v-announcements-section">
+      <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+        <!-- HEADER -->
+        <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
+          <button onclick="toggleNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
+        </div>
+        
+        <!-- 4 TABAI -->
+        <div style="padding:12px 16px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+          <button class="notif-tab" data-tab="system" onclick="switchNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span>🤖</span>
+            <span>Sistema <span id="v-notif-count-system" style="opacity:.7;"></span></span>
+          </button>
+          <button class="notif-tab" data-tab="challenges" onclick="switchNotifTab('challenges')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span>🎯</span>
+            <span>Iššūkiai <span id="v-notif-count-challenges" style="opacity:.7;"></span></span>
+          </button>
+          <button class="notif-tab" data-tab="competitions" onclick="switchNotifTab('competitions')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span>🏆</span>
+            <span>Varžybos <span id="v-notif-count-competitions" style="opacity:.7;"></span></span>
+          </button>
+          <button class="notif-tab" data-tab="messages" onclick="switchNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span>💬</span>
+            <span>Žinutės <span id="v-notif-count-messages" style="opacity:.7;"></span></span>
+          </button>
+        </div>
+        
+        <!-- LIST -->
+        <div id="v-notif-list" style="flex:1;overflow-y:auto;padding:12px 16px;">
+          <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
+        </div>
+        
+        <!-- FOOTER -->
+        <div style="padding:10px 16px;border-top:.5px solid var(--bdr);">
+          <button onclick="markAllNotifRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;">✓ Žymėti visus skaitytus</button>
+        </div>
       </div>
     </div>
     
@@ -15542,7 +15547,7 @@ function toggleNotifications() {
   if (!section) return;
   
   if (section.style.display === 'none' || section.style.display === '') {
-    section.style.display = 'block';
+    section.style.display = 'flex';
     // Užkrauti pranešimus
     loadAllNotifications();
   } else {
@@ -15619,23 +15624,33 @@ async function loadAllNotifications() {
   const zinutes = []; // TODO: ateityje žinutės iš trenerio
   
   // 🤖 SISTEMA
+  const challengeTypeLabels = { 
+    training: '🏋️ Treniruotės', 
+    weekly: '⚡ Savaitinis', 
+    monthly: '🌙 Mėnesinis', 
+    oneoff: '✨ Vienkartinis',
+    one_time: '✨ Vienkartinis',
+    permanent: '🔁 Nuolatinis'
+  };
+  
   (approvedChRes.data || []).forEach(s => {
+    const typeLabel = challengeTypeLabels[s.challenges?.type] || '🎯 Iššūkis';
     sistema.push({
       id: `apprCh-${s.id}`,
       icon: '✅',
-      title: 'Iššūkis patvirtintas',
+      title: `${typeLabel} patvirtintas`,
       body: `${s.challenges?.title || 'Iššūkis'} · +${s.exp_gain || 0} EXP`,
       time: s.reviewed_at,
       link: 'v-ish'
     });
   });
   (approvedCoRes.data || []).forEach(s => {
-    const placement = s.placement ? `${s.placement}-a vieta` : '';
+    const placement = s.placement ? `${s.placement}-a vieta · ` : '';
     sistema.push({
       id: `apprCo-${s.id}`,
       icon: '🏆',
       title: 'Varžybos patvirtintos',
-      body: `${s.competitions?.title || 'Varžyba'} ${placement} · +${s.exp_gained || 0} EXP`,
+      body: `${s.competitions?.title || 'Varžyba'} · ${placement}+${s.exp_gained || 0} EXP`,
       time: s.approved_at,
       link: 'v-comp'
     });
@@ -15650,23 +15665,29 @@ async function loadAllNotifications() {
       link: 'v-kar'
     });
   });
+  
+  // 🔥 STREAK BONUSAI - su tipo info
+  const streakTypeConfig = {
+    training: { icon: '🔥', label: 'Treniruočių' },
+    weekly: { icon: '📅', label: 'Savaitinis' },
+    monthly: { icon: '🏆', label: 'Mėnesinis' }
+  };
   (streakRes.data || []).forEach(s => {
-    const streakIcon = { training: '🔥', weekly: '📅', monthly: '🏆' };
+    const cfg = streakTypeConfig[s.streak_type] || { icon: '🔥', label: s.streak_type };
     sistema.push({
       id: `streak-${s.id}`,
-      icon: streakIcon[s.streak_type] || '🔥',
-      title: 'Streak bonusas',
+      icon: cfg.icon,
+      title: `${cfg.label} streak bonusas`,
       body: `Streak ${s.streak_count} · +${s.exp_awarded || 0} EXP`,
       time: s.created_at,
-      link: null
+      link: 'v-main' // Nukelti į pagrindinį (kur matosi streak skaičiai)
     });
   });
   
-  // 🎯 IŠŠŪKIAI - filtruoti pagal vaiką
+  // 🎯 IŠŠŪKIAI - filtruoti pagal vaiką (su tipo info)
   const myGroupId = currentKid.group_id;
   const myGender = currentKid.gender;
   const myKidId = currentKid.id;
-  const typeIcons = { training: '🏋️', weekly: '⚡', monthly: '🌙', oneoff: '✨', permanent: '🔁' };
   
   (newChRes.data || []).forEach(ch => {
     const audience = ch.target_audience || 'group';
@@ -15680,10 +15701,12 @@ async function loadAllNotifications() {
     }
     
     if (eligible) {
+      const typeLabel = challengeTypeLabels[ch.type] || '🎯 Iššūkis';
+      const typeIcon = (challengeTypeLabels[ch.type] || '🎯').split(' ')[0]; // tik emoji
       issukiai.push({
         id: `newCh-${ch.id}`,
-        icon: typeIcons[ch.type] || '🎯',
-        title: 'Naujas iššūkis',
+        icon: typeIcon,
+        title: `Naujas ${challengeTypeLabels[ch.type]?.split(' ')[1]?.toLowerCase() || ''} iššūkis`,
         body: `${ch.title || 'Iššūkis'}${ch.exp_reward ? ' · +' + ch.exp_reward + ' EXP' : ''}`,
         time: ch.created_at,
         link: 'v-ish'
