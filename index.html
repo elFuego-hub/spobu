@@ -13338,7 +13338,7 @@ async function loadPendingChallengeSubmissions() {
   }
   
   const { data: subs, error } = await sb.from('challenge_submissions')
-    .select('*, challenges(title, icon, type, exp_reward, target_value, target_unit, content_type)')
+    .select('*, challenges(title, icon, type, exp_reward, target_value, target_unit, content_type, allow_partial)')
     .eq('status', 'pending')
     .in('kid_id', myKidIds)
     .order('created_at', { ascending: false })
@@ -13359,6 +13359,28 @@ async function loadPendingChallengeSubmissions() {
       .select('id, first_name, last_name')
       .in('id', kidIds);
     (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
+  }
+  
+  // 📊 Užkraunam challenge_progress visiems partial iššūkiams
+  const progressMap = {};
+  if (subs?.length) {
+    const partialPairs = (subs || [])
+      .filter(s => s.challenges?.allow_partial)
+      .map(s => ({ challenge_id: s.challenge_id, kid_id: s.kid_id }));
+    
+    if (partialPairs.length > 0) {
+      const challengeIds = [...new Set(partialPairs.map(p => p.challenge_id))];
+      const kidIdsForProgress = [...new Set(partialPairs.map(p => p.kid_id))];
+      
+      const { data: progressData } = await sb.from('challenge_progress')
+        .select('challenge_id, kid_id, total_progress, is_completed')
+        .in('challenge_id', challengeIds)
+        .in('kid_id', kidIdsForProgress);
+      
+      (progressData || []).forEach(p => {
+        progressMap[`${p.challenge_id}_${p.kid_id}`] = p;
+      });
+    }
   }
   
   // Atnaujinam skaičiukus
@@ -13386,30 +13408,80 @@ async function loadPendingChallengeSubmissions() {
     const targetText = ch?.target_value 
       ? `🎯 Tikslas: ${ch.target_value} ${ch.target_unit || ''}` 
       : '';
-    const meetsTarget = ch?.target_value && parseFloat(s.value) >= ch.target_value;
+    
+    // 📊 PARTIAL info
+    const isPartial = ch?.allow_partial === true;
+    const progress = progressMap[`${s.challenge_id}_${s.kid_id}`];
+    const currentProgress = progress?.total_progress || 0;
+    const submissionValue = parseFloat(s.value || s.numeric_value || 0);
+    const projectedProgress = currentProgress + submissionValue; // jei patvirtins
+    const willComplete = ch?.target_value && projectedProgress >= ch.target_value;
+    
+    // Standartinis "meetsTarget" - vienkartinis pasiektas?
+    const meetsTarget = !isPartial && ch?.target_value && submissionValue >= ch.target_value;
+    
+    let resultBlock = '';
+    
+    if (isPartial) {
+      // 📊 PARTIAL - rodyti progress baras
+      const pct = Math.min(100, (projectedProgress / ch.target_value) * 100);
+      const color = willComplete ? '#22C55E' : '#FF8C00';
+      const statusText = willComplete ? '✅ Patvirtinus - PILNAI ATLIKTA' : '📊 Tarpinis rezultatas';
+      
+      resultBlock = `
+        <div style="background:${willComplete ? 'rgba(34,197,94,.1)' : 'rgba(79,195,247,.08)'};border:.5px solid ${willComplete ? 'var(--grn)' : 'rgba(79,195,247,.3)'};border-radius:10px;padding:12px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:10px;color:var(--mut);letter-spacing:1px;">PATEIKIA</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${color};letter-spacing:1px;">+${submissionValue} ${ch?.target_unit || ''}</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;">
+            <span style="color:var(--mut);">Buvo: <b style="color:white;">${currentProgress}</b></span>
+            <span style="color:var(--mut);">→ Bus: <b style="color:${color};">${projectedProgress} / ${ch.target_value}</b></span>
+          </div>
+          <div style="height:8px;background:var(--bdr);border-radius:99px;overflow:hidden;margin-bottom:8px;">
+            <div style="height:100%;background:linear-gradient(90deg,${color},${willComplete ? '#16A34A' : '#FFB300'});width:${pct.toFixed(1)}%;transition:width .4s;box-shadow:0 0 8px ${color}66;"></div>
+          </div>
+          <div style="text-align:center;font-size:11px;font-weight:800;color:${color};">${statusText}</div>
+        </div>
+      `;
+    } else {
+      // STANDARTINIS - vienkartinis rezultatas
+      resultBlock = `
+        <div style="background:${meetsTarget ? 'rgba(34,197,94,.1)' : 'var(--bg)'};border:.5px solid ${meetsTarget ? 'var(--grn)' : 'var(--bdr)'};border-radius:10px;padding:12px;margin-bottom:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--mut);letter-spacing:1px;">PATEIKTAS REZULTATAS</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${meetsTarget ? 'var(--grn)' : 'var(--text)'};margin:4px 0;">${s.value || '?'} ${ch?.target_unit || ''}</div>
+          ${meetsTarget ? '<div style="font-size:10px;color:var(--grn);font-weight:700;">✓ TIKSLAS PASIEKTAS</div>' : '<div style="font-size:10px;color:var(--mut);">Tikslas nepasiektas</div>'}
+        </div>
+      `;
+    }
+    
+    // EXP rodymas - partial atveju rodyti TIK kai pilnai atliks
+    const expBlock = isPartial 
+      ? `<div style="background:var(--bg);border-radius:10px;padding:8px 10px;margin-bottom:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--mut);">EXP ATLYGIS</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${willComplete ? 'var(--grn)' : 'var(--mut)'};">
+            ${willComplete ? `+${ch?.exp_reward||0} EXP (Pilnai atliks!)` : `0 EXP (tarpinis)`}
+          </div>
+        </div>`
+      : `<div style="background:var(--bg);border-radius:10px;padding:8px 10px;margin-bottom:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--mut);">EXP ATLYGIS PATVIRTINUS</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);">+${ch?.exp_reward||0} EXP</div>
+        </div>`;
     
     return `<div class="cd" style="margin-bottom:12px;" id="csub-${s.id}">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
         <div class="av" style="width:36px;height:36px;font-size:14px;background:var(--br);">${kid?.first_name?.[0]||'?'}</div>
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:900;">${kidName}</div>
-          <div style="font-size:11px;color:var(--mut);">${ch?.icon||'🎯'} ${ch?.title||'Iššūkis'}</div>
+          <div style="font-size:11px;color:var(--mut);">${ch?.icon||'🎯'} ${ch?.title||'Iššūkis'}${isPartial ? ' <span style="background:rgba(79,195,247,.2);color:#4FC3F7;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:800;">📊 PARTIAL</span>' : ''}</div>
         </div>
         <div class="bg or">${typeLabels[ch?.type]||ch?.type||''}</div>
       </div>
       
       ${targetText ? `<div style="font-size:11px;color:var(--mut);margin-bottom:8px;">${targetText}</div>` : ''}
       
-      <div style="background:${meetsTarget ? 'rgba(34,197,94,.1)' : 'var(--bg)'};border:.5px solid ${meetsTarget ? 'var(--grn)' : 'var(--bdr)'};border-radius:10px;padding:12px;margin-bottom:10px;text-align:center;">
-        <div style="font-size:10px;color:var(--mut);letter-spacing:1px;">PATEIKTAS REZULTATAS</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${meetsTarget ? 'var(--grn)' : 'var(--text)'};margin:4px 0;">${s.value || '?'} ${ch?.target_unit || ''}</div>
-        ${meetsTarget ? '<div style="font-size:10px;color:var(--grn);font-weight:700;">✓ TIKSLAS PASIEKTAS</div>' : '<div style="font-size:10px;color:var(--mut);">Tikslas nepasiektas</div>'}
-      </div>
-      
-      <div style="background:var(--bg);border-radius:10px;padding:8px 10px;margin-bottom:10px;text-align:center;">
-        <div style="font-size:10px;color:var(--mut);">EXP ATLYGIS PATVIRTINUS</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);">+${ch?.exp_reward||0} EXP</div>
-      </div>
+      ${resultBlock}
+      ${expBlock}
       
       <div style="display:flex;gap:8px;">
         <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveChallengeSubmission('${s.id}')">✓ Patvirtinti</button>
