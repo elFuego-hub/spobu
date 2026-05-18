@@ -682,6 +682,21 @@ select.inp option{background:#222;}
       </div>
     </div>
     
+    <!-- TARPINIAI REZULTATAI (toggle) -->
+    <div id="cc-partial-section" style="margin-bottom:14px;display:none;">
+      <div onclick="togglePartialResults()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:12px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+        <div style="font-size:24px;">📊</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:800;color:white;">Leisti tarpinius rezultatus</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;" id="cc-partial-desc">Vaikas pateikia po dalį (pvz. po 2 km), sumuojama iki tikslo</div>
+        </div>
+        <div id="cc-partial-toggle" style="width:44px;height:24px;border-radius:99px;background:var(--bdr);position:relative;transition:background .2s;flex-shrink:0;">
+          <div id="cc-partial-toggle-dot" style="width:18px;height:18px;border-radius:50%;background:white;position:absolute;top:3px;left:3px;transition:left .2s;"></div>
+        </div>
+      </div>
+      <input type="hidden" id="cc-allow-partial" value="false">
+    </div>
+    
     <!-- TRUKMĖS TIPAS -->
     <label class="lbl">TRUKMĖ</label>
     <div class="chs" style="margin-bottom:14px;" id="cc-types">
@@ -12541,6 +12556,14 @@ async function openCreateChallenge() {
   document.getElementById('cc-group-select-section').style.display = 'block';
   document.getElementById('cc-kid-select-section').style.display = 'none';
   
+  // 📊 Default tipas weekly → rodyti tarpinių sekciją (off)
+  document.getElementById('cc-partial-section').style.display = 'block';
+  document.getElementById('cc-allow-partial').value = 'false';
+  const toggle = document.getElementById('cc-partial-toggle');
+  const dot = document.getElementById('cc-partial-toggle-dot');
+  if (toggle) toggle.style.background = 'var(--bdr)';
+  if (dot) dot.style.left = '3px';
+  
   validateChallengeExp();
   document.getElementById('ccmo').classList.add('open');
 }
@@ -12606,6 +12629,42 @@ function selectChallengeType(el, type) {
   const current = parseInt(document.getElementById('cc-exp').value) || 0;
   if (current > max) document.getElementById('cc-exp').value = max;
   validateChallengeExp();
+  
+  // 📊 TARPINIŲ REZULTATŲ sekcija - rodyti tik weekly/monthly
+  const partialSection = document.getElementById('cc-partial-section');
+  if (partialSection) {
+    if (type === 'weekly' || type === 'monthly') {
+      partialSection.style.display = 'block';
+    } else {
+      partialSection.style.display = 'none';
+      // Resetinti toggle į off
+      document.getElementById('cc-allow-partial').value = 'false';
+      const toggle = document.getElementById('cc-partial-toggle');
+      const dot = document.getElementById('cc-partial-toggle-dot');
+      if (toggle) toggle.style.background = 'var(--bdr)';
+      if (dot) dot.style.left = '3px';
+    }
+  }
+}
+
+// 📊 TOGGLE - tarpiniai rezultatai
+function togglePartialResults() {
+  const input = document.getElementById('cc-allow-partial');
+  const toggle = document.getElementById('cc-partial-toggle');
+  const dot = document.getElementById('cc-partial-toggle-dot');
+  const desc = document.getElementById('cc-partial-desc');
+  
+  const isOn = input.value === 'true';
+  const newState = !isOn;
+  
+  input.value = newState ? 'true' : 'false';
+  if (toggle) toggle.style.background = newState ? '#FF4D00' : 'var(--bdr)';
+  if (dot) dot.style.left = newState ? '23px' : '3px';
+  if (desc) {
+    desc.textContent = newState 
+      ? '✅ Vaikas pateikia po dalį, sumuojama iki tikslo' 
+      : 'Vaikas pateikia po dalį (pvz. po 2 km), sumuojama iki tikslo';
+  }
 }
 
 function selectChallengeContentType(el, contentType) {
@@ -12700,7 +12759,8 @@ async function submitNewChallenge() {
     expires_at: expiresAt,
     target_audience: audience,
     target_kid_id: targetKidId,
-    group_id: groupId
+    group_id: groupId,
+    allow_partial: document.getElementById('cc-allow-partial')?.value === 'true'
   }).select();
   
   btn.disabled = false;
