@@ -8172,41 +8172,48 @@ async function loadRankings() {
   
   const kidIds = kids.map(k => k.id);
   
-  // 4) Užkrauti varžybų rezultatus (pergales) ir iššūkių submissions
-  const [winsRes, ishRes] = await Promise.all([
+  // 4) Užkrauti varžybų rezultatus + iššūkių submissions (skaičiuojam pagal EXP - kaip detali statistika)
+  const [compRes, ishRes] = await Promise.all([
     sb.from('competition_results')
-      .select('kid_id, placement')
+      .select('kid_id, exp_gained')
       .in('kid_id', kidIds)
       .eq('approval_status', 'approved'),
     sb.from('challenge_submissions')
-      .select('kid_id')
+      .select('kid_id, exp_gain')
       .in('kid_id', kidIds)
       .eq('status', 'approved')
   ]);
   
-  const winsCount = {};
-  (winsRes.data || []).forEach(r => {
-    if (r.placement === 1) winsCount[r.kid_id] = (winsCount[r.kid_id] || 0) + 1;
+  // VARŽYBŲ EXP suma (NE pergalių kiekis!)
+  const compExp = {};
+  (compRes.data || []).forEach(r => {
+    compExp[r.kid_id] = (compExp[r.kid_id] || 0) + (r.exp_gained || 0);
   });
   
-  const ishCount = {};
+  // IŠŠŪKIŲ EXP suma (NE submissions kiekis!)
+  const ishExp = {};
   (ishRes.data || []).forEach(s => {
-    ishCount[s.kid_id] = (ishCount[s.kid_id] || 0) + 1;
+    ishExp[s.kid_id] = (ishExp[s.kid_id] || 0) + (s.exp_gain || 0);
   });
   
-  // 1) Pagal varžybas (1 vietos = wins)
-  const sortedByWins = [...kids].sort((a, b) => (winsCount[b.id] || 0) - (winsCount[a.id] || 0));
-  const compRank = sortedByWins.findIndex(k => k.id === currentKid.id) + 1;
+  // 1) Pagal varžybų EXP
+  const sortedByComp = [...kids].sort((a, b) => (compExp[b.id] || 0) - (compExp[a.id] || 0));
+  const compRank = sortedByComp.findIndex(k => k.id === currentKid.id) + 1;
   
   // 2) Pagal bendrą EXP
   const sortedByExp = [...kids].sort((a, b) => (b.total_exp || 0) - (a.total_exp || 0));
   const expRank = sortedByExp.findIndex(k => k.id === currentKid.id) + 1;
   
-  // 3) Pagal iššūkius
-  const sortedByIsh = [...kids].sort((a, b) => (ishCount[b.id] || 0) - (ishCount[a.id] || 0));
+  // 3) Pagal iššūkių EXP
+  const sortedByIsh = [...kids].sort((a, b) => (ishExp[b.id] || 0) - (ishExp[a.id] || 0));
   const ishRank = sortedByIsh.findIndex(k => k.id === currentKid.id) + 1;
   
   console.log('[loadRankings] reitingai:', { compRank, expRank, ishRank, of: kids.length });
+  console.log('[loadRankings] mano EXP:', { 
+    comp: compExp[currentKid.id] || 0, 
+    total: kids.find(k => k.id === currentKid.id)?.total_exp || 0,
+    ish: ishExp[currentKid.id] || 0 
+  });
   
   // Atnaujint UI - rodome "#X" formatu (po juo bus "/Y" su kiekiu)
   const total = kids.length;
