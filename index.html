@@ -684,7 +684,7 @@ select.inp option{background:#222;}
     
     <!-- TARPINIAI REZULTATAI (toggle) -->
     <div id="cc-partial-section" style="margin-bottom:14px;display:none;">
-      <div onclick="togglePartialResults()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:12px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+      <div id="cc-partial-box" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
         <div style="font-size:24px;">📊</div>
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:800;color:white;">Leisti tarpinius rezultatus</div>
@@ -12556,13 +12556,22 @@ async function openCreateChallenge() {
   document.getElementById('cc-group-select-section').style.display = 'block';
   document.getElementById('cc-kid-select-section').style.display = 'none';
   
-  // 📊 Default tipas weekly → rodyti tarpinių sekciją (off)
-  document.getElementById('cc-partial-section').style.display = 'block';
-  document.getElementById('cc-allow-partial').value = 'false';
+  // 📊 Default tipas weekly → rodyti tarpinių sekciją locked ON
+  const partialSection = document.getElementById('cc-partial-section');
+  const partialBox = document.getElementById('cc-partial-box');
+  if (partialSection) partialSection.style.display = 'block';
+  document.getElementById('cc-allow-partial').value = 'true';
+  if (partialBox) {
+    partialBox.style.cursor = 'default';
+    partialBox.onclick = null;
+    partialBox.style.opacity = '.85';
+  }
   const toggle = document.getElementById('cc-partial-toggle');
   const dot = document.getElementById('cc-partial-toggle-dot');
-  if (toggle) toggle.style.background = 'var(--bdr)';
-  if (dot) dot.style.left = '3px';
+  const desc = document.getElementById('cc-partial-desc');
+  if (toggle) toggle.style.background = '#FF4D00';
+  if (dot) dot.style.left = '23px';
+  if (desc) desc.innerHTML = '🔒 <b>Savaitinis</b> iššūkis VISADA su tarpiniais rezultatais';
   
   validateChallengeExp();
   document.getElementById('ccmo').classList.add('open');
@@ -12630,20 +12639,45 @@ function selectChallengeType(el, type) {
   if (current > max) document.getElementById('cc-exp').value = max;
   validateChallengeExp();
   
-  // 📊 TARPINIŲ REZULTATŲ sekcija - rodyti tik weekly/monthly
+  // 📊 TARPINIŲ REZULTATŲ logika:
+  // - weekly/monthly: VISADA ON (auto-on, info)
+  // - permanent: VISADA OFF (slepiame sekciją)
+  // - training/one_time: treneris pasirenka toggle
   const partialSection = document.getElementById('cc-partial-section');
-  if (partialSection) {
-    if (type === 'weekly' || type === 'monthly') {
-      partialSection.style.display = 'block';
-    } else {
-      partialSection.style.display = 'none';
-      // Resetinti toggle į off
-      document.getElementById('cc-allow-partial').value = 'false';
-      const toggle = document.getElementById('cc-partial-toggle');
-      const dot = document.getElementById('cc-partial-toggle-dot');
-      if (toggle) toggle.style.background = 'var(--bdr)';
-      if (dot) dot.style.left = '3px';
+  const partialBox = document.getElementById('cc-partial-box');
+  const partialToggle = document.getElementById('cc-partial-toggle');
+  const partialDot = document.getElementById('cc-partial-toggle-dot');
+  const partialDesc = document.getElementById('cc-partial-desc');
+  const partialInput = document.getElementById('cc-allow-partial');
+  
+  if (type === 'weekly' || type === 'monthly') {
+    // VISADA tarpiniai - rodome locked info
+    if (partialSection) partialSection.style.display = 'block';
+    if (partialInput) partialInput.value = 'true';
+    if (partialBox) {
+      partialBox.style.cursor = 'default';
+      partialBox.onclick = null;
+      partialBox.style.opacity = '.85';
     }
+    if (partialToggle) partialToggle.style.background = '#FF4D00';
+    if (partialDot) partialDot.style.left = '23px';
+    if (partialDesc) partialDesc.innerHTML = `🔒 <b>${type === 'weekly' ? 'Savaitinis' : 'Mėnesinis'}</b> iššūkis VISADA su tarpiniais rezultatais`;
+  } else if (type === 'permanent') {
+    // VISADA be tarpinių - slepiame sekciją
+    if (partialSection) partialSection.style.display = 'none';
+    if (partialInput) partialInput.value = 'false';
+  } else {
+    // training arba one_time - treneris pasirenka
+    if (partialSection) partialSection.style.display = 'block';
+    if (partialInput) partialInput.value = 'false';
+    if (partialBox) {
+      partialBox.style.cursor = 'pointer';
+      partialBox.onclick = togglePartialResults;
+      partialBox.style.opacity = '1';
+    }
+    if (partialToggle) partialToggle.style.background = 'var(--bdr)';
+    if (partialDot) partialDot.style.left = '3px';
+    if (partialDesc) partialDesc.textContent = 'Vaikas pateikia po dalį, sumuojama iki tikslo';
   }
 }
 
@@ -12663,7 +12697,7 @@ function togglePartialResults() {
   if (desc) {
     desc.textContent = newState 
       ? '✅ Vaikas pateikia po dalį, sumuojama iki tikslo' 
-      : 'Vaikas pateikia po dalį (pvz. po 2 km), sumuojama iki tikslo';
+      : 'Vaikas pateikia po dalį, sumuojama iki tikslo';
   }
 }
 
