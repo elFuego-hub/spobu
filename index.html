@@ -969,34 +969,47 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- 🎯 SAVAITĖS TIKSLAS -->
-    <div style="margin:12px 16px;padding:12px;background:linear-gradient(135deg, rgba(79,195,247,.12), rgba(79,195,247,.04));border: 1px solid rgba(79,195,247,.25);border-radius:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div style="font-size:11px;color:#4FC3F7;font-weight:800;letter-spacing:1px;">🎯 ŠIOS SAVAITĖS TIKSLAS</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-week-goal-exp">0 / 200 EXP</div>
+    <!-- ⚡ AKTYVUS SAVAITINIS IŠŠŪKIS -->
+    <div id="v-week-challenge-card" onclick="openActiveWeeklyChallenge()" style="margin:12px 16px;padding:12px;background:linear-gradient(135deg, rgba(79,195,247,.12), rgba(79,195,247,.04));border: 1px solid rgba(79,195,247,.25);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:rgba(79,195,247,.2);transition:border-color .2s;display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:#4FC3F7;font-weight:800;letter-spacing:1px;">⚡ SAVAITINIS IŠŠŪKIS</div>
+          <div style="font-size:13px;color:white;font-weight:800;margin-top:2px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-week-challenge-title">–</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#4FC3F7;line-height:1;flex-shrink:0;" id="v-week-challenge-progress">0 / 0</div>
       </div>
       <div style="height:6px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden;">
-        <div style="height:100%;background:linear-gradient(90deg,#4FC3F7,#29B6F6);box-shadow:0 0 8px rgba(79,195,247,.5);border-radius:3px;width:0%;" id="v-week-goal-bar"></div>
+        <div style="height:100%;background:linear-gradient(90deg,#4FC3F7,#29B6F6);box-shadow:0 0 8px rgba(79,195,247,.5);border-radius:3px;width:0%;transition:width .4s ease;" id="v-week-challenge-bar"></div>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--mut);">
-        <span id="v-week-goal-pct">0% atlikta</span>
-        <span id="v-week-goal-days">7 dienos liko</span>
+        <span id="v-week-challenge-pct">0% atlikta</span>
+        <span id="v-week-challenge-days">– d. liko</span>
       </div>
     </div>
     
-    <!-- 📆 MĖNESIO TIKSLAS -->
-    <div style="margin:6px 16px;padding:12px;background:linear-gradient(135deg, rgba(186,104,200,.12), rgba(186,104,200,.04));border: 1px solid rgba(186,104,200,.25);border-radius:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div style="font-size:11px;color:#BA68C8;font-weight:800;letter-spacing:1px;">📆 ŠIO MĖNESIO TIKSLAS</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-month-goal-exp">0 / 1000 EXP</div>
+    <!-- 🌙 AKTYVUS MĖNESINIS IŠŠŪKIS -->
+    <div id="v-month-challenge-card" onclick="openActiveMonthlyChallenge()" style="margin:6px 16px;padding:12px;background:linear-gradient(135deg, rgba(186,104,200,.12), rgba(186,104,200,.04));border: 1px solid rgba(186,104,200,.25);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:rgba(186,104,200,.2);transition:border-color .2s;display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:#BA68C8;font-weight:800;letter-spacing:1px;">🌙 MĖNESINIS IŠŠŪKIS</div>
+          <div style="font-size:13px;color:white;font-weight:800;margin-top:2px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-month-challenge-title">–</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#BA68C8;line-height:1;flex-shrink:0;" id="v-month-challenge-progress">0 / 0</div>
       </div>
       <div style="height:6px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden;">
-        <div style="height:100%;background:linear-gradient(90deg,#BA68C8,#8E24AA);box-shadow:0 0 8px rgba(186,104,200,.5);border-radius:3px;width:0%;" id="v-month-goal-bar"></div>
+        <div style="height:100%;background:linear-gradient(90deg,#BA68C8,#8E24AA);box-shadow:0 0 8px rgba(186,104,200,.5);border-radius:3px;width:0%;transition:width .4s ease;" id="v-month-challenge-bar"></div>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--mut);">
-        <span id="v-month-goal-pct">0% atlikta</span>
-        <span id="v-month-goal-days">30 dienų liko</span>
+        <span id="v-month-challenge-pct">0% atlikta</span>
+        <span id="v-month-challenge-days">– d. liko</span>
       </div>
+    </div>
+    
+    <!-- 💡 KAI NĖRA AKTYVIŲ IŠŠŪKIŲ -->
+    <div id="v-no-active-challenges" style="margin:12px 16px;padding:14px;background:var(--card);border:.5px dashed var(--bdr);border-radius:14px;text-align:center;display:none;">
+      <div style="font-size:24px;margin-bottom:6px;">⏳</div>
+      <div style="font-size:12px;color:var(--mut);font-weight:700;">Šiuo metu neturi aktyvių savaitinių ar mėnesinių iššūkių</div>
+      <div style="font-size:10px;color:var(--mut);margin-top:4px;">Treneris paskirs naują iššūkį netrukus</div>
     </div>
     
     <!-- 📊 REITINGAI - kompaktiški kvadratai 2x2 -->
@@ -8266,79 +8279,167 @@ async function loadChallengeBadge() {
 // PAGRINDINIO LANGO DUOMENYS - tikslai, reitingai, next event
 // ════════════════════════════════════════
 
+// Globalūs - kad onclick funkcijos žinotų kuris iššūkis aktyvus
+let activeWeeklyChallengeId = null;
+let activeMonthlyChallengeId = null;
+
 async function loadGoals() {
   if (!currentKid?.id) return;
   console.log('[loadGoals] start, kidId:', currentKid.id);
   
-  // Savaitės EXP tikslas (default 200, mėnesio 1000)
-  const WEEK_GOAL = 200;
-  const MONTH_GOAL = 1000;
+  // Užkraunam aktyvius weekly + monthly iššūkius vaikui
+  const nowISO = new Date().toISOString();
+  const myKidId = currentKid.id;
+  const myGroupId = currentKid.group_id;
+  const myGender = currentKid.gender;
   
-  const now = new Date();
+  // 1. Surasti ALL aktyvius weekly/monthly iššūkius klubo
+  const { data: allChallenges } = await sb.from('challenges')
+    .select('id, title, type, target_value, target_unit, exp_reward, expires_at, allow_partial, target_audience, target_kid_id, group_id, created_at')
+    .eq('club_id', currentProfile?.club_id)
+    .eq('is_active', true)
+    .in('type', ['weekly', 'monthly'])
+    .or(`expires_at.is.null,expires_at.gt.${nowISO}`);
   
-  // Savaitės pradžia (pirmadienis)
-  const weekStart = new Date(now);
-  const day = weekStart.getDay();
-  const diff = day === 0 ? 6 : day - 1;
-  weekStart.setDate(weekStart.getDate() - diff);
-  weekStart.setHours(0, 0, 0, 0);
-  
-  // Mėnesio pradžia
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  monthStart.setHours(0, 0, 0, 0);
-  
-  // Surinkti šios savaitės ir mėnesio EXP iš submissions + competitions
-  const [subs, comps] = await Promise.all([
-    sb.from('challenge_submissions')
-      .select('exp_gain, reviewed_at')
-      .eq('kid_id', currentKid.id)
-      .eq('status', 'approved')
-      .gte('reviewed_at', monthStart.toISOString()),
-    sb.from('competition_results')
-      .select('exp_gained, approved_at')
-      .eq('kid_id', currentKid.id)
-      .eq('approval_status', 'approved')
-      .gte('approved_at', monthStart.toISOString())
-  ]);
-  
-  let weekExp = 0, monthExp = 0;
-  (subs.data || []).forEach(s => {
-    const exp = s.exp_gain || 0;
-    monthExp += exp;
-    if (s.reviewed_at && new Date(s.reviewed_at) >= weekStart) weekExp += exp;
-  });
-  (comps.data || []).forEach(c => {
-    const exp = c.exp_gained || 0;
-    monthExp += exp;
-    if (c.approved_at && new Date(c.approved_at) >= weekStart) weekExp += exp;
+  // 2. Filtruoti tik tuos kurie taikomi šiam vaikui
+  const myEligible = (allChallenges || []).filter(ch => {
+    const audience = ch.target_audience || 'group';
+    if (audience === 'all_club') return true;
+    if (audience === 'specific_kid') return ch.target_kid_id === myKidId;
+    if (!myGroupId || ch.group_id !== myGroupId) return false;
+    if (audience === 'group') return true;
+    if (audience === 'boys_in_group') return myGender === 'male';
+    if (audience === 'girls_in_group') return myGender === 'female';
+    return false;
   });
   
-  console.log('[loadGoals] subs:', subs.data?.length || 0, 'comps:', comps.data?.length || 0, 'weekExp:', weekExp, 'monthExp:', monthExp);
+  // 3. Užkraunam progress + submissions partial iššūkiams
+  const eligibleIds = myEligible.map(c => c.id);
+  const progressMap = {};
+  const submissionsMap = {};
   
-  // Savaitės UI
-  const weekPct = Math.min(100, (weekExp / WEEK_GOAL) * 100);
-  const daysLeft = 7 - diff;
-  const weekExpEl = document.getElementById('v-week-goal-exp');
-  const weekBarEl = document.getElementById('v-week-goal-bar');
-  const weekPctEl = document.getElementById('v-week-goal-pct');
-  const weekDaysEl = document.getElementById('v-week-goal-days');
-  if (weekExpEl) weekExpEl.textContent = `${weekExp} / ${WEEK_GOAL} EXP`;
-  if (weekBarEl) weekBarEl.style.width = weekPct + '%';
-  if (weekPctEl) weekPctEl.textContent = `${Math.round(weekPct)}% atlikta`;
-  if (weekDaysEl) weekDaysEl.textContent = `${daysLeft} d. liko`;
+  if (eligibleIds.length > 0) {
+    const [progressRes, subsRes] = await Promise.all([
+      sb.from('challenge_progress')
+        .select('challenge_id, total_progress, is_completed')
+        .eq('kid_id', myKidId)
+        .in('challenge_id', eligibleIds),
+      sb.from('challenge_submissions')
+        .select('challenge_id, status')
+        .eq('kid_id', myKidId)
+        .in('challenge_id', eligibleIds)
+    ]);
+    
+    (progressRes.data || []).forEach(p => { progressMap[p.challenge_id] = p; });
+    (subsRes.data || []).forEach(s => {
+      if (!submissionsMap[s.challenge_id]) submissionsMap[s.challenge_id] = [];
+      submissionsMap[s.challenge_id].push(s);
+    });
+  }
   
-  // Mėnesio UI
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const monthDaysLeft = Math.max(0, monthEnd.getDate() - now.getDate());
-  const monthPct = Math.min(100, (monthExp / MONTH_GOAL) * 100);
-  const monthExpEl = document.getElementById('v-month-goal-exp');
-  const monthBarEl = document.getElementById('v-month-goal-bar');
-  const monthPctEl = document.getElementById('v-month-goal-pct');
-  const monthDaysEl = document.getElementById('v-month-goal-days');
-  if (monthExpEl) monthExpEl.textContent = `${monthExp} / ${MONTH_GOAL} EXP`;
-  if (monthBarEl) monthBarEl.style.width = monthPct + '%';
-  if (monthPctEl) monthPctEl.textContent = `${Math.round(monthPct)}% atlikta`;
-  if (monthDaysEl) monthDaysEl.textContent = `${monthDaysLeft} d. liko`;
+  // 4. Atskirt į aktyvius - tik tie kurie dar NEPILNAI atlikti
+  const activeWeekly = myEligible.find(ch => {
+    if (ch.type !== 'weekly') return false;
+    if (ch.allow_partial) {
+      return !progressMap[ch.id]?.is_completed;
+    } else {
+      const subs = submissionsMap[ch.id] || [];
+      return !subs.some(s => s.status === 'approved');
+    }
+  });
+  
+  const activeMonthly = myEligible.find(ch => {
+    if (ch.type !== 'monthly') return false;
+    if (ch.allow_partial) {
+      return !progressMap[ch.id]?.is_completed;
+    } else {
+      const subs = submissionsMap[ch.id] || [];
+      return !subs.some(s => s.status === 'approved');
+    }
+  });
+  
+  activeWeeklyChallengeId = activeWeekly?.id || null;
+  activeMonthlyChallengeId = activeMonthly?.id || null;
+  
+  console.log('[loadGoals] weekly:', activeWeekly?.title, 'monthly:', activeMonthly?.title);
+  
+  // Helper - kiek dienų liko
+  const daysUntil = (dateStr) => {
+    if (!dateStr) return '∞';
+    const diff = new Date(dateStr) - new Date();
+    if (diff < 0) return 'pasibaigė';
+    const days = Math.floor(diff / 86400000);
+    if (days < 1) return `${Math.floor(diff / 3600000)} val.`;
+    return `${days} d.`;
+  };
+  
+  // Helper - atnaujint kortelę
+  const updateCard = (ch, prefix, fallbackHide = false) => {
+    const card = document.getElementById(`v-${prefix}-challenge-card`);
+    if (!ch) {
+      if (card) card.style.display = 'none';
+      return false;
+    }
+    
+    if (card) card.style.display = 'block';
+    
+    const progress = progressMap[ch.id];
+    const isPartial = ch.allow_partial === true;
+    const currentValue = isPartial ? (progress?.total_progress || 0) : 0;
+    const target = ch.target_value || 0;
+    const pct = target > 0 ? Math.min(100, (currentValue / target) * 100) : 0;
+    
+    document.getElementById(`v-${prefix}-challenge-title`).textContent = ch.title || 'Iššūkis';
+    
+    if (isPartial) {
+      document.getElementById(`v-${prefix}-challenge-progress`).textContent = `${currentValue} / ${target} ${ch.target_unit || ''}`;
+      document.getElementById(`v-${prefix}-challenge-pct`).textContent = `${Math.round(pct)}% atlikta`;
+    } else {
+      // Standartinis - rodom kiek aktyvus
+      const subs = submissionsMap[ch.id] || [];
+      const hasPending = subs.some(s => s.status === 'pending');
+      document.getElementById(`v-${prefix}-challenge-progress`).textContent = hasPending ? '⏳ Laukia' : '🎯 Dalyvauk';
+      document.getElementById(`v-${prefix}-challenge-pct`).textContent = hasPending ? 'Pateikta, laukia' : 'Pradėk dabar';
+    }
+    
+    const bar = document.getElementById(`v-${prefix}-challenge-bar`);
+    if (bar) bar.style.width = pct + '%';
+    
+    document.getElementById(`v-${prefix}-challenge-days`).textContent = daysUntil(ch.expires_at) + ' liko';
+    return true;
+  };
+  
+  const hasWeekly = updateCard(activeWeekly, 'week');
+  const hasMonthly = updateCard(activeMonthly, 'month');
+  
+  // Jei nieko nėra - rodom placeholder
+  const placeholder = document.getElementById('v-no-active-challenges');
+  if (placeholder) {
+    placeholder.style.display = (!hasWeekly && !hasMonthly) ? 'block' : 'none';
+  }
+}
+
+// Atveriam submit modal aktyviam weekly
+function openActiveWeeklyChallenge() {
+  if (!activeWeeklyChallengeId) return;
+  if (typeof openSubmitChallenge === 'function') {
+    openSubmitChallenge(activeWeeklyChallengeId);
+  } else {
+    // Fallback - nukela į iššūkių sąrašą
+    const navItem = document.querySelector('.bn2 .ni[onclick*="v-ish"]');
+    if (navItem) nv('v', navItem, 'v-ish');
+  }
+}
+
+// Atveriam submit modal aktyviam monthly
+function openActiveMonthlyChallenge() {
+  if (!activeMonthlyChallengeId) return;
+  if (typeof openSubmitChallenge === 'function') {
+    openSubmitChallenge(activeMonthlyChallengeId);
+  } else {
+    const navItem = document.querySelector('.bn2 .ni[onclick*="v-ish"]');
+    if (navItem) nv('v', navItem, 'v-ish');
+  }
 }
 
 async function loadRankings() {
