@@ -966,7 +966,7 @@ select.inp option{background:#222;}
           <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#CD7F32;text-shadow:0 0 8px rgba(205,127,50,.4);line-height:1;margin-top:2px;" id="v-rank-ish">#–</div>
         </div>
       </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="openStatWithFilter('skills')">
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" id="v-top-skill-card" onclick="openStatWithFilter('skills')">
         <div style="font-size:24px;line-height:1;">🥋</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;text-transform:uppercase;line-height:1.1;">TOP skillas</div>
@@ -975,7 +975,7 @@ select.inp option{background:#222;}
       </div>
     </div>
     <div style="padding:6px 16px 0;">
-      <button onclick="g('v','v-stat')" style="width:100%;padding:8px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:10px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:10px;">VISA STATISTIKA →</button>
+      <button onclick="openMainStat()" style="width:100%;padding:8px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:10px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:10px;">VISA STATISTIKA →</button>
     </div>
     
     <!-- 📅 ARTIMIAUSIA VARŽYBA -->
@@ -8263,6 +8263,12 @@ async function loadRankings() {
       else if (topExp >= 300) tier = '🥈 SILVER';
       else if (topExp >= 100) tier = '🥉 BRONZE';
       topSkillEl.textContent = `${catName.toUpperCase()} · ${tier}`;
+      
+      // Atnaujint kortelės onclick - nukels su konkrečiu skillId
+      const cardEl = document.getElementById('v-top-skill-card');
+      if (cardEl) {
+        cardEl.onclick = () => openStatWithFilter('skills', topCatId);
+      }
     }
   }
 }
@@ -8604,8 +8610,10 @@ function setStatSeasonFilter(filter) {
 
 // ════════════════════════════════════════
 // Nukelia į statistikos puslapį su filtru pagal vaiko kategoriją
+// tabName: 'overall' | 'skills' | 'challenges' | 'competitions'
+// skillId: jei nori automatiškai filtruoti skillą
 // ════════════════════════════════════════
-function openStatWithFilter(tabName) {
+function openStatWithFilter(tabName, skillId) {
   // Nustato filtrus pagal dabartinį vaiką
   if (currentKid) {
     statFilters.gender = currentKid.gender || 'all';
@@ -8623,6 +8631,11 @@ function openStatWithFilter(tabName) {
     }
     
     statFilters.scope = 'club';
+    
+    // Jei perduotas konkretus skillId - nustatyt
+    if (skillId) {
+      statFilters.skillId = skillId;
+    }
   }
   
   // Nukelia į statistikos page
@@ -8632,6 +8645,28 @@ function openStatWithFilter(tabName) {
   setTimeout(() => {
     if (typeof switchStatTab === 'function') {
       switchStatTab(tabName);
+    }
+  }, 100);
+}
+
+// ════════════════════════════════════════
+// Atveria pradinę statistiką (be auto-filtro)
+// ════════════════════════════════════════
+function openMainStat() {
+  // Resetina filtrus į default
+  statFilters.gender = 'all';
+  statFilters.ageGroup = 'all';
+  statFilters.scope = 'club';
+  statFilters.skillId = null;
+  statFilters.weight = 'all';
+  
+  // Nukelia į statistikos page
+  g('v', 'v-stat');
+  
+  // Aktyvuoja pirmąjį tabą (overall - bendra statistika)
+  setTimeout(() => {
+    if (typeof switchStatTab === 'function') {
+      switchStatTab('overall');
     }
   }, 100);
 }
