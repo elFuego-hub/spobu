@@ -893,17 +893,39 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- PRANEŠIMAI - paslėpti (atidaromi varpeliu) -->
+    <!-- 🔔 PRANEŠIMAI MODAL -->
     <div style="margin:12px 16px;display:none;" id="v-announcements-section">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button onclick="toggleNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
-          <button onclick="openAllAnnouncements()" id="v-announcements-all-btn" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;display:none;">VISI</button>
-        </div>
+        <button onclick="toggleNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
       </div>
-      <div id="v-announcements-list">
+      
+      <!-- 4 TABAI -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px;">
+        <button class="notif-tab" data-tab="system" onclick="switchNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <span>🤖</span>
+          <span>Sistema <span id="v-notif-count-system" style="opacity:.7;"></span></span>
+        </button>
+        <button class="notif-tab" data-tab="challenges" onclick="switchNotifTab('challenges')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <span>🎯</span>
+          <span>Iššūkiai <span id="v-notif-count-challenges" style="opacity:.7;"></span></span>
+        </button>
+        <button class="notif-tab" data-tab="competitions" onclick="switchNotifTab('competitions')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <span>🏆</span>
+          <span>Varžybos <span id="v-notif-count-competitions" style="opacity:.7;"></span></span>
+        </button>
+        <button class="notif-tab" data-tab="messages" onclick="switchNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <span>💬</span>
+          <span>Žinutės <span id="v-notif-count-messages" style="opacity:.7;"></span></span>
+        </button>
+      </div>
+      
+      <div id="v-notif-list" style="max-height:400px;overflow-y:auto;">
         <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
+      </div>
+      
+      <div style="margin-top:10px;display:flex;gap:6px;">
+        <button onclick="markAllNotifRead()" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;">✓ Žymėti visus skaitytus</button>
       </div>
     </div>
     
@@ -4810,6 +4832,11 @@ async function loadKidData() {
   
   // 📡 Realtime - prisijungti prie naujų iššūkių srauto
   subscribeToNewChallenges();
+  
+  // 🔔 Užkrauti pranešimus (kad badge skaičiukas atsinaujintų)
+  if (typeof loadAllNotifications === 'function') {
+    loadAllNotifications().catch(e => console.error('loadAllNotifications:', e));
+  }
 }
 
 // ════════════════════════════════════════
@@ -15504,6 +15531,12 @@ function closeAnnouncement() {
 
 // Atidaryti VISŲ pranešimų modal'ą
 // Pranešimų sekcijos perjungimas pagrindiniame lange (vaiko)
+// ════════════════════════════════════════
+// PRANEŠIMŲ SISTEMA - 4 tabai (sistema/iššūkiai/varžybos/žinutės)
+// ════════════════════════════════════════
+let currentNotifTab = 'system';
+let allNotifications = { system: [], challenges: [], competitions: [], messages: [] };
+
 function toggleNotifications() {
   const section = document.getElementById('v-announcements-section');
   if (!section) return;
@@ -15511,11 +15544,315 @@ function toggleNotifications() {
   if (section.style.display === 'none' || section.style.display === '') {
     section.style.display = 'block';
     // Užkrauti pranešimus
-    if (typeof loadAnnouncements === 'function') {
-      loadAnnouncements();
-    }
+    loadAllNotifications();
   } else {
     section.style.display = 'none';
+  }
+}
+
+async function loadAllNotifications() {
+  if (!currentKid?.id) return;
+  
+  console.log('[notifications] Užkraunam...');
+  
+  // localStorage seen IDs (kid-specific)
+  const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
+  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  
+  // Užkraunam IŠ 5 šaltinių (paskutinės 30 d.)
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  const cutoffISO = cutoff.toISOString();
+  
+  const [approvedChRes, approvedCoRes, approvedPrRes, streakRes, newChRes, newCoRes] = await Promise.all([
+    // 🤖 SISTEMA - approved challenge submissions
+    sb.from('challenge_submissions')
+      .select('id, exp_gain, reviewed_at, challenges(title, type)')
+      .eq('kid_id', currentKid.id)
+      .eq('status', 'approved')
+      .gte('reviewed_at', cutoffISO)
+      .order('reviewed_at', { ascending: false })
+      .limit(20),
+    // 🤖 SISTEMA - approved competitions
+    sb.from('competition_results')
+      .select('id, exp_gained, approved_at, placement, competitions(title)')
+      .eq('kid_id', currentKid.id)
+      .eq('approval_status', 'approved')
+      .gte('approved_at', cutoffISO)
+      .order('approved_at', { ascending: false })
+      .limit(20),
+    // 🤖 SISTEMA - approved PR (result_submissions)
+    sb.from('result_submissions')
+      .select('id, new_value, exp_gain, approved_at, exercises(name)')
+      .eq('kid_id', currentKid.id)
+      .eq('status', 'approved')
+      .gte('approved_at', cutoffISO)
+      .order('approved_at', { ascending: false })
+      .limit(20),
+    // 🤖 SISTEMA - streak bonusai
+    sb.from('streak_bonus_log')
+      .select('id, exp_awarded, streak_type, streak_count, created_at')
+      .eq('kid_id', currentKid.id)
+      .gte('created_at', cutoffISO)
+      .order('created_at', { ascending: false })
+      .limit(20),
+    // 🎯 IŠŠŪKIAI - nauji
+    sb.from('challenges')
+      .select('id, title, type, exp_reward, target_value, target_unit, expires_at, created_at, target_audience, target_kid_id, group_id')
+      .eq('club_id', currentProfile.club_id)
+      .gte('created_at', cutoffISO)
+      .order('created_at', { ascending: false })
+      .limit(20),
+    // 🏆 VARŽYBOS - naujos
+    sb.from('competitions')
+      .select('id, title, event_date, competition_type, level, created_at')
+      .eq('club_id', currentProfile.club_id)
+      .gte('created_at', cutoffISO)
+      .order('created_at', { ascending: false })
+      .limit(20)
+  ]);
+  
+  // Build 4 kategorijos
+  const sistema = [];
+  const issukiai = [];
+  const varzybos = [];
+  const zinutes = []; // TODO: ateityje žinutės iš trenerio
+  
+  // 🤖 SISTEMA
+  (approvedChRes.data || []).forEach(s => {
+    sistema.push({
+      id: `apprCh-${s.id}`,
+      icon: '✅',
+      title: 'Iššūkis patvirtintas',
+      body: `${s.challenges?.title || 'Iššūkis'} · +${s.exp_gain || 0} EXP`,
+      time: s.reviewed_at,
+      link: 'v-ish'
+    });
+  });
+  (approvedCoRes.data || []).forEach(s => {
+    const placement = s.placement ? `${s.placement}-a vieta` : '';
+    sistema.push({
+      id: `apprCo-${s.id}`,
+      icon: '🏆',
+      title: 'Varžybos patvirtintos',
+      body: `${s.competitions?.title || 'Varžyba'} ${placement} · +${s.exp_gained || 0} EXP`,
+      time: s.approved_at,
+      link: 'v-comp'
+    });
+  });
+  (approvedPrRes.data || []).forEach(s => {
+    sistema.push({
+      id: `apprPr-${s.id}`,
+      icon: '💪',
+      title: 'PR patvirtintas',
+      body: `${s.exercises?.name || 'Pratimas'}: ${s.new_value} · +${s.exp_gain || 0} EXP`,
+      time: s.approved_at,
+      link: 'v-kar'
+    });
+  });
+  (streakRes.data || []).forEach(s => {
+    const streakIcon = { training: '🔥', weekly: '📅', monthly: '🏆' };
+    sistema.push({
+      id: `streak-${s.id}`,
+      icon: streakIcon[s.streak_type] || '🔥',
+      title: 'Streak bonusas',
+      body: `Streak ${s.streak_count} · +${s.exp_awarded || 0} EXP`,
+      time: s.created_at,
+      link: null
+    });
+  });
+  
+  // 🎯 IŠŠŪKIAI - filtruoti pagal vaiką
+  const myGroupId = currentKid.group_id;
+  const myGender = currentKid.gender;
+  const myKidId = currentKid.id;
+  const typeIcons = { training: '🏋️', weekly: '⚡', monthly: '🌙', oneoff: '✨', permanent: '🔁' };
+  
+  (newChRes.data || []).forEach(ch => {
+    const audience = ch.target_audience || 'group';
+    let eligible = false;
+    if (audience === 'all_club') eligible = true;
+    else if (audience === 'specific_kid') eligible = (ch.target_kid_id === myKidId);
+    else if (myGroupId && ch.group_id === myGroupId) {
+      if (audience === 'group') eligible = true;
+      else if (audience === 'boys_in_group') eligible = (myGender === 'male');
+      else if (audience === 'girls_in_group') eligible = (myGender === 'female');
+    }
+    
+    if (eligible) {
+      issukiai.push({
+        id: `newCh-${ch.id}`,
+        icon: typeIcons[ch.type] || '🎯',
+        title: 'Naujas iššūkis',
+        body: `${ch.title || 'Iššūkis'}${ch.exp_reward ? ' · +' + ch.exp_reward + ' EXP' : ''}`,
+        time: ch.created_at,
+        link: 'v-ish'
+      });
+    }
+  });
+  
+  // 🏆 VARŽYBOS
+  (newCoRes.data || []).forEach(co => {
+    const levelLabels = { local: '🏘️', medium: '🏙️', european: '🌍' };
+    varzybos.push({
+      id: `newCo-${co.id}`,
+      icon: levelLabels[co.level] || '🏆',
+      title: 'Nauja varžyba',
+      body: `${co.title || 'Varžyba'} · ${new Date(co.event_date).toLocaleDateString('lt-LT')}`,
+      time: co.created_at,
+      link: 'v-comp'
+    });
+  });
+  
+  // Surūšiuoti pagal laiką (naujausi pirma)
+  const sortByTime = (a, b) => new Date(b.time) - new Date(a.time);
+  sistema.sort(sortByTime);
+  issukiai.sort(sortByTime);
+  varzybos.sort(sortByTime);
+  zinutes.sort(sortByTime);
+  
+  allNotifications = { system: sistema, challenges: issukiai, competitions: varzybos, messages: zinutes };
+  
+  console.log('[notifications]', {
+    system: sistema.length, challenges: issukiai.length,
+    competitions: varzybos.length, messages: zinutes.length
+  });
+  
+  // Pažymėti neperskaitytų skaičius
+  updateNotifCounts(seenIds);
+  
+  // Rodyti aktyvų tabą
+  renderNotifTab(currentNotifTab);
+}
+
+function updateNotifCounts(seenIds) {
+  const cats = ['system', 'challenges', 'competitions', 'messages'];
+  let totalUnread = 0;
+  
+  cats.forEach(cat => {
+    const unread = allNotifications[cat].filter(n => !seenIds.has(n.id)).length;
+    const el = document.getElementById(`v-notif-count-${cat}`);
+    if (el) el.textContent = unread > 0 ? `(${unread})` : '';
+    totalUnread += unread;
+  });
+  
+  // Atnaujint globalų badge
+  const badge = document.getElementById('v-notif-badge-count');
+  if (badge) {
+    if (totalUnread > 0) {
+      badge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+function switchNotifTab(tab) {
+  currentNotifTab = tab;
+  
+  // Update tab buttons
+  document.querySelectorAll('.notif-tab').forEach(btn => {
+    const isActive = btn.dataset.tab === tab;
+    btn.style.background = isActive ? 'rgba(255,77,0,.15)' : 'transparent';
+    btn.style.color = isActive ? '#FF8C00' : 'var(--mut)';
+    btn.style.borderColor = isActive ? 'rgba(255,77,0,.4)' : 'var(--bdr)';
+  });
+  
+  renderNotifTab(tab);
+}
+
+function renderNotifTab(tab) {
+  const list = document.getElementById('v-notif-list');
+  if (!list) return;
+  
+  const items = allNotifications[tab] || [];
+  
+  if (items.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Nėra pranešimų šioje kategorijoje</div>`;
+    return;
+  }
+  
+  // Specialus tabas - žinutės (atskirai pranešam)
+  if (tab === 'messages' && items.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:30px;">
+      <div style="font-size:32px;margin-bottom:10px;">💬</div>
+      <div style="color:var(--mut);font-size:12px;margin-bottom:14px;">Nėra naujų žinučių</div>
+      <button onclick="alert('Žinutės bus įdiegtos vėliau')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 16px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;">📨 Atidaryti žinutes →</button>
+    </div>`;
+    return;
+  }
+  
+  const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
+  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  
+  const timeAgo = (dateStr) => {
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (diff < 60) return 'ką tik';
+    if (diff < 3600) return `prieš ${Math.floor(diff/60)} min.`;
+    if (diff < 86400) return `prieš ${Math.floor(diff/3600)} val.`;
+    if (diff < 604800) return `prieš ${Math.floor(diff/86400)} d.`;
+    return new Date(dateStr).toLocaleDateString('lt-LT');
+  };
+  
+  list.innerHTML = items.map(n => {
+    const isUnread = !seenIds.has(n.id);
+    const bgColor = isUnread ? 'rgba(255,77,0,.08)' : 'var(--card)';
+    const borderColor = isUnread ? 'rgba(255,77,0,.3)' : 'var(--bdr)';
+    const onclickAttr = n.link 
+      ? `onclick="markNotifRead('${n.id}');navToNotifLink('${n.link}')"` 
+      : `onclick="markNotifRead('${n.id}')"`;
+    
+    return `<div ${onclickAttr} style="background:${bgColor};border:.5px solid ${borderColor};border-radius:12px;padding:10px 12px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);transition:background .2s;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${isUnread ? '<div style="width:6px;height:6px;background:#FF4D00;border-radius:50%;box-shadow:0 0 6px #FF4D00;flex-shrink:0;"></div>' : '<div style="width:6px;height:6px;flex-shrink:0;"></div>'}
+        <div style="font-size:20px;flex-shrink:0;">${n.icon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:800;color:white;margin-bottom:2px;">${n.title}</div>
+          <div style="font-size:11px;color:var(--mut);line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${n.body}</div>
+        </div>
+        <div style="font-size:9px;color:var(--mut);white-space:nowrap;flex-shrink:0;">${timeAgo(n.time)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function markNotifRead(notifId) {
+  if (!currentKid?.id) return;
+  const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
+  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  seenIds.add(notifId);
+  localStorage.setItem(lsKey, JSON.stringify([...seenIds]));
+  updateNotifCounts(seenIds);
+  renderNotifTab(currentNotifTab);
+}
+
+function markAllNotifRead() {
+  if (!currentKid?.id) return;
+  const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
+  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  
+  // Pridedam visus IDs iš visų kategorijų
+  ['system', 'challenges', 'competitions', 'messages'].forEach(cat => {
+    allNotifications[cat].forEach(n => seenIds.add(n.id));
+  });
+  
+  localStorage.setItem(lsKey, JSON.stringify([...seenIds]));
+  updateNotifCounts(seenIds);
+  renderNotifTab(currentNotifTab);
+}
+
+function navToNotifLink(link) {
+  // Uždarom pranešimus
+  const section = document.getElementById('v-announcements-section');
+  if (section) section.style.display = 'none';
+  
+  // Nukela į puslapį
+  const navItem = document.querySelector(`.bn2 .ni[onclick*="${link}"]`);
+  if (navItem && typeof nv === 'function') {
+    nv('v', navItem, link);
+  } else {
+    g('v', link);
   }
 }
 
