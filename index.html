@@ -980,7 +980,7 @@ select.inp option{background:#222;}
     
     <!-- 📅 ARTIMIAUSIOS VARŽYBOS -->
     <div class="st">📅 ARTIMIAUSIOS VARŽYBOS</div>
-    <div id="v-next-event" onclick="g('v','v-comp')" style="margin:0 16px;padding:12px;background:linear-gradient(135deg, rgba(255,215,0,.12), rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.3);border-radius:14px;display:flex;align-items:center;gap:12px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,215,0,.2);transition:transform .15s, border-color .2s;" onmouseenter="this.style.borderColor='rgba(255,215,0,.6)'" onmouseleave="this.style.borderColor='rgba(255,215,0,.3)'">
+    <div id="v-next-event" onclick="g('v','v-comp');if(typeof loadKidCompetitions==='function')loadKidCompetitions();" style="margin:0 16px;padding:12px;background:linear-gradient(135deg, rgba(255,215,0,.12), rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.3);border-radius:14px;display:flex;align-items:center;gap:12px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,215,0,.2);transition:transform .15s, border-color .2s;" onmouseenter="this.style.borderColor='rgba(255,215,0,.6)'" onmouseleave="this.style.borderColor='rgba(255,215,0,.3)'">
       <div style="font-size:28px;line-height:1;">🏆</div>
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:800;color:white;margin-bottom:2px;" id="v-next-event-name">Nėra suplanuotų varžybų</div>
