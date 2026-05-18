@@ -6087,10 +6087,10 @@ async function checkForNewApprovedSubmissions() {
         const isCompleted = progress?.is_completed === true;
         
         if (isCompleted) {
-          // Pilnai atliktas
-          showToast(`🎉 PILNAI ATLIKTA!\n\n${ch.title}\n+${ch.exp_reward || 0} EXP`, 'success', 6000);
+          // Pilnai atliktas - NEsiunčiam toast'o (yra bendras "pilnai atlikta" celebration)
+          return;
         } else {
-          // Tarpinis
+          // Tarpinis - rodom toast'ą
           const totalProgress = progress?.total_progress || 0;
           const remaining = (ch.target_value || 0) - totalProgress;
           showToast(`📊 Tarpinis patvirtintas!\n\n${ch.title}\n${totalProgress} / ${ch.target_value} ${ch.target_unit || ''}\nLiko: ${remaining} ${ch.target_unit || ''}`, 'success', 5500);
@@ -12990,36 +12990,85 @@ async function submitNewChallenge() {
   let eligibleKids = [];
   
   if (audience === 'all_club') {
-    // Visi klubo vaikai
-    const { data } = await sb.from('profiles')
-      .select('id, first_name, last_name, kids(id, gender, group_id)')
+    // Visi klubo vaikai - per profiles → kids
+    const { data: profiles, error: profErr } = await sb.from('profiles')
+      .select('id, first_name, last_name')
       .eq('club_id', currentProfile.club_id)
       .eq('role', 'kid');
     
-    eligibleKids = (data || [])
-      .filter(p => p.kids?.[0])
-      .map(p => ({
-        id: p.kids[0].id,
-        first_name: p.first_name,
-        last_name: p.last_name,
-        gender: p.kids[0].gender,
-        group_id: p.kids[0].group_id
-      }));
+    if (profErr) {
+      console.error('[challenge] Klaida kraunant klubą:', profErr);
+      btn.disabled = false;
+      btn.textContent = 'SUKURTI IŠŠŪKĮ';
+      showToast('❌ Klaida: ' + profErr.message, 'error');
+      return;
+    }
+    
+    const userIds = (profiles || []).map(p => p.id);
+    let kidsData = [];
+    if (userIds.length > 0) {
+      const { data: kids } = await sb.from('kids')
+        .select('id, user_id, gender, group_id')
+        .in('user_id', userIds);
+      kidsData = kids || [];
+    }
+    
+    const profilesMap = {};
+    (profiles || []).forEach(p => { profilesMap[p.id] = p; });
+    
+    eligibleKids = kidsData.map(k => {
+      const p = profilesMap[k.user_id];
+      return {
+        id: k.id,
+        first_name: p?.first_name || 'Vaikas',
+        last_name: p?.last_name || '',
+        gender: k.gender,
+        group_id: k.group_id
+      };
+    });
+    
+    console.log('[challenge] all_club eligibleKids:', eligibleKids.length);
   } else {
     // Grupė / berniukai / mergaitės
-    const { data: groupKids } = await sb.from('kids')
-      .select('id, gender, profiles!kids_user_id_fkey(first_name, last_name)')
+    const { data: groupKids, error: kidsErr } = await sb.from('kids')
+      .select('id, user_id, gender, group_id')
       .eq('group_id', groupId);
     
-    eligibleKids = (groupKids || []).map(k => ({
-      id: k.id,
-      first_name: k.profiles?.first_name || '',
-      last_name: k.profiles?.last_name || '',
-      gender: k.gender
-    }));
+    if (kidsErr) {
+      console.error('[challenge] Klaida kraunant grupes vaikus:', kidsErr);
+      btn.disabled = false;
+      btn.textContent = 'SUKURTI IŠŠŪKĮ';
+      showToast('❌ Klaida kraunant grupę: ' + kidsErr.message, 'error', 5000);
+      return;
+    }
+    
+    console.log('[challenge] groupKids found:', groupKids?.length, 'group_id:', groupId);
+    
+    // Užkraunam profilius atskirai
+    const userIds = (groupKids || []).map(k => k.user_id).filter(Boolean);
+    let profilesMap = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await sb.from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', userIds);
+      (profiles || []).forEach(p => { profilesMap[p.id] = p; });
+    }
+    
+    eligibleKids = (groupKids || []).map(k => {
+      const p = profilesMap[k.user_id];
+      return {
+        id: k.id,
+        first_name: p?.first_name || 'Vaikas',
+        last_name: p?.last_name || '',
+        gender: k.gender,
+        group_id: k.group_id
+      };
+    });
     
     if (audience === 'boys_in_group') eligibleKids = eligibleKids.filter(k => k.gender === 'male');
     else if (audience === 'girls_in_group') eligibleKids = eligibleKids.filter(k => k.gender === 'female');
+    
+    console.log('[challenge] eligibleKids after filter:', eligibleKids.length, 'audience:', audience);
   }
   
   if (eligibleKids.length === 0) {
