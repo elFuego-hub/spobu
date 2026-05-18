@@ -8115,16 +8115,19 @@ async function loadRankings() {
     return;
   }
   
-  const kidIds = clubProfiles.map(p => p.id);
+  const profileIds = clubProfiles.map(p => p.id);
+  console.log('[loadRankings] klubo profiles:', profileIds.length);
   
-  // 2) Užkrauti TIK egzistuojančius stulpelius iš kids
+  // 2) Užkrauti kids (per user_id, NE id - nes kids.id != profiles.id)
   const { data: kids } = await sb.from('kids')
-    .select('id, total_exp')
-    .in('id', kidIds);
+    .select('id, user_id, total_exp')
+    .in('user_id', profileIds);
   
   console.log('[loadRankings] klubo vaikai:', kids?.length || 0);
   
   if (!kids || kids.length === 0) return;
+  
+  const kidIds = kids.map(k => k.id);
   
   // 3) Užkrauti varžybų rezultatus - skaičiuoti pergales (1 vieta) ir iššūkių submissions
   const [winsRes, ishRes] = await Promise.all([
@@ -8148,6 +8151,9 @@ async function loadRankings() {
     ishCount[s.kid_id] = (ishCount[s.kid_id] || 0) + 1;
   });
   
+  console.log('[loadRankings] currentKid.id:', currentKid.id);
+  console.log('[loadRankings] EXP rūšiavimas:', kids.map(k => ({ id: k.id, exp: k.total_exp })));
+  
   // 1) Pagal varžybas (1 vietos = wins)
   const sortedByWins = [...kids].sort((a, b) => (winsCount[b.id] || 0) - (winsCount[a.id] || 0));
   const compRank = sortedByWins.findIndex(k => k.id === currentKid.id) + 1;
@@ -8160,8 +8166,14 @@ async function loadRankings() {
   const sortedByIsh = [...kids].sort((a, b) => (ishCount[b.id] || 0) - (ishCount[a.id] || 0));
   const ishRank = sortedByIsh.findIndex(k => k.id === currentKid.id) + 1;
   
-  // Atnaujint UI
-  const setRank = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ? `#${val}` : '#–'; };
+  console.log('[loadRankings] reitingai:', { compRank, expRank, ishRank });
+  
+  // Atnaujint UI - rodome "#X / total" formatu
+  const total = kids.length;
+  const setRank = (id, val) => { 
+    const el = document.getElementById(id); 
+    if (el) el.textContent = val ? `#${val}` : '#–'; 
+  };
   setRank('v-rank-comp', compRank);
   setRank('v-rank-exp', expRank);
   setRank('v-rank-ish', ishRank);
