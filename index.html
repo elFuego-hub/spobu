@@ -10251,7 +10251,12 @@ async function loadLeaderboard() {
 }
 
 async function loadKidPendingSubmissions() {
-  if (!currentKid?.id) return;
+  if (!currentKid?.id) {
+    console.log('[loadPending] Nėra currentKid');
+    return;
+  }
+  
+  console.log('[loadPending] currentKid.id:', currentKid.id);
   
   // Užkraunam 3 tipus pending:
   // 1) result_submissions (PR pratimai)
@@ -10278,14 +10283,28 @@ async function loadKidPendingSubmissions() {
       .limit(10)
   ]);
   
+  console.log('[loadPending] result_submissions:', { data: exRes.data?.length || 0, error: exRes.error });
+  console.log('[loadPending] challenge_submissions:', { data: chRes.data?.length || 0, error: chRes.error });
+  console.log('[loadPending] competition_results:', { data: coRes.data?.length || 0, error: coRes.error });
+  
   const exSubs = exRes.data || [];
   const chSubs = chRes.data || [];
   const coSubs = coRes.data || [];
-  const totalPending = exSubs.length + chSubs.length + coSubs.length;
   
-  console.log('[loadPending]', { ex: exSubs.length, ch: chSubs.length, co: coSubs.length });
+  // Sujungiam visus į vieną sąrašą su tipo žymėjimu
+  const allPending = [
+    ...exSubs.map(s => ({ ...s, _type: 'pr' })),
+    ...chSubs.map(s => ({ ...s, _type: 'ch' })),
+    ...coSubs.map(s => ({ ...s, _type: 'co' }))
+  ];
+  
+  // Surūšiuojam pagal created_at (naujausi pirma) ir paliekam tik 3
+  allPending.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const top3 = allPending.slice(0, 3);
+  
+  console.log('[loadPending] Viso pending:', allPending.length, 'Rodome:', top3.length);
 
-  if (totalPending === 0) {
+  if (top3.length === 0) {
     document.getElementById('v-pending-list').innerHTML =
       '<div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;">Nėra laukiančių pateikimų</div>';
     const notifDot = document.getElementById('v-notif-dot');
@@ -10307,76 +10326,74 @@ async function loadKidPendingSubmissions() {
 
   let html = '';
   
-  // 1) PR PRATIMAI
-  exSubs.forEach(s => {
-    const exName = s.exercises?.name || 'Pratimas';
-    const catName = s.exercises?.career_categories?.name || '';
-    const catIcon = s.exercises?.career_categories?.icon || '💪';
-    const delta = (s.new_value || 0) - (s.old_pr || 0);
+  // Loop'as per top 3 - kiekvienas pagal tipą
+  top3.forEach(s => {
     const time = timeAgo(s.created_at);
     
-    html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(255,77,0,.2);">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="font-size:22px;">${catIcon}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
-            <span style="font-size:9px;background:rgba(255,77,0,.2);color:#FF8C00;padding:2px 6px;border-radius:99px;font-weight:800;">PR</span>
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName}</span>
+    if (s._type === 'pr') {
+      // PR PRATIMAS
+      const exName = s.exercises?.name || 'Pratimas';
+      const catIcon = s.exercises?.career_categories?.icon || '💪';
+      
+      html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(255,77,0,.2);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:22px;">${catIcon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
+              <span style="font-size:9px;background:rgba(255,77,0,.2);color:#FF8C00;padding:2px 6px;border-radius:99px;font-weight:800;">PR</span>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName}</span>
+            </div>
+            <div style="font-size:10px;color:var(--mut);margin-top:2px;">${s.old_pr || 0} → <span style="color:var(--grn);font-weight:800;">${s.new_value}</span> · +${s.exp_gain || 0} EXP · ${time}</div>
           </div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${s.old_pr || 0} → <span style="color:var(--grn);font-weight:800;">${s.new_value}</span> · +${s.exp_gain || 0} EXP · ${time}</div>
+          <div style="font-size:10px;color:#FF8C00;font-weight:800;white-space:nowrap;">⏳</div>
         </div>
-        <div style="font-size:10px;color:#FF8C00;font-weight:800;white-space:nowrap;">⏳</div>
-      </div>
-    </div>`;
-  });
-  
-  // 2) IŠŠŪKIAI
-  const challengeTypeIcon = { training: '🏋️', weekly: '⚡', monthly: '🌙', oneoff: '✨', one_time: '✨', permanent: '🔁' };
-  chSubs.forEach(s => {
-    const chTitle = s.challenges?.title || 'Iššūkis';
-    const chType = s.challenges?.type || 'training';
-    const icon = challengeTypeIcon[chType] || '🎯';
-    const value = s.numeric_value ? `${s.numeric_value} ${s.challenges?.target_unit || ''}` : 'Pateikta';
-    const time = timeAgo(s.created_at);
-    
-    html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(79,195,247,.25);">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="font-size:22px;">${icon}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
-            <span style="font-size:9px;background:rgba(79,195,247,.2);color:#4FC3F7;padding:2px 6px;border-radius:99px;font-weight:800;">Iššūkis</span>
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${chTitle}</span>
+      </div>`;
+      
+    } else if (s._type === 'ch') {
+      // IŠŠŪKIS
+      const challengeTypeIcon = { training: '🏋️', weekly: '⚡', monthly: '🌙', oneoff: '✨', one_time: '✨', permanent: '🔁' };
+      const chTitle = s.challenges?.title || 'Iššūkis';
+      const chType = s.challenges?.type || 'training';
+      const icon = challengeTypeIcon[chType] || '🎯';
+      const value = s.numeric_value ? `${s.numeric_value} ${s.challenges?.target_unit || ''}` : 'Pateikta';
+      
+      html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(79,195,247,.25);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:22px;">${icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
+              <span style="font-size:9px;background:rgba(79,195,247,.2);color:#4FC3F7;padding:2px 6px;border-radius:99px;font-weight:800;">Iššūkis</span>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${chTitle}</span>
+            </div>
+            <div style="font-size:10px;color:var(--mut);margin-top:2px;">Mano: <span style="color:var(--grn);font-weight:800;">${value}</span> · ${time}</div>
           </div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;">Mano: <span style="color:var(--grn);font-weight:800;">${value}</span> · ${time}</div>
+          <div style="font-size:10px;color:#4FC3F7;font-weight:800;white-space:nowrap;">⏳</div>
         </div>
-        <div style="font-size:10px;color:#4FC3F7;font-weight:800;white-space:nowrap;">⏳</div>
-      </div>
-    </div>`;
-  });
-  
-  // 3) VARŽYBOS
-  coSubs.forEach(s => {
-    const compTitle = s.competitions?.title || 'Varžybos';
-    const compType = s.competitions?.competition_type || '';
-    const compTypeLabel = compType === 'kumite' ? '🥊 Kumite' : compType === 'kata' ? '🎌 Kata' : compType === 'belt_test' ? '🥋 Diržo egzaminas' : 'Varžyba';
-    const placement = s.placement ? `${s.placement} v.` : '';
-    const score = s.wins ? `${s.wins}W-${s.losses || 0}L` : '';
-    const detailsText = placement || score || 'Pateikta';
-    const time = timeAgo(s.created_at);
-    
-    html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(255,215,0,.25);">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="font-size:22px;">🏆</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
-            <span style="font-size:9px;background:rgba(255,215,0,.2);color:#FFD700;padding:2px 6px;border-radius:99px;font-weight:800;">Varžyba</span>
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${compTitle}</span>
+      </div>`;
+      
+    } else if (s._type === 'co') {
+      // VARŽYBA
+      const compTitle = s.competitions?.title || 'Varžybos';
+      const compType = s.competitions?.competition_type || '';
+      const compTypeLabel = compType === 'kumite' ? '🥊 Kumite' : compType === 'kata' ? '🎌 Kata' : compType === 'belt_test' ? '🥋 Diržo egzaminas' : 'Varžyba';
+      const placement = s.placement ? `${s.placement} v.` : '';
+      const score = s.wins ? `${s.wins}W-${s.losses || 0}L` : '';
+      const detailsText = placement || score || 'Pateikta';
+      
+      html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(255,215,0,.25);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:22px;">🏆</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
+              <span style="font-size:9px;background:rgba(255,215,0,.2);color:#FFD700;padding:2px 6px;border-radius:99px;font-weight:800;">Varžyba</span>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${compTitle}</span>
+            </div>
+            <div style="font-size:10px;color:var(--mut);margin-top:2px;">${compTypeLabel} · <span style="color:var(--grn);font-weight:800;">${detailsText}</span> · ${time}</div>
           </div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${compTypeLabel} · <span style="color:var(--grn);font-weight:800;">${detailsText}</span> · ${time}</div>
+          <div style="font-size:10px;color:#FFD700;font-weight:800;white-space:nowrap;">⏳</div>
         </div>
-        <div style="font-size:10px;color:#FFD700;font-weight:800;white-space:nowrap;">⏳</div>
-      </div>
-    </div>`;
+      </div>`;
+    }
   });
   
   document.getElementById('v-pending-list').innerHTML = html;
