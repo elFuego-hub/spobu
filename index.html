@@ -863,7 +863,7 @@ select.inp option{background:#222;}
     </div>
     
     <!-- ORANGE WELCOME HERO -->
-    <div class="hero" id="v-main-hero" style="background:linear-gradient(135deg,var(--br),var(--br2));position:relative;overflow:hidden;transition:background .6s ease;">
+    <div class="hero" id="v-main-hero" onclick="nv('v',document.querySelector('.bn2 .ni:nth-child(6)'),'v-prof')" style="background:linear-gradient(135deg,var(--br),var(--br2));position:relative;overflow:hidden;transition:background .6s ease;cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.1);">
       <!-- Animuoti karate fono elementai -->
       <div id="v-hero-bg-anim" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
         <!-- Didelis kanji fone -->
@@ -4992,9 +4992,14 @@ function updateExpBar(totalExp, level) {
   if (expBar) expBar.style.width = info.progressPercent.toFixed(1) + '%';
   
   if (expTxt) {
-    expTxt.textContent = info.isHallOfFame 
-      ? `${totalExp.toLocaleString()} EXP`
-      : `${totalExp.toLocaleString()} / ${info.nextLevelExp.toLocaleString()}`;
+    if (info.isHallOfFame) {
+      expTxt.textContent = `${totalExp.toLocaleString()} EXP`;
+    } else {
+      // Rodyti ŠIO LYGIO progresą (ne pilną total_exp)
+      const currentLevelProgress = totalExp - info.currentLevelExp;
+      const levelTotal = info.nextLevelExp - info.currentLevelExp;
+      expTxt.textContent = `${currentLevelProgress} / ${levelTotal}`;
+    }
   }
   
   if (lvlTxt) {
