@@ -13164,20 +13164,126 @@ async function submitNewChallenge() {
   btn.disabled = false;
   btn.textContent = 'SUKURTI IŠŠŪKĮ';
   
-  // 5. Rodyti rezultatą
-  let resultMsg = `✅ Sukurta ${successCount} iš ${eligibleKids.length} vaikų`;
-  if (skipped.length > 0) {
-    const skippedNames = skipped.slice(0, 3).map(k => `${k.first_name} ${k.last_name}`.trim()).join(', ');
-    const more = skipped.length > 3 ? ` ir dar ${skipped.length - 3}` : '';
-    resultMsg += `\n\n⏭️ Praleisti (${skipped.length}): ${skippedNames}${more}\n(jau turi aktyvų ${getTypeLabel(type)})`;
-  }
+  // 5. Rodyti detalų rezultatą - MODAL su sąrašu
+  showChallengeDistributionResult({
+    title,
+    typeLabel: getTypeLabel(type),
+    targetValue,
+    targetUnit,
+    expReward: exp,
+    createdFor,
+    skipped,
+    totalKids: eligibleKids.length
+  });
   
-  showToast(resultMsg, 'success', 8000);
   closeCreateChallenge();
   
   if (typeof loadTrainerOwnChallenges === 'function') {
     await loadTrainerOwnChallenges();
   }
+}
+
+// Modal su iššūkio paskirstymo rezultatu
+function showChallengeDistributionResult(info) {
+  // Pašalinam esamą jei yra
+  const existing = document.getElementById('challenge-distribution-modal');
+  if (existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'challenge-distribution-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:flex-end;justify-content:center;padding:0;';
+  
+  const createdNames = info.createdFor.map(k => `${k.first_name} ${k.last_name}`.trim()).filter(n => n);
+  const allSuccess = info.skipped.length === 0;
+  
+  modal.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+      
+      <!-- HEADER -->
+      <div style="padding:20px 20px 12px;border-bottom:.5px solid var(--bdr);background:${allSuccess ? 'rgba(34,197,94,.08)' : 'rgba(255,140,0,.08)'};text-align:center;">
+        <div style="font-size:48px;line-height:1;margin-bottom:6px;">${allSuccess ? '🎉' : '✅'}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:${allSuccess ? 'var(--grn)' : '#FF8C00'};">
+          ${allSuccess ? 'IŠŠŪKIS SUKURTAS!' : 'DALINAI SUKURTA'}
+        </div>
+        <div style="font-size:11px;color:var(--mut);margin-top:6px;">
+          ${info.createdFor.length} iš ${info.totalKids} vaikų gavo iššūkį
+        </div>
+      </div>
+      
+      <!-- IŠŠŪKIO INFO -->
+      <div style="padding:14px 20px;border-bottom:.5px solid var(--bdr);background:var(--card);">
+        <div style="font-size:14px;font-weight:800;color:white;margin-bottom:4px;">${info.title}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;">
+          <span style="background:rgba(79,195,247,.15);color:#4FC3F7;padding:3px 8px;border-radius:99px;font-weight:700;">${info.typeLabel}</span>
+          <span style="background:rgba(255,77,0,.15);color:#FF8C00;padding:3px 8px;border-radius:99px;font-weight:700;">🎯 ${info.targetValue} ${info.targetUnit || ''}</span>
+          <span style="background:rgba(34,197,94,.15);color:var(--grn);padding:3px 8px;border-radius:99px;font-weight:700;">+${info.expReward} EXP</span>
+        </div>
+      </div>
+      
+      <!-- TURINYS -->
+      <div style="flex:1;overflow-y:auto;padding:16px 20px;">
+        
+        <!-- SUKURTA -->
+        <div style="margin-bottom:${info.skipped.length > 0 ? '16px' : '0'};">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <div style="font-size:16px;">✅</div>
+            <div style="font-size:12px;font-weight:800;color:var(--grn);letter-spacing:1px;">SUKURTA (${info.createdFor.length})</div>
+          </div>
+          ${info.createdFor.length === 0 
+            ? '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;background:var(--card);border-radius:10px;">Nė vienam vaikui nesukurta</div>'
+            : `<div style="display:flex;flex-wrap:wrap;gap:6px;">${info.createdFor.map(k => {
+                const name = `${k.first_name} ${k.last_name}`.trim() || 'Vaikas';
+                const genderIcon = k.gender === 'male' ? '👦' : k.gender === 'female' ? '👧' : '👤';
+                return `<div style="background:rgba(34,197,94,.1);border:.5px solid rgba(34,197,94,.3);border-radius:99px;padding:5px 10px;font-size:11px;display:flex;align-items:center;gap:5px;">
+                  <span>${genderIcon}</span>
+                  <span style="color:white;font-weight:700;">${name}</span>
+                </div>`;
+              }).join('')}</div>`
+          }
+        </div>
+        
+        ${info.skipped.length > 0 ? `
+          <!-- PRALEISTI -->
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <div style="font-size:16px;">⏭️</div>
+              <div style="font-size:12px;font-weight:800;color:#FF8C00;letter-spacing:1px;">PRALEISTI (${info.skipped.length})</div>
+            </div>
+            <div style="background:rgba(255,140,0,.08);border:.5px solid rgba(255,140,0,.2);border-radius:12px;padding:10px;margin-bottom:8px;">
+              <div style="font-size:10px;color:var(--mut);line-height:1.5;">
+                💡 Šie vaikai jau turi aktyvų <b style="color:#FF8C00;">${info.typeLabel}</b> iššūkį. 
+                Galite jiems sukurti naują, kai esamasis bus įvykdytas arba pasibaigs.
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              ${info.skipped.map(k => {
+                const name = `${k.first_name} ${k.last_name}`.trim() || 'Vaikas';
+                const genderIcon = k.gender === 'male' ? '👦' : k.gender === 'female' ? '👧' : '👤';
+                return `<div style="background:var(--card);border:.5px solid rgba(255,140,0,.25);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
+                  <div style="font-size:18px;flex-shrink:0;">${genderIcon}</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;font-weight:800;color:white;">${name}</div>
+                    <div style="font-size:10px;color:var(--mut);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Turi aktyvų: ${k.reason || 'iššūkį'}</div>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
+        
+      </div>
+      
+      <!-- FOOTER -->
+      <div style="padding:14px 20px;border-top:.5px solid var(--bdr);">
+        <button onclick="document.getElementById('challenge-distribution-modal').remove()" style="width:100%;padding:12px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:12px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;">
+          UŽDARYTI
+        </button>
+      </div>
+      
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
 }
 
 // Helper - tipas → label
