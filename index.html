@@ -10251,16 +10251,43 @@ async function loadLeaderboard() {
 }
 
 async function loadKidPendingSubmissions() {
-  const { data: subs } = await sb.from('result_submissions')
-    .select('*, exercises(name, unit, career_categories(name, icon))')
-    .eq('kid_id', currentKid?.id || currentUser.id)
-    .eq('status', 'pending')
-    .order('created_at', {ascending: false})
-    .limit(10);
+  if (!currentKid?.id) return;
+  
+  // Užkraunam 3 tipus pending:
+  // 1) result_submissions (PR pratimai)
+  // 2) challenge_submissions (iššūkiai)
+  // 3) competition_results (varžybos)
+  const [exRes, chRes, coRes] = await Promise.all([
+    sb.from('result_submissions')
+      .select('id, new_value, old_pr, exp_gain, created_at, exercises(name, unit, career_categories(name, icon))')
+      .eq('kid_id', currentKid.id)
+      .eq('status', 'pending')
+      .order('created_at', {ascending: false})
+      .limit(10),
+    sb.from('challenge_submissions')
+      .select('id, numeric_value, exp_gain, created_at, challenges(title, type, target_value, target_unit)')
+      .eq('kid_id', currentKid.id)
+      .eq('status', 'pending')
+      .order('created_at', {ascending: false})
+      .limit(10),
+    sb.from('competition_results')
+      .select('id, placement, wins, losses, exp_gained, created_at, competitions(title, event_date, competition_type)')
+      .eq('kid_id', currentKid.id)
+      .eq('approval_status', 'pending')
+      .order('created_at', {ascending: false})
+      .limit(10)
+  ]);
+  
+  const exSubs = exRes.data || [];
+  const chSubs = chRes.data || [];
+  const coSubs = coRes.data || [];
+  const totalPending = exSubs.length + chSubs.length + coSubs.length;
+  
+  console.log('[loadPending]', { ex: exSubs.length, ch: chSubs.length, co: coSubs.length });
 
-  if (!subs?.length) {
+  if (totalPending === 0) {
     document.getElementById('v-pending-list').innerHTML =
-      '<div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Nėra laukiančių pateikimų</div>';
+      '<div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;">Nėra laukiančių pateikimų</div>';
     const notifDot = document.getElementById('v-notif-dot');
     if (notifDot) notifDot.style.display = 'none';
     return;
@@ -10269,7 +10296,7 @@ async function loadKidPendingSubmissions() {
   const notifDot = document.getElementById('v-notif-dot');
   if (notifDot) notifDot.style.display = 'block';
 
-  // Pagalbinė funkcija – kiek laiko praėjo
+  // Pagalbinė - kiek laiko praėjo
   const timeAgo = (dateStr) => {
     const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
     if (diff < 60) return 'ką tik';
@@ -10278,41 +10305,80 @@ async function loadKidPendingSubmissions() {
     return `prieš ${Math.floor(diff/86400)} d.`;
   };
 
-  const html = subs.map(s => {
+  let html = '';
+  
+  // 1) PR PRATIMAI
+  exSubs.forEach(s => {
     const exName = s.exercises?.name || 'Pratimas';
     const catName = s.exercises?.career_categories?.name || '';
     const catIcon = s.exercises?.career_categories?.icon || '💪';
-    const unit = s.exercises?.unit || 'pakartojimų';
     const delta = (s.new_value || 0) - (s.old_pr || 0);
     const time = timeAgo(s.created_at);
     
-    return `<div style="background:var(--bg);border-radius:14px;padding:12px;margin-bottom:10px;border:.5px solid rgba(255,77,0,.2);">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(255,77,0,.2);">
+      <div style="display:flex;align-items:center;gap:10px;">
         <div style="font-size:22px;">${catIcon}</div>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:900;">${exName}</div>
-          <div style="font-size:10px;color:var(--mut);">${catName} · ${time}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:9px;background:rgba(255,77,0,.2);color:#FF8C00;padding:2px 6px;border-radius:99px;font-weight:800;">PR</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName}</span>
+          </div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${s.old_pr || 0} → <span style="color:var(--grn);font-weight:800;">${s.new_value}</span> · +${s.exp_gain || 0} EXP · ${time}</div>
         </div>
-        <div class="bg or" style="white-space:nowrap;">⏳ Laukia</div>
-      </div>
-      <div style="display:flex;justify-content:space-around;align-items:center;background:var(--card);border-radius:10px;padding:8px;">
-        <div style="text-align:center;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:.5px;">SENAS PR</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--mut);">${s.old_pr || 0}</div>
-        </div>
-        <div style="color:var(--mut);font-size:14px;">→</div>
-        <div style="text-align:center;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:.5px;">NAUJAS</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--grn);">${s.new_value}</div>
-        </div>
-        <div style="color:var(--mut);font-size:14px;">|</div>
-        <div style="text-align:center;">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:.5px;">+${delta}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--br);">+${s.exp_gain || 0} EXP</div>
-        </div>
+        <div style="font-size:10px;color:#FF8C00;font-weight:800;white-space:nowrap;">⏳</div>
       </div>
     </div>`;
-  }).join('');
+  });
+  
+  // 2) IŠŠŪKIAI
+  const challengeTypeIcon = { training: '🏋️', weekly: '⚡', monthly: '🌙', oneoff: '✨', one_time: '✨', permanent: '🔁' };
+  chSubs.forEach(s => {
+    const chTitle = s.challenges?.title || 'Iššūkis';
+    const chType = s.challenges?.type || 'training';
+    const icon = challengeTypeIcon[chType] || '🎯';
+    const value = s.numeric_value ? `${s.numeric_value} ${s.challenges?.target_unit || ''}` : 'Pateikta';
+    const time = timeAgo(s.created_at);
+    
+    html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(79,195,247,.25);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:22px;">${icon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:9px;background:rgba(79,195,247,.2);color:#4FC3F7;padding:2px 6px;border-radius:99px;font-weight:800;">Iššūkis</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${chTitle}</span>
+          </div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;">Mano: <span style="color:var(--grn);font-weight:800;">${value}</span> · ${time}</div>
+        </div>
+        <div style="font-size:10px;color:#4FC3F7;font-weight:800;white-space:nowrap;">⏳</div>
+      </div>
+    </div>`;
+  });
+  
+  // 3) VARŽYBOS
+  coSubs.forEach(s => {
+    const compTitle = s.competitions?.title || 'Varžybos';
+    const compType = s.competitions?.competition_type || '';
+    const compTypeLabel = compType === 'kumite' ? '🥊 Kumite' : compType === 'kata' ? '🎌 Kata' : compType === 'belt_test' ? '🥋 Diržo egzaminas' : 'Varžyba';
+    const placement = s.placement ? `${s.placement} v.` : '';
+    const score = s.wins ? `${s.wins}W-${s.losses || 0}L` : '';
+    const detailsText = placement || score || 'Pateikta';
+    const time = timeAgo(s.created_at);
+    
+    html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(255,215,0,.25);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:22px;">🏆</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:9px;background:rgba(255,215,0,.2);color:#FFD700;padding:2px 6px;border-radius:99px;font-weight:800;">Varžyba</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${compTitle}</span>
+          </div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${compTypeLabel} · <span style="color:var(--grn);font-weight:800;">${detailsText}</span> · ${time}</div>
+        </div>
+        <div style="font-size:10px;color:#FFD700;font-weight:800;white-space:nowrap;">⏳</div>
+      </div>
+    </div>`;
+  });
+  
   document.getElementById('v-pending-list').innerHTML = html;
 }
 
