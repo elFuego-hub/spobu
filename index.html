@@ -9135,7 +9135,7 @@ async function loadOverallStatTab() {
   if (statSeasonFilter === 'all') {
     entries = await getFilteredKidEntries('total_exp');
   } else {
-    // Sezono filtras - sumuojam iš trijų šaltinių
+    // Sezono filtras - sumuojam iš keturių šaltinių (įskaitant streak bonus'us)
     // Pradedam nuo VISŲ vaikų (su 0 EXP) - kad vaikas matytų savo poziciją
     const allKidsBase = await getFilteredKidEntries('total_exp');
     const combined = {};
@@ -9156,6 +9156,20 @@ async function loadOverallStatTab() {
       }
       combined[e.kidId].score += e.score;
     });
+    
+    // 🔥 PRIDEDAM STREAK BONUS'US (kurie tiesiog įrašomi į kids.total_exp, bet ne į kitas lenteles)
+    const kidIds = Object.keys(combined);
+    if (kidIds.length > 0) {
+      const { data: streakBonuses } = await sb.from('streak_bonus_log')
+        .select('kid_id, exp_awarded')
+        .in('kid_id', kidIds);
+      
+      (streakBonuses || []).forEach(b => {
+        if (combined[b.kid_id]) {
+          combined[b.kid_id].score += (b.exp_awarded || 0);
+        }
+      });
+    }
     
     entries = Object.values(combined);
   }
