@@ -16790,15 +16790,42 @@ async function loadKidSettingsDetails() {
   const kyu = currentKid.kyu || '–';
   const clubName = currentProfile?.clubs?.name || '–';
   
-  // Užkrauti trenerį
-  let trainerName = '–';
+  // 🎯 Užkrauti VISUS trenerius (pagrindinį + pavaduojantis)
+  const trainerIds = new Set();
   if (currentKid.assigned_trainer_id) {
-    const { data: trainer } = await sb.from('profiles')
-      .select('first_name, last_name')
-      .eq('id', currentKid.assigned_trainer_id)
-      .maybeSingle();
-    if (trainer) {
-      trainerName = `${trainer.first_name || ''} ${trainer.last_name || ''}`.trim() || '–';
+    trainerIds.add(currentKid.assigned_trainer_id);
+  }
+  
+  // M:N papildomi treneriai
+  const { data: mnTrainers } = await sb.from('kid_trainers')
+    .select('trainer_id')
+    .eq('kid_id', currentKid.id);
+  
+  (mnTrainers || []).forEach(t => trainerIds.add(t.trainer_id));
+  
+  // Paruošti trenerių sąrašą
+  let trainersHtml = '<span style="color:var(--mut);">–</span>';
+  if (trainerIds.size > 0) {
+    const { data: trainers } = await sb.from('profiles')
+      .select('id, first_name, last_name')
+      .in('id', Array.from(trainerIds));
+    
+    const trainersList = (trainers || []).map(t => {
+      const name = `${t.first_name || ''} ${t.last_name || ''}`.trim() || '–';
+      const isPrimary = t.id === currentKid.assigned_trainer_id;
+      return { name, isPrimary };
+    });
+    
+    // Sort: pagrindinis pirma
+    trainersList.sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
+    
+    if (trainersList.length === 1) {
+      trainersHtml = trainersList[0].name;
+    } else {
+      // Daugiau nei vienas - rodom pagrindinį + skaičių
+      const primary = trainersList.find(t => t.isPrimary) || trainersList[0];
+      const others = trainersList.length - 1;
+      trainersHtml = `${primary.name} <span style="color:var(--mut);font-size:9px;">+${others}</span>`;
     }
   }
   
@@ -16812,9 +16839,12 @@ async function loadKidSettingsDetails() {
     </div>
   `;
   
+  // Trenerių label - "Treneriai" jei daugiau nei 1
+  const trainerLabel = trainerIds.size > 1 ? `Treneriai (${trainerIds.size})` : 'Treneris';
+  
   container.innerHTML = `
     ${cell('🏠', 'Klubas', clubName)}
-    ${cell('👨‍🏫', 'Treneris', trainerName)}
+    ${cell('👨‍🏫', trainerLabel, trainersHtml)}
     ${cell('🎂', 'Amžius', age !== null ? `${age} m.` : '–')}
     ${cell('⚖️', 'Svorio kat.', weight)}
     ${cell('🥋', 'Diržas (kyu)', kyu)}
