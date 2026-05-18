@@ -8117,10 +8117,11 @@ async function loadRankings() {
   
   const profileIds = clubProfiles.map(p => p.id);
   
-  // 2) Užkrauti kids su gender + birth_date (filtravimui)
+  // 2) Užkrauti kids su gender + birth_date (filtravimui) - TIK approved (kaip detali statistika)
   const { data: allKids } = await sb.from('kids')
     .select('id, user_id, total_exp, gender, birth_date, birth_year')
-    .in('user_id', profileIds);
+    .in('user_id', profileIds)
+    .eq('approval_status', 'approved');
   
   if (!allKids || allKids.length === 0) return;
   
