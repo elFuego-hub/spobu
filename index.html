@@ -15887,63 +15887,79 @@ function openKidSettings() {
     modal.id = 'kid-settings-modal';
     modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;padding:0;';
     modal.innerHTML = `
-      <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+      <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
         <!-- Header -->
-        <div style="padding:16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+        <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">⚙️ NUSTATYMAI</div>
           <button onclick="document.getElementById('kid-settings-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
         </div>
         
         <!-- Vartotojas info -->
-        <div style="padding:16px;border-bottom:.5px solid var(--bdr);">
-          <div style="font-size:10px;color:var(--mut);letter-spacing:1px;font-weight:700;margin-bottom:6px;">PRISIJUNGTAS KAIP</div>
-          <div style="font-size:14px;font-weight:700;" id="kid-settings-user">–</div>
-          <div style="font-size:11px;color:var(--mut);" id="kid-settings-email">–</div>
+        <div style="padding:14px 20px;border-bottom:.5px solid var(--bdr);background:rgba(255,77,0,.05);">
+          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:800;margin-bottom:6px;">PRISIJUNGTAS KAIP</div>
+          <div style="font-size:14px;font-weight:800;color:white;" id="kid-settings-user">–</div>
+          <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="kid-settings-email">–</div>
         </div>
         
-        <!-- Anonimo nustatymas -->
-        <div style="padding:16px;border-bottom:.5px solid var(--bdr);">
-          <div style="font-size:11px;color:var(--mut);letter-spacing:1px;font-weight:700;margin-bottom:8px;">🔒 PRIVATUMAS</div>
-          <div id="kid-settings-anon" style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card);border-radius:10px;">
-            <div style="font-size:22px;">👤</div>
+        <!-- INFO MYGTUKAI -->
+        <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
+          <button onclick="openInstructionsModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
+            <div style="font-size:28px;">📚</div>
             <div style="flex:1;">
-              <div style="font-size:12px;font-weight:700;">Statistikos rodymas</div>
-              <div style="font-size:10px;color:var(--mut);margin-top:2px;">Šį nustatymą valdo tavo tėvai</div>
+              <div style="font-size:13px;font-weight:800;color:white;">Kaip naudotis app'su</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Visi puslapiai ir funkcijos</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </button>
+          
+          <button onclick="openExpTableModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
+            <div style="font-size:28px;">📊</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">EXP lentelė</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Kiek EXP reikia kiekvienam lygiui</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </button>
+          
+          <button onclick="openBeltsModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
+            <div style="font-size:28px;">🥋</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Diržų sistema</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Kyokushin kyu lygiai</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </button>
+          
+          <button onclick="openHowExpModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
+            <div style="font-size:28px;">💎</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Kaip gauti EXP</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Iššūkiai, varžybos, streak'ai</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </button>
+        </div>
+        
+        <!-- Privatumas - ribota informacija -->
+        <div style="padding:0 16px 14px;">
+          <div style="background:rgba(255,255,255,.04);border:.5px solid var(--bdr);border-radius:14px;padding:12px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">🔒</div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:800;color:white;">Privatumas</div>
+              <div style="font-size:10px;color:var(--mut);margin-top:2px;">Statistikos rodymą valdo tėvai 👨‍👩‍👦</div>
             </div>
           </div>
         </div>
         
-        <!-- EXP info -->
-        <div style="padding:16px;border-bottom:.5px solid var(--bdr);">
-          <div style="font-size:11px;color:var(--mut);letter-spacing:1px;font-weight:700;margin-bottom:8px;">💎 KAIP GAUTI EXP</div>
-          <div style="background:var(--card);border-radius:10px;padding:12px;font-size:11px;line-height:1.6;">
-            <div style="margin-bottom:6px;">🏋️ <b>Treniruotės iššūkis:</b> +15 EXP</div>
-            <div style="margin-bottom:6px;">⚡ <b>Savaitinis iššūkis:</b> +30 EXP</div>
-            <div style="margin-bottom:6px;">🌙 <b>Mėnesinis iššūkis:</b> +100 EXP</div>
-            <div style="margin-bottom:6px;">✨ <b>Vienkartinis iššūkis:</b> +75 EXP</div>
-            <div style="margin-bottom:6px;">🥋 <b>Treniruotės dalyvavimas:</b> +EXP elgesiu</div>
-            <div>🏆 <b>Varžybos:</b> 40-1000 EXP (pagal lygį + vietą)</div>
-          </div>
-        </div>
-        
-        <!-- Žaidimo instrukcija -->
-        <div style="padding:16px;border-bottom:.5px solid var(--bdr);">
-          <div style="font-size:11px;color:var(--mut);letter-spacing:1px;font-weight:700;margin-bottom:8px;">📖 KAIP NAUDOTIS</div>
-          <div style="background:var(--card);border-radius:10px;padding:12px;font-size:11px;line-height:1.6;">
-            <div style="margin-bottom:8px;"><b>🏠 Pagrindinis:</b> Tavo dienos apžvalga - streakai, tikslai, reitingai</div>
-            <div style="margin-bottom:8px;"><b>📈 Karjera:</b> 7 kategorijos su pratimais. Pasiek tier'us!</div>
-            <div style="margin-bottom:8px;"><b>🎯 Iššūkiai:</b> Trenerio sukurti uždaviniai - įveik ir gauk EXP</div>
-            <div style="margin-bottom:8px;"><b>🏆 Varžybos:</b> Tavo kovų rekordas ir medaliai</div>
-            <div><b>👤 Profilis:</b> Diržas, trofėjai, skill badges</div>
-          </div>
-        </div>
-        
         <!-- ATSIJUNGTI -->
-        <div style="padding:16px;">
-          <button onclick="if(confirm('Ar tikrai atsijungti?')){document.getElementById('kid-settings-modal').remove();doLogout();}" style="width:100%;padding:12px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:12px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(255,77,0,.3);">🚪 ATSIJUNGTI</button>
+        <div style="padding:6px 16px 20px;">
+          <button onclick="if(confirm('Ar tikrai atsijungti?')){document.getElementById('kid-settings-modal').remove();doLogout();}" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(255,77,0,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
         </div>
         
-        <div style="height:20px;"></div>
+        <!-- App info -->
+        <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
+          SPOBU v1.0 · © 2026
+        </div>
       </div>
     `;
     document.body.appendChild(modal);
@@ -15958,6 +15974,219 @@ function openKidSettings() {
   }
   
   modal.style.display = 'flex';
+}
+
+// ════════════════════════════════════════
+// SETTINGS SUB-MODALS
+// ════════════════════════════════════════
+
+function openInfoSubmodal(title, contentHtml) {
+  // Bendras helper'is sub-modaliams
+  const existingModal = document.getElementById('settings-submodal');
+  if (existingModal) existingModal.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'settings-submodal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;align-items:flex-end;justify-content:center;padding:0;';
+  modal.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+      <!-- Header -->
+      <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:12px;background:var(--bg);">
+        <button onclick="document.getElementById('settings-submodal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:white;padding:0;line-height:1;">‹</button>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;flex:1;">${title}</div>
+        <button onclick="document.getElementById('settings-submodal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--mut);padding:0;">✕</button>
+      </div>
+      <!-- Content -->
+      <div style="flex:1;overflow-y:auto;padding:16px 20px;">
+        ${contentHtml}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function openInstructionsModal() {
+  openInfoSubmodal('📚 KAIP NAUDOTIS', `
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FF4D00;">
+        <div style="font-size:14px;font-weight:800;color:#FF8C00;margin-bottom:6px;">🏠 Pagrindinis</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Tavo dienos apžvalga: 🔥 streakai (treniruočių, savaitinis, mėnesinis), 🎯 tikslai, 📊 reitingai, 🏆 artimiausios varžybos ir ⏳ laukiantys patvirtinimai.</div>
+      </div>
+      
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #4FC3F7;">
+        <div style="font-size:14px;font-weight:800;color:#4FC3F7;margin-bottom:6px;">🏋️ Karjera</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">7 sporto kategorijos su pratimais (JĖGA, GREITIS, IŠTVERMĖ, ir t.t.). Pateik savo asmeninius rekordus (PR) - treneris patvirtins ir gausi EXP. Pasiek tier'us: BRONZE → SILVER → GOLD → MAX.</div>
+      </div>
+      
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #BA68C8;">
+        <div style="font-size:14px;font-weight:800;color:#BA68C8;margin-bottom:6px;">🎯 Iššūkiai</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Trenerio sukurti uždaviniai. 4 tipai: 🏋️ treniruočių, ⚡ savaitiniai, 🌙 mėnesiniai, ✨ vienkartiniai. Įveik ir gauk EXP + streak bonusus!</div>
+      </div>
+      
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FFD700;">
+        <div style="font-size:14px;font-weight:800;color:#FFD700;margin-bottom:6px;">🏆 Varžybos</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Klubo paskelbtos varžybos (Kumite, Kata, Diržo egzaminas). Pateik savo rezultatus - laimėjimus, vietas. Gauk medalius ir EXP.</div>
+      </div>
+      
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #22C55E;">
+        <div style="font-size:14px;font-weight:800;color:#22C55E;margin-bottom:6px;">📊 Statistika</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Reitingai tarp tavo kategorijos draugų (lytis + amžiaus grupė). Pamatyk kas yra TOP klube ir savo poziciją.</div>
+      </div>
+      
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FF8C00;">
+        <div style="font-size:14px;font-weight:800;color:#FF8C00;margin-bottom:6px;">👤 Profilis</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Diržo sertifikatas, skill badges, varžybų medaliai, streakų statistika.</div>
+      </div>
+    </div>
+  `);
+}
+
+function openExpTableModal() {
+  // Generuojam EXP lentelę iš LEVEL_THRESHOLDS
+  let tableHtml = `
+    <div style="font-size:11px;color:var(--mut);margin-bottom:12px;line-height:1.5;">
+      Kiekvienas lygis (LVL) reikalauja vis daugiau EXP. Pasiek 99 LVL - tampi <b style="color:#FFD700;">✨ Hall of Fame</b> nariu!
+    </div>
+    <div style="background:var(--card);border-radius:12px;padding:12px;font-size:12px;">
+  `;
+  
+  // Sugrupuojam pagal stadijas
+  STAGES.forEach((stage, sIdx) => {
+    const startLvl = sIdx === 0 ? 1 : STAGES.slice(0, sIdx).reduce((sum, s) => sum + (LEVEL_THRESHOLDS.filter(t => t >= s.minExp && t <= s.maxExp).length), 0) + 1;
+    
+    // Surinkti levels šios stadijos rėmuose
+    const stageLevels = [];
+    LEVEL_THRESHOLDS.forEach((threshold, idx) => {
+      const lvl = idx + 1;
+      if (threshold >= stage.minExp && threshold <= stage.maxExp) {
+        stageLevels.push({ lvl, exp: threshold });
+      }
+    });
+    
+    if (stageLevels.length === 0) return;
+    
+    const firstLvl = stageLevels[0].lvl;
+    const lastLvl = stageLevels[stageLevels.length - 1].lvl;
+    
+    tableHtml += `
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 10px;background:rgba(255,255,255,.04);border-radius:8px;border-left:3px solid ${stage.color};">
+          <div style="font-size:20px;">${stage.emoji}</div>
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:800;color:${stage.color};">${stage.name.toUpperCase()}</div>
+            <div style="font-size:9px;color:var(--mut);letter-spacing:.5px;">LVL ${firstLvl}–${lastLvl} · ${stage.minExp.toLocaleString()}–${stage.maxExp === Infinity ? '∞' : stage.maxExp.toLocaleString()} EXP</div>
+          </div>
+          <div style="font-family:'Noto Serif JP',serif;font-size:24px;color:${stage.color};opacity:.6;">${stage.kanji}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:0 4px;">
+          ${stageLevels.map(({lvl, exp}) => `
+            <div style="text-align:center;padding:4px;background:var(--bg);border-radius:6px;font-size:9px;">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:white;line-height:1;">${lvl}</div>
+              <div style="color:var(--mut);font-size:8px;margin-top:1px;">${exp.toLocaleString()}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+  
+  tableHtml += '</div>';
+  openInfoSubmodal('📊 EXP LENTELĖ', tableHtml);
+}
+
+function openBeltsModal() {
+  const BELTS = [
+    { kyu: '10 kyu', color: 'WHITE',         hex: '#F5F5F5', label: 'Pradedančiojo diržas',   exp: 'Pradžia' },
+    { kyu: '9 kyu',  color: 'WHITE/ORANGE',  hex: '#FF8C00', label: 'Pradedantysis II',       exp: '~500 EXP' },
+    { kyu: '8 kyu',  color: 'ORANGE',        hex: '#FF6B00', label: 'Žemiausias mokinys',     exp: '~1000 EXP' },
+    { kyu: '7 kyu',  color: 'ORANGE/BLUE',   hex: '#4A90E2', label: 'Mokinys',                exp: '~1500 EXP' },
+    { kyu: '6 kyu',  color: 'BLUE',          hex: '#2E5C8A', label: 'Mokinys II',             exp: '~2000 EXP' },
+    { kyu: '5 kyu',  color: 'BLUE/YELLOW',   hex: '#FFEB3B', label: 'Mokinys III',            exp: '~2500 EXP' },
+    { kyu: '4 kyu',  color: 'YELLOW',        hex: '#FBC02D', label: 'Pažengęs mokinys',       exp: '~3500 EXP' },
+    { kyu: '3 kyu',  color: 'YELLOW/GREEN',  hex: '#4CAF50', label: 'Pažengęs mokinys II',    exp: '~5000 EXP' },
+    { kyu: '2 kyu',  color: 'GREEN',         hex: '#2E7D32', label: 'Aukštasis mokinys',      exp: '~7000 EXP' },
+    { kyu: '1 kyu',  color: 'GREEN/BROWN',   hex: '#8B4513', label: 'Senior mokinys',         exp: '~9000 EXP' },
+    { kyu: '1 DAN',  color: 'BLACK',         hex: '#000',    label: 'Juodas diržas (1-asis)', exp: '~12000 EXP' },
+    { kyu: '2 DAN',  color: 'BLACK',         hex: '#000',    label: 'Juodas diržas (2-asis)', exp: '~16000 EXP' }
+  ];
+  
+  let html = `
+    <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.5;">
+      Kyokushin karatė diržų sistema. Naujesnis - šviesesnis (10 kyu), žemesnis - tamsesnis (1 kyu, DAN). Diržą skiria <b>klubo treneriai</b> už pasiekimus ir techniką.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+  `;
+  
+  BELTS.forEach(b => {
+    html += `
+      <div style="background:var(--card);border-radius:12px;padding:10px;display:flex;align-items:center;gap:12px;border:.5px solid var(--bdr);">
+        <div style="width:30px;height:30px;border-radius:6px;background:${b.hex};border:1px solid rgba(255,255,255,.2);flex-shrink:0;${b.color.includes('/') ? `background:linear-gradient(90deg, ${b.hex} 50%, #fff 50%);` : ''}"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:white;line-height:1;">${b.kyu}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${b.label}</div>
+        </div>
+        <div style="font-size:10px;color:var(--mut);text-align:right;">${b.exp}</div>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  openInfoSubmodal('🥋 DIRŽŲ SISTEMA', html);
+}
+
+function openHowExpModal() {
+  openInfoSubmodal('💎 KAIP GAUTI EXP', `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FF4D00;">
+        <div style="font-size:13px;font-weight:800;color:#FF8C00;margin-bottom:6px;">🏋️ TRENIRUOTĖS IŠŠŪKIS</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
+          Trenerio sukurtas užduotis treniruotės metu. Bazinis EXP ~+10. Plius streak bonusas kuris auga su kiekviena iš eilės atlikta!
+          <br><b style="color:#FF8C00;">Streak formulė:</b> 3 × 1.1^(streak-1)
+        </div>
+      </div>
+      
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #4FC3F7;">
+        <div style="font-size:13px;font-weight:800;color:#4FC3F7;margin-bottom:6px;">⚡ SAVAITINIS IŠŠŪKIS</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
+          Savaitės užduotys. Bazinis EXP ~+25. Streak bonusas didesnis:
+          <br><b style="color:#4FC3F7;">Formulė:</b> 7 × 1.1^(streak-1)
+        </div>
+      </div>
+      
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #BA68C8;">
+        <div style="font-size:13px;font-weight:800;color:#BA68C8;margin-bottom:6px;">🌙 MĖNESINIS IŠŠŪKIS</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
+          Mėnesio tikslai. Bazinis EXP ~+50. Didžiausi streak bonusai:
+          <br><b style="color:#BA68C8;">Formulė:</b> 12 × 1.1^(streak-1)
+        </div>
+      </div>
+      
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FFD700;">
+        <div style="font-size:13px;font-weight:800;color:#FFD700;margin-bottom:6px;">🏆 VARŽYBOS</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
+          Klubo lygis:<br>
+          • 🏘️ Vietinė: 40-200 EXP<br>
+          • 🏙️ Vidutinė: 100-500 EXP<br>
+          • 🌍 Europos: 300-1000 EXP<br>
+          Pagal pozicijos vietą (1, 2, 3) ir kovos rezultatus.
+        </div>
+      </div>
+      
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #22C55E;">
+        <div style="font-size:13px;font-weight:800;color:#22C55E;margin-bottom:6px;">💪 ASMENINIAI REKORDAI (PR)</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
+          Pateik naują PR pratime (karjera tab'e). Treneris patvirtins ir gausi EXP proporcingai skirtumui nuo seno PR.
+        </div>
+      </div>
+      
+      <div style="background:linear-gradient(135deg,rgba(255,77,0,.15),rgba(255,128,0,.05));border-radius:12px;padding:14px;border:.5px solid rgba(255,77,0,.3);">
+        <div style="font-size:13px;font-weight:800;color:#FF8C00;margin-bottom:6px;">🔥 STREAK BONUSAI</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
+          Atlikdamas iššūkius iš eilės gauni <b>streak bonusus</b>. Kuo ilgesnis streak, tuo daugiau EXP! Bet jei nepateiki - streak nutruko, pradedi nuo 0.
+        </div>
+      </div>
+    </div>
+  `);
 }
 
 function openAllAnnouncements() {
