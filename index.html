@@ -4850,6 +4850,9 @@ async function loadKidData() {
   // 🎯 Patikrinam naujus iššūkius (kai treneris paskyrė)
   await checkForNewChallenges().catch(e => console.error('checkForNewChallenges:', e));
   
+  // ✅ Patikrinam patvirtintus submissions (taip pat tarpinius)
+  await checkForNewApprovedSubmissions().catch(e => console.error('checkForNewApprovedSubmissions:', e));
+  
   // 📡 Realtime - prisijungti prie naujų iššūkių srauto
   subscribeToNewChallenges();
   
@@ -6020,6 +6023,85 @@ function subscribeToNewChallenges() {
   console.log('[challenge realtime] Subscribed');
 }
 
+
+// ════════════════════════════════════════
+// Tikrina ar yra naujų APPROVED submissions ir rodo toast'ą
+// Ypač svarbu tarpiniam (partial) - vaikas mato kad tarpinis patvirtintas
+// ════════════════════════════════════════
+async function checkForNewApprovedSubmissions() {
+  if (!currentKid?.id) return;
+  
+  const lsKey = `spobu_kid_${currentKid.id}_seen_approved_sub_ids`;
+  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  
+  // Užkraunam approved submissions (naujausi pirma, paskutinės 24h)
+  const dayAgo = new Date(Date.now() - 86400000).toISOString();
+  
+  const { data: subs } = await sb.from('challenge_submissions')
+    .select('id, challenge_id, numeric_value, exp_gain, reviewed_at, challenges(title, target_value, target_unit, allow_partial, exp_reward)')
+    .eq('kid_id', currentKid.id)
+    .eq('status', 'approved')
+    .gte('reviewed_at', dayAgo)
+    .order('reviewed_at', { ascending: false })
+    .limit(10);
+  
+  if (!subs?.length) return;
+  
+  const newApproved = subs.filter(s => !seenIds.has(s.id));
+  if (newApproved.length === 0) return;
+  
+  console.log('[approved popup] Naujų patvirtinimų:', newApproved.length);
+  
+  // Pažymėt VISUS matytus
+  subs.forEach(s => seenIds.add(s.id));
+  localStorage.setItem(lsKey, JSON.stringify([...seenIds]));
+  
+  // Užkraunam progress'ą partial iššūkiams
+  const partialChallengeIds = newApproved
+    .filter(s => s.challenges?.allow_partial)
+    .map(s => s.challenge_id);
+  
+  const progressMap = {};
+  if (partialChallengeIds.length > 0) {
+    const { data: progress } = await sb.from('challenge_progress')
+      .select('challenge_id, total_progress, is_completed')
+      .in('challenge_id', partialChallengeIds)
+      .eq('kid_id', currentKid.id);
+    
+    (progress || []).forEach(p => {
+      progressMap[p.challenge_id] = p;
+    });
+  }
+  
+  // Queue toast'ų (po 500ms)
+  newApproved.reverse(); // chronologine tvarka
+  
+  for (let i = 0; i < newApproved.length; i++) {
+    const sub = newApproved[i];
+    const ch = sub.challenges;
+    const isPartial = ch?.allow_partial === true;
+    
+    setTimeout(() => {
+      if (isPartial) {
+        const progress = progressMap[sub.challenge_id];
+        const isCompleted = progress?.is_completed === true;
+        
+        if (isCompleted) {
+          // Pilnai atliktas
+          showToast(`🎉 PILNAI ATLIKTA!\n\n${ch.title}\n+${ch.exp_reward || 0} EXP`, 'success', 6000);
+        } else {
+          // Tarpinis
+          const totalProgress = progress?.total_progress || 0;
+          const remaining = (ch.target_value || 0) - totalProgress;
+          showToast(`📊 Tarpinis patvirtintas!\n\n${ch.title}\n${totalProgress} / ${ch.target_value} ${ch.target_unit || ''}\nLiko: ${remaining} ${ch.target_unit || ''}`, 'success', 5500);
+        }
+      } else {
+        // Standartinis iššūkis
+        showToast(`✅ Iššūkis patvirtintas!\n\n${ch?.title || 'Iššūkis'}\n+${sub.exp_gain || 0} EXP`, 'success', 5000);
+      }
+    }, i * 700);
+  }
+}
 
 async function checkForNewStreakBonuses() {
   if (!currentKid?.id) return;
@@ -12821,6 +12903,7 @@ async function submitNewChallenge() {
   const exp = parseInt(document.getElementById('cc-exp').value);
   const icon = document.getElementById('cc-icon').value;
   const audience = document.getElementById('cc-audience').value;
+  const allowPartial = document.getElementById('cc-allow-partial')?.value === 'true';
   
   if (!title) { showToast('❌ Įvesk pavadinimą', 'error'); return; }
   if (!targetValue || targetValue <= 0) { showToast('❌ Įvesk tikslą (skaičių)', 'error'); return; }
@@ -12851,47 +12934,256 @@ async function submitNewChallenge() {
   btn.disabled = true;
   btn.textContent = 'KURIAMA...';
   
-  const { data, error } = await sb.from('challenges').insert({
+  // 🔥 Tikrinam ar tipas turi blokavimą (weekly/monthly/permanent = max 1 aktyvus)
+  const shouldCheckLimit = (type === 'weekly' || type === 'monthly' || type === 'permanent');
+  
+  // ════════════════════════════════════════
+  // VARIANTAS 1: SPECIFIC KID (konkretus vaikas)
+  // ════════════════════════════════════════
+  if (audience === 'specific_kid') {
+    // Tikrinam ar vaikas jau turi aktyvų to tipo iššūkį
+    if (shouldCheckLimit) {
+      const hasActive = await checkKidHasActiveChallenge(targetKidId, type);
+      if (hasActive) {
+        btn.disabled = false;
+        btn.textContent = 'SUKURTI IŠŠŪKĮ';
+        showToast(`⚠️ Šis vaikas jau turi aktyvų ${getTypeLabel(type)} iššūkį: "${hasActive.title}"`, 'error', 6000);
+        return;
+      }
+    }
+    
+    // Sukuriam vieną iššūkį
+    const { error } = await sb.from('challenges').insert({
+      trainer_id: currentUser.id,
+      club_id: currentProfile?.club_id,
+      title, description: desc || null, instructions: desc || null,
+      type, content_type: contentType,
+      target_value: targetValue, target_unit: targetUnit,
+      exp_reward: exp, icon,
+      is_active: true, expires_at: expiresAt,
+      target_audience: 'specific_kid',
+      target_kid_id: targetKidId,
+      group_id: groupId,
+      allow_partial: allowPartial
+    });
+    
+    btn.disabled = false;
+    btn.textContent = 'SUKURTI IŠŠŪKĮ';
+    
+    if (error) {
+      showToast('❌ Klaida: ' + error.message, 'error', 5000);
+      console.error(error);
+      return;
+    }
+    
+    showToast(`✅ Iššūkis sukurtas vaikui!`, 'success');
+    closeCreateChallenge();
+    if (typeof loadTrainerOwnChallenges === 'function') await loadTrainerOwnChallenges();
+    return;
+  }
+  
+  // ════════════════════════════════════════
+  // VARIANTAS 2: GRUPĖ / BERNIUKAI / MERGAITĖS / VISAS KLUBAS
+  // ════════════════════════════════════════
+  
+  // 1. Surasti VISUS tinkančius vaikus
+  let eligibleKids = [];
+  
+  if (audience === 'all_club') {
+    // Visi klubo vaikai
+    const { data } = await sb.from('profiles')
+      .select('id, first_name, last_name, kids(id, gender, group_id)')
+      .eq('club_id', currentProfile.club_id)
+      .eq('role', 'kid');
+    
+    eligibleKids = (data || [])
+      .filter(p => p.kids?.[0])
+      .map(p => ({
+        id: p.kids[0].id,
+        first_name: p.first_name,
+        last_name: p.last_name,
+        gender: p.kids[0].gender,
+        group_id: p.kids[0].group_id
+      }));
+  } else {
+    // Grupė / berniukai / mergaitės
+    const { data: groupKids } = await sb.from('kids')
+      .select('id, gender, profiles!kids_user_id_fkey(first_name, last_name)')
+      .eq('group_id', groupId);
+    
+    eligibleKids = (groupKids || []).map(k => ({
+      id: k.id,
+      first_name: k.profiles?.first_name || '',
+      last_name: k.profiles?.last_name || '',
+      gender: k.gender
+    }));
+    
+    if (audience === 'boys_in_group') eligibleKids = eligibleKids.filter(k => k.gender === 'male');
+    else if (audience === 'girls_in_group') eligibleKids = eligibleKids.filter(k => k.gender === 'female');
+  }
+  
+  if (eligibleKids.length === 0) {
+    btn.disabled = false;
+    btn.textContent = 'SUKURTI IŠŠŪKĮ';
+    showToast('⚠️ Pasirinktoje grupėje/audience nėra vaikų', 'error');
+    return;
+  }
+  
+  // 2. Tikrinam kuriems vaikams jau yra aktyvus to tipo iššūkis
+  const createdFor = [];
+  const skipped = [];
+  
+  if (shouldCheckLimit) {
+    btn.textContent = `TIKRINAMA... (0/${eligibleKids.length})`;
+    
+    for (let i = 0; i < eligibleKids.length; i++) {
+      const kid = eligibleKids[i];
+      btn.textContent = `TIKRINAMA... (${i + 1}/${eligibleKids.length})`;
+      const hasActive = await checkKidHasActiveChallenge(kid.id, type);
+      if (hasActive) {
+        skipped.push({ ...kid, reason: hasActive.title });
+      } else {
+        createdFor.push(kid);
+      }
+    }
+  } else {
+    // Treniruotės / vienkartiniai - visiem kuriama
+    createdFor.push(...eligibleKids);
+  }
+  
+  if (createdFor.length === 0) {
+    btn.disabled = false;
+    btn.textContent = 'SUKURTI IŠŠŪKĮ';
+    showToast(`⚠️ Visi ${eligibleKids.length} vaikai jau turi aktyvų ${getTypeLabel(type)} iššūkį`, 'error', 6000);
+    return;
+  }
+  
+  // 3. Sukurti PARENT TEMPLATE įrašą (paslėptas - tik organizacijai)
+  btn.textContent = `KURIAMA... (parent)`;
+  const distributionMeta = {
+    total_kids: eligibleKids.length,
+    created_for: createdFor.length,
+    skipped: skipped.length,
+    skipped_kids: skipped.map(k => ({ id: k.id, name: `${k.first_name} ${k.last_name}`.trim(), reason: k.reason }))
+  };
+  
+  const { data: parentData, error: parentError } = await sb.from('challenges').insert({
     trainer_id: currentUser.id,
     club_id: currentProfile?.club_id,
-    title,
-    description: desc || null,
-    instructions: desc || null,
-    type,
-    content_type: contentType,
-    target_value: targetValue,
-    target_unit: targetUnit,
-    exp_reward: exp,
-    icon,
-    is_active: true,
+    title, description: desc || null, instructions: desc || null,
+    type, content_type: contentType,
+    target_value: targetValue, target_unit: targetUnit,
+    exp_reward: exp, icon,
+    is_active: false, // PARENT yra paslėptas, niekas jo nemato
     expires_at: expiresAt,
     target_audience: audience,
-    target_kid_id: targetKidId,
     group_id: groupId,
-    allow_partial: document.getElementById('cc-allow-partial')?.value === 'true'
-  }).select();
+    allow_partial: allowPartial,
+    distribution_meta: distributionMeta
+  }).select().single();
+  
+  if (parentError || !parentData) {
+    btn.disabled = false;
+    btn.textContent = 'SUKURTI IŠŠŪKĮ';
+    showToast('❌ Klaida (parent): ' + (parentError?.message || 'unknown'), 'error');
+    return;
+  }
+  
+  // 4. Sukurti INDIVIDUALŲ įrašą kiekvienam vaikui (specific_kid)
+  btn.textContent = `KURIAMA... (0/${createdFor.length})`;
+  const insertPromises = createdFor.map(kid => 
+    sb.from('challenges').insert({
+      trainer_id: currentUser.id,
+      club_id: currentProfile?.club_id,
+      title, description: desc || null, instructions: desc || null,
+      type, content_type: contentType,
+      target_value: targetValue, target_unit: targetUnit,
+      exp_reward: exp, icon,
+      is_active: true,
+      expires_at: expiresAt,
+      target_audience: 'specific_kid',
+      target_kid_id: kid.id,
+      group_id: kid.group_id || groupId,
+      allow_partial: allowPartial,
+      parent_challenge_id: parentData.id
+    })
+  );
+  
+  const results = await Promise.allSettled(insertPromises);
+  const successCount = results.filter(r => r.status === 'fulfilled' && !r.value.error).length;
   
   btn.disabled = false;
   btn.textContent = 'SUKURTI IŠŠŪKĮ';
   
-  if (error) {
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
-    console.error(error);
-    return;
+  // 5. Rodyti rezultatą
+  let resultMsg = `✅ Sukurta ${successCount} iš ${eligibleKids.length} vaikų`;
+  if (skipped.length > 0) {
+    const skippedNames = skipped.slice(0, 3).map(k => `${k.first_name} ${k.last_name}`.trim()).join(', ');
+    const more = skipped.length > 3 ? ` ir dar ${skipped.length - 3}` : '';
+    resultMsg += `\n\n⏭️ Praleisti (${skipped.length}): ${skippedNames}${more}\n(jau turi aktyvų ${getTypeLabel(type)})`;
   }
   
-  if (!data || data.length === 0) {
-    showToast('❌ Iššūkis nepavyko sukurti - nepakanka teisių', 'error', 5000);
-    return;
-  }
-  
-  showToast(`✅ Iššūkis sukurtas!\n\n${title}\nTikslas: ${targetValue} ${targetUnit}\n+${exp} EXP`, 'success');
+  showToast(resultMsg, 'success', 8000);
   closeCreateChallenge();
   
-  // Perkrauti sąrašą
   if (typeof loadTrainerOwnChallenges === 'function') {
     await loadTrainerOwnChallenges();
   }
+}
+
+// Helper - tipas → label
+function getTypeLabel(type) {
+  const labels = {
+    training: '🏋️ treniruotės',
+    weekly: '⚡ savaitinį',
+    monthly: '🌙 mėnesinį',
+    one_time: '✨ vienkartinį',
+    permanent: '🔁 nuolatinį'
+  };
+  return labels[type] || type;
+}
+
+// Helper - patikrint ar vaikas turi aktyvų to tipo iššūkį
+async function checkKidHasActiveChallenge(kidId, type) {
+  const nowISO = new Date().toISOString();
+  
+  // 1. Tikrinam ar yra iššūkis kur kidId yra target_kid_id (individualus)
+  const { data: individual } = await sb.from('challenges')
+    .select('id, title, allow_partial')
+    .eq('target_kid_id', kidId)
+    .eq('type', type)
+    .eq('is_active', true)
+    .or(`expires_at.is.null,expires_at.gt.${nowISO}`)
+    .limit(5);
+  
+  // Patikrinam ar bent vienas dar NEpasiektas (jei partial - per challenge_progress, jei ne - per submissions)
+  for (const ch of (individual || [])) {
+    if (ch.allow_partial) {
+      // Partial - tikrinam ar progress completed
+      const { data: progress } = await sb.from('challenge_progress')
+        .select('is_completed')
+        .eq('challenge_id', ch.id)
+        .eq('kid_id', kidId)
+        .maybeSingle();
+      
+      if (!progress?.is_completed) {
+        return { id: ch.id, title: ch.title };
+      }
+    } else {
+      // Standartinis - tikrinam ar yra approved submission
+      const { count } = await sb.from('challenge_submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('challenge_id', ch.id)
+        .eq('kid_id', kidId)
+        .eq('status', 'approved');
+      
+      if (!count || count === 0) {
+        return { id: ch.id, title: ch.title };
+      }
+    }
+  }
+  
+  return null;
 }
 
 // ════════════════════════════════════════
