@@ -6362,12 +6362,24 @@ async function loadChallenges() {
   // 3. Šio vaiko submission'ai
   const allChallengeIds = eligibleChallenges.map(c => c.id);
   let mySubs = [];
+  let myProgress = {}; // 📊 Partial iššūkių progresas
+  
   if (allChallengeIds.length > 0) {
-    const { data: subsData } = await sb.from('challenge_submissions')
-      .select('challenge_id, status, value, numeric_value, created_at')
-      .eq('kid_id', currentKid.id)
-      .in('challenge_id', allChallengeIds);
-    mySubs = subsData || [];
+    const [subsRes, progressRes] = await Promise.all([
+      sb.from('challenge_submissions')
+        .select('challenge_id, status, value, numeric_value, created_at')
+        .eq('kid_id', currentKid.id)
+        .in('challenge_id', allChallengeIds),
+      sb.from('challenge_progress')
+        .select('challenge_id, total_progress, is_completed, completed_at, exp_awarded')
+        .eq('kid_id', currentKid.id)
+        .in('challenge_id', allChallengeIds)
+    ]);
+    
+    mySubs = subsRes.data || [];
+    (progressRes.data || []).forEach(p => {
+      myProgress[p.challenge_id] = p;
+    });
   }
   
   const subsByChallenge = {};
@@ -6388,24 +6400,44 @@ async function loadChallenges() {
     const isExpired = ch.expires_at && new Date(ch.expires_at) < now;
     const isFrozen = !ch.is_active;
     
-    // ATLIKTI grupė: 
-    // - Vaikas pats atliko (yra approved submission), IŠSKYRUS permanent (kuris kartojamas)
-    // - Iššūkis pasibaigė laikas
-    // - Iššūkis užšaldytas BET vaikas atliko anksčiau
+    // 📊 PARTIAL iššūkis - papildoma logika
+    const isPartial = ch.allow_partial === true;
+    const progress = myProgress[ch.id];
     
-    if (myApproved && ch.type !== 'permanent') {
-      completedChallenges.push(ch);
-    } else if (isExpired) {
-      // Pasibaigęs - į atliktus tik jei vaikas dalyvavo
-      if (subs.length > 0) {
+    // Pridedam progress info į iššūkį (kad UI galėtų rodyti)
+    ch._progress = progress;
+    ch._is_partial_completed = isPartial && progress?.is_completed === true;
+    
+    // ATLIKTI grupė:
+    // - PARTIAL: tik kai progress.is_completed = true
+    // - Standartinis: kai yra approved submission
+    // - permanent kartojamas - į aktyvius
+    // - Pasibaigęs laikas
+    
+    if (isPartial) {
+      // Tarpinis iššūkis - tik kai progress completed
+      if (progress?.is_completed === true && ch.type !== 'permanent') {
         completedChallenges.push(ch);
+      } else if (isExpired && subs.length > 0) {
+        completedChallenges.push(ch);
+      } else if (isFrozen) {
+        // Užšaldytas - nematomas
+      } else {
+        activeChallenges.push(ch);
       }
-      // Jei nedalyvavo ir pasibaigė - paslėpiam (nesvarbu)
-    } else if (isFrozen) {
-      // Užšaldytas - nematomas vaikui (nei aktyviuose, nei atliktuose)
     } else {
-      // Aktyvus
-      activeChallenges.push(ch);
+      // Standartinis (be tarpinių)
+      if (myApproved && ch.type !== 'permanent') {
+        completedChallenges.push(ch);
+      } else if (isExpired) {
+        if (subs.length > 0) {
+          completedChallenges.push(ch);
+        }
+      } else if (isFrozen) {
+        // Užšaldytas - nematomas
+      } else {
+        activeChallenges.push(ch);
+      }
     }
   });
   
