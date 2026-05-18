@@ -6468,29 +6468,70 @@ async function loadChallenges() {
     const isExpired = ch.expires_at && new Date(ch.expires_at) < now;
     const isCompletedTab = kidChallengesActiveTab === 'completed';
     
+    // 📊 PARTIAL info
+    const isPartial = ch.allow_partial === true;
+    const progress = ch._progress;
+    const progressValue = progress?.total_progress || 0;
+    const isPartialFullyDone = progress?.is_completed === true;
+    
     let statusBadge = '';
     let actionButton = '';
+    let progressBar = '';
     
-    if (approvedSub) {
-      statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">✅ Atlikta: ${approvedSub.value} ${ch.target_unit || ''}</span>`;
-      // Permanent ir aktyvių tabe - galima pakartoti
-      if (ch.type === 'permanent' && !isCompletedTab) {
-        actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">PAKARTOTI</button>`;
+    // 📊 PROGRESS BAR partial iššūkiams
+    if (isPartial && ch.target_value) {
+      const pct = Math.min(100, (progressValue / ch.target_value) * 100);
+      const color = isPartialFullyDone ? '#22C55E' : '#FF8C00';
+      progressBar = `
+        <div style="margin-top:8px;padding:8px;background:rgba(255,77,0,.05);border-radius:10px;border:.5px solid rgba(255,77,0,.2);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:10px;color:var(--mut);font-weight:700;letter-spacing:.5px;">📊 PROGRESAS</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${color};letter-spacing:1px;">${progressValue} / ${ch.target_value} ${ch.target_unit || ''}</span>
+          </div>
+          <div style="height:6px;background:var(--bdr);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;background:linear-gradient(90deg,${color},${isPartialFullyDone ? '#16A34A' : '#FFB300'});width:${pct.toFixed(1)}%;transition:width .4s ease;box-shadow:0 0 8px ${color}66;"></div>
+          </div>
+        </div>
+      `;
+    }
+    
+    if (isPartial) {
+      // 📊 PARTIAL iššūkis - daug submissions galima
+      if (isPartialFullyDone) {
+        // Visiškai atliktas
+        statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">✅ Pilnai atlikta!</span>`;
+      } else if (pendingSub) {
+        statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">⏳ Laukia patvirtinimo: ${pendingSub.value}</span>`;
+        // Net laukiant - galima pateikti dar (jei netruks - susikaups)
+      } else if (approvedSub) {
+        // Tarpinis patvirtintas - rodom tarpinį statusą, leidžiam pateikti dar
+        statusBadge = `<span class="bg" style="background:rgba(79,195,247,.15);color:#4FC3F7;padding:4px 10px;font-size:11px;">📊 Tarpinis patvirtintas</span>`;
       }
-    } else if (pendingSub) {
-      statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">⏳ Laukia patvirtinimo: ${pendingSub.value}</span>`;
-    } else if (rejectedSub) {
-      statusBadge = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">❌ Atmesta</span>`;
-      // Atmestus aktyvų tab'e galima bandyti dar kartą
-      if (!isExpired && !isCompletedTab) {
-        actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">BANDYTI DAR KARTĄ</button>`;
+      
+      // Galima pateikti dar - jei dar nepasiektas target ir nepasibaigė
+      if (!isPartialFullyDone && !isExpired && !isCompletedTab) {
+        const btnText = approvedSub || pendingSub ? 'PATEIKTI DAR' : 'DALYVAUTI';
+        actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">${btnText}</button>`;
       }
-    } else if (isExpired && isCompletedTab) {
-      // Pasibaigęs laikas, vaikas dalyvavo (kažkokia pendinga submission'as)
-      statusBadge = `<span class="bg" style="background:rgba(255,255,255,.1);color:var(--mut);padding:4px 10px;font-size:11px;">⏰ Pasibaigė laikas</span>`;
-    } else if (!isCompletedTab) {
-      // Aktyvūs - DALYVAUTI mygtukas
-      actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">DALYVAUTI</button>`;
+    } else {
+      // Standartinis (be tarpinių) - sena logika
+      if (approvedSub) {
+        statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">✅ Atlikta: ${approvedSub.value} ${ch.target_unit || ''}</span>`;
+        if (ch.type === 'permanent' && !isCompletedTab) {
+          actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">PAKARTOTI</button>`;
+        }
+      } else if (pendingSub) {
+        statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">⏳ Laukia patvirtinimo: ${pendingSub.value}</span>`;
+      } else if (rejectedSub) {
+        statusBadge = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">❌ Atmesta</span>`;
+        if (!isExpired && !isCompletedTab) {
+          actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">BANDYTI DAR KARTĄ</button>`;
+        }
+      } else if (isExpired && isCompletedTab) {
+        statusBadge = `<span class="bg" style="background:rgba(255,255,255,.1);color:var(--mut);padding:4px 10px;font-size:11px;">⏰ Pasibaigė laikas</span>`;
+      } else if (!isCompletedTab) {
+        actionButton = `<button class="btn btng" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">DALYVAUTI</button>`;
+      }
     }
     
     let timeInfo = '';
@@ -6525,6 +6566,7 @@ async function loadChallenges() {
         <div class="bg bl" style="padding:6px 12px;font-size:13px;flex-shrink:0;margin-left:8px;">+${ch.exp_reward} EXP</div>
       </div>
       ${statusBadge}
+      ${progressBar}
       ${actionButton}
     </div>`;
   }).join('');
