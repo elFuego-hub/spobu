@@ -10324,77 +10324,61 @@ async function loadKidPendingSubmissions() {
     return `prieš ${Math.floor(diff/86400)} d.`;
   };
 
-  let html = '';
+  // Grid stilius pagal kiekį (kaip streak'ai)
+  const gridCols = top3.length === 1 ? '1fr' : top3.length === 2 ? '1fr 1fr' : '1fr 1fr 1fr';
+  
+  let html = `<div style="display:grid;grid-template-columns:${gridCols};gap:6px;">`;
   
   // Loop'as per top 3 - kiekvienas pagal tipą
   top3.forEach(s => {
     const time = timeAgo(s.created_at);
     
     if (s._type === 'pr') {
-      // PR PRATIMAS
+      // PR PRATIMAS → nukela į v-kar (karjera)
       const exName = s.exercises?.name || 'Pratimas';
       const catIcon = s.exercises?.career_categories?.icon || '💪';
       
-      html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(255,77,0,.2);">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="font-size:22px;">${catIcon}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
-              <span style="font-size:9px;background:rgba(255,77,0,.2);color:#FF8C00;padding:2px 6px;border-radius:99px;font-weight:800;">PR</span>
-              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName}</span>
-            </div>
-            <div style="font-size:10px;color:var(--mut);margin-top:2px;">${s.old_pr || 0} → <span style="color:var(--grn);font-weight:800;">${s.new_value}</span> · +${s.exp_gain || 0} EXP · ${time}</div>
-          </div>
-          <div style="font-size:10px;color:#FF8C00;font-weight:800;white-space:nowrap;">⏳</div>
-        </div>
+      html += `<div onclick="nv('v',document.querySelector('.bn2 .ni:nth-child(2)'),'v-kar')" style="background:var(--card);border-radius:12px;padding:10px;border:.5px solid rgba(255,77,0,.3);cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);text-align:center;min-width:0;">
+        <div style="font-size:18px;line-height:1;margin-bottom:4px;">${catIcon}</div>
+        <div style="font-size:9px;background:rgba(255,77,0,.2);color:#FF8C00;padding:2px 6px;border-radius:99px;font-weight:800;display:inline-block;margin-bottom:4px;">PR</div>
+        <div style="font-size:10px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName}</div>
+        <div style="font-size:9px;color:var(--mut);margin-top:2px;">+${s.exp_gain || 0} EXP · ${time}</div>
       </div>`;
       
     } else if (s._type === 'ch') {
-      // IŠŠŪKIS
+      // IŠŠŪKIS → nukela į v-ish
       const challengeTypeIcon = { training: '🏋️', weekly: '⚡', monthly: '🌙', oneoff: '✨', one_time: '✨', permanent: '🔁' };
       const chTitle = s.challenges?.title || 'Iššūkis';
       const chType = s.challenges?.type || 'training';
       const icon = challengeTypeIcon[chType] || '🎯';
       const value = s.numeric_value ? `${s.numeric_value} ${s.challenges?.target_unit || ''}` : 'Pateikta';
       
-      html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(79,195,247,.25);">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="font-size:22px;">${icon}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
-              <span style="font-size:9px;background:rgba(79,195,247,.2);color:#4FC3F7;padding:2px 6px;border-radius:99px;font-weight:800;">Iššūkis</span>
-              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${chTitle}</span>
-            </div>
-            <div style="font-size:10px;color:var(--mut);margin-top:2px;">Mano: <span style="color:var(--grn);font-weight:800;">${value}</span> · ${time}</div>
-          </div>
-          <div style="font-size:10px;color:#4FC3F7;font-weight:800;white-space:nowrap;">⏳</div>
-        </div>
+      html += `<div onclick="nv('v',document.querySelector('.bn2 .ni:nth-child(3)'),'v-ish')" style="background:var(--card);border-radius:12px;padding:10px;border:.5px solid rgba(79,195,247,.3);cursor:pointer;-webkit-tap-highlight-color:rgba(79,195,247,.2);text-align:center;min-width:0;">
+        <div style="font-size:18px;line-height:1;margin-bottom:4px;">${icon}</div>
+        <div style="font-size:9px;background:rgba(79,195,247,.2);color:#4FC3F7;padding:2px 6px;border-radius:99px;font-weight:800;display:inline-block;margin-bottom:4px;">Iššūkis</div>
+        <div style="font-size:10px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${chTitle}</div>
+        <div style="font-size:9px;color:var(--mut);margin-top:2px;">${value} · ${time}</div>
       </div>`;
       
     } else if (s._type === 'co') {
-      // VARŽYBA
+      // VARŽYBA → nukela į v-comp
       const compTitle = s.competitions?.title || 'Varžybos';
       const compType = s.competitions?.competition_type || '';
-      const compTypeLabel = compType === 'kumite' ? '🥊 Kumite' : compType === 'kata' ? '🎌 Kata' : compType === 'belt_test' ? '🥋 Diržo egzaminas' : 'Varžyba';
+      const compTypeIcon = compType === 'kumite' ? '🥊' : compType === 'kata' ? '🎌' : compType === 'belt_test' ? '🥋' : '🏆';
       const placement = s.placement ? `${s.placement} v.` : '';
       const score = s.wins ? `${s.wins}W-${s.losses || 0}L` : '';
       const detailsText = placement || score || 'Pateikta';
       
-      html += `<div style="background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;border:.5px solid rgba(255,215,0,.25);">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="font-size:22px;">🏆</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:900;display:flex;align-items:center;gap:6px;">
-              <span style="font-size:9px;background:rgba(255,215,0,.2);color:#FFD700;padding:2px 6px;border-radius:99px;font-weight:800;">Varžyba</span>
-              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${compTitle}</span>
-            </div>
-            <div style="font-size:10px;color:var(--mut);margin-top:2px;">${compTypeLabel} · <span style="color:var(--grn);font-weight:800;">${detailsText}</span> · ${time}</div>
-          </div>
-          <div style="font-size:10px;color:#FFD700;font-weight:800;white-space:nowrap;">⏳</div>
-        </div>
+      html += `<div onclick="nv('v',document.querySelector('.bn2 .ni:nth-child(4)'),'v-comp')" style="background:var(--card);border-radius:12px;padding:10px;border:.5px solid rgba(255,215,0,.3);cursor:pointer;-webkit-tap-highlight-color:rgba(255,215,0,.2);text-align:center;min-width:0;">
+        <div style="font-size:18px;line-height:1;margin-bottom:4px;">${compTypeIcon}</div>
+        <div style="font-size:9px;background:rgba(255,215,0,.2);color:#FFD700;padding:2px 6px;border-radius:99px;font-weight:800;display:inline-block;margin-bottom:4px;">Varžyba</div>
+        <div style="font-size:10px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${compTitle}</div>
+        <div style="font-size:9px;color:var(--mut);margin-top:2px;">${detailsText} · ${time}</div>
       </div>`;
     }
   });
+  
+  html += '</div>';
   
   document.getElementById('v-pending-list').innerHTML = html;
 }
