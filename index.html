@@ -943,30 +943,30 @@ select.inp option{background:#222;}
     </div>
     
     <!-- 📊 REITINGAI - kompaktiški kvadratai 2x2 -->
-    <div class="st">📊 MANO REITINGAI <span style="font-size:9px;color:rgba(255,255,255,.4);font-weight:600;text-transform:none;letter-spacing:.5px;" id="v-rank-category-info">(tarp tavo kategorijos)</span></div>
+    <div class="st">📊 MANO REITINGAI <span style="font-size:11px;color:rgba(255,255,255,.55);font-weight:700;text-transform:none;letter-spacing:.5px;" id="v-rank-category-info">(tarp tavo kategorijos)</span></div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 16px;">
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="g('v','v-comp')">
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="openStatWithFilter('competitions')">
         <div style="font-size:24px;line-height:1;">🏆</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;text-transform:uppercase;line-height:1.1;">Varžybos</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FFD700;text-shadow:0 0 8px rgba(255,215,0,.4);line-height:1;margin-top:2px;" id="v-rank-comp">#–</div>
         </div>
       </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="g('v','v-stat')">
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="openStatWithFilter('overall')">
         <div style="font-size:24px;line-height:1;">⚡</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;text-transform:uppercase;line-height:1.1;">EXP</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#C0C0C0;text-shadow:0 0 8px rgba(192,192,192,.4);line-height:1;margin-top:2px;" id="v-rank-exp">#–</div>
         </div>
       </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="g('v','v-ish')">
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="openStatWithFilter('challenges')">
         <div style="font-size:24px;line-height:1;">🎯</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;text-transform:uppercase;line-height:1.1;">Iššūkiai</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#CD7F32;text-shadow:0 0 8px rgba(205,127,50,.4);line-height:1;margin-top:2px;" id="v-rank-ish">#–</div>
         </div>
       </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="g('v','v-kar')">
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="openStatWithFilter('skills')">
         <div style="font-size:24px;line-height:1;">🥋</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:700;text-transform:uppercase;line-height:1.1;">TOP skillas</div>
@@ -8600,6 +8600,40 @@ function setStatSeasonFilter(filter) {
   if (activeTab) {
     switchStatTab(activeTab.dataset.tab);
   }
+}
+
+// ════════════════════════════════════════
+// Nukelia į statistikos puslapį su filtru pagal vaiko kategoriją
+// ════════════════════════════════════════
+function openStatWithFilter(tabName) {
+  // Nustato filtrus pagal dabartinį vaiką
+  if (currentKid) {
+    statFilters.gender = currentKid.gender || 'all';
+    
+    // Surast vaiko amžiaus grupę
+    const myAge = currentKid.birth_date 
+      ? calculateAge(currentKid.birth_date) 
+      : (currentKid.birth_year ? new Date().getFullYear() - currentKid.birth_year : null);
+    
+    if (myAge !== null) {
+      const myAgeGroup = AGE_GROUPS.find(g => g.id !== 'all' && myAge >= g.min && myAge <= g.max);
+      statFilters.ageGroup = myAgeGroup?.id || 'all';
+    } else {
+      statFilters.ageGroup = 'all';
+    }
+    
+    statFilters.scope = 'club';
+  }
+  
+  // Nukelia į statistikos page
+  g('v', 'v-stat');
+  
+  // Po 100ms aktyvuoja tabą (kad UI spėtų užkrauti)
+  setTimeout(() => {
+    if (typeof switchStatTab === 'function') {
+      switchStatTab(tabName);
+    }
+  }, 100);
 }
 
 function switchStatTab(tabName) {
