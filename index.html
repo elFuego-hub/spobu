@@ -943,7 +943,7 @@ select.inp option{background:#222;}
     </div>
     
     <!-- 📊 REITINGAI - kompaktiški kvadratai 2x2 -->
-    <div class="st">📊 MANO REITINGAI</div>
+    <div class="st">📊 MANO REITINGAI <span style="font-size:9px;color:rgba(255,255,255,.4);font-weight:600;text-transform:none;letter-spacing:.5px;" id="v-rank-category-info">(tarp tavo kategorijos)</span></div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 16px;">
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="g('v','v-comp')">
         <div style="font-size:24px;line-height:1;">🏆</div>
@@ -8116,20 +8116,62 @@ async function loadRankings() {
   }
   
   const profileIds = clubProfiles.map(p => p.id);
-  console.log('[loadRankings] klubo profiles:', profileIds.length);
   
-  // 2) Užkrauti kids (per user_id, NE id - nes kids.id != profiles.id)
-  const { data: kids } = await sb.from('kids')
-    .select('id, user_id, total_exp')
+  // 2) Užkrauti kids su gender + birth_date (filtravimui)
+  const { data: allKids } = await sb.from('kids')
+    .select('id, user_id, total_exp, gender, birth_date, birth_year')
     .in('user_id', profileIds);
   
-  console.log('[loadRankings] klubo vaikai:', kids?.length || 0);
+  if (!allKids || allKids.length === 0) return;
   
-  if (!kids || kids.length === 0) return;
+  // 3) FILTRUOJAM pagal vaiko kategoriją (lytis + amžiaus grupė)
+  const myGender = currentKid.gender;
+  const myAge = currentKid.birth_date 
+    ? calculateAge(currentKid.birth_date) 
+    : (currentKid.birth_year ? new Date().getFullYear() - currentKid.birth_year : null);
+  
+  // Surast vaiko amžiaus grupę
+  let myAgeGroup = null;
+  if (myAge !== null) {
+    myAgeGroup = AGE_GROUPS.find(g => g.id !== 'all' && myAge >= g.min && myAge <= g.max);
+  }
+  
+  console.log('[loadRankings] mano kategorija:', { gender: myGender, age: myAge, ageGroup: myAgeGroup?.id });
+  
+  // Atnaujint kategorijos info subtitle
+  const categoryInfoEl = document.getElementById('v-rank-category-info');
+  if (categoryInfoEl) {
+    if (myGender && myAgeGroup) {
+      const genderLabel = myGender === 'male' ? 'vaikinai' : myGender === 'female' ? 'merginos' : '';
+      categoryInfoEl.textContent = `(${genderLabel}, ${myAgeGroup.label})`;
+    } else {
+      categoryInfoEl.textContent = '(visame klube)';
+    }
+  }
+  
+  // Filtruojam tik tos pačios lyties ir amžiaus grupės vaikus
+  const kids = allKids.filter(k => {
+    // Jei nepavyko nustatyti vaiko kategorijos - rodyti visus
+    if (!myGender || !myAgeGroup) return true;
+    
+    // Lytis turi sutapti
+    if (k.gender !== myGender) return false;
+    
+    // Amžius turi būti tame pačiame intervale
+    const kAge = k.birth_date 
+      ? calculateAge(k.birth_date) 
+      : (k.birth_year ? new Date().getFullYear() - k.birth_year : null);
+    if (kAge === null) return false;
+    return kAge >= myAgeGroup.min && kAge <= myAgeGroup.max;
+  });
+  
+  console.log('[loadRankings] vaikai mano kategorijoje:', kids.length, 'iš', allKids.length);
+  
+  if (kids.length === 0) return;
   
   const kidIds = kids.map(k => k.id);
   
-  // 3) Užkrauti varžybų rezultatus - skaičiuoti pergales (1 vieta) ir iššūkių submissions
+  // 4) Užkrauti varžybų rezultatus (pergales) ir iššūkių submissions
   const [winsRes, ishRes] = await Promise.all([
     sb.from('competition_results')
       .select('kid_id, placement')
@@ -8151,9 +8193,6 @@ async function loadRankings() {
     ishCount[s.kid_id] = (ishCount[s.kid_id] || 0) + 1;
   });
   
-  console.log('[loadRankings] currentKid.id:', currentKid.id);
-  console.log('[loadRankings] EXP rūšiavimas:', kids.map(k => ({ id: k.id, exp: k.total_exp })));
-  
   // 1) Pagal varžybas (1 vietos = wins)
   const sortedByWins = [...kids].sort((a, b) => (winsCount[b.id] || 0) - (winsCount[a.id] || 0));
   const compRank = sortedByWins.findIndex(k => k.id === currentKid.id) + 1;
@@ -8166,13 +8205,19 @@ async function loadRankings() {
   const sortedByIsh = [...kids].sort((a, b) => (ishCount[b.id] || 0) - (ishCount[a.id] || 0));
   const ishRank = sortedByIsh.findIndex(k => k.id === currentKid.id) + 1;
   
-  console.log('[loadRankings] reitingai:', { compRank, expRank, ishRank });
+  console.log('[loadRankings] reitingai:', { compRank, expRank, ishRank, of: kids.length });
   
-  // Atnaujint UI - rodome "#X / total" formatu
+  // Atnaujint UI - rodome "#X" formatu (po juo bus "/Y" su kiekiu)
   const total = kids.length;
   const setRank = (id, val) => { 
     const el = document.getElementById(id); 
-    if (el) el.textContent = val ? `#${val}` : '#–'; 
+    if (el) {
+      if (val) {
+        el.innerHTML = `#${val}<span style="font-size:11px;color:rgba(255,255,255,.4);font-weight:400;"> / ${total}</span>`;
+      } else {
+        el.textContent = '#–';
+      }
+    }
   };
   setRank('v-rank-comp', compRank);
   setRank('v-rank-exp', expRank);
