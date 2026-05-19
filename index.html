@@ -8185,12 +8185,11 @@ function switchVcTab(el, tabName) {
 // 📊 Varžybų statistika - HERO + medalių lentelė
 // ════════════════════════════════════════
 function updateCompStatsUI(completed, resultsByComp, pending) {
-  // Lygių grupavimas pagal scope
-  // local/lithuanian (vietinė), regional/european (vidutinė/europinė), world (pasaulinė)
+  // Lygių grupavimas pagal level: local/medium/european
   const levelGroups = {
-    local:    { label: '🏘️ Vietinė',  gold: 0, silver: 0, bronze: 0 },
-    regional: { label: '🏙️ Regiono',  gold: 0, silver: 0, bronze: 0 },
-    european: { label: '🌍 Europos', gold: 0, silver: 0, bronze: 0 }
+    local:    { label: '🏘️ Vietinės',  gold: 0, silver: 0, bronze: 0 },
+    medium:   { label: '🏙️ Vidutinės', gold: 0, silver: 0, bronze: 0 },
+    european: { label: '🌍 Europos',   gold: 0, silver: 0, bronze: 0 }
   };
   
   let totalWins = 0;
@@ -8213,13 +8212,11 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     if (medalType) {
       totalMedals[medalType]++;
       
-      // Sugrupuoti pagal lygį
-      const scope = comp.competition_scope || 'local';
-      let group = 'local';
-      if (scope === 'regional' || scope === 'national') group = 'regional';
-      else if (scope === 'european' || scope === 'world' || scope === 'international') group = 'european';
-      
-      levelGroups[group][medalType]++;
+      // Sugrupuoti pagal level (local/medium/european)
+      const level = comp.level || 'local';
+      if (levelGroups[level]) {
+        levelGroups[level][medalType]++;
+      }
     }
   });
   
@@ -8276,17 +8273,15 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     tableEl.innerHTML = rowsHtml;
   }
   
-  // ⏳ LAUKIA REZULTATŲ kortelė - rodyti pirmą pending
+  // ⏳ LAUKIA REZULTATŲ kortelė - rodyti pirmą pending (TIK kai NEesi pending tab'e)
   const pendingCard = document.getElementById('v-comp-pending-card');
   if (pendingCard) {
-    if (pending && pending.length > 0) {
+    if (pending && pending.length > 0 && vcActiveTab !== 'pending') {
       const p = pending[0];
       pendingCard.style.display = 'flex';
       setText('v-comp-pending-title', p.title);
-      const scope = p.competition_scope || 'local';
-      const scopeLabel = scope === 'european' || scope === 'world' || scope === 'international' ? '🌍 Europos' : 
-                        (scope === 'regional' || scope === 'national') ? '🏙️ Regiono' : '🏘️ Vietinė';
-      setText('v-comp-pending-meta', `📅 ${p.event_date} · ${scopeLabel}`);
+      const levelLabel = COMP_LEVEL_LABELS[p.level] || '🏘️ Vietinės';
+      setText('v-comp-pending-meta', `📅 ${p.event_date} · ${levelLabel}`);
     } else {
       pendingCard.style.display = 'none';
     }
@@ -8484,13 +8479,29 @@ async function loadKidCompetitions() {
     
     const cardOpacity = vcActiveTab === 'completed' ? 'opacity:.85;' : '';
     
-    return `<div class="kid-comp-card" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;margin-bottom:5px;${cardOpacity}">
+    // 🎨 SPALVOS PAGAL TIPĄ (kumite/kata/belt_test)
+    const typeColors = {
+      kumite:    { color: '#EF4444', bg: 'rgba(239,68,68,.08)',   border: 'rgba(239,68,68,.3)',   icon: '🥊' },
+      kata:      { color: '#4FC3F7', bg: 'rgba(79,195,247,.08)',  border: 'rgba(79,195,247,.3)',  icon: '🎭' },
+      belt_test: { color: '#FFD700', bg: 'rgba(255,215,0,.08)',   border: 'rgba(255,215,0,.3)',   icon: '🥋' }
+    };
+    const tCol = typeColors[c.competition_type] || typeColors.kumite;
+    
+    // 🏆 LYGIO BADGE
+    const levelColors = {
+      local:    { color: '#9CA3AF', label: '🏘️ Vietinė',   bg: 'rgba(156,163,175,.15)', border: 'rgba(156,163,175,.3)' },
+      medium:   { color: '#FF8C00', label: '🏙️ Vidutinė',  bg: 'rgba(255,140,0,.15)',   border: 'rgba(255,140,0,.3)'   },
+      european: { color: '#BA68C8', label: '🌍 Europos',   bg: 'rgba(186,104,200,.15)', border: 'rgba(186,104,200,.3)' }
+    };
+    const lvl = levelColors[c.level] || levelColors.local;
+    
+    return `<div class="kid-comp-card" style="background:${tCol.bg};border:.5px solid ${tCol.border};border-radius:10px;padding:8px 10px;margin-bottom:5px;${cardOpacity}border-left:3px solid ${tCol.color};">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:6px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:800;line-height:1.2;color:white;">${c.title}</div>
-          <div style="font-size:9px;color:var(--mut);margin-top:2px;">${typeLabel}${levelLabel ? ' · ' + levelLabel : ''}</div>
+          <div style="font-size:12px;font-weight:800;line-height:1.2;color:white;">${tCol.icon} ${c.title}</div>
+          <div style="font-size:9px;color:${tCol.color};margin-top:2px;font-weight:700;">${typeLabel}${levelLabel ? ' · ' : ''}<span style="color:${lvl.color};">${levelLabel || ''}</span></div>
         </div>
-        <div style="background:${isPast ? 'rgba(255,255,255,.1)' : 'rgba(34,197,94,.15)'};color:${isPast ? 'var(--mut)' : '#22C55E'};border:.5px solid ${isPast ? 'var(--bdr)' : 'rgba(34,197,94,.3)'};padding:3px 8px;font-size:9px;font-weight:800;border-radius:99px;flex-shrink:0;">${timeInfo}</div>
+        <div style="background:${isPast ? 'rgba(255,255,255,.1)' : 'rgba(34,197,94,.15)'};color:${isPast ? 'var(--mut)' : '#22C55E'};border:.5px solid ${isPast ? 'var(--bdr)' : 'rgba(34,197,94,.3)'};padding:3px 8px;font-size:9px;font-weight:800;border-radius:99px;flex-shrink:0;white-space:nowrap;">${timeInfo}</div>
       </div>
       
       <div style="background:var(--bg);border-radius:8px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:var(--mut);">
