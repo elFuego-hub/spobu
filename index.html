@@ -170,7 +170,7 @@ body.full-mobile-preview .sb { display: none !important; }  /* Tas pats toggle r
 .si{background:rgba(200,200,200,.12);color:#ccc;}
 .bn{background:rgba(205,127,50,.15);color:#CD7F32;}
 .mu{background:rgba(255,255,255,.06);color:var(--mut);}
-.bn2{position:sticky;bottom:0;background:var(--card);border-top:.5px solid var(--bdr);display:flex;padding:8px 0 14px;margin-top:auto;flex-shrink:0;}
+.bn2{position:sticky;bottom:0;background:var(--card);border-top:.5px solid var(--bdr);display:flex;padding:8px 0 14px;flex-shrink:0;}
 .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:4px 0;}
 .ni .ic{font-size:19px;}
 .ni .lb{font-size:10px;font-weight:700;color:var(--mut);}
@@ -1061,10 +1061,9 @@ select.inp option{background:#222;}
     
     <!-- ⏳ LAUKIA PATVIRTINIMO - kompaktiškas -->
     <div class="st">⏳ LAUKIA PATVIRTINIMO</div>
-    <div id="v-pending-list" style="margin:0 16px;">
-      <div style="text-align:center;padding:10px;color:var(--mut);font-size:12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;">Nėra laukiančių pateikimų</div>
+    <div id="v-pending-list" style="margin:0 16px 8px;">
+      <div style="text-align:center;padding:8px;color:var(--mut);font-size:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;">Nėra laukiančių pateikimų</div>
     </div>
-    <div style="height:16px;"></div>
   </div>
   <div class="bn2">
     <div class="ni on" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
