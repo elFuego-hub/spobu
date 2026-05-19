@@ -16450,6 +16450,11 @@ function toggleNotifications() {
   const section = document.getElementById('v-announcements-section');
   if (!section) return;
   
+  // Perkelti modal į body jei dar ne ten (kad veiktų iš bet kurio lango)
+  if (section.parentElement !== document.body) {
+    document.body.appendChild(section);
+  }
+  
   if (section.style.display === 'none' || section.style.display === '') {
     section.style.display = 'flex';
     // Užkrauti pranešimus
