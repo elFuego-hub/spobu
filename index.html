@@ -1131,16 +1131,76 @@ select.inp option{background:#222;}
 <!-- IŠŠŪKIAI -->
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">IŠŠŪKIAI</div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI</div>
+    <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
+        <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
+      </div>
+      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+    </div>
+  </div>
   <div class="sa">
-    <!-- Tabai -->
-    <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🎯 AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
-      <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">📦 ATLIKTI <span id="v-completed-count" style="opacity:.7;">0</span></button>
+    
+    <!-- 🎯 IŠŠŪKIŲ HERO (žalias gradient) -->
+    <div id="v-ish-hero" style="margin:6px 12px 8px;padding:12px;background:linear-gradient(135deg,rgba(102,187,106,.12),rgba(102,187,106,.04));border:1px solid rgba(102,187,106,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">🎯</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">🎯 ĮVEIKTI IŠŠŪKIAI</div>
+      <div id="v-ish-total-completed" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#66BB6A;line-height:1;text-shadow:0 0 20px rgba(102,187,106,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;">0</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="v-ish-total-exp">+0 EXP gauta</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
+        <div style="text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#FF8C00;line-height:1;" id="v-ish-count-active">0</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🔥 Aktyvūs</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-ish-count-done">0</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">✅ Įveikti</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-ish-count-total">0</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">📋 Iš viso</div>
+        </div>
+      </div>
     </div>
     
-    <div id="v-challenges-list">
-      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    <!-- 📊 PAGAL TIPUS - 2x2 GRID -->
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">📊 PAGAL TIPUS · ĮVEIKTA</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 12px 8px;">
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;">🏋️</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-ish-type-training-num">0</div>
+        <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Treniruot.</div>
+        <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:1px;" id="v-ish-type-training-exp">+0 EXP</div>
+      </div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;">⚡</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-ish-type-weekly-num">0</div>
+        <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Savait.</div>
+        <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:1px;" id="v-ish-type-weekly-exp">+0 EXP</div>
+      </div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;">🌙</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-ish-type-monthly-num">0</div>
+        <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Mėnes.</div>
+        <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:1px;" id="v-ish-type-monthly-exp">+0 EXP</div>
+      </div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;">✨</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-ish-type-onetime-num">0</div>
+        <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Vienkart.</div>
+        <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:1px;" id="v-ish-type-onetime-exp">+0 EXP</div>
+      </div>
+    </div>
+    
+    <!-- Tabai -->
+    <div style="display:flex;gap:4px;margin:0 16px 6px;">
+      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">🔥 AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
+      <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">📜 ARCHYVAS <span id="v-completed-count" style="opacity:.7;">0</span></button>
+    </div>
+    
+    <div id="v-challenges-list" style="padding:0 16px;">
+      <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
     </div>
   </div>
   <div class="bn2">
@@ -1148,7 +1208,6 @@ select.inp option{background:#222;}
     <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic">📈</span><span class="lb">Karjera</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('v',this,'v-ish')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic">🏆</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -6501,11 +6560,113 @@ function switchKidChallengesTab(el, tabName) {
   loadChallenges();
 }
 
+// ════════════════════════════════════════
+// 📊 Iššūkių statistika - HERO + tipų grid
+// ════════════════════════════════════════
+async function loadChallengeStats() {
+  if (!currentKid?.id) return;
+  
+  // Užkraunam VISUS approved submissions su iššūkio tipo
+  const { data: approvedSubs } = await sb.from('challenge_submissions')
+    .select('id, exp_gain, challenge_id, challenges(type)')
+    .eq('kid_id', currentKid.id)
+    .eq('status', 'approved');
+  
+  // Užkraunam partial completed iš challenge_progress (kur is_completed=true)
+  const { data: progressCompleted } = await sb.from('challenge_progress')
+    .select('challenge_id, exp_awarded, is_completed, challenges(type)')
+    .eq('kid_id', currentKid.id)
+    .eq('is_completed', true);
+  
+  // Suskaičiuojam: pilnai įveiktų iššūkių (UNIKALŪS)
+  // Partial - pagal challenge_progress
+  // Standartiniai - pagal approved submissions kur iššūkis NĖRA partial
+  
+  const completedChallengeIds = new Set();
+  let totalExpFromCompleted = 0;
+  const typeCounts = { training: 0, weekly: 0, monthly: 0, one_time: 0, permanent: 0 };
+  const typeExp = { training: 0, weekly: 0, monthly: 0, one_time: 0, permanent: 0 };
+  
+  // Partial completed
+  (progressCompleted || []).forEach(p => {
+    if (!completedChallengeIds.has(p.challenge_id)) {
+      completedChallengeIds.add(p.challenge_id);
+      totalExpFromCompleted += (p.exp_awarded || 0);
+      const t = p.challenges?.type;
+      if (t && typeCounts[t] !== undefined) {
+        typeCounts[t]++;
+        typeExp[t] += (p.exp_awarded || 0);
+      }
+    }
+  });
+  
+  // Standartiniai approved (NE partial - nes partial jau virš)
+  (approvedSubs || []).forEach(s => {
+    if (!completedChallengeIds.has(s.challenge_id)) {
+      completedChallengeIds.add(s.challenge_id);
+      totalExpFromCompleted += (s.exp_gain || 0);
+      const t = s.challenges?.type;
+      if (t && typeCounts[t] !== undefined) {
+        typeCounts[t]++;
+        typeExp[t] += (s.exp_gain || 0);
+      }
+    }
+  });
+  
+  const totalCompleted = completedChallengeIds.size;
+  
+  // Užkraunam aktyvius (eligible vaikui)
+  const nowISO = new Date().toISOString();
+  const { data: allActive } = await sb.from('challenges')
+    .select('id, target_audience, target_kid_id, group_id, allow_partial')
+    .eq('club_id', currentProfile?.club_id)
+    .eq('is_active', true)
+    .or(`expires_at.is.null,expires_at.gt.${nowISO}`);
+  
+  // Filtruoti pagal vaikui priklausančius
+  const myGroupId = currentKid.group_id;
+  const myGender = currentKid.gender;
+  const myEligible = (allActive || []).filter(ch => {
+    const audience = ch.target_audience || 'group';
+    if (audience === 'all_club') return true;
+    if (audience === 'specific_kid') return ch.target_kid_id === currentKid.id;
+    if (!myGroupId || ch.group_id !== myGroupId) return false;
+    if (audience === 'group') return true;
+    if (audience === 'boys_in_group') return myGender === 'male';
+    if (audience === 'girls_in_group') return myGender === 'female';
+    return false;
+  });
+  
+  // Aktyvūs = eligible ir NE completed
+  const activeCount = myEligible.filter(ch => !completedChallengeIds.has(ch.id)).length;
+  const totalCount = myEligible.length + totalCompleted;
+  
+  // Update UI
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setText('v-ish-total-completed', totalCompleted);
+  setText('v-ish-total-exp', `+${totalExpFromCompleted.toLocaleString('lt-LT')} EXP gauta`);
+  setText('v-ish-count-active', activeCount);
+  setText('v-ish-count-done', totalCompleted);
+  setText('v-ish-count-total', totalCount);
+  
+  setText('v-ish-type-training-num', typeCounts.training);
+  setText('v-ish-type-training-exp', `+${typeExp.training} EXP`);
+  setText('v-ish-type-weekly-num', typeCounts.weekly);
+  setText('v-ish-type-weekly-exp', `+${typeExp.weekly} EXP`);
+  setText('v-ish-type-monthly-num', typeCounts.monthly);
+  setText('v-ish-type-monthly-exp', `+${typeExp.monthly} EXP`);
+  setText('v-ish-type-onetime-num', typeCounts.one_time);
+  setText('v-ish-type-onetime-exp', `+${typeExp.one_time} EXP`);
+}
+
 async function loadChallenges() {
   if (!currentKid?.id) {
     console.warn('loadChallenges: currentKid.id missing');
     return;
   }
+  
+  // 🎯 Užkrauti statistikų suvestinę (HERO + tipų grid)
+  await loadChallengeStats().catch(e => console.error('loadChallengeStats:', e));
   
   // BUG FIX: Klubą gauname per vaiko trenerį (assigned_trainer_id arba kid_trainers)
   let clubId = currentProfile?.club_id;
