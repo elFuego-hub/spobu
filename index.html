@@ -1182,21 +1182,21 @@ select.inp option{background:#222;}
 
 <div class="sc" id="v-stat">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">STATISTIKA</div></div>
+  <div style="padding:6px 16px 4px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">STATISTIKA</div></div>
   <div class="sa">
     
-    <!-- Sezono filtras -->
-    <div style="display:flex;gap:6px;margin:0 0 12px;">
-      <button class="season-filter-btn on" data-filter="season" onclick="setStatSeasonFilter('season')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🔥 ŠIS SEZONAS</button>
-      <button class="season-filter-btn" data-filter="all" onclick="setStatSeasonFilter('all')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🏆 VISŲ LAIKŲ</button>
+    <!-- Sezono filtras - kompaktiškas -->
+    <div style="display:flex;gap:4px;margin:0 16px 6px;">
+      <button class="season-filter-btn on" data-filter="season" onclick="setStatSeasonFilter('season')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">🔥 ŠIS SEZONAS</button>
+      <button class="season-filter-btn" data-filter="all" onclick="setStatSeasonFilter('all')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">🏆 VISŲ LAIKŲ</button>
     </div>
     
-    <!-- Tab nav -->
-    <div style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;padding-bottom:4px;">
-      <button class="stat-tab on" data-tab="overall" onclick="switchStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
-      <button class="stat-tab" data-tab="skills" onclick="switchStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
-      <button class="stat-tab" data-tab="challenges" onclick="switchStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
-      <button class="stat-tab" data-tab="competitions" onclick="switchStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
+    <!-- Tab nav - kompaktiškas -->
+    <div style="display:flex;gap:4px;margin:0 16px 8px;overflow-x:auto;padding-bottom:2px;">
+      <button class="stat-tab on" data-tab="overall" onclick="switchStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">📈 LVL</button>
+      <button class="stat-tab" data-tab="skills" onclick="switchStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
+      <button class="stat-tab" data-tab="challenges" onclick="switchStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
+      <button class="stat-tab" data-tab="competitions" onclick="switchStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
     </div>
     
     <!-- TAB: BENDRAS LVL (leaderboard) -->
@@ -9242,28 +9242,27 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel) {
   let myCard = '';
   if (myEntry && myRank) {
     myCard = `
-      <div style="background:linear-gradient(135deg,var(--br),#FF6B33);color:white;padding:14px;border-radius:12px;margin-bottom:14px;box-shadow:0 4px 12px rgba(255,77,0,.3);">
-        <div style="font-size:10px;font-weight:700;letter-spacing:1px;opacity:.85;margin-bottom:4px;">MANO POZICIJA</div>
+      <div style="background:linear-gradient(135deg,var(--br),#FF6B33);color:white;padding:8px 10px;border-radius:10px;margin:0 16px 8px;box-shadow:0 3px 10px rgba(255,77,0,.3);">
+        <div style="font-size:8px;font-weight:700;letter-spacing:1px;opacity:.85;margin-bottom:2px;">MANO POZICIJA · iš ${totalCount}</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;line-height:1;">#${myRank}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;">#${myRank}</div>
             <div style="flex:1;min-width:0;">
-              <div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${myEntry.name}</div>
-              <div style="font-size:10px;opacity:.8;">${myEntry.kyu || 'Mu kyu'}</div>
+              <div style="font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;">${myEntry.name}</div>
+              <div style="font-size:8px;opacity:.8;margin-top:1px;">${myEntry.kyu || 'Mu kyu'}</div>
             </div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1;">${myEntry.score.toLocaleString()}</div>
-            <div style="font-size:9px;opacity:.8;">${scoreLabel}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;line-height:1;">${myEntry.score.toLocaleString()}</div>
+            <div style="font-size:7px;opacity:.8;">${scoreLabel}</div>
           </div>
         </div>
-        <div style="font-size:10px;opacity:.7;margin-top:6px;text-align:center;">iš ${totalCount} dalyvių</div>
       </div>
     `;
   } else {
     myCard = `
-      <div style="background:rgba(255,255,255,.05);border:.5px solid var(--bdr);padding:14px;border-radius:12px;margin-bottom:14px;text-align:center;color:var(--mut);font-size:11px;">
-        Tu nesi šiame leaderboard'e (pagal pasirinktus filtrus)
+      <div style="background:rgba(255,255,255,.05);border:.5px solid var(--bdr);padding:8px;border-radius:10px;margin:0 16px 8px;text-align:center;color:var(--mut);font-size:10px;">
+        Tu nesi šiame leaderboard'e
       </div>
     `;
   }
@@ -9275,21 +9274,21 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel) {
     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
     
     return `
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;${isMe ? 'background:rgba(255,77,0,.08);border-left:2px solid var(--br);' : 'background:var(--bg);'}border-radius:8px;margin-bottom:4px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${isMe ? 'var(--br)' : 'var(--mut)'};min-width:28px;">${medal || '#' + rank}</div>
+      <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;${isMe ? 'background:rgba(255,77,0,.08);border-left:2px solid var(--br);' : 'background:var(--bg);'}border-radius:6px;margin-bottom:3px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${isMe ? 'var(--br)' : 'var(--mut)'};min-width:22px;">${medal || '#' + rank}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:${isMe ? '800' : '600'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isMe ? 'var(--br)' : 'var(--text)'};">${e.name}</div>
-          <div style="font-size:9px;color:var(--mut);">${e.kyu || 'Mu kyu'}</div>
+          <div style="font-size:11px;font-weight:${isMe ? '800' : '600'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isMe ? 'var(--br)' : 'var(--text)'};line-height:1.1;">${e.name}</div>
+          <div style="font-size:8px;color:var(--mut);">${e.kyu || 'Mu kyu'}</div>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${isMe ? 'var(--br)' : 'var(--text)'};flex-shrink:0;">${e.score.toLocaleString()}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:${isMe ? 'var(--br)' : 'var(--text)'};flex-shrink:0;">${e.score.toLocaleString()}</div>
       </div>
     `;
   }).join('');
   
   return `
     ${myCard}
-    <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">🏆 TOP 10</div>
-    <div class="cd" style="padding:8px;">
+    <div style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:1px;margin:0 16px 4px;">🏆 TOP 10</div>
+    <div class="cd" style="padding:5px;margin:0 16px;">
       ${topList}
     </div>
   `;
@@ -9481,27 +9480,27 @@ async function _getFilteredKidEntriesUncached(scoreSource, scoreField) {
 function renderFiltersUI(tabType) {
   // tabType: 'overall' | 'skills' | 'challenges' | 'competitions'
   
-  let html = '<div style="margin-bottom:14px;">';
+  let html = '<div style="margin:0 16px 8px;">';
   
   // Lyties chips
   html += `
-    <div style="display:flex;gap:6px;margin-bottom:8px;">
+    <div style="display:flex;gap:4px;margin-bottom:5px;">
       <button onclick="setStatFilter('gender','all')" class="stat-filter-chip ${statFilters.gender === 'all' ? 'on' : ''}" style="flex:1;${chipStyle(statFilters.gender === 'all')}">Visi</button>
       <button onclick="setStatFilter('gender','male')" class="stat-filter-chip ${statFilters.gender === 'male' ? 'on' : ''}" style="flex:1;${chipStyle(statFilters.gender === 'male')}">👦 Berniukai</button>
       <button onclick="setStatFilter('gender','female')" class="stat-filter-chip ${statFilters.gender === 'female' ? 'on' : ''}" style="flex:1;${chipStyle(statFilters.gender === 'female')}">👧 Mergaitės</button>
     </div>
   `;
   
-  // Amžiaus grupė (dropdown)
+  // Amžiaus grupė (dropdown) - kompaktiška
   html += `
-    <select onchange="setStatFilter('ageGroup',this.value)" class="inp" style="margin-bottom:8px;">
+    <select onchange="setStatFilter('ageGroup',this.value)" class="inp" style="margin-bottom:5px;padding:5px 8px;font-size:10px;height:auto;">
       ${AGE_GROUPS.map(g => `<option value="${g.id}" ${statFilters.ageGroup === g.id ? 'selected' : ''}>${g.label}</option>`).join('')}
     </select>
   `;
   
   // Karjera: skill'o pasirinkimas
   if (tabType === 'skills') {
-    html += `<select onchange="setStatFilter('skillId',this.value || null)" class="inp" style="margin-bottom:8px;" id="skill-filter-select">
+    html += `<select onchange="setStatFilter('skillId',this.value || null)" class="inp" style="margin-bottom:5px;padding:5px 8px;font-size:10px;height:auto;" id="skill-filter-select">
       <option value="">Visi skill'ai</option>
     </select>`;
   }
@@ -9509,11 +9508,11 @@ function renderFiltersUI(tabType) {
   // Varžybos: klubas/federacija + svoris
   if (tabType === 'competitions') {
     html += `
-      <div style="display:flex;gap:6px;margin-bottom:8px;">
-        <button onclick="setStatFilter('scope','club')" style="flex:1;${chipStyle(statFilters.scope === 'club')}">🏢 Mano klubas</button>
+      <div style="display:flex;gap:4px;margin-bottom:5px;">
+        <button onclick="setStatFilter('scope','club')" style="flex:1;${chipStyle(statFilters.scope === 'club')}">🏢 Klubas</button>
         <button onclick="setStatFilter('scope','federation')" style="flex:1;${chipStyle(statFilters.scope === 'federation')}">🌐 Federacija</button>
       </div>
-      <select onchange="setStatFilter('weight',this.value)" class="inp" style="margin-bottom:8px;" id="weight-filter-select">
+      <select onchange="setStatFilter('weight',this.value)" class="inp" style="margin-bottom:5px;padding:5px 8px;font-size:10px;height:auto;" id="weight-filter-select">
         <option value="all">Visi svoriai</option>
       </select>
     `;
@@ -9525,9 +9524,9 @@ function renderFiltersUI(tabType) {
 
 function chipStyle(active) {
   if (active) {
-    return 'background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;';
+    return 'background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 8px;border-radius:99px;font-size:9px;font-weight:800;letter-spacing:.3px;cursor:pointer;';
   }
-  return 'background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;';
+  return 'background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 8px;border-radius:99px;font-size:9px;font-weight:800;letter-spacing:.3px;cursor:pointer;';
 }
 
 // Filtras keičiasi - perkrauti aktyvų taba
