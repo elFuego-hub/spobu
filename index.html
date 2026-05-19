@@ -1222,24 +1222,27 @@ select.inp option{background:#222;}
       
       <!-- KUMITE + KATA REKORDAI - 2 stulpeliai -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;position:relative;">
-        <!-- KUMITE -->
-        <div style="padding-right:8px;border-right:1px solid rgba(255,255,255,.1);">
+        <!-- 🥊 KUMITE -->
+        <div style="padding-right:8px;border-right:1px solid rgba(255,255,255,.15);">
           <div style="font-size:8px;color:#EF4444;letter-spacing:1.5px;font-weight:800;">🥊 KUMITE</div>
-          <div id="v-comp-record" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#EF4444;line-height:1;text-shadow:0 0 15px rgba(239,68,68,.5);margin:3px 0 2px;letter-spacing:2px;">0 - 0</div>
-          <div style="font-size:8px;color:rgba(255,255,255,.7);" id="v-comp-stats-line">0% · 0 varž.</div>
+          <div id="v-comp-record" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#EF4444;line-height:1;text-shadow:0 0 12px rgba(239,68,68,.5);margin:3px 0 2px;letter-spacing:2px;">0 - 0</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.7);margin-bottom:6px;" id="v-comp-stats-line">0% · 0 varž.</div>
+          <!-- Kumite medaliai -->
+          <div id="v-comp-kumite-medals" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding-top:5px;border-top:.5px solid rgba(255,255,255,.08);">
+            <!-- užpildoma -->
+          </div>
         </div>
         
-        <!-- KATA -->
+        <!-- 🎭 KATA -->
         <div style="padding-left:8px;">
           <div style="font-size:8px;color:#4FC3F7;letter-spacing:1.5px;font-weight:800;">🎭 KATA</div>
-          <div id="v-comp-kata-record" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#4FC3F7;line-height:1;text-shadow:0 0 15px rgba(79,195,247,.5);margin:3px 0 2px;letter-spacing:2px;">0</div>
-          <div style="font-size:8px;color:rgba(255,255,255,.7);" id="v-comp-kata-stats-line">0 varž. · 0 medalių</div>
+          <div id="v-comp-kata-record" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#4FC3F7;line-height:1;text-shadow:0 0 12px rgba(79,195,247,.5);margin:3px 0 2px;letter-spacing:2px;">0 - 0</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.7);margin-bottom:6px;" id="v-comp-kata-stats-line">0% · 0 varž.</div>
+          <!-- Kata medaliai -->
+          <div id="v-comp-kata-medals" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding-top:5px;border-top:.5px solid rgba(255,255,255,.08);">
+            <!-- užpildoma -->
+          </div>
         </div>
-      </div>
-      
-      <!-- BENDRA MEDALIŲ SUVESTINĖ -->
-      <div id="v-comp-medals-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
-        <!-- Užpildoma dinamiškai -->
       </div>
     </div>
     
@@ -8214,32 +8217,39 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
   let totalKataWins = 0;
   let totalKataLosses = 0;
   let totalKataComps = 0;   // tik kata varžybos
-  let totalKataMedals = 0;  // kata medalių (1-3 vieta)
   let totalMedals = { gold: 0, silver: 0, bronze: 0 };
+  let kumiteMedals = { gold: 0, silver: 0, bronze: 0 };
+  let kataMedals = { gold: 0, silver: 0, bronze: 0 };
   
   completed.forEach(comp => {
     const result = resultsByComp[comp.id];
     if (!result || result.status !== 'participated') return;
     
-    // 🥊 KUMITE - W/L
+    // 🥊 KUMITE - W/L + medaliai
     if (comp.competition_type === 'kumite') {
       totalKumiteWins += (result.wins || 0);
       totalKumiteLosses += (result.losses || 0);
       totalKumiteComps++;
+      
+      // Medaliai TIK kumite tipui
+      if (result.placement === 1) kumiteMedals.gold++;
+      else if (result.placement === 2) kumiteMedals.silver++;
+      else if (result.placement === 3) kumiteMedals.bronze++;
     }
     
-    // 🎭 KATA - taip pat W/L (dabar visi kovų stiliai turi)
+    // 🎭 KATA - W/L + medaliai
     if (comp.competition_type === 'kata') {
       totalKataWins += (result.wins || 0);
       totalKataLosses += (result.losses || 0);
       totalKataComps++;
-      // Jei laimėjo medalį
-      if (result.placement >= 1 && result.placement <= 3) {
-        totalKataMedals++;
-      }
+      
+      // Medaliai TIK kata tipui
+      if (result.placement === 1) kataMedals.gold++;
+      else if (result.placement === 2) kataMedals.silver++;
+      else if (result.placement === 3) kataMedals.bronze++;
     }
     
-    // 🏅 MEDALIAI - iš VISŲ tipų (kumite + kata + belt_test)
+    // 🏅 BENDRA SUVESTINĖ MEDALIŲ - iš VISŲ tipų (kumite + kata + belt_test)
     let medalType = null;
     if (result.placement === 1) medalType = 'gold';
     else if (result.placement === 2) medalType = 'silver';
@@ -8271,23 +8281,38 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
   setText('v-comp-record', `${totalKumiteWins} - ${totalKumiteLosses}`);
   setText('v-comp-stats-line', `${kumiteWinRate}% · ${totalKumiteComps} varž.`);
   
-  // 🎭 Kata - dabar rodome W-L (kaip kumite)
+  // 🎭 Kata
   setText('v-comp-kata-record', `${totalKataWins} - ${totalKataLosses}`);
   setText('v-comp-kata-stats-line', `${kataWinRate}% · ${totalKataComps} varž.`);
   
-  // 🎖️ Medalių grid (3 aukščiausi)
-  const medalsGrid = document.getElementById('v-comp-medals-grid');
-  if (medalsGrid) {
-    const allMedals = [
-      { count: totalMedals.gold,   icon: '🥇', label: 'Aukso',   color: '#FFD700' },
-      { count: totalMedals.silver, icon: '🥈', label: 'Sidabro', color: '#C0C0C0' },
-      { count: totalMedals.bronze, icon: '🥉', label: 'Bronzos', color: '#CD7F32' }
+  // 🥊 KUMITE MEDALIAI - 3 mini langeliai
+  const kumiteGrid = document.getElementById('v-comp-kumite-medals');
+  if (kumiteGrid) {
+    const medalsData = [
+      { count: kumiteMedals.gold,   icon: '🥇', color: '#FFD700' },
+      { count: kumiteMedals.silver, icon: '🥈', color: '#C0C0C0' },
+      { count: kumiteMedals.bronze, icon: '🥉', color: '#CD7F32' }
     ];
-    
-    medalsGrid.innerHTML = allMedals.map(m => `
-      <div style="text-align:center;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${m.count > 0 ? m.color : 'white'};line-height:1;text-shadow:${m.count > 0 ? `0 0 8px ${m.color}66` : 'none'};">${m.count}</div>
-        <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">${m.icon} ${m.label}</div>
+    kumiteGrid.innerHTML = medalsData.map(m => `
+      <div style="text-align:center;padding:2px 0;">
+        <div style="font-size:11px;line-height:1;">${m.icon}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;line-height:1;color:${m.count > 0 ? m.color : 'rgba(255,255,255,.3)'};text-shadow:${m.count > 0 ? `0 0 6px ${m.color}66` : 'none'};margin-top:2px;">${m.count}</div>
+      </div>
+    `).join('');
+  }
+  
+  // 🎭 KATA MEDALIAI - 3 mini langeliai
+  const kataGrid = document.getElementById('v-comp-kata-medals');
+  if (kataGrid) {
+    const medalsData = [
+      { count: kataMedals.gold,   icon: '🥇', color: '#FFD700' },
+      { count: kataMedals.silver, icon: '🥈', color: '#C0C0C0' },
+      { count: kataMedals.bronze, icon: '🥉', color: '#CD7F32' }
+    ];
+    kataGrid.innerHTML = medalsData.map(m => `
+      <div style="text-align:center;padding:2px 0;">
+        <div style="font-size:11px;line-height:1;">${m.icon}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;line-height:1;color:${m.count > 0 ? m.color : 'rgba(255,255,255,.3)'};text-shadow:${m.count > 0 ? `0 0 6px ${m.color}66` : 'none'};margin-top:2px;">${m.count}</div>
       </div>
     `).join('');
   }
@@ -8893,10 +8918,11 @@ async function submitCompResult() {
       // kumite arba kata - placement
       insertData.placement = placement ? parseInt(placement) : null;
       
-      if (type === 'kumite') {
+      // 🥊🎭 W/L laukai - tiek kumite, tiek kata
+      if (type === 'kumite' || type === 'kata') {
         insertData.wins = wins;
         insertData.losses = losses;
-        console.log('🥊 SUBMIT KUMITE:', { wins, losses, placement, type, insertData });
+        console.log(`${type === 'kumite' ? '🥊' : '🎭'} SUBMIT ${type.toUpperCase()}:`, { wins, losses, placement, type });
       }
     }
   }
