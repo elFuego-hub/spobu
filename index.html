@@ -1085,7 +1085,7 @@ select.inp option{background:#222;}
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 6px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">KARJERA</div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <div onclick="openNotifPanel()" style="position:relative;width:34px;height:34px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;border:.5px solid var(--bdr);">🔔
+      <div onclick="toggleNotifications()" style="position:relative;width:34px;height:34px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;border:.5px solid var(--bdr);">🔔
         <div id="v-kar-notif-badge" style="position:absolute;top:-2px;right:-2px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
       <div onclick="openKidSettings()" style="width:34px;height:34px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;border:.5px solid var(--bdr);">⚙️</div>
@@ -1094,7 +1094,7 @@ select.inp option{background:#222;}
   <div class="sa">
     
     <!-- KARJEROS HERO -->
-    <div style="margin:12px;padding:16px;background:linear-gradient(135deg,rgba(79,195,247,.12),rgba(79,195,247,.04));border:1px solid rgba(79,195,247,.25);border-radius:16px;text-align:center;position:relative;overflow:hidden;">
+    <div id="v-kar-hero" style="margin:12px;padding:16px;background:linear-gradient(135deg,rgba(79,195,247,.12),rgba(79,195,247,.04));border:1px solid rgba(79,195,247,.25);border-radius:16px;text-align:center;position:relative;overflow:hidden;">
       <div style="position:absolute;font-size:100px;right:-20px;top:-20px;opacity:.08;line-height:1;">⚔️</div>
       <div style="font-size:10px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">KARJEROS EXP</div>
       <div id="v-kar-total-num" style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:#4FC3F7;line-height:1;text-shadow:0 0 20px rgba(79,195,247,.5);margin:6px 0 8px;letter-spacing:3px;position:relative;">0</div>
@@ -5802,9 +5802,25 @@ async function loadCategories() {
 
   document.getElementById('v-categories-list').innerHTML = html;
   
-  // Update HERO statistikas
+  // 🎨 Update HERO fonas pagal stage (kaip pagrindiniame + profilyje)
+  const totalExp = currentKid?.total_exp || 0;
+  const stageInfo = getStageInfo(totalExp);
+  const stage = STAGES.find(s => s.name === stageInfo.stage) || STAGES[0];
+  
+  const heroEl = document.getElementById('v-kar-hero');
+  if (heroEl && stage?.bgGradient) {
+    heroEl.style.background = stage.bgGradient;
+    // Border accent pagal stage spalvą
+    heroEl.style.borderColor = (stage.color || '#FFFFFF') + '40';
+  }
+  
+  // Pakeisti karjeros EXP spalvą pagal stage
   const totalEl = document.getElementById('v-kar-total-num');
-  if (totalEl) totalEl.textContent = totalCareerExp.toLocaleString('lt-LT');
+  if (totalEl) {
+    totalEl.textContent = totalCareerExp.toLocaleString('lt-LT');
+    totalEl.style.color = stage?.color || '#4FC3F7';
+    totalEl.style.textShadow = `0 0 20px ${stage?.color || '#4FC3F7'}80`;
+  }
   
   const masterEl = document.getElementById('v-kar-count-master');
   if (masterEl) masterEl.textContent = countMaster;
