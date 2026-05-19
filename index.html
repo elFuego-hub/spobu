@@ -1093,32 +1093,32 @@ select.inp option{background:#222;}
   </div>
   <div class="sa">
     
-    <!-- KARJEROS HERO -->
-    <div id="v-kar-hero" style="margin:12px;padding:16px;background:linear-gradient(135deg,rgba(79,195,247,.12),rgba(79,195,247,.04));border:1px solid rgba(79,195,247,.25);border-radius:16px;text-align:center;position:relative;overflow:hidden;">
-      <div style="position:absolute;font-size:100px;right:-20px;top:-20px;opacity:.08;line-height:1;">⚔️</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">KARJEROS EXP</div>
-      <div id="v-kar-total-num" style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:#4FC3F7;line-height:1;text-shadow:0 0 20px rgba(79,195,247,.5);margin:6px 0 8px;letter-spacing:3px;position:relative;">0</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.7);position:relative;" id="v-kar-next-tier">Iki MASTER: 4 200 EXP</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
+    <!-- KARJEROS HERO - kompaktiškas -->
+    <div id="v-kar-hero" style="margin:8px 12px;padding:12px;background:linear-gradient(135deg,rgba(79,195,247,.12),rgba(79,195,247,.04));border:1px solid rgba(79,195,247,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">⚔️</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">KARJEROS EXP</div>
+      <div id="v-kar-total-num" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#4FC3F7;line-height:1;text-shadow:0 0 20px rgba(79,195,247,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;">0</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="v-kar-next-tier">Iki MASTER: 4 200 EXP</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
         <div style="text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:white;line-height:1;" id="v-kar-count-master">0</div>
-          <div style="font-size:8px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:3px;text-transform:uppercase;">🏆 Master</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-kar-count-master">0</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🏆 Master</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:white;line-height:1;" id="v-kar-count-gold">0</div>
-          <div style="font-size:8px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:3px;text-transform:uppercase;">🥇 Gold</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-kar-count-gold">0</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🥇 Gold</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:white;line-height:1;" id="v-kar-count-silver">0</div>
-          <div style="font-size:8px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:3px;text-transform:uppercase;">🥈 Silver</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-kar-count-silver">0</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🥈 Silver</div>
         </div>
       </div>
     </div>
     
-    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:8px 20px 8px;">📂 7 KATEGORIJOS · SPAUSK PRATIMAMS</div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">📂 7 KATEGORIJOS · SPAUSK PRATIMAMS</div>
     
     <!-- 7 KATEGORIJŲ GRID 2x4 -->
-    <div id="v-categories-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:0 12px 16px;">
+    <div id="v-categories-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 8px 12px;">
       <div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Kraunama...</div>
     </div>
     
@@ -5788,15 +5788,15 @@ async function loadCategories() {
       ? `${cappedExp} EXP` 
       : `${cappedExp}/${target} EXP`;
     
-    return `<div onclick="showExercises('${cat.id}','${cat.name}')" style="background:${bgStyle};border:1px solid ${borderStyle};border-radius:14px;padding:12px;text-align:center;cursor:pointer;position:relative;${shadow}-webkit-tap-highlight-color:rgba(255,77,0,.2);">
-      ${medal ? `<div style="position:absolute;top:6px;right:6px;font-size:16px;">${medal}</div>` : ''}
-      <div style="font-size:36px;line-height:1;margin-bottom:4px;">${CATEGORY_ICONS[cat.name] || '💪'}</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;margin-bottom:4px;color:white;">${cat.name.toUpperCase()}</div>
-      <div style="font-size:8px;font-weight:800;letter-spacing:1px;margin-bottom:4px;color:${tierColor};">${tierLabel}</div>
-      <div style="background:rgba(0,0,0,.4);height:4px;border-radius:2px;overflow:hidden;margin-bottom:3px;">
+    return `<div onclick="showExercises('${cat.id}','${cat.name}')" style="background:${bgStyle};border:1px solid ${borderStyle};border-radius:12px;padding:8px 6px;text-align:center;cursor:pointer;position:relative;${shadow}-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+      ${medal ? `<div style="position:absolute;top:4px;right:4px;font-size:13px;">${medal}</div>` : ''}
+      <div style="font-size:26px;line-height:1;margin-bottom:2px;">${CATEGORY_ICONS[cat.name] || '💪'}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1px;margin-bottom:2px;color:white;">${cat.name.toUpperCase()}</div>
+      <div style="font-size:7px;font-weight:800;letter-spacing:.5px;margin-bottom:3px;color:${tierColor};">${tierLabel}</div>
+      <div style="background:rgba(0,0,0,.4);height:3px;border-radius:2px;overflow:hidden;margin-bottom:2px;">
         <div style="height:100%;border-radius:2px;background:${fillStyle};width:${Math.min(100, pct)}%;"></div>
       </div>
-      <div style="font-size:8px;color:rgba(255,255,255,.6);">${expText}</div>
+      <div style="font-size:7px;color:rgba(255,255,255,.6);">${expText}</div>
     </div>`;
   }).join('');
 
