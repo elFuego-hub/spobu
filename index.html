@@ -6993,6 +6993,10 @@ function openKidChallengesModal() {
 let currentChallengeForSubmission = null;
 
 async function openSubmitChallenge(challengeId) {
+  // 🎯 Uždaryt "DAUGIAU iššūkių" modal'ą jei atidarytas
+  const challengesModal = document.getElementById('kid-challenges-modal');
+  if (challengesModal) challengesModal.remove();
+  
   const { data: challenge, error } = await sb.from('challenges')
     .select('*')
     .eq('id', challengeId)
