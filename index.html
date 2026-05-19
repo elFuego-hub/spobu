@@ -1219,9 +1219,25 @@ select.inp option{background:#222;}
     <!-- 🏆 VARŽYBŲ HERO -->
     <div id="v-comp-hero" style="margin:6px 12px 8px;padding:12px;background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
       <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">🏆</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">🥊 KUMITE REKORDAS</div>
-      <div id="v-comp-record" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#FFD700;line-height:1;text-shadow:0 0 20px rgba(255,215,0,.5);margin:3px 0 4px;letter-spacing:3px;position:relative;">0 - 0</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="v-comp-stats-line">0% pergalių · 0 varžybų</div>
+      
+      <!-- KUMITE + KATA REKORDAI - 2 stulpeliai -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;position:relative;">
+        <!-- KUMITE -->
+        <div style="padding-right:8px;border-right:1px solid rgba(255,255,255,.1);">
+          <div style="font-size:8px;color:#EF4444;letter-spacing:1.5px;font-weight:800;">🥊 KUMITE</div>
+          <div id="v-comp-record" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#EF4444;line-height:1;text-shadow:0 0 15px rgba(239,68,68,.5);margin:3px 0 2px;letter-spacing:2px;">0 - 0</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.7);" id="v-comp-stats-line">0% · 0 varž.</div>
+        </div>
+        
+        <!-- KATA -->
+        <div style="padding-left:8px;">
+          <div style="font-size:8px;color:#4FC3F7;letter-spacing:1.5px;font-weight:800;">🎭 KATA</div>
+          <div id="v-comp-kata-record" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#4FC3F7;line-height:1;text-shadow:0 0 15px rgba(79,195,247,.5);margin:3px 0 2px;letter-spacing:2px;">0</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.7);" id="v-comp-kata-stats-line">0 varž. · 0 medalių</div>
+        </div>
+      </div>
+      
+      <!-- BENDRA MEDALIŲ SUVESTINĖ -->
       <div id="v-comp-medals-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
         <!-- Užpildoma dinamiškai -->
       </div>
@@ -8195,6 +8211,8 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
   let totalKumiteWins = 0;
   let totalKumiteLosses = 0;
   let totalKumiteComps = 0; // tik kumite varžybos
+  let totalKataComps = 0;   // tik kata varžybos
+  let totalKataMedals = 0;  // kata medalių (1-3 vieta)
   let totalMedals = { gold: 0, silver: 0, bronze: 0 };
   
   completed.forEach(comp => {
@@ -8206,6 +8224,15 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
       totalKumiteWins += (result.wins || 0);
       totalKumiteLosses += (result.losses || 0);
       totalKumiteComps++;
+    }
+    
+    // 🎭 KATA varžybų skaičius
+    if (comp.competition_type === 'kata') {
+      totalKataComps++;
+      // Jei laimėjo medalį
+      if (result.placement >= 1 && result.placement <= 3) {
+        totalKataMedals++;
+      }
     }
     
     // 🏅 MEDALIAI - iš VISŲ tipų (kumite + kata + belt_test)
@@ -8233,7 +8260,11 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   
   setText('v-comp-record', `${totalKumiteWins} - ${totalKumiteLosses}`);
-  setText('v-comp-stats-line', `${winRate}% pergalių · ${totalKumiteComps} kumite varžybų`);
+  setText('v-comp-stats-line', `${winRate}% · ${totalKumiteComps} varž.`);
+  
+  // Kata statistikos
+  setText('v-comp-kata-record', totalKataMedals);
+  setText('v-comp-kata-stats-line', `${totalKataComps} varž. · ${totalKataMedals} medaliai`);
   
   // 🎖️ Medalių grid (3 aukščiausi)
   const medalsGrid = document.getElementById('v-comp-medals-grid');
@@ -8303,12 +8334,7 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     heroEl.style.background = stage.bgGradient;
     heroEl.style.borderColor = (stage.color || '#FFD700') + '40';
   }
-  
-  const recordEl = document.getElementById('v-comp-record');
-  if (recordEl) {
-    recordEl.style.color = stage?.color || '#FFD700';
-    recordEl.style.textShadow = `0 0 20px ${stage?.color || '#FFD700'}80`;
-  }
+  // Rekordo skaičiai turi savo spalvas (Kumite=raudonas, Kata=mėlynas) - nesikeičia
 }
 
 async function loadKidCompetitions() {
