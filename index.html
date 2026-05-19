@@ -17775,7 +17775,157 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  
+  // 🔄 PULL-TO-REFRESH - svipina žemyn nuo viršaus → perkrauna
+  initPullToRefresh();
 });
+
+// ════════════════════════════════════════
+// 🔄 PULL-TO-REFRESH funkcija
+// ════════════════════════════════════════
+function initPullToRefresh() {
+  let startY = 0;
+  let pullDistance = 0;
+  let isPulling = false;
+  const THRESHOLD = 80; // px - kiek reikia trauk kad paleist refresh
+  
+  // Sukurti indikatorių
+  const indicator = document.createElement('div');
+  indicator.id = 'pull-refresh-indicator';
+  indicator.style.cssText = 'position:fixed;top:-60px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--bdr);border-radius:99px;padding:8px 16px;display:flex;align-items:center;gap:8px;z-index:9999;font-size:12px;font-weight:800;color:#FF8C00;letter-spacing:.5px;box-shadow:0 4px 16px rgba(0,0,0,.4);transition:top .2s ease;pointer-events:none;';
+  indicator.innerHTML = '<span id="pull-icon" style="display:inline-block;font-size:14px;transition:transform .2s ease;">⬇️</span> <span id="pull-text">TRAUK ŽEMYN</span>';
+  document.body.appendChild(indicator);
+  
+  // Surast aktyvų scroll'inamą container'į
+  const getActiveScrollContainer = () => {
+    const activeSc = document.querySelector('.sc.on');
+    if (!activeSc) return null;
+    return activeSc.querySelector('.sa');
+  };
+  
+  // Surast koks aktyvus puslapis - kuris loader iškviest
+  const getActiveLoader = () => {
+    const activeSc = document.querySelector('.sc.on');
+    if (!activeSc) return null;
+    const id = activeSc.id;
+    
+    if (id === 'v-main') return () => typeof loadKidData === 'function' ? loadKidData() : null;
+    if (id === 'v-kar') return () => typeof loadCategories === 'function' ? loadCategories() : null;
+    if (id === 'v-ish') return () => typeof loadChallenges === 'function' ? loadChallenges() : null;
+    if (id === 'v-comp') return () => typeof loadKidCompetitions === 'function' ? loadKidCompetitions() : null;
+    if (id === 'v-prof') return () => typeof loadKidProfile === 'function' ? loadKidProfile() : (typeof loadKidData === 'function' ? loadKidData() : null);
+    if (id === 'v-stat') {
+      const activeTab = document.querySelector('.stat-tab.on');
+      const tabName = activeTab?.dataset?.tab;
+      if (tabName && typeof switchStatTab === 'function') {
+        return () => switchStatTab(tabName);
+      }
+    }
+    
+    return null;
+  };
+  
+  document.addEventListener('touchstart', (e) => {
+    const container = getActiveScrollContainer();
+    if (!container) return;
+    
+    // Tik jei scrolled į viršų
+    if (container.scrollTop > 0) {
+      isPulling = false;
+      return;
+    }
+    
+    startY = e.touches[0].clientY;
+    isPulling = true;
+    pullDistance = 0;
+  }, { passive: true });
+  
+  document.addEventListener('touchmove', (e) => {
+    if (!isPulling) return;
+    
+    const container = getActiveScrollContainer();
+    if (!container || container.scrollTop > 0) {
+      isPulling = false;
+      indicator.style.top = '-60px';
+      return;
+    }
+    
+    const currentY = e.touches[0].clientY;
+    pullDistance = currentY - startY;
+    
+    if (pullDistance > 0) {
+      // Trukdom default scroll'ą (svipinimą žemyn)
+      // Pastaba: passive event listener'is to nedaro, todėl trūkdyti negalim
+      
+      // Rodom indikatorių
+      const progress = Math.min(pullDistance / THRESHOLD, 1.5);
+      const top = Math.min(-60 + pullDistance * 0.5, 20);
+      indicator.style.top = top + 'px';
+      
+      // Rotate ikon pagal progresą
+      const icon = document.getElementById('pull-icon');
+      const text = document.getElementById('pull-text');
+      if (pullDistance >= THRESHOLD) {
+        if (icon) icon.style.transform = 'rotate(180deg)';
+        if (text) text.textContent = 'PALEISK';
+      } else {
+        if (icon) icon.style.transform = 'rotate(0deg)';
+        if (text) text.textContent = 'TRAUK ŽEMYN';
+      }
+    }
+  }, { passive: true });
+  
+  document.addEventListener('touchend', async () => {
+    if (!isPulling) return;
+    isPulling = false;
+    
+    if (pullDistance >= THRESHOLD) {
+      // 🔄 REFRESH!
+      const icon = document.getElementById('pull-icon');
+      const text = document.getElementById('pull-text');
+      if (icon) {
+        icon.textContent = '🔄';
+        icon.style.transform = 'rotate(0deg)';
+        icon.style.animation = 'spin 1s linear infinite';
+      }
+      if (text) text.textContent = 'KRAUNAMA...';
+      
+      indicator.style.top = '20px';
+      
+      try {
+        const loader = getActiveLoader();
+        if (loader) {
+          await loader();
+        }
+        // Sėkmė
+        if (icon) {
+          icon.textContent = '✅';
+          icon.style.animation = '';
+        }
+        if (text) text.textContent = 'ATNAUJINTA';
+        
+        setTimeout(() => {
+          indicator.style.top = '-60px';
+        }, 800);
+      } catch (e) {
+        console.error('Refresh klaida:', e);
+        if (icon) {
+          icon.textContent = '❌';
+          icon.style.animation = '';
+        }
+        if (text) text.textContent = 'KLAIDA';
+        setTimeout(() => {
+          indicator.style.top = '-60px';
+        }, 1200);
+      }
+    } else {
+      // Per mažai - schovat
+      indicator.style.top = '-60px';
+    }
+    
+    pullDistance = 0;
+  }, { passive: true });
+}
 
 // ════════════════════════════════════════
 // PALEISTI
