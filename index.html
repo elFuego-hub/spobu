@@ -8211,6 +8211,8 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
   let totalKumiteWins = 0;
   let totalKumiteLosses = 0;
   let totalKumiteComps = 0; // tik kumite varžybos
+  let totalKataWins = 0;
+  let totalKataLosses = 0;
   let totalKataComps = 0;   // tik kata varžybos
   let totalKataMedals = 0;  // kata medalių (1-3 vieta)
   let totalMedals = { gold: 0, silver: 0, bronze: 0 };
@@ -8219,15 +8221,17 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     const result = resultsByComp[comp.id];
     if (!result || result.status !== 'participated') return;
     
-    // 🥊 KOVŲ REKORDAS - TIK iš kumite varžybų (kata neturi wins/losses)
+    // 🥊 KUMITE - W/L
     if (comp.competition_type === 'kumite') {
       totalKumiteWins += (result.wins || 0);
       totalKumiteLosses += (result.losses || 0);
       totalKumiteComps++;
     }
     
-    // 🎭 KATA varžybų skaičius
+    // 🎭 KATA - taip pat W/L (dabar visi kovų stiliai turi)
     if (comp.competition_type === 'kata') {
+      totalKataWins += (result.wins || 0);
+      totalKataLosses += (result.losses || 0);
       totalKataComps++;
       // Jei laimėjo medalį
       if (result.placement >= 1 && result.placement <= 3) {
@@ -8252,19 +8256,24 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     }
   });
   
-  const winRate = (totalKumiteWins + totalKumiteLosses) > 0 
+  const kumiteWinRate = (totalKumiteWins + totalKumiteLosses) > 0 
     ? Math.round((totalKumiteWins / (totalKumiteWins + totalKumiteLosses)) * 100) 
+    : 0;
+  
+  const kataWinRate = (totalKataWins + totalKataLosses) > 0 
+    ? Math.round((totalKataWins / (totalKataWins + totalKataLosses)) * 100) 
     : 0;
   
   // Update UI
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   
+  // 🥊 Kumite
   setText('v-comp-record', `${totalKumiteWins} - ${totalKumiteLosses}`);
-  setText('v-comp-stats-line', `${winRate}% · ${totalKumiteComps} varž.`);
+  setText('v-comp-stats-line', `${kumiteWinRate}% · ${totalKumiteComps} varž.`);
   
-  // Kata statistikos
-  setText('v-comp-kata-record', totalKataMedals);
-  setText('v-comp-kata-stats-line', `${totalKataComps} varž. · ${totalKataMedals} medaliai`);
+  // 🎭 Kata - dabar rodome W-L (kaip kumite)
+  setText('v-comp-kata-record', `${totalKataWins} - ${totalKataLosses}`);
+  setText('v-comp-kata-stats-line', `${kataWinRate}% · ${totalKataComps} varž.`);
   
   // 🎖️ Medalių grid (3 aukščiausi)
   const medalsGrid = document.getElementById('v-comp-medals-grid');
@@ -8812,14 +8821,15 @@ function updateCrmFields() {
       nextKyuInfo.style.display = 'none';
       newKyuInput.value = '';
     }
-  } else if (type === 'kumite') {
+  } else if (type === 'kumite' || type === 'kata') {
+    // Kumite ir Kata - abu turi vietą + W/L laukus
     placementSection.style.display = 'block';
     kumiteSection.style.display = 'block';
     beltSection.style.display = 'none';
     if (trainerSection) trainerSection.style.display = 'block';
     if (didntAttendInfo) didntAttendInfo.style.display = 'none';
   } else {
-    // kata
+    // fallback - kažkoks kitas tipas
     placementSection.style.display = 'block';
     kumiteSection.style.display = 'none';
     beltSection.style.display = 'none';
