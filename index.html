@@ -8225,6 +8225,15 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     const result = resultsByComp[comp.id];
     if (!result || result.status !== 'participated') return;
     
+    // 🐛 DEBUG - log kiekvieną result
+    console.log(`[comp stats] ${comp.competition_type} "${comp.title}":`, {
+      status: result.status,
+      approval_status: result.approval_status,
+      wins: result.wins,
+      losses: result.losses,
+      placement: result.placement
+    });
+    
     // 🥊 KUMITE - W/L + medaliai
     if (comp.competition_type === 'kumite') {
       totalKumiteWins += (result.wins || 0);
