@@ -6667,6 +6667,7 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
   const typeCounts = { training: 0, weekly: 0, monthly: 0, one_time: 0, permanent: 0 };
   const typeExp = { training: 0, weekly: 0, monthly: 0, one_time: 0, permanent: 0 };
   
+  // 1) ĮVEIKTI iššūkiai - skaičiuojam ir EXP
   completedChallenges.forEach(ch => {
     let earnedExp = 0;
     if (ch.allow_partial) {
@@ -6678,11 +6679,45 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
       earnedExp = approved?.exp_gain || 0;
     }
     
+    // 🛡️ FALLBACK: jei submission/progress turi 0 EXP, naudojam iššūkio bazinį EXP reward
+    // (atveju kai DB neturi exp_gain įrašyto)
+    if (earnedExp === 0 && ch.exp_reward) {
+      earnedExp = ch.exp_reward;
+      console.warn(`[challenge stats] FALLBACK EXP "${ch.title}" (${ch.type}): naudojam exp_reward=${ch.exp_reward}`);
+    }
+    
     totalExpFromCompleted += earnedExp;
     
     if (ch.type && typeCounts[ch.type] !== undefined) {
       typeCounts[ch.type]++;
       typeExp[ch.type] += earnedExp;
+    }
+  });
+  
+  // 2) 🔥 AKTYVŪS iššūkiai - PARTIAL gali jau būti gavę dalinį EXP iš tarpinių patvirtinimų
+  // (vaikas dalyvauja, dalis jau patvirtinta, bet pilnai dar neatlikta)
+  activeChallenges.forEach(ch => {
+    let earnedExp = 0;
+    
+    if (ch.allow_partial) {
+      // Partial iššūkiai - tarpinis progresas
+      const p = myProgress?.[ch.id];
+      earnedExp = p?.exp_awarded || 0;
+    } else {
+      // Standartiniai aktyvūs - dažniausiai 0, bet jei buvo approved tarpinis - skaičiuojam
+      const subs = subsByChallenge?.[ch.id] || [];
+      const approved = subs.find(s => s.status === 'approved');
+      if (approved && ch.type === 'permanent') {
+        // Nuolatinis - galima daug kartų atlikti
+        earnedExp = approved.exp_gain || 0;
+      }
+    }
+    
+    if (earnedExp > 0) {
+      totalExpFromCompleted += earnedExp;
+      if (ch.type && typeExp[ch.type] !== undefined) {
+        typeExp[ch.type] += earnedExp;
+      }
     }
   });
   
