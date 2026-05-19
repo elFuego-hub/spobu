@@ -1334,91 +1334,94 @@ select.inp option{background:#222;}
 <!-- PROFILIS -->
 <div class="sc" id="v-prof">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">PROFILIS</div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PROFILIS</div>
+    <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
+        <div id="v-prof-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
+      </div>
+      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+    </div>
+  </div>
   <div class="sa">
-    <div class="hero" id="v-prof-hero" style="background:linear-gradient(135deg,var(--br),var(--br2));padding:24px 16px;border-radius:24px;text-align:center;position:relative;overflow:hidden;">
-      <!-- KANJI + PROGRESS RING -->
-      <div style="position:relative;width:220px;height:220px;margin:0 auto 14px;">
-        <svg id="v-prof-progress-ring" style="position:absolute;inset:0;transform:rotate(-90deg);" viewBox="0 0 220 220">
-          <circle cx="110" cy="110" r="100" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/>
-          <circle id="v-prof-progress-circle" cx="110" cy="110" r="100" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-dasharray="628" stroke-dashoffset="628" style="transition:stroke-dashoffset .8s ease-out;"/>
+    
+    <!-- 🥋 HERO su kanji + progress ring -->
+    <div class="hero" id="v-prof-hero" style="background:linear-gradient(135deg,var(--br),var(--br2));margin:6px 12px 8px;padding:14px 12px 12px;border-radius:16px;text-align:center;position:relative;overflow:hidden;">
+      <!-- KANJI + PROGRESS RING - sumažintas -->
+      <div style="position:relative;width:140px;height:140px;margin:0 auto 10px;">
+        <svg id="v-prof-progress-ring" style="position:absolute;inset:0;transform:rotate(-90deg);" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="63" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="5"/>
+          <circle id="v-prof-progress-circle" cx="70" cy="70" r="63" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="396" style="transition:stroke-dashoffset .8s ease-out;filter:drop-shadow(0 0 6px rgba(255,255,255,.6));"/>
         </svg>
-        <div style="position:absolute;inset:18px;border-radius:50%;background:rgba(0,0,0,.4);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 40px rgba(0,0,0,.4), 0 8px 32px rgba(0,0,0,.3);" id="v-prof-kanji-circle">
-          <div id="v-prof-kanji" style="font-family:'Noto Serif JP', 'Hiragino Mincho ProN', serif;font-size:100px;font-weight:900;line-height:1;text-shadow:0 4px 12px rgba(0,0,0,.4);margin-bottom:4px;color:#FFFFFF;">始</div>
-          <div id="v-prof-lvl-num" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:white;line-height:1;">LVL 1</div>
-          <div id="v-prof-lvl-exp" style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:700;margin-top:2px;">0 EXP</div>
+        <div style="position:absolute;inset:12px;border-radius:50%;background:rgba(0,0,0,.4);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 30px rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.3);" id="v-prof-kanji-circle">
+          <div id="v-prof-kanji" style="font-family:'Noto Serif JP', 'Hiragino Mincho ProN', serif;font-size:60px;font-weight:900;line-height:1;text-shadow:0 4px 12px rgba(0,0,0,.4);margin-bottom:2px;color:#FFFFFF;">始</div>
+          <div id="v-prof-lvl-num" style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:white;line-height:1;">LVL 1</div>
+          <div id="v-prof-lvl-exp" style="font-size:8px;color:rgba(255,255,255,.7);letter-spacing:1px;font-weight:700;margin-top:2px;">0 EXP</div>
         </div>
       </div>
       
-      <!-- STADIJOS ANTRASTĖ -->
+      <!-- Stage antraštė -->
       <div style="text-align:center;margin-bottom:4px;">
-        <div id="v-prof-stage-title" style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:4px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.3);color:white;">🌱 NAUJOKAS</div>
-        <div id="v-prof-stage-meaning" style="font-size:10px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:700;margin-top:6px;">PRADŽIA · KELIO RADIMAS</div>
-        <div id="v-prof-stage-next" style="font-size:10px;color:rgba(255,255,255,.6);margin-top:4px;">Iki LVL 2: +100 EXP</div>
+        <div id="v-prof-stage-title" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.3);color:white;">🌱 NAUJOKAS</div>
+        <div id="v-prof-stage-meaning" style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:1.5px;font-weight:700;margin-top:4px;">PRADŽIA · KELIO RADIMAS</div>
       </div>
       
-      <!-- VARDAS IR KLUBAS -->
-      <div style="text-align:center;border-top:.5px solid rgba(255,255,255,.2);padding-top:12px;margin-top:14px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;" id="v-prof-name">–</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px;" id="v-prof-club">–</div>
+      <!-- Vardas + klubas -->
+      <div style="text-align:center;border-top:.5px solid rgba(255,255,255,.2);padding-top:8px;margin-top:8px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:white;" id="v-prof-name">–</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:2px;" id="v-prof-club">📍 –</div>
       </div>
     </div>
     
-    <!-- DIRŽO SERTIFIKATAS - kyokushin stilius -->
-    <div id="v-prof-belt-cert" style="margin:8px 16px;">
-      <!-- Renderinama JS -->
+    <!-- 💬 BIOGRAFIJA/MOTTO kortelė -->
+    <div onclick="openBioEdit()" style="margin:0 12px 8px;padding:10px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);position:relative;">
+      <div id="v-prof-bio" style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.4;font-style:italic;">"Karatė nėra kovos sportas - tai kelias į asmenybės ugdymą."</div>
+      <div style="font-size:8px;color:var(--mut);margin-top:4px;text-align:right;">✏️ Spausk redaguoti</div>
     </div>
-    <div style="display:flex;gap:1px;background:var(--bdr);border-radius:16px;overflow:hidden;margin:12px 16px 12px;">
-      <div style="flex:1;background:var(--card);padding:12px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-prof-exp">0</div><div style="font-size:10px;color:var(--mut);font-weight:700;margin-top:2px;">EXP</div></div>
-      <div style="flex:1;background:var(--card);padding:12px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;" id="v-prof-level">1</div><div style="font-size:10px;color:var(--mut);font-weight:700;margin-top:2px;">Lygis</div></div>
-      <div style="flex:1;background:var(--card);padding:12px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--br);" id="v-prof-record">0–0</div><div style="font-size:10px;color:var(--mut);font-weight:700;margin-top:2px;">Rekordas</div></div>
+    
+    <!-- 🥋 FLAT DIRŽAS - ribbon stilius -->
+    <div id="v-prof-belt-flat" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;display:flex;align-items:center;position:relative;">
+      <!-- Užpildoma JS - dinaminis diržas pagal kyu -->
     </div>
-    <div class="st">MANO INVENTORIUS</div>
-    <div class="cd">
-      <div style="font-size:11px;font-weight:800;color:var(--mut);margin-bottom:12px;letter-spacing:1px;">🏆 SKILL BADGES</div>
-      <div id="v-skill-badges" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-        <div style="text-align:center;padding:20px 0;color:var(--mut);font-size:12px;grid-column:span 4;">Kraunama...</div>
-      </div>
-      
-      <!-- 🔥 STREAK SEKCIJA - rodo 3 streak progresus -->
-      <div style="font-size:11px;font-weight:800;color:var(--mut);margin:18px 0 12px;letter-spacing:1px;">🔥 STREAK'AI</div>
-      <div id="v-streaks" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
-        <div style="text-align:center;padding:12px 0;color:var(--mut);font-size:12px;">Kraunama...</div>
-      </div>
-      
-      <!-- IŠŠŪKIŲ BADGE (su tier sistema, unlimited EXP) -->
-      <div style="font-size:11px;font-weight:800;color:var(--mut);margin:18px 0 12px;letter-spacing:1px;">🎯 IŠŠŪKIŲ MEISTRAS</div>
-      <div id="v-challenge-badge" style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;padding:14px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);" onclick="openClubChallengeLeaderboard()">
-        <div style="text-align:center;padding:12px 0;color:var(--mut);font-size:12px;">Kraunama...</div>
-      </div>
-      
-      <div style="font-size:11px;font-weight:800;color:var(--mut);margin:18px 0 12px;letter-spacing:1px;">🥇 VARŽYBŲ MEDALIAI</div>
-      <div id="v-comp-medals" style="text-align:center;padding:14px;color:var(--mut);font-size:12px;background:var(--bg);border-radius:12px;border:.5px dashed var(--bdr);">
-        Dar nedalyvavai varžybose
-      </div>
+    
+    <!-- 📋 INFORMACIJA -->
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">📋 INFORMACIJA</div>
+    <div id="v-prof-info-card" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
+      <!-- Užpildoma JS -->
     </div>
-    <div class="st">PRIVATUMO NUSTATYMAI</div>
-    <div class="cd">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="font-size:24px;" id="v-anon-icon">👤</div>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:800;" id="v-anon-status">Statistikoje matomas vardu</div>
-          <div style="font-size:11px;color:var(--mut);margin-top:2px;">Šį nustatymą valdo tavo tėvai 👨‍👩‍👦</div>
-        </div>
+    
+    <!-- 👨‍🏫 TRENERIAI -->
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">👨‍🏫 TRENERIAI</div>
+    <div id="v-prof-trainers" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
+      <div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
+    </div>
+    
+    <!-- 🤝 KOMANDOS DRAUGAI -->
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">🤝 KOMANDOS DRAUGAI</div>
+    <div id="v-prof-teammates" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
+      <div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
+    </div>
+    
+    <!-- 🏆 INVENTORIUS - SKILL BADGES (collapse) -->
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">🏆 INVENTORIUS</div>
+    <div class="cd" style="margin:0 12px 8px;padding:10px;">
+      <div style="font-size:10px;font-weight:800;color:var(--mut);margin-bottom:8px;letter-spacing:1px;">🥋 SKILL BADGES</div>
+      <div id="v-skill-badges" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+        <div style="text-align:center;padding:10px 0;color:var(--mut);font-size:10px;grid-column:span 4;">Kraunama...</div>
       </div>
     </div>
-    <div class="st">PRENUMERATA</div>
-    <div class="cd" id="v-subscription-card">
-      <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Kraunama...</div>
+    
+    <!-- 💎 PRENUMERATA -->
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">💎 PRENUMERATA</div>
+    <div class="cd" id="v-subscription-card" style="margin:0 12px 8px;padding:10px;">
+      <div style="text-align:center;padding:8px;color:var(--mut);font-size:11px;">Kraunama...</div>
     </div>
-    <div style="height:16px;"></div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic">📈</span><span class="lb">Karjera</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic">🏆</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    
     <div class="ni on" onclick="nv('v',this,'v-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -4882,11 +4885,11 @@ async function loadKidData() {
       : `Iki LVL ${stageInfo.globalLevel + 1}: +${stageInfo.expToNextLevel} EXP`;
   }
   
-  // Diržo sertifikatas (Kyokushin stilius)
-  const beltCert = document.getElementById('v-prof-belt-cert');
-  if (beltCert) {
-    beltCert.innerHTML = renderBeltCertificate(currentKid.kyu, true);
-  }
+  // 🥋 Diržo FLAT ribbon (kompaktiškas)
+  renderBeltFlat();
+  
+  // 📋 Informacija + Treneriai + Draugai + Biografija
+  renderProfileExtras();
   
   // Diržas (header)
   updateBeltDisplay();
@@ -5977,6 +5980,229 @@ async function loadCategories() {
 // ════════════════════════════════════════
 // SKILL BADGES (Inventorius)
 // ════════════════════════════════════════
+// ════════════════════════════════════════
+// 🥋 Diržo FLAT ribbon stilius (profilis)
+// ════════════════════════════════════════
+function renderBeltFlat() {
+  const el = document.getElementById('v-prof-belt-flat');
+  if (!el || !currentKid) return;
+  
+  const kyu = currentKid.kyu || 'Mu kyu';
+  
+  // Kyokushin diržų hierarchija + spalvos
+  const beltColors = {
+    'Mu kyu':  { color: '#FFFFFF', bg: 'linear-gradient(135deg, #f5f5f5, #e0e0e0)', textColor: '#000', label: 'BALTAS DIRŽAS' },
+    '10 kyu':  { color: '#FF6B00', bg: 'linear-gradient(135deg, #FF6B00, #CC5500)', textColor: '#fff', label: 'ORANŽINIS DIRŽAS' },
+    '9 kyu':   { color: '#FF6B00', bg: 'linear-gradient(135deg, #FF6B00, #CC5500)', textColor: '#fff', label: 'ORANŽINIS DIRŽAS' },
+    '8 kyu':   { color: '#0066CC', bg: 'linear-gradient(135deg, #2563EB, #1E40AF)', textColor: '#fff', label: 'MĖLYNAS DIRŽAS' },
+    '7 kyu':   { color: '#0066CC', bg: 'linear-gradient(135deg, #2563EB, #1E40AF)', textColor: '#fff', label: 'MĖLYNAS DIRŽAS' },
+    '6 kyu':   { color: '#FFD700', bg: 'linear-gradient(135deg, #FCD34D, #D97706)', textColor: '#000', label: 'GELTONAS DIRŽAS' },
+    '5 kyu':   { color: '#FFD700', bg: 'linear-gradient(135deg, #FCD34D, #D97706)', textColor: '#000', label: 'GELTONAS DIRŽAS' },
+    '4 kyu':   { color: '#16A34A', bg: 'linear-gradient(135deg, #16A34A, #14532D)', textColor: '#fff', label: 'ŽALIAS DIRŽAS' },
+    '3 kyu':   { color: '#16A34A', bg: 'linear-gradient(135deg, #16A34A, #14532D)', textColor: '#fff', label: 'ŽALIAS DIRŽAS' },
+    '2 kyu':   { color: '#92400E', bg: 'linear-gradient(135deg, #92400E, #451A03)', textColor: '#fff', label: 'RUDAS DIRŽAS' },
+    '1 kyu':   { color: '#92400E', bg: 'linear-gradient(135deg, #92400E, #451A03)', textColor: '#fff', label: 'RUDAS DIRŽAS' },
+    '1 dan':   { color: '#000000', bg: 'linear-gradient(135deg, #1F2937, #000)', textColor: '#FFD700', label: 'JUODAS DIRŽAS' },
+    '2 dan':   { color: '#000000', bg: 'linear-gradient(135deg, #1F2937, #000)', textColor: '#FFD700', label: 'JUODAS DIRŽAS' },
+    '3 dan':   { color: '#000000', bg: 'linear-gradient(135deg, #1F2937, #000)', textColor: '#FFD700', label: 'JUODAS DIRŽAS' }
+  };
+  
+  const belt = beltColors[kyu] || beltColors['Mu kyu'];
+  
+  el.innerHTML = `
+    <!-- Ribbon dešinėje -->
+    <div style="background:${belt.bg};width:60px;padding:14px 6px;text-align:center;color:${belt.textColor};font-family:'Noto Serif JP',serif;font-size:18px;font-weight:900;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;">空手</div>
+    
+    <!-- Info -->
+    <div style="flex:1;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:white;">${belt.label}</div>
+      <div style="background:${belt.bg};color:${belt.textColor};font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1px;padding:3px 8px;border-radius:99px;font-weight:800;">${kyu.toUpperCase()}</div>
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════
+// 📋 Profilio papildomi: biografija, info, treneriai, draugai
+// ════════════════════════════════════════
+async function renderProfileExtras() {
+  if (!currentKid) return;
+  
+  // 💬 BIOGRAFIJA - iš kids.bio (jei yra)
+  const bioEl = document.getElementById('v-prof-bio');
+  if (bioEl) {
+    const defaultBio = '"Karatė nėra kovos sportas - tai kelias į asmenybės ugdymą."';
+    bioEl.textContent = currentKid.bio || defaultBio;
+  }
+  
+  // 📋 INFORMACIJA
+  const infoEl = document.getElementById('v-prof-info-card');
+  if (infoEl) {
+    const age = currentKid.birth_date 
+      ? Math.floor((new Date() - new Date(currentKid.birth_date)) / (365.25 * 24 * 60 * 60 * 1000))
+      : (currentKid.birth_year ? new Date().getFullYear() - currentKid.birth_year : null);
+    
+    // Grupė
+    let groupName = '–';
+    if (currentKid.group_id) {
+      try {
+        const { data: g } = await sb.from('groups').select('name').eq('id', currentKid.group_id).maybeSingle();
+        if (g?.name) groupName = g.name;
+      } catch(e) {}
+    }
+    
+    // Karatė nuo (jei yra karate_since stulpelis arba registracijos data)
+    let karateSince = '–';
+    if (currentKid.karate_since) {
+      const years = Math.floor((new Date() - new Date(currentKid.karate_since)) / (365.25 * 24 * 60 * 60 * 1000));
+      const months = Math.floor((new Date() - new Date(currentKid.karate_since)) / (30 * 24 * 60 * 60 * 1000));
+      karateSince = years > 0 ? `${years} ${years === 1 ? 'metai' : 'metai'}` : `${months} mėn.`;
+    } else if (currentKid.created_at) {
+      const months = Math.floor((new Date() - new Date(currentKid.created_at)) / (30 * 24 * 60 * 60 * 1000));
+      const years = Math.floor(months / 12);
+      karateSince = years > 0 ? `${years} ${years === 1 ? 'metai' : 'metai'}` : `${months} mėn.`;
+    }
+    
+    // Tikslas (jei yra goal stulpelis)
+    const goal = currentKid.goal || '–';
+    
+    const rows = [
+      { icon: '🎂', label: 'Amžius', value: age !== null ? `${age} m.` : '–' },
+      { icon: '👥', label: 'Grupė', value: groupName },
+      { icon: '📚', label: 'Karatė nuo', value: karateSince },
+      { icon: '🎯', label: 'Tikslas', value: goal }
+    ];
+    
+    infoEl.innerHTML = rows.map((r, idx) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;${idx < rows.length - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}">
+        <div style="font-size:11px;color:var(--mut);font-weight:700;">${r.icon} ${r.label}</div>
+        <div style="font-size:11px;color:white;font-weight:600;">${r.value}</div>
+      </div>
+    `).join('');
+  }
+  
+  // 👨‍🏫 TRENERIAI
+  const trainersEl = document.getElementById('v-prof-trainers');
+  if (trainersEl) {
+    try {
+      // Pagrindinis treneris
+      let primaryTrainer = null;
+      if (currentKid.assigned_trainer_id) {
+        const { data } = await sb.from('profiles')
+          .select('first_name, last_name')
+          .eq('id', currentKid.assigned_trainer_id)
+          .maybeSingle();
+        if (data) primaryTrainer = data;
+      }
+      
+      // Papildomi treneriai
+      const { data: additionalTrainers } = await sb.from('kid_trainers')
+        .select('role, profiles!kid_trainers_trainer_id_fkey(first_name, last_name)')
+        .eq('kid_id', currentKid.id);
+      
+      const allTrainers = [];
+      if (primaryTrainer) {
+        allTrainers.push({
+          name: `${primaryTrainer.first_name || ''} ${primaryTrainer.last_name || ''}`.trim() || 'Treneris',
+          role: '🥋 PAGRINDINIS'
+        });
+      }
+      (additionalTrainers || []).forEach(t => {
+        if (t.profiles && t.role !== 'primary') {
+          allTrainers.push({
+            name: `${t.profiles.first_name || ''} ${t.profiles.last_name || ''}`.trim() || 'Treneris',
+            role: t.role === 'assistant' ? '⚔️ PAVADUOTOJA' : '🥷 PAGALBA'
+          });
+        }
+      });
+      
+      if (allTrainers.length === 0) {
+        trainersEl.innerHTML = `<div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Nepriskirtas treneris</div>`;
+      } else {
+        trainersEl.innerHTML = allTrainers.map((t, idx) => {
+          const letter = t.name.charAt(0).toUpperCase();
+          return `
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;${idx < allTrainers.length - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF8C00,#FF4D00);color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${letter}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:11px;font-weight:800;color:white;line-height:1.2;">${t.name}</div>
+                <div style="font-size:8px;color:var(--mut);letter-spacing:1px;font-weight:700;margin-top:2px;">${t.role}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    } catch(e) {
+      console.error('renderProfileExtras trainers:', e);
+      trainersEl.innerHTML = `<div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Klaida kraunant trenerius</div>`;
+    }
+  }
+  
+  // 🤝 KOMANDOS DRAUGAI - iš to paties grupės kiti vaikai
+  const teammatesEl = document.getElementById('v-prof-teammates');
+  if (teammatesEl && currentKid.group_id) {
+    try {
+      const { data: mates } = await sb.from('kids')
+        .select('id, total_exp, kyu, is_anonymous, profiles(first_name, last_name)')
+        .eq('group_id', currentKid.group_id)
+        .neq('id', currentKid.id)
+        .order('total_exp', { ascending: false })
+        .limit(3);
+      
+      if (!mates || mates.length === 0) {
+        teammatesEl.innerHTML = `<div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Komandos draugų nėra</div>`;
+      } else {
+        teammatesEl.innerHTML = mates.map((m, idx) => {
+          const stageInfo = getStageInfo(m.total_exp || 0);
+          const stage = STAGES.find(s => s.name === stageInfo.stage) || STAGES[0];
+          
+          const name = m.is_anonymous 
+            ? 'Anonimas'
+            : `${m.profiles?.first_name || ''} ${(m.profiles?.last_name || '').charAt(0)}${m.profiles?.last_name ? '.' : ''}`.trim() || 'Vaikas';
+          const letter = m.is_anonymous ? '?' : (m.profiles?.first_name?.charAt(0).toUpperCase() || 'V');
+          
+          return `
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;${idx < mates.length - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}">
+              <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,${stage.color}88,${stage.color}44);color:white;font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${letter}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:11px;font-weight:800;color:white;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+                <div style="font-size:8px;color:var(--mut);margin-top:1px;">${stage.emoji} ${stage.name} · ${(m.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
+              </div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:${stage.color};letter-spacing:1px;flex-shrink:0;">LVL ${stageInfo.globalLevel}</div>
+            </div>
+          `;
+        }).join('');
+      }
+    } catch(e) {
+      console.error('renderProfileExtras teammates:', e);
+      teammatesEl.innerHTML = `<div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Klaida kraunant draugus</div>`;
+    }
+  } else if (teammatesEl) {
+    teammatesEl.innerHTML = `<div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Nepriskirtas grupei</div>`;
+  }
+}
+
+// Biografijos redagavimas (modal)
+function openBioEdit() {
+  const current = currentKid?.bio || '';
+  const newBio = prompt('Įvesk savo motto/biografiją:', current);
+  if (newBio === null) return;
+  
+  sb.from('kids')
+    .update({ bio: newBio.trim() || null })
+    .eq('id', currentKid.id)
+    .then(({ error }) => {
+      if (error) {
+        showToast('❌ Klaida: ' + error.message, 'error');
+        console.error('bio update:', error);
+      } else {
+        currentKid.bio = newBio.trim() || null;
+        const bioEl = document.getElementById('v-prof-bio');
+        if (bioEl) bioEl.textContent = currentKid.bio || '"Karatė nėra kovos sportas - tai kelias į asmenybės ugdymą."';
+        showToast('✅ Motto atnaujintas!', 'success');
+      }
+    });
+}
+
 const CATEGORY_ICONS = {
   'Jėga': '💪',
   'Ištvermė': '🏃',
