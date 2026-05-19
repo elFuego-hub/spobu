@@ -8611,13 +8611,26 @@ async function setKidIntent(competitionId, intent) {
   }
   
   showToast(intent === 'planning' ? '🎯 Pažymėta!' : '🚫 Nedalyvausiu', 'success');
+  
+  // 🎯 Uždaryt DAUGIAU varžybų modal'ą jei atidarytas (kad pakeitimai matytųsi)
+  const modal = document.getElementById('kid-comp-modal');
+  if (modal) modal.remove();
+  
   await loadKidCompetitions();
+  
+  // Scroll į viršų (kad vartotojas matytų pakeitimus)
+  const compSa = document.querySelector('#v-comp .sa');
+  if (compSa) compSa.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // Vaiko rezultato pateikimas (po varžybų)
 let currentCompetitionForResult = null;
 
 async function openSubmitCompResult(competitionId, defaultStatus) {
+  // 🎯 Uždaryt DAUGIAU varžybų modal'ą jei atidarytas
+  const moreModal = document.getElementById('kid-comp-modal');
+  if (moreModal) moreModal.remove();
+  
   const { data: comp } = await sb.from('competitions')
     .select('*')
     .eq('id', competitionId)
