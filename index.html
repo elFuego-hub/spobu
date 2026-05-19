@@ -16611,9 +16611,9 @@ function renderNotifTab(tab) {
       ? `onclick="markNotifRead('${n.id}');navToNotifLink('${n.link}')"` 
       : `onclick="markNotifRead('${n.id}')"`;
     
-    return `<div ${onclickAttr} style="background:${bgColor};border:.5px solid ${borderColor};border-radius:12px;padding:10px 12px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);transition:background .2s;">
+    return `<div ${onclickAttr} data-notif-id="${n.id}" style="background:${bgColor};border:.5px solid ${borderColor};border-radius:12px;padding:10px 12px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);transition:background .2s;">
       <div style="display:flex;align-items:center;gap:10px;">
-        ${isUnread ? '<div style="width:6px;height:6px;background:#FF4D00;border-radius:50%;box-shadow:0 0 6px #FF4D00;flex-shrink:0;"></div>' : '<div style="width:6px;height:6px;flex-shrink:0;"></div>'}
+        ${isUnread ? '<div class="notif-unread-dot" style="width:6px;height:6px;background:#FF4D00;border-radius:50%;box-shadow:0 0 6px #FF4D00;flex-shrink:0;"></div>' : '<div class="notif-unread-dot" style="width:6px;height:6px;flex-shrink:0;background:transparent;"></div>'}
         <div style="font-size:20px;flex-shrink:0;">${n.icon}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:800;color:white;margin-bottom:2px;">${n.title}</div>
@@ -16632,7 +16632,14 @@ function markNotifRead(notifId) {
   seenIds.add(notifId);
   localStorage.setItem(lsKey, JSON.stringify([...seenIds]));
   updateNotifCounts(seenIds);
-  renderNotifTab(currentNotifTab);
+  // Tik atnaujint tą vieną įrašą vizualiai, neperendinti viso tab'o
+  const items = document.querySelectorAll(`#v-notif-list [data-notif-id="${notifId}"]`);
+  items.forEach(el => {
+    el.style.background = 'var(--card)';
+    el.style.borderColor = 'var(--bdr)';
+    const dot = el.querySelector('.notif-unread-dot');
+    if (dot) dot.style.background = 'transparent';
+  });
 }
 
 function markAllNotifRead() {
@@ -16651,16 +16658,27 @@ function markAllNotifRead() {
 }
 
 function navToNotifLink(link) {
-  // Uždarom pranešimus
+  if (!link) return;
+  console.log('[notif] navigate to:', link);
+  
+  // 1. Uždarom pranešimus
   const section = document.getElementById('v-announcements-section');
   if (section) section.style.display = 'none';
   
-  // Nukela į puslapį
+  // 2. Nukela į puslapį - bandom kelis būdus
   const navItem = document.querySelector(`.bn2 .ni[onclick*="${link}"]`);
+  
   if (navItem && typeof nv === 'function') {
     nv('v', navItem, link);
-  } else {
+  } else if (typeof g === 'function') {
     g('v', link);
+    // Po g() iškviesti tinkamą loader'į
+    setTimeout(() => {
+      if (link === 'v-comp' && typeof loadKidCompetitions === 'function') loadKidCompetitions();
+      else if (link === 'v-ish' && typeof loadKidChallenges === 'function') loadKidChallenges();
+      else if (link === 'v-kar' && typeof loadKidCareer === 'function') loadKidCareer();
+      else if (link === 'v-main' && typeof loadKidData === 'function') loadKidData();
+    }, 50);
   }
 }
 
@@ -16700,6 +16718,15 @@ async function openKidSettings() {
               <div style="font-size:11px;color:var(--mut);margin-top:2px;">Visi puslapiai ir funkcijos</div>
             </div>
             <div style="font-size:18px;color:var(--mut);">›</div>
+          </button>
+          
+          <button onclick="openInstallAppModal()" style="background:linear-gradient(135deg, rgba(255,77,0,.12), rgba(255,128,0,.04));border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
+            <div style="font-size:28px;">📱</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Įdiegti kaip programėlę</div>
+              <div style="font-size:11px;color:#FF8C00;margin-top:2px;">Greitas paleidimas iš ekrano · be naršyklės</div>
+            </div>
+            <div style="font-size:18px;color:#FF8C00;">›</div>
           </button>
           
           <button onclick="openExpTableModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
@@ -16790,6 +16817,16 @@ async function loadKidSettingsDetails() {
   const kyu = currentKid.kyu || '–';
   const clubName = currentProfile?.clubs?.name || '–';
   
+  // 🎯 Užkrauti grupę
+  let groupName = '–';
+  if (currentKid.group_id) {
+    const { data: group } = await sb.from('groups')
+      .select('name')
+      .eq('id', currentKid.group_id)
+      .maybeSingle();
+    if (group) groupName = group.name || '–';
+  }
+  
   // 🎯 Užkrauti VISUS trenerius (pagrindinį + pavaduojantis)
   const trainerIds = new Set();
   if (currentKid.assigned_trainer_id) {
@@ -16844,10 +16881,11 @@ async function loadKidSettingsDetails() {
   
   container.innerHTML = `
     ${cell('🏠', 'Klubas', clubName)}
+    ${cell('👥', 'Grupė', groupName)}
     ${cell('👨‍🏫', trainerLabel, trainersHtml)}
+    ${cell('🥋', 'Diržas (kyu)', kyu)}
     ${cell('🎂', 'Amžius', age !== null ? `${age} m.` : '–')}
     ${cell('⚖️', 'Svorio kat.', weight)}
-    ${cell('🥋', 'Diržas (kyu)', kyu)}
     ${cell('🆔', 'Lytis', currentKid.gender === 'male' ? '👦 Vaikinas' : currentKid.gender === 'female' ? '👧 Mergaitė' : '–')}
   `;
 }
@@ -16879,6 +16917,81 @@ function openInfoSubmodal(title, contentHtml) {
     </div>
   `;
   document.body.appendChild(modal);
+}
+
+function openInstallAppModal() {
+  openInfoSubmodal('📱 ĮDIEGTI KAIP PROGRAMĖLĘ', `
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      
+      <!-- Kodėl verta -->
+      <div style="background:linear-gradient(135deg, rgba(255,77,0,.12), rgba(255,128,0,.04));border-radius:12px;padding:14px;border:.5px solid rgba(255,77,0,.3);">
+        <div style="font-size:13px;font-weight:800;color:#FF8C00;margin-bottom:6px;">✨ Kodėl verta įdiegti?</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
+          • 🚀 Greitas paleidimas iš pagrindinio ekrano<br>
+          • 🌐 Veikia be naršyklės juostos (full-screen)<br>
+          • 📲 Atrodo kaip "tikra" programėlė<br>
+          • ⚡ Greitesnis užkrovimas<br>
+          • 🔕 Nereikia kiekvieną kartą atidaryti naršyklės
+        </div>
+      </div>
+      
+      <!-- ANDROID -->
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #3DDC84;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="font-size:24px;">🤖</div>
+          <div style="font-size:14px;font-weight:800;color:#3DDC84;">ANDROID (Chrome)</div>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.7;">
+          <div style="margin-bottom:8px;"><b>1.</b> Atidaryk SPOBU <b>Chrome naršyklėje</b></div>
+          <div style="margin-bottom:8px;"><b>2.</b> Spausk ⋮ (trys taškai viršuje dešinėje)</div>
+          <div style="margin-bottom:8px;"><b>3.</b> Pasirink <b>"Pridėti į pagrindinį ekraną"</b> arba <b>"Įdiegti programą"</b></div>
+          <div style="margin-bottom:8px;"><b>4.</b> Patvirtink "Įdiegti"</div>
+          <div style="background:rgba(61,220,132,.1);padding:8px;border-radius:8px;margin-top:8px;font-size:10px;">
+            💡 Kartais Chrome pats parodo banerį "Įdiegti SPOBU" - spustelėk jį!
+          </div>
+        </div>
+      </div>
+      
+      <!-- iPHONE -->
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #007AFF;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="font-size:24px;">🍎</div>
+          <div style="font-size:14px;font-weight:800;color:#007AFF;">iPHONE / iPAD (Safari)</div>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.7;">
+          <div style="margin-bottom:8px;"><b>1.</b> Atidaryk SPOBU <b>Safari naršyklėje</b> (NE Chrome!)</div>
+          <div style="margin-bottom:8px;"><b>2.</b> Spausk <span style="background:rgba(0,122,255,.2);padding:2px 8px;border-radius:4px;">📤 dalintis</span> mygtuką (apačioje vidury)</div>
+          <div style="margin-bottom:8px;"><b>3.</b> Slinkis žemyn ir spausk <b>"Pridėti į pagrindinį ekraną"</b></div>
+          <div style="margin-bottom:8px;"><b>4.</b> Spausk <b>"Pridėti"</b> viršuje dešinėje</div>
+          <div style="background:rgba(0,122,255,.1);padding:8px;border-radius:8px;margin-top:8px;font-size:10px;">
+            ⚠️ <b>Tik Safari</b> palaiko PWA įdiegimą iPhone! Chrome iPhone negalės.
+          </div>
+        </div>
+      </div>
+      
+      <!-- KOMPIUTERIS -->
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #BA68C8;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="font-size:24px;">💻</div>
+          <div style="font-size:14px;font-weight:800;color:#BA68C8;">KOMPIUTERIS (Chrome / Edge)</div>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.7;">
+          <div style="margin-bottom:8px;"><b>1.</b> Atidaryk SPOBU naršyklėje</div>
+          <div style="margin-bottom:8px;"><b>2.</b> Adreso juostos dešinėje pamatysi <b>⬇️ įdiegimo ikoną</b></div>
+          <div style="margin-bottom:8px;"><b>3.</b> Spustelėk ją → <b>"Įdiegti"</b></div>
+          <div style="margin-bottom:8px;"><b>4.</b> SPOBU atsiras kaip atskira programa darbalaukyje</div>
+        </div>
+      </div>
+      
+      <!-- Patarimas -->
+      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:14px;border:.5px dashed var(--bdr);">
+        <div style="font-size:11px;color:var(--mut);line-height:1.5;text-align:center;">
+          💡 Įdiegus tu vis tiek matysi tuos pačius duomenis - SPOBU sinchronizuojasi tarp visų įrenginių. Tik bus patogiau pasiekti!
+        </div>
+      </div>
+      
+    </div>
+  `);
 }
 
 function openInstructionsModal() {
@@ -16971,42 +17084,85 @@ function openExpTableModal() {
 }
 
 function openBeltsModal() {
+  // Tikra Kyokushin karatė diržų sistema
+  // base = pagrindinė spalva, stripe = juostos spalva (jei yra), gold_stripes = aukso juostų skaičius DAN'ams
   const BELTS = [
-    { kyu: '10 kyu', color: 'WHITE',         hex: '#F5F5F5', label: 'Pradedančiojo diržas',   exp: 'Pradžia' },
-    { kyu: '9 kyu',  color: 'WHITE/ORANGE',  hex: '#FF8C00', label: 'Pradedantysis II',       exp: '~500 EXP' },
-    { kyu: '8 kyu',  color: 'ORANGE',        hex: '#FF6B00', label: 'Žemiausias mokinys',     exp: '~1000 EXP' },
-    { kyu: '7 kyu',  color: 'ORANGE/BLUE',   hex: '#4A90E2', label: 'Mokinys',                exp: '~1500 EXP' },
-    { kyu: '6 kyu',  color: 'BLUE',          hex: '#2E5C8A', label: 'Mokinys II',             exp: '~2000 EXP' },
-    { kyu: '5 kyu',  color: 'BLUE/YELLOW',   hex: '#FFEB3B', label: 'Mokinys III',            exp: '~2500 EXP' },
-    { kyu: '4 kyu',  color: 'YELLOW',        hex: '#FBC02D', label: 'Pažengęs mokinys',       exp: '~3500 EXP' },
-    { kyu: '3 kyu',  color: 'YELLOW/GREEN',  hex: '#4CAF50', label: 'Pažengęs mokinys II',    exp: '~5000 EXP' },
-    { kyu: '2 kyu',  color: 'GREEN',         hex: '#2E7D32', label: 'Aukštasis mokinys',      exp: '~7000 EXP' },
-    { kyu: '1 kyu',  color: 'GREEN/BROWN',   hex: '#8B4513', label: 'Senior mokinys',         exp: '~9000 EXP' },
-    { kyu: '1 DAN',  color: 'BLACK',         hex: '#000',    label: 'Juodas diržas (1-asis)', exp: '~12000 EXP' },
-    { kyu: '2 DAN',  color: 'BLACK',         hex: '#000',    label: 'Juodas diržas (2-asis)', exp: '~16000 EXP' }
+    { kyu: 'Mu kyu', base: '#F5F5F5', stripe: null,      label: 'Baltas (pradžia)',           jp: 'Mu kyu' },
+    { kyu: '10 kyu', base: '#FB923C', stripe: null,      label: 'Oranžinis',                  jp: '10th Kyu' },
+    { kyu: '9 kyu',  base: '#FB923C', stripe: '#1E40AF', label: 'Oranžinis · mėlyna juosta',  jp: '9th Kyu' },
+    { kyu: '8 kyu',  base: '#1E40AF', stripe: null,      label: 'Mėlynas',                    jp: '8th Kyu' },
+    { kyu: '7 kyu',  base: '#1E40AF', stripe: '#FACC15', label: 'Mėlynas · geltona juosta',   jp: '7th Kyu' },
+    { kyu: '6 kyu',  base: '#FACC15', stripe: null,      label: 'Geltonas',                   jp: '6th Kyu' },
+    { kyu: '5 kyu',  base: '#FACC15', stripe: '#16A34A', label: 'Geltonas · žalia juosta',    jp: '5th Kyu' },
+    { kyu: '4 kyu',  base: '#16A34A', stripe: null,      label: 'Žalias',                     jp: '4th Kyu' },
+    { kyu: '3 kyu',  base: '#16A34A', stripe: '#78350F', label: 'Žalias · ruda juosta',       jp: '3rd Kyu' },
+    { kyu: '2 kyu',  base: '#78350F', stripe: null,      label: 'Rudas',                      jp: '2nd Kyu' },
+    { kyu: '1 kyu',  base: '#78350F', stripe: '#000000', label: 'Rudas · juoda juosta',       jp: '1st Kyu' },
+    { kyu: '1 DAN',  base: '#000',    gold_stripes: 1,   label: 'Juodas · 1 aukso juosta',   jp: 'Shodan (初段)' },
+    { kyu: '2 DAN',  base: '#000',    gold_stripes: 2,   label: 'Juodas · 2 aukso juostos',  jp: 'Nidan (二段)' },
+    { kyu: '3 DAN',  base: '#000',    gold_stripes: 3,   label: 'Juodas · 3 aukso juostos',  jp: 'Sandan (三段)' },
+    { kyu: '4 DAN',  base: '#000',    gold_stripes: 4,   label: 'Juodas · 4 aukso juostos',  jp: 'Yondan (四段)' },
+    { kyu: '5 DAN',  base: '#000',    gold_stripes: 5,   label: 'Juodas · 5 aukso juostos',  jp: 'Godan (五段)' }
   ];
   
   let html = `
-    <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.5;">
-      Kyokushin karatė diržų sistema. Naujesnis - šviesesnis (10 kyu), žemesnis - tamsesnis (1 kyu, DAN). Diržą skiria <b>klubo treneriai</b> už pasiekimus ir techniką.
+    <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.5;padding:12px;background:rgba(255,77,0,.08);border-left:3px solid var(--br);border-radius:8px;">
+      🥋 <b>Oficiali Kyokushin karatė diržų sistema.</b><br>
+      Pradedi nuo balto <b>Mu kyu</b>, kyliesi per spalvas (10 → 1 kyu), tada juodi <b>DAN</b> diržai su aukso juostomis. Diržus skiria <b>klubo treneriai</b> po sėkmingo egzamino.
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
   `;
   
   BELTS.forEach(b => {
+    const isDan = b.kyu.includes('DAN');
+    let beltVisualStyle;
+    
+    if (isDan && b.gold_stripes) {
+      // Juodas diržas su aukso juostomis (rodom kaip mažas indikatorius)
+      beltVisualStyle = `background:${b.base};position:relative;`;
+    } else if (b.stripe) {
+      // Diržas su viena spalvota juosta vidury
+      beltVisualStyle = `background: linear-gradient(to bottom, ${b.base} 0%, ${b.base} 38%, ${b.stripe} 38%, ${b.stripe} 62%, ${b.base} 62%, ${b.base} 100%);`;
+    } else {
+      // Vienspalvis
+      beltVisualStyle = `background:${b.base};`;
+    }
+    
+    // DAN aukso juostos - mažos vertikalios
+    let danStripesHtml = '';
+    if (isDan && b.gold_stripes) {
+      danStripesHtml = '<div style="position:absolute;right:4px;top:50%;transform:translateY(-50%);display:flex;gap:1.5px;">';
+      for (let i = 0; i < b.gold_stripes; i++) {
+        danStripesHtml += '<div style="width:2px;height:10px;background:#FCD34D;border-radius:1px;"></div>';
+      }
+      danStripesHtml += '</div>';
+    }
+    
     html += `
-      <div style="background:var(--card);border-radius:12px;padding:10px;display:flex;align-items:center;gap:12px;border:.5px solid var(--bdr);">
-        <div style="width:30px;height:30px;border-radius:6px;background:${b.hex};border:1px solid rgba(255,255,255,.2);flex-shrink:0;${b.color.includes('/') ? `background:linear-gradient(90deg, ${b.hex} 50%, #fff 50%);` : ''}"></div>
+      <div style="background:var(--card);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:12px;border:.5px solid ${isDan ? 'rgba(252,211,77,.3)' : 'var(--bdr)'};${isDan ? 'box-shadow: 0 0 10px rgba(252,211,77,.1);' : ''}">
+        <!-- Diržo vizualas -->
+        <div style="width:54px;height:16px;border-radius:3px;${beltVisualStyle};flex-shrink:0;border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 0 4px rgba(0,0,0,.3);overflow:hidden;">${danStripesHtml}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:white;line-height:1;">${b.kyu}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${b.label}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:${isDan ? '#FCD34D' : 'white'};line-height:1;">${b.kyu}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.label}</div>
         </div>
-        <div style="font-size:10px;color:var(--mut);text-align:right;">${b.exp}</div>
+        <div style="font-size:9px;color:var(--mut);text-align:right;font-style:italic;flex-shrink:0;">${b.jp}</div>
       </div>
     `;
   });
   
   html += '</div>';
+  
+  // Pridėt info apie aukštesnius DAN'us
+  html += `
+    <div style="margin-top:16px;padding:10px;background:rgba(252,211,77,.05);border-radius:8px;border:.5px dashed rgba(252,211,77,.2);text-align:center;">
+      <div style="font-size:10px;color:var(--mut);line-height:1.5;">
+        Aukštesni DAN'ai (<b>6-10 DAN</b>) skiriami už didelius nuopelnus Kyokushin karatei.<br>
+        <span style="color:#FCD34D;">Jūdan (10 DAN)</span> - aukščiausias garbės titulas.
+      </div>
+    </div>
+  `;
+  
   openInfoSubmodal('🥋 DIRŽŲ SISTEMA', html);
 }
 
