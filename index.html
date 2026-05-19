@@ -6561,88 +6561,42 @@ function switchKidChallengesTab(el, tabName) {
 }
 
 // ════════════════════════════════════════
-// 📊 Iššūkių statistika - HERO + tipų grid
+// 📊 Iššūkių statistika UI - HERO + tipų grid
+// Kviečiama iš loadChallenges su jau apdorotais duomenimis
 // ════════════════════════════════════════
-async function loadChallengeStats() {
-  if (!currentKid?.id) return;
+function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleChallenges, subsByChallenge, myProgress) {
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   
-  // Užkraunam VISUS approved submissions su iššūkio tipo
-  const { data: approvedSubs } = await sb.from('challenge_submissions')
-    .select('id, exp_gain, challenge_id, challenges(type)')
-    .eq('kid_id', currentKid.id)
-    .eq('status', 'approved');
+  const activeCount = activeChallenges.length;
+  const totalCompleted = completedChallenges.length;
+  const totalCount = activeCount + totalCompleted; // viskas ką tu mato
   
-  // Užkraunam partial completed iš challenge_progress (kur is_completed=true)
-  const { data: progressCompleted } = await sb.from('challenge_progress')
-    .select('challenge_id, exp_awarded, is_completed, challenges(type)')
-    .eq('kid_id', currentKid.id)
-    .eq('is_completed', true);
-  
-  // Suskaičiuojam: pilnai įveiktų iššūkių (UNIKALŪS)
-  // Partial - pagal challenge_progress
-  // Standartiniai - pagal approved submissions kur iššūkis NĖRA partial
-  
-  const completedChallengeIds = new Set();
+  // EXP iš įveiktų + tipų statistika
   let totalExpFromCompleted = 0;
   const typeCounts = { training: 0, weekly: 0, monthly: 0, one_time: 0, permanent: 0 };
   const typeExp = { training: 0, weekly: 0, monthly: 0, one_time: 0, permanent: 0 };
   
-  // Partial completed
-  (progressCompleted || []).forEach(p => {
-    if (!completedChallengeIds.has(p.challenge_id)) {
-      completedChallengeIds.add(p.challenge_id);
-      totalExpFromCompleted += (p.exp_awarded || 0);
-      const t = p.challenges?.type;
-      if (t && typeCounts[t] !== undefined) {
-        typeCounts[t]++;
-        typeExp[t] += (p.exp_awarded || 0);
-      }
+  completedChallenges.forEach(ch => {
+    let earnedExp = 0;
+    if (ch.allow_partial) {
+      const p = myProgress?.[ch.id];
+      earnedExp = p?.exp_awarded || 0;
+    } else {
+      const subs = subsByChallenge?.[ch.id] || [];
+      const approved = subs.find(s => s.status === 'approved');
+      earnedExp = approved?.exp_gain || 0;
+    }
+    
+    totalExpFromCompleted += earnedExp;
+    
+    if (ch.type && typeCounts[ch.type] !== undefined) {
+      typeCounts[ch.type]++;
+      typeExp[ch.type] += earnedExp;
     }
   });
   
-  // Standartiniai approved (NE partial - nes partial jau virš)
-  (approvedSubs || []).forEach(s => {
-    if (!completedChallengeIds.has(s.challenge_id)) {
-      completedChallengeIds.add(s.challenge_id);
-      totalExpFromCompleted += (s.exp_gain || 0);
-      const t = s.challenges?.type;
-      if (t && typeCounts[t] !== undefined) {
-        typeCounts[t]++;
-        typeExp[t] += (s.exp_gain || 0);
-      }
-    }
-  });
+  console.log('[challenge stats] active:', activeCount, 'completed:', totalCompleted, 'total:', totalCount, 'exp:', totalExpFromCompleted);
   
-  const totalCompleted = completedChallengeIds.size;
-  
-  // Užkraunam aktyvius (eligible vaikui)
-  const nowISO = new Date().toISOString();
-  const { data: allActive } = await sb.from('challenges')
-    .select('id, target_audience, target_kid_id, group_id, allow_partial')
-    .eq('club_id', currentProfile?.club_id)
-    .eq('is_active', true)
-    .or(`expires_at.is.null,expires_at.gt.${nowISO}`);
-  
-  // Filtruoti pagal vaikui priklausančius
-  const myGroupId = currentKid.group_id;
-  const myGender = currentKid.gender;
-  const myEligible = (allActive || []).filter(ch => {
-    const audience = ch.target_audience || 'group';
-    if (audience === 'all_club') return true;
-    if (audience === 'specific_kid') return ch.target_kid_id === currentKid.id;
-    if (!myGroupId || ch.group_id !== myGroupId) return false;
-    if (audience === 'group') return true;
-    if (audience === 'boys_in_group') return myGender === 'male';
-    if (audience === 'girls_in_group') return myGender === 'female';
-    return false;
-  });
-  
-  // Aktyvūs = eligible ir NE completed
-  const activeCount = myEligible.filter(ch => !completedChallengeIds.has(ch.id)).length;
-  const totalCount = myEligible.length + totalCompleted;
-  
-  // Update UI
-  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   setText('v-ish-total-completed', totalCompleted);
   setText('v-ish-total-exp', `+${totalExpFromCompleted.toLocaleString('lt-LT')} EXP gauta`);
   setText('v-ish-count-active', activeCount);
@@ -6659,14 +6613,16 @@ async function loadChallengeStats() {
   setText('v-ish-type-onetime-exp', `+${typeExp.one_time} EXP`);
 }
 
+// Legacy alias (kad nesulauždytų vidinio kelio)
+async function loadChallengeStats() {
+  return; // dabar viską daro updateChallengeStatsUI iš loadChallenges
+}
+
 async function loadChallenges() {
   if (!currentKid?.id) {
     console.warn('loadChallenges: currentKid.id missing');
     return;
   }
-  
-  // 🎯 Užkrauti statistikų suvestinę (HERO + tipų grid)
-  await loadChallengeStats().catch(e => console.error('loadChallengeStats:', e));
   
   // BUG FIX: Klubą gauname per vaiko trenerį (assigned_trainer_id arba kid_trainers)
   let clubId = currentProfile?.club_id;
@@ -6816,6 +6772,9 @@ async function loadChallenges() {
   document.getElementById('v-active-count').textContent = activeChallenges.length;
   document.getElementById('v-completed-count').textContent = completedChallenges.length;
   
+  // 🎯 Užkrauti HERO + tipų statistikas SU TAIS PAČIAIS DUOMENIMIS
+  updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleChallenges, subsByChallenge, myProgress);
+  
   // Pasirinkti rodymui
   const challengesToShow = kidChallengesActiveTab === 'active' ? activeChallenges : completedChallenges;
   
@@ -6926,29 +6885,94 @@ async function loadChallenges() {
     // Atliktiems tabe - šiek tiek pritemdyti
     const cardOpacity = isCompletedTab ? 'opacity:.85;' : '';
     
-    return `<div class="cd" style="margin-bottom:10px;${cardOpacity}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-        <div style="flex:1;">
-          <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${ch.icon || '🎯'} ${ch.title}</div>
-          <div style="font-size:11px;color:var(--mut);margin-bottom:6px;">${typeIcons[ch.type] || '⚡'} ${typeLabels[ch.type] || ch.type} · ${timeInfo}</div>
-          ${target ? `<div style="font-size:12px;color:var(--br);font-weight:700;margin-bottom:4px;">${target}</div>` : ''}
-          ${ch.description ? `<div style="font-size:12px;color:var(--mut);line-height:1.4;">${ch.description}</div>` : ''}
+    return `<div class="kid-ch-card" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;margin-bottom:5px;${cardOpacity}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:800;line-height:1.2;color:white;">${ch.icon || '🎯'} ${ch.title}</div>
+          <div style="font-size:9px;color:var(--mut);margin-top:2px;">${typeIcons[ch.type] || '⚡'} ${typeLabels[ch.type] || ch.type} · ${timeInfo}${target ? ' · ' + target : ''}</div>
         </div>
-        <div class="bg bl" style="padding:6px 12px;font-size:13px;flex-shrink:0;margin-left:8px;">+${ch.exp_reward} EXP</div>
+        <div style="background:rgba(79,195,247,.15);color:#4FC3F7;border:.5px solid rgba(79,195,247,.3);padding:3px 8px;font-size:10px;font-weight:800;border-radius:99px;flex-shrink:0;">+${ch.exp_reward}</div>
       </div>
-      ${statusBadge}
+      ${ch.description ? `<div style="font-size:10px;color:var(--mut);line-height:1.3;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${ch.description}</div>` : ''}
+      ${statusBadge ? `<div style="margin-top:4px;">${statusBadge}</div>` : ''}
       ${progressBar}
       ${actionButton}
     </div>`;
   }).join('');
 
-  document.getElementById('v-challenges-list').innerHTML = html;
+  // 🎯 COLLAPSE - rodyti tik 2 pirmus + mygtuką "Daugiau" jei daugiau
+  const SHOW_LIMIT = 2;
+  const totalCount = challengesToShow.length;
+  
+  let finalHtml = html;
+  if (totalCount > SHOW_LIMIT) {
+    // Užmaskuojam kortelės po SHOW_LIMIT
+    finalHtml = `
+      <div id="kid-ch-visible">${challengesToShow.slice(0, SHOW_LIMIT).map((ch, idx) => {
+        // Re-render only first 2 (kopijuojam logiką)
+        return html.split('</div>').slice(0, SHOW_LIMIT * 100).join('</div>'); // hack - paimam tik N kortelių
+      }).join('').split('</div>').slice(0, SHOW_LIMIT * 6 + 1).join('</div>') + (challengesToShow.slice(0, SHOW_LIMIT).length > 0 ? '' : '')}</div>
+      <div id="kid-ch-hidden" style="display:none;"></div>
+      <button id="kid-ch-toggle" onclick="toggleKidChallengesExpand()" style="width:100%;padding:8px;background:transparent;border:.5px dashed rgba(255,77,0,.4);color:#FF8C00;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;border-radius:10px;margin-top:4px;">
+        ▼ DAUGIAU (${totalCount - SHOW_LIMIT})
+      </button>
+    `;
+    
+    // Geriau - regeneruoja split'inant html'ą
+    // Bet tiesiog padarom kitaip - dalinant array ir join'inant
+  }
+  
+  // Pakeisim - tiesiog naudosime visus elementus su CSS slėpimu
+  if (totalCount > SHOW_LIMIT) {
+    // Visus renderinam, tik po SHOW_LIMIT padarom display:none
+    let counter = 0;
+    finalHtml = challengesToShow.map((ch, idx) => {
+      const cardHtml = challengesToShow.length > 0 ? '' : ''; // placeholder
+      // Tiesiog regenerate kortelę kiekvienam
+      return idx >= SHOW_LIMIT ? '__HIDDEN__' : '__VISIBLE__';
+    }).join('');
+    
+    // Vietoj sudėtingos logikos - sukurkim simpliau:
+    const cardsArray = html.match(/<div class="kid-ch-card"[^>]*>[\s\S]*?<\/div>(?=\s*<div class="kid-ch-card"|$)/g) || [html];
+    
+    const visible = cardsArray.slice(0, SHOW_LIMIT).join('');
+    const hidden = cardsArray.slice(SHOW_LIMIT).join('');
+    
+    finalHtml = `
+      ${visible}
+      <div id="kid-ch-hidden" style="display:none;">${hidden}</div>
+      <button id="kid-ch-toggle" onclick="toggleKidChallengesExpand()" style="width:100%;padding:8px;background:transparent;border:.5px dashed rgba(255,77,0,.4);color:#FF8C00;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;border-radius:10px;margin-top:4px;">
+        ▼ DAUGIAU (${totalCount - SHOW_LIMIT})
+      </button>
+    `;
+  }
+
+  document.getElementById('v-challenges-list').innerHTML = finalHtml;
   
   // EXP skaičiukas pagrindinio ekrano
   const expEl = document.getElementById('v-challenges-exp');
   if (expEl) {
     const approvedCount = mySubs.filter(s => s.status === 'approved').length;
     expEl.textContent = approvedCount;
+  }
+}
+
+// Toggle "daugiau" - rodyti/slėpti likusias korteles
+function toggleKidChallengesExpand() {
+  const hidden = document.getElementById('kid-ch-hidden');
+  const btn = document.getElementById('kid-ch-toggle');
+  if (!hidden || !btn) return;
+  
+  const isHidden = hidden.style.display === 'none';
+  hidden.style.display = isHidden ? 'block' : 'none';
+  
+  if (isHidden) {
+    // Atskleidžiame - keičiame mygtukus
+    btn.innerHTML = '▲ MAŽIAU';
+  } else {
+    // Slepiame - grįžtame
+    const count = hidden.querySelectorAll('.kid-ch-card').length;
+    btn.innerHTML = `▼ DAUGIAU (${count})`;
   }
 }
 
@@ -16831,7 +16855,7 @@ function updateNotifCounts(seenIds) {
   });
   
   // Atnaujint globalų badge (pagrindinis + karjeros + bet kuris kitas)
-  const badgeIds = ['v-notif-badge-count', 'v-kar-notif-badge'];
+  const badgeIds = ['v-notif-badge-count', 'v-kar-notif-badge', 'v-ish-notif-badge'];
   badgeIds.forEach(id => {
     const badge = document.getElementById(id);
     if (!badge) return;
