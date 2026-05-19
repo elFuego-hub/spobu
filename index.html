@@ -157,7 +157,7 @@ body.full-mobile-preview .sb { display: none !important; }  /* Tas pats toggle r
 .ebf{height:100%;background:white;border-radius:99px;transition:width 1s ease;}
 .lc{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border-radius:99px;padding:4px 10px;font-size:11px;font-weight:800;color:white;margin-top:10px;}
 .ld{width:6px;height:6px;border-radius:50%;background:var(--gld);}
-.st{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--txt);padding:16px 20px 10px;}
+.st{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--txt);padding:10px 16px 6px;}
 .cd{background:var(--card);border-radius:var(--r);border:.5px solid var(--bdr);margin:0 16px 12px;padding:16px;}
 .ri{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:.5px solid var(--bdr);}
 .ri:last-child{border-bottom:none;}
@@ -877,34 +877,36 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- ORANGE WELCOME HERO -->
-    <div class="hero" id="v-main-hero" onclick="nv('v',document.querySelector('.bn2 .ni:nth-child(6)'),'v-prof')" style="background:linear-gradient(135deg,var(--br),var(--br2));position:relative;overflow:hidden;transition:background .6s ease;cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.1);">
+    <!-- ORANGE WELCOME HERO - kompaktiškas -->
+    <div class="hero" id="v-main-hero" onclick="nv('v',document.querySelector('.bn2 .ni:nth-child(6)'),'v-prof')" style="background:linear-gradient(135deg,var(--br),var(--br2));position:relative;overflow:hidden;transition:background .6s ease;cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.1);padding:12px 14px;margin:0 16px;">
       <!-- Animuoti karate fono elementai -->
       <div id="v-hero-bg-anim" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
-        <!-- Didelis kanji fone -->
-        <div id="v-hero-kanji-bg" style="position:absolute;font-family:'Noto Serif JP',serif;font-size:200px;right:-30px;top:-60px;opacity:.08;color:white;line-height:1;font-weight:900;transition:opacity .6s, color .6s;">武</div>
+        <!-- Mažesnis kanji fone -->
+        <div id="v-hero-kanji-bg" style="position:absolute;font-family:'Noto Serif JP',serif;font-size:130px;right:-15px;top:-30px;opacity:.08;color:white;line-height:1;font-weight:900;transition:opacity .6s, color .6s;">武</div>
         <!-- Mažas dekoratyvinis emoji -->
-        <div style="position:absolute;font-size:60px;left:-15px;bottom:-25px;opacity:.06;transform:rotate(-15deg);">🥋</div>
+        <div style="position:absolute;font-size:40px;left:-10px;bottom:-15px;opacity:.06;transform:rotate(-15deg);">🥋</div>
         <!-- Slankiojantys aplikatūros taškai -->
-        <div style="position:absolute;width:6px;height:6px;background:rgba(255,255,255,.3);border-radius:50%;top:20%;left:15%;animation:floatDot 4s ease-in-out infinite;"></div>
-        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.25);border-radius:50%;top:60%;left:25%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
-        <div style="position:absolute;width:5px;height:5px;background:rgba(255,255,255,.2);border-radius:50%;top:30%;right:30%;animation:floatDot 6s ease-in-out infinite 1.5s;"></div>
-        <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.35);border-radius:50%;bottom:30%;right:20%;animation:floatDot 4.5s ease-in-out infinite .3s;"></div>
+        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.3);border-radius:50%;top:20%;left:15%;animation:floatDot 4s ease-in-out infinite;"></div>
+        <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.25);border-radius:50%;top:60%;left:25%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
+        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.2);border-radius:50%;top:30%;right:30%;animation:floatDot 6s ease-in-out infinite 1.5s;"></div>
         <!-- Šviesos blizgėjimas -->
-        <div style="position:absolute;width:160%;height:50px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:30%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
+        <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:30%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
       </div>
       <div style="position:relative;z-index:1;">
-        <div style="font-size:11px;color:rgba(255,255,255,.85);letter-spacing:1px;font-weight:800;text-transform:uppercase;">SVEIKA</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:white;line-height:1.1;margin-top:2px;" id="v-name">SPORTUOTOJA! 🥋</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;margin:8px 0;line-height:1.2;" id="v-level-txt">🌱 NAUJOKAS · LVL 1</div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:11px;color:rgba(255,255,255,.75);font-weight:700;letter-spacing:1px;">EXP</span>
-          <span style="font-size:12px;font-weight:800;" id="v-exp-txt">0 / 100</span>
+        <!-- Vardas + Lygis vienoje eilutėje -->
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-name">SVEIKA, SPORTUOTOJA! 🥋</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;color:rgba(255,255,255,.9);line-height:1;margin-top:3px;" id="v-level-txt">🌱 NAUJOKAS · LVL 1</div>
+          </div>
         </div>
-        <div class="ebt"><div class="ebf" id="v-exp-bar"></div></div>
-        <div style="display:flex;justify-content:flex-end;align-items:center;margin-top:8px;">
-          <div style="font-size:10px;color:rgba(255,255,255,.85);font-weight:700;" id="v-next-txt"></div>
+        <!-- EXP baras -->
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px;align-items:center;">
+          <span style="font-size:9px;color:rgba(255,255,255,.7);font-weight:700;letter-spacing:1px;">EXP</span>
+          <span style="font-size:10px;font-weight:800;color:white;" id="v-exp-txt">0 / 100</span>
         </div>
+        <div class="ebt" style="height:5px;"><div class="ebf" id="v-exp-bar"></div></div>
+        <div style="text-align:right;font-size:9px;color:rgba(255,255,255,.8);font-weight:700;margin-top:3px;" id="v-next-txt"></div>
       </div>
     </div>
     
@@ -4715,7 +4717,7 @@ async function loadKidData() {
   const firstName = (currentProfile.first_name || 'SPORTUOTOJA').toUpperCase();
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   
-  setText('v-name', `${firstName}! 🥋`);
+  setText('v-name', `SVEIKA, ${firstName}! 🥋`);
   setText('v-avatar', currentProfile.first_name?.[0] || '?');
   setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
   setText('v-prof-exp', (currentKid.total_exp || 0).toLocaleString());
