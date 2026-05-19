@@ -1205,17 +1205,53 @@ select.inp option{background:#222;}
 <!-- VAIKO VARŽYBOS -->
 <div class="sc" id="v-comp">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">VARŽYBOS</div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">VARŽYBOS</div>
+    <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
+        <div id="v-comp-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
+      </div>
+      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+    </div>
+  </div>
   <div class="sa">
-    <!-- Tabai -->
-    <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <button class="vc-tab on" data-tab="upcoming" onclick="switchVcTab(this,'upcoming')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;">🔜 ARTĖJA <span id="vc-upcoming-count" style="opacity:.7;">0</span></button>
-      <button class="vc-tab" data-tab="pending" onclick="switchVcTab(this,'pending')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;">⏳ LAUKIA <span id="vc-pending-count" style="opacity:.7;">0</span></button>
-      <button class="vc-tab" data-tab="completed" onclick="switchVcTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;">✅ ATLIKTOS <span id="vc-completed-count" style="opacity:.7;">0</span></button>
+    
+    <!-- 🏆 VARŽYBŲ HERO -->
+    <div id="v-comp-hero" style="margin:6px 12px 8px;padding:12px;background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">🏆</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">🏆 KOVŲ REKORDAS</div>
+      <div id="v-comp-record" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#FFD700;line-height:1;text-shadow:0 0 20px rgba(255,215,0,.5);margin:3px 0 4px;letter-spacing:3px;position:relative;">0 - 0</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="v-comp-stats-line">0% pergalių · 0 varžybų</div>
+      <div id="v-comp-medals-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
+        <!-- Užpildoma dinamiškai -->
+      </div>
     </div>
     
-    <div id="v-comp-list">
-      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    <!-- ⏳ LAUKIA REZULTATŲ kortelė -->
+    <div id="v-comp-pending-card" style="margin:0 12px 8px;padding:10px;background:linear-gradient(135deg,rgba(255,140,0,.12),rgba(255,140,0,.04));border:1px solid rgba(255,140,0,.3);border-radius:12px;display:none;cursor:pointer;align-items:center;gap:10px;" onclick="switchVcTab(document.querySelector('.vc-tab[data-tab=pending]'),'pending')">
+      <div style="font-size:28px;line-height:1;flex-shrink:0;">⏳</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:8px;color:#FF8C00;letter-spacing:1.5px;font-weight:800;">LAUKIA REZULTATŲ</div>
+        <div style="font-size:12px;color:white;font-weight:800;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-comp-pending-title">–</div>
+        <div style="font-size:9px;color:var(--mut);margin-top:2px;" id="v-comp-pending-meta">–</div>
+      </div>
+    </div>
+    
+    <!-- 🏆 LAIMĖJIMŲ LENTELĖ -->
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">🏆 LAIMĖJIMŲ LENTELĖ</div>
+    <div id="v-comp-medals-table" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;overflow:hidden;">
+      <!-- Užpildoma dinamiškai -->
+    </div>
+    
+    <!-- Tabai -->
+    <div style="display:flex;gap:4px;margin:0 16px 6px;">
+      <button class="vc-tab on" data-tab="upcoming" onclick="switchVcTab(this,'upcoming')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">📅 ARTĖJA <span id="vc-upcoming-count" style="opacity:.7;">0</span></button>
+      <button class="vc-tab" data-tab="pending" onclick="switchVcTab(this,'pending')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">⏳ LAUKIA <span id="vc-pending-count" style="opacity:.7;">0</span></button>
+      <button class="vc-tab" data-tab="completed" onclick="switchVcTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">✅ ATLIKTOS <span id="vc-completed-count" style="opacity:.7;">0</span></button>
+    </div>
+    
+    <div id="v-comp-list" style="padding:0 16px;">
+      <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
     </div>
   </div>
   <div class="bn2">
@@ -1223,7 +1259,6 @@ select.inp option{background:#222;}
     <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic">📈</span><span class="lb">Karjera</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('v',this,'v-comp')"><span class="ic">🏆</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -8146,6 +8181,135 @@ function switchVcTab(el, tabName) {
   loadKidCompetitions();
 }
 
+// ════════════════════════════════════════
+// 📊 Varžybų statistika - HERO + medalių lentelė
+// ════════════════════════════════════════
+function updateCompStatsUI(completed, resultsByComp, pending) {
+  // Lygių grupavimas pagal scope
+  // local/lithuanian (vietinė), regional/european (vidutinė/europinė), world (pasaulinė)
+  const levelGroups = {
+    local:    { label: '🏘️ Vietinė',  gold: 0, silver: 0, bronze: 0 },
+    regional: { label: '🏙️ Regiono',  gold: 0, silver: 0, bronze: 0 },
+    european: { label: '🌍 Europos', gold: 0, silver: 0, bronze: 0 }
+  };
+  
+  let totalWins = 0;
+  let totalLosses = 0;
+  let totalMedals = { gold: 0, silver: 0, bronze: 0 };
+  
+  completed.forEach(comp => {
+    const result = resultsByComp[comp.id];
+    if (!result || result.status !== 'participated') return;
+    
+    totalWins += (result.wins || 0);
+    totalLosses += (result.losses || 0);
+    
+    // Medalis pagal vietą
+    let medalType = null;
+    if (result.placement === 1) medalType = 'gold';
+    else if (result.placement === 2) medalType = 'silver';
+    else if (result.placement === 3) medalType = 'bronze';
+    
+    if (medalType) {
+      totalMedals[medalType]++;
+      
+      // Sugrupuoti pagal lygį
+      const scope = comp.competition_scope || 'local';
+      let group = 'local';
+      if (scope === 'regional' || scope === 'national') group = 'regional';
+      else if (scope === 'european' || scope === 'world' || scope === 'international') group = 'european';
+      
+      levelGroups[group][medalType]++;
+    }
+  });
+  
+  const totalComps = completed.filter(c => resultsByComp[c.id]?.status === 'participated').length;
+  const winRate = (totalWins + totalLosses) > 0 ? Math.round((totalWins / (totalWins + totalLosses)) * 100) : 0;
+  
+  // Update UI
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  
+  setText('v-comp-record', `${totalWins} - ${totalLosses}`);
+  setText('v-comp-stats-line', `${winRate}% pergalių · ${totalComps} varžybos`);
+  
+  // 🎖️ Medalių grid (3 aukščiausi)
+  const medalsGrid = document.getElementById('v-comp-medals-grid');
+  if (medalsGrid) {
+    const allMedals = [
+      { count: totalMedals.gold,   icon: '🥇', label: 'Aukso',   color: '#FFD700' },
+      { count: totalMedals.silver, icon: '🥈', label: 'Sidabro', color: '#C0C0C0' },
+      { count: totalMedals.bronze, icon: '🥉', label: 'Bronzos', color: '#CD7F32' }
+    ];
+    
+    medalsGrid.innerHTML = allMedals.map(m => `
+      <div style="text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${m.count > 0 ? m.color : 'white'};line-height:1;text-shadow:${m.count > 0 ? `0 0 8px ${m.color}66` : 'none'};">${m.count}</div>
+        <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">${m.icon} ${m.label}</div>
+      </div>
+    `).join('');
+  }
+  
+  // 🏆 LAIMĖJIMŲ LENTELĖ
+  const tableEl = document.getElementById('v-comp-medals-table');
+  if (tableEl) {
+    let rowsHtml = `
+      <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;padding:6px 10px;background:rgba(255,255,255,.05);font-size:9px;font-weight:800;color:var(--mut);letter-spacing:.5px;border-bottom:.5px solid var(--bdr);">
+        <div>Lygis</div>
+        <div style="text-align:center;">🥇</div>
+        <div style="text-align:center;">🥈</div>
+        <div style="text-align:center;">🥉</div>
+      </div>
+    `;
+    
+    Object.values(levelGroups).forEach((group, idx) => {
+      const isLast = idx === Object.values(levelGroups).length - 1;
+      rowsHtml += `
+        <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;padding:6px 10px;font-size:10px;font-weight:700;color:white;${isLast ? '' : 'border-bottom:.5px solid var(--bdr);'}">
+          <div>${group.label}</div>
+          <div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:${group.gold > 0 ? '#FFD700' : 'rgba(255,255,255,.3)'};text-shadow:${group.gold > 0 ? '0 0 6px rgba(255,215,0,.5)' : 'none'};">${group.gold}</div>
+          <div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:${group.silver > 0 ? '#C0C0C0' : 'rgba(255,255,255,.3)'};text-shadow:${group.silver > 0 ? '0 0 6px rgba(192,192,192,.5)' : 'none'};">${group.silver}</div>
+          <div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:${group.bronze > 0 ? '#CD7F32' : 'rgba(255,255,255,.3)'};text-shadow:${group.bronze > 0 ? '0 0 6px rgba(205,127,50,.5)' : 'none'};">${group.bronze}</div>
+        </div>
+      `;
+    });
+    
+    tableEl.innerHTML = rowsHtml;
+  }
+  
+  // ⏳ LAUKIA REZULTATŲ kortelė - rodyti pirmą pending
+  const pendingCard = document.getElementById('v-comp-pending-card');
+  if (pendingCard) {
+    if (pending && pending.length > 0) {
+      const p = pending[0];
+      pendingCard.style.display = 'flex';
+      setText('v-comp-pending-title', p.title);
+      const scope = p.competition_scope || 'local';
+      const scopeLabel = scope === 'european' || scope === 'world' || scope === 'international' ? '🌍 Europos' : 
+                        (scope === 'regional' || scope === 'national') ? '🏙️ Regiono' : '🏘️ Vietinė';
+      setText('v-comp-pending-meta', `📅 ${p.event_date} · ${scopeLabel}`);
+    } else {
+      pendingCard.style.display = 'none';
+    }
+  }
+  
+  // 🎨 HERO fonas pagal stage
+  const totalExp = currentKid?.total_exp || 0;
+  const stageInfo = getStageInfo(totalExp);
+  const stage = STAGES.find(s => s.name === stageInfo.stage) || STAGES[0];
+  
+  const heroEl = document.getElementById('v-comp-hero');
+  if (heroEl && stage?.bgGradient) {
+    heroEl.style.background = stage.bgGradient;
+    heroEl.style.borderColor = (stage.color || '#FFD700') + '40';
+  }
+  
+  const recordEl = document.getElementById('v-comp-record');
+  if (recordEl) {
+    recordEl.style.color = stage?.color || '#FFD700';
+    recordEl.style.textShadow = `0 0 20px ${stage?.color || '#FFD700'}80`;
+  }
+}
+
 async function loadKidCompetitions() {
   if (!currentKid?.id) return;
   
@@ -8213,6 +8377,9 @@ async function loadKidCompetitions() {
   document.getElementById('vc-upcoming-count').textContent = upcoming.length;
   document.getElementById('vc-pending-count').textContent = pending.length;
   document.getElementById('vc-completed-count').textContent = completed.length;
+  
+  // 🎯 STATISTIKOS - užpildom HERO + medalių lentelę
+  updateCompStatsUI(completed, resultsByComp, pending);
   
   // Pasirinkti rodomam tabui
   let compsToShow = [];
@@ -17023,7 +17190,7 @@ function updateNotifCounts(seenIds) {
   });
   
   // Atnaujint globalų badge (pagrindinis + karjeros + bet kuris kitas)
-  const badgeIds = ['v-notif-badge-count', 'v-kar-notif-badge', 'v-ish-notif-badge'];
+  const badgeIds = ['v-notif-badge-count', 'v-kar-notif-badge', 'v-ish-notif-badge', 'v-comp-notif-badge'];
   badgeIds.forEach(id => {
     const badge = document.getElementById(id);
     if (!badge) return;
