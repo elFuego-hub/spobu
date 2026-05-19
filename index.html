@@ -4886,10 +4886,18 @@ async function loadKidData() {
   }
   
   // 🥋 Diržo FLAT ribbon (kompaktiškas)
-  renderBeltFlat();
+  try {
+    renderBeltFlat();
+  } catch(e) {
+    console.error('[renderBeltFlat] klaida:', e);
+  }
   
   // 📋 Informacija + Treneriai + Draugai + Biografija
-  renderProfileExtras();
+  try {
+    renderProfileExtras();
+  } catch(e) {
+    console.error('[renderProfileExtras] klaida:', e);
+  }
   
   // Diržas (header)
   updateBeltDisplay();
@@ -4899,7 +4907,8 @@ async function loadKidData() {
 
   // Klubas
   if (currentProfile.clubs) {
-    document.getElementById('v-prof-club').textContent = currentProfile.clubs.name;
+    const clubEl = document.getElementById('v-prof-club');
+    if (clubEl) clubEl.textContent = `📍 ${currentProfile.clubs.name}`;
   }
 
   // EXP baras
@@ -9265,7 +9274,9 @@ async function loadChallengeBadge() {
     ? `<div style="font-size:10px;color:var(--mut);margin-top:2px;">Klubo vieta: <span style="color:${tier.color};font-weight:800;">#${rank}</span></div>`
     : '';
   
-  document.getElementById('v-challenge-badge').innerHTML = `
+  const challengeBadgeEl = document.getElementById('v-challenge-badge');
+  if (!challengeBadgeEl) return;
+  challengeBadgeEl.innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;">
       <div style="width:60px;height:60px;border-radius:50%;background:${tier.bgColor};border:2px solid ${tier.borderColor};display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;">
         ${tier.icon}
