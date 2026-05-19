@@ -976,47 +976,45 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <!-- ⚡ AKTYVUS SAVAITINIS IŠŠŪKIS -->
-    <div id="v-week-challenge-card" onclick="openActiveWeeklyChallenge()" style="margin:12px 16px;padding:12px;background:linear-gradient(135deg, rgba(79,195,247,.12), rgba(79,195,247,.04));border: 1px solid rgba(79,195,247,.25);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:rgba(79,195,247,.2);transition:border-color .2s;display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:11px;color:#4FC3F7;font-weight:800;letter-spacing:1px;">⚡ SAVAITINIS IŠŠŪKIS</div>
-          <div style="font-size:13px;color:white;font-weight:800;margin-top:2px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-week-challenge-title">–</div>
+    <!-- ⚡ AKTYVUS SAVAITINIS IŠŠŪKIS - kompaktiškas -->
+    <div id="v-week-challenge-card" onclick="openActiveWeeklyChallenge()" style="margin:8px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(79,195,247,.12), rgba(79,195,247,.04));border: 1px solid rgba(79,195,247,.25);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(79,195,247,.2);transition:border-color .2s;display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:13px;flex-shrink:0;">⚡</span>
+          <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-week-challenge-title">–</span>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#4FC3F7;line-height:1;flex-shrink:0;" id="v-week-challenge-progress">0 / 0</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#4FC3F7;line-height:1;flex-shrink:0;" id="v-week-challenge-progress">0 / 0</div>
       </div>
-      <div style="height:6px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden;">
-        <div style="height:100%;background:linear-gradient(90deg,#4FC3F7,#29B6F6);box-shadow:0 0 8px rgba(79,195,247,.5);border-radius:3px;width:0%;transition:width .4s ease;" id="v-week-challenge-bar"></div>
+      <div style="height:4px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;">
+        <div style="height:100%;background:linear-gradient(90deg,#4FC3F7,#29B6F6);box-shadow:0 0 6px rgba(79,195,247,.5);border-radius:2px;width:0%;transition:width .4s ease;" id="v-week-challenge-bar"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--mut);">
+      <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:8px;color:var(--mut);">
         <span id="v-week-challenge-pct">0% atlikta</span>
         <span id="v-week-challenge-days">– d. liko</span>
       </div>
     </div>
     
-    <!-- 🌙 AKTYVUS MĖNESINIS IŠŠŪKIS -->
-    <div id="v-month-challenge-card" onclick="openActiveMonthlyChallenge()" style="margin:6px 16px;padding:12px;background:linear-gradient(135deg, rgba(186,104,200,.12), rgba(186,104,200,.04));border: 1px solid rgba(186,104,200,.25);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:rgba(186,104,200,.2);transition:border-color .2s;display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:11px;color:#BA68C8;font-weight:800;letter-spacing:1px;">🌙 MĖNESINIS IŠŠŪKIS</div>
-          <div style="font-size:13px;color:white;font-weight:800;margin-top:2px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-month-challenge-title">–</div>
+    <!-- 🌙 AKTYVUS MĖNESINIS IŠŠŪKIS - kompaktiškas -->
+    <div id="v-month-challenge-card" onclick="openActiveMonthlyChallenge()" style="margin:4px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(186,104,200,.12), rgba(186,104,200,.04));border: 1px solid rgba(186,104,200,.25);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(186,104,200,.2);transition:border-color .2s;display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:13px;flex-shrink:0;">🌙</span>
+          <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-month-challenge-title">–</span>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#BA68C8;line-height:1;flex-shrink:0;" id="v-month-challenge-progress">0 / 0</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#BA68C8;line-height:1;flex-shrink:0;" id="v-month-challenge-progress">0 / 0</div>
       </div>
-      <div style="height:6px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden;">
-        <div style="height:100%;background:linear-gradient(90deg,#BA68C8,#8E24AA);box-shadow:0 0 8px rgba(186,104,200,.5);border-radius:3px;width:0%;transition:width .4s ease;" id="v-month-challenge-bar"></div>
+      <div style="height:4px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;">
+        <div style="height:100%;background:linear-gradient(90deg,#BA68C8,#8E24AA);box-shadow:0 0 6px rgba(186,104,200,.5);border-radius:2px;width:0%;transition:width .4s ease;" id="v-month-challenge-bar"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--mut);">
+      <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:8px;color:var(--mut);">
         <span id="v-month-challenge-pct">0% atlikta</span>
         <span id="v-month-challenge-days">– d. liko</span>
       </div>
     </div>
     
-    <!-- 💡 KAI NĖRA AKTYVIŲ IŠŠŪKIŲ -->
-    <div id="v-no-active-challenges" style="margin:12px 16px;padding:14px;background:var(--card);border:.5px dashed var(--bdr);border-radius:14px;text-align:center;display:none;">
-      <div style="font-size:24px;margin-bottom:6px;">⏳</div>
-      <div style="font-size:12px;color:var(--mut);font-weight:700;">Šiuo metu neturi aktyvių savaitinių ar mėnesinių iššūkių</div>
-      <div style="font-size:10px;color:var(--mut);margin-top:4px;">Treneris paskirs naują iššūkį netrukus</div>
+    <!-- 💡 KAI NĖRA AKTYVIŲ IŠŠŪKIŲ - kompaktiškas -->
+    <div id="v-no-active-challenges" style="margin:8px 16px;padding:8px;background:var(--card);border:.5px dashed var(--bdr);border-radius:10px;text-align:center;display:none;">
+      <div style="font-size:10px;color:var(--mut);font-weight:700;">⏳ Nėra aktyvių savaitinių/mėnesinių iššūkių</div>
     </div>
     
     <!-- 📊 REITINGAI - kompaktiški 4 kvadratai vienoje eilėje -->
