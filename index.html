@@ -1402,10 +1402,32 @@ select.inp option{background:#222;}
       <div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
     </div>
     
-    <!-- 🏆 INVENTORIUS - SKILL BADGES (collapse) -->
-    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">🏆 INVENTORIUS</div>
-    <div class="cd" style="margin:0 12px 8px;padding:10px;">
-      <div style="font-size:10px;font-weight:800;color:var(--mut);margin-bottom:8px;letter-spacing:1px;">🥋 SKILL BADGES</div>
+    <!-- 🏆 TROFĖJAI (collapse) -->
+    <div onclick="toggleProfileSection('v-prof-trophies-body','v-prof-trophies-arrow')" style="margin:0 12px 6px;padding:10px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:white;">🏆 MANO TROFĖJAI</div>
+      <div style="display:flex;align-items:center;gap:6px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;">
+        <span id="v-prof-trophies-gold" style="color:#FFD700;">🥇0</span>
+        <span id="v-prof-trophies-silver" style="color:#C0C0C0;">🥈0</span>
+        <span id="v-prof-trophies-bronze" style="color:#CD7F32;">🥉0</span>
+        <span id="v-prof-trophies-arrow" style="font-size:10px;color:var(--mut);margin-left:4px;">▼</span>
+      </div>
+    </div>
+    <div id="v-prof-trophies-body" style="display:none;margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
+      <div id="v-comp-medals" style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
+    </div>
+    
+    <!-- 🏅 SKILL BADGES (collapse) -->
+    <div onclick="toggleProfileSection('v-prof-badges-body','v-prof-badges-arrow')" style="margin:0 12px 6px;padding:10px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:white;">🏅 SKILL BADGES</div>
+      <div style="display:flex;align-items:center;gap:6px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;">
+        <span id="v-prof-badges-master" style="color:#FF4D00;">🏆0</span>
+        <span id="v-prof-badges-gold" style="color:#FFD700;">🥇0</span>
+        <span id="v-prof-badges-silver" style="color:#C0C0C0;">🥈0</span>
+        <span id="v-prof-badges-bronze" style="color:#CD7F32;">🥉0</span>
+        <span id="v-prof-badges-arrow" style="font-size:10px;color:var(--mut);margin-left:4px;">▼</span>
+      </div>
+    </div>
+    <div id="v-prof-badges-body" style="display:none;margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;padding:10px;">
       <div id="v-skill-badges" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
         <div style="text-align:center;padding:10px 0;color:var(--mut);font-size:10px;grid-column:span 4;">Kraunama...</div>
       </div>
@@ -4899,6 +4921,13 @@ async function loadKidData() {
     console.error('[renderProfileExtras] klaida:', e);
   }
   
+  // 🏆 Atnaujint trofėjų/badge'ų skaičius
+  try {
+    updateProfileCounts();
+  } catch(e) {
+    console.error('[updateProfileCounts] klaida:', e);
+  }
+  
   // Diržas (header)
   updateBeltDisplay();
   
@@ -6187,6 +6216,101 @@ async function renderProfileExtras() {
     }
   } else if (teammatesEl) {
     teammatesEl.innerHTML = `<div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Nepriskirtas grupei</div>`;
+  }
+}
+
+// Toggle profilio sekciją (collapse/expand)
+function toggleProfileSection(bodyId, arrowId) {
+  const body = document.getElementById(bodyId);
+  const arrow = document.getElementById(arrowId);
+  if (!body) return;
+  
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+  if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+}
+
+// Atnaujint trofėjų ir badge'ų skaičius collapse antraštėje
+async function updateProfileCounts() {
+  if (!currentKid?.id) return;
+  
+  // 🏆 TROFĖJAI (medalių lentelė) - iš competition_results
+  try {
+    const { data: results } = await sb.from('competition_results')
+      .select('placement, status, approval_status')
+      .eq('kid_id', currentKid.id)
+      .eq('status', 'participated')
+      .eq('approval_status', 'approved');
+    
+    let gold = 0, silver = 0, bronze = 0;
+    (results || []).forEach(r => {
+      if (r.placement === 1) gold++;
+      else if (r.placement === 2) silver++;
+      else if (r.placement === 3) bronze++;
+    });
+    
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setText('v-prof-trophies-gold', `🥇${gold}`);
+    setText('v-prof-trophies-silver', `🥈${silver}`);
+    setText('v-prof-trophies-bronze', `🥉${bronze}`);
+  } catch(e) {
+    console.error('updateProfileCounts trophies:', e);
+  }
+  
+  // 🏅 SKILL BADGES - iš kid_records (medal stulpelio)
+  try {
+    const { data: records } = await sb.from('kid_records')
+      .select('medal, category_exp')
+      .eq('kid_id', currentKid.id);
+    
+    // Grupuojam pagal kategoriją - aukščiausias medalis kiekvienai
+    // Bet kid_records turi pratimus, ne kategorijas - reikia sumuoti pagal categories
+    // Greičiausia - imti TIK medal stulpelį
+    
+    let master = 0, gold = 0, silver = 0, bronze = 0;
+    
+    // Naudosim categories per kid_records aggregaciją
+    // (suskaičiuosim category_exp totals)
+    const expByCategory = {};
+    (records || []).forEach(r => {
+      // category_id reiktų - bet jei ne, tiesiog suskaičiuosim medalius
+      if (r.medal === 'completed' || r.medal === 'master') master++;
+      else if (r.medal === 'gold') gold++;
+      else if (r.medal === 'silver') silver++;
+      else if (r.medal === 'bronze') bronze++;
+    });
+    
+    // Bet iš tiesų - medalis turėtų būti pagal **kategorijos EXP**, ne per pratimus
+    // Pažiūrim per career categories
+    const { data: cats } = await sb.from('career_categories').select('id');
+    const { data: catRecords } = await sb.from('kid_records')
+      .select('category_id, category_exp')
+      .eq('kid_id', currentKid.id);
+    
+    if (cats && catRecords) {
+      master = 0; gold = 0; silver = 0; bronze = 0;
+      
+      const catExp = {};
+      catRecords.forEach(r => {
+        catExp[r.category_id] = (catExp[r.category_id] || 0) + (r.category_exp || 0);
+      });
+      
+      cats.forEach(c => {
+        const exp = Math.min(catExp[c.id] || 0, 600);
+        if (exp >= 600) master++;
+        else if (exp >= 500) gold++;
+        else if (exp >= 300) silver++;
+        else if (exp >= 100) bronze++;
+      });
+    }
+    
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setText('v-prof-badges-master', `🏆${master}`);
+    setText('v-prof-badges-gold', `🥇${gold}`);
+    setText('v-prof-badges-silver', `🥈${silver}`);
+    setText('v-prof-badges-bronze', `🥉${bronze}`);
+  } catch(e) {
+    console.error('updateProfileCounts badges:', e);
   }
 }
 
