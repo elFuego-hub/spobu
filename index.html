@@ -1219,7 +1219,7 @@ select.inp option{background:#222;}
     <!-- 🏆 VARŽYBŲ HERO -->
     <div id="v-comp-hero" style="margin:6px 12px 8px;padding:12px;background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
       <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">🏆</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">🏆 KOVŲ REKORDAS</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">🥊 KUMITE REKORDAS</div>
       <div id="v-comp-record" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#FFD700;line-height:1;text-shadow:0 0 20px rgba(255,215,0,.5);margin:3px 0 4px;letter-spacing:3px;position:relative;">0 - 0</div>
       <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="v-comp-stats-line">0% pergalių · 0 varžybų</div>
       <div id="v-comp-medals-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
@@ -8192,18 +8192,23 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     european: { label: '🌍 Europos',   gold: 0, silver: 0, bronze: 0 }
   };
   
-  let totalWins = 0;
-  let totalLosses = 0;
+  let totalKumiteWins = 0;
+  let totalKumiteLosses = 0;
+  let totalKumiteComps = 0; // tik kumite varžybos
   let totalMedals = { gold: 0, silver: 0, bronze: 0 };
   
   completed.forEach(comp => {
     const result = resultsByComp[comp.id];
     if (!result || result.status !== 'participated') return;
     
-    totalWins += (result.wins || 0);
-    totalLosses += (result.losses || 0);
+    // 🥊 KOVŲ REKORDAS - TIK iš kumite varžybų (kata neturi wins/losses)
+    if (comp.competition_type === 'kumite') {
+      totalKumiteWins += (result.wins || 0);
+      totalKumiteLosses += (result.losses || 0);
+      totalKumiteComps++;
+    }
     
-    // Medalis pagal vietą
+    // 🏅 MEDALIAI - iš VISŲ tipų (kumite + kata + belt_test)
     let medalType = null;
     if (result.placement === 1) medalType = 'gold';
     else if (result.placement === 2) medalType = 'silver';
@@ -8220,14 +8225,15 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     }
   });
   
-  const totalComps = completed.filter(c => resultsByComp[c.id]?.status === 'participated').length;
-  const winRate = (totalWins + totalLosses) > 0 ? Math.round((totalWins / (totalWins + totalLosses)) * 100) : 0;
+  const winRate = (totalKumiteWins + totalKumiteLosses) > 0 
+    ? Math.round((totalKumiteWins / (totalKumiteWins + totalKumiteLosses)) * 100) 
+    : 0;
   
   // Update UI
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   
-  setText('v-comp-record', `${totalWins} - ${totalLosses}`);
-  setText('v-comp-stats-line', `${winRate}% pergalių · ${totalComps} varžybos`);
+  setText('v-comp-record', `${totalKumiteWins} - ${totalKumiteLosses}`);
+  setText('v-comp-stats-line', `${winRate}% pergalių · ${totalKumiteComps} kumite varžybų`);
   
   // 🎖️ Medalių grid (3 aukščiausi)
   const medalsGrid = document.getElementById('v-comp-medals-grid');
@@ -8515,8 +8521,8 @@ async function loadKidCompetitions() {
     </div>`;
   }).join('');
   
-  // 🎯 COLLAPSE - rodyti tik 2 pirmas + mygtuką "Daugiau" jei daugiau
-  const SHOW_LIMIT = 2;
+  // 🎯 COLLAPSE - rodyti tik 1 pirmą + mygtuką "Daugiau" jei daugiau
+  const SHOW_LIMIT = 1;
   const totalCount = compsToShow.length;
   
   let finalHtml = html;
