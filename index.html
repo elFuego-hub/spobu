@@ -1095,19 +1095,8 @@ select.inp option{background:#222;}
       <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">KARJEROS EXP</div>
       <div id="v-kar-total-num" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#4FC3F7;line-height:1;text-shadow:0 0 20px rgba(79,195,247,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;">0</div>
       <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="v-kar-next-tier">Iki MASTER: 4 200 EXP</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
-        <div style="text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-kar-count-master">0</div>
-          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🏆 Master</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-kar-count-gold">0</div>
-          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🥇 Gold</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-kar-count-silver">0</div>
-          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🥈 Silver</div>
-        </div>
+      <div id="v-kar-medals-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
+        <!-- Užpildoma dinamiškai per loadCategories - rodome 3 aukščiausius medalių tipus kuriuos turi vaikas -->
       </div>
     </div>
     
@@ -5886,6 +5875,35 @@ async function loadCategories() {
   const silverEl = document.getElementById('v-kar-count-silver');
   if (silverEl) silverEl.textContent = countSilver;
   
+  // 🎖️ DINAMIŠKAS MEDALIŲ GRID - rodyti 3 aukščiausius turimus tipus
+  const medalsGrid = document.getElementById('v-kar-medals-grid');
+  if (medalsGrid) {
+    const allMedals = [
+      { count: countMaster, icon: '🏆', label: 'Master', color: '#FF4D00' },
+      { count: countGold,   icon: '🥇', label: 'Gold',   color: '#FFD700' },
+      { count: countSilver, icon: '🥈', label: 'Silver', color: '#C0C0C0' },
+      { count: countBronze, icon: '🥉', label: 'Bronze', color: '#CD7F32' }
+    ];
+    
+    // Filtruoti tik turimus (count > 0), bet jei vaikas turi mažiau nei 3 - parodyti nuo aukščiausio
+    let medalsToShow = allMedals.filter(m => m.count > 0);
+    
+    // Jei tu turi mažiau nei 3 medalių tipų - užpildom žemesniais (kad visada matytum 3 langelius)
+    if (medalsToShow.length < 3) {
+      const remaining = allMedals.filter(m => m.count === 0);
+      medalsToShow = [...medalsToShow, ...remaining].slice(0, 3);
+    } else {
+      medalsToShow = medalsToShow.slice(0, 3); // tik 3 aukščiausi
+    }
+    
+    medalsGrid.innerHTML = medalsToShow.map(m => `
+      <div style="text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${m.count > 0 ? m.color : 'white'};line-height:1;text-shadow:${m.count > 0 ? `0 0 8px ${m.color}66` : 'none'};">${m.count}</div>
+        <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">${m.icon} ${m.label}</div>
+      </div>
+    `).join('');
+  }
+  
   // Next tier text
   const nextTierEl = document.getElementById('v-kar-next-tier');
   if (nextTierEl) {
@@ -7029,13 +7047,23 @@ async function loadChallenges() {
     // Atliktiems tabe - šiek tiek pritemdyti
     const cardOpacity = isCompletedTab ? 'opacity:.85;' : '';
     
-    return `<div class="kid-ch-card" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;margin-bottom:5px;${cardOpacity}">
+    // 🎨 SPALVOS PAGAL TIPĄ (kaip popup'uose ir pagrindiniame)
+    const typeColors = {
+      training:  { color: '#FF4D00', bg: 'rgba(255,77,0,.08)',   border: 'rgba(255,77,0,.3)' },
+      weekly:    { color: '#4FC3F7', bg: 'rgba(79,195,247,.08)', border: 'rgba(79,195,247,.3)' },
+      monthly:   { color: '#BA68C8', bg: 'rgba(186,104,200,.08)', border: 'rgba(186,104,200,.3)' },
+      one_time:  { color: '#FFD700', bg: 'rgba(255,215,0,.08)',  border: 'rgba(255,215,0,.3)' },
+      permanent: { color: '#66BB6A', bg: 'rgba(102,187,106,.08)', border: 'rgba(102,187,106,.3)' }
+    };
+    const tCol = typeColors[ch.type] || typeColors.one_time;
+    
+    return `<div class="kid-ch-card" style="background:${tCol.bg};border:.5px solid ${tCol.border};border-radius:10px;padding:8px 10px;margin-bottom:5px;${cardOpacity}border-left:3px solid ${tCol.color};">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:800;line-height:1.2;color:white;">${ch.icon || '🎯'} ${ch.title}</div>
-          <div style="font-size:9px;color:var(--mut);margin-top:2px;">${typeIcons[ch.type] || '⚡'} ${typeLabels[ch.type] || ch.type} · ${timeInfo}${target ? ' · ' + target : ''}</div>
+          <div style="font-size:9px;color:${tCol.color};margin-top:2px;font-weight:700;">${typeIcons[ch.type] || '⚡'} ${typeLabels[ch.type] || ch.type} · <span style="color:var(--mut);font-weight:400;">${timeInfo}${target ? ' · ' + target : ''}</span></div>
         </div>
-        <div style="background:rgba(79,195,247,.15);color:#4FC3F7;border:.5px solid rgba(79,195,247,.3);padding:3px 8px;font-size:10px;font-weight:800;border-radius:99px;flex-shrink:0;">+${ch.exp_reward}</div>
+        <div style="background:${tCol.bg};color:${tCol.color};border:.5px solid ${tCol.border};padding:3px 8px;font-size:10px;font-weight:800;border-radius:99px;flex-shrink:0;text-shadow:0 0 6px ${tCol.color}88;">+${ch.exp_reward}</div>
       </div>
       ${ch.description ? `<div style="font-size:10px;color:var(--mut);line-height:1.3;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${ch.description}</div>` : ''}
       ${statusBadge ? `<div style="margin-top:4px;">${statusBadge}</div>` : ''}
