@@ -4966,13 +4966,13 @@ async function loadKidData() {
   await loadKidPendingSubmissions();
   
   // Badge inventorius
-  await loadBadges();
+  await loadBadges().catch(e => console.error('loadBadges:', e));
   
   // Iššūkių badge (tier sistema)
-  await loadChallengeBadge();
+  await loadChallengeBadge().catch(e => console.error('loadChallengeBadge:', e));
   
   // 🔥 Streak'ai
-  await loadStreaks();
+  await loadStreaks().catch(e => console.error('loadStreaks:', e));
   
   // 🆕 Pagrindinio lango duomenys (tikslai, reitingai, artimiausia varžyba)
   await loadGoals().catch(e => console.error('loadGoals:', e));
@@ -6482,7 +6482,8 @@ async function loadBadges() {
     </div>`;
   }).join('');
 
-  document.getElementById('v-skill-badges').innerHTML = html;
+  const skillBadgesEl = document.getElementById('v-skill-badges');
+  if (skillBadgesEl) skillBadgesEl.innerHTML = html;
 }
 
 // ════════════════════════════════════════
@@ -11972,19 +11973,8 @@ async function loadKidPendingSubmissions() {
 }
 
 function loadSubscriptionCard() {
-  const active = currentKid?.subscription_active;
-  const expires = currentKid?.subscription_expires_at;
-  const html = active
-    ? `<div style="display:flex;justify-content:space-between;align-items:center;">
-        <div><div style="font-size:14px;font-weight:800;">Metinė prenumerata</div>
-        <div style="font-size:11px;color:var(--mut);margin-top:2px;">Galioja iki ${expires ? new Date(expires).toLocaleDateString('lt') : '–'}</div></div>
-        <div class="bg gn">Aktyvi</div>
-       </div>`
-    : `<div style="text-align:center;padding:8px;">
-        <div style="font-size:13px;color:var(--mut);margin-bottom:12px;">Prenumerata neaktyvi</div>
-        <button class="btn" style="margin:0;width:100%;" onclick="startPayment()">Prenumeruoti – 40 €/metai</button>
-       </div>`;
-  document.getElementById('v-subscription-card').innerHTML = html;
+  // Prenumerata pašalinta iš vaiko profilio - tėvai užsako iš savo paskyros
+  return;
 }
 
 async function toggleAnon() {
