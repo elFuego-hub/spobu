@@ -1379,9 +1379,18 @@ select.inp option{background:#222;}
       <div style="font-size:8px;color:var(--mut);margin-top:4px;text-align:right;">✏️ Spausk redaguoti</div>
     </div>
     
-    <!-- 🥋 FLAT DIRŽAS - ribbon stilius -->
-    <div id="v-prof-belt-flat" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;display:flex;align-items:center;position:relative;">
-      <!-- Užpildoma JS - dinaminis diržas pagal kyu -->
+    <!-- 🏆 TROFĖJAI + 🏅 BADGES - 2 mygtukai -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 12px 8px;">
+      <div onclick="openTrophiesModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 8px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+        <div style="font-size:24px;line-height:1;margin-bottom:4px;">🏆</div>
+        <div style="font-size:10px;font-weight:800;letter-spacing:.5px;color:white;">MANO TROFĖJAI</div>
+        <div id="v-prof-trophies-summary" style="font-size:9px;color:var(--mut);margin-top:3px;">🥇0 🥈0 🥉0</div>
+      </div>
+      <div onclick="openBadgesModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 8px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+        <div style="font-size:24px;line-height:1;margin-bottom:4px;">🏅</div>
+        <div style="font-size:10px;font-weight:800;letter-spacing:.5px;color:white;">SKILL BADGES</div>
+        <div id="v-prof-badges-summary" style="font-size:9px;color:var(--mut);margin-top:3px;">🏆0 🥇0 🥈0</div>
+      </div>
     </div>
     
     <!-- 📋 INFORMACIJA -->
@@ -1398,45 +1407,8 @@ select.inp option{background:#222;}
     
     <!-- 🤝 KOMANDOS DRAUGAI -->
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">🤝 KOMANDOS DRAUGAI</div>
-    <div id="v-prof-teammates" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
+    <div id="v-prof-teammates" style="margin:0 12px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
       <div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
-    </div>
-    
-    <!-- 🏆 TROFĖJAI (collapse) -->
-    <div onclick="toggleProfileSection('v-prof-trophies-body','v-prof-trophies-arrow')" style="margin:0 12px 6px;padding:10px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:white;">🏆 MANO TROFĖJAI</div>
-      <div style="display:flex;align-items:center;gap:6px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;">
-        <span id="v-prof-trophies-gold" style="color:#FFD700;">🥇0</span>
-        <span id="v-prof-trophies-silver" style="color:#C0C0C0;">🥈0</span>
-        <span id="v-prof-trophies-bronze" style="color:#CD7F32;">🥉0</span>
-        <span id="v-prof-trophies-arrow" style="font-size:10px;color:var(--mut);margin-left:4px;">▼</span>
-      </div>
-    </div>
-    <div id="v-prof-trophies-body" style="display:none;margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
-      <div id="v-comp-medals" style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
-    </div>
-    
-    <!-- 🏅 SKILL BADGES (collapse) -->
-    <div onclick="toggleProfileSection('v-prof-badges-body','v-prof-badges-arrow')" style="margin:0 12px 6px;padding:10px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:white;">🏅 SKILL BADGES</div>
-      <div style="display:flex;align-items:center;gap:6px;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;">
-        <span id="v-prof-badges-master" style="color:#FF4D00;">🏆0</span>
-        <span id="v-prof-badges-gold" style="color:#FFD700;">🥇0</span>
-        <span id="v-prof-badges-silver" style="color:#C0C0C0;">🥈0</span>
-        <span id="v-prof-badges-bronze" style="color:#CD7F32;">🥉0</span>
-        <span id="v-prof-badges-arrow" style="font-size:10px;color:var(--mut);margin-left:4px;">▼</span>
-      </div>
-    </div>
-    <div id="v-prof-badges-body" style="display:none;margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;padding:10px;">
-      <div id="v-skill-badges" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
-        <div style="text-align:center;padding:10px 0;color:var(--mut);font-size:10px;grid-column:span 4;">Kraunama...</div>
-      </div>
-    </div>
-    
-    <!-- 💎 PRENUMERATA -->
-    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">💎 PRENUMERATA</div>
-    <div class="cd" id="v-subscription-card" style="margin:0 12px 8px;padding:10px;">
-      <div style="text-align:center;padding:8px;color:var(--mut);font-size:11px;">Kraunama...</div>
     </div>
   </div>
   <div class="bn2">
@@ -4907,13 +4879,6 @@ async function loadKidData() {
       : `Iki LVL ${stageInfo.globalLevel + 1}: +${stageInfo.expToNextLevel} EXP`;
   }
   
-  // 🥋 Diržo FLAT ribbon (kompaktiškas)
-  try {
-    renderBeltFlat();
-  } catch(e) {
-    console.error('[renderBeltFlat] klaida:', e);
-  }
-  
   // 📋 Informacija + Treneriai + Draugai + Biografija
   try {
     renderProfileExtras();
@@ -6219,22 +6184,11 @@ async function renderProfileExtras() {
   }
 }
 
-// Toggle profilio sekciją (collapse/expand)
-function toggleProfileSection(bodyId, arrowId) {
-  const body = document.getElementById(bodyId);
-  const arrow = document.getElementById(arrowId);
-  if (!body) return;
-  
-  const isHidden = body.style.display === 'none';
-  body.style.display = isHidden ? 'block' : 'none';
-  if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
-}
-
-// Atnaujint trofėjų ir badge'ų skaičius collapse antraštėje
+// Atnaujint trofėjų ir badge'ų suvestinę profilio mygtukuose
 async function updateProfileCounts() {
   if (!currentKid?.id) return;
   
-  // 🏆 TROFĖJAI (medalių lentelė) - iš competition_results
+  // 🏆 TROFĖJAI - iš competition_results
   try {
     const { data: results } = await sb.from('competition_results')
       .select('placement, status, approval_status')
@@ -6249,47 +6203,25 @@ async function updateProfileCounts() {
       else if (r.placement === 3) bronze++;
     });
     
-    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    setText('v-prof-trophies-gold', `🥇${gold}`);
-    setText('v-prof-trophies-silver', `🥈${silver}`);
-    setText('v-prof-trophies-bronze', `🥉${bronze}`);
+    window._profTrophies = { gold, silver, bronze, total: (results || []).length };
+    
+    const summaryEl = document.getElementById('v-prof-trophies-summary');
+    if (summaryEl) summaryEl.textContent = `🥇${gold} 🥈${silver} 🥉${bronze}`;
   } catch(e) {
     console.error('updateProfileCounts trophies:', e);
   }
   
-  // 🏅 SKILL BADGES - iš kid_records (medal stulpelio)
+  // 🏅 SKILL BADGES - pagal career_categories EXP
   try {
-    const { data: records } = await sb.from('kid_records')
-      .select('medal, category_exp')
-      .eq('kid_id', currentKid.id);
-    
-    // Grupuojam pagal kategoriją - aukščiausias medalis kiekvienai
-    // Bet kid_records turi pratimus, ne kategorijas - reikia sumuoti pagal categories
-    // Greičiausia - imti TIK medal stulpelį
-    
-    let master = 0, gold = 0, silver = 0, bronze = 0;
-    
-    // Naudosim categories per kid_records aggregaciją
-    // (suskaičiuosim category_exp totals)
-    const expByCategory = {};
-    (records || []).forEach(r => {
-      // category_id reiktų - bet jei ne, tiesiog suskaičiuosim medalius
-      if (r.medal === 'completed' || r.medal === 'master') master++;
-      else if (r.medal === 'gold') gold++;
-      else if (r.medal === 'silver') silver++;
-      else if (r.medal === 'bronze') bronze++;
-    });
-    
-    // Bet iš tiesų - medalis turėtų būti pagal **kategorijos EXP**, ne per pratimus
-    // Pažiūrim per career categories
-    const { data: cats } = await sb.from('career_categories').select('id');
+    const { data: cats } = await sb.from('career_categories').select('id, name');
     const { data: catRecords } = await sb.from('kid_records')
       .select('category_id, category_exp')
       .eq('kid_id', currentKid.id);
     
+    let master = 0, gold = 0, silver = 0, bronze = 0;
+    const badgesList = [];
+    
     if (cats && catRecords) {
-      master = 0; gold = 0; silver = 0; bronze = 0;
-      
       const catExp = {};
       catRecords.forEach(r => {
         catExp[r.category_id] = (catExp[r.category_id] || 0) + (r.category_exp || 0);
@@ -6297,21 +6229,172 @@ async function updateProfileCounts() {
       
       cats.forEach(c => {
         const exp = Math.min(catExp[c.id] || 0, 600);
-        if (exp >= 600) master++;
-        else if (exp >= 500) gold++;
-        else if (exp >= 300) silver++;
-        else if (exp >= 100) bronze++;
+        let tier = null, tierColor = null, tierIcon = null;
+        if (exp >= 600) { master++; tier = 'MASTER'; tierColor = '#FF4D00'; tierIcon = '🏆'; }
+        else if (exp >= 500) { gold++; tier = 'GOLD'; tierColor = '#FFD700'; tierIcon = '🥇'; }
+        else if (exp >= 300) { silver++; tier = 'SILVER'; tierColor = '#C0C0C0'; tierIcon = '🥈'; }
+        else if (exp >= 100) { bronze++; tier = 'BRONZE'; tierColor = '#CD7F32'; tierIcon = '🥉'; }
+        else { tier = 'PRADINIS'; tierColor = 'rgba(255,255,255,.3)'; tierIcon = ''; }
+        
+        badgesList.push({ name: c.name, exp, tier, tierColor, tierIcon });
       });
     }
     
-    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    setText('v-prof-badges-master', `🏆${master}`);
-    setText('v-prof-badges-gold', `🥇${gold}`);
-    setText('v-prof-badges-silver', `🥈${silver}`);
-    setText('v-prof-badges-bronze', `🥉${bronze}`);
+    window._profBadges = { master, gold, silver, bronze, list: badgesList };
+    
+    const summaryEl = document.getElementById('v-prof-badges-summary');
+    if (summaryEl) summaryEl.textContent = `🏆${master} 🥇${gold} 🥈${silver}`;
   } catch(e) {
     console.error('updateProfileCounts badges:', e);
   }
+}
+
+// 🏆 Atveria TROFĖJŲ modal'ą
+async function openTrophiesModal() {
+  const existing = document.getElementById('prof-trophies-modal');
+  if (existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'prof-trophies-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:flex-end;justify-content:center;';
+  
+  modal.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+      <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🏆 MANO TROFĖJAI</div>
+        <button onclick="document.getElementById('prof-trophies-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:14px 16px;" id="prof-trophies-modal-body">
+        <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Užkrauti medalius
+  const t = window._profTrophies || { gold: 0, silver: 0, bronze: 0, total: 0 };
+  const body = document.getElementById('prof-trophies-modal-body');
+  
+  // Medalių suvestinė - 3 dideli langeliai
+  let html = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+      <div style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.3);border-radius:14px;padding:14px 8px;text-align:center;">
+        <div style="font-size:32px;line-height:1;">🥇</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#FFD700;line-height:1;margin-top:4px;">${t.gold}</div>
+        <div style="font-size:8px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-top:2px;">AUKSO</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(192,192,192,.15),rgba(192,192,192,.04));border:1px solid rgba(192,192,192,.3);border-radius:14px;padding:14px 8px;text-align:center;">
+        <div style="font-size:32px;line-height:1;">🥈</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#C0C0C0;line-height:1;margin-top:4px;">${t.silver}</div>
+        <div style="font-size:8px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-top:2px;">SIDABRO</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(205,127,50,.15),rgba(205,127,50,.04));border:1px solid rgba(205,127,50,.3);border-radius:14px;padding:14px 8px;text-align:center;">
+        <div style="font-size:32px;line-height:1;">🥉</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#CD7F32;line-height:1;margin-top:4px;">${t.bronze}</div>
+        <div style="font-size:8px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-top:2px;">BRONZOS</div>
+      </div>
+    </div>
+  `;
+  
+  // Detalus medalių sąrašas iš competition_results
+  try {
+    const { data: results } = await sb.from('competition_results')
+      .select('placement, approved_at, competitions(title, competition_type, event_date)')
+      .eq('kid_id', currentKid.id)
+      .eq('status', 'participated')
+      .eq('approval_status', 'approved')
+      .in('placement', [1, 2, 3])
+      .order('approved_at', { ascending: false });
+    
+    if (results && results.length > 0) {
+      html += `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">📋 VISI LAIMĖJIMAI</div>`;
+      html += results.map(r => {
+        const medal = r.placement === 1 ? '🥇' : r.placement === 2 ? '🥈' : '🥉';
+        const typeIcon = r.competitions?.competition_type === 'kumite' ? '🥊' : r.competitions?.competition_type === 'kata' ? '🎭' : '🥋';
+        return `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--card);border-radius:10px;margin-bottom:5px;">
+            <div style="font-size:24px;">${medal}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:11px;font-weight:800;color:white;">${typeIcon} ${r.competitions?.title || 'Varžybos'}</div>
+              <div style="font-size:9px;color:var(--mut);margin-top:1px;">${r.competitions?.event_date || ''}</div>
+            </div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${r.placement === 1 ? '#FFD700' : r.placement === 2 ? '#C0C0C0' : '#CD7F32'};">${r.placement} v.</div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      html += `<div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Dar nėra laimėtų medalių.<br>Dalyvauk varžybose! 🥋</div>`;
+    }
+  } catch(e) {
+    console.error('openTrophiesModal:', e);
+  }
+  
+  body.innerHTML = html;
+}
+
+// 🏅 Atveria SKILL BADGES modal'ą
+function openBadgesModal() {
+  const existing = document.getElementById('prof-badges-modal');
+  if (existing) existing.remove();
+  
+  const b = window._profBadges || { master: 0, gold: 0, silver: 0, bronze: 0, list: [] };
+  
+  const modal = document.createElement('div');
+  modal.id = 'prof-badges-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:flex-end;justify-content:center;';
+  
+  // Badge kortelės
+  const badgeCards = (b.list || []).map(badge => {
+    const isEarned = badge.tier !== 'PRADINIS';
+    return `
+      <div style="background:${isEarned ? `linear-gradient(135deg, ${badge.tierColor}22, ${badge.tierColor}08)` : 'var(--card)'};border:1px solid ${isEarned ? badge.tierColor + '44' : 'var(--bdr)'};border-radius:12px;padding:10px 6px;text-align:center;">
+        <div style="font-size:24px;line-height:1;">${CATEGORY_ICONS[badge.name] || '💪'}</div>
+        <div style="font-size:9px;font-weight:800;color:white;margin-top:4px;line-height:1.1;">${badge.name}</div>
+        <div style="font-size:8px;font-weight:800;color:${badge.tierColor};margin-top:3px;letter-spacing:.5px;">${badge.tierIcon} ${badge.tier}</div>
+        <div style="font-size:8px;color:var(--mut);margin-top:2px;">${badge.exp} EXP</div>
+      </div>
+    `;
+  }).join('');
+  
+  modal.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+      <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🏅 SKILL BADGES</div>
+        <button onclick="document.getElementById('prof-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:14px 16px;">
+        <!-- Suvestinė -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;">
+          <div style="background:linear-gradient(135deg,rgba(255,77,0,.15),rgba(255,77,0,.04));border:1px solid rgba(255,77,0,.3);border-radius:12px;padding:10px 4px;text-align:center;">
+            <div style="font-size:20px;">🏆</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF4D00;line-height:1;">${b.master}</div>
+            <div style="font-size:7px;color:var(--mut);font-weight:700;margin-top:2px;">MASTER</div>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.3);border-radius:12px;padding:10px 4px;text-align:center;">
+            <div style="font-size:20px;">🥇</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FFD700;line-height:1;">${b.gold}</div>
+            <div style="font-size:7px;color:var(--mut);font-weight:700;margin-top:2px;">GOLD</div>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(192,192,192,.15),rgba(192,192,192,.04));border:1px solid rgba(192,192,192,.3);border-radius:12px;padding:10px 4px;text-align:center;">
+            <div style="font-size:20px;">🥈</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#C0C0C0;line-height:1;">${b.silver}</div>
+            <div style="font-size:7px;color:var(--mut);font-weight:700;margin-top:2px;">SILVER</div>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(205,127,50,.15),rgba(205,127,50,.04));border:1px solid rgba(205,127,50,.3);border-radius:12px;padding:10px 4px;text-align:center;">
+            <div style="font-size:20px;">🥉</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#CD7F32;line-height:1;">${b.bronze}</div>
+            <div style="font-size:7px;color:var(--mut);font-weight:700;margin-top:2px;">BRONZE</div>
+          </div>
+        </div>
+        
+        <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">📂 KATEGORIJŲ BADGES</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+          ${badgeCards || '<div style="grid-column:span 3;text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>'}
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
 }
 
 // Biografijos redagavimas (modal)
