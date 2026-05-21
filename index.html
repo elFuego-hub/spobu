@@ -6016,36 +6016,12 @@ function renderBeltFlat() {
   
   const kyu = currentKid.kyu || 'Mu kyu';
   
-  // Kyokushin diržų hierarchija + spalvos
-  const beltColors = {
-    'Mu kyu':  { color: '#FFFFFF', bg: 'linear-gradient(135deg, #f5f5f5, #e0e0e0)', textColor: '#000', label: 'BALTAS DIRŽAS' },
-    '10 kyu':  { color: '#FF6B00', bg: 'linear-gradient(135deg, #FF6B00, #CC5500)', textColor: '#fff', label: 'ORANŽINIS DIRŽAS' },
-    '9 kyu':   { color: '#FF6B00', bg: 'linear-gradient(135deg, #FF6B00, #CC5500)', textColor: '#fff', label: 'ORANŽINIS DIRŽAS' },
-    '8 kyu':   { color: '#0066CC', bg: 'linear-gradient(135deg, #2563EB, #1E40AF)', textColor: '#fff', label: 'MĖLYNAS DIRŽAS' },
-    '7 kyu':   { color: '#0066CC', bg: 'linear-gradient(135deg, #2563EB, #1E40AF)', textColor: '#fff', label: 'MĖLYNAS DIRŽAS' },
-    '6 kyu':   { color: '#FFD700', bg: 'linear-gradient(135deg, #FCD34D, #D97706)', textColor: '#000', label: 'GELTONAS DIRŽAS' },
-    '5 kyu':   { color: '#FFD700', bg: 'linear-gradient(135deg, #FCD34D, #D97706)', textColor: '#000', label: 'GELTONAS DIRŽAS' },
-    '4 kyu':   { color: '#16A34A', bg: 'linear-gradient(135deg, #16A34A, #14532D)', textColor: '#fff', label: 'ŽALIAS DIRŽAS' },
-    '3 kyu':   { color: '#16A34A', bg: 'linear-gradient(135deg, #16A34A, #14532D)', textColor: '#fff', label: 'ŽALIAS DIRŽAS' },
-    '2 kyu':   { color: '#92400E', bg: 'linear-gradient(135deg, #92400E, #451A03)', textColor: '#fff', label: 'RUDAS DIRŽAS' },
-    '1 kyu':   { color: '#92400E', bg: 'linear-gradient(135deg, #92400E, #451A03)', textColor: '#fff', label: 'RUDAS DIRŽAS' },
-    '1 dan':   { color: '#000000', bg: 'linear-gradient(135deg, #1F2937, #000)', textColor: '#FFD700', label: 'JUODAS DIRŽAS' },
-    '2 dan':   { color: '#000000', bg: 'linear-gradient(135deg, #1F2937, #000)', textColor: '#FFD700', label: 'JUODAS DIRŽAS' },
-    '3 dan':   { color: '#000000', bg: 'linear-gradient(135deg, #1F2937, #000)', textColor: '#FFD700', label: 'JUODAS DIRŽAS' }
-  };
-  
-  const belt = beltColors[kyu] || beltColors['Mu kyu'];
-  
-  el.innerHTML = `
-    <!-- Ribbon dešinėje -->
-    <div style="background:${belt.bg};width:60px;padding:14px 6px;text-align:center;color:${belt.textColor};font-family:'Noto Serif JP',serif;font-size:18px;font-weight:900;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;">空手</div>
-    
-    <!-- Info -->
-    <div style="flex:1;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:white;">${belt.label}</div>
-      <div style="background:${belt.bg};color:${belt.textColor};font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1px;padding:3px 8px;border-radius:99px;font-weight:800;">${kyu.toUpperCase()}</div>
-    </div>
-  `;
+  // Naudojam gražų diržo sertifikatą (kaip senesnėje versijoje)
+  el.style.background = 'transparent';
+  el.style.border = 'none';
+  el.style.borderRadius = '0';
+  el.style.display = 'block';
+  el.innerHTML = renderBeltCertificate(kyu, true);
 }
 
 // ════════════════════════════════════════
