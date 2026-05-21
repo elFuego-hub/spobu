@@ -6336,6 +6336,7 @@ async function renderMyDuels() {
   el.innerHTML = duels.map(d => {
     const t = DUEL_TYPES[d.duel_type] || { icon: '🥊', name: d.duel_type, unit: '' };
     const isChallenger = d.challenger_id === currentKid.id;
+    console.log('[duel]', d.id.slice(0,8), 'challenger:', d.challenger_id?.slice(0,8), 'opponent:', d.opponent_id?.slice(0,8), 'myKid:', currentKid.id?.slice(0,8), 'isChallenger:', isChallenger, 'status:', d.status);
     const opponentId = isChallenger ? d.opponent_id : d.challenger_id;
     const opponentName = getKidName(opponentId);
     
