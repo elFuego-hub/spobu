@@ -1143,12 +1143,12 @@ select.inp option{background:#222;}
           <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🔥 Aktyvūs</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-ish-count-done">0</div>
-          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">✅ Įveikti</div>
-        </div>
-        <div style="text-align:center;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-ish-count-total">0</div>
           <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">📋 Iš viso</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#EC407A;line-height:1;" id="v-ish-count-duels">0</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🥊 Dvikovos</div>
         </div>
       </div>
     </div>
@@ -6303,54 +6303,16 @@ async function renderMyDuels() {
     return;
   }
   
-  // Dvikovų rekordas (užbaigtos)
-  const { data: completed } = await sb.from('duels')
-    .select('winner_id, status')
-    .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
-    .eq('status', 'completed');
-  
-  let wins = 0, losses = 0, draws = 0;
-  (completed || []).forEach(d => {
-    if (!d.winner_id) draws++;
-    else if (d.winner_id === currentKid.id) wins++;
-    else losses++;
-  });
-  
-  // Jei nėra nei aktyvių, nei rekordo - tuščias
-  if ((!duels || duels.length === 0) && (wins + losses + draws) === 0) {
+  // Rodom TIK jei yra aktyvių dvikovų (rekordas - HERO langelyje)
+  if (!duels || duels.length === 0) {
     el.innerHTML = '';
     return;
   }
   
   let html = '';
   
-  // 🏆 DVIKOVŲ REKORDAS - visada rodom jei buvo bent viena
-  if (wins + losses + draws > 0) {
-    html += `
-      <div style="background:linear-gradient(135deg,rgba(186,104,200,.15),rgba(186,104,200,.04));border:1px solid rgba(186,104,200,.3);border-radius:12px;padding:10px;margin-bottom:8px;">
-        <div style="font-size:9px;color:#BA68C8;font-weight:800;letter-spacing:1px;text-align:center;margin-bottom:6px;">🥊 DVIKOVŲ REKORDAS</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:14px;">
-          <div style="text-align:center;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#22C55E;line-height:1;">${wins}</div>
-            <div style="font-size:7px;color:var(--mut);font-weight:700;margin-top:2px;">PERGALĖS</div>
-          </div>
-          <div style="font-size:12px;color:var(--mut);">·</div>
-          <div style="text-align:center;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#FF8C00;line-height:1;">${draws}</div>
-            <div style="font-size:7px;color:var(--mut);font-weight:700;margin-top:2px;">LYGIOS</div>
-          </div>
-          <div style="font-size:12px;color:var(--mut);">·</div>
-          <div style="text-align:center;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#EF4444;line-height:1;">${losses}</div>
-            <div style="font-size:7px;color:var(--mut);font-weight:700;margin-top:2px;">PRALAIMĖTOS</div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  
   // Aktyvios dvikovos
-  if (duels && duels.length > 0) {
+  {
     // Surinkti vardus
     const kidIds = [...new Set(duels.flatMap(d => [d.challenger_id, d.opponent_id]))];
     const { data: kids } = await sb.from('kids')
@@ -6374,7 +6336,7 @@ async function renderMyDuels() {
       return p ? `${p.first_name || ''} ${(p.last_name || '').charAt(0)}${p.last_name ? '.' : ''}`.trim() : 'Vaikas';
     };
     
-    html += `<div style="font-size:9px;color:#FF8C00;font-weight:800;letter-spacing:1px;margin-bottom:6px;padding-left:2px;">⚔️ AKTYVIOS DVIKOVOS</div>`;
+    html += `<div style="font-size:9px;color:#EC407A;font-weight:800;letter-spacing:1px;margin-bottom:6px;padding-left:2px;">⚔️ AKTYVIOS DVIKOVOS</div>`;
     
     html += duels.map(d => {
       const t = DUEL_TYPES[d.duel_type] || { icon: '🥊', name: d.duel_type, unit: '' };
@@ -6424,17 +6386,17 @@ async function renderMyDuels() {
         `;
       }
       
-      // 🥊 Dvikova VIZUALIAI IŠSISKIRIA - violetinis kraštas + "DRAUGŲ DVIKOVA" antraštė
+      // 🥊 Dvikova VIZUALIAI IŠSISKIRIA - rožinis kraštas + "DRAUGŲ DVIKOVA" antraštė
       return `
-        <div style="background:linear-gradient(135deg,rgba(186,104,200,.1),rgba(186,104,200,.03));border:1px solid rgba(186,104,200,.35);border-left:3px solid #BA68C8;border-radius:12px;padding:10px;margin-bottom:6px;">
-          <div style="font-size:8px;color:#BA68C8;font-weight:800;letter-spacing:1.5px;margin-bottom:6px;">🥊 DRAUGŲ DVIKOVA</div>
+        <div style="background:linear-gradient(135deg,rgba(236,64,122,.1),rgba(236,64,122,.03));border:1px solid rgba(236,64,122,.35);border-left:3px solid #EC407A;border-radius:12px;padding:10px;margin-bottom:6px;">
+          <div style="font-size:8px;color:#EC407A;font-weight:800;letter-spacing:1.5px;margin-bottom:6px;">🥊 DRAUGŲ DVIKOVA</div>
           <div style="display:flex;align-items:center;gap:8px;">
             <div style="font-size:24px;">${t.icon}</div>
             <div style="flex:1;min-width:0;">
               <div style="font-size:12px;font-weight:800;color:white;">${t.name}</div>
               <div style="font-size:9px;color:var(--mut);margin-top:1px;">vs ${opponentName}</div>
             </div>
-            <div style="font-size:8px;color:#BA68C8;font-weight:800;letter-spacing:.5px;background:rgba(186,104,200,.15);padding:3px 7px;border-radius:99px;">${isChallenger ? 'TU IŠKVIETEI' : 'TAVE IŠKVIETĖ'}</div>
+            <div style="font-size:8px;color:#EC407A;font-weight:800;letter-spacing:.5px;background:rgba(236,64,122,.15);padding:3px 7px;border-radius:99px;">${isChallenger ? 'TU IŠKVIETEI' : 'TAVE IŠKVIETĖ'}</div>
           </div>
           ${statusBlock}
         </div>
@@ -8157,8 +8119,19 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
   setText('v-ish-total-completed', totalCompleted);
   setText('v-ish-total-exp', `+${totalExpFromCompleted.toLocaleString('lt-LT')} EXP gauta`);
   setText('v-ish-count-active', activeCount);
-  setText('v-ish-count-done', totalCompleted);
   setText('v-ish-count-total', totalCount);
+  
+  // 🥊 Dvikovų pergalės
+  if (currentKid?.id) {
+    sb.from('duels')
+      .select('winner_id, status')
+      .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
+      .eq('status', 'completed')
+      .then(({ data }) => {
+        const wins = (data || []).filter(d => d.winner_id === currentKid.id).length;
+        setText('v-ish-count-duels', wins);
+      });
+  }
   
   setText('v-ish-type-training-num', typeCounts.training);
   setText('v-ish-type-training-exp', `+${typeExp.training} EXP`);
