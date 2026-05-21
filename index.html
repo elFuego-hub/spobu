@@ -7663,29 +7663,125 @@ function showDuelResultPopup(duel, myKidId) {
 async function checkForCompletedDuels() {
   if (!currentKid?.id) return;
   
+  // 1) Užbaigtos dvikovos - rezultato popup
   const lsKey = `spobu_kid_${currentKid.id}_seen_duels`;
   const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
   
-  // Visos užbaigtos dvikovos kuriose dalyvavau
   const { data: duels } = await sb.from('duels')
     .select('*')
     .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
     .eq('status', 'completed')
     .order('completed_at', { ascending: false });
   
-  if (!duels || duels.length === 0) return;
+  if (duels && duels.length > 0) {
+    const newDuels = duels.filter(d => !seenIds.has(d.id));
+    if (newDuels.length > 0) {
+      showDuelResultPopup(newDuels[0], currentKid.id);
+      localStorage.setItem(lsKey, JSON.stringify(duels.map(d => d.id)));
+    }
+  }
   
-  // Naujos (nematytos)
-  const newDuels = duels.filter(d => !seenIds.has(d.id));
+  // 2) Nauji iškvietimai - PRIIMTI/ATMESTI popup
+  const challKey = `spobu_kid_${currentKid.id}_seen_duel_challenges`;
+  const seenChall = new Set(JSON.parse(localStorage.getItem(challKey) || '[]'));
   
-  if (newDuels.length === 0) return;
+  const { data: pendingDuels } = await sb.from('duels')
+    .select('*')
+    .eq('opponent_id', currentKid.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
   
-  // Rodyti popup'ą naujausiai (1 popup, ne visi iš karto)
-  showDuelResultPopup(newDuels[0], currentKid.id);
+  if (pendingDuels && pendingDuels.length > 0) {
+    const newChall = pendingDuels.filter(d => !seenChall.has(d.id));
+    if (newChall.length > 0) {
+      const duel = newChall[0];
+      const { data: chKid } = await sb.from('kids')
+        .select('user_id, is_anonymous')
+        .eq('id', duel.challenger_id)
+        .single();
+      
+      let challengerName = 'Draugas';
+      if (chKid && !chKid.is_anonymous) {
+        const { data: chProf } = await sb.from('profiles')
+          .select('first_name')
+          .eq('id', chKid.user_id)
+          .single();
+        challengerName = chProf?.first_name || 'Draugas';
+      } else if (chKid?.is_anonymous) {
+        challengerName = 'Anonimas';
+      }
+      
+      showDuelChallengePopup(duel, challengerName);
+    }
+    localStorage.setItem(challKey, JSON.stringify(pendingDuels.map(d => d.id)));
+  }
+}
+
+// 🥊 Gražus dvikovos IŠKVIETIMO popup (kai mane iškviečia)
+function showDuelChallengePopup(duel, challengerName) {
+  const t = DUEL_TYPES[duel.duel_type] || { icon: '🥊', name: 'Dvikova', desc: '' };
   
-  // Pažymėti visas kaip matytas
-  const allIds = duels.map(d => d.id);
-  localStorage.setItem(lsKey, JSON.stringify(allIds));
+  // Pašalint seną jei yra
+  document.getElementById('duel-challenge-popup')?.remove();
+  
+  const popup = document.createElement('div');
+  popup.id = 'duel-challenge-popup';
+  popup.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    background: linear-gradient(135deg, rgba(20,20,20,.98), rgba(10,10,10,.98));
+    border: 2px solid #FF4D00;
+    border-radius: 24px;
+    padding: 24px;
+    z-index: 999999;
+    max-width: 320px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.7), 0 0 60px #FF4D0044;
+    opacity: 0;
+    transition: opacity .4s, transform .4s cubic-bezier(.34,1.56,.64,1);
+  `;
+  
+  popup.innerHTML = `
+    <div style="font-size:11px;color:#FF8C00;letter-spacing:2px;font-weight:800;margin-bottom:8px;">🥊 NAUJAS IŠŠŪKIS!</div>
+    
+    <div style="font-size:14px;color:white;font-weight:800;margin-bottom:14px;">${challengerName} iškvietė tave į dvikovą!</div>
+    
+    <div style="font-size:56px;line-height:1;margin-bottom:6px;filter:drop-shadow(0 0 16px #FF4D00);">${t.icon}</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:#FF8C00;margin-bottom:4px;">${t.name.toUpperCase()}</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.7);margin-bottom:14px;">${t.desc}</div>
+    
+    <div style="height:1px;background:linear-gradient(90deg,transparent,#FF4D00,transparent);margin:14px 0;"></div>
+    
+    <div style="display:flex;gap:8px;">
+      <button onclick="respondToDuelFromPopup('${duel.id}','accept')" style="flex:2;padding:12px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:12px;color:white;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 12px #22C55E88;">✅ PRIIMTI</button>
+      <button onclick="respondToDuelFromPopup('${duel.id}','decline')" style="flex:1;padding:12px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:12px;color:#EF4444;font-size:12px;font-weight:800;cursor:pointer;">ATMESTI</button>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  requestAnimationFrame(() => {
+    popup.style.opacity = '1';
+    popup.style.transform = 'translate(-50%, -50%) scale(1)';
+  });
+}
+
+// Atsakyti į dvikovą iš popup'o
+async function respondToDuelFromPopup(duelId, action) {
+  document.getElementById('duel-challenge-popup')?.remove();
+  // Pažymėti matytą iškvietimą
+  if (currentKid?.id) {
+    const challKey = `spobu_kid_${currentKid.id}_seen_duel_challenges`;
+    const seen = JSON.parse(localStorage.getItem(challKey) || '[]');
+    if (!seen.includes(duelId)) {
+      seen.push(duelId);
+      localStorage.setItem(challKey, JSON.stringify(seen));
+    }
+  }
+  await respondToDuel(duelId, action);
 }
 
 async function checkForNewStreakBonuses() {
@@ -16528,6 +16624,44 @@ function subscribeKidNotifications() {
         showToast(`❌ ATMESTA\n\n${exName}\n${reason}`, 'error');
         await loadKidPendingSubmissions();
       }
+    })
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'duels'
+    }, async payload => {
+      const duel = payload.new;
+      if (!duel || duel.status !== 'pending') return;
+      
+      // Ar mane iškvietė? (esu opponent)
+      const myKidId = currentKid?.id;
+      if (duel.opponent_id !== myKidId) return;
+      
+      // Gauti iškvietėjo vardą
+      const { data: chKid } = await sb.from('kids')
+        .select('user_id, is_anonymous')
+        .eq('id', duel.challenger_id)
+        .single();
+      
+      let challengerName = 'Draugas';
+      if (chKid && !chKid.is_anonymous) {
+        const { data: chProf } = await sb.from('profiles')
+          .select('first_name')
+          .eq('id', chKid.user_id)
+          .single();
+        challengerName = chProf?.first_name || 'Draugas';
+      } else if (chKid?.is_anonymous) {
+        challengerName = 'Anonimas';
+      }
+      
+      // Pažymėti matytą iškvietimą
+      const challKey = `spobu_kid_${myKidId}_seen_duel_challenges`;
+      const seenCh = JSON.parse(localStorage.getItem(challKey) || '[]');
+      if (!seenCh.includes(duel.id)) {
+        seenCh.push(duel.id);
+        localStorage.setItem(challKey, JSON.stringify(seenCh));
+      }
+      
+      // Gražus popup
+      showDuelChallengePopup(duel, challengerName);
     })
     .on('postgres_changes', {
       event: 'UPDATE', schema: 'public', table: 'duels'
