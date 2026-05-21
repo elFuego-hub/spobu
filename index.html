@@ -8479,24 +8479,26 @@ async function loadChallenges() {
     
     // 🎨 SPALVOS PAGAL TIPĄ (kaip popup'uose ir pagrindiniame)
     const typeColors = {
-      training:  { color: '#FF4D00', bg: 'rgba(255,77,0,.08)',   border: 'rgba(255,77,0,.3)' },
-      weekly:    { color: '#4FC3F7', bg: 'rgba(79,195,247,.08)', border: 'rgba(79,195,247,.3)' },
-      monthly:   { color: '#BA68C8', bg: 'rgba(186,104,200,.08)', border: 'rgba(186,104,200,.3)' },
-      one_time:  { color: '#FFD700', bg: 'rgba(255,215,0,.08)',  border: 'rgba(255,215,0,.3)' },
-      permanent: { color: '#66BB6A', bg: 'rgba(102,187,106,.08)', border: 'rgba(102,187,106,.3)' }
+      training:  { color: '#FF4D00', bg: 'rgba(255,77,0,.1)',   border: 'rgba(255,77,0,.35)',   label: 'TRENIRUOTĖS IŠŠŪKIS' },
+      weekly:    { color: '#4FC3F7', bg: 'rgba(79,195,247,.1)', border: 'rgba(79,195,247,.35)', label: 'SAVAITINIS IŠŠŪKIS' },
+      monthly:   { color: '#BA68C8', bg: 'rgba(186,104,200,.1)', border: 'rgba(186,104,200,.35)', label: 'MĖNESINIS IŠŠŪKIS' },
+      one_time:  { color: '#FFD700', bg: 'rgba(255,215,0,.1)',  border: 'rgba(255,215,0,.35)',  label: 'VIENKARTINIS IŠŠŪKIS' },
+      permanent: { color: '#66BB6A', bg: 'rgba(102,187,106,.1)', border: 'rgba(102,187,106,.35)', label: 'NUOLATINIS IŠŠŪKIS' }
     };
     const tCol = typeColors[ch.type] || typeColors.one_time;
     
-    return `<div class="kid-ch-card" style="background:${tCol.bg};border:.5px solid ${tCol.border};border-radius:10px;padding:8px 10px;margin-bottom:5px;${cardOpacity}border-left:3px solid ${tCol.color};">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px;">
+    return `<div class="kid-ch-card" style="background:linear-gradient(135deg,${tCol.bg},${tCol.bg.replace(/[\d.]+\)$/,'.03)')});border:1px solid ${tCol.border};border-left:3px solid ${tCol.color};border-radius:12px;padding:10px;margin-bottom:6px;${cardOpacity}">
+      <div style="font-size:8px;color:${tCol.color};font-weight:800;letter-spacing:1.5px;margin-bottom:6px;">${typeIcons[ch.type] || '⚡'} ${tCol.label}</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-size:24px;">${ch.icon || '🎯'}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:800;line-height:1.2;color:white;">${ch.icon || '🎯'} ${ch.title}</div>
-          <div style="font-size:9px;color:${tCol.color};margin-top:2px;font-weight:700;">${typeIcons[ch.type] || '⚡'} ${typeLabels[ch.type] || ch.type} · <span style="color:var(--mut);font-weight:400;">${timeInfo}${target ? ' · ' + target : ''}</span></div>
+          <div style="font-size:12px;font-weight:800;color:white;line-height:1.2;">${ch.title}</div>
+          <div style="font-size:9px;color:var(--mut);margin-top:1px;">${timeInfo}${target ? ' · ' + target : ''}</div>
         </div>
         <div style="background:${tCol.bg};color:${tCol.color};border:.5px solid ${tCol.border};padding:3px 8px;font-size:10px;font-weight:800;border-radius:99px;flex-shrink:0;text-shadow:0 0 6px ${tCol.color}88;">+${ch.exp_reward}</div>
       </div>
-      ${ch.description ? `<div style="font-size:10px;color:var(--mut);line-height:1.3;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${ch.description}</div>` : ''}
-      ${statusBadge ? `<div style="margin-top:4px;">${statusBadge}</div>` : ''}
+      ${ch.description ? `<div style="font-size:10px;color:var(--mut);line-height:1.3;margin-top:6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${ch.description}</div>` : ''}
+      ${statusBadge ? `<div style="margin-top:6px;">${statusBadge}</div>` : ''}
       ${progressBar}
       ${actionButton}
     </div>`;
@@ -8505,6 +8507,7 @@ async function loadChallenges() {
   // 🎯 COLLAPSE - rodyti tik 2 pirmus + mygtuką "Daugiau" jei daugiau
   const SHOW_LIMIT = 2;
   const totalCount = cardsArray.length;
+  console.log('[SHOW_LIMIT] tab:', kidChallengesActiveTab, 'cardsArray:', totalCount, 'SHOW_LIMIT:', SHOW_LIMIT, '> ?', totalCount > SHOW_LIMIT);
   
   let finalHtml;
   
