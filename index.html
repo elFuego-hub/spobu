@@ -1143,19 +1143,19 @@ select.inp option{background:#222;}
           <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🔥 Aktyvūs</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-ish-count-total">0</div>
-          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">📋 Iš viso</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-ish-count-done">0</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">✅ Įveikti</div>
         </div>
         <div style="text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#EC407A;line-height:1;" id="v-ish-count-duels">0</div>
-          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">🥊 Dvikovos</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-ish-count-total">0</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">📋 Iš viso</div>
         </div>
       </div>
     </div>
     
     <!-- 📊 PAGAL TIPUS - 2x2 GRID -->
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">📊 PAGAL TIPUS · ĮVEIKTA</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 12px 8px;">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:0 12px 8px;">
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
         <div style="font-size:18px;line-height:1;margin-bottom:2px;">🏋️</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-ish-type-training-num">0</div>
@@ -1179,6 +1179,18 @@ select.inp option{background:#222;}
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-ish-type-onetime-num">0</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Vienkart.</div>
         <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:1px;" id="v-ish-type-onetime-exp">+0 EXP</div>
+      </div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;">♾️</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-ish-type-permanent-num">0</div>
+        <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Nuolat.</div>
+        <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:1px;" id="v-ish-type-permanent-exp">+0 EXP</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(236,64,122,.12),rgba(236,64,122,.04));border:.5px solid rgba(236,64,122,.35);border-radius:10px;padding:7px 4px;text-align:center;">
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;">🥊</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#EC407A;line-height:1;" id="v-ish-type-duels-num">0</div>
+        <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Dvikovos</div>
+        <div style="font-size:8px;color:rgba(236,64,122,.6);margin-top:1px;" id="v-ish-type-duels-exp">+0 EXP</div>
       </div>
     </div>
     
@@ -6290,12 +6302,15 @@ async function renderMyDuels() {
   const el = document.getElementById('v-ish-duels');
   if (!el || !currentKid?.id) return;
   
-  // Aktyvios dvikovos
+  // Archyvo tabe - rodom užbaigtas, kitur - aktyvias
+  const isArchive = kidChallengesActiveTab === 'completed';
+  const statuses = isArchive ? ['completed'] : ['pending', 'active', 'submitted'];
+  
   const { data: duels, error } = await sb.from('duels')
     .select('*')
     .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
-    .in('status', ['pending', 'active', 'submitted'])
-    .order('created_at', { ascending: false });
+    .in('status', statuses)
+    .order(isArchive ? 'completed_at' : 'created_at', { ascending: false });
   
   if (error) {
     console.error('renderMyDuels:', error);
@@ -6303,7 +6318,6 @@ async function renderMyDuels() {
     return;
   }
   
-  // Rodom TIK jei yra aktyvių dvikovų (rekordas - HERO langelyje)
   if (!duels || duels.length === 0) {
     el.innerHTML = '';
     return;
@@ -6311,9 +6325,8 @@ async function renderMyDuels() {
   
   let html = '';
   
-  // Aktyvios dvikovos
+  // Surinkti vardus
   {
-    // Surinkti vardus
     const kidIds = [...new Set(duels.flatMap(d => [d.challenger_id, d.opponent_id]))];
     const { data: kids } = await sb.from('kids')
       .select('id, user_id, is_anonymous')
@@ -6336,7 +6349,8 @@ async function renderMyDuels() {
       return p ? `${p.first_name || ''} ${(p.last_name || '').charAt(0)}${p.last_name ? '.' : ''}`.trim() : 'Vaikas';
     };
     
-    html += `<div style="font-size:9px;color:#EC407A;font-weight:800;letter-spacing:1px;margin-bottom:6px;padding-left:2px;">⚔️ AKTYVIOS DVIKOVOS</div>`;
+    const headerLabel = isArchive ? '📜 BAIGTOS DVIKOVOS' : '⚔️ AKTYVIOS DVIKOVOS';
+    html += `<div style="font-size:9px;color:#EC407A;font-weight:800;letter-spacing:1px;margin-bottom:6px;padding-left:2px;">${headerLabel}</div>`;
     
     html += duels.map(d => {
       const t = DUEL_TYPES[d.duel_type] || { icon: '🥊', name: d.duel_type, unit: '' };
@@ -6382,6 +6396,25 @@ async function renderMyDuels() {
           <div style="background:rgba(255,140,0,.1);border-radius:8px;padding:8px;margin-top:8px;text-align:center;">
             <div style="font-size:10px;color:#FF8C00;font-weight:700;">⏳ Laukiama trenerio patvirtinimo</div>
             <div style="font-size:9px;color:var(--mut);margin-top:2px;">Tu: ${myValue ?? '–'} · ${opponentName}: ${oppValue ?? '–'}</div>
+          </div>
+        `;
+      } else if (d.status === 'completed') {
+        // Baigta dvikova - rezultatas
+        let resultLabel, resultColor;
+        if (d.winner_id === null) {
+          resultLabel = '🤝 LYGIOSIOS';
+          resultColor = '#FF8C00';
+        } else if (d.winner_id === currentKid.id) {
+          resultLabel = '🏆 PERGALĖ';
+          resultColor = '#22C55E';
+        } else {
+          resultLabel = '💪 PRALAIMĖJIMAS';
+          resultColor = '#EF4444';
+        }
+        statusBlock = `
+          <div style="background:${resultColor}1a;border-radius:8px;padding:8px;margin-top:8px;text-align:center;">
+            <div style="font-size:11px;color:${resultColor};font-weight:800;letter-spacing:.5px;">${resultLabel}</div>
+            <div style="font-size:10px;color:white;font-weight:700;margin-top:3px;">Tu ${myValue ?? '–'} · ${oppValue ?? '–'} ${opponentName}</div>
           </div>
         `;
       }
@@ -8119,17 +8152,26 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
   setText('v-ish-total-completed', totalCompleted);
   setText('v-ish-total-exp', `+${totalExpFromCompleted.toLocaleString('lt-LT')} EXP gauta`);
   setText('v-ish-count-active', activeCount);
+  setText('v-ish-count-done', totalCompleted);
   setText('v-ish-count-total', totalCount);
   
-  // 🥊 Dvikovų pergalės
+  // 🥊 Dvikovų pergalės + EXP (PAGAL TIPUS bloke)
   if (currentKid?.id) {
     sb.from('duels')
-      .select('winner_id, status')
+      .select('winner_id, status, challenger_id, opponent_id')
       .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
       .eq('status', 'completed')
       .then(({ data }) => {
         const wins = (data || []).filter(d => d.winner_id === currentKid.id).length;
-        setText('v-ish-count-duels', wins);
+        // Dvikovų EXP suma (laimėjo 50 / lygiosios 35 / pralaimėjo 25)
+        let duelExp = 0;
+        (data || []).forEach(d => {
+          if (!d.winner_id) duelExp += DUEL_EXP.draw;
+          else if (d.winner_id === currentKid.id) duelExp += DUEL_EXP.winner;
+          else duelExp += DUEL_EXP.loser;
+        });
+        setText('v-ish-type-duels-num', wins);
+        setText('v-ish-type-duels-exp', `+${duelExp} EXP`);
       });
   }
   
@@ -8141,6 +8183,8 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
   setText('v-ish-type-monthly-exp', `+${typeExp.monthly} EXP`);
   setText('v-ish-type-onetime-num', typeCounts.one_time);
   setText('v-ish-type-onetime-exp', `+${typeExp.one_time} EXP`);
+  setText('v-ish-type-permanent-num', typeCounts.permanent || 0);
+  setText('v-ish-type-permanent-exp', `+${typeExp.permanent || 0} EXP`);
   
   // 🎨 HERO fonas pagal stage (kaip pagrindiniame + profilyje + karjeroje)
   const totalExp = currentKid?.total_exp || 0;
