@@ -6477,17 +6477,16 @@ async function openDuelChallenge(friendJson) {
     friend = typeof friendJson === 'string' ? JSON.parse(friendJson) : friendJson;
   } catch(e) { return; }
   
-  // Patikrint savaitės limitą - kiek iškvietimų šią savaitę
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: myWeekDuels } = await sb.from('duels')
-    .select('id, created_at')
-    .eq('challenger_id', currentKid.id)
-    .gte('created_at', weekAgo);
-  
-  if (myWeekDuels && myWeekDuels.length >= 1) {
-    showToast('🥊 Jau iškvietei dvikovą šią savaitę! Kitą galėsi po savaitės.', 'error');
-    return;
-  }
+  // ⚠️ SAVAITĖS LIMITAS IŠJUNGTAS TESTAVIMUI - vėliau grąžinti
+  // const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  // const { data: myWeekDuels } = await sb.from('duels')
+  //   .select('id, created_at')
+  //   .eq('challenger_id', currentKid.id)
+  //   .gte('created_at', weekAgo);
+  // if (myWeekDuels && myWeekDuels.length >= 1) {
+  //   showToast('🥊 Jau iškvietei dvikovą šią savaitę! Kitą galėsi po savaitės.', 'error');
+  //   return;
+  // }
   
   // Patikrint ar nėra aktyvios dvikovos su šiuo draugu
   const { data: activeDuel } = await sb.from('duels')
