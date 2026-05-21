@@ -6146,13 +6146,40 @@ async function renderProfileExtras() {
   console.log('[teammates] el:', !!teammatesEl, 'group_id:', currentKid.group_id);
   if (teammatesEl && currentKid.group_id) {
     try {
-      // VISI grupės vaikai (su manimi) - kad rasti poziciją
-      const { data: allKids } = await sb.from('kids')
-        .select('id, total_exp, kyu, is_anonymous, profiles(first_name, last_name)')
-        .eq('group_id', currentKid.group_id)
-        .order('total_exp', { ascending: false });
+      // RLS-friendly: pirma profiles, tada kids per user_id
+      const { data: clubProfiles } = await sb.from('profiles')
+        .select('id')
+        .eq('club_id', currentProfile?.club_id)
+        .eq('role', 'kid');
       
-      console.log('[teammates] allKids:', allKids?.length || 0);
+      const profileIds = (clubProfiles || []).map(p => p.id);
+      
+      // VISI klubo vaikai su group_id
+      const { data: clubKids } = await sb.from('kids')
+        .select('id, user_id, total_exp, kyu, is_anonymous, group_id')
+        .in('user_id', profileIds)
+        .eq('approval_status', 'approved');
+      
+      // Filtruoti tik tos pačios grupės
+      const groupKids = (clubKids || []).filter(k => k.group_id === currentKid.group_id);
+      console.log('[teammates] klubo vaikai:', clubKids?.length || 0, 'grupėje:', groupKids.length);
+      
+      // Užkrauti vardus per profiles
+      const groupProfileIds = groupKids.map(k => k.user_id);
+      const { data: names } = await sb.from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', groupProfileIds);
+      
+      const namesMap = {};
+      (names || []).forEach(n => { namesMap[n.id] = n; });
+      
+      // Sujungti + rikiuoti pagal EXP
+      const allKids = groupKids.map(k => ({
+        ...k,
+        profiles: namesMap[k.user_id] || null
+      })).sort((a, b) => (b.total_exp || 0) - (a.total_exp || 0));
+      
+      console.log('[teammates] allKids:', allKids.length);
       
       if (!allKids || allKids.length <= 1) {
         teammatesEl.innerHTML = `<div style="padding:14px;text-align:center;color:var(--mut);font-size:10px;">Grupėje kol kas tik tu 🥋</div>`;
