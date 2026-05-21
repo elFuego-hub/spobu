@@ -8382,7 +8382,7 @@ async function loadChallenges() {
   const typeIcons = { training: '🏋️', weekly: '⚡', monthly: '🎯', one_time: '✨', permanent: '♾️' };
   const typeLabels = { training: 'Treniruotės', weekly: 'Savaitinis', monthly: 'Mėnesinis', one_time: 'Vienkartinis', permanent: 'Nuolatinis' };
   
-  const html = challengesToShow.map(ch => {
+  const cardsArray = challengesToShow.map(ch => {
     const subs = subsByChallenge[ch.id] || [];
     const approvedSub = subs.find(s => s.status === 'approved');
     const pendingSub = subs.find(s => s.status === 'pending');
@@ -8500,18 +8500,15 @@ async function loadChallenges() {
       ${progressBar}
       ${actionButton}
     </div>`;
-  }).join('');
+  });
 
   // 🎯 COLLAPSE - rodyti tik 2 pirmus + mygtuką "Daugiau" jei daugiau
   const SHOW_LIMIT = 2;
-  const totalCount = challengesToShow.length;
+  const totalCount = cardsArray.length;
   
-  let finalHtml = html;
+  let finalHtml;
   
   if (totalCount > SHOW_LIMIT) {
-    // Atskirti kortelės į matomas/paslėptas
-    const cardsArray = html.match(/<div class="kid-ch-card"[^>]*>[\s\S]*?<\/div>(?=\s*<div class="kid-ch-card"|$)/g) || [html];
-    
     const visible = cardsArray.slice(0, SHOW_LIMIT).join('');
     const hidden = cardsArray.slice(SHOW_LIMIT).join('');
     
@@ -8525,6 +8522,8 @@ async function loadChallenges() {
         ▼ DAUGIAU IŠŠŪKIŲ (${totalCount - SHOW_LIMIT})
       </button>
     `;
+  } else {
+    finalHtml = cardsArray.join('');
   }
 
   document.getElementById('v-challenges-list').innerHTML = finalHtml;
