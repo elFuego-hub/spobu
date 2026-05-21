@@ -6289,7 +6289,12 @@ async function renderProfileExtras() {
 // ════════════════════════════════════════
 async function renderMyDuels() {
   const el = document.getElementById('v-prof-duels');
-  if (!el || !currentKid?.id) return;
+  if (!el || !currentKid?.id) {
+    console.log('[renderMyDuels] STOP - el:', !!el, 'kid:', currentKid?.id);
+    return;
+  }
+  
+  console.log('[renderMyDuels] START, currentKid.id:', currentKid.id);
   
   // Visos mano dvikovos (kur dalyvauju) - ne completed/declined/expired
   const { data: duels, error } = await sb.from('duels')
@@ -6297,6 +6302,9 @@ async function renderMyDuels() {
     .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
     .in('status', ['pending', 'active', 'submitted'])
     .order('created_at', { ascending: false });
+  
+  console.log('[renderMyDuels] duels:', duels?.length || 0, 'error:', error?.message || 'none');
+  if (duels) duels.forEach(d => console.log('  → duel:', d.id.slice(0,8), 'ch:', d.challenger_id?.slice(0,8), 'op:', d.opponent_id?.slice(0,8), 'status:', d.status));
   
   if (error) {
     console.error('renderMyDuels:', error);
