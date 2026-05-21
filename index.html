@@ -1554,6 +1554,7 @@ select.inp option{background:#222;}
     <div class="tab on" onclick="switchTrTab(this,'career')">🏋️ Karjera <span id="tr-career-count" style="opacity:.6;">0</span></div>
     <div class="tab" onclick="switchTrTab(this,'challenges')">🎯 Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
     <div class="tab" onclick="switchTrTab(this,'competitions')">🥇 Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
+    <div class="tab" onclick="switchTrTab(this,'duels')">🥊 Dvikovos <span id="tr-duels-count" style="opacity:.6;">0</span></div>
   </div>
   <div class="sa">
     <!-- Karjeros pateikimai -->
@@ -1566,6 +1567,10 @@ select.inp option{background:#222;}
     </div>
     <!-- Varžybų rezultatai (paslėpti pradžioje) -->
     <div id="tr-competition-submissions-list" style="display:none;">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <!-- Dvikovos (paslėptos pradžioje) -->
+    <div id="tr-duels-list" style="display:none;">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
   </div>
@@ -12701,6 +12706,7 @@ async function loadTrainerData() {
   await loadPendingSubmissions();
   await loadPendingChallengeSubmissions();
   await loadPendingCompetitionResults();
+  await loadPendingDuels().catch(e => console.error('loadPendingDuels:', e));
   await loadTrainerMembers();
   await loadTrainerGroups();
 }
@@ -14585,22 +14591,220 @@ function switchTrTab(el, type) {
   const careerList = document.getElementById('tr-submissions-list');
   const challengesList = document.getElementById('tr-challenge-submissions-list');
   const competitionsList = document.getElementById('tr-competition-submissions-list');
+  const duelsList = document.getElementById('tr-duels-list');
+  
+  // Paslėpti visus
+  [careerList, challengesList, competitionsList, duelsList].forEach(l => { if (l) l.style.display = 'none'; });
   
   if (type === 'career') {
-    careerList.style.display = 'block';
-    challengesList.style.display = 'none';
-    if (competitionsList) competitionsList.style.display = 'none';
+    if (careerList) careerList.style.display = 'block';
   } else if (type === 'challenges') {
-    careerList.style.display = 'none';
-    challengesList.style.display = 'block';
-    if (competitionsList) competitionsList.style.display = 'none';
+    if (challengesList) challengesList.style.display = 'block';
     loadPendingChallengeSubmissions();
   } else if (type === 'competitions') {
-    careerList.style.display = 'none';
-    challengesList.style.display = 'none';
     if (competitionsList) competitionsList.style.display = 'block';
     loadPendingCompetitionResults();
+  } else if (type === 'duels') {
+    if (duelsList) duelsList.style.display = 'block';
+    loadPendingDuels();
   }
+}
+
+// ════════════════════════════════════════
+// 🥊 TRENERIO DVIKOVŲ PATVIRTINIMAS
+// ════════════════════════════════════════
+async function loadPendingDuels() {
+  const list = document.getElementById('tr-duels-list');
+  if (!list) return;
+  
+  const clubId = currentProfile?.club_id;
+  if (!clubId) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Klubas nepriskirtas</div>';
+    return;
+  }
+  
+  // Submitted dvikovos klube - laukia patvirtinimo
+  const { data: duels, error } = await sb.from('duels')
+    .select('*')
+    .eq('club_id', clubId)
+    .eq('status', 'submitted')
+    .order('created_at', { ascending: true });
+  
+  if (error) {
+    console.error('loadPendingDuels:', error);
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#EF4444;">Klaida kraunant dvikovas</div>';
+    return;
+  }
+  
+  // Atnaujint skaičių
+  const countEl = document.getElementById('tr-duels-count');
+  if (countEl) countEl.textContent = duels?.length || 0;
+  
+  if (!duels || duels.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">🥊 Nėra dvikovų laukiančių patvirtinimo</div>';
+    return;
+  }
+  
+  // Surinkti vaikų vardus
+  const kidIds = [...new Set(duels.flatMap(d => [d.challenger_id, d.opponent_id]))];
+  const { data: kids } = await sb.from('kids')
+    .select('id, user_id, is_anonymous')
+    .in('id', kidIds);
+  
+  const userIds = (kids || []).map(k => k.user_id);
+  const { data: profs } = await sb.from('profiles')
+    .select('id, first_name, last_name')
+    .in('id', userIds);
+  
+  const kidMap = {};
+  (kids || []).forEach(k => { kidMap[k.id] = k; });
+  const profMap = {};
+  (profs || []).forEach(p => { profMap[p.id] = p; });
+  
+  const getName = (kidId) => {
+    const k = kidMap[kidId];
+    if (!k) return 'Vaikas';
+    if (k.is_anonymous) return 'Anonimas';
+    const p = profMap[k.user_id];
+    return p ? `${p.first_name || ''} ${p.last_name || ''}`.trim() : 'Vaikas';
+  };
+  
+  list.innerHTML = duels.map(d => {
+    const t = DUEL_TYPES[d.duel_type] || { icon: '🥊', name: d.duel_type, unit: '', moreIsBetter: true };
+    const chName = getName(d.challenger_id);
+    const opName = getName(d.opponent_id);
+    const chVal = d.challenger_value;
+    const opVal = d.opponent_value;
+    
+    let chWins, opWins;
+    if (t.moreIsBetter) {
+      chWins = chVal > opVal;
+      opWins = opVal > chVal;
+    } else {
+      chWins = chVal < opVal;
+      opWins = opVal < chVal;
+    }
+    const isDraw = chVal === opVal;
+    
+    return `
+      <div class="cd" style="margin:0 12px 10px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="font-size:28px;">${t.icon}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:900;color:white;">${t.name}</div>
+            <div style="font-size:10px;color:var(--mut);">Dvikovos rezultatas</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:stretch;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;background:${chWins ? 'rgba(34,197,94,.12)' : isDraw ? 'rgba(255,140,0,.1)' : 'var(--bg)'};border:.5px solid ${chWins ? 'rgba(34,197,94,.4)' : 'var(--bdr)'};border-radius:10px;padding:8px;text-align:center;">
+            <div style="font-size:11px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${chName}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${chWins ? '#22C55E' : 'white'};line-height:1;margin-top:3px;">${chVal ?? '–'}</div>
+            <div style="font-size:8px;color:var(--mut);">${t.unit}</div>
+            ${chWins ? '<div style="font-size:8px;color:#22C55E;font-weight:800;margin-top:2px;">🏆 LAIMI</div>' : ''}
+          </div>
+          <div style="display:flex;align-items:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--mut);">VS</div>
+          <div style="flex:1;background:${opWins ? 'rgba(34,197,94,.12)' : isDraw ? 'rgba(255,140,0,.1)' : 'var(--bg)'};border:.5px solid ${opWins ? 'rgba(34,197,94,.4)' : 'var(--bdr)'};border-radius:10px;padding:8px;text-align:center;">
+            <div style="font-size:11px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${opName}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${opWins ? '#22C55E' : 'white'};line-height:1;margin-top:3px;">${opVal ?? '–'}</div>
+            <div style="font-size:8px;color:var(--mut);">${t.unit}</div>
+            ${opWins ? '<div style="font-size:8px;color:#22C55E;font-weight:800;margin-top:2px;">🏆 LAIMI</div>' : ''}
+          </div>
+        </div>
+        ${isDraw ? '<div style="text-align:center;font-size:10px;color:#FF8C00;font-weight:800;margin-bottom:8px;">🤝 LYGIOSIOS</div>' : ''}
+        <div style="display:flex;gap:6px;">
+          <button onclick="approveDuel('${d.id}')" style="flex:2;padding:10px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:8px;color:white;font-size:12px;font-weight:800;cursor:pointer;">✅ PATVIRTINTI</button>
+          <button onclick="rejectDuel('${d.id}')" style="flex:1;padding:10px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:8px;color:#EF4444;font-size:12px;font-weight:800;cursor:pointer;">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Treneris patvirtina dvikovą
+async function approveDuel(duelId) {
+  const { data: duel } = await sb.from('duels').select('*').eq('id', duelId).single();
+  if (!duel) {
+    showToast('❌ Dvikova nerasta', 'error');
+    return;
+  }
+  
+  const t = DUEL_TYPES[duel.duel_type] || { moreIsBetter: true };
+  const chVal = duel.challenger_value;
+  const opVal = duel.opponent_value;
+  
+  let winnerId = null;
+  if (chVal !== opVal) {
+    if (t.moreIsBetter) {
+      winnerId = chVal > opVal ? duel.challenger_id : duel.opponent_id;
+    } else {
+      winnerId = chVal < opVal ? duel.challenger_id : duel.opponent_id;
+    }
+  }
+  
+  const { error } = await sb.from('duels')
+    .update({
+      status: 'completed',
+      winner_id: winnerId,
+      trainer_id: currentUser.id,
+      completed_at: new Date().toISOString()
+    })
+    .eq('id', duelId);
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error');
+    return;
+  }
+  
+  // 🎯 EXP paskirstymas
+  try {
+    let chExp, opExp;
+    if (winnerId === null) {
+      chExp = DUEL_EXP.draw;
+      opExp = DUEL_EXP.draw;
+    } else if (winnerId === duel.challenger_id) {
+      chExp = DUEL_EXP.winner;
+      opExp = DUEL_EXP.loser;
+    } else {
+      chExp = DUEL_EXP.loser;
+      opExp = DUEL_EXP.winner;
+    }
+    
+    await addExpToKid(duel.challenger_id, chExp);
+    await addExpToKid(duel.opponent_id, opExp);
+    
+    console.log('[approveDuel] EXP paskirta:', { challenger: chExp, opponent: opExp, winnerId });
+  } catch(e) {
+    console.error('[approveDuel] EXP klaida:', e);
+  }
+  
+  showToast('✅ Dvikova patvirtinta! EXP paskirta abiem vaikams.', 'success');
+  loadPendingDuels();
+}
+
+// Pridėti EXP vaikui (helper)
+async function addExpToKid(kidId, expAmount) {
+  if (!kidId || !expAmount) return;
+  const { data: kid } = await sb.from('kids').select('total_exp').eq('id', kidId).single();
+  if (!kid) return;
+  const newExp = (kid.total_exp || 0) + expAmount;
+  await sb.from('kids').update({ total_exp: newExp }).eq('id', kidId);
+}
+
+// Treneris atmeta dvikovą
+async function rejectDuel(duelId) {
+  if (!confirm('Atmesti šią dvikovą? Vaikai turės įvesti rezultatus iš naujo.')) return;
+  
+  const { error } = await sb.from('duels')
+    .update({ status: 'active', challenger_value: null, opponent_value: null })
+    .eq('id', duelId);
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error');
+    return;
+  }
+  
+  showToast('Dvikova grąžinta - vaikai įves rezultatus iš naujo.', 'info');
+  loadPendingDuels();
 }
 
 // EXP ribos pagal tipą
@@ -16119,8 +16323,9 @@ async function updateTrainerPendingBadge() {
   const careerCount = parseInt(document.getElementById('tr-career-count').textContent) || 0;
   const challengesCount = parseInt(document.getElementById('tr-challenges-count').textContent) || 0;
   const compCount = parseInt(document.getElementById('tr-competitions-count').textContent) || 0;
+  const duelsCount = parseInt(document.getElementById('tr-duels-count')?.textContent) || 0;
   
-  const total = careerCount + challengesCount + compCount;
+  const total = careerCount + challengesCount + compCount + duelsCount;
   const badge = document.getElementById('tr-pending-badge');
   if (badge) badge.textContent = total;
 }
