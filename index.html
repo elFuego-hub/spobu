@@ -1155,7 +1155,7 @@ select.inp option{background:#222;}
     
     <!-- 📊 PAGAL TIPUS - 2x2 GRID -->
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">📊 PAGAL TIPUS · ĮVEIKTA</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 12px 8px;">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:0 12px 8px;">
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
         <div style="font-size:18px;line-height:1;margin-bottom:2px;">🏋️</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-ish-type-training-num">0</div>
@@ -1180,12 +1180,28 @@ select.inp option{background:#222;}
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Vienkart.</div>
         <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:1px;" id="v-ish-type-onetime-exp">+0 EXP</div>
       </div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;">♾️</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;line-height:1;" id="v-ish-type-permanent-num">0</div>
+        <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Nuolat.</div>
+        <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:1px;" id="v-ish-type-permanent-exp">+0 EXP</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(236,64,122,.12),rgba(236,64,122,.04));border:.5px solid rgba(236,64,122,.35);border-radius:10px;padding:7px 4px;text-align:center;">
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;">🥊</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#EC407A;line-height:1;" id="v-ish-type-duels-num">0</div>
+        <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Dvikovos</div>
+        <div style="font-size:8px;color:rgba(236,64,122,.6);margin-top:1px;" id="v-ish-type-duels-exp">+0 EXP</div>
+      </div>
     </div>
     
     <!-- Tabai -->
     <div style="display:flex;gap:4px;margin:0 16px 6px;">
       <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">🔥 AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
       <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">📜 ARCHYVAS <span id="v-completed-count" style="opacity:.7;">0</span></button>
+    </div>
+    
+    <div id="v-ish-duels" style="padding:0 16px;">
+      <!-- Dvikovos užpildomos JS (tik kai yra aktyvių) -->
     </div>
     
     <div id="v-challenges-list" style="padding:0 16px;">
@@ -1548,6 +1564,7 @@ select.inp option{background:#222;}
     <div class="tab on" onclick="switchTrTab(this,'career')">🏋️ Karjera <span id="tr-career-count" style="opacity:.6;">0</span></div>
     <div class="tab" onclick="switchTrTab(this,'challenges')">🎯 Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
     <div class="tab" onclick="switchTrTab(this,'competitions')">🥇 Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
+    <div class="tab" onclick="switchTrTab(this,'duels')">🥊 Dvikovos <span id="tr-duels-count" style="opacity:.6;">0</span></div>
   </div>
   <div class="sa">
     <!-- Karjeros pateikimai -->
@@ -1560,6 +1577,10 @@ select.inp option{background:#222;}
     </div>
     <!-- Varžybų rezultatai (paslėpti pradžioje) -->
     <div id="tr-competition-submissions-list" style="display:none;">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <!-- Dvikovos (paslėptos pradžioje) -->
+    <div id="tr-duels-list" style="display:none;">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
   </div>
@@ -5010,6 +5031,9 @@ async function loadKidData() {
   console.log('🔥 Kviečiam checkForNewStreakBonuses...');
   await checkForNewStreakBonuses().catch(e => console.error('checkForNewStreakBonuses:', e));
   
+  // 🥊 Patikrint ar yra naujų užbaigtų dvikovų (popup jei nematytas)
+  await checkForCompletedDuels().catch(e => console.error('checkForCompletedDuels:', e));
+  
   // 🎯 Patikrinam naujus iššūkius (kai treneris paskyrė)
   await checkForNewChallenges().catch(e => console.error('checkForNewChallenges:', e));
   
@@ -6271,6 +6295,258 @@ async function renderProfileExtras() {
   }
 }
 
+// ════════════════════════════════════════
+// 🥊 Mano dvikovos - rodymas iššūkių lange
+// ════════════════════════════════════════
+async function renderMyDuels() {
+  const el = document.getElementById('v-ish-duels');
+  if (!el || !currentKid?.id) return;
+  
+  // Archyvo tabe - rodom užbaigtas, kitur - aktyvias
+  const isArchive = kidChallengesActiveTab === 'completed';
+  const statuses = isArchive ? ['completed'] : ['pending', 'active', 'submitted'];
+  
+  const { data: duels, error } = await sb.from('duels')
+    .select('*')
+    .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
+    .in('status', statuses)
+    .order(isArchive ? 'completed_at' : 'created_at', { ascending: false });
+  
+  if (error) {
+    console.error('renderMyDuels:', error);
+    el.innerHTML = '';
+    return;
+  }
+  
+  if (!duels || duels.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+  
+  let html = '';
+  
+  // Surinkti vardus
+  {
+    const kidIds = [...new Set(duels.flatMap(d => [d.challenger_id, d.opponent_id]))];
+    const { data: kids } = await sb.from('kids')
+      .select('id, user_id, is_anonymous')
+      .in('id', kidIds);
+    const userIds = (kids || []).map(k => k.user_id);
+    const { data: profs } = await sb.from('profiles')
+      .select('id, first_name, last_name')
+      .in('id', userIds);
+    
+    const kidMap = {};
+    (kids || []).forEach(k => { kidMap[k.id] = k; });
+    const profMap = {};
+    (profs || []).forEach(p => { profMap[p.id] = p; });
+    
+    const getKidName = (kidId) => {
+      const k = kidMap[kidId];
+      if (!k) return 'Vaikas';
+      if (k.is_anonymous) return 'Anonimas';
+      const p = profMap[k.user_id];
+      return p ? `${p.first_name || ''} ${(p.last_name || '').charAt(0)}${p.last_name ? '.' : ''}`.trim() : 'Vaikas';
+    };
+    
+    const headerLabel = isArchive ? '📜 BAIGTOS DVIKOVOS' : '⚔️ AKTYVIOS DVIKOVOS';
+    html += `<div style="font-size:9px;color:#EC407A;font-weight:800;letter-spacing:1px;margin-bottom:6px;padding-left:2px;">${headerLabel}</div>`;
+    
+    html += duels.map(d => {
+      const t = DUEL_TYPES[d.duel_type] || { icon: '🥊', name: d.duel_type, unit: '' };
+      const isChallenger = d.challenger_id === currentKid.id;
+      const opponentId = isChallenger ? d.opponent_id : d.challenger_id;
+      const opponentName = getKidName(opponentId);
+      
+      const myValue = isChallenger ? d.challenger_value : d.opponent_value;
+      const oppValue = isChallenger ? d.opponent_value : d.challenger_value;
+      const iSubmitted = myValue !== null && myValue !== undefined;
+      
+      let statusBlock = '';
+      
+      if (d.status === 'pending') {
+        if (isChallenger) {
+          statusBlock = `
+            <div style="background:rgba(255,140,0,.1);border-radius:8px;padding:8px;margin-top:8px;text-align:center;">
+              <div style="font-size:10px;color:#FF8C00;font-weight:700;">⏳ Laukiama, ar ${opponentName} priims</div>
+            </div>
+          `;
+        } else {
+          statusBlock = `
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <button onclick="respondToDuel('${d.id}','accept')" style="flex:1;padding:8px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:8px;color:white;font-size:11px;font-weight:800;cursor:pointer;">✅ PRIIMTI</button>
+              <button onclick="respondToDuel('${d.id}','decline')" style="flex:1;padding:8px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:8px;color:#EF4444;font-size:11px;font-weight:800;cursor:pointer;">✕ ATMESTI</button>
+            </div>
+          `;
+        }
+      } else if (d.status === 'active') {
+        if (iSubmitted) {
+          statusBlock = `
+            <div style="background:rgba(34,197,94,.1);border-radius:8px;padding:8px;margin-top:8px;text-align:center;">
+              <div style="font-size:10px;color:#22C55E;font-weight:700;">✅ Tavo rezultatas: ${myValue} ${t.unit} · laukiam ${opponentName}</div>
+            </div>
+          `;
+        } else {
+          statusBlock = `
+            <button onclick="openDuelResultInput('${d.id}','${d.duel_type}')" style="width:100%;padding:9px;background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;border-radius:8px;color:white;font-size:11px;font-weight:800;cursor:pointer;margin-top:8px;">📝 ĮVESTI REZULTATĄ</button>
+          `;
+        }
+      } else if (d.status === 'submitted') {
+        statusBlock = `
+          <div style="background:rgba(255,140,0,.1);border-radius:8px;padding:8px;margin-top:8px;text-align:center;">
+            <div style="font-size:10px;color:#FF8C00;font-weight:700;">⏳ Laukiama trenerio patvirtinimo</div>
+            <div style="font-size:9px;color:var(--mut);margin-top:2px;">Tu: ${myValue ?? '–'} · ${opponentName}: ${oppValue ?? '–'}</div>
+          </div>
+        `;
+      } else if (d.status === 'completed') {
+        // Baigta dvikova - rezultatas
+        let resultLabel, resultColor;
+        if (d.winner_id === null) {
+          resultLabel = '🤝 LYGIOSIOS';
+          resultColor = '#FF8C00';
+        } else if (d.winner_id === currentKid.id) {
+          resultLabel = '🏆 PERGALĖ';
+          resultColor = '#22C55E';
+        } else {
+          resultLabel = '💪 PRALAIMĖJIMAS';
+          resultColor = '#EF4444';
+        }
+        statusBlock = `
+          <div style="background:${resultColor}1a;border-radius:8px;padding:8px;margin-top:8px;text-align:center;">
+            <div style="font-size:11px;color:${resultColor};font-weight:800;letter-spacing:.5px;">${resultLabel}</div>
+            <div style="font-size:10px;color:white;font-weight:700;margin-top:3px;">Tu ${myValue ?? '–'} · ${oppValue ?? '–'} ${opponentName}</div>
+          </div>
+        `;
+      }
+      
+      // 🥊 Dvikova VIZUALIAI IŠSISKIRIA - rožinis kraštas + "DRAUGŲ DVIKOVA" antraštė
+      return `
+        <div style="background:linear-gradient(135deg,rgba(236,64,122,.1),rgba(236,64,122,.03));border:1px solid rgba(236,64,122,.35);border-left:3px solid #EC407A;border-radius:12px;padding:10px;margin-bottom:6px;">
+          <div style="font-size:8px;color:#EC407A;font-weight:800;letter-spacing:1.5px;margin-bottom:6px;">🥊 DRAUGŲ DVIKOVA</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="font-size:24px;">${t.icon}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:800;color:white;">${t.name}</div>
+              <div style="font-size:9px;color:var(--mut);margin-top:1px;">vs ${opponentName}</div>
+            </div>
+            <div style="font-size:8px;color:#EC407A;font-weight:800;letter-spacing:.5px;background:rgba(236,64,122,.15);padding:3px 7px;border-radius:99px;">${isChallenger ? 'TU IŠKVIETEI' : 'TAVE IŠKVIETĖ'}</div>
+          </div>
+          ${statusBlock}
+        </div>
+      `;
+    }).join('');
+  }
+  
+  el.innerHTML = html;
+}
+
+// 🥊 Atsakyti į dvikovą - priimti / atmesti
+async function respondToDuel(duelId, action) {
+  if (action === 'accept') {
+    const { error } = await sb.from('duels')
+      .update({ status: 'active' })
+      .eq('id', duelId);
+    
+    if (error) {
+      showToast('❌ Klaida: ' + error.message, 'error');
+      return;
+    }
+    showToast('✅ Dvikova priimta! Dabar atlik užduotį ir įvesk rezultatą.', 'success');
+  } else {
+    const { error } = await sb.from('duels')
+      .update({ status: 'declined' })
+      .eq('id', duelId);
+    
+    if (error) {
+      showToast('❌ Klaida: ' + error.message, 'error');
+      return;
+    }
+    showToast('Dvikova atmesta.', 'info');
+  }
+  
+  renderMyDuels();
+}
+
+// 🥊 Įvesti dvikovos rezultatą
+function openDuelResultInput(duelId, duelType) {
+  const t = DUEL_TYPES[duelType] || { icon: '🥊', name: duelType, unit: '' };
+  
+  const existing = document.getElementById('duel-result-modal');
+  if (existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'duel-result-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:center;justify-content:center;padding:20px;';
+  
+  modal.innerHTML = `
+    <div style="width:100%;max-width:340px;background:var(--bg);border-radius:20px;overflow:hidden;border:.5px solid var(--bdr);">
+      <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);text-align:center;">
+        <div style="font-size:32px;">${t.icon}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;margin-top:4px;">${t.name.toUpperCase()}</div>
+      </div>
+      <div style="padding:16px;">
+        <div style="font-size:11px;color:var(--mut);text-align:center;margin-bottom:10px;">Įvesk savo rezultatą (${t.unit}):</div>
+        <input type="number" id="duel-result-value" inputmode="numeric" placeholder="0" style="width:100%;padding:14px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;color:white;font-size:24px;text-align:center;font-family:'Bebas Neue',sans-serif;box-sizing:border-box;" />
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button onclick="document.getElementById('duel-result-modal').remove()" style="flex:1;padding:12px;background:transparent;border:.5px solid var(--bdr);border-radius:10px;color:var(--mut);font-size:12px;font-weight:800;cursor:pointer;">ATŠAUKTI</button>
+          <button onclick="submitDuelResult('${duelId}')" style="flex:1;padding:12px;background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;border-radius:10px;color:white;font-size:12px;font-weight:800;cursor:pointer;">PATEIKTI</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('duel-result-value')?.focus(), 100);
+}
+
+// Pateikti dvikovos rezultatą
+async function submitDuelResult(duelId) {
+  const valueEl = document.getElementById('duel-result-value');
+  const value = parseFloat(valueEl?.value);
+  
+  if (isNaN(value) || value < 0) {
+    showToast('❌ Įvesk teisingą skaičių', 'error');
+    return;
+  }
+  
+  // Gauti dvikovą
+  const { data: duel } = await sb.from('duels').select('*').eq('id', duelId).single();
+  if (!duel) {
+    showToast('❌ Dvikova nerasta', 'error');
+    return;
+  }
+  
+  const isChallenger = duel.challenger_id === currentKid.id;
+  const updateData = {};
+  if (isChallenger) {
+    updateData.challenger_value = value;
+  } else {
+    updateData.opponent_value = value;
+  }
+  
+  // Patikrint ar abu jau įvedė - jei taip, status='submitted'
+  const otherValue = isChallenger ? duel.opponent_value : duel.challenger_value;
+  if (otherValue !== null && otherValue !== undefined) {
+    updateData.status = 'submitted';
+  }
+  
+  const { error } = await sb.from('duels').update(updateData).eq('id', duelId);
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error');
+    return;
+  }
+  
+  document.getElementById('duel-result-modal')?.remove();
+  
+  if (updateData.status === 'submitted') {
+    showToast('✅ Rezultatas pateiktas! Laukiama trenerio patvirtinimo.', 'success');
+  } else {
+    showToast('✅ Tavo rezultatas išsaugotas! Laukiam draugo.', 'success');
+  }
+  
+  renderMyDuels();
+}
+
 // 🤝 Atveria VISŲ komandos draugų modal'ą
 function openTeammatesModal() {
   const data = window._teammatesData;
@@ -6477,17 +6753,16 @@ async function openDuelChallenge(friendJson) {
     friend = typeof friendJson === 'string' ? JSON.parse(friendJson) : friendJson;
   } catch(e) { return; }
   
-  // Patikrint savaitės limitą - kiek iškvietimų šią savaitę
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: myWeekDuels } = await sb.from('duels')
-    .select('id, created_at')
-    .eq('challenger_id', currentKid.id)
-    .gte('created_at', weekAgo);
-  
-  if (myWeekDuels && myWeekDuels.length >= 1) {
-    showToast('🥊 Jau iškvietei dvikovą šią savaitę! Kitą galėsi po savaitės.', 'error');
-    return;
-  }
+  // ⚠️ SAVAITĖS LIMITAS IŠJUNGTAS TESTAVIMUI - vėliau grąžinti
+  // const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  // const { data: myWeekDuels } = await sb.from('duels')
+  //   .select('id, created_at')
+  //   .eq('challenger_id', currentKid.id)
+  //   .gte('created_at', weekAgo);
+  // if (myWeekDuels && myWeekDuels.length >= 1) {
+  //   showToast('🥊 Jau iškvietei dvikovą šią savaitę! Kitą galėsi po savaitės.', 'error');
+  //   return;
+  // }
   
   // Patikrint ar nėra aktyvios dvikovos su šiuo draugu
   const { data: activeDuel } = await sb.from('duels')
@@ -7293,6 +7568,245 @@ function showChallengeApprovedPopup(challenge, submission) {
   }, 6000);
 }
 
+// 🥊 Gražus dvikovos rezultato popup
+function showDuelResultPopup(duel, myKidId) {
+  const t = DUEL_TYPES[duel.duel_type] || { icon: '🥊', name: 'Dvikova', unit: '' };
+  const isChallenger = duel.challenger_id === myKidId;
+  const myValue = isChallenger ? duel.challenger_value : duel.opponent_value;
+  const oppValue = isChallenger ? duel.opponent_value : duel.challenger_value;
+  
+  // Rezultatas
+  let resultLabel, resultColor, resultGradient, resultIcon, expGained;
+  if (duel.winner_id === null) {
+    resultLabel = 'LYGIOSIOS';
+    resultColor = '#FF8C00';
+    resultGradient = 'linear-gradient(135deg, #FF8C00, #FF6B00)';
+    resultIcon = '🤝';
+    expGained = DUEL_EXP.draw;
+  } else if (duel.winner_id === myKidId) {
+    resultLabel = 'PERGALĖ!';
+    resultColor = '#22C55E';
+    resultGradient = 'linear-gradient(135deg, #22C55E, #16A34A)';
+    resultIcon = '🏆';
+    expGained = DUEL_EXP.winner;
+  } else {
+    resultLabel = 'PRALAIMĖJIMAS';
+    resultColor = '#EF4444';
+    resultGradient = 'linear-gradient(135deg, #EF4444, #DC2626)';
+    resultIcon = '💪';
+    expGained = DUEL_EXP.loser;
+  }
+  
+  const popup = document.createElement('div');
+  popup.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    background: linear-gradient(135deg, rgba(20,20,20,.98), rgba(10,10,10,.98));
+    border: 2px solid ${resultColor};
+    border-radius: 24px;
+    padding: 24px;
+    z-index: 999999;
+    max-width: 320px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.7), 0 0 60px ${resultColor}44;
+    opacity: 0;
+    transition: opacity .4s, transform .4s cubic-bezier(.34,1.56,.64,1);
+  `;
+  
+  // Padrąsinanti žinutė pralaimėjusiam
+  const encouragement = duel.winner_id !== null && duel.winner_id !== myKidId
+    ? '<div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:8px;font-style:italic;">Kitą kartą pavyks! 💪</div>'
+    : '';
+  
+  popup.innerHTML = `
+    <div style="font-size:11px;color:#FF8C00;letter-spacing:2px;font-weight:800;margin-bottom:8px;">🥊 DVIKOVA BAIGTA</div>
+    
+    <div style="font-size:13px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:14px;">${t.icon} ${t.name}</div>
+    
+    <div style="font-size:56px;line-height:1;margin-bottom:4px;filter:drop-shadow(0 0 16px ${resultColor});">${resultIcon}</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:${resultColor};margin-bottom:6px;text-shadow:0 0 16px ${resultColor};">${resultLabel}</div>
+    
+    <!-- Rezultatų palyginimas -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:14px 0;">
+      <div style="text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:white;line-height:1;">${myValue ?? '–'}</div>
+        <div style="font-size:8px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-top:2px;">TU · ${t.unit}</div>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--mut);">VS</div>
+      <div style="text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:rgba(255,255,255,.6);line-height:1;">${oppValue ?? '–'}</div>
+        <div style="font-size:8px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-top:2px;">DRAUGAS · ${t.unit}</div>
+      </div>
+    </div>
+    
+    <div style="height:1px;background:linear-gradient(90deg,transparent,${resultColor},transparent);margin:14px 0;"></div>
+    
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;">
+      <div style="font-size:24px;">💎</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${resultColor};line-height:1;text-shadow:0 0 16px ${resultColor};">+${expGained}</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">EXP</div>
+    </div>
+    ${encouragement}
+    
+    <button onclick="this.closest('[style*=\\'position: fixed\\']').remove()" style="
+      background: ${resultGradient};
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px ${resultColor}88;
+      margin-top: 14px;
+    ">GERAI! 🥋</button>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  requestAnimationFrame(() => {
+    popup.style.opacity = '1';
+    popup.style.transform = 'translate(-50%, -50%) scale(1)';
+  });
+  
+  setTimeout(() => {
+    if (popup.parentElement) {
+      popup.style.opacity = '0';
+      popup.style.transform = 'translate(-50%, -50%) scale(0.85)';
+      setTimeout(() => popup.remove(), 400);
+    }
+  }, 8000);
+}
+
+// 🥊 Patikrint ar yra užbaigtų dvikovų kurių vaikas dar nematė
+async function checkForCompletedDuels() {
+  if (!currentKid?.id) return;
+  
+  // 1) Užbaigtos dvikovos - rezultato popup
+  const lsKey = `spobu_kid_${currentKid.id}_seen_duels`;
+  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  
+  const { data: duels } = await sb.from('duels')
+    .select('*')
+    .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
+    .eq('status', 'completed')
+    .order('completed_at', { ascending: false });
+  
+  if (duels && duels.length > 0) {
+    const newDuels = duels.filter(d => !seenIds.has(d.id));
+    if (newDuels.length > 0) {
+      showDuelResultPopup(newDuels[0], currentKid.id);
+      localStorage.setItem(lsKey, JSON.stringify(duels.map(d => d.id)));
+    }
+  }
+  
+  // 2) Nauji iškvietimai - PRIIMTI/ATMESTI popup
+  const challKey = `spobu_kid_${currentKid.id}_seen_duel_challenges`;
+  const seenChall = new Set(JSON.parse(localStorage.getItem(challKey) || '[]'));
+  
+  const { data: pendingDuels } = await sb.from('duels')
+    .select('*')
+    .eq('opponent_id', currentKid.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+  
+  if (pendingDuels && pendingDuels.length > 0) {
+    const newChall = pendingDuels.filter(d => !seenChall.has(d.id));
+    if (newChall.length > 0) {
+      const duel = newChall[0];
+      const { data: chKid } = await sb.from('kids')
+        .select('user_id, is_anonymous')
+        .eq('id', duel.challenger_id)
+        .single();
+      
+      let challengerName = 'Draugas';
+      if (chKid && !chKid.is_anonymous) {
+        const { data: chProf } = await sb.from('profiles')
+          .select('first_name')
+          .eq('id', chKid.user_id)
+          .single();
+        challengerName = chProf?.first_name || 'Draugas';
+      } else if (chKid?.is_anonymous) {
+        challengerName = 'Anonimas';
+      }
+      
+      showDuelChallengePopup(duel, challengerName);
+    }
+    localStorage.setItem(challKey, JSON.stringify(pendingDuels.map(d => d.id)));
+  }
+}
+
+// 🥊 Gražus dvikovos IŠKVIETIMO popup (kai mane iškviečia)
+function showDuelChallengePopup(duel, challengerName) {
+  const t = DUEL_TYPES[duel.duel_type] || { icon: '🥊', name: 'Dvikova', desc: '' };
+  
+  // Pašalint seną jei yra
+  document.getElementById('duel-challenge-popup')?.remove();
+  
+  const popup = document.createElement('div');
+  popup.id = 'duel-challenge-popup';
+  popup.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    background: linear-gradient(135deg, rgba(20,20,20,.98), rgba(10,10,10,.98));
+    border: 2px solid #FF4D00;
+    border-radius: 24px;
+    padding: 24px;
+    z-index: 999999;
+    max-width: 320px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.7), 0 0 60px #FF4D0044;
+    opacity: 0;
+    transition: opacity .4s, transform .4s cubic-bezier(.34,1.56,.64,1);
+  `;
+  
+  popup.innerHTML = `
+    <div style="font-size:11px;color:#FF8C00;letter-spacing:2px;font-weight:800;margin-bottom:8px;">🥊 NAUJAS IŠŠŪKIS!</div>
+    
+    <div style="font-size:14px;color:white;font-weight:800;margin-bottom:14px;">${challengerName} iškvietė tave į dvikovą!</div>
+    
+    <div style="font-size:56px;line-height:1;margin-bottom:6px;filter:drop-shadow(0 0 16px #FF4D00);">${t.icon}</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:#FF8C00;margin-bottom:4px;">${t.name.toUpperCase()}</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.7);margin-bottom:14px;">${t.desc}</div>
+    
+    <div style="height:1px;background:linear-gradient(90deg,transparent,#FF4D00,transparent);margin:14px 0;"></div>
+    
+    <div style="display:flex;gap:8px;">
+      <button onclick="respondToDuelFromPopup('${duel.id}','accept')" style="flex:2;padding:12px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:12px;color:white;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 12px #22C55E88;">✅ PRIIMTI</button>
+      <button onclick="respondToDuelFromPopup('${duel.id}','decline')" style="flex:1;padding:12px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:12px;color:#EF4444;font-size:12px;font-weight:800;cursor:pointer;">ATMESTI</button>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  requestAnimationFrame(() => {
+    popup.style.opacity = '1';
+    popup.style.transform = 'translate(-50%, -50%) scale(1)';
+  });
+}
+
+// Atsakyti į dvikovą iš popup'o
+async function respondToDuelFromPopup(duelId, action) {
+  document.getElementById('duel-challenge-popup')?.remove();
+  // Pažymėti matytą iškvietimą
+  if (currentKid?.id) {
+    const challKey = `spobu_kid_${currentKid.id}_seen_duel_challenges`;
+    const seen = JSON.parse(localStorage.getItem(challKey) || '[]');
+    if (!seen.includes(duelId)) {
+      seen.push(duelId);
+      localStorage.setItem(challKey, JSON.stringify(seen));
+    }
+  }
+  await respondToDuel(duelId, action);
+}
+
 async function checkForNewStreakBonuses() {
   if (!currentKid?.id) return;
   
@@ -7641,6 +8155,26 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
   setText('v-ish-count-done', totalCompleted);
   setText('v-ish-count-total', totalCount);
   
+  // 🥊 Dvikovų pergalės + EXP (PAGAL TIPUS bloke)
+  if (currentKid?.id) {
+    sb.from('duels')
+      .select('winner_id, status, challenger_id, opponent_id')
+      .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
+      .eq('status', 'completed')
+      .then(({ data }) => {
+        const wins = (data || []).filter(d => d.winner_id === currentKid.id).length;
+        // Dvikovų EXP suma (laimėjo 50 / lygiosios 35 / pralaimėjo 25)
+        let duelExp = 0;
+        (data || []).forEach(d => {
+          if (!d.winner_id) duelExp += DUEL_EXP.draw;
+          else if (d.winner_id === currentKid.id) duelExp += DUEL_EXP.winner;
+          else duelExp += DUEL_EXP.loser;
+        });
+        setText('v-ish-type-duels-num', wins);
+        setText('v-ish-type-duels-exp', `+${duelExp} EXP`);
+      });
+  }
+  
   setText('v-ish-type-training-num', typeCounts.training);
   setText('v-ish-type-training-exp', `+${typeExp.training} EXP`);
   setText('v-ish-type-weekly-num', typeCounts.weekly);
@@ -7649,6 +8183,8 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
   setText('v-ish-type-monthly-exp', `+${typeExp.monthly} EXP`);
   setText('v-ish-type-onetime-num', typeCounts.one_time);
   setText('v-ish-type-onetime-exp', `+${typeExp.one_time} EXP`);
+  setText('v-ish-type-permanent-num', typeCounts.permanent || 0);
+  setText('v-ish-type-permanent-exp', `+${typeExp.permanent || 0} EXP`);
   
   // 🎨 HERO fonas pagal stage (kaip pagrindiniame + profilyje + karjeroje)
   const totalExp = currentKid?.total_exp || 0;
@@ -7846,7 +8382,7 @@ async function loadChallenges() {
   const typeIcons = { training: '🏋️', weekly: '⚡', monthly: '🎯', one_time: '✨', permanent: '♾️' };
   const typeLabels = { training: 'Treniruotės', weekly: 'Savaitinis', monthly: 'Mėnesinis', one_time: 'Vienkartinis', permanent: 'Nuolatinis' };
   
-  const html = challengesToShow.map(ch => {
+  const cardsArray = challengesToShow.map(ch => {
     const subs = subsByChallenge[ch.id] || [];
     const approvedSub = subs.find(s => s.status === 'approved');
     const pendingSub = subs.find(s => s.status === 'pending');
@@ -7964,18 +8500,15 @@ async function loadChallenges() {
       ${progressBar}
       ${actionButton}
     </div>`;
-  }).join('');
+  });
 
   // 🎯 COLLAPSE - rodyti tik 2 pirmus + mygtuką "Daugiau" jei daugiau
   const SHOW_LIMIT = 2;
-  const totalCount = challengesToShow.length;
+  const totalCount = cardsArray.length;
   
-  let finalHtml = html;
+  let finalHtml;
   
   if (totalCount > SHOW_LIMIT) {
-    // Atskirti kortelės į matomas/paslėptas
-    const cardsArray = html.match(/<div class="kid-ch-card"[^>]*>[\s\S]*?<\/div>(?=\s*<div class="kid-ch-card"|$)/g) || [html];
-    
     const visible = cardsArray.slice(0, SHOW_LIMIT).join('');
     const hidden = cardsArray.slice(SHOW_LIMIT).join('');
     
@@ -7989,9 +8522,18 @@ async function loadChallenges() {
         ▼ DAUGIAU IŠŠŪKIŲ (${totalCount - SHOW_LIMIT})
       </button>
     `;
+  } else {
+    finalHtml = cardsArray.join('');
   }
 
   document.getElementById('v-challenges-list').innerHTML = finalHtml;
+  
+  // 🥊 Dvikovos iššūkių lange (virš įprastų iššūkių)
+  try {
+    await renderMyDuels();
+  } catch(e) {
+    console.error('[renderMyDuels] klaida:', e);
+  }
   
   // EXP skaičiukas pagrindinio ekrano
   const expEl = document.getElementById('v-challenges-exp');
@@ -12457,6 +12999,7 @@ async function loadTrainerData() {
   await loadPendingSubmissions();
   await loadPendingChallengeSubmissions();
   await loadPendingCompetitionResults();
+  await loadPendingDuels().catch(e => console.error('loadPendingDuels:', e));
   await loadTrainerMembers();
   await loadTrainerGroups();
 }
@@ -14341,22 +14884,220 @@ function switchTrTab(el, type) {
   const careerList = document.getElementById('tr-submissions-list');
   const challengesList = document.getElementById('tr-challenge-submissions-list');
   const competitionsList = document.getElementById('tr-competition-submissions-list');
+  const duelsList = document.getElementById('tr-duels-list');
+  
+  // Paslėpti visus
+  [careerList, challengesList, competitionsList, duelsList].forEach(l => { if (l) l.style.display = 'none'; });
   
   if (type === 'career') {
-    careerList.style.display = 'block';
-    challengesList.style.display = 'none';
-    if (competitionsList) competitionsList.style.display = 'none';
+    if (careerList) careerList.style.display = 'block';
   } else if (type === 'challenges') {
-    careerList.style.display = 'none';
-    challengesList.style.display = 'block';
-    if (competitionsList) competitionsList.style.display = 'none';
+    if (challengesList) challengesList.style.display = 'block';
     loadPendingChallengeSubmissions();
   } else if (type === 'competitions') {
-    careerList.style.display = 'none';
-    challengesList.style.display = 'none';
     if (competitionsList) competitionsList.style.display = 'block';
     loadPendingCompetitionResults();
+  } else if (type === 'duels') {
+    if (duelsList) duelsList.style.display = 'block';
+    loadPendingDuels();
   }
+}
+
+// ════════════════════════════════════════
+// 🥊 TRENERIO DVIKOVŲ PATVIRTINIMAS
+// ════════════════════════════════════════
+async function loadPendingDuels() {
+  const list = document.getElementById('tr-duels-list');
+  if (!list) return;
+  
+  const clubId = currentProfile?.club_id;
+  if (!clubId) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Klubas nepriskirtas</div>';
+    return;
+  }
+  
+  // Submitted dvikovos klube - laukia patvirtinimo
+  const { data: duels, error } = await sb.from('duels')
+    .select('*')
+    .eq('club_id', clubId)
+    .eq('status', 'submitted')
+    .order('created_at', { ascending: true });
+  
+  if (error) {
+    console.error('loadPendingDuels:', error);
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#EF4444;">Klaida kraunant dvikovas</div>';
+    return;
+  }
+  
+  // Atnaujint skaičių
+  const countEl = document.getElementById('tr-duels-count');
+  if (countEl) countEl.textContent = duels?.length || 0;
+  
+  if (!duels || duels.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">🥊 Nėra dvikovų laukiančių patvirtinimo</div>';
+    return;
+  }
+  
+  // Surinkti vaikų vardus
+  const kidIds = [...new Set(duels.flatMap(d => [d.challenger_id, d.opponent_id]))];
+  const { data: kids } = await sb.from('kids')
+    .select('id, user_id, is_anonymous')
+    .in('id', kidIds);
+  
+  const userIds = (kids || []).map(k => k.user_id);
+  const { data: profs } = await sb.from('profiles')
+    .select('id, first_name, last_name')
+    .in('id', userIds);
+  
+  const kidMap = {};
+  (kids || []).forEach(k => { kidMap[k.id] = k; });
+  const profMap = {};
+  (profs || []).forEach(p => { profMap[p.id] = p; });
+  
+  const getName = (kidId) => {
+    const k = kidMap[kidId];
+    if (!k) return 'Vaikas';
+    if (k.is_anonymous) return 'Anonimas';
+    const p = profMap[k.user_id];
+    return p ? `${p.first_name || ''} ${p.last_name || ''}`.trim() : 'Vaikas';
+  };
+  
+  list.innerHTML = duels.map(d => {
+    const t = DUEL_TYPES[d.duel_type] || { icon: '🥊', name: d.duel_type, unit: '', moreIsBetter: true };
+    const chName = getName(d.challenger_id);
+    const opName = getName(d.opponent_id);
+    const chVal = d.challenger_value;
+    const opVal = d.opponent_value;
+    
+    let chWins, opWins;
+    if (t.moreIsBetter) {
+      chWins = chVal > opVal;
+      opWins = opVal > chVal;
+    } else {
+      chWins = chVal < opVal;
+      opWins = opVal < chVal;
+    }
+    const isDraw = chVal === opVal;
+    
+    return `
+      <div class="cd" style="margin:0 12px 10px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="font-size:28px;">${t.icon}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:900;color:white;">${t.name}</div>
+            <div style="font-size:10px;color:var(--mut);">Dvikovos rezultatas</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:stretch;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;background:${chWins ? 'rgba(34,197,94,.12)' : isDraw ? 'rgba(255,140,0,.1)' : 'var(--bg)'};border:.5px solid ${chWins ? 'rgba(34,197,94,.4)' : 'var(--bdr)'};border-radius:10px;padding:8px;text-align:center;">
+            <div style="font-size:11px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${chName}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${chWins ? '#22C55E' : 'white'};line-height:1;margin-top:3px;">${chVal ?? '–'}</div>
+            <div style="font-size:8px;color:var(--mut);">${t.unit}</div>
+            ${chWins ? '<div style="font-size:8px;color:#22C55E;font-weight:800;margin-top:2px;">🏆 LAIMI</div>' : ''}
+          </div>
+          <div style="display:flex;align-items:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--mut);">VS</div>
+          <div style="flex:1;background:${opWins ? 'rgba(34,197,94,.12)' : isDraw ? 'rgba(255,140,0,.1)' : 'var(--bg)'};border:.5px solid ${opWins ? 'rgba(34,197,94,.4)' : 'var(--bdr)'};border-radius:10px;padding:8px;text-align:center;">
+            <div style="font-size:11px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${opName}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${opWins ? '#22C55E' : 'white'};line-height:1;margin-top:3px;">${opVal ?? '–'}</div>
+            <div style="font-size:8px;color:var(--mut);">${t.unit}</div>
+            ${opWins ? '<div style="font-size:8px;color:#22C55E;font-weight:800;margin-top:2px;">🏆 LAIMI</div>' : ''}
+          </div>
+        </div>
+        ${isDraw ? '<div style="text-align:center;font-size:10px;color:#FF8C00;font-weight:800;margin-bottom:8px;">🤝 LYGIOSIOS</div>' : ''}
+        <div style="display:flex;gap:6px;">
+          <button onclick="approveDuel('${d.id}')" style="flex:2;padding:10px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:8px;color:white;font-size:12px;font-weight:800;cursor:pointer;">✅ PATVIRTINTI</button>
+          <button onclick="rejectDuel('${d.id}')" style="flex:1;padding:10px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:8px;color:#EF4444;font-size:12px;font-weight:800;cursor:pointer;">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Treneris patvirtina dvikovą
+async function approveDuel(duelId) {
+  const { data: duel } = await sb.from('duels').select('*').eq('id', duelId).single();
+  if (!duel) {
+    showToast('❌ Dvikova nerasta', 'error');
+    return;
+  }
+  
+  const t = DUEL_TYPES[duel.duel_type] || { moreIsBetter: true };
+  const chVal = duel.challenger_value;
+  const opVal = duel.opponent_value;
+  
+  let winnerId = null;
+  if (chVal !== opVal) {
+    if (t.moreIsBetter) {
+      winnerId = chVal > opVal ? duel.challenger_id : duel.opponent_id;
+    } else {
+      winnerId = chVal < opVal ? duel.challenger_id : duel.opponent_id;
+    }
+  }
+  
+  const { error } = await sb.from('duels')
+    .update({
+      status: 'completed',
+      winner_id: winnerId,
+      trainer_id: currentUser.id,
+      completed_at: new Date().toISOString()
+    })
+    .eq('id', duelId);
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error');
+    return;
+  }
+  
+  // 🎯 EXP paskirstymas
+  try {
+    let chExp, opExp;
+    if (winnerId === null) {
+      chExp = DUEL_EXP.draw;
+      opExp = DUEL_EXP.draw;
+    } else if (winnerId === duel.challenger_id) {
+      chExp = DUEL_EXP.winner;
+      opExp = DUEL_EXP.loser;
+    } else {
+      chExp = DUEL_EXP.loser;
+      opExp = DUEL_EXP.winner;
+    }
+    
+    await addExpToKid(duel.challenger_id, chExp);
+    await addExpToKid(duel.opponent_id, opExp);
+    
+    console.log('[approveDuel] EXP paskirta:', { challenger: chExp, opponent: opExp, winnerId });
+  } catch(e) {
+    console.error('[approveDuel] EXP klaida:', e);
+  }
+  
+  showToast('✅ Dvikova patvirtinta! EXP paskirta abiem vaikams.', 'success');
+  loadPendingDuels();
+}
+
+// Pridėti EXP vaikui (helper)
+async function addExpToKid(kidId, expAmount) {
+  if (!kidId || !expAmount) return;
+  const { data: kid } = await sb.from('kids').select('total_exp').eq('id', kidId).single();
+  if (!kid) return;
+  const newExp = (kid.total_exp || 0) + expAmount;
+  await sb.from('kids').update({ total_exp: newExp }).eq('id', kidId);
+}
+
+// Treneris atmeta dvikovą
+async function rejectDuel(duelId) {
+  if (!confirm('Atmesti šią dvikovą? Vaikai turės įvesti rezultatus iš naujo.')) return;
+  
+  const { error } = await sb.from('duels')
+    .update({ status: 'active', challenger_value: null, opponent_value: null })
+    .eq('id', duelId);
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error');
+    return;
+  }
+  
+  showToast('Dvikova grąžinta - vaikai įves rezultatus iš naujo.', 'info');
+  loadPendingDuels();
 }
 
 // EXP ribos pagal tipą
@@ -15875,8 +16616,9 @@ async function updateTrainerPendingBadge() {
   const careerCount = parseInt(document.getElementById('tr-career-count').textContent) || 0;
   const challengesCount = parseInt(document.getElementById('tr-challenges-count').textContent) || 0;
   const compCount = parseInt(document.getElementById('tr-competitions-count').textContent) || 0;
+  const duelsCount = parseInt(document.getElementById('tr-duels-count')?.textContent) || 0;
   
-  const total = careerCount + challengesCount + compCount;
+  const total = careerCount + challengesCount + compCount + duelsCount;
   const badge = document.getElementById('tr-pending-badge');
   if (badge) badge.textContent = total;
 }
@@ -15927,14 +16669,72 @@ function subscribeKidNotifications() {
 
       if (sub.status === 'approved') {
         showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success');
-        // Atnaujinam visus duomenis
         await loadKidData();
       } else if (sub.status === 'rejected') {
         const reason = sub.rejection_reason || 'be priežasties';
         showToast(`❌ ATMESTA\n\n${exName}\n${reason}`, 'error');
-        // Atnaujinam tik laukiančių sąrašą
         await loadKidPendingSubmissions();
       }
+    })
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'duels'
+    }, async payload => {
+      const duel = payload.new;
+      if (!duel || duel.status !== 'pending') return;
+      
+      // Ar mane iškvietė? (esu opponent)
+      const myKidId = currentKid?.id;
+      if (duel.opponent_id !== myKidId) return;
+      
+      // Gauti iškvietėjo vardą
+      const { data: chKid } = await sb.from('kids')
+        .select('user_id, is_anonymous')
+        .eq('id', duel.challenger_id)
+        .single();
+      
+      let challengerName = 'Draugas';
+      if (chKid && !chKid.is_anonymous) {
+        const { data: chProf } = await sb.from('profiles')
+          .select('first_name')
+          .eq('id', chKid.user_id)
+          .single();
+        challengerName = chProf?.first_name || 'Draugas';
+      } else if (chKid?.is_anonymous) {
+        challengerName = 'Anonimas';
+      }
+      
+      // Pažymėti matytą iškvietimą
+      const challKey = `spobu_kid_${myKidId}_seen_duel_challenges`;
+      const seenCh = JSON.parse(localStorage.getItem(challKey) || '[]');
+      if (!seenCh.includes(duel.id)) {
+        seenCh.push(duel.id);
+        localStorage.setItem(challKey, JSON.stringify(seenCh));
+      }
+      
+      // Gražus popup
+      showDuelChallengePopup(duel, challengerName);
+    })
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'duels'
+    }, async payload => {
+      const duel = payload.new;
+      if (!duel || duel.status !== 'completed') return;
+      
+      // Ar aš dalyvavau šioje dvikovoje?
+      const myKidId = currentKid?.id;
+      if (duel.challenger_id !== myKidId && duel.opponent_id !== myKidId) return;
+      
+      // Pažymėti matytą (kad checkForCompletedDuels nepasikartotų)
+      const lsKey = `spobu_kid_${myKidId}_seen_duels`;
+      const seen = JSON.parse(localStorage.getItem(lsKey) || '[]');
+      if (!seen.includes(duel.id)) {
+        seen.push(duel.id);
+        localStorage.setItem(lsKey, JSON.stringify(seen));
+      }
+      
+      // Gražus popup
+      showDuelResultPopup(duel, myKidId);
+      await loadKidData();
     })
     .subscribe();
 }
