@@ -1346,7 +1346,7 @@ select.inp option{background:#222;}
   <div class="sa">
     
     <!-- 🥋 HERO su kanji + progress ring -->
-    <div class="hero" id="v-prof-hero" style="background:linear-gradient(135deg,var(--br),var(--br2));margin:6px 12px 8px;padding:14px 12px 12px;border-radius:16px;text-align:center;position:relative;overflow:hidden;">
+    <div class="hero" id="v-prof-hero" style="background:transparent;margin:6px 12px 8px;padding:14px 12px 12px;border-radius:16px;text-align:center;position:relative;overflow:hidden;">
       <!-- KANJI + PROGRESS RING - sumažintas -->
       <div style="position:relative;width:140px;height:140px;margin:0 auto 10px;">
         <svg id="v-prof-progress-ring" style="position:absolute;inset:0;transform:rotate(-90deg);" viewBox="0 0 140 140">
@@ -4831,9 +4831,21 @@ async function loadKidData() {
   const stageIdx = STAGES.findIndex(s => s.name === stageInfo.stage);
   const stage = STAGES[stageIdx] || STAGES[0];
   
-  // Hero fonas
+  // 🎨 STAGE FONAS VISAM PROFILIO LANGUI (.sa scroll area)
+  const profSc = document.getElementById('v-prof');
+  if (profSc) {
+    const profSa = profSc.querySelector('.sa');
+    if (profSa) {
+      // Radial gradient pagal stage spalvą - tamsus, su švytėjimu viršuje
+      profSa.style.background = stage.bgGradient || 'transparent';
+    }
+    // Top bar + status bar taip pat - kad būtų vientisas
+    profSc.style.background = stage.bgGradient || 'transparent';
+  }
+  
+  // Hero - transparent (kad matytųsi lango fonas)
   const profHero = document.getElementById('v-prof-hero');
-  if (profHero) profHero.style.background = stage.bgGradient;
+  if (profHero) profHero.style.background = 'transparent';
   
   // Kanji
   const kanjiEl = document.getElementById('v-prof-kanji');
