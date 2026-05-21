@@ -16376,14 +16376,41 @@ function subscribeKidNotifications() {
 
       if (sub.status === 'approved') {
         showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success');
-        // Atnaujinam visus duomenis
         await loadKidData();
       } else if (sub.status === 'rejected') {
         const reason = sub.rejection_reason || 'be priežasties';
         showToast(`❌ ATMESTA\n\n${exName}\n${reason}`, 'error');
-        // Atnaujinam tik laukiančių sąrašą
         await loadKidPendingSubmissions();
       }
+    })
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'duels'
+    }, async payload => {
+      const duel = payload.new;
+      if (!duel || duel.status !== 'completed') return;
+      
+      // Ar aš dalyvavau šioje dvikovoje?
+      const myKidId = currentKid?.id;
+      if (duel.challenger_id !== myKidId && duel.opponent_id !== myKidId) return;
+      
+      const t = DUEL_TYPES[duel.duel_type] || { icon: '🥊', name: 'Dvikova' };
+      const isChallenger = duel.challenger_id === myKidId;
+      
+      // Rezultatas man
+      let resultText, expGained;
+      if (duel.winner_id === null) {
+        resultText = '🤝 LYGIOSIOS';
+        expGained = DUEL_EXP.draw;
+      } else if (duel.winner_id === myKidId) {
+        resultText = '🏆 LAIMĖJAI!';
+        expGained = DUEL_EXP.winner;
+      } else {
+        resultText = '😔 Pralaimėjai';
+        expGained = DUEL_EXP.loser;
+      }
+      
+      showToast(`${t.icon} DVIKOVA BAIGTA\n\n${t.name}\n${resultText}\n+${expGained} EXP`, 'success', 5000);
+      await loadKidData();
     })
     .subscribe();
 }
