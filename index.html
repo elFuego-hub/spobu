@@ -1410,6 +1410,12 @@ select.inp option{background:#222;}
       <div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
     </div>
     
+    <!-- 🥊 MANO DVIKOVOS -->
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">🥊 MANO DVIKOVOS</div>
+    <div id="v-prof-duels" style="margin:0 12px 8px;">
+      <div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;">Kraunama...</div>
+    </div>
+    
     <!-- 🤝 KOMANDOS DRAUGAI -->
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">🤝 KOMANDOS DRAUGAI</div>
     <div id="v-prof-teammates" style="margin:0 12px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
@@ -6269,6 +6275,236 @@ async function renderProfileExtras() {
   } else if (teammatesEl) {
     teammatesEl.innerHTML = `<div style="padding:14px;text-align:center;color:var(--mut);font-size:10px;">Nepriskirtas grupei</div>`;
   }
+  
+  // 🥊 MANO DVIKOVOS
+  try {
+    await renderMyDuels();
+  } catch(e) {
+    console.error('[renderMyDuels] klaida:', e);
+  }
+}
+
+// ════════════════════════════════════════
+// 🥊 Mano dvikovos - rodymas profilyje
+// ════════════════════════════════════════
+async function renderMyDuels() {
+  const el = document.getElementById('v-prof-duels');
+  if (!el || !currentKid?.id) return;
+  
+  // Visos mano dvikovos (kur dalyvauju) - ne completed/declined/expired
+  const { data: duels, error } = await sb.from('duels')
+    .select('*')
+    .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
+    .in('status', ['pending', 'active', 'submitted'])
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('renderMyDuels:', error);
+    el.innerHTML = `<div style="padding:10px;text-align:center;color:#EF4444;font-size:10px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;">Klaida kraunant dvikovas</div>`;
+    return;
+  }
+  
+  if (!duels || duels.length === 0) {
+    el.innerHTML = `<div style="padding:14px;text-align:center;color:var(--mut);font-size:10px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;">Nėra aktyvių dvikovų.<br>Iškviesk draugą! 🥊</div>`;
+    return;
+  }
+  
+  // Surinkti visų dalyvių vardus
+  const kidIds = [...new Set(duels.flatMap(d => [d.challenger_id, d.opponent_id]))];
+  const { data: kids } = await sb.from('kids')
+    .select('id, user_id, is_anonymous')
+    .in('id', kidIds);
+  
+  const userIds = (kids || []).map(k => k.user_id);
+  const { data: profs } = await sb.from('profiles')
+    .select('id, first_name, last_name')
+    .in('id', userIds);
+  
+  const kidMap = {};
+  (kids || []).forEach(k => { kidMap[k.id] = k; });
+  const profMap = {};
+  (profs || []).forEach(p => { profMap[p.id] = p; });
+  
+  const getKidName = (kidId) => {
+    const k = kidMap[kidId];
+    if (!k) return 'Vaikas';
+    if (k.is_anonymous) return 'Anonimas';
+    const p = profMap[k.user_id];
+    return p ? `${p.first_name || ''} ${(p.last_name || '').charAt(0)}${p.last_name ? '.' : ''}`.trim() : 'Vaikas';
+  };
+  
+  el.innerHTML = duels.map(d => {
+    const t = DUEL_TYPES[d.duel_type] || { icon: '🥊', name: d.duel_type, unit: '' };
+    const isChallenger = d.challenger_id === currentKid.id;
+    const opponentId = isChallenger ? d.opponent_id : d.challenger_id;
+    const opponentName = getKidName(opponentId);
+    
+    // Mano ir oponento rezultatai
+    const myValue = isChallenger ? d.challenger_value : d.opponent_value;
+    const oppValue = isChallenger ? d.opponent_value : d.challenger_value;
+    const iSubmitted = myValue !== null && myValue !== undefined;
+    
+    let statusBlock = '';
+    
+    if (d.status === 'pending') {
+      if (isChallenger) {
+        // Aš iškviečiau, laukiu atsakymo
+        statusBlock = `
+          <div style="background:rgba(255,140,0,.1);border-radius:8px;padding:8px;margin-top:8px;text-align:center;">
+            <div style="font-size:10px;color:#FF8C00;font-weight:700;">⏳ Laukiama, ar ${opponentName} priims</div>
+          </div>
+        `;
+      } else {
+        // Mane iškvietė - PRIIMTI/ATMESTI
+        statusBlock = `
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button onclick="respondToDuel('${d.id}','accept')" style="flex:1;padding:8px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:8px;color:white;font-size:11px;font-weight:800;cursor:pointer;">✅ PRIIMTI</button>
+            <button onclick="respondToDuel('${d.id}','decline')" style="flex:1;padding:8px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:8px;color:#EF4444;font-size:11px;font-weight:800;cursor:pointer;">✕ ATMESTI</button>
+          </div>
+        `;
+      }
+    } else if (d.status === 'active') {
+      if (iSubmitted) {
+        statusBlock = `
+          <div style="background:rgba(34,197,94,.1);border-radius:8px;padding:8px;margin-top:8px;text-align:center;">
+            <div style="font-size:10px;color:#22C55E;font-weight:700;">✅ Tavo rezultatas: ${myValue} ${t.unit} · laukiam ${opponentName}</div>
+          </div>
+        `;
+      } else {
+        statusBlock = `
+          <button onclick="openDuelResultInput('${d.id}','${d.duel_type}')" style="width:100%;padding:9px;background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;border-radius:8px;color:white;font-size:11px;font-weight:800;cursor:pointer;margin-top:8px;">📝 ĮVESTI REZULTATĄ</button>
+        `;
+      }
+    } else if (d.status === 'submitted') {
+      statusBlock = `
+        <div style="background:rgba(255,140,0,.1);border-radius:8px;padding:8px;margin-top:8px;text-align:center;">
+          <div style="font-size:10px;color:#FF8C00;font-weight:700;">⏳ Laukiama trenerio patvirtinimo</div>
+          <div style="font-size:9px;color:var(--mut);margin-top:2px;">Tu: ${myValue ?? '–'} · ${opponentName}: ${oppValue ?? '–'}</div>
+        </div>
+      `;
+    }
+    
+    return `
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:24px;">${t.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:800;color:white;">${t.name}</div>
+            <div style="font-size:9px;color:var(--mut);margin-top:1px;">vs ${opponentName}</div>
+          </div>
+          <div style="font-size:8px;color:#FF8C00;font-weight:800;letter-spacing:.5px;background:rgba(255,140,0,.12);padding:3px 7px;border-radius:99px;">${isChallenger ? 'TU IŠKVIETEI' : 'TAVE IŠKVIETĖ'}</div>
+        </div>
+        ${statusBlock}
+      </div>
+    `;
+  }).join('');
+}
+
+// 🥊 Atsakyti į dvikovą - priimti / atmesti
+async function respondToDuel(duelId, action) {
+  if (action === 'accept') {
+    const { error } = await sb.from('duels')
+      .update({ status: 'active' })
+      .eq('id', duelId);
+    
+    if (error) {
+      showToast('❌ Klaida: ' + error.message, 'error');
+      return;
+    }
+    showToast('✅ Dvikova priimta! Dabar atlik užduotį ir įvesk rezultatą.', 'success');
+  } else {
+    const { error } = await sb.from('duels')
+      .update({ status: 'declined' })
+      .eq('id', duelId);
+    
+    if (error) {
+      showToast('❌ Klaida: ' + error.message, 'error');
+      return;
+    }
+    showToast('Dvikova atmesta.', 'info');
+  }
+  
+  renderProfileExtras();
+}
+
+// 🥊 Įvesti dvikovos rezultatą
+function openDuelResultInput(duelId, duelType) {
+  const t = DUEL_TYPES[duelType] || { icon: '🥊', name: duelType, unit: '' };
+  
+  const existing = document.getElementById('duel-result-modal');
+  if (existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'duel-result-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:center;justify-content:center;padding:20px;';
+  
+  modal.innerHTML = `
+    <div style="width:100%;max-width:340px;background:var(--bg);border-radius:20px;overflow:hidden;border:.5px solid var(--bdr);">
+      <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);text-align:center;">
+        <div style="font-size:32px;">${t.icon}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;margin-top:4px;">${t.name.toUpperCase()}</div>
+      </div>
+      <div style="padding:16px;">
+        <div style="font-size:11px;color:var(--mut);text-align:center;margin-bottom:10px;">Įvesk savo rezultatą (${t.unit}):</div>
+        <input type="number" id="duel-result-value" inputmode="numeric" placeholder="0" style="width:100%;padding:14px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;color:white;font-size:24px;text-align:center;font-family:'Bebas Neue',sans-serif;box-sizing:border-box;" />
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button onclick="document.getElementById('duel-result-modal').remove()" style="flex:1;padding:12px;background:transparent;border:.5px solid var(--bdr);border-radius:10px;color:var(--mut);font-size:12px;font-weight:800;cursor:pointer;">ATŠAUKTI</button>
+          <button onclick="submitDuelResult('${duelId}')" style="flex:1;padding:12px;background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;border-radius:10px;color:white;font-size:12px;font-weight:800;cursor:pointer;">PATEIKTI</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('duel-result-value')?.focus(), 100);
+}
+
+// Pateikti dvikovos rezultatą
+async function submitDuelResult(duelId) {
+  const valueEl = document.getElementById('duel-result-value');
+  const value = parseFloat(valueEl?.value);
+  
+  if (isNaN(value) || value < 0) {
+    showToast('❌ Įvesk teisingą skaičių', 'error');
+    return;
+  }
+  
+  // Gauti dvikovą
+  const { data: duel } = await sb.from('duels').select('*').eq('id', duelId).single();
+  if (!duel) {
+    showToast('❌ Dvikova nerasta', 'error');
+    return;
+  }
+  
+  const isChallenger = duel.challenger_id === currentKid.id;
+  const updateData = {};
+  if (isChallenger) {
+    updateData.challenger_value = value;
+  } else {
+    updateData.opponent_value = value;
+  }
+  
+  // Patikrint ar abu jau įvedė - jei taip, status='submitted'
+  const otherValue = isChallenger ? duel.opponent_value : duel.challenger_value;
+  if (otherValue !== null && otherValue !== undefined) {
+    updateData.status = 'submitted';
+  }
+  
+  const { error } = await sb.from('duels').update(updateData).eq('id', duelId);
+  
+  if (error) {
+    showToast('❌ Klaida: ' + error.message, 'error');
+    return;
+  }
+  
+  document.getElementById('duel-result-modal')?.remove();
+  
+  if (updateData.status === 'submitted') {
+    showToast('✅ Rezultatas pateiktas! Laukiama trenerio patvirtinimo.', 'success');
+  } else {
+    showToast('✅ Tavo rezultatas išsaugotas! Laukiam draugo.', 'success');
+  }
+  
+  renderProfileExtras();
 }
 
 // 🤝 Atveria VISŲ komandos draugų modal'ą
