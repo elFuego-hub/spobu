@@ -6029,6 +6029,7 @@ function renderBeltFlat() {
 // ════════════════════════════════════════
 async function renderProfileExtras() {
   if (!currentKid) return;
+  console.log('[renderProfileExtras] START, group_id:', currentKid.group_id);
   
   // 💬 BIOGRAFIJA - iš kids.bio (jei yra)
   const bioEl = document.getElementById('v-prof-bio');
@@ -6142,6 +6143,7 @@ async function renderProfileExtras() {
   
   // 🤝 KOMANDOS DRAUGAI - iš to paties grupės kiti vaikai
   const teammatesEl = document.getElementById('v-prof-teammates');
+  console.log('[teammates] el:', !!teammatesEl, 'group_id:', currentKid.group_id);
   if (teammatesEl && currentKid.group_id) {
     try {
       // VISI grupės vaikai (su manimi) - kad rasti poziciją
@@ -6149,6 +6151,8 @@ async function renderProfileExtras() {
         .select('id, total_exp, kyu, is_anonymous, profiles(first_name, last_name)')
         .eq('group_id', currentKid.group_id)
         .order('total_exp', { ascending: false });
+      
+      console.log('[teammates] allKids:', allKids?.length || 0);
       
       if (!allKids || allKids.length <= 1) {
         teammatesEl.innerHTML = `<div style="padding:14px;text-align:center;color:var(--mut);font-size:10px;">Grupėje kol kas tik tu 🥋</div>`;
