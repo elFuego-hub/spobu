@@ -6221,7 +6221,7 @@ async function renderProfileExtras() {
         }
         
         return `
-          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;${idx < total - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}">
+          <div onclick='openFriendModal(${JSON.stringify(JSON.stringify(m))})' style="display:flex;align-items:center;gap:8px;padding:7px 10px;${idx < total - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
             <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,${stage.color}88,${stage.color}44);color:white;font-family:'Bebas Neue',sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${letter}</div>
             <div style="flex:1;min-width:0;">
               <div style="font-size:11px;font-weight:800;color:white;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
@@ -6231,6 +6231,7 @@ async function renderProfileExtras() {
               <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:${stage.color};letter-spacing:1px;">LVL ${stageInfo.globalLevel}</div>
               ${diffBadge}
             </div>
+            <div style="font-size:11px;color:var(--mut);flex-shrink:0;">›</div>
           </div>
         `;
       };
@@ -6303,7 +6304,7 @@ function openTeammatesModal() {
     }
     
     return `
-      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border-radius:10px;margin-bottom:5px;">
+      <div onclick='document.getElementById("teammates-modal").remove();openFriendModal(${JSON.stringify(JSON.stringify(m))})' style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border-radius:10px;margin-bottom:5px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
         <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,${stage.color}88,${stage.color}44);color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${letter}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:800;color:white;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
@@ -6313,6 +6314,7 @@ function openTeammatesModal() {
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${stage.color};letter-spacing:1px;">LVL ${stageInfo.globalLevel}</div>
           ${diffBadge}
         </div>
+        <div style="font-size:12px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
     `;
   }).join('');
@@ -6333,6 +6335,246 @@ function openTeammatesModal() {
     </div>
   `;
   document.body.appendChild(modal);
+}
+
+// ════════════════════════════════════════
+// 🥊 DVIKOVŲ SISTEMA
+// ════════════════════════════════════════
+
+// 5 fiksuoti dvikovų tipai
+const DUEL_TYPES = {
+  pushups: { icon: '💪', name: 'Atsispaudimai', unit: 'kartų', desc: 'Kas daugiau atsispaus', moreIsBetter: true },
+  squats:  { icon: '🦵', name: 'Pritūpimai',    unit: 'kartų', desc: 'Kas daugiau pritūps',  moreIsBetter: true },
+  situps:  { icon: '🤸', name: 'Pilvo presas',  unit: 'kartų', desc: 'Kas daugiau pakels',   moreIsBetter: true },
+  plank:   { icon: '⏱️', name: 'Lenta (plank)', unit: 'sek.',  desc: 'Kas ilgiau išlaikys',  moreIsBetter: true },
+  running: { icon: '🏃', name: 'Bėgimas',       unit: 'min.',  desc: 'Kas greičiau nubėgs',  moreIsBetter: false }
+};
+
+const DUEL_EXP = { winner: 50, loser: 25, draw: 35 };
+
+// 🤝 Atveria DRAUGO modalą - pasiekimai + dvikovos mygtukas
+async function openFriendModal(friendJson) {
+  let friend;
+  try {
+    friend = typeof friendJson === 'string' ? JSON.parse(friendJson) : friendJson;
+  } catch(e) {
+    console.error('openFriendModal parse:', e);
+    return;
+  }
+  
+  const existing = document.getElementById('friend-modal');
+  if (existing) existing.remove();
+  
+  const stageInfo = getStageInfo(friend.total_exp || 0);
+  const stage = STAGES.find(s => s.name === stageInfo.stage) || STAGES[0];
+  
+  const name = friend.is_anonymous 
+    ? 'Anonimas'
+    : `${friend.profiles?.first_name || ''} ${friend.profiles?.last_name || ''}`.trim() || 'Vaikas';
+  const letter = friend.is_anonymous ? '?' : (friend.profiles?.first_name?.charAt(0).toUpperCase() || 'V');
+  
+  const modal = document.createElement('div');
+  modal.id = 'friend-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:flex-end;justify-content:center;';
+  
+  modal.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+      <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">👤 KOMANDOS DRAUGAS</div>
+        <button onclick="document.getElementById('friend-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:16px;" id="friend-modal-body">
+        <!-- HERO -->
+        <div style="background:${stage.bgGradient};border-radius:16px;padding:16px;text-align:center;margin-bottom:12px;">
+          <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,${stage.color}88,${stage.color}44);color:white;font-family:'Bebas Neue',sans-serif;font-size:30px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;border:2px solid ${stage.color};">${letter}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;">${name}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.8);margin-top:3px;">${stage.emoji} ${stage.name} · ${friend.kyu || 'Mu kyu'}</div>
+          <div style="display:flex;justify-content:center;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.15);">
+            <div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;line-height:1;">LVL ${stageInfo.globalLevel}</div>
+              <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;">LYGIS</div>
+            </div>
+            <div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;line-height:1;">${(friend.total_exp || 0).toLocaleString('lt-LT')}</div>
+              <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;">EXP</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Dvikovų statistika su šiuo draugu -->
+        <div id="friend-duel-stats" style="margin-bottom:12px;"></div>
+        
+        <!-- IŠKVIESTI Į DVIKOVĄ -->
+        <button onclick='openDuelChallenge(${JSON.stringify(JSON.stringify(friend))})' style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;border-radius:14px;color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+          🥊 IŠKVIESTI Į DVIKOVĄ
+        </button>
+        <div style="font-size:9px;color:var(--mut);text-align:center;margin-top:6px;">Iškviesti gali 1× per savaitę · priimti — be limito</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Užkrauti dvikovų statistiką su šiuo draugu
+  loadFriendDuelStats(friend.id, name);
+}
+
+// Dvikovų rekordas su konkrečiu draugu
+async function loadFriendDuelStats(friendKidId, friendName) {
+  const el = document.getElementById('friend-duel-stats');
+  if (!el || !currentKid?.id) return;
+  
+  try {
+    const { data: duels } = await sb.from('duels')
+      .select('winner_id, status, challenger_id, opponent_id')
+      .eq('status', 'completed')
+      .or(`and(challenger_id.eq.${currentKid.id},opponent_id.eq.${friendKidId}),and(challenger_id.eq.${friendKidId},opponent_id.eq.${currentKid.id})`);
+    
+    let myWins = 0, friendWins = 0, draws = 0;
+    (duels || []).forEach(d => {
+      if (!d.winner_id) draws++;
+      else if (d.winner_id === currentKid.id) myWins++;
+      else friendWins++;
+    });
+    
+    const total = myWins + friendWins + draws;
+    
+    if (total === 0) {
+      el.innerHTML = `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;text-align:center;font-size:10px;color:var(--mut);">Dar nesivaržėte su ${friendName} 🥊</div>`;
+      return;
+    }
+    
+    el.innerHTML = `
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;">
+        <div style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:1px;text-align:center;margin-bottom:6px;">DVIKOVŲ REKORDAS</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
+          <div style="text-align:center;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#22C55E;line-height:1;">${myWins}</div>
+            <div style="font-size:7px;color:var(--mut);font-weight:700;margin-top:2px;">TU</div>
+          </div>
+          <div style="font-size:12px;color:var(--mut);">·</div>
+          <div style="text-align:center;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--mut);line-height:1;">${draws}</div>
+            <div style="font-size:7px;color:var(--mut);font-weight:700;margin-top:2px;">LYGIOS</div>
+          </div>
+          <div style="font-size:12px;color:var(--mut);">·</div>
+          <div style="text-align:center;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#EF4444;line-height:1;">${friendWins}</div>
+            <div style="font-size:7px;color:var(--mut);font-weight:700;margin-top:2px;">DRAUGAS</div>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch(e) {
+    console.error('loadFriendDuelStats:', e);
+    el.innerHTML = '';
+  }
+}
+
+// 🥊 Atveria dvikovos tipo pasirinkimą
+async function openDuelChallenge(friendJson) {
+  let friend;
+  try {
+    friend = typeof friendJson === 'string' ? JSON.parse(friendJson) : friendJson;
+  } catch(e) { return; }
+  
+  // Patikrint savaitės limitą - kiek iškvietimų šią savaitę
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: myWeekDuels } = await sb.from('duels')
+    .select('id, created_at')
+    .eq('challenger_id', currentKid.id)
+    .gte('created_at', weekAgo);
+  
+  if (myWeekDuels && myWeekDuels.length >= 1) {
+    showToast('🥊 Jau iškvietei dvikovą šią savaitę! Kitą galėsi po savaitės.', 'error');
+    return;
+  }
+  
+  // Patikrint ar nėra aktyvios dvikovos su šiuo draugu
+  const { data: activeDuel } = await sb.from('duels')
+    .select('id, status')
+    .or(`and(challenger_id.eq.${currentKid.id},opponent_id.eq.${friend.id}),and(challenger_id.eq.${friend.id},opponent_id.eq.${currentKid.id})`)
+    .in('status', ['pending', 'active', 'submitted']);
+  
+  if (activeDuel && activeDuel.length > 0) {
+    showToast('⚔️ Su šiuo draugu jau yra aktyvi dvikova!', 'error');
+    return;
+  }
+  
+  const friendName = friend.is_anonymous ? 'Anonimas' : (friend.profiles?.first_name || 'Draugas');
+  
+  const existing = document.getElementById('duel-challenge-modal');
+  if (existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'duel-challenge-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:flex-end;justify-content:center;';
+  
+  const typeCards = Object.entries(DUEL_TYPES).map(([key, t]) => `
+    <div onclick='sendDuelChallenge("${friend.id}","${key}")' style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:12px;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+      <div style="font-size:28px;">${t.icon}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:800;color:white;">${t.name}</div>
+        <div style="font-size:9px;color:var(--mut);margin-top:1px;">${t.desc}</div>
+      </div>
+      <div style="font-size:14px;color:#FF8C00;">›</div>
+    </div>
+  `).join('');
+  
+  modal.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+      <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🥊 DVIKOVA SU ${friendName.toUpperCase()}</div>
+        <button onclick="document.getElementById('duel-challenge-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">✕</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:14px 16px;">
+        <div style="font-size:11px;color:var(--mut);margin-bottom:10px;text-align:center;">Pasirink dvikovos tipą:</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${typeCards}
+        </div>
+        <div style="font-size:9px;color:var(--mut);text-align:center;margin-top:12px;line-height:1.4;">
+          Laimėtojas gauna <b style="color:#FFD700;">${DUEL_EXP.winner} EXP</b> · pralaimėjęs <b style="color:#22C55E;">${DUEL_EXP.loser} EXP</b><br>
+          Lygiosios — abu po <b style="color:#FF8C00;">${DUEL_EXP.draw} EXP</b>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// Išsiųsti dvikovos iškvietimą
+async function sendDuelChallenge(opponentKidId, duelType) {
+  if (!currentKid?.id) return;
+  
+  const t = DUEL_TYPES[duelType];
+  if (!t) return;
+  
+  try {
+    const { error } = await sb.from('duels').insert({
+      challenger_id: currentKid.id,
+      opponent_id: opponentKidId,
+      club_id: currentProfile?.club_id || null,
+      duel_type: duelType,
+      status: 'pending'
+    });
+    
+    if (error) {
+      console.error('sendDuelChallenge:', error);
+      showToast('❌ Klaida: ' + error.message, 'error');
+      return;
+    }
+    
+    // Uždaryti modalus
+    document.getElementById('duel-challenge-modal')?.remove();
+    document.getElementById('friend-modal')?.remove();
+    
+    showToast(`🥊 Dvikova "${t.name}" išsiųsta! Laukiama, ar draugas priims.`, 'success');
+    
+    // Atnaujint draugų sekciją
+    renderProfileExtras();
+  } catch(e) {
+    console.error('sendDuelChallenge:', e);
+    showToast('❌ Klaida siunčiant dvikovą', 'error');
+  }
 }
 
 // Atnaujint trofėjų ir badge'ų suvestinę profilio mygtukuose
