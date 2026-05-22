@@ -1121,7 +1121,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL13</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL15</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -1430,6 +1430,7 @@ select.inp option{background:#222;}
     
     <!-- 🤝 KOMANDOS DRAUGAI -->
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">🤝 KOMANDOS DRAUGAI</div>
+    <div id="v-prof-group-info" style="margin:0 12px 6px;"></div>
     <div id="v-prof-teammates" style="margin:0 12px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
       <div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
     </div>
@@ -6190,6 +6191,67 @@ async function renderProfileExtras() {
       const groupKids = (clubKids || []).filter(k => k.group_id === currentKid.group_id);
       console.log('[teammates] klubo vaikai:', clubKids?.length || 0, 'grupėje:', groupKids.length);
       
+      // 💎 GRUPĖS INFO - EXP suma, nariai, vieta klube
+      try {
+        const groupInfoEl = document.getElementById('v-prof-group-info');
+        if (groupInfoEl) {
+          // Suskaičiuoti kiekvienos grupės EXP sumą
+          const groupExpMap = {};  // { group_id: { sum, count } }
+          (clubKids || []).forEach(k => {
+            if (!k.group_id) return;
+            if (!groupExpMap[k.group_id]) groupExpMap[k.group_id] = { sum: 0, count: 0 };
+            groupExpMap[k.group_id].sum += (k.total_exp || 0);
+            groupExpMap[k.group_id].count++;
+          });
+          
+          const myGroupExp = groupExpMap[currentKid.group_id]?.sum || 0;
+          const myGroupCount = groupExpMap[currentKid.group_id]?.count || 0;
+          
+          // Grupių rikiavimas pagal EXP sumą - rasti vietą
+          const sortedGroups = Object.entries(groupExpMap)
+            .sort((a, b) => b[1].sum - a[1].sum);
+          const totalGroups = sortedGroups.length;
+          const myGroupPlace = sortedGroups.findIndex(g => g[0] === currentKid.group_id) + 1;
+          
+          // Grupės pavadinimas
+          let groupName = 'Mano grupė';
+          try {
+            const { data: grp } = await sb.from('groups')
+              .select('name')
+              .eq('id', currentKid.group_id)
+              .maybeSingle();
+            if (grp?.name) groupName = grp.name;
+          } catch(e) {}
+          
+          // Vietos badge tik jei klube >1 grupės
+          const placeBadge = totalGroups > 1
+            ? `<div style="background:rgba(255,215,0,.12);border:.5px solid rgba(255,215,0,.35);border-radius:99px;padding:3px 9px;display:flex;align-items:center;gap:3px;">
+                 <span style="font-size:10px;">🏆</span>
+                 <span style="font-size:10px;font-weight:800;color:#FFD700;">#${myGroupPlace} iš ${totalGroups}</span>
+               </div>`
+            : '';
+          
+          groupInfoEl.innerHTML = `
+            <div style="background:linear-gradient(135deg,rgba(79,195,247,.12),rgba(79,195,247,.03));border:.5px solid rgba(79,195,247,.3);border-radius:12px;padding:10px 12px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <div style="min-width:0;">
+                  <div style="font-size:12px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${groupName}</div>
+                  <div style="font-size:8px;color:var(--mut);font-weight:700;letter-spacing:.5px;margin-top:1px;">👥 ${myGroupCount} NARIAI</div>
+                </div>
+                ${placeBadge}
+              </div>
+              <div style="display:flex;align-items:baseline;gap:5px;margin-top:8px;padding-top:8px;border-top:.5px solid rgba(255,255,255,.08);">
+                <span style="font-size:13px;">💎</span>
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#4FC3F7;line-height:1;">${myGroupExp.toLocaleString('lt-LT')}</span>
+                <span style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:.5px;">BENDRA GRUPĖS EXP</span>
+              </div>
+            </div>
+          `;
+        }
+      } catch(e) {
+        console.error('[group info]', e);
+      }
+      
       // Užkrauti vardus per profiles
       const groupProfileIds = groupKids.map(k => k.user_id);
       const { data: names } = await sb.from('profiles')
@@ -7905,7 +7967,12 @@ function showDuelChallengePopup(duel, challengerName) {
     
     <div style="font-size:56px;line-height:1;margin-bottom:6px;filter:drop-shadow(0 0 16px #FF4D00);">${t.icon}</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:#FF8C00;margin-bottom:4px;">${t.name.toUpperCase()}</div>
-    <div style="font-size:10px;color:rgba(255,255,255,.7);margin-bottom:14px;">${t.desc}</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.7);margin-bottom:${duel.note ? '10px' : '14px'};">${t.desc}</div>
+    
+    ${duel.note ? `<div style="background:rgba(236,64,122,.12);border:.5px solid rgba(236,64,122,.3);border-radius:10px;padding:9px 11px;margin-bottom:14px;display:flex;gap:7px;align-items:flex-start;text-align:left;">
+      <div style="font-size:13px;">💬</div>
+      <div style="font-size:11px;color:white;line-height:1.35;font-style:italic;">${duel.note}</div>
+    </div>` : ''}
     
     <div style="height:1px;background:linear-gradient(90deg,transparent,#FF4D00,transparent);margin:14px 0;"></div>
     
