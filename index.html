@@ -1121,7 +1121,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL10</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL11</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -1242,7 +1242,8 @@ select.inp option{background:#222;}
         <div style="padding-right:8px;border-right:1px solid rgba(255,255,255,.15);">
           <div style="font-size:8px;color:#EF4444;letter-spacing:1.5px;font-weight:800;">🥊 KUMITE</div>
           <div id="v-comp-record" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#EF4444;line-height:1;text-shadow:0 0 12px rgba(239,68,68,.5);margin:3px 0 2px;letter-spacing:2px;">0 - 0</div>
-          <div style="font-size:8px;color:rgba(255,255,255,.7);margin-bottom:6px;" id="v-comp-stats-line">0% · 0 varž.</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.7);" id="v-comp-stats-line">0% · 0 varž.</div>
+          <div style="font-size:9px;color:#EF4444;font-weight:800;margin:2px 0 6px;" id="v-comp-kumite-exp">+0 EXP</div>
           <!-- Kumite medaliai -->
           <div id="v-comp-kumite-medals" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding-top:5px;border-top:.5px solid rgba(255,255,255,.08);">
             <!-- užpildoma -->
@@ -1253,7 +1254,8 @@ select.inp option{background:#222;}
         <div style="padding-left:8px;">
           <div style="font-size:8px;color:#4FC3F7;letter-spacing:1.5px;font-weight:800;">🎭 KATA</div>
           <div id="v-comp-kata-record" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#4FC3F7;line-height:1;text-shadow:0 0 12px rgba(79,195,247,.5);margin:3px 0 2px;letter-spacing:2px;">0 - 0</div>
-          <div style="font-size:8px;color:rgba(255,255,255,.7);margin-bottom:6px;" id="v-comp-kata-stats-line">0% · 0 varž.</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.7);" id="v-comp-kata-stats-line">0% · 0 varž.</div>
+          <div style="font-size:9px;color:#4FC3F7;font-weight:800;margin:2px 0 6px;" id="v-comp-kata-exp">+0 EXP</div>
           <!-- Kata medaliai -->
           <div id="v-comp-kata-medals" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding-top:5px;border-top:.5px solid rgba(255,255,255,.08);">
             <!-- užpildoma -->
@@ -9648,9 +9650,11 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
   let totalKumiteWins = 0;
   let totalKumiteLosses = 0;
   let totalKumiteComps = 0; // tik kumite varžybos
+  let totalKumiteExp = 0;   // kumite EXP suma
   let totalKataWins = 0;
   let totalKataLosses = 0;
   let totalKataComps = 0;   // tik kata varžybos
+  let totalKataExp = 0;     // kata EXP suma
   let totalMedals = { gold: 0, silver: 0, bronze: 0 };
   let kumiteMedals = { gold: 0, silver: 0, bronze: 0 };
   let kataMedals = { gold: 0, silver: 0, bronze: 0 };
@@ -9659,20 +9663,12 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     const result = resultsByComp[comp.id];
     if (!result || result.status !== 'participated') return;
     
-    // 🐛 DEBUG - log kiekvieną result
-    console.log(`[comp stats] ${comp.competition_type} "${comp.title}":`, {
-      status: result.status,
-      approval_status: result.approval_status,
-      wins: result.wins,
-      losses: result.losses,
-      placement: result.placement
-    });
-    
     // 🥊 KUMITE - W/L + medaliai
     if (comp.competition_type === 'kumite') {
       totalKumiteWins += (result.wins || 0);
       totalKumiteLosses += (result.losses || 0);
       totalKumiteComps++;
+      totalKumiteExp += (result.exp_gained || 0);
       
       // Medaliai TIK kumite tipui
       if (result.placement === 1) kumiteMedals.gold++;
@@ -9685,6 +9681,7 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
       totalKataWins += (result.wins || 0);
       totalKataLosses += (result.losses || 0);
       totalKataComps++;
+      totalKataExp += (result.exp_gained || 0);
       
       // Medaliai TIK kata tipui
       if (result.placement === 1) kataMedals.gold++;
@@ -9723,10 +9720,12 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
   // 🥊 Kumite
   setText('v-comp-record', `${totalKumiteWins} - ${totalKumiteLosses}`);
   setText('v-comp-stats-line', `${kumiteWinRate}% · ${totalKumiteComps} varž.`);
+  setText('v-comp-kumite-exp', `+${totalKumiteExp.toLocaleString('lt-LT')} EXP`);
   
   // 🎭 Kata
   setText('v-comp-kata-record', `${totalKataWins} - ${totalKataLosses}`);
   setText('v-comp-kata-stats-line', `${kataWinRate}% · ${totalKataComps} varž.`);
+  setText('v-comp-kata-exp', `+${totalKataExp.toLocaleString('lt-LT')} EXP`);
   
   // 🥊 KUMITE MEDALIAI - 3 mini langeliai
   const kumiteGrid = document.getElementById('v-comp-kumite-medals');
