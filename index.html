@@ -1121,7 +1121,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL16</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL17</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -1388,6 +1388,7 @@ select.inp option{background:#222;}
       <div style="text-align:center;border-top:.5px solid rgba(255,255,255,.2);padding-top:8px;margin-top:8px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:white;" id="v-prof-name">–</div>
         <div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:2px;" id="v-prof-club">📍 –</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:3px;font-weight:600;" id="v-prof-karate-since">🥋 –</div>
       </div>
     </div>
     
@@ -1414,18 +1415,6 @@ select.inp option{background:#222;}
         <div style="font-size:10px;font-weight:800;letter-spacing:.5px;color:white;">SKILL BADGES</div>
         <div id="v-prof-badges-summary" style="font-size:9px;color:var(--mut);margin-top:3px;">🏆0 🥇0 🥈0</div>
       </div>
-    </div>
-    
-    <!-- 📋 INFORMACIJA -->
-    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">📋 INFORMACIJA</div>
-    <div id="v-prof-info-card" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
-      <!-- Užpildoma JS -->
-    </div>
-    
-    <!-- 👨‍🏫 TRENERIAI -->
-    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">👨‍🏫 TRENERIAI</div>
-    <div id="v-prof-trainers" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
-      <div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
     </div>
     
     <!-- 🤝 KOMANDOS DRAUGAI -->
@@ -4843,6 +4832,26 @@ async function loadKidData() {
   setText('v-name', `SVEIKA, ${firstName}! 🥋`);
   setText('v-avatar', currentProfile.first_name?.[0] || '?');
   setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
+  
+  // 🥋 Karatė nuo - kiek laiko sportuoja
+  {
+    let karateSinceText = '';
+    const sinceDate = currentKid.karate_since || currentKid.created_at;
+    if (sinceDate) {
+      const months = Math.floor((new Date() - new Date(sinceDate)) / (30 * 24 * 60 * 60 * 1000));
+      const years = Math.floor(months / 12);
+      const remMonths = months % 12;
+      if (years > 0) {
+        karateSinceText = remMonths > 0
+          ? `🥋 Karatė: ${years} m. ${remMonths} mėn.`
+          : `🥋 Karatė: ${years} ${years === 1 ? 'metai' : 'metai'}`;
+      } else {
+        karateSinceText = `🥋 Karatė: ${months} mėn.`;
+      }
+    }
+    setText('v-prof-karate-since', karateSinceText || '');
+  }
+  
   setText('v-prof-exp', (currentKid.total_exp || 0).toLocaleString());
   setText('v-prof-level', currentKid.current_level || 1);
   setText('v-prof-record', `${currentKid.wins||0}–${currentKid.losses||0}`);
@@ -6061,109 +6070,6 @@ async function renderProfileExtras() {
   if (bioEl) {
     const defaultBio = '"Karatė nėra kovos sportas - tai kelias į asmenybės ugdymą."';
     bioEl.textContent = currentKid.bio || defaultBio;
-  }
-  
-  // 📋 INFORMACIJA
-  const infoEl = document.getElementById('v-prof-info-card');
-  if (infoEl) {
-    const age = currentKid.birth_date 
-      ? Math.floor((new Date() - new Date(currentKid.birth_date)) / (365.25 * 24 * 60 * 60 * 1000))
-      : (currentKid.birth_year ? new Date().getFullYear() - currentKid.birth_year : null);
-    
-    // Grupė
-    let groupName = '–';
-    if (currentKid.group_id) {
-      try {
-        const { data: g } = await sb.from('groups').select('name').eq('id', currentKid.group_id).maybeSingle();
-        if (g?.name) groupName = g.name;
-      } catch(e) {}
-    }
-    
-    // Karatė nuo (jei yra karate_since stulpelis arba registracijos data)
-    let karateSince = '–';
-    if (currentKid.karate_since) {
-      const years = Math.floor((new Date() - new Date(currentKid.karate_since)) / (365.25 * 24 * 60 * 60 * 1000));
-      const months = Math.floor((new Date() - new Date(currentKid.karate_since)) / (30 * 24 * 60 * 60 * 1000));
-      karateSince = years > 0 ? `${years} ${years === 1 ? 'metai' : 'metai'}` : `${months} mėn.`;
-    } else if (currentKid.created_at) {
-      const months = Math.floor((new Date() - new Date(currentKid.created_at)) / (30 * 24 * 60 * 60 * 1000));
-      const years = Math.floor(months / 12);
-      karateSince = years > 0 ? `${years} ${years === 1 ? 'metai' : 'metai'}` : `${months} mėn.`;
-    }
-    
-    // Tikslas (jei yra goal stulpelis)
-    const goal = currentKid.goal || '–';
-    
-    const rows = [
-      { icon: '🎂', label: 'Amžius', value: age !== null ? `${age} m.` : '–' },
-      { icon: '👥', label: 'Grupė', value: groupName },
-      { icon: '📚', label: 'Karatė nuo', value: karateSince },
-      { icon: '🎯', label: 'Tikslas', value: goal }
-    ];
-    
-    infoEl.innerHTML = rows.map((r, idx) => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;${idx < rows.length - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}">
-        <div style="font-size:11px;color:var(--mut);font-weight:700;">${r.icon} ${r.label}</div>
-        <div style="font-size:11px;color:white;font-weight:600;">${r.value}</div>
-      </div>
-    `).join('');
-  }
-  
-  // 👨‍🏫 TRENERIAI
-  const trainersEl = document.getElementById('v-prof-trainers');
-  if (trainersEl) {
-    try {
-      // Pagrindinis treneris
-      let primaryTrainer = null;
-      if (currentKid.assigned_trainer_id) {
-        const { data } = await sb.from('profiles')
-          .select('first_name, last_name')
-          .eq('id', currentKid.assigned_trainer_id)
-          .maybeSingle();
-        if (data) primaryTrainer = data;
-      }
-      
-      // Papildomi treneriai
-      const { data: additionalTrainers } = await sb.from('kid_trainers')
-        .select('role, profiles!kid_trainers_trainer_id_fkey(first_name, last_name)')
-        .eq('kid_id', currentKid.id);
-      
-      const allTrainers = [];
-      if (primaryTrainer) {
-        allTrainers.push({
-          name: `${primaryTrainer.first_name || ''} ${primaryTrainer.last_name || ''}`.trim() || 'Treneris',
-          role: '🥋 PAGRINDINIS'
-        });
-      }
-      (additionalTrainers || []).forEach(t => {
-        if (t.profiles && t.role !== 'primary') {
-          allTrainers.push({
-            name: `${t.profiles.first_name || ''} ${t.profiles.last_name || ''}`.trim() || 'Treneris',
-            role: t.role === 'assistant' ? '⚔️ PAVADUOTOJA' : '🥷 PAGALBA'
-          });
-        }
-      });
-      
-      if (allTrainers.length === 0) {
-        trainersEl.innerHTML = `<div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Nepriskirtas treneris</div>`;
-      } else {
-        trainersEl.innerHTML = allTrainers.map((t, idx) => {
-          const letter = t.name.charAt(0).toUpperCase();
-          return `
-            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;${idx < allTrainers.length - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}">
-              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF8C00,#FF4D00);color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${letter}</div>
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:11px;font-weight:800;color:white;line-height:1.2;">${t.name}</div>
-                <div style="font-size:8px;color:var(--mut);letter-spacing:1px;font-weight:700;margin-top:2px;">${t.role}</div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-    } catch(e) {
-      console.error('renderProfileExtras trainers:', e);
-      trainersEl.innerHTML = `<div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Klaida kraunant trenerius</div>`;
-    }
   }
   
   // 🤝 KOMANDOS DRAUGAI - iš to paties grupės kiti vaikai
