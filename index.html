@@ -1121,7 +1121,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL22</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL23</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5191,18 +5191,18 @@ function renderBeltCertificate(kyu, isCurrent) {
     }
   }
   
-  const danGlow = isDan ? 'box-shadow:0 6px 20px rgba(255,215,0,.4),inset 0 0 20px rgba(0,0,0,.3);' : '';
+  const danGlow = isDan ? 'box-shadow:0 5px 16px rgba(255,215,0,.4),inset 0 0 16px rgba(0,0,0,.3);' : '';
   
   return `
-    <div style="border-radius:12px;padding:9px;position:relative;border:2px solid ${info.accentColor};background:linear-gradient(135deg,${info.accentColor}22,${info.accentColor}05);${danGlow}overflow:hidden;">
-      <div style="position:absolute;top:4px;left:4px;width:10px;height:10px;border-top:2px solid ${info.accentColor};border-left:2px solid ${info.accentColor};"></div>
-      <div style="position:absolute;bottom:4px;right:4px;width:10px;height:10px;border-bottom:2px solid ${info.accentColor};border-right:2px solid ${info.accentColor};"></div>
-      <div style="font-family:'Noto Serif JP','Hiragino Mincho ProN',serif;font-size:29px;font-weight:900;text-align:center;line-height:1;margin-bottom:6px;color:${info.accentColor};text-shadow:0 0 14px ${info.accentColor}80;">${info.kanji}</div>
-      <div style="height:11px;border-radius:3px;margin:5px 0;position:relative;box-shadow:inset 0 2px 4px rgba(255,255,255,.3),inset 0 -2px 4px rgba(0,0,0,.4);overflow:hidden;background:${info.mainGradient};">
+    <div style="border-radius:10px;padding:7px;position:relative;border:1.5px solid ${info.accentColor};background:linear-gradient(135deg,${info.accentColor}22,${info.accentColor}05);${danGlow}overflow:hidden;">
+      <div style="position:absolute;top:3px;left:3px;width:8px;height:8px;border-top:2px solid ${info.accentColor};border-left:2px solid ${info.accentColor};"></div>
+      <div style="position:absolute;bottom:3px;right:3px;width:8px;height:8px;border-bottom:2px solid ${info.accentColor};border-right:2px solid ${info.accentColor};"></div>
+      <div style="font-family:'Noto Serif JP','Hiragino Mincho ProN',serif;font-size:23px;font-weight:900;text-align:center;line-height:1;margin-bottom:4px;color:${info.accentColor};text-shadow:0 0 11px ${info.accentColor}80;">${info.kanji}</div>
+      <div style="height:9px;border-radius:2px;margin:4px 0;position:relative;box-shadow:inset 0 2px 4px rgba(255,255,255,.3),inset 0 -2px 4px rgba(0,0,0,.4);overflow:hidden;background:${info.mainGradient};">
         ${stripeHtml}
       </div>
-      <div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1.5px;margin-top:4px;color:${info.textColor};">${info.name.toUpperCase()}</div>
-      <div style="text-align:center;font-size:8px;margin-top:1px;letter-spacing:1px;opacity:.7;color:${info.textColor};">${info.color}</div>
+      <div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:1.2px;margin-top:3px;color:${info.textColor};">${info.name.toUpperCase()}</div>
+      <div style="text-align:center;font-size:7px;margin-top:1px;letter-spacing:1px;opacity:.7;color:${info.textColor};">${info.color}</div>
     </div>
   `;
 }
@@ -6134,18 +6134,18 @@ async function renderProfileExtras() {
         
         // Galvutė - gradientinis fonas, grupės pavadinimas + info eilutė
         groupHeaderHtml = `
-          <div style="background:linear-gradient(135deg,rgba(79,195,247,.14),rgba(79,195,247,.04));padding:12px 14px;border-bottom:.5px solid var(--bdr);">
+          <div style="background:linear-gradient(135deg,rgba(79,195,247,.14),rgba(79,195,247,.04));padding:9px 12px;border-bottom:.5px solid var(--bdr);">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-              <div style="display:flex;align-items:center;gap:7px;min-width:0;">
-                <span style="font-size:16px;">🤝</span>
-                <div style="font-size:13px;font-weight:900;color:white;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${groupName}</div>
+              <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                <span style="font-size:14px;">🤝</span>
+                <div style="font-size:12px;font-weight:900;color:white;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${groupName}</div>
               </div>
               ${placeBadge}
             </div>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
-              <div style="font-size:9px;color:rgba(255,255,255,.7);font-weight:700;">👥 ${myGroupCount} nariai</div>
+            <div style="display:flex;align-items:center;gap:9px;margin-top:4px;">
+              <div style="font-size:8px;color:rgba(255,255,255,.7);font-weight:700;">👥 ${myGroupCount} nariai</div>
               <div style="width:3px;height:3px;border-radius:50%;background:var(--mut);"></div>
-              <div style="font-size:9px;color:#4FC3F7;font-weight:800;">💎 ${myGroupExp.toLocaleString('lt-LT')} EXP</div>
+              <div style="font-size:8px;color:#4FC3F7;font-weight:800;">💎 ${myGroupExp.toLocaleString('lt-LT')} EXP</div>
             </div>
           </div>
         `;
