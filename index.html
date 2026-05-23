@@ -1121,7 +1121,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL30</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL31</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -1364,29 +1364,29 @@ select.inp option{background:#222;}
   <div class="sa">
     
     <!-- 🥋 HERO su kanji + progress ring -->
-    <div class="hero" id="v-prof-hero" style="background:transparent;margin:4px 12px 6px;padding:10px 12px 9px;border-radius:16px;text-align:center;position:relative;overflow:hidden;">
+    <div class="hero" id="v-prof-hero" style="background:transparent;margin:4px 12px 5px;padding:8px 12px 7px;border-radius:16px;text-align:center;position:relative;overflow:hidden;">
       <!-- KANJI + PROGRESS RING - sumažintas -->
-      <div style="position:relative;width:104px;height:104px;margin:0 auto 7px;">
+      <div style="position:relative;width:94px;height:94px;margin:0 auto 6px;">
         <svg id="v-prof-progress-ring" style="position:absolute;inset:0;transform:rotate(-90deg);" viewBox="0 0 140 140">
           <circle cx="70" cy="70" r="63" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="5"/>
           <circle id="v-prof-progress-circle" cx="70" cy="70" r="63" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="396" style="transition:stroke-dashoffset .8s ease-out;filter:drop-shadow(0 0 6px rgba(255,255,255,.6));"/>
         </svg>
-        <div style="position:absolute;inset:9px;border-radius:50%;background:rgba(0,0,0,.4);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 30px rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.3);" id="v-prof-kanji-circle">
-          <div id="v-prof-kanji" style="font-family:'Noto Serif JP', 'Hiragino Mincho ProN', serif;font-size:44px;font-weight:900;line-height:1;text-shadow:0 4px 12px rgba(0,0,0,.4);margin-bottom:1px;color:#FFFFFF;">始</div>
-          <div id="v-prof-lvl-num" style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:white;line-height:1;">LVL 1</div>
+        <div style="position:absolute;inset:8px;border-radius:50%;background:rgba(0,0,0,.4);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 30px rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.3);" id="v-prof-kanji-circle">
+          <div id="v-prof-kanji" style="font-family:'Noto Serif JP', 'Hiragino Mincho ProN', serif;font-size:40px;font-weight:900;line-height:1;text-shadow:0 4px 12px rgba(0,0,0,.4);margin-bottom:1px;color:#FFFFFF;">始</div>
+          <div id="v-prof-lvl-num" style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1.5px;color:white;line-height:1;">LVL 1</div>
           <div id="v-prof-lvl-exp" style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:1px;font-weight:700;margin-top:1px;">0 EXP</div>
         </div>
       </div>
       
       <!-- Stage antraštė -->
       <div style="text-align:center;margin-bottom:3px;">
-        <div id="v-prof-stage-title" style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2.5px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.3);color:white;">🌱 NAUJOKAS</div>
-        <div id="v-prof-stage-meaning" style="font-size:8px;color:rgba(255,255,255,.7);letter-spacing:1.5px;font-weight:700;margin-top:3px;">PRADŽIA · KELIO RADIMAS</div>
+        <div id="v-prof-stage-title" style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2.2px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.3);color:white;">🌱 NAUJOKAS</div>
+        <div id="v-prof-stage-meaning" style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:1.5px;font-weight:700;margin-top:3px;">PRADŽIA · KELIO RADIMAS</div>
       </div>
       
       <!-- Vardas + karatė nuo -->
-      <div style="text-align:center;border-top:.5px solid rgba(255,255,255,.2);padding-top:6px;margin-top:6px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:white;" id="v-prof-name">–</div>
+      <div style="text-align:center;border-top:.5px solid rgba(255,255,255,.2);padding-top:5px;margin-top:5px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:white;" id="v-prof-name">–</div>
         <div style="font-size:8px;color:rgba(255,255,255,.6);margin-top:2px;font-weight:600;" id="v-prof-karate-since">🥋 –</div>
       </div>
     </div>
@@ -6134,15 +6134,15 @@ async function renderProfileExtras() {
         
         // Galvutė - gradientinis fonas, grupės pavadinimas + info eilutė
         groupHeaderHtml = `
-          <div style="background:linear-gradient(135deg,rgba(79,195,247,.14),rgba(79,195,247,.04));padding:9px 12px;border-bottom:.5px solid var(--bdr);">
+          <div style="background:linear-gradient(135deg,rgba(79,195,247,.14),rgba(79,195,247,.04));padding:7px 11px;border-bottom:.5px solid var(--bdr);">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
               <div style="display:flex;align-items:center;gap:6px;min-width:0;">
-                <span style="font-size:14px;">🤝</span>
-                <div style="font-size:12px;font-weight:900;color:white;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${groupName}</div>
+                <span style="font-size:13px;">🤝</span>
+                <div style="font-size:11px;font-weight:900;color:white;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${groupName}</div>
               </div>
               ${placeBadge}
             </div>
-            <div style="display:flex;align-items:center;gap:9px;margin-top:4px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-top:3px;">
               <div style="font-size:8px;color:rgba(255,255,255,.7);font-weight:700;">👥 ${myGroupCount} nariai</div>
               <div style="width:3px;height:3px;border-radius:50%;background:var(--mut);"></div>
               <div style="font-size:8px;color:#4FC3F7;font-weight:800;">💎 ${myGroupExp.toLocaleString('lt-LT')} EXP</div>
@@ -6209,17 +6209,17 @@ async function renderProfileExtras() {
         }
         
         return `
-          <div onclick='openFriendModal(${JSON.stringify(JSON.stringify(m))})' style="display:flex;align-items:center;gap:7px;padding:5px 10px;${idx < total - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-            <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,${stage.color}88,${stage.color}44);color:white;font-family:'Bebas Neue',sans-serif;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${letter}</div>
+          <div onclick='openFriendModal(${JSON.stringify(JSON.stringify(m))})' style="display:flex;align-items:center;gap:6px;padding:4px 9px;${idx < total - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,${stage.color}88,${stage.color}44);color:white;font-family:'Bebas Neue',sans-serif;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${letter}</div>
             <div style="flex:1;min-width:0;">
-              <div style="font-size:11px;font-weight:800;color:white;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
-              <div style="font-size:8px;color:var(--mut);margin-top:1px;">${stage.emoji} ${stage.name} · ${(m.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
+              <div style="font-size:10px;font-weight:800;color:white;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+              <div style="font-size:7px;color:var(--mut);margin-top:1px;">${stage.emoji} ${stage.name} · ${(m.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
             </div>
             <div style="text-align:right;flex-shrink:0;">
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:${stage.color};letter-spacing:1px;">LVL ${stageInfo.globalLevel}</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:${stage.color};letter-spacing:1px;">LVL ${stageInfo.globalLevel}</div>
               ${diffBadge}
             </div>
-            <div style="font-size:11px;color:var(--mut);flex-shrink:0;">›</div>
+            <div style="font-size:10px;color:var(--mut);flex-shrink:0;">›</div>
           </div>
         `;
       };
@@ -6231,11 +6231,11 @@ async function renderProfileExtras() {
       let html = `
         ${groupHeaderHtml}
         <!-- Tavo pozicija grupėje -->
-        <div style="padding:5px 10px;background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,77,0,.04));border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:7px;">
-          <div style="font-size:15px;">🏅</div>
+        <div style="padding:4px 9px;background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,77,0,.04));border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:6px;">
+          <div style="font-size:13px;">🏅</div>
           <div style="flex:1;">
-            <div style="font-size:9px;color:#FF8C00;font-weight:800;letter-spacing:.5px;">TAVO VIETA GRUPĖJE</div>
-            <div style="font-size:11px;color:white;font-weight:800;margin-top:1px;">#${myRank} iš ${totalInGroup} sportininkų</div>
+            <div style="font-size:8px;color:#FF8C00;font-weight:800;letter-spacing:.5px;">TAVO VIETA GRUPĖJE</div>
+            <div style="font-size:10px;color:white;font-weight:800;margin-top:1px;">#${myRank} iš ${totalInGroup} sportininkų</div>
           </div>
         </div>
         ${visibleMates.map((m, i) => renderMateRow(m, i, visibleMates.length)).join('')}
