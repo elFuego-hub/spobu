@@ -1121,7 +1121,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL18</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL19</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -7024,15 +7024,17 @@ async function updateProfileCounts() {
     const chSummaryEl = document.getElementById('v-prof-challenges-summary');
     if (chSummaryEl && currentKid?.id) {
       const { data: subs } = await sb.from('challenge_submissions')
-        .select('id')
+        .select('challenge_id')
         .eq('kid_id', currentKid.id)
         .eq('status', 'approved');
+      // Unikalūs iššūkiai (ne submission'ai - vienas iššūkis gali turėti kelis)
+      const uniqueChallenges = new Set((subs || []).map(s => s.challenge_id));
       const { data: dWins } = await sb.from('duels')
         .select('winner_id')
         .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
         .eq('status', 'completed');
       const wins = (dWins || []).filter(d => d.winner_id === currentKid.id).length;
-      const total = (subs?.length || 0) + wins;
+      const total = uniqueChallenges.size + wins;
       chSummaryEl.textContent = `${total} įveikta`;
     }
   } catch(e) {
@@ -7221,7 +7223,7 @@ async function openChallengeTypesModal() {
     
     // Iššūkių pateikimai (approved) pagal tipą
     const { data: subs } = await sb.from('challenge_submissions')
-      .select('exp_gain, status, challenges(type, exp_reward)')
+      .select('challenge_id, exp_gain, status, challenges(type, exp_reward)')
       .eq('kid_id', currentKid.id)
       .eq('status', 'approved');
     
@@ -7233,11 +7235,19 @@ async function openChallengeTypesModal() {
       permanent: { count: 0, exp: 0 }
     };
     
+    // Unikalūs iššūkiai pagal tipą (count = unikalūs, exp = visų submission'ų suma)
+    const seenChallenges = {};  // type -> Set(challenge_id)
     (subs || []).forEach(s => {
       const type = s.challenges?.type;
       if (type && typeStats[type]) {
-        typeStats[type].count++;
+        // EXP - visų submission'ų suma
         typeStats[type].exp += (s.exp_gain || s.challenges?.exp_reward || 0);
+        // Count - tik unikalūs iššūkiai
+        if (!seenChallenges[type]) seenChallenges[type] = new Set();
+        if (s.challenge_id && !seenChallenges[type].has(s.challenge_id)) {
+          seenChallenges[type].add(s.challenge_id);
+          typeStats[type].count++;
+        }
       }
     });
     
