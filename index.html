@@ -1121,7 +1121,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL15</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL16</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -1429,10 +1429,8 @@ select.inp option{background:#222;}
     </div>
     
     <!-- 🤝 KOMANDOS DRAUGAI -->
-    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 4px;">🤝 KOMANDOS DRAUGAI</div>
-    <div id="v-prof-group-info" style="margin:0 12px 6px;"></div>
-    <div id="v-prof-teammates" style="margin:0 12px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
-      <div style="padding:10px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
+    <div id="v-prof-teammates" style="margin:12px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">
+      <div style="padding:14px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
     </div>
   </div>
   <div class="bn2">
@@ -6191,63 +6189,62 @@ async function renderProfileExtras() {
       const groupKids = (clubKids || []).filter(k => k.group_id === currentKid.group_id);
       console.log('[teammates] klubo vaikai:', clubKids?.length || 0, 'grupėje:', groupKids.length);
       
-      // 💎 GRUPĖS INFO - EXP suma, nariai, vieta klube
+      // 💎 GRUPĖS GALVUTĖ - sukaupiam HTML (dėsim į teammates kortelės viršų)
+      let groupHeaderHtml = '';
       try {
-        const groupInfoEl = document.getElementById('v-prof-group-info');
-        if (groupInfoEl) {
-          // Suskaičiuoti kiekvienos grupės EXP sumą
-          const groupExpMap = {};  // { group_id: { sum, count } }
-          (clubKids || []).forEach(k => {
-            if (!k.group_id) return;
-            if (!groupExpMap[k.group_id]) groupExpMap[k.group_id] = { sum: 0, count: 0 };
-            groupExpMap[k.group_id].sum += (k.total_exp || 0);
-            groupExpMap[k.group_id].count++;
-          });
-          
-          const myGroupExp = groupExpMap[currentKid.group_id]?.sum || 0;
-          const myGroupCount = groupExpMap[currentKid.group_id]?.count || 0;
-          
-          // Grupių rikiavimas pagal EXP sumą - rasti vietą
-          const sortedGroups = Object.entries(groupExpMap)
-            .sort((a, b) => b[1].sum - a[1].sum);
-          const totalGroups = sortedGroups.length;
-          const myGroupPlace = sortedGroups.findIndex(g => g[0] === currentKid.group_id) + 1;
-          
-          // Grupės pavadinimas
-          let groupName = 'Mano grupė';
-          try {
-            const { data: grp } = await sb.from('groups')
-              .select('name')
-              .eq('id', currentKid.group_id)
-              .maybeSingle();
-            if (grp?.name) groupName = grp.name;
-          } catch(e) {}
-          
-          // Vietos badge tik jei klube >1 grupės
-          const placeBadge = totalGroups > 1
-            ? `<div style="background:rgba(255,215,0,.12);border:.5px solid rgba(255,215,0,.35);border-radius:99px;padding:3px 9px;display:flex;align-items:center;gap:3px;">
-                 <span style="font-size:10px;">🏆</span>
-                 <span style="font-size:10px;font-weight:800;color:#FFD700;">#${myGroupPlace} iš ${totalGroups}</span>
-               </div>`
-            : '';
-          
-          groupInfoEl.innerHTML = `
-            <div style="background:linear-gradient(135deg,rgba(79,195,247,.12),rgba(79,195,247,.03));border:.5px solid rgba(79,195,247,.3);border-radius:12px;padding:10px 12px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                <div style="min-width:0;">
-                  <div style="font-size:12px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${groupName}</div>
-                  <div style="font-size:8px;color:var(--mut);font-weight:700;letter-spacing:.5px;margin-top:1px;">👥 ${myGroupCount} NARIAI</div>
-                </div>
-                ${placeBadge}
+        // Suskaičiuoti kiekvienos grupės EXP sumą
+        const groupExpMap = {};  // { group_id: { sum, count } }
+        (clubKids || []).forEach(k => {
+          if (!k.group_id) return;
+          if (!groupExpMap[k.group_id]) groupExpMap[k.group_id] = { sum: 0, count: 0 };
+          groupExpMap[k.group_id].sum += (k.total_exp || 0);
+          groupExpMap[k.group_id].count++;
+        });
+        
+        const myGroupExp = groupExpMap[currentKid.group_id]?.sum || 0;
+        const myGroupCount = groupExpMap[currentKid.group_id]?.count || 0;
+        
+        // Grupių rikiavimas pagal EXP sumą - rasti vietą
+        const sortedGroups = Object.entries(groupExpMap)
+          .sort((a, b) => b[1].sum - a[1].sum);
+        const totalGroups = sortedGroups.length;
+        const myGroupPlace = sortedGroups.findIndex(g => g[0] === currentKid.group_id) + 1;
+        
+        // Grupės pavadinimas
+        let groupName = 'Mano grupė';
+        try {
+          const { data: grp } = await sb.from('groups')
+            .select('name')
+            .eq('id', currentKid.group_id)
+            .maybeSingle();
+          if (grp?.name) groupName = grp.name;
+        } catch(e) {}
+        
+        // Vietos badge tik jei klube >1 grupės
+        const placeBadge = totalGroups > 1
+          ? `<div style="background:rgba(255,215,0,.14);border:.5px solid rgba(255,215,0,.4);border-radius:99px;padding:3px 9px;display:flex;align-items:center;gap:3px;flex-shrink:0;">
+               <span style="font-size:10px;">🏆</span>
+               <span style="font-size:10px;font-weight:800;color:#FFD700;">#${myGroupPlace} iš ${totalGroups}</span>
+             </div>`
+          : '';
+        
+        // Galvutė - gradientinis fonas, grupės pavadinimas + info eilutė
+        groupHeaderHtml = `
+          <div style="background:linear-gradient(135deg,rgba(79,195,247,.14),rgba(79,195,247,.04));padding:12px 14px;border-bottom:.5px solid var(--bdr);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <div style="display:flex;align-items:center;gap:7px;min-width:0;">
+                <span style="font-size:16px;">🤝</span>
+                <div style="font-size:13px;font-weight:900;color:white;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${groupName}</div>
               </div>
-              <div style="display:flex;align-items:baseline;gap:5px;margin-top:8px;padding-top:8px;border-top:.5px solid rgba(255,255,255,.08);">
-                <span style="font-size:13px;">💎</span>
-                <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#4FC3F7;line-height:1;">${myGroupExp.toLocaleString('lt-LT')}</span>
-                <span style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:.5px;">BENDRA GRUPĖS EXP</span>
-              </div>
+              ${placeBadge}
             </div>
-          `;
-        }
+            <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+              <div style="font-size:9px;color:rgba(255,255,255,.7);font-weight:700;">👥 ${myGroupCount} nariai</div>
+              <div style="width:3px;height:3px;border-radius:50%;background:var(--mut);"></div>
+              <div style="font-size:9px;color:#4FC3F7;font-weight:800;">💎 ${myGroupExp.toLocaleString('lt-LT')} EXP</div>
+            </div>
+          </div>
+        `;
       } catch(e) {
         console.error('[group info]', e);
       }
@@ -6270,7 +6267,7 @@ async function renderProfileExtras() {
       console.log('[teammates] allKids:', allKids.length);
       
       if (!allKids || allKids.length <= 1) {
-        teammatesEl.innerHTML = `<div style="padding:14px;text-align:center;color:var(--mut);font-size:10px;">Grupėje kol kas tik tu 🥋</div>`;
+        teammatesEl.innerHTML = groupHeaderHtml + `<div style="padding:16px;text-align:center;color:var(--mut);font-size:10px;">Grupėje kol kas tik tu 🥋</div>`;
         return;
       }
       
@@ -6328,6 +6325,7 @@ async function renderProfileExtras() {
       const visibleMates = mates.slice(0, SHOW);
       
       let html = `
+        ${groupHeaderHtml}
         <!-- Tavo pozicija grupėje -->
         <div style="padding:8px 10px;background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,77,0,.04));border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:8px;">
           <div style="font-size:18px;">🏅</div>
