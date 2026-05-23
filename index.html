@@ -1148,7 +1148,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL36</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL37</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -1406,8 +1406,16 @@ select.inp option{background:#222;}
     
     <!-- 🥋 HERO su kanji + progress ring -->
     <div class="hero" id="v-prof-hero" style="background:transparent;margin:4px 12px 5px;padding:8px 12px 7px;border-radius:16px;text-align:center;position:relative;overflow:hidden;">
+      <!-- Animuoti fono elementai - gyvumas -->
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
+        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.22);border-radius:50%;top:14%;left:12%;animation:floatDot 4s ease-in-out infinite;"></div>
+        <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.18);border-radius:50%;top:70%;left:20%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
+        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.16);border-radius:50%;top:24%;right:14%;animation:floatDot 6s ease-in-out infinite 1.5s;"></div>
+        <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.2);border-radius:50%;top:78%;right:22%;animation:floatDot 5.5s ease-in-out infinite 2.2s;"></div>
+        <div style="position:absolute;width:170%;height:44px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:30%;left:-35%;transform:rotate(-12deg);animation:shimmer 9s linear infinite;"></div>
+      </div>
       <!-- KANJI + PROGRESS RING - sumažintas -->
-      <div style="position:relative;width:94px;height:94px;margin:0 auto 6px;">
+      <div style="position:relative;z-index:1;width:94px;height:94px;margin:0 auto 6px;">
         <svg id="v-prof-progress-ring" style="position:absolute;inset:0;transform:rotate(-90deg);" viewBox="0 0 140 140">
           <circle cx="70" cy="70" r="63" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="5"/>
           <circle id="v-prof-progress-circle" cx="70" cy="70" r="63" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="396" style="transition:stroke-dashoffset .8s ease-out;filter:drop-shadow(0 0 6px rgba(255,255,255,.6));"/>
@@ -1420,13 +1428,13 @@ select.inp option{background:#222;}
       </div>
       
       <!-- Stage antraštė -->
-      <div style="text-align:center;margin-bottom:3px;">
+      <div style="text-align:center;margin-bottom:3px;position:relative;z-index:1;">
         <div id="v-prof-stage-title" style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2.2px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.3);color:white;">🌱 NAUJOKAS</div>
         <div id="v-prof-stage-meaning" style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:1.5px;font-weight:700;margin-top:3px;">PRADŽIA · KELIO RADIMAS</div>
       </div>
       
       <!-- Vardas + karatė nuo -->
-      <div style="text-align:center;border-top:.5px solid rgba(255,255,255,.2);padding-top:5px;margin-top:5px;">
+      <div style="text-align:center;border-top:.5px solid rgba(255,255,255,.2);padding-top:5px;margin-top:5px;position:relative;z-index:1;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:white;" id="v-prof-name">–</div>
         <div style="font-size:8px;color:rgba(255,255,255,.6);margin-top:2px;font-weight:600;" id="v-prof-karate-since">🥋 –</div>
       </div>
