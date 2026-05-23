@@ -1121,7 +1121,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL24</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL25</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -6675,6 +6675,9 @@ async function openFriendModal(friendJson) {
   const name = `${friend.profiles?.first_name || ''} ${friend.profiles?.last_name || ''}`.trim() || 'Vaikas';
   const letter = friend.profiles?.first_name?.charAt(0).toUpperCase() || 'V';
   
+  // Saugom vardą globaliai - 3 mygtukų onclick prieiga
+  window._friendModalName = name;
+  
   const modal = document.createElement('div');
   modal.id = 'friend-modal';
   modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:flex-end;justify-content:center;';
@@ -6705,6 +6708,27 @@ async function openFriendModal(friendJson) {
         
         <!-- Dvikovų statistika su šiuo draugu -->
         <div id="friend-duel-stats" style="margin-bottom:12px;"></div>
+        
+        <!-- 🥋 DRAUGO DIRŽAS -->
+        <div style="margin-bottom:12px;">
+          ${renderBeltCertificate(friend.kyu || '10 kyu', true)}
+        </div>
+        
+        <!-- 🏆 3 MYGTUKAI - draugo trofėjai/badges/iššūkiai -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;">
+          <div onclick="openTrophiesModal('${friend.id}', window._friendModalName)" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:9px 4px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+            <div style="font-size:20px;line-height:1;margin-bottom:3px;">🏆</div>
+            <div style="font-size:9px;font-weight:800;color:white;">TROFĖJAI</div>
+          </div>
+          <div onclick="openBadgesModal('${friend.id}', window._friendModalName)" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:9px 4px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+            <div style="font-size:20px;line-height:1;margin-bottom:3px;">🏅</div>
+            <div style="font-size:9px;font-weight:800;color:white;">BADGES</div>
+          </div>
+          <div onclick="openChallengeTypesModal('${friend.id}', window._friendModalName)" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:9px 4px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+            <div style="font-size:20px;line-height:1;margin-bottom:3px;">🎯</div>
+            <div style="font-size:9px;font-weight:800;color:white;">IŠŠŪKIAI</div>
+          </div>
+        </div>
         
         <!-- IŠKVIESTI Į DVIKOVĄ -->
         <button onclick='openDuelChallenge(${JSON.stringify(JSON.stringify(friend))})' style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;border-radius:14px;color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -7036,7 +7060,12 @@ async function updateProfileCounts() {
 }
 
 // 🏆 Atveria TROFĖJŲ modal'ą - inventoriaus stilius su SVG medaliais
-async function openTrophiesModal() {
+// kidId nebūtinas - jei perduotas, rodo to vaiko trofėjus (draugo profiliui)
+async function openTrophiesModal(kidId, kidName) {
+  const targetKidId = kidId || currentKid?.id;
+  const isOwn = !kidId || kidId === currentKid?.id;
+  const titleText = isOwn ? '🏆 MANO TROFĖJAI' : `🏆 ${(kidName || 'DRAUGO').toUpperCase()} TROFĖJAI`;
+  
   const existing = document.getElementById('prof-trophies-modal');
   if (existing) existing.remove();
   
@@ -7047,7 +7076,7 @@ async function openTrophiesModal() {
   modal.innerHTML = `
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🏆 MANO TROFĖJAI</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${titleText}</div>
         <button onclick="document.getElementById('prof-trophies-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;" id="prof-trophies-modal-body">
@@ -7063,7 +7092,7 @@ async function openTrophiesModal() {
     // Visi patvirtinti rezultatai
     const { data: results } = await sb.from('competition_results')
       .select('*')
-      .eq('kid_id', currentKid.id)
+      .eq('kid_id', targetKidId)
       .eq('approval_status', 'approved')
       .eq('status', 'participated')
       .order('approved_at', { ascending: false });
@@ -7148,11 +7177,40 @@ async function openTrophiesModal() {
 }
 
 // 🏅 Atveria SKILL BADGES modal'ą - TIK kategorijų badges
-function openBadgesModal() {
+// kidId nebūtinas - jei perduotas, rodo to vaiko badges (draugo profiliui)
+async function openBadgesModal(kidId, kidName) {
+  const targetKidId = kidId || currentKid?.id;
+  const isOwn = !kidId || kidId === currentKid?.id;
+  const titleText = isOwn ? '🏅 SKILL BADGES' : `🏅 ${(kidName || 'DRAUGO').toUpperCase()} BADGES`;
+  
   const existing = document.getElementById('prof-badges-modal');
   if (existing) existing.remove();
   
-  const b = window._profBadges || { master: 0, gold: 0, silver: 0, bronze: 0, list: [] };
+  // Badge'ai - savo iš cache, draugo - skaičiuojam
+  let b = window._profBadges || { master: 0, gold: 0, silver: 0, bronze: 0, list: [] };
+  if (!isOwn) {
+    b = { master: 0, gold: 0, silver: 0, bronze: 0, list: [] };
+    try {
+      const { data: cats } = await sb.from('career_categories').select('id, name');
+      const { data: catRecords } = await sb.from('kid_records')
+        .select('category_id, category_exp')
+        .eq('kid_id', targetKidId);
+      if (cats && catRecords) {
+        const catExp = {};
+        catRecords.forEach(r => { catExp[r.category_id] = (catExp[r.category_id] || 0) + (r.category_exp || 0); });
+        cats.forEach(c => {
+          const exp = Math.min(catExp[c.id] || 0, 600);
+          let tier = null, tierColor = null, tierIcon = null;
+          if (exp >= 600) { b.master++; tier = 'MASTER'; tierColor = '#FF4D00'; tierIcon = '🏆'; }
+          else if (exp >= 500) { b.gold++; tier = 'GOLD'; tierColor = '#FFD700'; tierIcon = '🥇'; }
+          else if (exp >= 300) { b.silver++; tier = 'SILVER'; tierColor = '#C0C0C0'; tierIcon = '🥈'; }
+          else if (exp >= 100) { b.bronze++; tier = 'BRONZE'; tierColor = '#CD7F32'; tierIcon = '🥉'; }
+          else { tier = 'PRADINIS'; tierColor = 'rgba(255,255,255,.3)'; tierIcon = ''; }
+          b.list.push({ name: c.name, exp, tier, tierColor, tierIcon });
+        });
+      }
+    } catch(e) { console.error('openBadgesModal friend:', e); }
+  }
   
   const modal = document.createElement('div');
   modal.id = 'prof-badges-modal';
@@ -7174,7 +7232,7 @@ function openBadgesModal() {
   modal.innerHTML = `
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🏅 SKILL BADGES</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${titleText}</div>
         <button onclick="document.getElementById('prof-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;">
@@ -7188,7 +7246,12 @@ function openBadgesModal() {
 }
 
 // 🎯 Atveria IŠŠŪKIŲ TIPŲ modalą - PAGAL TIPUS statistika
-async function openChallengeTypesModal() {
+// kidId nebūtinas - jei perduotas, rodo to vaiko statistiką (draugo profiliui)
+async function openChallengeTypesModal(kidId, kidName) {
+  const targetKidId = kidId || currentKid?.id;
+  const isOwn = !kidId || kidId === currentKid?.id;
+  const titleText = isOwn ? '🎯 IŠŠŪKIAI · PAGAL TIPUS' : `🎯 ${(kidName || 'DRAUGO').toUpperCase()} IŠŠŪKIAI`;
+  
   const existing = document.getElementById('prof-challenges-modal');
   if (existing) existing.remove();
   
@@ -7199,7 +7262,7 @@ async function openChallengeTypesModal() {
   modal.innerHTML = `
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🎯 IŠŠŪKIAI · PAGAL TIPUS</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${titleText}</div>
         <button onclick="document.getElementById('prof-challenges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;" id="prof-challenges-modal-body">
@@ -7212,12 +7275,12 @@ async function openChallengeTypesModal() {
   // Užkrauti duomenis
   try {
     const body = document.getElementById('prof-challenges-modal-body');
-    if (!body || !currentKid?.id) return;
+    if (!body || !targetKidId) return;
     
     // Iššūkių pateikimai (approved) pagal tipą
     const { data: subs } = await sb.from('challenge_submissions')
       .select('challenge_id, exp_gain, status, challenges(type, exp_reward)')
-      .eq('kid_id', currentKid.id)
+      .eq('kid_id', targetKidId)
       .eq('status', 'approved');
     
     const typeStats = {
@@ -7247,12 +7310,12 @@ async function openChallengeTypesModal() {
     // Dvikovos
     const { data: duels } = await sb.from('duels')
       .select('winner_id, status')
-      .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
+      .or(`challenger_id.eq.${targetKidId},opponent_id.eq.${targetKidId}`)
       .eq('status', 'completed');
     
     let duelWins = 0, duelExp = 0;
     (duels || []).forEach(d => {
-      if (d.winner_id === currentKid.id) { duelWins++; duelExp += DUEL_EXP.winner; }
+      if (d.winner_id === targetKidId) { duelWins++; duelExp += DUEL_EXP.winner; }
       else if (!d.winner_id) duelExp += DUEL_EXP.draw;
       else duelExp += DUEL_EXP.loser;
     });
@@ -7287,9 +7350,11 @@ async function openChallengeTypesModal() {
       </div>
     `;
     
-    // Atnaujint mygtuko santrauką
-    const summaryEl = document.getElementById('v-prof-challenges-summary');
-    if (summaryEl) summaryEl.textContent = `${totalCount} įveikta`;
+    // Atnaujint mygtuko santrauką (tik savo profilyje)
+    if (isOwn) {
+      const summaryEl = document.getElementById('v-prof-challenges-summary');
+      if (summaryEl) summaryEl.textContent = `${totalCount} įveikta`;
+    }
   } catch(e) {
     console.error('openChallengeTypesModal:', e);
     const body = document.getElementById('prof-challenges-modal-body');
