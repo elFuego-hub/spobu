@@ -1111,9 +1111,16 @@ select.inp option{background:#222;}
     
     <!-- KARJEROS HERO - kompaktiškas -->
     <div id="v-kar-hero" style="margin:8px 12px;padding:12px;background:linear-gradient(135deg,rgba(79,195,247,.12),rgba(79,195,247,.04));border:1px solid rgba(79,195,247,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
+      <!-- Animuoti fono elementai -->
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.25);border-radius:50%;top:18%;left:14%;animation:floatDot 4s ease-in-out infinite;"></div>
+        <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.2);border-radius:50%;top:62%;left:24%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
+        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.18);border-radius:50%;top:32%;right:28%;animation:floatDot 6s ease-in-out infinite 1.5s;"></div>
+        <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:28%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
+      </div>
       <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">⚔️</div>
       <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">KARJEROS EXP</div>
-      <div id="v-kar-total-num" class="glow-soft" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#4FC3F7;line-height:1;text-shadow:0 0 20px rgba(79,195,247,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;--glow-color:#4FC3F7;">0</div>
+      <div id="v-kar-total-num" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#4FC3F7;line-height:1;text-shadow:0 0 20px rgba(79,195,247,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;--glow-color:#4FC3F7;">0</div>
       <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="v-kar-next-tier">Iki MASTER: 4 200 EXP</div>
       <div id="v-kar-medals-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
         <!-- Užpildoma dinamiškai per loadCategories - rodome 3 aukščiausius medalių tipus kuriuos turi vaikas -->
@@ -1141,7 +1148,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL35</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL36</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -1153,9 +1160,16 @@ select.inp option{background:#222;}
     
     <!-- 🎯 IŠŠŪKIŲ HERO (žalias gradient) -->
     <div id="v-ish-hero" style="margin:6px 12px 8px;padding:12px;background:linear-gradient(135deg,rgba(102,187,106,.12),rgba(102,187,106,.04));border:1px solid rgba(102,187,106,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
+      <!-- Animuoti fono elementai -->
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.25);border-radius:50%;top:18%;left:14%;animation:floatDot 4s ease-in-out infinite;"></div>
+        <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.2);border-radius:50%;top:62%;left:24%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
+        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.18);border-radius:50%;top:32%;right:28%;animation:floatDot 6s ease-in-out infinite 1.5s;"></div>
+        <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:28%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
+      </div>
       <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">🎯</div>
       <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">🎯 ĮVEIKTI IŠŠŪKIAI</div>
-      <div id="v-ish-total-completed" class="glow-soft" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#66BB6A;line-height:1;text-shadow:0 0 20px rgba(102,187,106,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;--glow-color:#66BB6A;">0</div>
+      <div id="v-ish-total-completed" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#66BB6A;line-height:1;text-shadow:0 0 20px rgba(102,187,106,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;--glow-color:#66BB6A;">0</div>
       <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="v-ish-total-exp">+0 EXP gauta</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
         <div style="text-align:center;">
@@ -1254,6 +1268,13 @@ select.inp option{background:#222;}
     
     <!-- 🏆 VARŽYBŲ HERO -->
     <div id="v-comp-hero" style="margin:6px 12px 8px;padding:12px;background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
+      <!-- Animuoti fono elementai -->
+      <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
+        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.25);border-radius:50%;top:18%;left:14%;animation:floatDot 4s ease-in-out infinite;"></div>
+        <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.2);border-radius:50%;top:62%;left:24%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
+        <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.18);border-radius:50%;top:32%;right:28%;animation:floatDot 6s ease-in-out infinite 1.5s;"></div>
+        <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:28%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
+      </div>
       <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">🏆</div>
       
       <!-- KUMITE + KATA REKORDAI - 2 stulpeliai -->
@@ -1261,7 +1282,7 @@ select.inp option{background:#222;}
         <!-- 🥊 KUMITE -->
         <div style="padding-right:8px;border-right:1px solid rgba(255,255,255,.15);">
           <div style="font-size:8px;color:#EF4444;letter-spacing:1.5px;font-weight:800;">🥊 KUMITE</div>
-          <div id="v-comp-record" class="glow-soft" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#EF4444;line-height:1;text-shadow:0 0 12px rgba(239,68,68,.5);margin:3px 0 2px;letter-spacing:2px;--glow-color:#EF4444;">0 - 0</div>
+          <div id="v-comp-record" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#EF4444;line-height:1;text-shadow:0 0 12px rgba(239,68,68,.5);margin:3px 0 2px;letter-spacing:2px;--glow-color:#EF4444;">0 - 0</div>
           <div style="font-size:8px;color:rgba(255,255,255,.7);" id="v-comp-stats-line">0% · 0 varž.</div>
           <div style="font-size:9px;color:#EF4444;font-weight:800;margin:2px 0 6px;" id="v-comp-kumite-exp">+0 EXP</div>
           <!-- Kumite medaliai -->
@@ -1273,7 +1294,7 @@ select.inp option{background:#222;}
         <!-- 🎭 KATA -->
         <div style="padding-left:8px;">
           <div style="font-size:8px;color:#4FC3F7;letter-spacing:1.5px;font-weight:800;">🎭 KATA</div>
-          <div id="v-comp-kata-record" class="glow-soft" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#4FC3F7;line-height:1;text-shadow:0 0 12px rgba(79,195,247,.5);margin:3px 0 2px;letter-spacing:2px;--glow-color:#4FC3F7;">0 - 0</div>
+          <div id="v-comp-kata-record" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#4FC3F7;line-height:1;text-shadow:0 0 12px rgba(79,195,247,.5);margin:3px 0 2px;letter-spacing:2px;--glow-color:#4FC3F7;">0 - 0</div>
           <div style="font-size:8px;color:rgba(255,255,255,.7);" id="v-comp-kata-stats-line">0% · 0 varž.</div>
           <div style="font-size:9px;color:#4FC3F7;font-weight:800;margin:2px 0 6px;" id="v-comp-kata-exp">+0 EXP</div>
           <!-- Kata medaliai -->
