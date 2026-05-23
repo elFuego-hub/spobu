@@ -108,13 +108,13 @@ body{display:flex;flex-direction:column;align-items:center;}
 
 /* ✨ GYVYBĖS EFEKTAI - glow pagal lygį + paspaudimo atsakas */
 /* Glow pulsavimas - aukštiems lygiams/retiems badge */
-@keyframes glowPulse{0%,100%{filter:drop-shadow(0 0 4px var(--glow-color));}50%{filter:drop-shadow(0 0 12px var(--glow-color));}}
-@keyframes glowPulseStrong{0%,100%{filter:drop-shadow(0 0 6px var(--glow-color)) drop-shadow(0 0 10px var(--glow-color));}50%{filter:drop-shadow(0 0 14px var(--glow-color)) drop-shadow(0 0 24px var(--glow-color));}}
+@keyframes glowPulse{0%,100%{filter:drop-shadow(0 0 6px var(--glow-color));}50%{filter:drop-shadow(0 0 16px var(--glow-color)) drop-shadow(0 0 6px var(--glow-color));}}
+@keyframes glowPulseStrong{0%,100%{filter:drop-shadow(0 0 8px var(--glow-color)) drop-shadow(0 0 14px var(--glow-color));}50%{filter:drop-shadow(0 0 18px var(--glow-color)) drop-shadow(0 0 32px var(--glow-color));}}
 /* Švelnus kvėpavimas - HERO kanji */
 @keyframes breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
 /* Glow lygiai - taikoma su --glow-color CSS kintamuoju */
-.glow-soft{animation:glowPulse 3s ease-in-out infinite;}
-.glow-strong{animation:glowPulseStrong 2.4s ease-in-out infinite;}
+.glow-soft{animation:glowPulse 2.8s ease-in-out infinite;}
+.glow-strong{animation:glowPulseStrong 2.2s ease-in-out infinite;}
 /* Paspaudimo atsakas - visiems interaktyviems elementams */
 .tap-react{transition:transform .12s ease,filter .12s ease;}
 .tap-react:active{transform:scale(.96);}
@@ -1137,7 +1137,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL33</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL34</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -4904,19 +4904,14 @@ async function loadKidData() {
     kanjiEl.textContent = stage.kanji;
     kanjiEl.style.color = stage.color;
     kanjiEl.style.setProperty('--glow-color', stage.color);
-    // Glow intensyvumas pagal lygį: žemi - ramu, aukšti - švyti
+    // Glow intensyvumas pagal lygį: visi turi bent švelnų, aukšti - stiprų
     kanjiEl.classList.remove('glow-soft', 'glow-strong');
-    if (stageIdx >= 5) {
-      // Legenda/Drakonas/HoF - stiprus pulsuojantis glow
+    if (stageIdx >= 4) {
       kanjiEl.classList.add('glow-strong');
       kanjiEl.style.textShadow = `0 0 20px ${stage.color}`;
-    } else if (stageIdx >= 3) {
-      // Vidutiniai lygiai - švelnus glow
+    } else {
       kanjiEl.classList.add('glow-soft');
       kanjiEl.style.textShadow = `0 0 12px ${stage.color}80`;
-    } else {
-      // Žemi lygiai - ramu, be glow
-      kanjiEl.style.textShadow = '0 4px 12px rgba(0,0,0,.4)';
     }
   }
   
@@ -5218,11 +5213,15 @@ function renderBeltCertificate(kyu, isCurrent) {
   
   const danGlow = isDan ? 'box-shadow:0 5px 16px rgba(255,215,0,.4),inset 0 0 16px rgba(0,0,0,.3);' : '';
   
+  // Glow ant diржo kanji pagal lygį: dan - stiprus, ruda/1-2 kyu - švelnus, žemesni - ramus
+  const isBrown = info.color === 'RUDAS';
+  const beltGlowClass = isDan ? 'glow-strong' : (isBrown ? 'glow-soft' : '');
+  
   return `
     <div style="border-radius:10px;padding:7px;position:relative;border:1.5px solid ${info.accentColor};background:linear-gradient(135deg,${info.accentColor}22,${info.accentColor}05);${danGlow}overflow:hidden;">
       <div style="position:absolute;top:3px;left:3px;width:8px;height:8px;border-top:2px solid ${info.accentColor};border-left:2px solid ${info.accentColor};"></div>
       <div style="position:absolute;bottom:3px;right:3px;width:8px;height:8px;border-bottom:2px solid ${info.accentColor};border-right:2px solid ${info.accentColor};"></div>
-      <div style="font-family:'Noto Serif JP','Hiragino Mincho ProN',serif;font-size:23px;font-weight:900;text-align:center;line-height:1;margin-bottom:4px;color:${info.accentColor};text-shadow:0 0 11px ${info.accentColor}80;">${info.kanji}</div>
+      <div class="${beltGlowClass}" style="font-family:'Noto Serif JP','Hiragino Mincho ProN',serif;font-size:23px;font-weight:900;text-align:center;line-height:1;margin-bottom:4px;color:${info.accentColor};text-shadow:0 0 11px ${info.accentColor}80;--glow-color:${info.accentColor};">${info.kanji}</div>
       <div style="height:9px;border-radius:2px;margin:4px 0;position:relative;box-shadow:inset 0 2px 4px rgba(255,255,255,.3),inset 0 -2px 4px rgba(0,0,0,.4);overflow:hidden;background:${info.mainGradient};">
         ${stripeHtml}
       </div>
@@ -6712,8 +6711,8 @@ async function openFriendModal(friendJson) {
   const ringOffset = circumference - (stageInfo.progressPercent / 100) * circumference;
   const ringGlow = friendStageIdx >= 5 ? `filter:drop-shadow(0 0 8px ${stage.color});` : '';
   const kanjiGlow = friendStageIdx >= 5 ? `0 0 20px ${stage.color}` : (friendStageIdx >= 3 ? `0 0 12px ${stage.color}80` : '0 4px 12px rgba(0,0,0,.4)');
-  // Glow klasė pagal lygį
-  const kanjiGlowClass = friendStageIdx >= 5 ? 'glow-strong' : (friendStageIdx >= 3 ? 'glow-soft' : '');
+  // Glow klasė pagal lygį - visi turi bent švelnų
+  const kanjiGlowClass = friendStageIdx >= 4 ? 'glow-strong' : 'glow-soft';
   
   // Kiek lanko karatę
   let friendKarateSince = '';
@@ -7213,10 +7212,15 @@ async function openTrophiesModal(kidId, kidName) {
             extraInfo = `<div style="font-size:8px;color:var(--mut);margin-top:1px;">${r.wins}W : ${r.losses}L</div>`;
           }
           
+          // Glow pagal vietą - auksas stiprus, sidabras švelnus, bronza ramus
+          const medalGlow = r.placement === 1
+            ? `glow-strong" style="--glow-color:#FFD700;`
+            : (r.placement === 2 ? `glow-soft" style="--glow-color:#C0C0C0;` : `" style="`);
+          
           return `
             <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 6px;text-align:center;position:relative;">
               <div style="position:absolute;top:5px;right:5px;background:${typeColor};color:white;font-size:7px;font-weight:800;padding:2px 5px;border-radius:99px;letter-spacing:.5px;">${typeLabel}</div>
-              <div style="display:flex;justify-content:center;margin-bottom:5px;margin-top:8px;">${svg}</div>
+              <div class="${medalGlow}display:flex;justify-content:center;margin-bottom:5px;margin-top:8px;">${svg}</div>
               <div style="font-size:9px;font-weight:800;color:white;margin-bottom:1px;letter-spacing:.3px;">${label}</div>
               <div style="font-size:9px;color:rgba(255,255,255,.8);line-height:1.2;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.title}</div>
               <div style="font-size:8px;color:var(--mut);">${month} ${year}</div>
