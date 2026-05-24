@@ -122,6 +122,9 @@ body{display:flex;flex-direction:column;align-items:center;}
 /* Paspaudimo atsakas - visiems interaktyviems elementams */
 .tap-react{transition:transform .12s ease,filter .12s ease;}
 .tap-react:active{transform:scale(.96);}
+/* 🎊 CONFETTI - krentantys spalvoti lašeliai */
+@keyframes confettiFall{0%{transform:translateY(-20px) rotateZ(0deg);opacity:1;}100%{transform:translateY(105vh) rotateZ(720deg);opacity:.2;}}
+.confetti-piece{position:fixed;top:0;width:9px;height:9px;z-index:999999;pointer-events:none;will-change:transform;}
 
 /* TOAST */
 .toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);background:var(--card);border:2px solid var(--bdr);border-radius:18px;padding:20px 28px;font-size:15px;font-weight:800;color:var(--txt);z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);line-height:1.4;}
@@ -1148,7 +1151,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL37</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL38</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -7872,13 +7875,15 @@ async function checkForNewApprovedSubmissions() {
           // Pilnai atliktas - NEsiunčiam toast'o (yra bendras "pilnai atlikta" celebration)
           return;
         } else {
-          // Tarpinis - rodom toast'ą
+          // Tarpinis - rodom toast'ą + confetti
           const totalProgress = progress?.total_progress || 0;
           const remaining = (ch.target_value || 0) - totalProgress;
+          confetti({ count: 24 });
           showToast(`📊 Tarpinis patvirtintas!\n\n${ch.title}\n${totalProgress} / ${ch.target_value} ${ch.target_unit || ''}\nLiko: ${remaining} ${ch.target_unit || ''}`, 'success', 5500);
         }
       } else {
-        // Standartinis iššūkis - tipui specifinis popup (kaip streak'as)
+        // Standartinis iššūkis - tipui specifinis popup + confetti
+        confetti();
         showChallengeApprovedPopup(ch, sub);
       }
     }, i * 700);
@@ -7997,6 +8002,8 @@ function showDuelResultPopup(duel, myKidId) {
     resultGradient = 'linear-gradient(135deg, #22C55E, #16A34A)';
     resultIcon = '🏆';
     expGained = DUEL_EXP.winner;
+    // 🎊 Confetti tik pergalei
+    confetti({ count: 44, colors: ['#22C55E', '#FFD700', '#66BB6A', '#4FC3F7'] });
   } else {
     resultLabel = 'PRALAIMĖJIMAS';
     resultColor = '#EF4444';
@@ -17792,6 +17799,34 @@ function showErr(el, msg){el.textContent=msg;el.style.display='block';}
 function showLoading(on){document.getElementById('loading').style.display=on?'':'none';}
 
 let toastTimer=null;
+// 🎊 Confetti efektas - krentantys spalvoti lašeliai
+function confetti(opts = {}) {
+  const count = opts.count || 36;
+  const colors = opts.colors || ['#FF4D00', '#FFD700', '#4FC3F7', '#66BB6A', '#EC407A', '#BA68C8', '#FF8C00'];
+  
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const left = Math.random() * 100;
+    const duration = 2.4 + Math.random() * 1.8; // 2.4-4.2s
+    const delay = Math.random() * 0.5;
+    const size = 6 + Math.random() * 7;
+    const isRound = Math.random() > 0.5;
+    
+    piece.style.left = left + 'vw';
+    piece.style.width = size + 'px';
+    piece.style.height = size + 'px';
+    piece.style.background = color;
+    piece.style.borderRadius = isRound ? '50%' : '2px';
+    piece.style.animation = `confettiFall ${duration}s ${delay}s ease-in forwards`;
+    
+    document.body.appendChild(piece);
+    // Pašalint po animacijos
+    setTimeout(() => piece.remove(), (duration + delay) * 1000 + 200);
+  }
+}
+
 function showToast(msg, type='', duration=null){
   const t=document.getElementById('toast');
   const b=document.getElementById('toast-backdrop');
