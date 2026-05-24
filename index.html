@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL47</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL48</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -4979,7 +4979,7 @@ async function loadKidData() {
   // Progress ring
   const progressCircle = document.getElementById('v-prof-progress-circle');
   if (progressCircle) {
-    const circumference = 628; // 2 * PI * 100
+    const circumference = 396; // 2 * PI * 63 (atitinka r=63 ir stroke-dasharray=396)
     const offset = circumference - (stageInfo.progressPercent / 100) * circumference;
     progressCircle.style.strokeDashoffset = offset;
     progressCircle.setAttribute('stroke', stage.color);
@@ -18023,7 +18023,72 @@ function triggerCountUp(sid) {
         }
       }
     }
+    // EXP juosta "atvažiuoja" - nunulint, tada grąžint (CSS transition animuoja)
+    replayBarFill('v-exp-bar');
   }
+  
+  // Profilis - progreso žiedas "atvažiuoja"
+  if (sid === 'v-prof') {
+    replayRingFill('v-prof-progress-circle');
+  }
+  
+  // Varžybos - W-L rekordai "X - Y" (abu skaičiai count-up)
+  if (sid === 'v-comp') {
+    ['v-comp-record', 'v-comp-kata-record'].forEach(recId => {
+      const el = document.getElementById(recId);
+      if (!el) return;
+      const m = el.textContent.match(/(\d+)\s*-\s*(\d+)/);
+      if (!m) return;
+      const wins = parseInt(m[1]) || 0;
+      const losses = parseInt(m[2]) || 0;
+      if (wins === 0 && losses === 0) return;
+      // Animuojam abu skaičius kartu, atnaujinam tekstą "X - Y"
+      const startTime = performance.now();
+      const dur = 1000;
+      function ease(t) { return 1 - (1 - t) * (1 - t); }
+      function frame(now) {
+        const p = Math.min((now - startTime) / dur, 1);
+        const e = ease(p);
+        const w = Math.round(wins * e);
+        const l = Math.round(losses * e);
+        el.textContent = `${w} - ${l}`;
+        if (p < 1) requestAnimationFrame(frame);
+        else el.textContent = `${wins} - ${losses}`;
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+}
+
+// 🎢 Juosta "atvažiuoja" - nunulina plotį, tada grąžina (CSS transition animuoja)
+function replayBarFill(barId) {
+  const bar = document.getElementById(barId);
+  if (!bar) return;
+  const targetWidth = bar.style.width || getComputedStyle(bar).width;
+  if (!targetWidth || targetWidth === '0px' || targetWidth === '0%') return;
+  const prevTransition = bar.style.transition;
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  void bar.offsetWidth; // force reflow
+  bar.style.transition = 'width 1s cubic-bezier(.25,.8,.35,1)';
+  bar.style.width = targetWidth;
+  setTimeout(() => { bar.style.transition = prevTransition; }, 1100);
+}
+
+// 🎢 Progreso žiedas "atvažiuoja" - nunulina, tada grąžina
+function replayRingFill(ringId) {
+  const ring = document.getElementById(ringId);
+  if (!ring) return;
+  // Tikra reikšmė - iš stiliaus (užpildymas nustato .style.strokeDashoffset)
+  const targetOffset = ring.style.strokeDashoffset || ring.getAttribute('stroke-dashoffset');
+  if (!targetOffset) return;
+  const prevTransition = ring.style.transition;
+  ring.style.transition = 'none';
+  ring.style.strokeDashoffset = '396'; // tuščias žiedas
+  ring.getBoundingClientRect(); // force reflow
+  ring.style.transition = 'stroke-dashoffset 1s cubic-bezier(.25,.8,.35,1)';
+  ring.style.strokeDashoffset = targetOffset;
+  setTimeout(() => { ring.style.transition = prevTransition; }, 1100);
 }
 
 // ════════════════════════════════════════
