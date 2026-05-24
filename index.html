@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL40</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL41</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5901,12 +5901,12 @@ async function detectNewMedals() {
   
   const lsKey = `spobu_kid_${currentKid.id}_lastMedalId`;
   
+  // Visi patvirtinti rezultatai (medaliai 1-3 IR dalyvavimas 4+)
   const { data: results } = await sb.from('competition_results')
-    .select('id, placement, competition_id, approved_at, exp_gained')
+    .select('id, placement, competition_id, approved_at, exp_gained, status')
     .eq('kid_id', currentKid.id)
     .eq('approval_status', 'approved')
-    .gte('placement', 1)
-    .lte('placement', 3)
+    .eq('status', 'participated')
     .order('approved_at', { ascending: false })
     .limit(5);
   
@@ -5947,14 +5947,92 @@ async function detectNewMedals() {
   newMedals.forEach((medal, idx) => {
     setTimeout(() => {
       const comp = compsMap[medal.competition_id];
-      showCompetitionCelebration(
-        medal.placement,
-        comp?.title || 'Varžybos',
-        medal.exp_gained || 0
-      );
+      const title = comp?.title || 'Varžybos';
+      const exp = medal.exp_gained || 0;
+      // Medalis (1-3) - medalio šventimas, 4+ - motyvuojantis dalyvavimo
+      if (medal.placement >= 1 && medal.placement <= 3) {
+        showCompetitionCelebration(medal.placement, title, exp);
+      } else {
+        showParticipationCelebration(title, exp, medal.placement);
+      }
     }, 1500 + idx * 500);
   });
 }
+
+// ════════════════════════════════════════
+// 🥋 DALYVAVIMO CELEBRATION - 4+ vieta, motyvuojantis
+// ════════════════════════════════════════
+function showParticipationCelebration(competitionTitle = '', expEarned = 0, placement = 0) {
+  let modal = document.getElementById('participation-modal');
+  if (modal) modal.remove();
+  
+  modal = document.createElement('div');
+  modal.id = 'participation-modal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:99999;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    opacity:0;transition:opacity .35s;
+  `;
+  
+  const accent = '#4FC3F7';
+  
+  modal.innerHTML = `
+    <div id="participation-content" style="
+      position:fixed;top:50%;left:50%;
+      transform:translate(-50%,-50%) scale(.7);
+      max-width:340px;width:90%;
+      background:linear-gradient(135deg, rgba(25,35,48,.98), rgba(12,16,22,.98));
+      border:2px solid ${accent};
+      border-radius:24px;padding:30px 24px;text-align:center;
+      box-shadow:0 0 50px ${accent}55, inset 0 0 30px rgba(0,0,0,.4);
+      transition:transform .45s cubic-bezier(.34,1.56,.64,1);
+    ">
+      <div style="font-size:10px;color:${accent};font-weight:800;letter-spacing:3px;margin-bottom:10px;">VARŽYBOS UŽBAIGTOS</div>
+      
+      <div style="font-size:54px;line-height:1;margin-bottom:8px;">🥋</div>
+      
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:white;line-height:1.1;">TU KOVOJAI!</div>
+      ${placement ? `<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;">${placement} vieta · ${competitionTitle}</div>` : `<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;">${competitionTitle}</div>`}
+      
+      <div style="height:1px;background:linear-gradient(90deg,transparent,${accent},transparent);margin:16px 0;"></div>
+      
+      <div style="font-size:12px;color:rgba(255,255,255,.9);line-height:1.55;margin-bottom:14px;">
+        Šįkart medalis nepasidavė — bet tu išėjai į tatamį ir kovojai. <b style="color:${accent};">Tai jau pergalė.</b><br><br>
+        Kiekvienos varžybos daro tave stipresnį. Kitą kartą bus geriau. 💪
+      </div>
+      
+      ${expEarned > 0 ? `<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;">
+        <div style="font-size:20px;">💎</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:${accent};text-shadow:0 0 12px ${accent};">+${expEarned}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">EXP</div>
+      </div>` : ''}
+      
+      <button onclick="document.getElementById('participation-modal').remove()" style="
+        background:linear-gradient(135deg, ${accent}, #2E9BD6);
+        color:white;border:none;padding:11px 30px;border-radius:13px;
+        font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;cursor:pointer;
+        box-shadow:0 4px 14px ${accent}77;
+      ">TĘSIU TRENIRUOTES 🥋</button>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  requestAnimationFrame(() => {
+    modal.style.opacity = '1';
+    const content = document.getElementById('participation-content');
+    if (content) content.style.transform = 'translate(-50%,-50%) scale(1)';
+  });
+  
+  // Švelnus confetti - mėlynas/baltas (ne šventiškas auksinis)
+  confetti({ count: 28, colors: ['#4FC3F7', '#FFFFFF', '#90CAF9'] });
+  
+  if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+}
+
+// Test: testParticipation()
+window.testParticipation = function() {
+  showParticipationCelebration('Vilniaus taurė 2026', 30, 5);
+};
 
 // ════════════════════════════════════════
 // Auto-detect naujų įveiktų iššūkių
