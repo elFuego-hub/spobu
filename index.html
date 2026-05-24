@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL46</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL47</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -17979,7 +17979,7 @@ function nv(p,el,sid){
 
 // 🔢 Paleidžia count-up HERO skaičiams pagal aktyvų langą
 function triggerCountUp(sid) {
-  // Skaičių elementai pagal langą: [id, ar tūkstančių skyrikliai]
+  // Paprasti skaičiai (vienas grynas skaičius)
   const heroNumbers = {
     'v-prof': [
       { id: 'v-prof-lvl-num', prefix: 'LVL ', locale: false },
@@ -17987,26 +17987,43 @@ function triggerCountUp(sid) {
     ],
     'v-kar':  [{ id: 'v-kar-total-num', locale: true }],
     'v-ish':  [{ id: 'v-ish-total-completed', locale: false }],
-    'v':      [] // pagrindinis - tvarkomas atskirai per updateExpBar
+    'v-comp': [
+      { id: 'v-comp-kumite-exp', prefix: '+', suffix: ' EXP', locale: true },
+      { id: 'v-comp-kata-exp', prefix: '+', suffix: ' EXP', locale: true }
+    ]
   };
   
   const targets = heroNumbers[sid];
-  if (!targets) return;
-  
-  targets.forEach(t => {
-    const el = document.getElementById(t.id);
-    if (!el) return;
-    // Ištraukti skaičių iš esamo teksto (pašalint LVL, EXP, tarpus, skyriklius)
-    const raw = el.textContent.replace(/[^\d]/g, '');
-    const num = parseInt(raw) || 0;
-    if (num <= 0) return; // nėra ką animuoti
-    countUp(el, num, {
-      duration: 1000,
-      prefix: t.prefix || '',
-      suffix: t.suffix || '',
-      useLocale: t.locale
+  if (targets) {
+    targets.forEach(t => {
+      const el = document.getElementById(t.id);
+      if (!el) return;
+      const raw = el.textContent.replace(/[^\d]/g, '');
+      const num = parseInt(raw) || 0;
+      if (num <= 0) return;
+      countUp(el, num, {
+        duration: 1000,
+        prefix: t.prefix || '',
+        suffix: t.suffix || '',
+        useLocale: t.locale
+      });
     });
-  });
+  }
+  
+  // Pagrindinis langas - EXP juostos "X / Y" formatas (animuojam tik X)
+  if (sid === 'v-main') {
+    const expEl = document.getElementById('v-exp-txt');
+    if (expEl) {
+      const parts = expEl.textContent.split('/');
+      if (parts.length === 2) {
+        const current = parseInt(parts[0].replace(/[^\d]/g, '')) || 0;
+        const suffix = ' / ' + parts[1].trim();
+        if (current > 0) {
+          countUp(expEl, current, { duration: 1000, suffix: suffix, useLocale: false });
+        }
+      }
+    }
+  }
 }
 
 // ════════════════════════════════════════
