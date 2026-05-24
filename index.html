@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL44</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL45</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5678,34 +5678,34 @@ window.testCompetition = function(placement = 1) {
 // ════════════════════════════════════════
 
 const BELT_REWARDS = {
-  '10 kyu': { color: '#FFFFFF', name: 'Baltas diržas', desc: 'Pradedantysis', icon: '⚪' },
-  '9 kyu':  { color: '#FFA500', name: 'Oranžinis diržas', desc: 'Pradedančiojo I lygis', icon: '🟠' },
-  '8 kyu':  { color: '#FFA500', name: 'Oranžinis diržas (2)', desc: 'Pradedančiojo II lygis', icon: '🟠' },
-  '7 kyu':  { color: '#0066CC', name: 'Mėlynas diržas', desc: 'Pradedantis sportininkas I', icon: '🔵' },
-  '6 kyu':  { color: '#0066CC', name: 'Mėlynas diržas (2)', desc: 'Pradedantis sportininkas II', icon: '🔵' },
-  '5 kyu':  { color: '#FFD700', name: 'Geltonas diržas', desc: 'Pažengęs sportininkas I', icon: '🟡' },
-  '4 kyu':  { color: '#FFD700', name: 'Geltonas diržas (2)', desc: 'Pažengęs sportininkas II', icon: '🟡' },
-  '3 kyu':  { color: '#22C55E', name: 'Žalias diržas', desc: 'Patyręs sportininkas I', icon: '🟢' },
-  '2 kyu':  { color: '#22C55E', name: 'Žalias diržas (2)', desc: 'Patyręs sportininkas II', icon: '🟢' },
-  '1 kyu':  { color: '#8B4513', name: 'Rudas diržas', desc: 'Beveik meistras', icon: '🟤' },
-  '1 dan':  { color: '#000000', name: 'Juodas diržas', desc: 'MEISTRAS · Shodan', icon: '⚫' },
-  '2 dan':  { color: '#000000', name: 'Juodas diržas (2)', desc: 'Vyresnis meistras · Nidan', icon: '⚫' },
-  '3 dan':  { color: '#000000', name: 'Juodas diržas (3)', desc: 'Aukštas meistras · Sandan', icon: '⚫' },
-  '4 dan':  { color: '#000000', name: 'Juodas diržas (4)', desc: 'Yondan', icon: '⚫' },
-  '5 dan':  { color: '#000000', name: 'Juodas diržas (5)', desc: 'Godan', icon: '⚫' }
+  '10 kyu': { color: '#FF8C00', name: 'Oranžinis dirжas', desc: 'Pradedantysis I lygis', icon: '🟠' },
+  '9 kyu':  { color: '#FF8C00', name: 'Oranžinis dirжas su mėlyna juostele', desc: 'Pradedantysis II lygis', icon: '🟠' },
+  '8 kyu':  { color: '#4FC3F7', name: 'Mėlynas dirжas', desc: 'Pradedantis sportininkas I', icon: '🔵' },
+  '7 kyu':  { color: '#4FC3F7', name: 'Mėlynas dirжas su geltona juostele', desc: 'Pradedantis sportininkas II', icon: '🔵' },
+  '6 kyu':  { color: '#FFD700', name: 'Geltonas dirжas', desc: 'Pažengęs sportininkas I', icon: '🟡' },
+  '5 kyu':  { color: '#FFD700', name: 'Geltonas dirжas su žalia juostele', desc: 'Pažengęs sportininkas II', icon: '🟡' },
+  '4 kyu':  { color: '#66BB6A', name: 'Žalias dirжas', desc: 'Patyręs sportininkas I', icon: '🟢' },
+  '3 kyu':  { color: '#66BB6A', name: 'Žalias dirжas su ruda juostele', desc: 'Patyręs sportininkas II', icon: '🟢' },
+  '2 kyu':  { color: '#8B4513', name: 'Rudas dirжas', desc: 'Beveik meistras I', icon: '🟤' },
+  '1 kyu':  { color: '#8B4513', name: 'Rudas dirжas su juoda juostele', desc: 'Beveik meistras II', icon: '🟤' },
+  '1 dan':  { color: '#000000', name: 'Juodas dirжas', desc: 'MEISTRAS · Shodan', icon: '⚫' },
+  '2 dan':  { color: '#000000', name: 'Juodas dirжas (2)', desc: 'Vyresnis meistras · Nidan', icon: '⚫' },
+  '3 dan':  { color: '#000000', name: 'Juodas dirжas (3)', desc: 'Aukštas meistras · Sandan', icon: '⚫' },
+  '4 dan':  { color: '#000000', name: 'Juodas dirжas (4)', desc: 'Yondan', icon: '⚫' },
+  '5 dan':  { color: '#000000', name: 'Juodas dirжas (5)', desc: 'Godan', icon: '⚫' }
 };
 
 const BELT_MESSAGES = {
-  '10 kyu': 'Sveikas atvykęs į karatė kelią! Baltas diržas - švari pradžia.',
-  '9 kyu':  'Pirmas egzaminas išlaikytas! Oranžinis diržas - tavo darbo įrodymas.',
-  '8 kyu':  'Antrasis oranžinis lygis - tu jau įsisavinai bazę. Toliau!',
-  '7 kyu':  'Mėlynas kaip dangus - tavo žinios plečiasi.',
-  '6 kyu':  'Antrasis mėlynas lygis - tu jau pažengęs ne tik teorijoje.',
-  '5 kyu':  'Geltonas kaip saulė - tu spindi savo darbu ir užsispyrimu.',
-  '4 kyu':  'Antrasis geltonas - artėji prie viduriniojo lygio. Tu - pavyzdys jaunesniems.',
-  '3 kyu':  'Žalias kaip gyvybė - tu pasiekei svarbų lygį.',
-  '2 kyu':  'Antrasis žalias - tavo technika tobulinasi kasdien.',
-  '1 kyu':  'Rudas kaip žemė - paskutinis žingsnis prieš juodą diržą!',
+  '10 kyu': 'Sveikas atvykęs į karatė kelią! Oranžinis dirжas - tavo pradžia.',
+  '9 kyu':  'Pirmas egzaminas išlaikytas! Mėlyna juostelė rodo, kad jau pažengei.',
+  '8 kyu':  'Mėlynas kaip dangus - tavo žinios plečiasi. Toliau!',
+  '7 kyu':  'Mėlynas su geltona juostele - artėji prie naujo lygio.',
+  '6 kyu':  'Geltonas kaip saulė - tu spindi savo darbu ir užsispyrimu.',
+  '5 kyu':  'Geltonas su žalia juostele - tu jau pavyzdys jaunesniems.',
+  '4 kyu':  'Žalias kaip gyvybė - tu pasiekei svarbų lygį.',
+  '3 kyu':  'Žalias su ruda juostele - tavo technika tobulinasi kasdien.',
+  '2 kyu':  'Rudas kaip žemė - tu jau patyręs karatietis.',
+  '1 kyu':  'Rudas su juoda juostele - paskutinis žingsnis prieš juodą dirжas!',
   '1 dan':  'JUODAS DIRŽAS! Shodan - tu pasiekei tai, ko siekė tūkstančiai. Tu - meistras.',
   '2 dan':  'Nidan - aukštesnis meistro lygis. Tu jau mokytojas kitiems.',
   '3 dan':  'Sandan - tavo žinios neribotos. Tu - karatė pasaulio dalis.',
