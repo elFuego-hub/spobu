@@ -123,8 +123,19 @@ body{display:flex;flex-direction:column;align-items:center;}
 .tap-react{transition:transform .12s ease,filter .12s ease;}
 .tap-react:active{transform:scale(.96);}
 /* 🎊 CONFETTI - krentantys spalvoti lašeliai */
-@keyframes confettiFall{0%{transform:translateY(-20px) rotateZ(0deg);opacity:1;}100%{transform:translateY(105vh) rotateZ(720deg);opacity:.2;}}
+@keyframes confettiDrop{0%{transform:translateY(-20px) rotateZ(0deg);opacity:1;}100%{transform:translateY(105vh) rotateZ(720deg);opacity:.2;}}
 .confetti-piece{position:fixed;top:0;width:9px;height:9px;z-index:999999;pointer-events:none;will-change:transform;}
+/* 💥 SMŪGIO BLYKSNIS - dvikovos pergalei */
+@keyframes impactBurst{0%{transform:translate(-50%,-50%) scale(0);opacity:1;}60%{opacity:.8;}100%{transform:translate(-50%,-50%) scale(3.5);opacity:0;}}
+@keyframes impactSpark{0%{transform:translate(-50%,-50%) rotate(var(--ang)) translateX(0) scale(1);opacity:1;}100%{transform:translate(-50%,-50%) rotate(var(--ang)) translateX(160px) scale(.3);opacity:0;}}
+.impact-ring{position:fixed;top:50%;left:50%;width:80px;height:80px;border-radius:50%;border:5px solid #FFD700;z-index:999998;pointer-events:none;animation:impactBurst .55s ease-out forwards;}
+.impact-spark{position:fixed;top:50%;left:50%;width:7px;height:28px;border-radius:4px;z-index:999998;pointer-events:none;animation:impactSpark .6s ease-out forwards;}
+/* 📈 AUGIMO EFEKTAS - karjeros medaliui */
+@keyframes growUp{0%{transform:translateY(0) scale(.6);opacity:0;}25%{opacity:1;}100%{transform:translateY(-180px) scale(1.1);opacity:0;}}
+.grow-arrow{position:fixed;bottom:30vh;z-index:999998;pointer-events:none;font-size:22px;animation:growUp 1.8s ease-out forwards;}
+/* 🌊 LYGIO BANGA - ekrano švytėjimo banga */
+@keyframes levelWave{0%{opacity:0;box-shadow:inset 0 0 0px 0px var(--wave-color);}30%{opacity:1;}50%{box-shadow:inset 0 0 80px 14px var(--wave-color);}100%{opacity:0;box-shadow:inset 0 0 0px 0px var(--wave-color);}}
+.level-wave{position:fixed;inset:0;z-index:999997;pointer-events:none;animation:levelWave 1.6s ease-out forwards;}
 
 /* TOAST */
 .toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);background:var(--card);border:2px solid var(--bdr);border-radius:18px;padding:20px 28px;font-size:15px;font-weight:800;color:var(--txt);z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);line-height:1.4;}
@@ -1151,7 +1162,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL38</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL39</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5438,7 +5449,8 @@ function showLevelUpCelebration(newLevel, oldLevel = newLevel - 1) {
     if (content) content.style.transform = 'scale(1)';
   }, 50);
   
-  // Confetti efektas
+  // 🌊 Ekrano švytėjimo banga + confetti
+  levelWaveEffect('#FFD700');
   triggerConfetti();
 }
 
@@ -5544,7 +5556,13 @@ function showCompetitionCelebration(placement, competitionTitle = '', expEarned 
     if (content) content.style.transform = 'scale(1)';
   }, 50);
   
-  triggerConfetti();
+  // 🎊 Confetti pagal vietą - auksas/sidabras/bronza
+  const placeColors = {
+    1: ['#FFD700', '#FFA500', '#FFFFFF', '#FFD700'],   // Auksas
+    2: ['#C0C0C0', '#E8E8E8', '#FFFFFF', '#A8A8A8'],   // Sidabras
+    3: ['#CD7F32', '#E39A5C', '#FFFFFF', '#B8702A']    // Bronza
+  };
+  confetti({ count: 48, colors: placeColors[placement] || placeColors[1] });
 }
 
 function closeCompetitionCelebration() {
@@ -5679,6 +5697,8 @@ function showBeltCelebration(newKyu, oldKyu = '') {
     if (content) content.style.transform = 'scale(1)';
   }, 50);
   
+  // 🌊 Ekrano švytėjimo banga (diржo spalva) + confetti
+  levelWaveEffect('#FF8C00');
   triggerConfetti();
 }
 
@@ -7882,8 +7902,7 @@ async function checkForNewApprovedSubmissions() {
           showToast(`📊 Tarpinis patvirtintas!\n\n${ch.title}\n${totalProgress} / ${ch.target_value} ${ch.target_unit || ''}\nLiko: ${remaining} ${ch.target_unit || ''}`, 'success', 5500);
         }
       } else {
-        // Standartinis iššūkis - tipui specifinis popup + confetti
-        confetti();
+        // Standartinis iššūkis - tipui specifinis popup (confetti su tipo spalva popup'e)
         showChallengeApprovedPopup(ch, sub);
       }
     }, i * 700);
@@ -7965,6 +7984,9 @@ function showChallengeApprovedPopup(challenge, submission) {
   
   document.body.appendChild(popup);
   
+  // 🎊 Confetti su tipo spalva
+  confetti({ count: 38, colors: [cfg.color, '#FFD700', '#FFFFFF', cfg.color] });
+  
   // Animacija - atsiranda
   requestAnimationFrame(() => {
     popup.style.opacity = '1';
@@ -8002,8 +8024,8 @@ function showDuelResultPopup(duel, myKidId) {
     resultGradient = 'linear-gradient(135deg, #22C55E, #16A34A)';
     resultIcon = '🏆';
     expGained = DUEL_EXP.winner;
-    // 🎊 Confetti tik pergalei
-    confetti({ count: 44, colors: ['#22C55E', '#FFD700', '#66BB6A', '#4FC3F7'] });
+    // 💥 Smūgio blyksnis pergalei
+    impactEffect('#FFD700');
   } else {
     resultLabel = 'PRALAIMĖJIMAS';
     resultColor = '#EF4444';
@@ -8449,7 +8471,8 @@ function showAchievement(catName, tier) {
   document.getElementById('amo-msg').textContent = messages[tier] || 'Pasiekei naują lygį!';
   document.getElementById('amo').classList.add('open');
   
-  // Confetti animacija
+  // 📈 Augimo efektas - kylančios rodyklės/žvaigždės
+  growEffect();
   spawnConfetti();
   
   // Vibracija
@@ -17809,7 +17832,7 @@ function confetti(opts = {}) {
     piece.className = 'confetti-piece';
     const color = colors[Math.floor(Math.random() * colors.length)];
     const left = Math.random() * 100;
-    const duration = 2.4 + Math.random() * 1.8; // 2.4-4.2s
+    const duration = 2.4 + Math.random() * 1.8;
     const delay = Math.random() * 0.5;
     const size = 6 + Math.random() * 7;
     const isRound = Math.random() > 0.5;
@@ -17819,12 +17842,55 @@ function confetti(opts = {}) {
     piece.style.height = size + 'px';
     piece.style.background = color;
     piece.style.borderRadius = isRound ? '50%' : '2px';
-    piece.style.animation = `confettiFall ${duration}s ${delay}s ease-in forwards`;
+    piece.style.animation = `confettiDrop ${duration}s ${delay}s ease-in forwards`;
     
     document.body.appendChild(piece);
-    // Pašalint po animacijos
     setTimeout(() => piece.remove(), (duration + delay) * 1000 + 200);
   }
+}
+
+// 💥 Smūgio blyksnis - dvikovos pergalei (žiedas + spinduliai iš centro)
+function impactEffect(color = '#FFD700') {
+  // Centrinis žiedas
+  const ring = document.createElement('div');
+  ring.className = 'impact-ring';
+  ring.style.borderColor = color;
+  document.body.appendChild(ring);
+  setTimeout(() => ring.remove(), 700);
+  
+  // 12 spindulių aplink
+  for (let i = 0; i < 12; i++) {
+    const spark = document.createElement('div');
+    spark.className = 'impact-spark';
+    spark.style.setProperty('--ang', (i * 30) + 'deg');
+    spark.style.background = i % 2 === 0 ? color : '#FFFFFF';
+    document.body.appendChild(spark);
+    setTimeout(() => spark.remove(), 750);
+  }
+}
+
+// 📈 Augimo efektas - karjeros medaliui (kylančios rodyklės)
+function growEffect() {
+  const icons = ['⬆️', '✨', '⬆️', '⭐', '⬆️'];
+  for (let i = 0; i < 10; i++) {
+    const el = document.createElement('div');
+    el.className = 'grow-arrow';
+    el.textContent = icons[Math.floor(Math.random() * icons.length)];
+    el.style.left = (10 + Math.random() * 80) + 'vw';
+    el.style.animationDelay = (Math.random() * 0.6) + 's';
+    el.style.fontSize = (16 + Math.random() * 14) + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
+  }
+}
+
+// 🌊 Lygio banga - ekrano kraštų švytėjimas (naujam lygiui/kyu)
+function levelWaveEffect(color = '#FFD700') {
+  const wave = document.createElement('div');
+  wave.className = 'level-wave';
+  wave.style.setProperty('--wave-color', color);
+  document.body.appendChild(wave);
+  setTimeout(() => wave.remove(), 1700);
 }
 
 function showToast(msg, type='', duration=null){
