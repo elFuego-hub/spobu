@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL43</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL44</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5249,15 +5249,15 @@ function getBeltInfo(kyu) {
   if (k.includes('1') && k.includes('dan')) return { name: '1 Dan', color: 'JUODAS', kanji: '初段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 1, color: 'gold' } };
   
   // KYU lygiai (Kyokushin)
-  if (k.includes('1 kyu') || k === '1') return { name: '1 Kyu', color: 'RUDAS', kanji: '一', mainGradient: 'linear-gradient(180deg, #A1693B 0%, #8B4513 50%, #4A2304 100%)', accentColor: '#CD7F32', textColor: '#CD7F32', stripe: { type: 'single', color: 'linear-gradient(180deg, #2c2c2c, #000)' } };
+  if (k.includes('1 kyu') || k === '1') return { name: '1 Kyu', color: 'RUDAS', stripeName: 'juoda', kanji: '一', mainGradient: 'linear-gradient(180deg, #A1693B 0%, #8B4513 50%, #4A2304 100%)', accentColor: '#CD7F32', textColor: '#CD7F32', stripe: { type: 'single', color: 'linear-gradient(180deg, #2c2c2c, #000)' } };
   if (k.includes('2 kyu') || k === '2') return { name: '2 Kyu', color: 'RUDAS', kanji: '二', mainGradient: 'linear-gradient(180deg, #A1693B 0%, #8B4513 50%, #4A2304 100%)', accentColor: '#CD7F32', textColor: '#CD7F32', stripe: null };
-  if (k.includes('3 kyu') || k === '3') return { name: '3 Kyu', color: 'ŽALIAS', kanji: '三', mainGradient: 'linear-gradient(180deg, #66BB6A 0%, #4CAF50 50%, #1B5E20 100%)', accentColor: '#66BB6A', textColor: '#66BB6A', stripe: { type: 'single', color: 'linear-gradient(180deg, #A1693B, #5D2906)' } };
+  if (k.includes('3 kyu') || k === '3') return { name: '3 Kyu', color: 'ŽALIAS', stripeName: 'ruda', kanji: '三', mainGradient: 'linear-gradient(180deg, #66BB6A 0%, #4CAF50 50%, #1B5E20 100%)', accentColor: '#66BB6A', textColor: '#66BB6A', stripe: { type: 'single', color: 'linear-gradient(180deg, #A1693B, #5D2906)' } };
   if (k.includes('4 kyu') || k === '4') return { name: '4 Kyu', color: 'ŽALIAS', kanji: '四', mainGradient: 'linear-gradient(180deg, #66BB6A 0%, #4CAF50 50%, #1B5E20 100%)', accentColor: '#66BB6A', textColor: '#66BB6A', stripe: null };
-  if (k.includes('5 kyu') || k === '5') return { name: '5 Kyu', color: 'GELTONAS', kanji: '五', mainGradient: 'linear-gradient(180deg, #FFE600 0%, #FFD700 50%, #B8860B 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'single', color: 'linear-gradient(180deg, #66BB6A, #2E7D32)' } };
+  if (k.includes('5 kyu') || k === '5') return { name: '5 Kyu', color: 'GELTONAS', stripeName: 'žalia', kanji: '五', mainGradient: 'linear-gradient(180deg, #FFE600 0%, #FFD700 50%, #B8860B 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'single', color: 'linear-gradient(180deg, #66BB6A, #2E7D32)' } };
   if (k.includes('6 kyu') || k === '6') return { name: '6 Kyu', color: 'GELTONAS', kanji: '六', mainGradient: 'linear-gradient(180deg, #FFE600 0%, #FFD700 50%, #B8860B 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: null };
-  if (k.includes('7 kyu') || k === '7') return { name: '7 Kyu', color: 'MĖLYNAS', kanji: '七', mainGradient: 'linear-gradient(180deg, #2E5C8A 0%, #1E3A5F 50%, #0F1E33 100%)', accentColor: '#4FC3F7', textColor: '#4FC3F7', stripe: { type: 'single', color: 'linear-gradient(180deg, #FFE600, #DAA520)' } };
+  if (k.includes('7 kyu') || k === '7') return { name: '7 Kyu', color: 'MĖLYNAS', stripeName: 'geltona', kanji: '七', mainGradient: 'linear-gradient(180deg, #2E5C8A 0%, #1E3A5F 50%, #0F1E33 100%)', accentColor: '#4FC3F7', textColor: '#4FC3F7', stripe: { type: 'single', color: 'linear-gradient(180deg, #FFE600, #DAA520)' } };
   if (k.includes('8 kyu') || k === '8') return { name: '8 Kyu', color: 'MĖLYNAS', kanji: '八', mainGradient: 'linear-gradient(180deg, #2E5C8A 0%, #1E3A5F 50%, #0F1E33 100%)', accentColor: '#4FC3F7', textColor: '#4FC3F7', stripe: null };
-  if (k.includes('9 kyu') || k === '9') return { name: '9 Kyu', color: 'ORANŽINIS', kanji: '九', mainGradient: 'linear-gradient(180deg, #FFA500 0%, #FF8C00 50%, #E65100 100%)', accentColor: '#FF8C00', textColor: '#FF8C00', stripe: { type: 'single', color: 'linear-gradient(180deg, #4A90E2, #1E3A5F)' } };
+  if (k.includes('9 kyu') || k === '9') return { name: '9 Kyu', color: 'ORANŽINIS', stripeName: 'mėlyna', kanji: '九', mainGradient: 'linear-gradient(180deg, #FFA500 0%, #FF8C00 50%, #E65100 100%)', accentColor: '#FF8C00', textColor: '#FF8C00', stripe: { type: 'single', color: 'linear-gradient(180deg, #4A90E2, #1E3A5F)' } };
   if (k.includes('10 kyu') || k === '10') return { name: '10 Kyu', color: 'ORANŽINIS', kanji: '十', mainGradient: 'linear-gradient(180deg, #FFA500 0%, #FF8C00 50%, #E65100 100%)', accentColor: '#FF8C00', textColor: '#FF8C00', stripe: null };
   
   // Mu Kyu (default - baltas)
@@ -5303,7 +5303,7 @@ function renderBeltCertificate(kyu, isCurrent) {
         ${stripeHtml}
       </div>
       <div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:1.2px;margin-top:3px;color:${info.textColor};">${info.name.toUpperCase()}</div>
-      <div style="text-align:center;font-size:7px;margin-top:1px;letter-spacing:1px;opacity:.7;color:${info.textColor};">${info.color}</div>
+      <div style="text-align:center;font-size:7px;margin-top:1px;letter-spacing:1px;opacity:.7;color:${info.textColor};">${info.color}${info.stripeName ? ` · ${info.stripeName} juostelė` : ''}</div>
     </div>
   `;
 }
@@ -5766,7 +5766,7 @@ function showBeltCelebration(newKyu, oldKyu = '') {
       </div>` : `<div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:${textColor};margin:18px 0;">${newKyu}</div>`}
       
       <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:${textColor};margin-bottom:8px;">
-        ${getBeltInfo(newKyu).name.toUpperCase()} · ${getBeltInfo(newKyu).color}
+        ${getBeltInfo(newKyu).name.toUpperCase()} · ${getBeltInfo(newKyu).color}${getBeltInfo(newKyu).stripeName ? `<div style="font-size:13px;letter-spacing:.5px;opacity:.85;margin-top:2px;">su ${getBeltInfo(newKyu).stripeName} juostele</div>` : ''}
       </div>
       
       <div style="font-size:12px;color:${textColor === 'white' ? 'rgba(255,255,255,.85)' : 'rgba(0,0,0,.7)'};font-weight:700;margin-bottom:14px;letter-spacing:1px;">
