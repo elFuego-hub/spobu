@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL48</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL49</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5469,9 +5469,10 @@ function showLevelUpCelebration(newLevel, oldLevel = newLevel - 1) {
     if (content) content.style.transform = 'scale(1)';
   }, 50);
   
-  // 🌊 Ekrano švytėjimo banga + confetti
+  // 🌊 Ekrano švytėjimo banga + confetti + 🔊 garsas
   levelWaveEffect('#FFD700');
   triggerConfetti();
+  playSound('levelup');
 }
 
 function closeLevelUpCelebration() {
@@ -5546,11 +5547,12 @@ function showStageUpCelebration(newStageName, oldStageName = '') {
   document.body.appendChild(modal);
   requestAnimationFrame(() => { modal.style.opacity = '1'; });
   
-  // 🎆 Įspūdingiausi efektai - dviguba banga + confetti
+  // 🎆 Įspūdingiausi efektai - dviguba banga + confetti + 🔊 garsas
   levelWaveEffect(stage.color);
   setTimeout(() => levelWaveEffect(stage.color), 500);
   confetti({ count: 60, colors: [stage.color, '#FFD700', '#FFFFFF', stage.color, '#FF8C00'] });
   setTimeout(() => confetti({ count: 40, colors: [stage.color, '#FFFFFF'] }), 700);
+  playSound('levelup');
   
   // Vibracija
   if (navigator.vibrate) navigator.vibrate([120, 60, 120, 60, 250]);
@@ -5796,9 +5798,10 @@ function showBeltCelebration(newKyu, oldKyu = '') {
     if (content) content.style.transform = 'scale(1)';
   }, 50);
   
-  // 🌊 Ekrano švytėjimo banga (diржo spalva) + confetti
+  // 🌊 Ekrano švytėjimo banga (diржo spalva) + confetti + 🔊 garsas
   levelWaveEffect('#FF8C00');
   triggerConfetti();
+  playSound('levelup');
 }
 
 function closeBeltCelebration() {
@@ -7277,6 +7280,7 @@ async function sendDuelChallenge() {
     document.getElementById('friend-modal')?.remove();
     
     showToast(`🥊 Dvikova "${t.name}" išsiųsta! Laukiama, ar draugas priims.`, 'success');
+    playSound('send');
     
     // Atnaujint draugų sekciją
     renderProfileExtras();
@@ -8084,6 +8088,7 @@ async function checkForNewApprovedSubmissions() {
           const totalProgress = progress?.total_progress || 0;
           const remaining = (ch.target_value || 0) - totalProgress;
           confetti({ count: 24 });
+          playSound('exp');
           showToast(`📊 Tarpinis patvirtintas!\n\n${ch.title}\n${totalProgress} / ${ch.target_value} ${ch.target_unit || ''}\nLiko: ${remaining} ${ch.target_unit || ''}`, 'success', 5500);
         }
       } else {
@@ -8169,8 +8174,9 @@ function showChallengeApprovedPopup(challenge, submission) {
   
   document.body.appendChild(popup);
   
-  // 🎊 Confetti su tipo spalva
+  // 🎊 Confetti su tipo spalva + 🔊 garsas
   confetti({ count: 38, colors: [cfg.color, '#FFD700', '#FFFFFF', cfg.color] });
+  playSound('exp');
   
   // Animacija - atsiranda
   requestAnimationFrame(() => {
@@ -8209,8 +8215,9 @@ function showDuelResultPopup(duel, myKidId) {
     resultGradient = 'linear-gradient(135deg, #22C55E, #16A34A)';
     resultIcon = '🏆';
     expGained = DUEL_EXP.winner;
-    // 💥 Smūgio blyksnis pergalei
+    // 💥 Smūgio blyksnis pergalei + 🔊 garsas
     impactEffect('#FFD700');
+    playSound('victory');
   } else {
     resultLabel = 'PRALAIMĖJIMAS';
     resultColor = '#EF4444';
@@ -9392,6 +9399,7 @@ async function submitChallengeResult() {
   }
   
   showToast('✅ Rezultatas išsiųstas treneriui patvirtinimui!', 'success', 4000);
+  playSound('send');
   closeSubmitChallenge();
   await loadChallenges(); // perkrauti
 }
@@ -18226,6 +18234,96 @@ function countUp(el, target, opts = {}) {
   requestAnimationFrame(frame);
 }
 
+// 🔊 GARSŲ SISTEMA - sugeneruoti garsai (Web Audio API, be failų)
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) { return null; }
+  }
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+
+// Ar garsai įjungti (numatyta - įjungti)
+function soundEnabled() {
+  return localStorage.getItem('spobu_sound_off') !== '1';
+}
+function setSoundEnabled(on) {
+  localStorage.setItem('spobu_sound_off', on ? '0' : '1');
+}
+
+// Vienas tonas
+function playTone(freq, startT, dur, type = 'sine', vol = 0.18) {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, ctx.currentTime + startT);
+  gain.gain.setValueAtTime(0, ctx.currentTime + startT);
+  gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + startT + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startT + dur);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(ctx.currentTime + startT);
+  osc.stop(ctx.currentTime + startT + dur + 0.05);
+}
+
+// 🎵 Garsų rinkinys pagal įvykį
+function playSound(kind) {
+  if (!soundEnabled()) return;
+  if (!getAudioCtx()) return;
+  
+  switch(kind) {
+    case 'exp': // EXP patvirtinimas - kylantis linksmas trigarsis
+      playTone(523, 0,    0.12, 'triangle', 0.16); // C5
+      playTone(659, 0.10, 0.12, 'triangle', 0.16); // E5
+      playTone(784, 0.20, 0.22, 'triangle', 0.18); // G5
+      break;
+    case 'victory': // Dvikovos pergalė - triumfo fanfara
+      playTone(523, 0,    0.13, 'square', 0.14);
+      playTone(659, 0.12, 0.13, 'square', 0.14);
+      playTone(784, 0.24, 0.13, 'square', 0.14);
+      playTone(1047, 0.36, 0.35, 'square', 0.16); // C6 ilgesnis
+      break;
+    case 'levelup': // Naujas lygis/kyu/stage - didinga kylanti seka
+      playTone(440, 0,    0.14, 'triangle', 0.15);
+      playTone(587, 0.13, 0.14, 'triangle', 0.15);
+      playTone(740, 0.26, 0.14, 'triangle', 0.15);
+      playTone(880, 0.39, 0.18, 'triangle', 0.17);
+      playTone(1175, 0.52, 0.40, 'sine', 0.18); // D6 finalas
+      break;
+    case 'send': // Žinutės išsiuntimas - švelnus "švšš" pakilimas
+      playTone(660, 0,    0.08, 'sine', 0.12);
+      playTone(990, 0.07, 0.14, 'sine', 0.12);
+      break;
+  }
+}
+
+// 🔊 Test: playSound('exp'), playSound('victory'), playSound('levelup'), playSound('send')
+window.playSound = playSound;
+
+// Garso jungiklis nustatymuose
+function toggleAppSound() {
+  const newState = !soundEnabled();
+  setSoundEnabled(newState);
+  updateSoundToggleUI();
+  if (newState) playSound('exp'); // garsinis patvirtinimas, kad įjungta
+}
+
+function updateSoundToggleUI() {
+  const on = soundEnabled();
+  const icon = document.getElementById('kid-sound-icon');
+  const status = document.getElementById('kid-sound-status');
+  const sw = document.getElementById('kid-sound-switch');
+  const knob = document.getElementById('kid-sound-knob');
+  if (icon) icon.textContent = on ? '🔊' : '🔇';
+  if (status) status.textContent = on ? 'Įjungti · pasiekimų garsai' : 'Išjungti';
+  if (sw) sw.style.background = on ? '#66BB6A' : 'rgba(255,255,255,.15)';
+  if (knob) knob.style.left = on ? '21px' : '3px';
+}
+
 function showToast(msg, type='', duration=null){
   const t=document.getElementById('toast');
   const b=document.getElementById('toast-backdrop');
@@ -20059,6 +20157,20 @@ async function openKidSettings() {
           </div>
         </div>
         
+        <!-- 🔊 GARSO JUNGIKLIS -->
+        <div style="padding:12px 16px 0;">
+          <div onclick="toggleAppSound()" id="kid-sound-toggle" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;" id="kid-sound-icon">🔊</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Garsai</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="kid-sound-status">Įjungti · pasiekimų garsai</div>
+            </div>
+            <div id="kid-sound-switch" style="width:42px;height:24px;border-radius:99px;background:#66BB6A;position:relative;transition:background .2s;flex-shrink:0;">
+              <div id="kid-sound-knob" style="width:18px;height:18px;border-radius:50%;background:white;position:absolute;top:3px;left:21px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>
+            </div>
+          </div>
+        </div>
+        
         <!-- INFO MYGTUKAI -->
         <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
           <button onclick="openInstructionsModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
@@ -20142,6 +20254,9 @@ async function openKidSettings() {
   
   // 📋 Užkrauti detalią info (klubas, treneris, amžius, svoris, kyu)
   await loadKidSettingsDetails();
+  
+  // 🔊 Atnaujint garso jungiklio būseną
+  updateSoundToggleUI();
   
   modal.style.display = 'flex';
 }
