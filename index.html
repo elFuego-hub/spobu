@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL50</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL51</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5664,6 +5664,7 @@ function showCompetitionCelebration(placement, competitionTitle = '', expEarned 
     3: ['#CD7F32', '#E39A5C', '#FFFFFF', '#B8702A']    // Bronza
   };
   confetti({ count: 48, colors: placeColors[placement] || placeColors[1] });
+  playSound('victory');
 }
 
 function closeCompetitionCelebration() {
@@ -6036,6 +6037,7 @@ function showParticipationCelebration(competitionTitle = '', expEarned = 0, plac
   
   // Švelnus confetti - mėlynas/baltas (ne šventiškas auksinis)
   confetti({ count: 28, colors: ['#4FC3F7', '#FFFFFF', '#90CAF9'] });
+  playSound('exp');
   
   if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
 }
@@ -6816,6 +6818,7 @@ async function submitDuelResult(duelId) {
   } else {
     showToast('✅ Tavo rezultatas išsaugotas! Laukiam draugo.', 'success');
   }
+  playSound('send');
   
   renderMyDuels();
 }
@@ -11057,6 +11060,7 @@ async function submitCompResult() {
   }
   
   showToast('✅ Rezultatas išsiųstas treneriui!', 'success', 4000);
+  playSound('send');
   closeSubmitCompResult();
   await loadKidCompetitions();
 }
