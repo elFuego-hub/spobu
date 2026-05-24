@@ -136,6 +136,10 @@ body{display:flex;flex-direction:column;align-items:center;}
 /* 🌊 LYGIO BANGA - ekrano švytėjimo banga */
 @keyframes levelWave{0%{opacity:0;box-shadow:inset 0 0 0px 0px var(--wave-color);}30%{opacity:1;}50%{box-shadow:inset 0 0 80px 14px var(--wave-color);}100%{opacity:0;box-shadow:inset 0 0 0px 0px var(--wave-color);}}
 .level-wave{position:fixed;inset:0;z-index:999997;pointer-events:none;animation:levelWave 1.6s ease-out forwards;}
+/* 🌟 STAGE UP - naujo periodo šventimas */
+@keyframes stageUpIn{0%{transform:translate(-50%,-50%) scale(0) rotate(-12deg);opacity:0;}55%{transform:translate(-50%,-50%) scale(1.12) rotate(3deg);opacity:1;}75%{transform:translate(-50%,-50%) scale(.96) rotate(-1deg);}100%{transform:translate(-50%,-50%) scale(1) rotate(0deg);opacity:1;}}
+@keyframes stageKanjiPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 16px var(--stage-color));}50%{transform:scale(1.08);filter:drop-shadow(0 0 36px var(--stage-color));}}
+@keyframes stageRayRotate{0%{transform:translate(-50%,-50%) rotate(0deg);}100%{transform:translate(-50%,-50%) rotate(360deg);}}
 
 /* TOAST */
 .toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);background:var(--card);border:2px solid var(--bdr);border-radius:18px;padding:20px 28px;font-size:15px;font-weight:800;color:var(--txt);z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);line-height:1.4;}
@@ -1162,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL39</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL40</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5061,6 +5065,22 @@ async function loadKidData() {
   }
   localStorage.setItem(lsKey('lastKyu'), newKyu);
   
+  // 🌟 Detektuoti STAGE PERĖJIMĄ (Naujokas → Mokinys → Pažengęs → ...)
+  const stageInfoNow = getStageInfo(currentKid.total_exp || 0);
+  const newStage = stageInfoNow.stage;
+  const lastKnownStage = localStorage.getItem(lsKey('lastStage'));
+  console.log('🔵 [celebrations] Stage - lastKnown:', lastKnownStage, 'new:', newStage);
+  if (lastKnownStage && lastKnownStage !== newStage) {
+    // Tikrinam ar pakilo (ne nukrito) - pagal STAGES indeksą
+    const oldIdx = STAGES.findIndex(s => s.name === lastKnownStage);
+    const newIdx = STAGES.findIndex(s => s.name === newStage);
+    if (newIdx > oldIdx) {
+      console.log('🌟 STAGE UP detected!', lastKnownStage, '→', newStage);
+      setTimeout(() => showStageUpCelebration(newStage, lastKnownStage), 1600);
+    }
+  }
+  localStorage.setItem(lsKey('lastStage'), newStage);
+  
   // Detektuoti naujus medalius (1, 2, 3 vieta)
   detectNewMedals();
   
@@ -5462,6 +5482,85 @@ function closeLevelUpCelebration() {
 // Test funkcija - paleisti per console: testLevelUp(5)
 window.testLevelUp = function(newLevel = 5) {
   showLevelUpCelebration(newLevel, newLevel - 1);
+};
+
+// ════════════════════════════════════════
+// 🌟 STAGE UP CELEBRATION - naujo periodo šventimas (įspūdingiausias)
+// ════════════════════════════════════════
+function showStageUpCelebration(newStageName, oldStageName = '') {
+  const stage = STAGES.find(s => s.name === newStageName) || STAGES[0];
+  const oldStage = STAGES.find(s => s.name === oldStageName);
+  
+  let modal = document.getElementById('stage-up-modal');
+  if (modal) modal.remove();
+  
+  modal = document.createElement('div');
+  modal.id = 'stage-up-modal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    opacity:0;transition:opacity .4s;
+  `;
+  
+  modal.innerHTML = `
+    <!-- Besisukantys spinduliai fone -->
+    <div style="position:fixed;top:50%;left:50%;width:600px;height:600px;pointer-events:none;animation:stageRayRotate 18s linear infinite;opacity:.18;background:conic-gradient(from 0deg, transparent, ${stage.color}, transparent, ${stage.color}, transparent, ${stage.color}, transparent);"></div>
+    
+    <div id="stage-up-content" style="
+      position:fixed;top:50%;left:50%;
+      transform:translate(-50%,-50%) scale(0);
+      max-width:360px;width:90%;
+      background:linear-gradient(135deg, rgba(25,25,25,.98), rgba(12,12,12,.98));
+      border:2px solid ${stage.color};
+      border-radius:26px;padding:32px 24px;text-align:center;
+      box-shadow:0 0 60px ${stage.color}66, inset 0 0 40px rgba(0,0,0,.5);
+      animation:stageUpIn .8s cubic-bezier(.34,1.56,.64,1) forwards;
+    ">
+      <div style="font-size:10px;color:${stage.color};font-weight:800;letter-spacing:4px;margin-bottom:6px;">NAUJAS PERIODAS</div>
+      
+      ${oldStage ? `<div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:14px;">${oldStage.emoji} ${oldStage.name} &nbsp;→&nbsp; <span style="color:${stage.color};font-weight:800;">${stage.emoji} ${stage.name}</span></div>` : ''}
+      
+      <!-- Didelis kanji -->
+      <div style="--stage-color:${stage.color};font-family:'Noto Serif JP','Hiragino Mincho ProN',serif;font-size:88px;font-weight:900;line-height:1;color:${stage.color};margin:6px 0 10px;animation:stageKanjiPulse 2.2s ease-in-out infinite;">${stage.kanji}</div>
+      
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:white;line-height:1;">TU TAPAI</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:3px;color:${stage.color};line-height:1.1;text-shadow:0 0 20px ${stage.color};">${stage.emoji} ${stage.name.toUpperCase()}</div>
+      
+      <div style="font-size:10px;color:rgba(255,255,255,.7);letter-spacing:1.5px;font-weight:700;margin-top:10px;">${stage.meaning || ''}</div>
+      
+      <div style="height:1px;background:linear-gradient(90deg,transparent,${stage.color},transparent);margin:18px 0;"></div>
+      
+      <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;font-style:italic;margin-bottom:18px;">
+        Tu pakilai į naują karatė kelio pakopą. Tavo ryžtas ir darbas atnešė šį pasiekimą.
+      </div>
+      
+      <button onclick="document.getElementById('stage-up-modal').remove()" style="
+        background:linear-gradient(135deg, ${stage.color}, ${stage.color}cc);
+        color:white;border:none;padding:12px 32px;border-radius:14px;
+        font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;cursor:pointer;
+        box-shadow:0 4px 16px ${stage.color}88;
+      ">TĘSTI KELIĄ 🥋</button>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  requestAnimationFrame(() => { modal.style.opacity = '1'; });
+  
+  // 🎆 Įspūdingiausi efektai - dviguba banga + confetti
+  levelWaveEffect(stage.color);
+  setTimeout(() => levelWaveEffect(stage.color), 500);
+  confetti({ count: 60, colors: [stage.color, '#FFD700', '#FFFFFF', stage.color, '#FF8C00'] });
+  setTimeout(() => confetti({ count: 40, colors: [stage.color, '#FFFFFF'] }), 700);
+  
+  // Vibracija
+  if (navigator.vibrate) navigator.vibrate([120, 60, 120, 60, 250]);
+}
+
+// Test funkcija - paleisti per console: testStageUp('Pažengęs')
+window.testStageUp = function(stageName) {
+  const idx = stageName ? STAGES.findIndex(s => s.name === stageName) : 2;
+  const s = STAGES[idx >= 0 ? idx : 2];
+  showStageUpCelebration(s.name, STAGES[Math.max(0, (idx>=0?idx:2) - 1)].name);
 };
 
 // ════════════════════════════════════════
