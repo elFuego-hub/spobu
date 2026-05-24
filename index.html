@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL42</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL43</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5754,9 +5754,9 @@ function showBeltCelebration(newKyu, oldKyu = '') {
         ✨ EGZAMINAS IŠLAIKYTAS! ✨
       </div>
       
-      <!-- Diržo vizualizacija -->
-      <div style="margin:14px auto;width:200px;height:30px;background:${belt.color};border-radius:6px;border:2px solid rgba(0,0,0,.3);box-shadow:0 4px 15px rgba(0,0,0,.3);position:relative;">
-        ${isBlackBelt ? '<div style="position:absolute;bottom:0;left:10%;right:10%;height:6px;background:#FFD700;border-radius:0 0 4px 4px;"></div>' : ''}
+      <!-- Dirzo vizualizacija - tikslus sertifikatas (kaip profilyje) -->
+      <div style="margin:14px auto;max-width:220px;">
+        ${renderBeltCertificate(newKyu, true)}
       </div>
       
       ${oldKyu ? `<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:18px 0;font-family:'Bebas Neue',sans-serif;color:${textColor};">
@@ -5766,7 +5766,7 @@ function showBeltCelebration(newKyu, oldKyu = '') {
       </div>` : `<div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:${textColor};margin:18px 0;">${newKyu}</div>`}
       
       <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:${textColor};margin-bottom:8px;">
-        ${belt.name.toUpperCase()}
+        ${getBeltInfo(newKyu).name.toUpperCase()} · ${getBeltInfo(newKyu).color}
       </div>
       
       <div style="font-size:12px;color:${textColor === 'white' ? 'rgba(255,255,255,.85)' : 'rgba(0,0,0,.7)'};font-weight:700;margin-bottom:14px;letter-spacing:1px;">
