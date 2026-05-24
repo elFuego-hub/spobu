@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL45</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL46</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -17970,6 +17970,43 @@ function nv(p,el,sid){
   if (sid === 'k-stat' && typeof loadClubOverallStat === 'function') {
     loadClubOverallStat();
   }
+  
+  // 🔢 Count-up animacija HERO skaičiams - kai langas tampa matomas
+  if (typeof triggerCountUp === 'function') {
+    triggerCountUp(sid);
+  }
+}
+
+// 🔢 Paleidžia count-up HERO skaičiams pagal aktyvų langą
+function triggerCountUp(sid) {
+  // Skaičių elementai pagal langą: [id, ar tūkstančių skyrikliai]
+  const heroNumbers = {
+    'v-prof': [
+      { id: 'v-prof-lvl-num', prefix: 'LVL ', locale: false },
+      { id: 'v-prof-lvl-exp', suffix: ' EXP', locale: true }
+    ],
+    'v-kar':  [{ id: 'v-kar-total-num', locale: true }],
+    'v-ish':  [{ id: 'v-ish-total-completed', locale: false }],
+    'v':      [] // pagrindinis - tvarkomas atskirai per updateExpBar
+  };
+  
+  const targets = heroNumbers[sid];
+  if (!targets) return;
+  
+  targets.forEach(t => {
+    const el = document.getElementById(t.id);
+    if (!el) return;
+    // Ištraukti skaičių iš esamo teksto (pašalint LVL, EXP, tarpus, skyriklius)
+    const raw = el.textContent.replace(/[^\d]/g, '');
+    const num = parseInt(raw) || 0;
+    if (num <= 0) return; // nėra ką animuoti
+    countUp(el, num, {
+      duration: 1000,
+      prefix: t.prefix || '',
+      suffix: t.suffix || '',
+      useLocale: t.locale
+    });
+  });
 }
 
 // ════════════════════════════════════════
@@ -18076,6 +18113,35 @@ function levelWaveEffect(color = '#FFD700') {
   wave.style.setProperty('--wave-color', color);
   document.body.appendChild(wave);
   setTimeout(() => wave.remove(), 1700);
+}
+
+// 🔢 Count-up animacija - skaičius "užsiveda" nuo 0 iki tikros reikšmės
+function countUp(el, target, opts = {}) {
+  if (!el) return;
+  const duration = opts.duration || 1000;
+  const prefix = opts.prefix || '';
+  const suffix = opts.suffix || '';
+  const useLocale = opts.useLocale !== false;
+  
+  target = Number(target) || 0;
+  const startTime = performance.now();
+  
+  function ease(t) { return 1 - (1 - t) * (1 - t); }
+  
+  function frame(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const current = Math.round(target * ease(progress));
+    const numStr = useLocale ? current.toLocaleString('lt-LT') : String(current);
+    el.textContent = prefix + numStr + suffix;
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      const finalStr = useLocale ? target.toLocaleString('lt-LT') : String(target);
+      el.textContent = prefix + finalStr + suffix;
+    }
+  }
+  requestAnimationFrame(frame);
 }
 
 function showToast(msg, type='', duration=null){
