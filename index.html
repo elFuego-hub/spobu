@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL56</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL57</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -18414,11 +18414,19 @@ async function updatePushToggleUI() {
     return;
   }
   
-  const on = await isPushEnabled();
-  if (icon) icon.textContent = on ? '🔔' : '🔕';
-  if (status) status.textContent = on ? 'Įjungti · gausi pranešimus' : 'Išjungti · spausk įjungti';
-  if (sw) sw.style.background = on ? '#66BB6A' : 'rgba(255,255,255,.15)';
-  if (knob) knob.style.left = on ? '21px' : '3px';
+  // 1) IŠKART parodyti localStorage būseną (greita - be laukimo)
+  const cached = localStorage.getItem('spobu_push_on') === '1';
+  const applyState = (on) => {
+    if (icon) icon.textContent = on ? '🔔' : '🔕';
+    if (status) status.textContent = on ? 'Įjungti · gausi pranešimus' : 'Išjungti · spausk įjungti';
+    if (sw) sw.style.background = on ? '#66BB6A' : 'rgba(255,255,255,.15)';
+    if (knob) knob.style.left = on ? '21px' : '3px';
+  };
+  applyState(cached);
+  
+  // 2) Async patikslinti realią būseną (be "Tikrinama..." kabėjimo)
+  const real = await isPushEnabled();
+  if (real !== cached) applyState(real);
 }
 
 // ════════════════════════════════════════
@@ -18549,20 +18557,24 @@ async function disablePushNotifications() {
   }
 }
 
-// Ar push įjungtas (pagal realią prenumeratą). Su timeout - kad nekabotų.
+// Ar push įjungtas. Greitas - per getRegistration (ne lėtas .ready)
 async function isPushEnabled() {
   if (!pushSupported()) return false;
   try {
-    // navigator.serviceWorker.ready gali kaboti amžinai jei SW nėra - timeout
-    const reg = await Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise((_, rej) => setTimeout(() => rej(new Error('SW timeout')), 3000))
-    ]);
+    // getRegistration greitesnis nei .ready - negrąžina amžino laukimo
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      // SW dar neužregistruotas - bet jei localStorage sako įjungta, pasitikim
+      return localStorage.getItem('spobu_push_on') === '1';
+    }
     const sub = await reg.pushManager.getSubscription();
-    return !!sub;
+    const has = !!sub;
+    // Sinchronizuojam localStorage
+    localStorage.setItem('spobu_push_on', has ? '1' : '0');
+    return has;
   } catch (e) {
     console.warn('isPushEnabled:', e.message);
-    return false;
+    return localStorage.getItem('spobu_push_on') === '1';
   }
 }
 
@@ -20419,7 +20431,7 @@ async function openKidSettings() {
             <div style="font-size:28px;" id="kid-push-icon">🔔</div>
             <div style="flex:1;">
               <div style="font-size:13px;font-weight:800;color:white;">Pranešimai</div>
-              <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="kid-push-status">Tikrinama...</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="kid-push-status">Pranešimai apie pasiekimus</div>
             </div>
             <div id="kid-push-switch" style="width:42px;height:24px;border-radius:99px;background:rgba(255,255,255,.15);position:relative;transition:background .2s;flex-shrink:0;">
               <div id="kid-push-knob" style="width:18px;height:18px;border-radius:50%;background:white;position:absolute;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>
