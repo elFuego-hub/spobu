@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL53</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL54</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -2885,6 +2885,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // SVARBU: sb bus inicializuotas tik kai Supabase CDN užsikraus (žiūrėk init() funkciją)
 let sb = null;
 
+// 🔔 PUSH NOTIFICATIONS konfigūracija
+const VAPID_PUBLIC_KEY = 'BL3D0SftiziKKe0FC4kp3rkY6waYK1UNQVs8isOYRby6m9yEiOnbEM-RxoxOm2rHZKQbDn5y_89_BRUPEUehaio';
+const PUSH_FUNCTION_URL = SUPABASE_URL + '/functions/v1/clever-processor';
+
 // ════════════════════════════════════════
 // GLOBALI BŪSENA
 // ════════════════════════════════════════
@@ -2937,6 +2941,9 @@ async function init() {
   // 2) Tik dabar inicializuojam klientą
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   console.log('✅ Supabase klientas sukurtas');
+  
+  // 🔔 Service Worker registracija (push notifications)
+  registerServiceWorker();
   
   // 3) Patikrinti ar vartotojas jau prisijungęs
   const { data: { session } } = await sb.auth.getSession();
@@ -18378,6 +18385,161 @@ function updateSoundToggleUI() {
   if (knob) knob.style.left = on ? '21px' : '3px';
 }
 
+// 🔔 Pranešimų jungiklis
+async function toggleAppPush() {
+  if (!pushSupported()) {
+    showToast('📵 Tavo naršyklė nepalaiko pranešimų', 'error', 4000);
+    return;
+  }
+  const enabled = await isPushEnabled();
+  if (enabled) {
+    await disablePushNotifications();
+  } else {
+    await enablePushNotifications();
+  }
+  await updatePushToggleUI();
+}
+
+async function updatePushToggleUI() {
+  const icon = document.getElementById('kid-push-icon');
+  const status = document.getElementById('kid-push-status');
+  const sw = document.getElementById('kid-push-switch');
+  const knob = document.getElementById('kid-push-knob');
+  
+  if (!pushSupported()) {
+    if (icon) icon.textContent = '📵';
+    if (status) status.textContent = 'Naršyklė nepalaiko';
+    if (sw) sw.style.background = 'rgba(255,255,255,.15)';
+    if (knob) knob.style.left = '3px';
+    return;
+  }
+  
+  const on = await isPushEnabled();
+  if (icon) icon.textContent = on ? '🔔' : '🔕';
+  if (status) status.textContent = on ? 'Įjungti · gausi pranešimus' : 'Išjungti · spausk įjungti';
+  if (sw) sw.style.background = on ? '#66BB6A' : 'rgba(255,255,255,.15)';
+  if (knob) knob.style.left = on ? '21px' : '3px';
+}
+
+// ════════════════════════════════════════
+// 🔔 PUSH NOTIFICATIONS
+// ════════════════════════════════════════
+
+// base64url → Uint8Array (VAPID raktui)
+function urlB64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+// Ar push apskritai palaikomas šioje naršyklėje
+function pushSupported() {
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+// Registruoja Service Worker (kviečiama app'o starte)
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    const reg = await navigator.serviceWorker.register('sw.js');
+    console.log('🔔 Service Worker užregistruotas');
+    return reg;
+  } catch (e) {
+    console.error('SW registracijos klaida:', e);
+    return null;
+  }
+}
+
+// Prašo leidimo ir užregistruoja push prenumeratą
+async function enablePushNotifications() {
+  if (!pushSupported()) {
+    showToast('📵 Tavo naršyklė nepalaiko pranešimų', 'error', 4000);
+    return false;
+  }
+  if (!currentKid?.id) {
+    showToast('❌ Pirma prisijunk', 'error');
+    return false;
+  }
+  
+  try {
+    // Leidimo prašymas
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      showToast('🔕 Pranešimai neleisti', 'error', 4000);
+      return false;
+    }
+    
+    // SW turi būti užregistruotas
+    const reg = await navigator.serviceWorker.ready;
+    
+    // Push prenumerata
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    
+    // Išsaugoti Supabase
+    const subJson = sub.toJSON();
+    const { error } = await sb.from('push_subscriptions').upsert({
+      kid_id: currentKid.id,
+      user_id: currentUser.id,
+      endpoint: subJson.endpoint,
+      p256dh: subJson.keys.p256dh,
+      auth: subJson.keys.auth,
+      user_agent: navigator.userAgent.slice(0, 200),
+    }, { onConflict: 'endpoint' });
+    
+    if (error) {
+      console.error('Push subscription saugojimo klaida:', error);
+      showToast('❌ Klaida išsaugant', 'error', 4000);
+      return false;
+    }
+    
+    localStorage.setItem('spobu_push_on', '1');
+    showToast('🔔 Pranešimai įjungti!', 'success', 3000);
+    return true;
+  } catch (e) {
+    console.error('enablePushNotifications klaida:', e);
+    showToast('❌ Nepavyko įjungti pranešimų', 'error', 4000);
+    return false;
+  }
+}
+
+// Išjungia push prenumeratą
+async function disablePushNotifications() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      const endpoint = sub.endpoint;
+      await sub.unsubscribe();
+      if (sb) await sb.from('push_subscriptions').delete().eq('endpoint', endpoint);
+    }
+    localStorage.setItem('spobu_push_on', '0');
+    showToast('🔕 Pranešimai išjungti', 'success', 3000);
+  } catch (e) {
+    console.error('disablePushNotifications klaida:', e);
+  }
+}
+
+// Ar push įjungtas (pagal localStorage + reali prenumerata)
+async function isPushEnabled() {
+  if (!pushSupported()) return false;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    return !!sub;
+  } catch (e) {
+    return false;
+  }
+}
+
 function showToast(msg, type='', duration=null){
   const t=document.getElementById('toast');
   const b=document.getElementById('toast-backdrop');
@@ -20225,6 +20387,20 @@ async function openKidSettings() {
           </div>
         </div>
         
+        <!-- 🔔 PRANEŠIMŲ JUNGIKLIS -->
+        <div style="padding:8px 16px 0;">
+          <div onclick="toggleAppPush()" id="kid-push-toggle" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;" id="kid-push-icon">🔔</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Pranešimai</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="kid-push-status">Tikrinama...</div>
+            </div>
+            <div id="kid-push-switch" style="width:42px;height:24px;border-radius:99px;background:rgba(255,255,255,.15);position:relative;transition:background .2s;flex-shrink:0;">
+              <div id="kid-push-knob" style="width:18px;height:18px;border-radius:50%;background:white;position:absolute;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>
+            </div>
+          </div>
+        </div>
+        
         <!-- INFO MYGTUKAI -->
         <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
           <button onclick="openInstructionsModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
@@ -20311,6 +20487,8 @@ async function openKidSettings() {
   
   // 🔊 Atnaujint garso jungiklio būseną
   updateSoundToggleUI();
+  // 🔔 Atnaujint pranešimų jungiklio būseną
+  updatePushToggleUI();
   
   modal.style.display = 'flex';
 }
