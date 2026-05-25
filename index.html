@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL54</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL55</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -18472,8 +18472,17 @@ async function enablePushNotifications() {
       return false;
     }
     
-    // SW turi būti užregistruotas
-    const reg = await navigator.serviceWorker.ready;
+    // SW turi būti užregistruotas (su timeout - kad nekabotų)
+    let reg;
+    try {
+      reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, rej) => setTimeout(() => rej(new Error('SW timeout')), 5000))
+      ]);
+    } catch (e) {
+      showToast('❌ Service Worker neužsikrovė.\nPatikrink ar sw.js įkeltas.', 'error', 5000);
+      return false;
+    }
     
     // Push prenumerata
     let sub = await reg.pushManager.getSubscription();
@@ -18528,14 +18537,19 @@ async function disablePushNotifications() {
   }
 }
 
-// Ar push įjungtas (pagal localStorage + reali prenumerata)
+// Ar push įjungtas (pagal realią prenumeratą). Su timeout - kad nekabotų.
 async function isPushEnabled() {
   if (!pushSupported()) return false;
   try {
-    const reg = await navigator.serviceWorker.ready;
+    // navigator.serviceWorker.ready gali kaboti amžinai jei SW nėra - timeout
+    const reg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('SW timeout')), 3000))
+    ]);
     const sub = await reg.pushManager.getSubscription();
     return !!sub;
   } catch (e) {
+    console.warn('isPushEnabled:', e.message);
     return false;
   }
 }
