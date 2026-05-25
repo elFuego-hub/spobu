@@ -142,14 +142,14 @@ body{display:flex;flex-direction:column;align-items:center;}
 @keyframes stageRayRotate{0%{transform:translate(-50%,-50%) rotate(0deg);}100%{transform:translate(-50%,-50%) rotate(360deg);}}
 
 /* TOAST */
-.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);background:var(--card);border:2px solid var(--bdr);border-radius:18px;padding:20px 28px;font-size:15px;font-weight:800;color:var(--txt);z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);line-height:1.4;}
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);background:var(--card);border:2px solid var(--bdr);border-radius:18px;padding:20px 28px;font-size:15px;font-weight:800;color:var(--txt);z-index:999999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);line-height:1.4;}
 .toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
 .toast.success{border-color:var(--grn);background:linear-gradient(135deg,rgba(34,197,94,.15),var(--card));color:var(--grn);}
 .toast.error{border-color:var(--br);background:linear-gradient(135deg,rgba(255,77,0,.15),var(--card));color:var(--br);}
 .toast.success::before{content:'';position:absolute;inset:-2px;border-radius:18px;background:linear-gradient(135deg,var(--grn),transparent);opacity:.3;z-index:-1;animation:toastPulse 1s ease-out;}
 .toast.error::before{content:'';position:absolute;inset:-2px;border-radius:18px;background:linear-gradient(135deg,var(--br),transparent);opacity:.3;z-index:-1;animation:toastPulse 1s ease-out;}
 @keyframes toastPulse{0%{transform:scale(1);opacity:.6;}100%{transform:scale(1.3);opacity:0;}}
-.toast-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;opacity:0;transition:opacity .25s;pointer-events:none;}
+.toast-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999998;opacity:0;transition:opacity .25s;pointer-events:none;}
 .toast-backdrop.show{opacity:1;}
 /* PORTAL SELECTOR - visa originali stilistika */
 .ps{width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 20px;}
@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL62</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL63</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5394,7 +5394,7 @@ function showLevelUpCelebration(newLevel, oldLevel = newLevel - 1) {
     modal = document.createElement('div');
     modal.id = 'level-up-modal';
     modal.style.cssText = `
-      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;
+      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;
       display:flex;align-items:center;justify-content:center;padding:20px;
       opacity:0;transition:opacity .3s;
     `;
@@ -5495,7 +5495,7 @@ function showStageUpCelebration(newStageName, oldStageName = '') {
   modal = document.createElement('div');
   modal.id = 'stage-up-modal';
   modal.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;
+    position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:100001;
     display:flex;align-items:center;justify-content:center;padding:20px;
     opacity:0;transition:opacity .4s;
   `;
@@ -5596,7 +5596,7 @@ function showCompetitionCelebration(placement, competitionTitle = '', expEarned 
     modal = document.createElement('div');
     modal.id = 'comp-celebration-modal';
     modal.style.cssText = `
-      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;
+      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;
       display:flex;align-items:center;justify-content:center;padding:20px;
       opacity:0;transition:opacity .3s;
     `;
@@ -5724,7 +5724,7 @@ function showBeltCelebration(newKyu, oldKyu = '') {
     modal = document.createElement('div');
     modal.id = 'belt-celebration-modal';
     modal.style.cssText = `
-      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;
+      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;
       display:flex;align-items:center;justify-content:center;padding:20px;
       opacity:0;transition:opacity .3s;
     `;
@@ -5821,7 +5821,7 @@ function showChallengeCelebration(challengeName, expEarned = 0) {
     modal = document.createElement('div');
     modal.id = 'challenge-celebration-modal';
     modal.style.cssText = `
-      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;
+      position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;
       display:flex;align-items:center;justify-content:center;padding:20px;
       opacity:0;transition:opacity .3s;
     `;
@@ -5978,7 +5978,7 @@ function showParticipationCelebration(competitionTitle = '', expEarned = 0, plac
   modal = document.createElement('div');
   modal.id = 'participation-modal';
   modal.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:99999;
+    position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100001;
     display:flex;align-items:center;justify-content:center;padding:20px;
     opacity:0;transition:opacity .35s;
   `;
