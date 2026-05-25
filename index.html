@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL63</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL64</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -2078,6 +2078,31 @@ select.inp option{background:#222;}
         </select>
         <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;">
           💡 Vėliau treneris patvirtins egzaminus ir kyu pakils.
+        </div>
+        
+        <label class="lbl">KARATĖ TRENIRUOJASI NUO</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <select class="inp" id="ak-karate-month">
+            <option value="">Mėnuo</option>
+            <option value="1">Sausis</option>
+            <option value="2">Vasaris</option>
+            <option value="3">Kovas</option>
+            <option value="4">Balandis</option>
+            <option value="5">Gegužė</option>
+            <option value="6">Birželis</option>
+            <option value="7">Liepa</option>
+            <option value="8">Rugpjūtis</option>
+            <option value="9">Rugsėjis</option>
+            <option value="10">Spalis</option>
+            <option value="11">Lapkritis</option>
+            <option value="12">Gruodis</option>
+          </select>
+          <select class="inp" id="ak-karate-year">
+            <option value="">Metai</option>
+          </select>
+        </div>
+        <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;">
+          📅 Kada vaikas pradėjo lankyti karatė.
         </div>
       </div>
       
@@ -3354,7 +3379,7 @@ async function openAddKidWizard() {
   akData = {
     sport_id: null, sport_name: null, fname: '', lname: '', gender: 'male',
     birth_year: null, birth_month: null, birth_day: null, birth_date: null,
-    weight_range: null, kyu: null, club_id: null, club_name: null,
+    weight_range: null, kyu: null, karate_since: null, club_id: null, club_name: null,
     trainer_id: null, trainer_name: null,
     assistant_1_id: null, assistant_1_name: null,
     assistant_2_id: null, assistant_2_name: null,
@@ -3389,6 +3414,17 @@ async function openAddKidWizard() {
   
   document.getElementById('ak-birth-month').value = '';
   document.getElementById('ak-age-display').textContent = '';
+  
+  // Init karatė pradžios metai (nuo dabartinių iki 20 metų atgal)
+  const karateYearSelect = document.getElementById('ak-karate-year');
+  if (karateYearSelect) {
+    let kyOpts = '<option value="">Metai</option>';
+    for (let y = currentYear; y >= currentYear - 20; y--) kyOpts += `<option value="${y}">${y}</option>`;
+    karateYearSelect.innerHTML = kyOpts;
+    karateYearSelect.value = '';
+  }
+  const karateMonthSelect = document.getElementById('ak-karate-month');
+  if (karateMonthSelect) karateMonthSelect.value = '';
   
   // Krauname sportus
   const { data: sports } = await sb.from('sports').select('*').eq('is_active', true);
@@ -3719,12 +3755,27 @@ function akNext(currentScreen) {
     
     if (!weight) { showErr(errEl, 'Pasirink svorio intervalą'); return; }
     
+    // Karatė pradžios data (privaloma)
+    const karateMonth = parseInt(document.getElementById('ak-karate-month').value);
+    const karateYear = parseInt(document.getElementById('ak-karate-year').value);
+    if (!karateMonth || !karateYear) {
+      showErr(errEl, 'Nurodyk, nuo kada vaikas treniruojasi karatė (mėnuo ir metai)');
+      return;
+    }
+    // Negali būti ateityje
+    const karateDate = new Date(karateYear, karateMonth - 1, 1);
+    if (karateDate > new Date()) {
+      showErr(errEl, 'Karatė pradžios data negali būti ateityje');
+      return;
+    }
+    
     akData.fname = fname;
     akData.lname = lname;
     akData.birth_date = dateStr;
     akData.birth_year = year;  // Backward compat
     akData.weight_range = weight;
     akData.kyu = document.getElementById('ak-kyu').value || '10 kyu';
+    akData.karate_since = `${karateYear}-${String(karateMonth).padStart(2,'0')}-01`;
     
     akShowScreen(3);
   }
@@ -3820,6 +3871,7 @@ async function akSubmit() {
       birth_date: akData.birth_date,
       weight_range: akData.weight_range,
       kyu: akData.kyu,
+      karate_since: akData.karate_since,
       total_exp: 0,
       current_level: 1,
       wins: 0,
