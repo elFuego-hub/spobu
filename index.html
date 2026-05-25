@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL64</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL66</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -2063,18 +2063,19 @@ select.inp option{background:#222;}
         
         <label class="lbl">DIRŽO LYGIS (KYU)</label>
         <select class="inp" id="ak-kyu" style="margin-bottom:14px;">
-          <option value="10 kyu" selected>10 kyu (baltas) – pradedantysis</option>
-          <option value="9 kyu">9 kyu</option>
-          <option value="8 kyu">8 kyu</option>
-          <option value="7 kyu">7 kyu</option>
-          <option value="6 kyu">6 kyu</option>
-          <option value="5 kyu">5 kyu</option>
-          <option value="4 kyu">4 kyu</option>
-          <option value="3 kyu">3 kyu</option>
-          <option value="2 kyu">2 kyu</option>
-          <option value="1 kyu">1 kyu</option>
+          <option value="mu kyu" selected>Mu kyu (baltas) – ką tik pradėjo</option>
+          <option value="10 kyu">10 kyu (oranžinis)</option>
+          <option value="9 kyu">9 kyu (oranžinis su mėlyna juostele)</option>
+          <option value="8 kyu">8 kyu (mėlynas)</option>
+          <option value="7 kyu">7 kyu (mėlynas su geltona juostele)</option>
+          <option value="6 kyu">6 kyu (geltonas)</option>
+          <option value="5 kyu">5 kyu (geltonas su žalia juostele)</option>
+          <option value="4 kyu">4 kyu (žalias)</option>
+          <option value="3 kyu">3 kyu (žalias su ruda juostele)</option>
+          <option value="2 kyu">2 kyu (rudas)</option>
+          <option value="1 kyu">1 kyu (rudas su juoda juostele)</option>
           <option value="1 dan">1 dan (juodas)</option>
-          <option value="2 dan">2 dan</option>
+          <option value="2 dan">2 dan (juodas)</option>
         </select>
         <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;">
           💡 Vėliau treneris patvirtins egzaminus ir kyu pakils.
@@ -3774,7 +3775,7 @@ function akNext(currentScreen) {
     akData.birth_date = dateStr;
     akData.birth_year = year;  // Backward compat
     akData.weight_range = weight;
-    akData.kyu = document.getElementById('ak-kyu').value || '10 kyu';
+    akData.kyu = document.getElementById('ak-kyu').value || 'mu kyu';
     akData.karate_since = `${karateYear}-${String(karateMonth).padStart(2,'0')}-01`;
     
     akShowScreen(3);
@@ -5298,6 +5299,9 @@ function getBeltInfo(kyu) {
   if (k.includes('1') && k.includes('dan')) return { name: '1 Dan', color: 'JUODAS', kanji: '初段', mainGradient: 'linear-gradient(180deg, #2c2c2c 0%, #000 100%)', accentColor: '#FFD700', textColor: '#FFD700', stripe: { type: 'multi', count: 1, color: 'gold' } };
   
   // KYU lygiai (Kyokushin)
+  
+  // Mu Kyu - baltas diржas (pradžia, dar be egzamino)
+  if (k.includes('mu')) return { name: 'Mu Kyu', color: 'BALTAS', kanji: '無', mainGradient: 'linear-gradient(180deg, #FFFFFF 0%, #F0F0F0 50%, #D0D0D0 100%)', accentColor: '#FFFFFF', textColor: '#E8E8E8', stripe: null };
   if (k.includes('1 kyu') || k === '1') return { name: '1 Kyu', color: 'RUDAS', stripeName: 'juoda', kanji: '一', mainGradient: 'linear-gradient(180deg, #A1693B 0%, #8B4513 50%, #4A2304 100%)', accentColor: '#CD7F32', textColor: '#CD7F32', stripe: { type: 'single', color: 'linear-gradient(180deg, #2c2c2c, #000)' } };
   if (k.includes('2 kyu') || k === '2') return { name: '2 Kyu', color: 'RUDAS', kanji: '二', mainGradient: 'linear-gradient(180deg, #A1693B 0%, #8B4513 50%, #4A2304 100%)', accentColor: '#CD7F32', textColor: '#CD7F32', stripe: null };
   if (k.includes('3 kyu') || k === '3') return { name: '3 Kyu', color: 'ŽALIAS', stripeName: 'ruda', kanji: '三', mainGradient: 'linear-gradient(180deg, #66BB6A 0%, #4CAF50 50%, #1B5E20 100%)', accentColor: '#66BB6A', textColor: '#66BB6A', stripe: { type: 'single', color: 'linear-gradient(180deg, #A1693B, #5D2906)' } };
@@ -5730,6 +5734,7 @@ window.testCompetition = function(placement = 1) {
 // ════════════════════════════════════════
 
 const BELT_REWARDS = {
+  'mu kyu': { color: '#FFFFFF', name: 'Baltas dirжas (Mu kyu)', desc: 'Pati pradžia', icon: '⚪' },
   '10 kyu': { color: '#FF8C00', name: 'Oranžinis dirжas', desc: 'Pradedantysis I lygis', icon: '🟠' },
   '9 kyu':  { color: '#FF8C00', name: 'Oranžinis dirжas su mėlyna juostele', desc: 'Pradedantysis II lygis', icon: '🟠' },
   '8 kyu':  { color: '#4FC3F7', name: 'Mėlynas dirжas', desc: 'Pradedantis sportininkas I', icon: '🔵' },
@@ -5748,6 +5753,7 @@ const BELT_REWARDS = {
 };
 
 const BELT_MESSAGES = {
+  'mu kyu': 'Sveikas atvęs į karatė kelią! Baltas dirжas - tavo pirmas žingsnis.',
   '10 kyu': 'Sveikas atvykęs į karatė kelią! Oranžinis dirжas - tavo pradžia.',
   '9 kyu':  'Pirmas egzaminas išlaikytas! Mėlyna juostelė rodo, kad jau pažengei.',
   '8 kyu':  'Mėlynas kaip dangus - tavo žinios plečiasi. Toliau!',
@@ -10943,8 +10949,10 @@ const KYU_ORDER = [
 
 // Apskaičiuoti kitą kyu pagal dabartinį
 function getNextKyu(currentKyu) {
-  const idx = KYU_ORDER.indexOf(currentKyu);
-  if (idx === -1) return '10 kyu'; // jei nežinoma, pradedam nuo 10
+  // Case-insensitive paieška (DB gali būti 'mu kyu' ar 'Mu kyu')
+  const target = String(currentKyu || '').toLowerCase().trim();
+  const idx = KYU_ORDER.findIndex(k => k.toLowerCase().trim() === target);
+  if (idx === -1) return 'mu kyu'; // jei nežinoma, pradedam nuo balto
   if (idx >= KYU_ORDER.length - 1) return null; // jau aukščiausias
   return KYU_ORDER[idx + 1];
 }
