@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL70</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL71</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -18038,8 +18038,11 @@ function g(p,id){
   const el=document.getElementById(id);
   if(el){el.classList.add('on');const sa=el.querySelector('.sa');if(sa)sa.scrollTop=0;}
 }
+let _activeSid = null; // aktyvaus lango sekimas (atsibudimui iš fono)
+
 function nv(p,el,sid){
   g(p,sid);
+  _activeSid = sid;
   // Sinchronizuoti VISŲ apatinių navigacijų aktyvų mygtuką pagal sid
   // (kiekvienas langas turi savo .bn2 kopiją - visas reikia atnaujinti)
   document.querySelectorAll('.bn2').forEach(nav => {
@@ -18085,6 +18088,52 @@ function nv(p,el,sid){
     updateUnreadBadge();
   }
 }
+
+// 🔄 ATSIBUDIMAS IŠ FONO - kai PWA vėl tampa matoma, perkrauti duomenis
+let _lastHiddenTime = 0;
+async function handleAppResume() {
+  if (!currentUser || !sb) return;
+  try {
+    // 1) Patikrinti/atnaujinti Supabase sesiją
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      // Sesija dingo - perkrauti puslapį (vartotojas turės prisijungti)
+      console.warn('[resume] Sesija dingo');
+      return;
+    }
+    
+    // 2) Perkrauti aktyvaus lango duomenis pagal _activeSid
+    const loaders = {
+      'v-main': () => typeof loadKidData === 'function' && loadKidData(),
+      'v-kar':  () => typeof loadCategories === 'function' && loadCategories(),
+      'v-ish':  () => typeof loadChallenges === 'function' && loadChallenges(),
+      'v-comp': () => typeof loadKidCompetitions === 'function' && loadKidCompetitions(),
+      'v-prof': () => typeof loadKidData === 'function' && loadKidData(),
+    };
+    const loader = loaders[_activeSid];
+    if (loader) {
+      await loader();
+      console.log('[resume] Perkrauta:', _activeSid);
+    }
+    
+    // 3) Atnaujinti pranešimų badge
+    if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
+  } catch (e) {
+    console.error('[resume] klaida:', e);
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    _lastHiddenTime = Date.now();
+  } else if (document.visibilityState === 'visible') {
+    // Perkrauti tik jei buvo paslėpta bent 3 sek (kad nekrautų be reikalo)
+    const hiddenDuration = Date.now() - _lastHiddenTime;
+    if (_lastHiddenTime > 0 && hiddenDuration > 3000) {
+      handleAppResume();
+    }
+  }
+});
 
 // 🔢 Paleidžia count-up HERO skaičiams pagal aktyvų langą
 function triggerCountUp(sid) {
