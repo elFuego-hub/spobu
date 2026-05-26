@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL74</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL75</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -18092,13 +18092,9 @@ function nv(p,el,sid){
 // 🔄 ATSIBUDIMAS IŠ FONO - hibridas + DIAGNOSTIKA
 let _lastHiddenTime = 0;
 
-// Diagnostinis toast (laikinas - debug)
+// Diagnostika išjungta (buvo laikina)
 function _resumeDebug(msg) {
-  const d = document.createElement('div');
-  d.textContent = '🔄 ' + msg;
-  d.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#FF4D00;color:white;padding:8px 16px;border-radius:12px;font-size:12px;font-weight:800;z-index:9999999;box-shadow:0 4px 16px rgba(0,0,0,.5);';
-  document.body.appendChild(d);
-  setTimeout(() => d.remove(), 4000);
+  console.log('[resume]', msg);
 }
 
 async function handleAppResume() {
@@ -21471,7 +21467,7 @@ function initPullToRefresh() {
     isPulling = false;
     
     if (pullDistance >= THRESHOLD) {
-      // 🔄 REFRESH!
+      // 🔄 PERKRAUNAM APP'Ą - švarus, patikimas atsinaujinimas
       const icon = document.getElementById('pull-icon');
       const text = document.getElementById('pull-text');
       if (icon) {
@@ -21479,36 +21475,14 @@ function initPullToRefresh() {
         icon.style.transform = 'rotate(0deg)';
         icon.style.animation = 'spin 1s linear infinite';
       }
-      if (text) text.textContent = 'KRAUNAMA...';
+      if (text) text.textContent = 'ATNAUJINAMA...';
       
       indicator.style.top = '20px';
       
-      try {
-        const loader = getActiveLoader();
-        if (loader) {
-          await loader();
-        }
-        // Sėkmė
-        if (icon) {
-          icon.textContent = '✅';
-          icon.style.animation = '';
-        }
-        if (text) text.textContent = 'ATNAUJINTA';
-        
-        setTimeout(() => {
-          indicator.style.top = '-60px';
-        }, 800);
-      } catch (e) {
-        console.error('Refresh klaida:', e);
-        if (icon) {
-          icon.textContent = '❌';
-          icon.style.animation = '';
-        }
-        if (text) text.textContent = 'KLAIDA';
-        setTimeout(() => {
-          indicator.style.top = '-60px';
-        }, 1200);
-      }
+      // Trumpa pauzė, kad vartotojas pamatytų indikatorių, tada reload
+      setTimeout(() => {
+        location.reload();
+      }, 400);
     } else {
       // Per mažai - schovat
       indicator.style.top = '-60px';
