@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL71</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL72</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -18089,20 +18089,35 @@ function nv(p,el,sid){
   }
 }
 
-// 🔄 ATSIBUDIMAS IŠ FONO - kai PWA vėl tampa matoma, perkrauti duomenis
+// 🔄 ATSIBUDIMAS IŠ FONO - hibridas: greitas patikrinimas, reload tik jei ryšys miręs
 let _lastHiddenTime = 0;
 async function handleAppResume() {
   if (!currentUser || !sb) return;
+  
+  // 1) GREITAS ryšio patikrinimas su 2.5 sek timeout
+  // Jei Supabase atsako - ryšys gyvas. Jei ne - miręs (iOS užšaldė).
+  let connectionAlive = false;
   try {
-    // 1) Patikrinti/atnaujinti Supabase sesiją
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) {
-      // Sesija dingo - perkrauti puslapį (vartotojas turės prisijungti)
-      console.warn('[resume] Sesija dingo');
-      return;
-    }
-    
-    // 2) Perkrauti aktyvaus lango duomenis pagal _activeSid
+    const pingPromise = sb.auth.getSession();
+    const timeoutPromise = new Promise((_, rej) =>
+      setTimeout(() => rej(new Error('timeout')), 2500)
+    );
+    const result = await Promise.race([pingPromise, timeoutPromise]);
+    // Jei sesija atsako ir galioja - ryšys gyvas
+    connectionAlive = !!(result && result.data && result.data.session);
+  } catch (e) {
+    connectionAlive = false; // timeout arba klaida = ryšys miręs
+  }
+  
+  if (!connectionAlive) {
+    // 2a) RYŠYS MIRĘS - švarus perkrovimas (vienintelis patikimas iOS sprendimas)
+    console.warn('[resume] Ryšys miręs - perkraunam app\'ą');
+    location.reload();
+    return;
+  }
+  
+  // 2b) RYŠYS GYVAS - tyliai perkrauti aktyvaus lango duomenis
+  try {
     const loaders = {
       'v-main': () => typeof loadKidData === 'function' && loadKidData(),
       'v-kar':  () => typeof loadCategories === 'function' && loadCategories(),
@@ -18113,13 +18128,13 @@ async function handleAppResume() {
     const loader = loaders[_activeSid];
     if (loader) {
       await loader();
-      console.log('[resume] Perkrauta:', _activeSid);
+      console.log('[resume] Tyliai perkrauta:', _activeSid);
     }
-    
-    // 3) Atnaujinti pranešimų badge
     if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
   } catch (e) {
-    console.error('[resume] klaida:', e);
+    // Jei perkrovimas vis tiek lūžo - reload kaip atsarginis variantas
+    console.error('[resume] Perkrovimo klaida - reload:', e);
+    location.reload();
   }
 }
 
@@ -18127,7 +18142,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     _lastHiddenTime = Date.now();
   } else if (document.visibilityState === 'visible') {
-    // Perkrauti tik jei buvo paslėpta bent 3 sek (kad nekrautų be reikalo)
+    // Tikrinti tik jei buvo paslėpta bent 3 sek
     const hiddenDuration = Date.now() - _lastHiddenTime;
     if (_lastHiddenTime > 0 && hiddenDuration > 3000) {
       handleAppResume();
