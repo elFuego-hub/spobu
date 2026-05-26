@@ -45,6 +45,8 @@ self.addEventListener('push', (event) => {
       tag: 'spobu-' + Date.now(),
       data: { url: url },
       requireInteraction: false,
+      silent: false,            // garsas ĮJUNGTAS (OS standartinis pranešimo garsas)
+      vibrate: [120, 60, 120],  // vibracijos raštas
     });
   })());
 });
