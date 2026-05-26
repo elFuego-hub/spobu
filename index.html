@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL67</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL68</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5030,7 +5030,8 @@ async function loadKidData() {
   const progressCircle = document.getElementById('v-prof-progress-circle');
   if (progressCircle) {
     const circumference = 396; // 2 * PI * 63 (atitinka r=63 ir stroke-dasharray=396)
-    const offset = circumference - (stageInfo.progressPercent / 100) * circumference;
+    // 🥋 Žiedas rodo progresą iki kito STAGE (Naujokas → Pažengęs)
+    const offset = circumference - (stageInfo.stageProgressPercent / 100) * circumference;
     progressCircle.style.strokeDashoffset = offset;
     progressCircle.setAttribute('stroke', stage.color);
     if (stageIdx >= 5) {
@@ -5057,9 +5058,15 @@ async function loadKidData() {
   }
   if (stageMeaningEl) stageMeaningEl.textContent = stage.meaning;
   if (stageNextEl) {
-    stageNextEl.textContent = stageInfo.isHallOfFame 
-      ? '⭐ MAKSIMALUS LYGIS' 
-      : `Iki LVL ${stageInfo.globalLevel + 1}: +${stageInfo.expToNextLevel} EXP`;
+    if (stageInfo.isHallOfFame || stageInfo.expToNextStage <= 0) {
+      stageNextEl.textContent = '⭐ AUKŠČIAUSIA STADIJA';
+    } else {
+      // Kitos stadijos pavadinimas
+      const curIdx = STAGES.indexOf(stage);
+      const nextStage = STAGES[curIdx + 1];
+      const nextName = nextStage ? nextStage.name : '';
+      stageNextEl.textContent = `Iki "${nextName}": +${stageInfo.expToNextStage.toLocaleString()} EXP`;
+    }
   }
   
   // 🥋 Diržo FLAT ribbon
@@ -5255,11 +5262,21 @@ function getStageInfo(totalExp) {
     ? Math.min(100, ((exp - currentLevelExp) / levelSpan) * 100)
     : 100;
   
+  // 🥋 Progress % iki kito STAGE (Naujokas → Pažengęs ir t.t.)
+  const stageSpan = (stage.maxExp - stage.minExp) || 1;
+  const isLastStage = stage.maxExp >= 999999 || STAGES.indexOf(stage) === STAGES.length - 1;
+  const stageProgressPercent = isLastStage
+    ? 100
+    : Math.min(100, Math.max(0, ((exp - stage.minExp) / stageSpan) * 100));
+  const expToNextStage = isLastStage ? 0 : Math.max(0, (stage.maxExp + 1) - exp);
+  
   return {
     stage: stage.name,
     stageEmoji: stage.emoji,
     stageMinExp: stage.minExp,
     stageMaxExp: stage.maxExp,
+    stageProgressPercent,
+    expToNextStage,
     globalLevel,
     expToNextLevel,
     progressPercent,
@@ -7026,7 +7043,7 @@ async function openFriendModal(friendJson) {
   // Stage indeksas + progreso žiedo skaičiavimas
   const friendStageIdx = STAGES.findIndex(s => s.name === stageInfo.stage);
   const circumference = 396; // 2 * PI * 63
-  const ringOffset = circumference - (stageInfo.progressPercent / 100) * circumference;
+  const ringOffset = circumference - (stageInfo.stageProgressPercent / 100) * circumference;
   const ringGlow = friendStageIdx >= 5 ? `filter:drop-shadow(0 0 8px ${stage.color});` : '';
   const kanjiGlow = friendStageIdx >= 5 ? `0 0 20px ${stage.color}` : (friendStageIdx >= 3 ? `0 0 12px ${stage.color}80` : '0 4px 12px rgba(0,0,0,.4)');
   // Glow klasė pagal lygį - visi turi bent švelnų
@@ -19915,17 +19932,25 @@ async function loadAnnouncements(showAll = false) {
     }
   }
   
-  // Atnaujinti varpelio badge (naujas elementas pagrindiniame lange)
+  // Atnaujinti VISŲ langų varpelių badge'us
   if (currentProfile?.role === 'kid') {
-    const notifBadgeCount = document.getElementById('v-notif-badge-count');
-    if (notifBadgeCount) {
+    const bellBadges = [
+      'v-notif-badge-count',  // pagrindinis
+      'v-prof-notif-badge',   // profilis
+      'v-kar-notif-badge',    // karjera
+      'v-ish-notif-badge',    // iššūkiai
+      'v-comp-notif-badge'    // varžybos
+    ];
+    bellBadges.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
       if (unread > 0) {
-        notifBadgeCount.style.display = 'flex';
-        notifBadgeCount.textContent = unread;
+        el.style.display = 'flex';
+        el.textContent = unread > 99 ? '99+' : unread;
       } else {
-        notifBadgeCount.style.display = 'none';
+        el.style.display = 'none';
       }
-    }
+    });
   }
   
   // Užkrauti siuntėjų info
