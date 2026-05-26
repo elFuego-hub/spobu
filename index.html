@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL68</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL69</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -18068,6 +18068,11 @@ function nv(p,el,sid){
   if (typeof triggerCountUp === 'function') {
     triggerCountUp(sid);
   }
+  
+  // 🔔 Atnaujinti varpelio badge'us pereinant į bet kurį langą
+  if (typeof updateUnreadBadge === 'function' && currentUser) {
+    updateUnreadBadge();
+  }
 }
 
 // 🔢 Paleidžia count-up HERO skaičiams pagal aktyvų langą
@@ -19932,26 +19937,7 @@ async function loadAnnouncements(showAll = false) {
     }
   }
   
-  // Atnaujinti VISŲ langų varpelių badge'us
-  if (currentProfile?.role === 'kid') {
-    const bellBadges = [
-      'v-notif-badge-count',  // pagrindinis
-      'v-prof-notif-badge',   // profilis
-      'v-kar-notif-badge',    // karjera
-      'v-ish-notif-badge',    // iššūkiai
-      'v-comp-notif-badge'    // varžybos
-    ];
-    bellBadges.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (unread > 0) {
-        el.style.display = 'flex';
-        el.textContent = unread > 99 ? '99+' : unread;
-      } else {
-        el.style.display = 'none';
-      }
-    });
-  }
+  // Varpelių badge'ai atnaujinami per updateUnreadBadge (visos žinutės, ne tik announcement)
   
   // Užkrauti siuntėjų info
   const senderIds = [...new Set(announcements.map(m => m.conversations.created_by).filter(Boolean))];
@@ -21248,6 +21234,24 @@ async function updateUnreadBadge() {
       }
     }
   });
+  
+  // 🔔 Atnaujinti VISŲ langų varpelių badge'us (visos neperskaitytos žinutės)
+  if (currentProfile?.role === 'kid') {
+    const bellBadges = [
+      'v-notif-badge-count', 'v-prof-notif-badge', 'v-kar-notif-badge',
+      'v-ish-notif-badge', 'v-comp-notif-badge'
+    ];
+    bellBadges.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (unreadCount > 0) {
+        el.style.display = 'flex';
+        el.textContent = unreadCount > 99 ? '99+' : unreadCount;
+      } else {
+        el.style.display = 'none';
+      }
+    });
+  }
   
   // Taip pat atnaujinti pranešimus (visiems)
   if (typeof loadAnnouncements === 'function' && (currentProfile?.role === 'parent' || currentProfile?.role === 'kid' || currentProfile?.role === 'trainer')) {
