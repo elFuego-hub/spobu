@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL78</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL79</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -2970,6 +2970,9 @@ async function init() {
   
   // 🔔 Service Worker registracija (push notifications)
   registerServiceWorker();
+  
+  // 🔍 Pritaikyti išsaugotą vaizdo dydį
+  if (typeof applyAppZoom === 'function') applyAppZoom();
   
   // 3) Patikrinti ar vartotojas jau prisijungęs
   const { data: { session } } = await sb.auth.getSession();
@@ -18461,6 +18464,50 @@ function setSoundEnabled(on) {
   localStorage.setItem('spobu_sound_off', on ? '0' : '1');
 }
 
+// 🔍 VAIZDO DYDIS - prieinamumas
+const ZOOM_LEVELS = { small: 1.0, medium: 1.12, large: 1.25 };
+
+function getAppZoom() {
+  const z = localStorage.getItem('spobu_zoom');
+  return (z && ZOOM_LEVELS[z]) ? z : 'small';
+}
+
+function applyAppZoom() {
+  const level = getAppZoom();
+  const factor = ZOOM_LEVELS[level] || 1.0;
+  // zoom ant VISŲ .ds konteinerių (kiekvienas portalas turi savo)
+  const containers = document.querySelectorAll('.ds');
+  if (containers.length > 0) {
+    containers.forEach(c => { c.style.zoom = factor; });
+  } else {
+    document.body.style.zoom = factor;
+  }
+}
+
+function setAppZoom(level) {
+  if (!ZOOM_LEVELS[level]) level = 'small';
+  localStorage.setItem('spobu_zoom', level);
+  applyAppZoom();
+  updateZoomButtonsUI();
+}
+
+function updateZoomButtonsUI() {
+  const current = getAppZoom();
+  ['small', 'medium', 'large'].forEach(lvl => {
+    const btn = document.getElementById('zoom-btn-' + lvl);
+    if (!btn) return;
+    if (lvl === current) {
+      btn.style.background = 'linear-gradient(135deg,#FF4D00,#FF8C00)';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#FF8C00';
+    } else {
+      btn.style.background = 'rgba(255,255,255,.06)';
+      btn.style.color = 'var(--mut)';
+      btn.style.borderColor = 'var(--bdr)';
+    }
+  });
+}
+
 // Vienas tonas
 function playTone(freq, startT, dur, type = 'sine', vol = 0.18) {
   const ctx = getAudioCtx();
@@ -20595,6 +20642,24 @@ async function openKidSettings() {
           </div>
         </div>
         
+        <!-- 🔍 VAIZDO DYDIS -->
+        <div style="padding:8px 16px 0;">
+          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+              <div style="font-size:28px;">🔍</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:800;color:white;">Vaizdo dydis</div>
+                <div style="font-size:11px;color:var(--mut);margin-top:2px;">Padidink, jei sunku įžiūrėti</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+              <button onclick="setAppZoom('small')" id="zoom-btn-small" class="zoom-opt" style="background:rgba(255,255,255,.06);border:1px solid var(--bdr);border-radius:10px;padding:10px 4px;cursor:pointer;color:var(--mut);font-family:inherit;font-weight:800;font-size:11px;">Mažas</button>
+              <button onclick="setAppZoom('medium')" id="zoom-btn-medium" class="zoom-opt" style="background:rgba(255,255,255,.06);border:1px solid var(--bdr);border-radius:10px;padding:10px 4px;cursor:pointer;color:var(--mut);font-family:inherit;font-weight:800;font-size:13px;">Vidutinis</button>
+              <button onclick="setAppZoom('large')" id="zoom-btn-large" class="zoom-opt" style="background:rgba(255,255,255,.06);border:1px solid var(--bdr);border-radius:10px;padding:10px 4px;cursor:pointer;color:var(--mut);font-family:inherit;font-weight:800;font-size:15px;">Didelis</button>
+            </div>
+          </div>
+        </div>
+        
         <!-- INFO MYGTUKAI -->
         <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
           <button onclick="openInstructionsModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
@@ -20683,6 +20748,8 @@ async function openKidSettings() {
   updateSoundToggleUI();
   // 🔔 Atnaujint pranešimų jungiklio būseną
   updatePushToggleUI();
+  // 🔍 Atnaujint vaizdo dydžio mygtukus
+  if (typeof updateZoomButtonsUI === 'function') updateZoomButtonsUI();
   
   modal.style.display = 'flex';
 }
