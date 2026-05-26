@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL72</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL73</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -18089,35 +18089,50 @@ function nv(p,el,sid){
   }
 }
 
-// 🔄 ATSIBUDIMAS IŠ FONO - hibridas: greitas patikrinimas, reload tik jei ryšys miręs
+// 🔄 ATSIBUDIMAS IŠ FONO - hibridas + DIAGNOSTIKA
 let _lastHiddenTime = 0;
+
+// Diagnostinis toast (laikinas - debug)
+function _resumeDebug(msg) {
+  const d = document.createElement('div');
+  d.textContent = '🔄 ' + msg;
+  d.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#FF4D00;color:white;padding:8px 16px;border-radius:12px;font-size:12px;font-weight:800;z-index:9999999;box-shadow:0 4px 16px rgba(0,0,0,.5);';
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 4000);
+}
+
 async function handleAppResume() {
-  if (!currentUser || !sb) return;
+  _resumeDebug('1. Atsibudimas paleistas');
+  if (!currentUser || !sb) {
+    _resumeDebug('STOP: nera currentUser/sb');
+    return;
+  }
   
   // 1) GREITAS ryšio patikrinimas su 2.5 sek timeout
-  // Jei Supabase atsako - ryšys gyvas. Jei ne - miręs (iOS užšaldė).
   let connectionAlive = false;
   try {
+    _resumeDebug('2. Tikrinam rysi...');
     const pingPromise = sb.auth.getSession();
     const timeoutPromise = new Promise((_, rej) =>
       setTimeout(() => rej(new Error('timeout')), 2500)
     );
     const result = await Promise.race([pingPromise, timeoutPromise]);
-    // Jei sesija atsako ir galioja - ryšys gyvas
     connectionAlive = !!(result && result.data && result.data.session);
+    _resumeDebug('3. Rysys: ' + (connectionAlive ? 'GYVAS' : 'nera sesijos'));
   } catch (e) {
-    connectionAlive = false; // timeout arba klaida = ryšys miręs
+    connectionAlive = false;
+    _resumeDebug('3. Rysys MIRES (' + (e.message || 'klaida') + ')');
   }
   
   if (!connectionAlive) {
-    // 2a) RYŠYS MIRĘS - švarus perkrovimas (vienintelis patikimas iOS sprendimas)
-    console.warn('[resume] Ryšys miręs - perkraunam app\'ą');
-    location.reload();
+    _resumeDebug('4. PERKRAUNAM app...');
+    setTimeout(() => location.reload(), 1500);
     return;
   }
   
   // 2b) RYŠYS GYVAS - tyliai perkrauti aktyvaus lango duomenis
   try {
+    _resumeDebug('4. Perkraunam duomenis: ' + _activeSid);
     const loaders = {
       'v-main': () => typeof loadKidData === 'function' && loadKidData(),
       'v-kar':  () => typeof loadCategories === 'function' && loadCategories(),
@@ -18126,15 +18141,12 @@ async function handleAppResume() {
       'v-prof': () => typeof loadKidData === 'function' && loadKidData(),
     };
     const loader = loaders[_activeSid];
-    if (loader) {
-      await loader();
-      console.log('[resume] Tyliai perkrauta:', _activeSid);
-    }
+    if (loader) await loader();
     if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
+    _resumeDebug('5. PAVYKO - duomenys svieži');
   } catch (e) {
-    // Jei perkrovimas vis tiek lūžo - reload kaip atsarginis variantas
-    console.error('[resume] Perkrovimo klaida - reload:', e);
-    location.reload();
+    _resumeDebug('5. Klaida - perkraunam: ' + (e.message || ''));
+    setTimeout(() => location.reload(), 1500);
   }
 }
 
@@ -18142,8 +18154,8 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     _lastHiddenTime = Date.now();
   } else if (document.visibilityState === 'visible') {
-    // Tikrinti tik jei buvo paslėpta bent 3 sek
     const hiddenDuration = Date.now() - _lastHiddenTime;
+    _resumeDebug('visible! fone buvo ' + Math.round(hiddenDuration/1000) + 's');
     if (_lastHiddenTime > 0 && hiddenDuration > 3000) {
       handleAppResume();
     }
