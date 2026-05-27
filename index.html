@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL86</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL87</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -8111,11 +8111,11 @@ async function checkForNewApprovedSubmissions() {
   const dayAgo = new Date(Date.now() - 86400000).toISOString();
   
   const { data: subs } = await sb.from('challenge_submissions')
-    .select('id, challenge_id, numeric_value, exp_gain, reviewed_at, challenges(title, target_value, target_unit, allow_partial, exp_reward)')
+    .select('id, challenge_id, numeric_value, exp_gain, approved_at, challenges(title, target_value, target_unit, allow_partial, exp_reward)')
     .eq('kid_id', currentKid.id)
     .eq('status', 'approved')
-    .gte('reviewed_at', dayAgo)
-    .order('reviewed_at', { ascending: false })
+    .gte('approved_at', dayAgo)
+    .order('approved_at', { ascending: false })
     .limit(10);
   
   if (!subs?.length) return;
@@ -9278,7 +9278,7 @@ async function loadChallenges() {
     
     // Data rūšiavimui archyve - approved submission data arba expires_at
     const approvedSub2 = subs.find(s => s.status === 'approved');
-    const chDate = approvedSub2?.reviewed_at || approvedSub2?.created_at || ch.expires_at || ch.created_at;
+    const chDate = approvedSub2?.approved_at || approvedSub2?.created_at || ch.expires_at || ch.created_at;
     return { date: new Date(chDate || 0).getTime(), html: cardHtml };
   });
 
@@ -12290,11 +12290,11 @@ async function _getFilteredKidEntriesUncached(scoreSource, scoreField) {
     });
   } else if (scoreSource === 'challenge_submissions') {
     const { data: subs } = await sb.from('challenge_submissions')
-      .select('kid_id, exp_gain, reviewed_at')
+      .select('kid_id, exp_gain, approved_at')
       .in('kid_id', kidIds)
       .eq('status', 'approved');
     
-    const filtered = filterBySeasonFilter(subs || [], 'reviewed_at');
+    const filtered = filterBySeasonFilter(subs || [], 'approved_at');
     filtered.forEach(r => {
       scoresMap[r.kid_id] = (scoresMap[r.kid_id] || 0) + (r.exp_gain || 0);
     });
@@ -17199,7 +17199,7 @@ async function approveChallengeSubmission(subId) {
   const { error } = await sb.from('challenge_submissions')
     .update({ 
       status: 'approved',
-      reviewed_at: new Date().toISOString()
+      approved_at: new Date().toISOString()
     })
     .eq('id', subId);
   
@@ -17224,7 +17224,7 @@ async function rejectChallengeSubmission(subId) {
     .update({ 
       status: 'rejected', 
       rejection_reason: reason,
-      reviewed_at: new Date().toISOString()
+      approved_at: new Date().toISOString()
     })
     .eq('id', subId);
   
@@ -17622,7 +17622,7 @@ async function cr() {
   const comment = document.getElementById('reject-comment').value;
   await sb.from('result_submissions').update({
     status:'rejected', rejection_reason:reason,
-    rejection_comment:comment, reviewed_at:new Date().toISOString()
+    rejection_comment:comment, approved_at:new Date().toISOString()
   }).eq('id', rejectTargetId);
   cm();
   showToast('Atmesta su priežastimi', 'error');
@@ -18215,6 +18215,17 @@ async function handleAppResume() {
     const loader = loaders[_activeSid];
     if (loader) await loader();
     if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
+    
+    // 📡 Perregistruoti realtime kanalus (gali būti "miręs")
+    if (currentProfile?.role === 'kid' && typeof resubscribeKidChannels === 'function') {
+      await resubscribeKidChannels();
+    }
+    
+    // 📬 Patikrint praleistus įvykius nuo paskutinio matymo
+    if (currentProfile?.role === 'kid' && typeof showMissedEvents === 'function') {
+      await showMissedEvents();
+    }
+    
     _resumeDebug('5. PAVYKO - duomenys svieži');
   } catch (e) {
     _resumeDebug('5. Klaida - perkraunam: ' + (e.message || ''));
@@ -18222,9 +18233,145 @@ async function handleAppResume() {
   }
 }
 
+// 📡 Perregistruoti vaiko realtime kanalus (atjungiam senus, kviečiam subscribeKidNotifications)
+async function resubscribeKidChannels() {
+  if (!sb || !currentUser) return;
+  try {
+    const allChans = sb.getChannels();
+    const myChans = allChans.filter(ch => {
+      const t = ch.topic || '';
+      return t.includes('kid-' + currentUser.id) || 
+             t.includes('kid-approvals-' + currentUser.id) || 
+             t.includes('kid-msgs-' + currentUser.id);
+    });
+    for (const ch of myChans) {
+      try { await sb.removeChannel(ch); } catch(e){}
+    }
+    // Šviežias subscribe
+    if (typeof subscribeKidNotifications === 'function') {
+      subscribeKidNotifications();
+    }
+    console.log('[resume] Realtime kanalai perregistruoti:', myChans.length);
+  } catch (e) {
+    console.error('[resume] resubscribe klaida:', e);
+  }
+}
+
+// 📬 Parodyti praleistus įvykius (po vieną su pauzėmis)
+async function showMissedEvents() {
+  if (!sb || !currentUser || !currentKid) return;
+  try {
+    const lastSeen = localStorage.getItem('spobu_last_seen') || new Date(Date.now() - 24*60*60*1000).toISOString();
+    const kidId = currentKid.id;
+    const userId = currentUser.id;
+    
+    // Lygiagrečios užklausos visiems šaltiniams
+    const [chs, cps, exs, dus, msgs] = await Promise.all([
+      // 🎯 Iššūkiai patvirtinti
+      sb.from('challenge_submissions')
+        .select('id, exp_gain, approved_at')
+        .eq('kid_id', kidId).eq('status', 'approved')
+        .gt('approved_at', lastSeen).order('approved_at'),
+      // 🏆 Varžybų rezultatai patvirtinti
+      sb.from('competition_results')
+        .select('id, exp_gained, approved_at')
+        .eq('kid_id', kidId).eq('approval_status', 'approved')
+        .gt('approved_at', lastSeen).order('approved_at'),
+      // 📈 Karjeros pratimai patvirtinti
+      sb.from('result_submissions')
+        .select('id, exp_gain, exercise_id, approved_at')
+        .eq('kid_id', kidId).eq('status', 'approved')
+        .gt('approved_at', lastSeen).order('approved_at'),
+      // 🥊 Dvikovos užbaigtos (kur dalyvavau)
+      sb.from('duels')
+        .select('id, winner_id, challenger_id, opponent_id, created_at')
+        .eq('status', 'completed')
+        .or(`challenger_id.eq.${kidId},opponent_id.eq.${kidId}`)
+        .gt('created_at', lastSeen).order('created_at'),
+      // 💬 Naujos žinutės (kur esu narys, ne aš siuntėjas)
+      sb.from('messages')
+        .select('id, conversation_id, sender_id, body, sent_at')
+        .neq('sender_id', userId)
+        .gt('sent_at', lastSeen).order('sent_at')
+    ]);
+    
+    // Sudėti įvykius į vieną sąrašą su laiko žyma
+    const events = [];
+    (chs.data || []).forEach(c => events.push({ ts: c.approved_at, type: 'challenge', data: c }));
+    (cps.data || []).forEach(c => events.push({ ts: c.approved_at, type: 'competition', data: c }));
+    (exs.data || []).forEach(e => events.push({ ts: e.approved_at, type: 'exercise', data: e }));
+    (dus.data || []).forEach(d => events.push({ ts: d.created_at, type: 'duel', data: d }));
+    
+    // Žinutės - filtruoti tik tas, kur aš pokalbio narys
+    if (msgs.data && msgs.data.length > 0) {
+      const convIds = [...new Set(msgs.data.map(m => m.conversation_id))];
+      const { data: myMembers } = await sb.from('conversation_members')
+        .select('conversation_id')
+        .eq('user_id', userId)
+        .in('conversation_id', convIds);
+      const myConvIds = new Set((myMembers || []).map(m => m.conversation_id));
+      msgs.data.forEach(m => {
+        if (myConvIds.has(m.conversation_id)) {
+          events.push({ ts: m.sent_at, type: 'message', data: m });
+        }
+      });
+    }
+    
+    // Surūšiuoti chronologiškai
+    events.sort((a, b) => new Date(a.ts) - new Date(b.ts));
+    
+    if (events.length === 0) {
+      // Atnaujinti last_seen ir baigti
+      localStorage.setItem('spobu_last_seen', new Date().toISOString());
+      return;
+    }
+    
+    // Parodyti po vieną su 2.5s pauze
+    for (let i = 0; i < events.length; i++) {
+      const ev = events[i];
+      let toastMsg = '';
+      
+      if (ev.type === 'challenge') {
+        toastMsg = `📬 PRALEIDAI:\n🎯 IŠŠŪKIS PATVIRTINTAS\n+${ev.data.exp_gain || 0} EXP`;
+        playSound('exp');
+      } else if (ev.type === 'competition') {
+        toastMsg = `📬 PRALEIDAI:\n🏆 VARŽYBŲ REZULTATAS PATVIRTINTAS\n+${ev.data.exp_gained || 0} EXP`;
+        playSound('victory');
+      } else if (ev.type === 'exercise') {
+        toastMsg = `📬 PRALEIDAI:\n📈 KARJEROS PRATIMAS PATVIRTINTAS\n+${ev.data.exp_gain || 0} EXP`;
+        playSound('exp');
+      } else if (ev.type === 'duel') {
+        const won = ev.data.winner_id === kidId;
+        const drew = !ev.data.winner_id;
+        const txt = drew ? 'Lygiosios' : (won ? '✅ Laimėjai!' : '❌ Pralaimėjai');
+        toastMsg = `📬 PRALEIDAI:\n🥊 DVIKOVA UŽBAIGTA\n${txt}`;
+      } else if (ev.type === 'message') {
+        const { data: sender } = await sb.from('profiles')
+          .select('first_name, last_name').eq('id', ev.data.sender_id).maybeSingle();
+        const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() : 'Kažkas';
+        const preview = (ev.data.body || '').substring(0, 60);
+        toastMsg = `📬 PRALEIDAI:\n💬 NUO ${senderName.toUpperCase()}\n${preview}`;
+        playSound('send');
+      }
+      
+      showToast(toastMsg, 'info');
+      // Pauzė tarp toast'ų
+      if (i < events.length - 1) await new Promise(r => setTimeout(r, 2500));
+    }
+    
+    // Atnaujinti last_seen po visko
+    localStorage.setItem('spobu_last_seen', new Date().toISOString());
+    if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
+  } catch (e) {
+    console.error('[showMissedEvents] klaida:', e);
+  }
+}
+
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     _lastHiddenTime = Date.now();
+    // Įrašyti dabartinį laiką - kad atsibudus žinotume nuo kada tikrinti praleistus
+    try { localStorage.setItem('spobu_last_seen', new Date().toISOString()); } catch(e){}
   } else if (document.visibilityState === 'visible') {
     const hiddenDuration = Date.now() - _lastHiddenTime;
     _resumeDebug('visible! fone buvo ' + Math.round(hiddenDuration/1000) + 's');
@@ -20330,11 +20477,11 @@ async function loadAllNotifications() {
   const [approvedChRes, approvedCoRes, approvedPrRes, streakRes, newChRes, newCoRes] = await Promise.all([
     // 🤖 SISTEMA - approved challenge submissions
     sb.from('challenge_submissions')
-      .select('id, exp_gain, reviewed_at, challenges(title, type)')
+      .select('id, exp_gain, approved_at, challenges(title, type)')
       .eq('kid_id', currentKid.id)
       .eq('status', 'approved')
-      .gte('reviewed_at', cutoffISO)
-      .order('reviewed_at', { ascending: false })
+      .gte('approved_at', cutoffISO)
+      .order('approved_at', { ascending: false })
       .limit(20),
     // 🤖 SISTEMA - approved competitions
     sb.from('competition_results')
@@ -20398,7 +20545,7 @@ async function loadAllNotifications() {
       icon: '✅',
       title: `${typeLabel} patvirtintas`,
       body: `${s.challenges?.title || 'Iššūkis'} · +${s.exp_gain || 0} EXP`,
-      time: s.reviewed_at,
+      time: s.approved_at,
       link: 'v-ish'
     });
   });
