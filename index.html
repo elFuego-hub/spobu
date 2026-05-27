@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL87</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL88</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -8111,11 +8111,11 @@ async function checkForNewApprovedSubmissions() {
   const dayAgo = new Date(Date.now() - 86400000).toISOString();
   
   const { data: subs } = await sb.from('challenge_submissions')
-    .select('id, challenge_id, numeric_value, exp_gain, approved_at, challenges(title, target_value, target_unit, allow_partial, exp_reward)')
+    .select('id, challenge_id, numeric_value, exp_gain, reviewed_at, challenges(title, target_value, target_unit, allow_partial, exp_reward)')
     .eq('kid_id', currentKid.id)
     .eq('status', 'approved')
-    .gte('approved_at', dayAgo)
-    .order('approved_at', { ascending: false })
+    .gte('reviewed_at', dayAgo)
+    .order('reviewed_at', { ascending: false })
     .limit(10);
   
   if (!subs?.length) return;
@@ -12290,11 +12290,11 @@ async function _getFilteredKidEntriesUncached(scoreSource, scoreField) {
     });
   } else if (scoreSource === 'challenge_submissions') {
     const { data: subs } = await sb.from('challenge_submissions')
-      .select('kid_id, exp_gain, approved_at')
+      .select('kid_id, exp_gain, reviewed_at')
       .in('kid_id', kidIds)
       .eq('status', 'approved');
     
-    const filtered = filterBySeasonFilter(subs || [], 'approved_at');
+    const filtered = filterBySeasonFilter(subs || [], 'reviewed_at');
     filtered.forEach(r => {
       scoresMap[r.kid_id] = (scoresMap[r.kid_id] || 0) + (r.exp_gain || 0);
     });
@@ -17199,7 +17199,7 @@ async function approveChallengeSubmission(subId) {
   const { error } = await sb.from('challenge_submissions')
     .update({ 
       status: 'approved',
-      approved_at: new Date().toISOString()
+      reviewed_at: new Date().toISOString()
     })
     .eq('id', subId);
   
@@ -17224,7 +17224,7 @@ async function rejectChallengeSubmission(subId) {
     .update({ 
       status: 'rejected', 
       rejection_reason: reason,
-      approved_at: new Date().toISOString()
+      reviewed_at: new Date().toISOString()
     })
     .eq('id', subId);
   
@@ -17622,7 +17622,7 @@ async function cr() {
   const comment = document.getElementById('reject-comment').value;
   await sb.from('result_submissions').update({
     status:'rejected', rejection_reason:reason,
-    rejection_comment:comment, approved_at:new Date().toISOString()
+    rejection_comment:comment, reviewed_at:new Date().toISOString()
   }).eq('id', rejectTargetId);
   cm();
   showToast('Atmesta su priežastimi', 'error');
@@ -18269,9 +18269,9 @@ async function showMissedEvents() {
     const [chs, cps, exs, dus, msgs] = await Promise.all([
       // 🎯 Iššūkiai patvirtinti
       sb.from('challenge_submissions')
-        .select('id, exp_gain, approved_at')
+        .select('id, exp_gain, reviewed_at')
         .eq('kid_id', kidId).eq('status', 'approved')
-        .gt('approved_at', lastSeen).order('approved_at'),
+        .gt('reviewed_at', lastSeen).order('reviewed_at'),
       // 🏆 Varžybų rezultatai patvirtinti
       sb.from('competition_results')
         .select('id, exp_gained, approved_at')
@@ -18279,9 +18279,9 @@ async function showMissedEvents() {
         .gt('approved_at', lastSeen).order('approved_at'),
       // 📈 Karjeros pratimai patvirtinti
       sb.from('result_submissions')
-        .select('id, exp_gain, exercise_id, approved_at')
+        .select('id, exp_gain, exercise_id, reviewed_at')
         .eq('kid_id', kidId).eq('status', 'approved')
-        .gt('approved_at', lastSeen).order('approved_at'),
+        .gt('reviewed_at', lastSeen).order('reviewed_at'),
       // 🥊 Dvikovos užbaigtos (kur dalyvavau)
       sb.from('duels')
         .select('id, winner_id, challenger_id, opponent_id, created_at')
@@ -20477,11 +20477,11 @@ async function loadAllNotifications() {
   const [approvedChRes, approvedCoRes, approvedPrRes, streakRes, newChRes, newCoRes] = await Promise.all([
     // 🤖 SISTEMA - approved challenge submissions
     sb.from('challenge_submissions')
-      .select('id, exp_gain, approved_at, challenges(title, type)')
+      .select('id, exp_gain, reviewed_at, challenges(title, type)')
       .eq('kid_id', currentKid.id)
       .eq('status', 'approved')
-      .gte('approved_at', cutoffISO)
-      .order('approved_at', { ascending: false })
+      .gte('reviewed_at', cutoffISO)
+      .order('reviewed_at', { ascending: false })
       .limit(20),
     // 🤖 SISTEMA - approved competitions
     sb.from('competition_results')
@@ -20493,11 +20493,11 @@ async function loadAllNotifications() {
       .limit(20),
     // 🤖 SISTEMA - approved PR (result_submissions)
     sb.from('result_submissions')
-      .select('id, new_value, exp_gain, approved_at, exercises(name)')
+      .select('id, new_value, exp_gain, reviewed_at, exercises(name)')
       .eq('kid_id', currentKid.id)
       .eq('status', 'approved')
-      .gte('approved_at', cutoffISO)
-      .order('approved_at', { ascending: false })
+      .gte('reviewed_at', cutoffISO)
+      .order('reviewed_at', { ascending: false })
       .limit(20),
     // 🤖 SISTEMA - streak bonusai
     sb.from('streak_bonus_log')
