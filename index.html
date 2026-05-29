@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL92</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL93</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -18174,12 +18174,25 @@ function _resumeDebug(msg) {
   console.log('[resume]', msg);
 }
 
+// 🔧 LAIKINA DIAGNOSTIKA: rašo į localStorage (išlieka net po reload).
+// Peržiūrėti: paspausk versijos žymą (v.DUEL93) iššūkių lange.
+function _dbg(msg) {
+  console.log('[dbg]', msg);
+  try {
+    const t = new Date().toTimeString().substring(0, 8);
+    const prev = (localStorage.getItem('spobu_dbg') || '').split('\n').filter(Boolean);
+    prev.push(t + ' ' + msg);
+    localStorage.setItem('spobu_dbg', prev.slice(-25).join('\n'));
+  } catch(e){}
+}
+
 async function handleAppResume() {
   _resumeDebug('1. Atsibudimas paleistas');
   if (!currentUser || !sb) {
     _resumeDebug('STOP: nera currentUser/sb');
     return;
   }
+  _dbg('RESUME start');
 
   // 📌 Užfiksuoti praleistų įvykių atskaitos laiką IŠKART, prieš await'us.
   // iOS PWA atsibundant gali sukelti pakartotinį 'hidden' įvykį, kuris
@@ -18206,8 +18219,11 @@ async function handleAppResume() {
     _resumeDebug('3. DB rysys MIRES (' + (e.message || 'klaida') + ')');
   }
   
+  _dbg('conn=' + connectionAlive + ' anchor=' + (_missedAnchor ? _missedAnchor.substring(11,19) : 'null'));
+
   if (!connectionAlive) {
     _resumeDebug('4. PERKRAUNAM app...');
+    _dbg('DEAD -> reload (SME praleistas!)');
     setTimeout(() => location.reload(), 1500);
     return;
   }
@@ -18313,7 +18329,26 @@ async function showMissedEvents(anchorTs) {
         .neq('sender_id', userId)
         .gt('sent_at', lastSeen).order('sent_at')
     ]);
-    
+
+    // 🔧 LAIKINA DIAGNOSTIKA: naujausi įrašai BE laiko filtro (palyginti su lastSeen)
+    try {
+      const [nch, nex, nms] = await Promise.all([
+        sb.from('challenge_submissions').select('reviewed_at').eq('kid_id', kidId).eq('status','approved').order('reviewed_at',{ascending:false}).limit(1),
+        sb.from('result_submissions').select('reviewed_at').eq('kid_id', kidId).eq('status','approved').order('reviewed_at',{ascending:false}).limit(1),
+        sb.from('messages').select('sent_at').neq('sender_id', userId).order('sent_at',{ascending:false}).limit(1)
+      ]);
+      const tt = s => (s && s.length >= 19) ? s.substring(11,19) : (s || '—');
+      const f = (r,c) => r.error ? ('ERR:'+(r.error.code||r.error.message||'?')) : ((r.data&&r.data[0]) ? tt(r.data[0][c]) : 'nėra');
+      const cnt = r => r.error ? ('ERR:'+(r.error.code||r.error.message||'?')) : (r.data||[]).length;
+      const line1 = 'seen=' + tt(lastSeen);
+      const line2 = 'ch:' + cnt(chs) + ' new=' + f(nch,'reviewed_at');
+      const line3 = 'ex:' + cnt(exs) + ' new=' + f(nex,'reviewed_at');
+      const line4 = 'ms:' + cnt(msgs) + ' new=' + f(nms,'sent_at');
+      _dbg('SME ' + line1);
+      _dbg(line2); _dbg(line3); _dbg(line4);
+      showToast('🔧 ' + line1 + '\n' + line2 + '\n' + line3 + '\n' + line4, 'info');
+    } catch(dbgErr) { _dbg('SME dbg klaida: ' + (dbgErr.message||'')); }
+
     // Sudėti įvykius į vieną sąrašą su laiko žyma
     const events = [];
     (chs.data || []).forEach(c => events.push({ ts: c.reviewed_at, type: 'challenge', data: c }));
