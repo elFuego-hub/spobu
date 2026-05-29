@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL101</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL102</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -17543,6 +17543,7 @@ function subscribeKidNotifications() {
       const exName = ex?.name || 'Pratimas';
 
       if (sub.status === 'approved') {
+        if (_isSeen('ex', sub.id)) return; // jau parodyta (gyvai ar kaip praleista)
         _addSeen('ex', sub.id);
         showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
         await loadKidData();
@@ -17607,6 +17608,7 @@ function subscribeKidNotifications() {
       }
       
       // Gražus popup
+      if (_isSeen('du', duel.id)) return; // jau parodyta (gyvai ar kaip praleista)
       _addSeen('du', duel.id);
       showDuelResultPopup(duel, myKidId);
       await loadKidData();
@@ -17622,6 +17624,7 @@ function subscribeKidNotifications() {
     }, async payload => {
       const sub = payload.new;
       if (!sub || sub.status !== 'approved') return;
+      if (_isSeen('ch', sub.id)) return; // jau parodyta (gyvai ar kaip praleista)
       _addSeen('ch', sub.id);
       showToast(`🎯 IŠŠŪKIS PATVIRTINTAS!\n\n+${sub.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
       await loadKidData();
@@ -17632,6 +17635,7 @@ function subscribeKidNotifications() {
     }, async payload => {
       const res = payload.new;
       if (!res || res.approval_status !== 'approved') return;
+      if (_isSeen('cp', res.id)) return; // jau parodyta (gyvai ar kaip praleista)
       _addSeen('cp', res.id);
       showToast(`🏆 VARŽYBŲ REZULTATAS PATVIRTINTAS!\n\n+${res.exp_gained || 0} EXP`, 'success', null, { confetti: 20, sound: 'victory' });
       await loadKidData();
@@ -17646,7 +17650,8 @@ function subscribeKidNotifications() {
       const msg = payload.new;
       if (!msg || !msg.conversation_id) return;
       if (msg.sender_id === currentUser.id) return;
-      
+      if (_isSeen('ms', msg.id)) return; // jau parodyta (gyvai ar kaip praleista)
+
       // Patikrint ar aš pokalbio narys
       const { data: member } = await sb.from('conversation_members')
         .select('conversation_id')
@@ -18346,6 +18351,11 @@ async function handleAppResume() {
     // 🥇 Patikrint naujas varžybas, paskelbtas kol buvai išėjęs
     if (currentProfile?.role === 'kid' && typeof checkForNewCompetitions === 'function') {
       checkForNewCompetitions();
+    }
+
+    // 🔔 Atnaujinti varpelio notifikacijų skaičių (vienas šaltinis — be konflikto)
+    if (currentProfile?.role === 'kid' && typeof loadAllNotifications === 'function') {
+      loadAllNotifications();
     }
     
     _resumeDebug('5. PAVYKO - duomenys svieži');
@@ -20934,9 +20944,8 @@ function renderNotifTab(tab) {
     const isUnread = !seenIds.has(n.id);
     const bgColor = isUnread ? 'rgba(255,77,0,.08)' : 'var(--card)';
     const borderColor = isUnread ? 'rgba(255,77,0,.3)' : 'var(--bdr)';
-    const onclickAttr = n.link 
-      ? `onclick="markNotifRead('${n.id}');navToNotifLink('${n.link}')"` 
-      : `onclick="markNotifRead('${n.id}')"`;
+    // Paspaudus - tiesiog pažymim perskaityta (be navigacijos į langą)
+    const onclickAttr = `onclick="markNotifRead('${n.id}')"`;
     
     return `<div ${onclickAttr} data-notif-id="${n.id}" style="background:${bgColor};border:.5px solid ${borderColor};border-radius:12px;padding:10px 12px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);transition:background .2s;">
       <div style="display:flex;align-items:center;gap:10px;">
@@ -21820,24 +21829,12 @@ async function updateUnreadBadge() {
     }
   });
   
-  // 🔔 Atnaujinti VISŲ langų varpelių badge'us (visos neperskaitytos žinutės)
-  if (currentProfile?.role === 'kid') {
-    const bellBadges = [
-      'v-notif-badge-count', 'v-prof-notif-badge', 'v-kar-notif-badge',
-      'v-ish-notif-badge', 'v-comp-notif-badge'
-    ];
-    bellBadges.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (unreadCount > 0) {
-        el.style.display = 'flex';
-        el.textContent = unreadCount > 99 ? '99+' : unreadCount;
-      } else {
-        el.style.display = 'none';
-      }
-    });
-  }
-  
+  // 🔔 PASTABA: vaiko varpelio badge'ų ČIA NEBELIEČIAM!
+  // Anksčiau čia buvo rašoma neskaitytų POKALBIŲ skaičius, o updateNotifCounts
+  // rašo VISŲ notifikacijų skaičių į TUOS PAČIUS badge'us → konfliktas (kartais
+  // rodydavo skirtingus skaičius). Dabar varpelio badge'ą valdo TIK updateNotifCounts
+  // (per loadAllNotifications: init, atidarius varpelį, atsibudus).
+
   // Taip pat atnaujinti pranešimus (visiems)
   if (typeof loadAnnouncements === 'function' && (currentProfile?.role === 'parent' || currentProfile?.role === 'kid' || currentProfile?.role === 'trainer')) {
     loadAnnouncements();
