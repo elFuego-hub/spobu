@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL95</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL96</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -18381,36 +18381,52 @@ async function showMissedEvents() {
 
     if (events.length === 0) return;
 
-    // Parodyti po vieną su 2.5s pauze
+    // Parodyti po vieną su 2.5s pauze — STANDARTINIU stiliumi (kaip gyvi pranešimai)
     for (let i = 0; i < events.length; i++) {
       const ev = events[i];
       _addSeen(ev.sk, ev.id); // pažymėti matytu IŠKART (kad nepasikartotų)
-      let toastMsg = '';
 
       if (ev.type === 'challenge') {
-        toastMsg = `📬 PRALEIDAI:\n🎯 IŠŠŪKIS PATVIRTINTAS\n+${ev.data.exp_gain || 0} EXP`;
+        showToast(`🎯 IŠŠŪKIS PATVIRTINTAS!\n\n+${ev.data.exp_gain || 0} EXP`, 'success');
+        if (typeof confetti === 'function') confetti({ count: 30 });
         playSound('exp');
       } else if (ev.type === 'competition') {
-        toastMsg = `📬 PRALEIDAI:\n🏆 VARŽYBŲ REZULTATAS PATVIRTINTAS\n+${ev.data.exp_gained || 0} EXP`;
+        showToast(`🏆 VARŽYBŲ REZULTATAS PATVIRTINTAS!\n\n+${ev.data.exp_gained || 0} EXP`, 'success');
+        if (typeof confetti === 'function') confetti({ count: 30 });
         playSound('victory');
       } else if (ev.type === 'exercise') {
-        toastMsg = `📬 PRALEIDAI:\n📈 KARJEROS PRATIMAS PATVIRTINTAS\n+${ev.data.exp_gain || 0} EXP`;
+        let exName = 'Pratimas';
+        try {
+          const { data: ex } = await sb.from('exercises').select('name').eq('id', ev.data.exercise_id).single();
+          exName = ex?.name || 'Pratimas';
+        } catch (_e) {}
+        showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success');
+        if (typeof confetti === 'function') confetti({ count: 30 });
         playSound('exp');
       } else if (ev.type === 'duel') {
-        const won = ev.data.winner_id === kidId;
-        const drew = !ev.data.winner_id;
-        const txt = drew ? 'Lygiosios' : (won ? '✅ Laimėjai!' : '❌ Pralaimėjai');
-        toastMsg = `📬 PRALEIDAI:\n🥊 DVIKOVA UŽBAIGTA\n${txt}`;
+        if (typeof showDuelResultPopup === 'function') {
+          showDuelResultPopup(ev.data, kidId);
+        } else {
+          const won = ev.data.winner_id === kidId;
+          const drew = !ev.data.winner_id;
+          const txt = drew ? 'Lygiosios' : (won ? '✅ Laimėjai!' : '❌ Pralaimėjai');
+          showToast(`🥊 DVIKOVA UŽBAIGTA\n${txt}`, 'info');
+        }
       } else if (ev.type === 'message') {
-        const { data: sender } = await sb.from('profiles')
-          .select('first_name, last_name').eq('id', ev.data.sender_id).maybeSingle();
+        const [{ data: conv }, { data: sender }] = await Promise.all([
+          sb.from('conversations').select('type, title').eq('id', ev.data.conversation_id).maybeSingle(),
+          sb.from('profiles').select('first_name, last_name, role').eq('id', ev.data.sender_id).maybeSingle()
+        ]);
         const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() : 'Kažkas';
-        const preview = (ev.data.body || '').substring(0, 60);
-        toastMsg = `📬 PRALEIDAI:\n💬 NUO ${senderName.toUpperCase()}\n${preview}`;
+        const roleEmoji = sender?.role === 'trainer' ? '👨‍🏫' : (sender?.role === 'club_admin' ? '🏛️' : '');
+        const isAnnouncement = conv?.type === 'announcement';
+        const preview = (ev.data.body || '').substring(0, 80);
+        const trimmed = (ev.data.body || '').length > 80 ? '...' : '';
+        const header = isAnnouncement ? `📢 KLUBO PRANEŠIMAS\n${roleEmoji} ${senderName}` : `💬 NUO ${roleEmoji} ${senderName.toUpperCase()}`;
+        showToast(`${header}\n\n${preview}${trimmed}`, 'info');
         playSound('send');
       }
 
-      showToast(toastMsg, 'info');
       if (i < events.length - 1) await new Promise(r => setTimeout(r, 2500));
     }
 
