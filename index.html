@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL91</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span style="font-size:9px;color:#EC407A;letter-spacing:0;">v.DUEL92</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -18180,7 +18180,13 @@ async function handleAppResume() {
     _resumeDebug('STOP: nera currentUser/sb');
     return;
   }
-  
+
+  // 📌 Užfiksuoti praleistų įvykių atskaitos laiką IŠKART, prieš await'us.
+  // iOS PWA atsibundant gali sukelti pakartotinį 'hidden' įvykį, kuris
+  // perrašytų spobu_last_seen į DABAR, ir showMissedEvents nerastų nieko
+  // (race condition). Todėl skaitom reikšmę dabar ir perduodam ją toliau.
+  const _missedAnchor = localStorage.getItem('spobu_last_seen');
+
   // 1) GREITAS ryšio patikrinimas su 2.5 sek timeout
   // SVARBU: tikram DB ryšiui tikrinti naudojam TIKRĄ užklausą, ne getSession
   // (getSession grąžina sesiją iš atminties net jei tinklo ryšys miręs)
@@ -18225,9 +18231,9 @@ async function handleAppResume() {
       await resubscribeKidChannels();
     }
     
-    // 📬 Patikrint praleistus įvykius nuo paskutinio matymo
+    // 📬 Patikrint praleistus įvykius nuo paskutinio matymo (su užfiksuotu laiku)
     if (currentProfile?.role === 'kid' && typeof showMissedEvents === 'function') {
-      await showMissedEvents();
+      await showMissedEvents(_missedAnchor);
     }
     
     _resumeDebug('5. PAVYKO - duomenys svieži');
@@ -18262,23 +18268,19 @@ async function resubscribeKidChannels() {
 }
 
 // 📬 Parodyti praleistus įvykius (po vieną su pauzėmis)
-async function showMissedEvents() {
-  showToast('📬 DEBUG: showMissedEvents paleista', 'info');
-  if (!sb || !currentUser || !currentKid) {
-    showToast('📬 DEBUG: STOP - nera sb/user/kid', 'info');
-    return;
-  }
+async function showMissedEvents(anchorTs) {
+  if (!sb || !currentUser || !currentKid) return;
   try {
-    const lastSeenRaw = localStorage.getItem('spobu_last_seen');
+    // Naudojam užfiksuotą laiką (perduotą iš handleAppResume PRIEŠ await'us),
+    // o jei nėra (tiesioginis kvietimas) - skaitom iš localStorage
+    const lastSeenRaw = anchorTs || localStorage.getItem('spobu_last_seen');
     if (!lastSeenRaw) {
       // Pirmas kartas - tik įrašom dabartį, nieko nerodom
       localStorage.setItem('spobu_last_seen', new Date().toISOString());
-      showToast('📬 DEBUG: pirmas kartas - irasoma laikas', 'info');
       return;
     }
     const lastSeen = lastSeenRaw;
-    showToast('📬 DEBUG: lastSeen = ' + lastSeen.substring(0, 19), 'info');
-    
+
     const kidId = currentKid.id;
     const userId = currentUser.id;
     
@@ -18321,28 +18323,22 @@ async function showMissedEvents() {
     
     // Žinutės - filtruoti tik tas, kur aš pokalbio narys
     if (msgs.data && msgs.data.length > 0) {
-      showToast(`📬 DEBUG: msgs gauta ${msgs.data.length}, filtruojam narystę...`, 'info');
       const convIds = [...new Set(msgs.data.map(m => m.conversation_id))];
       const { data: myMembers } = await sb.from('conversation_members')
         .select('conversation_id')
         .eq('user_id', userId)
         .in('conversation_id', convIds);
       const myConvIds = new Set((myMembers || []).map(m => m.conversation_id));
-      showToast(`📬 DEBUG: nariu ${myConvIds.size}/${convIds.length} pokalbiu`, 'info');
       msgs.data.forEach(m => {
         if (myConvIds.has(m.conversation_id)) {
           events.push({ ts: m.sent_at, type: 'message', data: m });
         }
       });
-    } else {
-      showToast(`📬 DEBUG: msgs uzklausa tuscia (${msgs.error?.message || 'no error'})`, 'info');
     }
     
     // Surūšiuoti chronologiškai
     events.sort((a, b) => new Date(a.ts) - new Date(b.ts));
-    
-    showToast(`📬 DEBUG: rasta ${events.length} ivykiu (ch:${(chs.data||[]).length} cp:${(cps.data||[]).length} ex:${(exs.data||[]).length} du:${(dus.data||[]).length} ms:${(msgs.data||[]).length})`, 'info');
-    
+
     if (events.length === 0) {
       // Atnaujinti last_seen ir baigti
       localStorage.setItem('spobu_last_seen', new Date().toISOString());
