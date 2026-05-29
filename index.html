@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL96</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL98</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -5211,7 +5211,11 @@ async function loadKidData() {
   
   // 📡 Realtime - prisijungti prie naujų iššūkių srauto
   subscribeToNewChallenges();
-  
+
+  // 🥇 Patikrinam naujas varžybas (klubas paskelbė) + realtime srautas
+  await checkForNewCompetitions().catch(e => console.error('checkForNewCompetitions:', e));
+  subscribeToNewCompetitions();
+
   // 🔔 Užkrauti pranešimus (kad badge skaičiukas atsinaujintų)
   if (typeof loadAllNotifications === 'function') {
     loadAllNotifications().catch(e => console.error('loadAllNotifications:', e));
@@ -8098,6 +8102,75 @@ function subscribeToNewChallenges() {
     .subscribe();
   
   console.log('[challenge realtime] Subscribed');
+}
+
+// ════════════════════════════════════════
+// 🥇 NAUJOS VARŽYBOS (klubas paskelbė) — pranešimas vaikui (gyvai + praleistas)
+// ════════════════════════════════════════
+let competitionsRealtimeSub = null;
+
+function subscribeToNewCompetitions() {
+  if (!currentKid?.id || !currentProfile?.club_id) return;
+  if (competitionsRealtimeSub) {
+    sb.removeChannel(competitionsRealtimeSub);
+    competitionsRealtimeSub = null;
+  }
+  competitionsRealtimeSub = sb.channel(`new-competitions-${currentKid.id}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'competitions',
+      filter: `club_id=eq.${currentProfile.club_id}`
+    }, (payload) => {
+      console.log('[competition realtime] Naujos varžybos:', payload.new);
+      setTimeout(() => checkForNewCompetitions(), 500);
+    })
+    .subscribe();
+  console.log('[competition realtime] Subscribed');
+}
+
+async function checkForNewCompetitions() {
+  if (!currentKid?.id) return;
+
+  // Klubo ID (kaip loadKidCompetitions — per profilį arba per trenerį)
+  let clubId = currentProfile?.club_id;
+  if (!clubId && currentKid.assigned_trainer_id) {
+    const { data: trainer } = await sb.from('profiles')
+      .select('club_id').eq('id', currentKid.assigned_trainer_id).maybeSingle();
+    clubId = trainer?.club_id;
+  }
+  if (!clubId) return;
+
+  const lsKey = `spobu_kid_${currentKid.id}_seen_competition_ids`;
+  const firstRun = localStorage.getItem(lsKey) === null; // pirmas kartas - tik baseline
+  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+
+  const today = new Date().toISOString().split('T')[0];
+  const { data: comps, error } = await sb.from('competitions')
+    .select('id, title, competition_type, event_date, location')
+    .eq('club_id', clubId).eq('is_active', true)
+    .order('event_date', { ascending: false }).limit(40);
+  if (error || !comps) return;
+
+  // Nauji = nematyti IR dar neįvykę (event_date >= šiandien)
+  const fresh = comps.filter(c => !seenIds.has(c.id) && (!c.event_date || c.event_date >= today));
+
+  // Pažymėti VISUS matytais (kad nepasikartotų)
+  comps.forEach(c => seenIds.add(c.id));
+  localStorage.setItem(lsKey, JSON.stringify([...seenIds].slice(-300)));
+
+  if (firstRun) return;       // pirmą kartą nieko nerodom (kad neužverstume sena istorija)
+  if (fresh.length === 0) return;
+
+  // Rodyti per toast EILĘ (vienas po kito), seniausi pirma
+  const typeIcon = { kumite: '🥊', kata: '🎭', belt_test: '🥋' };
+  fresh.reverse();
+  for (const c of fresh) {
+    const icon = typeIcon[c.competition_type] || '🥇';
+    const dateStr = c.event_date ? `📅 ${c.event_date}` : '';
+    const loc = c.location ? ` · ${c.location}` : '';
+    showToast(`🥇 NAUJOS VARŽYBOS!\n\n${icon} ${c.title}\n${dateStr}${loc}`, 'success', null, { sound: 'send' });
+  }
 }
 
 
@@ -17468,9 +17541,7 @@ function subscribeKidNotifications() {
 
       if (sub.status === 'approved') {
         _addSeen('ex', sub.id);
-        showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success');
-        confetti({ count: 30 });
-        playSound('exp');
+        showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
         await loadKidData();
       } else if (sub.status === 'rejected') {
         const reason = sub.rejection_reason || 'be priežasties';
@@ -17549,9 +17620,7 @@ function subscribeKidNotifications() {
       const sub = payload.new;
       if (!sub || sub.status !== 'approved') return;
       _addSeen('ch', sub.id);
-      showToast(`🎯 IŠŠŪKIS PATVIRTINTAS!\n\n+${sub.exp_gain || 0} EXP`, 'success');
-      confetti({ count: 30 });
-      playSound('exp');
+      showToast(`🎯 IŠŠŪKIS PATVIRTINTAS!\n\n+${sub.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
       await loadKidData();
     })
     .on('postgres_changes', {
@@ -17561,9 +17630,7 @@ function subscribeKidNotifications() {
       const res = payload.new;
       if (!res || res.approval_status !== 'approved') return;
       _addSeen('cp', res.id);
-      showToast(`🏆 VARŽYBŲ REZULTATAS PATVIRTINTAS!\n\n+${res.exp_gained || 0} EXP`, 'success');
-      confetti({ count: 30 });
-      playSound('victory');
+      showToast(`🏆 VARŽYBŲ REZULTATAS PATVIRTINTAS!\n\n+${res.exp_gained || 0} EXP`, 'success', null, { confetti: 20, sound: 'victory' });
       await loadKidData();
     })
     .subscribe();
@@ -17606,8 +17673,7 @@ function subscribeKidNotifications() {
       }
       
       _addSeen('ms', msg.id);
-      showToast(`${header}\n\n${preview}${trimmed}`, 'info');
-      playSound('send');
+      showToast(`${header}\n\n${preview}${trimmed}`, 'info', null, { sound: 'send' });
       if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
     })
     .subscribe();
@@ -18273,6 +18339,11 @@ async function handleAppResume() {
     if (currentProfile?.role === 'kid' && typeof showMissedEvents === 'function') {
       await showMissedEvents();
     }
+
+    // 🥇 Patikrint naujas varžybas, paskelbtas kol buvai išėjęs
+    if (currentProfile?.role === 'kid' && typeof checkForNewCompetitions === 'function') {
+      checkForNewCompetitions();
+    }
     
     _resumeDebug('5. PAVYKO - duomenys svieži');
   } catch (e) {
@@ -18381,37 +18452,28 @@ async function showMissedEvents() {
 
     if (events.length === 0) return;
 
-    // Parodyti po vieną su 2.5s pauze — STANDARTINIU stiliumi (kaip gyvi pranešimai)
+    // Parodyti per toast EILĘ (vienas po kito) STANDARTINIU stiliumi (kaip gyvi pranešimai).
+    // Eilė pati išdėsto pranešimus laike + paleidžia konfeti/garsą sinchroniškai (be lago).
     for (let i = 0; i < events.length; i++) {
       const ev = events[i];
       _addSeen(ev.sk, ev.id); // pažymėti matytu IŠKART (kad nepasikartotų)
 
       if (ev.type === 'challenge') {
-        showToast(`🎯 IŠŠŪKIS PATVIRTINTAS!\n\n+${ev.data.exp_gain || 0} EXP`, 'success');
-        if (typeof confetti === 'function') confetti({ count: 30 });
-        playSound('exp');
+        showToast(`🎯 IŠŠŪKIS PATVIRTINTAS!\n\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
       } else if (ev.type === 'competition') {
-        showToast(`🏆 VARŽYBŲ REZULTATAS PATVIRTINTAS!\n\n+${ev.data.exp_gained || 0} EXP`, 'success');
-        if (typeof confetti === 'function') confetti({ count: 30 });
-        playSound('victory');
+        showToast(`🏆 VARŽYBŲ REZULTATAS PATVIRTINTAS!\n\n+${ev.data.exp_gained || 0} EXP`, 'success', null, { confetti: 20, sound: 'victory' });
       } else if (ev.type === 'exercise') {
         let exName = 'Pratimas';
         try {
           const { data: ex } = await sb.from('exercises').select('name').eq('id', ev.data.exercise_id).single();
           exName = ex?.name || 'Pratimas';
         } catch (_e) {}
-        showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success');
-        if (typeof confetti === 'function') confetti({ count: 30 });
-        playSound('exp');
+        showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
       } else if (ev.type === 'duel') {
-        if (typeof showDuelResultPopup === 'function') {
-          showDuelResultPopup(ev.data, kidId);
-        } else {
-          const won = ev.data.winner_id === kidId;
-          const drew = !ev.data.winner_id;
-          const txt = drew ? 'Lygiosios' : (won ? '✅ Laimėjai!' : '❌ Pralaimėjai');
-          showToast(`🥊 DVIKOVA UŽBAIGTA\n${txt}`, 'info');
-        }
+        const won = ev.data.winner_id === kidId;
+        const drew = !ev.data.winner_id;
+        const txt = drew ? 'Lygiosios' : (won ? '✅ Laimėjai!' : '❌ Pralaimėjai');
+        showToast(`🥊 DVIKOVA UŽBAIGTA\n\n${txt}`, 'info', null, { sound: won ? 'victory' : 'send' });
       } else if (ev.type === 'message') {
         const [{ data: conv }, { data: sender }] = await Promise.all([
           sb.from('conversations').select('type, title').eq('id', ev.data.conversation_id).maybeSingle(),
@@ -18423,11 +18485,8 @@ async function showMissedEvents() {
         const preview = (ev.data.body || '').substring(0, 80);
         const trimmed = (ev.data.body || '').length > 80 ? '...' : '';
         const header = isAnnouncement ? `📢 KLUBO PRANEŠIMAS\n${roleEmoji} ${senderName}` : `💬 NUO ${roleEmoji} ${senderName.toUpperCase()}`;
-        showToast(`${header}\n\n${preview}${trimmed}`, 'info');
-        playSound('send');
+        showToast(`${header}\n\n${preview}${trimmed}`, 'info', null, { sound: 'send' });
       }
-
-      if (i < events.length - 1) await new Promise(r => setTimeout(r, 2500));
     }
 
     if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
@@ -19077,56 +19136,84 @@ async function isPushEnabled() {
   }
 }
 
-function showToast(msg, type='', duration=null){
+// 🔔 TOAST EILĖ: pranešimai rodomi VIENAS PO KITO (ne vienas ant kito).
+// opts (nebūtina): { confetti: skaičius|true, sound: 'exp'|'victory'|'send'... }
+// — efektai paleidžiami sinchroniškai su pranešimo pasirodymu (ne visi iškart).
+let _toastQueue = [];
+let _toastShowing = false;
+
+function showToast(msg, type='', duration=null, opts=null){
+  _toastQueue.push({ msg, type, duration, opts });
+  if (!_toastShowing) _nextToast();
+}
+
+function _nextToast(){
+  if (_toastQueue.length === 0){ _toastShowing = false; return; }
+  _toastShowing = true;
+  const item = _toastQueue.shift();
+  _renderToast(item.msg, item.type || '', item.duration, item.opts);
+}
+
+function _renderToast(msg, type, duration, opts){
   const t=document.getElementById('toast');
   const b=document.getElementById('toast-backdrop');
-  
-  // Default trukmė: success/error 4 sek., svarbūs (su +EXP) 8 sek.
+
+  // Default trukmė; jei eilėje laukia daugiau - rodom trumpiau, kad nevilkintų
   if(duration===null){
     duration = (msg.includes('EXP') || type==='error') ? 6000 : 3500;
   }
-  
+  if (_toastQueue.length > 0) duration = Math.min(duration, 2800);
+
   // Innerhtml leidžia line breaks ir emoji
   t.innerHTML = msg.replace(/\n/g, '<br>');
   t.className = 'toast ' + (type||'');
-  
+
   // Force reflow ir parodom
   void t.offsetWidth;
   t.classList.add('show');
-  
+
+  // Efektai SINCHRONIŠKAI su pasirodymu (vienas po kito, ne visi iškart)
+  if (opts){
+    if (opts.confetti && typeof confetti === 'function'){
+      confetti({ count: (typeof opts.confetti === 'number' ? opts.confetti : 20) });
+    }
+    if (opts.sound && typeof playSound === 'function'){
+      playSound(opts.sound);
+    }
+  }
+
   // Backdrop tik svarbiems pranešimams (su EXP arba error)
   const isImportant = msg.includes('EXP') || type==='error';
   if(isImportant){
     b.classList.add('show');
-    // Vibracija telefone (jei palaiko)
     if(navigator.vibrate){
       navigator.vibrate(type==='error' ? [100,50,100] : [80,40,80]);
     }
   }
-  
-  if(toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>{
+
+  let done = false;
+  const finish = ()=>{
+    if (done) return; done = true;
     t.classList.remove('show');
     b.classList.remove('show');
-  }, duration);
-  
+    if(toastTimer) clearTimeout(toastTimer);
+    b.removeEventListener('click', dismiss);
+    t.removeEventListener('click', dismiss);
+    t.style.pointerEvents = 'none';
+    b.style.pointerEvents = 'none';
+    setTimeout(_nextToast, 320); // tarpas hide animacijai, tada kitas iš eilės
+  };
+  const dismiss = ()=> finish();
+
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(finish, duration);
+
   // Click to dismiss (svarbiems pranešimams)
   if(isImportant){
-    const dismiss = ()=>{
-      t.classList.remove('show');
-      b.classList.remove('show');
-      if(toastTimer) clearTimeout(toastTimer);
-      b.removeEventListener('click', dismiss);
-      t.removeEventListener('click', dismiss);
-    };
-    b.addEventListener('click', dismiss);
-    t.addEventListener('click', dismiss);
     t.style.pointerEvents = 'auto';
     b.style.pointerEvents = 'auto';
-    setTimeout(()=>{
-      t.style.pointerEvents = 'none';
-      b.style.pointerEvents = 'none';
-    }, duration);
+    b.addEventListener('click', dismiss);
+    t.addEventListener('click', dismiss);
   }
 }
 
