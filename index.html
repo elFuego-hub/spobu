@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL93</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL94</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -17467,6 +17467,7 @@ function subscribeKidNotifications() {
       const exName = ex?.name || 'Pratimas';
 
       if (sub.status === 'approved') {
+        markSeen();
         showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success');
         confetti({ count: 30 });
         playSound('exp');
@@ -17532,6 +17533,7 @@ function subscribeKidNotifications() {
       }
       
       // Gražus popup
+      markSeen();
       showDuelResultPopup(duel, myKidId);
       await loadKidData();
     })
@@ -17546,6 +17548,7 @@ function subscribeKidNotifications() {
     }, async payload => {
       const sub = payload.new;
       if (!sub || sub.status !== 'approved') return;
+      markSeen();
       showToast(`🎯 IŠŠŪKIS PATVIRTINTAS!\n\n+${sub.exp_gain || 0} EXP`, 'success');
       confetti({ count: 30 });
       playSound('exp');
@@ -17557,6 +17560,7 @@ function subscribeKidNotifications() {
     }, async payload => {
       const res = payload.new;
       if (!res || res.approval_status !== 'approved') return;
+      markSeen();
       showToast(`🏆 VARŽYBŲ REZULTATAS PATVIRTINTAS!\n\n+${res.exp_gained || 0} EXP`, 'success');
       confetti({ count: 30 });
       playSound('victory');
@@ -17601,6 +17605,7 @@ function subscribeKidNotifications() {
         header = `💬 NUO ${roleEmoji} ${senderName.toUpperCase()}`;
       }
       
+      markSeen();
       showToast(`${header}\n\n${preview}${trimmed}`, 'info');
       playSound('send');
       if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
@@ -18186,6 +18191,13 @@ function _dbg(msg) {
   } catch(e){}
 }
 
+// 📌 Pažymėti, kad įvykis MATYTAS (gyvai per realtime arba per showMissedEvents).
+// Anchor judinamas tik PIRMYN, kad praleisti įvykiai niekada nebūtų prarasti.
+// SVARBU: NIEKADA nekviečiam šito 'hidden' momentu - tik kai įvykį tikrai parodėm.
+function markSeen() {
+  try { localStorage.setItem('spobu_last_seen', new Date().toISOString()); } catch(e){}
+}
+
 async function handleAppResume() {
   _resumeDebug('1. Atsibudimas paleistas');
   if (!currentUser || !sb) {
@@ -18424,8 +18436,8 @@ async function showMissedEvents(anchorTs) {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     _lastHiddenTime = Date.now();
-    // Įrašyti dabartinį laiką - kad atsibudus žinotume nuo kada tikrinti praleistus
-    try { localStorage.setItem('spobu_last_seen', new Date().toISOString()); } catch(e){}
+    // ⚠️ NEBERAŠOM last_seen čia! Tai sugadindavo anchor (tapdavo vėlesnis už
+    // praleistus įvykius). Anchor judinamas tik per markSeen() / showMissedEvents.
   } else if (document.visibilityState === 'visible') {
     const hiddenDuration = Date.now() - _lastHiddenTime;
     _resumeDebug('visible! fone buvo ' + Math.round(hiddenDuration/1000) + 's');
