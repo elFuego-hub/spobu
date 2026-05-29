@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL99</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL101</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -8146,15 +8146,14 @@ async function checkForNewCompetitions() {
   const firstRun = localStorage.getItem(lsKey) === null; // pirmas kartas - tik baseline
   const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
 
-  const today = new Date().toISOString().split('T')[0];
   const { data: comps, error } = await sb.from('competitions')
     .select('id, title, competition_type, event_date, location')
     .eq('club_id', clubId).eq('is_active', true)
     .order('event_date', { ascending: false }).limit(40);
   if (error || !comps) return;
 
-  // Nauji = nematyti IR dar neįvykę (event_date >= šiandien)
-  const fresh = comps.filter(c => !seenIds.has(c.id) && (!c.event_date || c.event_date >= today));
+  // Nauji = tiesiog dar nematyti (data NESVARBI — svarbu kad naujai paskelbtos)
+  const fresh = comps.filter(c => !seenIds.has(c.id));
 
   // 🔧 LAIKINA DIAGNOSTIKA (matoma paspaudus versijos žymą)
   if (typeof _dbg === 'function') _dbg('COMP run first=' + firstRun + ' club=' + (clubId ? 'ok' : 'NULL') + ' viso=' + comps.length + ' nauji=' + fresh.length);
@@ -20633,7 +20632,7 @@ async function loadAllNotifications() {
   cutoff.setDate(cutoff.getDate() - 30);
   const cutoffISO = cutoff.toISOString();
   
-  const [approvedChRes, approvedCoRes, approvedPrRes, streakRes, newChRes, newCoRes] = await Promise.all([
+  const [approvedChRes, approvedCoRes, approvedPrRes, streakRes, newChRes, newCoRes, msgsRes] = await Promise.all([
     // 🤖 SISTEMA - approved challenge submissions
     sb.from('challenge_submissions')
       .select('id, exp_gain, reviewed_at, challenges(title, type)')
@@ -20678,17 +20677,28 @@ async function loadAllNotifications() {
       .eq('club_id', currentProfile.club_id)
       .gte('created_at', cutoffISO)
       .order('created_at', { ascending: false })
-      .limit(20)
+      .limit(20),
+    // 💬 ŽINUTĖS - ne mano siųstos (paskutinės 30 d.)
+    sb.from('messages')
+      .select('id, conversation_id, sender_id, body, sent_at')
+      .neq('sender_id', currentUser.id)
+      .gte('sent_at', cutoffISO)
+      .order('sent_at', { ascending: false })
+      .limit(30)
   ]);
   
-  // Build 4 kategorijos
+  // Build 4 kategorijos (PAGAL TEMĄ):
+  //  🎯 issukiai  = nauji iššūkiai + patvirtinti iššūkiai
+  //  🏆 varzybos  = naujos varžybos + patvirtintos varžybos
+  //  💬 zinutes   = žinutės + klubo pranešimai
+  //  🤖 sistema   = karjeros PR + streak bonusai (kas neturi savo tab'o)
   const sistema = [];
   const issukiai = [];
   const varzybos = [];
-  const zinutes = []; // TODO: ateityje žinutės iš trenerio
-  
-  // 🤖 SISTEMA
-  const challengeTypeLabels = { 
+  const zinutes = [];
+
+  // ✅ PATVIRTINTI IŠŠŪKIAI → 🎯 Iššūkiai
+  const challengeTypeLabels = {
     training: '🏋️ Treniruotės', 
     weekly: '⚡ Savaitinis', 
     monthly: '🌙 Mėnesinis', 
@@ -20699,18 +20709,18 @@ async function loadAllNotifications() {
   
   (approvedChRes.data || []).forEach(s => {
     const typeLabel = challengeTypeLabels[s.challenges?.type] || '🎯 Iššūkis';
-    sistema.push({
+    issukiai.push({
       id: `apprCh-${s.id}`,
       icon: '✅',
       title: `${typeLabel} patvirtintas`,
       body: `${s.challenges?.title || 'Iššūkis'} · +${s.exp_gain || 0} EXP`,
-      time: s.approved_at,
+      time: s.reviewed_at,
       link: 'v-ish'
     });
   });
   (approvedCoRes.data || []).forEach(s => {
     const placement = s.placement ? `${s.placement}-a vieta · ` : '';
-    sistema.push({
+    varzybos.push({
       id: `apprCo-${s.id}`,
       icon: '🏆',
       title: 'Varžybos patvirtintos',
@@ -20725,7 +20735,7 @@ async function loadAllNotifications() {
       icon: '💪',
       title: 'PR patvirtintas',
       body: `${s.exercises?.name || 'Pratimas'}: ${s.new_value} · +${s.exp_gain || 0} EXP`,
-      time: s.approved_at,
+      time: s.reviewed_at,
       link: 'v-kar'
     });
   });
@@ -20791,6 +20801,42 @@ async function loadAllNotifications() {
     });
   });
   
+  // 💬 ŽINUTĖS + KLUBO PRANEŠIMAI → 💬 Žinutės (tik kur esu pokalbio narys)
+  if (msgsRes.data && msgsRes.data.length > 0) {
+    const convIds = [...new Set(msgsRes.data.map(m => m.conversation_id))];
+    const [membersRes, convsRes] = await Promise.all([
+      sb.from('conversation_members').select('conversation_id').eq('user_id', currentUser.id).in('conversation_id', convIds),
+      sb.from('conversations').select('id, type, title').in('id', convIds)
+    ]);
+    const myConvIds = new Set((membersRes.data || []).map(m => m.conversation_id));
+    const convById = {};
+    (convsRes.data || []).forEach(c => { convById[c.id] = c; });
+
+    // Siuntėjų vardai (tik tų, kurių pokalbiuose esu narys)
+    const senderIds = [...new Set(msgsRes.data.filter(m => myConvIds.has(m.conversation_id)).map(m => m.sender_id))];
+    const senderName = {};
+    if (senderIds.length > 0) {
+      const { data: senders } = await sb.from('profiles').select('id, first_name, last_name').in('id', senderIds);
+      (senders || []).forEach(p => { senderName[p.id] = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Kažkas'; });
+    }
+
+    msgsRes.data.forEach(m => {
+      if (!myConvIds.has(m.conversation_id)) return;
+      const conv = convById[m.conversation_id];
+      const isAnnouncement = conv?.type === 'announcement';
+      const name = senderName[m.sender_id] || 'Kažkas';
+      const preview = (m.body || '').substring(0, 80);
+      zinutes.push({
+        id: `msg-${m.id}`,
+        icon: isAnnouncement ? '📢' : '💬',
+        title: isAnnouncement ? 'Klubo pranešimas' : `Žinutė nuo ${name}`,
+        body: preview,
+        time: m.sent_at,
+        link: `msg:${m.conversation_id}`
+      });
+    });
+  }
+
   // Surūšiuoti pagal laiką (naujausi pirma)
   const sortByTime = (a, b) => new Date(b.time) - new Date(a.time);
   sistema.sort(sortByTime);
@@ -20946,18 +20992,28 @@ function navToNotifLink(link) {
   const section = document.getElementById('v-announcements-section');
   if (section) section.style.display = 'none';
   
+  // 1b. Žinutė/klubo pranešimas - atidaryti konkretų pokalbį
+  if (link.indexOf('msg:') === 0) {
+    const convId = link.slice(4);
+    if (typeof openMessages === 'function') openMessages();
+    setTimeout(() => {
+      if (convId && typeof openConversation === 'function') openConversation(convId);
+    }, 120);
+    return;
+  }
+
   // 2. Nukela į puslapį - bandom kelis būdus
   const navItem = document.querySelector(`.bn2 .ni[onclick*="${link}"]`);
-  
+
   if (navItem && typeof nv === 'function') {
     nv('v', navItem, link);
   } else if (typeof g === 'function') {
     g('v', link);
-    // Po g() iškviesti tinkamą loader'į
+    // Po g() iškviesti tinkamą loader'į (TEISINGI pavadinimai!)
     setTimeout(() => {
       if (link === 'v-comp' && typeof loadKidCompetitions === 'function') loadKidCompetitions();
-      else if (link === 'v-ish' && typeof loadKidChallenges === 'function') loadKidChallenges();
-      else if (link === 'v-kar' && typeof loadKidCareer === 'function') loadKidCareer();
+      else if (link === 'v-ish' && typeof loadChallenges === 'function') loadChallenges();
+      else if (link === 'v-kar' && typeof loadCategories === 'function') loadCategories();
       else if (link === 'v-main' && typeof loadKidData === 'function') loadKidData();
     }, 50);
   }
