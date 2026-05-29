@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL94</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL95</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -17467,7 +17467,7 @@ function subscribeKidNotifications() {
       const exName = ex?.name || 'Pratimas';
 
       if (sub.status === 'approved') {
-        markSeen();
+        _addSeen('ex', sub.id);
         showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success');
         confetti({ count: 30 });
         playSound('exp');
@@ -17533,7 +17533,7 @@ function subscribeKidNotifications() {
       }
       
       // Gražus popup
-      markSeen();
+      _addSeen('du', duel.id);
       showDuelResultPopup(duel, myKidId);
       await loadKidData();
     })
@@ -17548,7 +17548,7 @@ function subscribeKidNotifications() {
     }, async payload => {
       const sub = payload.new;
       if (!sub || sub.status !== 'approved') return;
-      markSeen();
+      _addSeen('ch', sub.id);
       showToast(`🎯 IŠŠŪKIS PATVIRTINTAS!\n\n+${sub.exp_gain || 0} EXP`, 'success');
       confetti({ count: 30 });
       playSound('exp');
@@ -17560,7 +17560,7 @@ function subscribeKidNotifications() {
     }, async payload => {
       const res = payload.new;
       if (!res || res.approval_status !== 'approved') return;
-      markSeen();
+      _addSeen('cp', res.id);
       showToast(`🏆 VARŽYBŲ REZULTATAS PATVIRTINTAS!\n\n+${res.exp_gained || 0} EXP`, 'success');
       confetti({ count: 30 });
       playSound('victory');
@@ -17605,7 +17605,7 @@ function subscribeKidNotifications() {
         header = `💬 NUO ${roleEmoji} ${senderName.toUpperCase()}`;
       }
       
-      markSeen();
+      _addSeen('ms', msg.id);
       showToast(`${header}\n\n${preview}${trimmed}`, 'info');
       playSound('send');
       if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
@@ -18191,11 +18191,27 @@ function _dbg(msg) {
   } catch(e){}
 }
 
-// 📌 Pažymėti, kad įvykis MATYTAS (gyvai per realtime arba per showMissedEvents).
-// Anchor judinamas tik PIRMYN, kad praleisti įvykiai niekada nebūtų prarasti.
-// SVARBU: NIEKADA nekviečiam šito 'hidden' momentu - tik kai įvykį tikrai parodėm.
-function markSeen() {
-  try { localStorage.setItem('spobu_last_seen', new Date().toISOString()); } catch(e){}
+// 📌 MATYTŲ ĮVYKIŲ SEKIMAS PER ID (ne per laiką!).
+// Kiekvienas įvykis (iššūkis/karjera/varžybos/dvikova/žinutė) turi unikalų ID.
+// Kai įvykį parodom (gyvai per realtime ARBA per showMissedEvents) — įsimenam jo ID.
+// showMissedEvents rodo TIK tuos, kurių ID dar nematytas → jokių laiko lenktynių.
+// sk = seen-key: 'ch' iššūkiai, 'cp' varžybos, 'ex' karjera, 'du' dvikovos, 'ms' žinutės.
+function _getSeenSet(sk) {
+  try { return new Set(JSON.parse(localStorage.getItem('spobu_seen_' + sk) || '[]')); }
+  catch (e) { return new Set(); }
+}
+function _isSeen(sk, id) {
+  if (id == null) return false;
+  return _getSeenSet(sk).has(id);
+}
+function _addSeen(sk, id) {
+  if (id == null) return;
+  const s = _getSeenSet(sk);
+  if (s.has(id)) return;
+  s.add(id);
+  let arr = [...s];
+  if (arr.length > 300) arr = arr.slice(arr.length - 300); // riba, kad localStorage neaugtų be galo
+  try { localStorage.setItem('spobu_seen_' + sk, JSON.stringify(arr)); } catch (e) {}
 }
 
 async function handleAppResume() {
@@ -18205,12 +18221,6 @@ async function handleAppResume() {
     return;
   }
   _dbg('RESUME start');
-
-  // 📌 Užfiksuoti praleistų įvykių atskaitos laiką IŠKART, prieš await'us.
-  // iOS PWA atsibundant gali sukelti pakartotinį 'hidden' įvykį, kuris
-  // perrašytų spobu_last_seen į DABAR, ir showMissedEvents nerastų nieko
-  // (race condition). Todėl skaitom reikšmę dabar ir perduodam ją toliau.
-  const _missedAnchor = localStorage.getItem('spobu_last_seen');
 
   // 1) GREITAS ryšio patikrinimas su 2.5 sek timeout
   // SVARBU: tikram DB ryšiui tikrinti naudojam TIKRĄ užklausą, ne getSession
@@ -18231,7 +18241,7 @@ async function handleAppResume() {
     _resumeDebug('3. DB rysys MIRES (' + (e.message || 'klaida') + ')');
   }
   
-  _dbg('conn=' + connectionAlive + ' anchor=' + (_missedAnchor ? _missedAnchor.substring(11,19) : 'null'));
+  _dbg('conn=' + connectionAlive);
 
   if (!connectionAlive) {
     _resumeDebug('4. PERKRAUNAM app...');
@@ -18259,9 +18269,9 @@ async function handleAppResume() {
       await resubscribeKidChannels();
     }
     
-    // 📬 Patikrint praleistus įvykius nuo paskutinio matymo (su užfiksuotu laiku)
+    // 📬 Patikrint praleistus įvykius (dedup per ID — nebepriklauso nuo laiko)
     if (currentProfile?.role === 'kid' && typeof showMissedEvents === 'function') {
-      await showMissedEvents(_missedAnchor);
+      await showMissedEvents();
     }
     
     _resumeDebug('5. PAVYKO - duomenys svieži');
@@ -18296,107 +18306,87 @@ async function resubscribeKidChannels() {
 }
 
 // 📬 Parodyti praleistus įvykius (po vieną su pauzėmis)
-async function showMissedEvents(anchorTs) {
+async function showMissedEvents() {
   if (!sb || !currentUser || !currentKid) return;
   try {
-    // Naudojam užfiksuotą laiką (perduotą iš handleAppResume PRIEŠ await'us),
-    // o jei nėra (tiesioginis kvietimas) - skaitom iš localStorage
-    const lastSeenRaw = anchorTs || localStorage.getItem('spobu_last_seen');
-    if (!lastSeenRaw) {
-      // Pirmas kartas - tik įrašom dabartį, nieko nerodom
-      localStorage.setItem('spobu_last_seen', new Date().toISOString());
-      return;
-    }
-    const lastSeen = lastSeenRaw;
-
     const kidId = currentKid.id;
     const userId = currentUser.id;
-    
-    // Lygiagrečios užklausos visiems šaltiniams
+    const firstRun = !localStorage.getItem('spobu_missed_init');
+
+    // Naujausi įvykiai pagal tipą (BE laiko filtro — dedup vykdom per ID, ne laiką)
     const [chs, cps, exs, dus, msgs] = await Promise.all([
-      // 🎯 Iššūkiai patvirtinti
       sb.from('challenge_submissions')
         .select('id, exp_gain, reviewed_at')
         .eq('kid_id', kidId).eq('status', 'approved')
-        .gt('reviewed_at', lastSeen).order('reviewed_at'),
-      // 🏆 Varžybų rezultatai patvirtinti
+        .order('reviewed_at', { ascending: false }).limit(40),
       sb.from('competition_results')
         .select('id, exp_gained, approved_at')
         .eq('kid_id', kidId).eq('approval_status', 'approved')
-        .gt('approved_at', lastSeen).order('approved_at'),
-      // 📈 Karjeros pratimai patvirtinti
+        .order('approved_at', { ascending: false }).limit(40),
       sb.from('result_submissions')
         .select('id, exp_gain, exercise_id, reviewed_at')
         .eq('kid_id', kidId).eq('status', 'approved')
-        .gt('reviewed_at', lastSeen).order('reviewed_at'),
-      // 🥊 Dvikovos užbaigtos (kur dalyvavau)
+        .order('reviewed_at', { ascending: false }).limit(40),
       sb.from('duels')
         .select('id, winner_id, challenger_id, opponent_id, created_at')
         .eq('status', 'completed')
         .or(`challenger_id.eq.${kidId},opponent_id.eq.${kidId}`)
-        .gt('created_at', lastSeen).order('created_at'),
-      // 💬 Naujos žinutės (kur esu narys, ne aš siuntėjas)
+        .order('created_at', { ascending: false }).limit(40),
       sb.from('messages')
         .select('id, conversation_id, sender_id, body, sent_at')
         .neq('sender_id', userId)
-        .gt('sent_at', lastSeen).order('sent_at')
+        .order('sent_at', { ascending: false }).limit(40)
     ]);
 
-    // 🔧 LAIKINA DIAGNOSTIKA: naujausi įrašai BE laiko filtro (palyginti su lastSeen)
-    try {
-      const [nch, nex, nms] = await Promise.all([
-        sb.from('challenge_submissions').select('reviewed_at').eq('kid_id', kidId).eq('status','approved').order('reviewed_at',{ascending:false}).limit(1),
-        sb.from('result_submissions').select('reviewed_at').eq('kid_id', kidId).eq('status','approved').order('reviewed_at',{ascending:false}).limit(1),
-        sb.from('messages').select('sent_at').neq('sender_id', userId).order('sent_at',{ascending:false}).limit(1)
-      ]);
-      const tt = s => (s && s.length >= 19) ? s.substring(11,19) : (s || '—');
-      const f = (r,c) => r.error ? ('ERR:'+(r.error.code||r.error.message||'?')) : ((r.data&&r.data[0]) ? tt(r.data[0][c]) : 'nėra');
-      const cnt = r => r.error ? ('ERR:'+(r.error.code||r.error.message||'?')) : (r.data||[]).length;
-      const line1 = 'seen=' + tt(lastSeen);
-      const line2 = 'ch:' + cnt(chs) + ' new=' + f(nch,'reviewed_at');
-      const line3 = 'ex:' + cnt(exs) + ' new=' + f(nex,'reviewed_at');
-      const line4 = 'ms:' + cnt(msgs) + ' new=' + f(nms,'sent_at');
-      _dbg('SME ' + line1);
-      _dbg(line2); _dbg(line3); _dbg(line4);
-      showToast('🔧 ' + line1 + '\n' + line2 + '\n' + line3 + '\n' + line4, 'info');
-    } catch(dbgErr) { _dbg('SME dbg klaida: ' + (dbgErr.message||'')); }
+    // Surinkti VISUS kandidatus su seen-raktu (sk) ir ID
+    const all = [];
+    (chs.data || []).forEach(c => all.push({ ts: c.reviewed_at, type: 'challenge',   sk: 'ch', id: c.id, data: c }));
+    (cps.data || []).forEach(c => all.push({ ts: c.approved_at, type: 'competition', sk: 'cp', id: c.id, data: c }));
+    (exs.data || []).forEach(e => all.push({ ts: e.reviewed_at, type: 'exercise',    sk: 'ex', id: e.id, data: e }));
+    (dus.data || []).forEach(d => all.push({ ts: d.created_at,  type: 'duel',        sk: 'du', id: d.id, data: d }));
 
-    // Sudėti įvykius į vieną sąrašą su laiko žyma
-    const events = [];
-    (chs.data || []).forEach(c => events.push({ ts: c.reviewed_at, type: 'challenge', data: c }));
-    (cps.data || []).forEach(c => events.push({ ts: c.approved_at, type: 'competition', data: c }));
-    (exs.data || []).forEach(e => events.push({ ts: e.reviewed_at, type: 'exercise', data: e }));
-    (dus.data || []).forEach(d => events.push({ ts: d.created_at, type: 'duel', data: d }));
-    
-    // Žinutės - filtruoti tik tas, kur aš pokalbio narys
+    // Žinutės — tik tos, kur esu pokalbio narys
     if (msgs.data && msgs.data.length > 0) {
       const convIds = [...new Set(msgs.data.map(m => m.conversation_id))];
       const { data: myMembers } = await sb.from('conversation_members')
-        .select('conversation_id')
-        .eq('user_id', userId)
-        .in('conversation_id', convIds);
+        .select('conversation_id').eq('user_id', userId).in('conversation_id', convIds);
       const myConvIds = new Set((myMembers || []).map(m => m.conversation_id));
       msgs.data.forEach(m => {
-        if (myConvIds.has(m.conversation_id)) {
-          events.push({ ts: m.sent_at, type: 'message', data: m });
-        }
+        if (myConvIds.has(m.conversation_id)) all.push({ ts: m.sent_at, type: 'message', sk: 'ms', id: m.id, data: m });
       });
     }
-    
-    // Surūšiuoti chronologiškai
+
+    // Atfiltruoti jau MATYTUS (per ID — gyvai per realtime arba anksčiau parodytus)
+    let events = all.filter(e => !_isSeen(e.sk, e.id));
+
+    // PIRMAS PALEIDIMAS: baseline — pažymim senus (>3 min) matytais, rodom tik labai šviežius.
+    // (Kad neužverstume vaiko sena istorija pirmą kartą, bet test'as veiktų iškart.)
+    if (firstRun) {
+      const nowMs = Date.now();
+      const fresh = new Set(events.filter(e => e.ts && (nowMs - new Date(e.ts).getTime()) < 180000).map(e => e.sk + ':' + e.id));
+      events.forEach(e => { if (!fresh.has(e.sk + ':' + e.id)) _addSeen(e.sk, e.id); });
+      events = events.filter(e => fresh.has(e.sk + ':' + e.id));
+      localStorage.setItem('spobu_missed_init', '1');
+    }
+
+    // Surūšiuoti chronologiškai (seniausi pirma)
     events.sort((a, b) => new Date(a.ts) - new Date(b.ts));
 
-    if (events.length === 0) {
-      // Atnaujinti last_seen ir baigti
-      localStorage.setItem('spobu_last_seen', new Date().toISOString());
-      return;
-    }
-    
+    // 🔧 LAIKINA DIAGNOSTIKA
+    try {
+      const cnt = r => r.error ? ('ERR:' + (r.error.code || r.error.message || '?')) : (r.data || []).length;
+      _dbg('SME first=' + firstRun + ' rodom=' + events.length + ' | ch:' + cnt(chs) + ' cp:' + cnt(cps) + ' ex:' + cnt(exs) + ' du:' + cnt(dus) + ' ms:' + cnt(msgs));
+      showToast('🔧 first=' + firstRun + ' rodom=' + events.length + '\nviso ch:' + cnt(chs) + ' ex:' + cnt(exs) + ' ms:' + cnt(msgs), 'info');
+    } catch (_e) {}
+
+    if (events.length === 0) return;
+
     // Parodyti po vieną su 2.5s pauze
     for (let i = 0; i < events.length; i++) {
       const ev = events[i];
+      _addSeen(ev.sk, ev.id); // pažymėti matytu IŠKART (kad nepasikartotų)
       let toastMsg = '';
-      
+
       if (ev.type === 'challenge') {
         toastMsg = `📬 PRALEIDAI:\n🎯 IŠŠŪKIS PATVIRTINTAS\n+${ev.data.exp_gain || 0} EXP`;
         playSound('exp');
@@ -18419,14 +18409,11 @@ async function showMissedEvents(anchorTs) {
         toastMsg = `📬 PRALEIDAI:\n💬 NUO ${senderName.toUpperCase()}\n${preview}`;
         playSound('send');
       }
-      
+
       showToast(toastMsg, 'info');
-      // Pauzė tarp toast'ų
       if (i < events.length - 1) await new Promise(r => setTimeout(r, 2500));
     }
-    
-    // Atnaujinti last_seen po visko
-    localStorage.setItem('spobu_last_seen', new Date().toISOString());
+
     if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
   } catch (e) {
     console.error('[showMissedEvents] klaida:', e);
@@ -18436,8 +18423,7 @@ async function showMissedEvents(anchorTs) {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     _lastHiddenTime = Date.now();
-    // ⚠️ NEBERAŠOM last_seen čia! Tai sugadindavo anchor (tapdavo vėlesnis už
-    // praleistus įvykius). Anchor judinamas tik per markSeen() / showMissedEvents.
+    // Praleistų įvykių sekimas dabar per ID (_addSeen), ne per laiką — čia nieko nerašom.
   } else if (document.visibilityState === 'visible') {
     const hiddenDuration = Date.now() - _lastHiddenTime;
     _resumeDebug('visible! fone buvo ' + Math.round(hiddenDuration/1000) + 's');
