@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL109</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL110</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -21515,13 +21515,33 @@ function openInstructionsModal() {
         <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Klubo paskelbtos varžybos (Kumite, Kata, Diržo egzaminas). Pateik savo rezultatus - laimėjimus, vietas. Gauk medalius ir EXP.</div>
       </div>
       
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #EC407A;">
+        <div style="font-size:14px;font-weight:800;color:#EC407A;margin-bottom:6px;">🥊 Dvikovos</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Iškviesk komandos draugą į draugišką dvikovą! Treneris patvirtina, kas laimėjo. Už dalyvavimą visada gauni EXP. Iškviesti gali 1× per savaitę, o priimti kvietimus — be limito.</div>
+      </div>
+
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #66BB6A;">
+        <div style="font-size:14px;font-weight:800;color:#66BB6A;margin-bottom:6px;">💪 Karjera</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Tavo asmeniniai rekordai (PR): atsispaudimai, pritūpimai, greitis ir kt. Pagerink rekordą, pateik trenerio patvirtinimui ir gauk EXP + medalius.</div>
+      </div>
+
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #4FC3F7;">
+        <div style="font-size:14px;font-weight:800;color:#4FC3F7;margin-bottom:6px;">💬 Žinutės ir pranešimai</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Susirašyk su treneriu, gauk klubo pranešimus (📢). 🔔 Varpelis viršuje renka visus pranešimus — iššūkius, varžybas, žinutes ir patvirtinimus.</div>
+      </div>
+
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FF8C00;">
+        <div style="font-size:14px;font-weight:800;color:#FF8C00;margin-bottom:6px;">🔥 Streak — kodėl svarbu</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Streak — kiek kartų IŠ EILĖS atlikai užduotis nepraleisdamas. Kuo ilgesnis streak, tuo DIDESNIS EXP bonusas! Sportuok reguliariai ir nenutrauk serijos.</div>
+      </div>
+
       <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #22C55E;">
         <div style="font-size:14px;font-weight:800;color:#22C55E;margin-bottom:6px;">📊 Statistika</div>
         <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Reitingai tarp tavo kategorijos draugų (lytis + amžiaus grupė). Pamatyk kas yra TOP klube ir savo poziciją.</div>
       </div>
-      
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FF8C00;">
-        <div style="font-size:14px;font-weight:800;color:#FF8C00;margin-bottom:6px;">👤 Profilis</div>
+
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #BA68C8;">
+        <div style="font-size:14px;font-weight:800;color:#BA68C8;margin-bottom:6px;">👤 Profilis</div>
         <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Diržo sertifikatas, skill badges, varžybų medaliai, streakų statistika.</div>
       </div>
     </div>
@@ -21702,6 +21722,17 @@ function openHowExpModal() {
         </div>
       </div>
       
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #EC407A;">
+        <div style="font-size:13px;font-weight:800;color:#EC407A;margin-bottom:6px;">🥊 DVIKOVOS</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
+          Iškviesk komandos draugą į dvikovą! Treneris patvirtina rezultatą.<br>
+          • ✅ Laimėjimas: <b style="color:#EC407A;">+50 EXP</b><br>
+          • 🤝 Lygiosios: <b style="color:#EC407A;">+35 EXP</b><br>
+          • ❌ Pralaimėjimas: <b style="color:#EC407A;">+25 EXP</b> (vis tiek gauni!)<br>
+          <span style="color:#FF8C00;">⏳ Iškviesti gali 1× per savaitę</span> · priimti kvietimus — be limito.
+        </div>
+      </div>
+
       <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #22C55E;">
         <div style="font-size:13px;font-weight:800;color:#22C55E;margin-bottom:6px;">💪 ASMENINIAI REKORDAI (PR)</div>
         <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
