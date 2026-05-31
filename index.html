@@ -1167,7 +1167,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL115</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL116</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -6551,7 +6551,7 @@ async function renderProfileExtras() {
       
       // VISI klubo vaikai su group_id
       const { data: clubKids } = await sb.from('kids')
-        .select('id, user_id, total_exp, kyu, is_anonymous, group_id, created_at, bio, karate_since')
+        .select('id, user_id, total_exp, kyu, is_anonymous, group_id, created_at, bio, karate_since, avatar_url')
         .in('user_id', profileIds)
         .eq('approval_status', 'approved');
       
@@ -7046,7 +7046,7 @@ function openTeammatesModal() {
     
     return `
       <div onclick='document.getElementById("teammates-modal").remove();openFriendModal(${JSON.stringify(JSON.stringify(m))})' style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border-radius:10px;margin-bottom:5px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,${stage.color}88,${stage.color}44);color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${letter}</div>
+        <div style="width:34px;height:34px;border-radius:50%;${m.avatar_url ? `background-image:url('${m.avatar_url}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,${stage.color}88,${stage.color}44);`}color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${m.avatar_url ? '' : letter}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:800;color:white;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
           <div style="font-size:9px;color:var(--mut);margin-top:2px;">${stage.emoji} ${stage.name} · ${(m.total_exp || 0).toLocaleString('lt-LT')} EXP · ${m.kyu || 'Mu kyu'}</div>
@@ -12425,7 +12425,7 @@ async function _getFilteredKidEntriesUncached(scoreSource, scoreField) {
   
   // 2. Gauti vaikus
   let kidsQuery = sb.from('kids')
-    .select('id, first_name, last_name, gender, birth_date, kyu, weight_range, total_exp, is_anonymous, user_id')
+    .select('id, first_name, last_name, gender, birth_date, kyu, weight_range, total_exp, is_anonymous, user_id, avatar_url')
     .eq('approval_status', 'approved');
   
   if (userIds) {
