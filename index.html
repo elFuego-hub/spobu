@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL108</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL109</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -20692,27 +20692,27 @@ async function loadAllNotifications() {
   const cutoffISO = cutoff.toISOString();
   
   const [approvedChRes, approvedCoRes, approvedPrRes, streakRes, newChRes, newCoRes, msgsRes] = await Promise.all([
-    // 🤖 SISTEMA - approved challenge submissions
+    // 🤖 SISTEMA - patvirtinti IR atmesti iššūkių submissions
     sb.from('challenge_submissions')
-      .select('id, exp_gain, reviewed_at, challenges(title, type)')
+      .select('id, exp_gain, reviewed_at, status, rejection_reason, challenges(title, type)')
       .eq('kid_id', currentKid.id)
-      .eq('status', 'approved')
+      .in('status', ['approved', 'rejected'])
       .gte('reviewed_at', cutoffISO)
       .order('reviewed_at', { ascending: false })
       .limit(20),
-    // 🤖 SISTEMA - approved competitions
+    // 🤖 SISTEMA - patvirtintos IR atmestos varžybos
     sb.from('competition_results')
-      .select('id, exp_gained, approved_at, placement, competitions(title)')
+      .select('id, exp_gained, approved_at, placement, approval_status, rejection_reason, competitions(title)')
       .eq('kid_id', currentKid.id)
-      .eq('approval_status', 'approved')
+      .in('approval_status', ['approved', 'rejected'])
       .gte('approved_at', cutoffISO)
       .order('approved_at', { ascending: false })
       .limit(20),
-    // 🤖 SISTEMA - approved PR (result_submissions)
+    // 🤖 SISTEMA - patvirtinti IR atmesti PR (result_submissions)
     sb.from('result_submissions')
-      .select('id, new_value, exp_gain, reviewed_at, exercises(name)')
+      .select('id, new_value, exp_gain, reviewed_at, status, rejection_reason, exercises(name)')
       .eq('kid_id', currentKid.id)
-      .eq('status', 'approved')
+      .in('status', ['approved', 'rejected'])
       .gte('reviewed_at', cutoffISO)
       .order('reviewed_at', { ascending: false })
       .limit(20),
@@ -20769,35 +20769,68 @@ async function loadAllNotifications() {
   
   (approvedChRes.data || []).forEach(s => {
     const typeLabel = challengeTypeLabels[s.challenges?.type] || '🎯 Iššūkis';
-    issukiai.push({
-      id: `apprCh-${s.id}`,
-      icon: '✅',
-      title: `${typeLabel} patvirtintas`,
-      body: `${s.challenges?.title || 'Iššūkis'} · +${s.exp_gain || 0} EXP`,
-      time: s.reviewed_at,
-      link: 'v-ish'
-    });
+    if (s.status === 'rejected') {
+      issukiai.push({
+        id: `rejCh-${s.id}`,
+        icon: '❌',
+        title: `${typeLabel} atmestas`,
+        body: `${s.challenges?.title || 'Iššūkis'} · ${s.rejection_reason || 'be priežasties'}`,
+        time: s.reviewed_at,
+        link: 'v-ish'
+      });
+    } else {
+      issukiai.push({
+        id: `apprCh-${s.id}`,
+        icon: '✅',
+        title: `${typeLabel} patvirtintas`,
+        body: `${s.challenges?.title || 'Iššūkis'} · +${s.exp_gain || 0} EXP`,
+        time: s.reviewed_at,
+        link: 'v-ish'
+      });
+    }
   });
   (approvedCoRes.data || []).forEach(s => {
-    const placement = s.placement ? `${s.placement}-a vieta · ` : '';
-    varzybos.push({
-      id: `apprCo-${s.id}`,
-      icon: '🏆',
-      title: 'Varžybos patvirtintos',
-      body: `${s.competitions?.title || 'Varžyba'} · ${placement}+${s.exp_gained || 0} EXP`,
-      time: s.approved_at,
-      link: 'v-comp'
-    });
+    if (s.approval_status === 'rejected') {
+      varzybos.push({
+        id: `rejCo-${s.id}`,
+        icon: '❌',
+        title: 'Varžybų rezultatas atmestas',
+        body: `${s.competitions?.title || 'Varžyba'} · ${s.rejection_reason || 'be priežasties'}`,
+        time: s.approved_at,
+        link: 'v-comp'
+      });
+    } else {
+      const placement = s.placement ? `${s.placement}-a vieta · ` : '';
+      varzybos.push({
+        id: `apprCo-${s.id}`,
+        icon: '🏆',
+        title: 'Varžybos patvirtintos',
+        body: `${s.competitions?.title || 'Varžyba'} · ${placement}+${s.exp_gained || 0} EXP`,
+        time: s.approved_at,
+        link: 'v-comp'
+      });
+    }
   });
   (approvedPrRes.data || []).forEach(s => {
-    sistema.push({
-      id: `apprPr-${s.id}`,
-      icon: '💪',
-      title: 'PR patvirtintas',
-      body: `${s.exercises?.name || 'Pratimas'}: ${s.new_value} · +${s.exp_gain || 0} EXP`,
-      time: s.reviewed_at,
-      link: 'v-kar'
-    });
+    if (s.status === 'rejected') {
+      sistema.push({
+        id: `rejPr-${s.id}`,
+        icon: '❌',
+        title: 'PR atmestas',
+        body: `${s.exercises?.name || 'Pratimas'} · ${s.rejection_reason || 'be priežasties'}`,
+        time: s.reviewed_at,
+        link: 'v-kar'
+      });
+    } else {
+      sistema.push({
+        id: `apprPr-${s.id}`,
+        icon: '💪',
+        title: 'PR patvirtintas',
+        body: `${s.exercises?.name || 'Pratimas'}: ${s.new_value} · +${s.exp_gain || 0} EXP`,
+        time: s.reviewed_at,
+        link: 'v-kar'
+      });
+    }
   });
   
   // 🔥 STREAK BONUSAI - su tipo info
@@ -21026,8 +21059,11 @@ function markNotifRead(notifId) {
   const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
   const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
   seenIds.add(notifId);
-  localStorage.setItem(lsKey, JSON.stringify([...seenIds]));
-  updateNotifCounts(seenIds);
+  // Riba: laikom tik paskutinius 500 ID (kad localStorage neaugtų be galo)
+  let arr = [...seenIds];
+  if (arr.length > 500) arr = arr.slice(arr.length - 500);
+  localStorage.setItem(lsKey, JSON.stringify(arr));
+  updateNotifCounts(new Set(arr));
   // Tik atnaujint tą vieną įrašą vizualiai, neperendinti viso tab'o
   const items = document.querySelectorAll(`#v-notif-list [data-notif-id="${notifId}"]`);
   items.forEach(el => {
@@ -21048,8 +21084,11 @@ function markAllNotifRead() {
     allNotifications[cat].forEach(n => seenIds.add(n.id));
   });
   
-  localStorage.setItem(lsKey, JSON.stringify([...seenIds]));
-  updateNotifCounts(seenIds);
+  // Riba: laikom tik paskutinius 500 ID (kad localStorage neaugtų be galo)
+  let arr = [...seenIds];
+  if (arr.length > 500) arr = arr.slice(arr.length - 500);
+  localStorage.setItem(lsKey, JSON.stringify(arr));
+  updateNotifCounts(new Set(arr));
   renderNotifTab(currentNotifTab);
 }
 
