@@ -9025,15 +9025,18 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
   
   const activeCount = activeChallenges.length;
   const totalCompleted = completedChallenges.length;
-  const totalCount = activeCount + totalCompleted; // viskas ką tu mato
+  // permanent yra ir aktyvus, ir completed — kad "IŠ VISO" nedubliuotų, skaičiuojam unikalius
+  const permanentInBoth = completedChallenges.filter(c => c.type === 'permanent').length;
+  const totalCount = activeCount + totalCompleted - permanentInBoth; // viskas ką tu mato (be dublių)
   
   // EXP iš įveiktų + tipų statistika
   let totalExpFromCompleted = 0;
   const typeCounts = { training: 0, weekly: 0, monthly: 0, one_time: 0, permanent: 0 };
   const typeExp = { training: 0, weekly: 0, monthly: 0, one_time: 0, permanent: 0 };
   
-  // 1) ĮVEIKTI iššūkiai - skaičiuojam ir EXP
+  // 1) ĮVEIKTI iššūkiai - skaičiuojam ir EXP (permanent praleidžiam — jį skaičiuojam 1b atskirai)
   completedChallenges.forEach(ch => {
+    if (ch.type === 'permanent') return;
     let earnedExp = 0;
     if (ch.allow_partial) {
       const p = myProgress?.[ch.id];
@@ -9043,48 +9046,54 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
       const approved = subs.find(s => s.status === 'approved');
       earnedExp = approved?.exp_gain || 0;
     }
-    
+
     // 🛡️ FALLBACK
     if (earnedExp === 0 && ch.exp_reward) {
       earnedExp = ch.exp_reward;
       console.warn(`[challenge stats] FALLBACK EXP "${ch.title}" (${ch.type}): naudojam exp_reward=${ch.exp_reward}`);
     }
-    
+
     totalExpFromCompleted += earnedExp;
-    
+
     if (ch.type && typeCounts[ch.type] !== undefined) {
       typeCounts[ch.type]++;
       typeExp[ch.type] += earnedExp;
     }
   });
-  
-  // 1b) 🔁 NUOLATINIAI (permanent): atliktas permanent dabar jau yra completedChallenges
-  // (suskaičiuotas 1 kilpoje). Šis blokas nebereikalingas — paliekam 0, kad nedubliuotų.
+
+  // 1b) 🔁 NUOLATINIAI (permanent): skaičiuojam KIEKVIENĄ patvirtintą atlikimą atskirai
+  // (vaikas atlieka daug kartų — kiekvienas approved submission = +1 įveikta + EXP).
   let permanentCompleted = 0;
-  
-  // Bendras įveiktų skaičius (completedChallenges + permanent su approved)
-  const realTotalCompleted = totalCompleted + permanentCompleted;
+  eligibleChallenges.forEach(ch => {
+    if (ch.type !== 'permanent') return;
+    const subs = subsByChallenge?.[ch.id] || [];
+    const approvedSubs = subs.filter(s => s.status === 'approved');
+    approvedSubs.forEach(s => {
+      permanentCompleted++;
+      const exp = s.exp_gain || ch.exp_reward || 0;
+      totalExpFromCompleted += exp;
+      typeCounts.permanent++;
+      typeExp.permanent += exp;
+    });
+  });
+
+  // Bendras įveiktų skaičius = įprasti completed (be permanent) + permanent atlikimai
+  const totalCompletedNonPermanent = completedChallenges.filter(c => c.type !== 'permanent').length;
+  const realTotalCompleted = totalCompletedNonPermanent + permanentCompleted;
   
   
   // 2) 🔥 AKTYVŪS iššūkiai - PARTIAL gali jau būti gavę dalinį EXP iš tarpinių patvirtinimų
   // (vaikas dalyvauja, dalis jau patvirtinta, bet pilnai dar neatlikta)
   activeChallenges.forEach(ch => {
+    if (ch.type === 'permanent') return; // permanent EXP jau suskaičiuotas 1b bloke
     let earnedExp = 0;
-    
+
     if (ch.allow_partial) {
       // Partial iššūkiai - tarpinis progresas
       const p = myProgress?.[ch.id];
       earnedExp = p?.exp_awarded || 0;
-    } else {
-      // Standartiniai aktyvūs - dažniausiai 0, bet jei buvo approved tarpinis - skaičiuojam
-      const subs = subsByChallenge?.[ch.id] || [];
-      const approved = subs.find(s => s.status === 'approved');
-      if (approved && ch.type === 'permanent') {
-        // Nuolatinis - galima daug kartų atlikti
-        earnedExp = approved.exp_gain || 0;
-      }
     }
-    
+
     if (earnedExp > 0) {
       totalExpFromCompleted += earnedExp;
       if (ch.type && typeExp[ch.type] !== undefined) {
@@ -9266,7 +9275,7 @@ async function loadChallenges() {
   if (allChallengeIds.length > 0) {
     const [subsRes, progressRes] = await Promise.all([
       sb.from('challenge_submissions')
-        .select('challenge_id, status, value, numeric_value, created_at')
+        .select('challenge_id, status, value, numeric_value, exp_gain, created_at')
         .eq('kid_id', currentKid.id)
         .in('challenge_id', allChallengeIds),
       sb.from('challenge_progress')
@@ -9324,9 +9333,13 @@ async function loadChallenges() {
       } else {
         activeChallenges.push(ch);
       }
+    } else if (ch.type === 'permanent') {
+      // 🔁 NUOLATINIS: VISADA lieka aktyvus (galima atlikti vėl ir vėl).
+      // Jei jau bent kartą patvirtinta — TAIP PAT rodom archyve (bet iš aktyvių nedingsta).
+      if (!isFrozen) activeChallenges.push(ch);
+      if (myApproved) completedChallenges.push(ch);
     } else {
-      // Standartinis (be tarpinių). Nuolatinis (permanent) ATLIKUS irgi archyvuojamas
-      // į "įveiktus" (ir skaičiuojamas pagal tipą + bendram skaičiui).
+      // Standartinis (be tarpinių)
       if (myApproved) {
         completedChallenges.push(ch);
       } else if (isExpired) {
