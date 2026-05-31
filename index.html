@@ -169,7 +169,7 @@ body.am{padding:20px 0;justify-content:flex-start;}
 
 /* MOBILE - pilnas viewport be ramelių */
 @media (max-width: 500px) {
-  body.am { padding: 0 !important; }
+  body.am:not(.full-mobile-preview) { padding: 0 !important; }
   .df { width: 100vw !important; max-width: 100% !important; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: var(--bg) !important; }
   .ds { width: 100% !important; border-radius: 0 !important; }
   .ph { width: 100% !important; min-height: 100vh !important; }
@@ -188,9 +188,9 @@ body.full-mobile-preview .sb { display: none !important; }  /* Tas pats toggle r
 /* 💻 DESKTOP LAYOUT — vaiko portalas su šoniniu menu */
 #v-desktop-nav { display: none; }  /* default — mobile slepiama */
 @media (min-width: 1024px) {
-  body.am { padding: 0 !important; }
+  body.am:not(.full-mobile-preview) { padding: 0 !important; }
   /* Vaiko portalas tampa grid: 260px sidebar + likęs ekranas turiniui */
-  body.am #pv { display: grid !important; grid-template-columns: 260px 1fr; height: 100vh; overflow: hidden; }
+  body.am:not(.full-mobile-preview) #pv { display: grid !important; grid-template-columns: 260px 1fr; height: 100vh; overflow: hidden; }
   /* Šoninis nav matomas */
   #v-desktop-nav {
     display: flex; flex-direction: column;
@@ -235,24 +235,34 @@ body.full-mobile-preview .sb { display: none !important; }  /* Tas pats toggle r
   .vdn-badge { background: var(--br); color: white; font-size: 10px; font-weight: 800; min-width: 18px; height: 18px; border-radius: 99px; display: none; align-items: center; justify-content: center; padding: 0 5px; }
   .vdn-badge.on { display: inline-flex; }
   /* .df praranda telefono rėmelį — užima visą main plotą */
-  body.am #pv .df {
+  body.am:not(.full-mobile-preview) #pv .df {
     width: 100% !important; max-width: 100% !important;
     padding: 0 !important; border-radius: 0 !important;
     background: var(--bg) !important; box-shadow: none !important;
     height: 100vh; overflow-y: auto;
   }
   /* .ds (ekranas) — centruotas su max-width, kad turinys neišsiplėstų per platų */
-  body.am #pv .ds {
+  body.am:not(.full-mobile-preview) #pv .ds {
     width: 100% !important; max-width: 920px !important;
     margin: 0 auto !important;
     border-radius: 0 !important; background: var(--bg) !important;
   }
-  body.am #pv .ph { width: 100% !important; min-height: auto !important; padding: 24px 16px 60px !important; }
-  body.am #pv .sc { min-height: auto !important; }
-  body.am #pv .sc.on { min-height: auto !important; }
+  body.am:not(.full-mobile-preview) #pv .ph { width: 100% !important; min-height: auto !important; padding: 24px 16px 60px !important; }
+  body.am:not(.full-mobile-preview) #pv .sc { min-height: auto !important; }
+  body.am:not(.full-mobile-preview) #pv .sc.on { min-height: auto !important; }
   /* Apačios bnav ir status bar paslepiame — vietoje jų side nav */
-  body.am #pv .bn2 { display: none !important; }
-  body.am #pv .sb { display: none !important; }
+  /* Desktop'e header'io varpelis/nustatymai paslepti — yra side nav'e */
+  body.am:not(.full-mobile-preview) #pv .sc [onclick*="toggleNotifications"],
+  body.am:not(.full-mobile-preview) #pv .sc [onclick*="openKidSettings"] {
+    display: none !important;
+  }
+  /* Desktop'e header'io varpelis/nustatymai paslepti — yra side nav'e */
+  body.am:not(.full-mobile-preview) #pv .sc [onclick*="toggleNotifications"],
+  body.am:not(.full-mobile-preview) #pv .sc [onclick*="openKidSettings"] {
+    display: none !important;
+  }
+  body.am:not(.full-mobile-preview) #pv .bn2 { display: none !important; }
+  body.am:not(.full-mobile-preview) #pv .sb { display: none !important; }
 }
 
 .sc{display:none;flex-direction:column;min-height:780px;}
@@ -5062,7 +5072,7 @@ async function loadKidData() {
   // 💻 DESKTOP side nav user info
   applyAvatarById('vdn-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
   setText('vdn-name', firstName);
-  setText('vdn-level', `LVL ${currentKid.current_level || 1}`);
+  setText('vdn-level', 'LVL ' + getStageInfo(currentKid.total_exp || 0).globalLevel);
   
   // 🥋 Karatė nuo - kiek laiko sportuoja
   {
