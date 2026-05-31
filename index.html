@@ -1167,7 +1167,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL117</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL119</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -4957,8 +4957,12 @@ async function loadKidData() {
   // Vardas hero kortelėje (tik pirmasis vardas + jaustukas)
   const firstName = (currentProfile.first_name || 'SPORTUOTOJA').toUpperCase();
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  
-  setText('v-name', `SVEIKA, ${firstName}! 🥋`);
+
+  // Pasveikinimas pagal lytį: vaikinui „SVEIKAS", merginai „SVEIKA"
+  const isMale = currentKid?.gender === 'male';
+  const greeting = isMale ? 'SVEIKAS' : 'SVEIKA';
+  setText('v-name', `${greeting}, ${firstName}! 🥋`);
+  setText('v-prof-welcome', isMale ? 'Sveikas atvykęs į savo profilį' : 'Sveika atvykusi į savo profilį');
   applyAvatarById('v-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
   setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
   
@@ -12171,7 +12175,11 @@ function openMainStat() {
   }, 100);
 }
 
-function switchStatTab(tabName) {
+function switchStatTab(tabName, keepPage) {
+  // Puslapį atstatom į 1 tik kai tikrai keičiam tab'ą (ne perrenderinant per puslapiavimą)
+  if (!keepPage && tabName !== kidStatActiveTab) kidStatPage = 1;
+  kidStatActiveTab = tabName;
+
   // Pakeisti aktyvų tab mygtuką
   document.querySelectorAll('.stat-tab').forEach(btn => {
     if (btn.dataset.tab === tabName) {
@@ -12263,8 +12271,16 @@ function inAgeGroup(birthDate, groupId) {
   return age >= group.min && age <= group.max;
 }
 
-// Helper: render leaderboard kortelės (top 10 + mano pozicija)
-function renderLeaderboardCard(entries, currentKidId, scoreLabel) {
+// Vaiko statistikos puslapiavimo būsena
+let kidStatActiveTab = 'overall';
+let kidStatPage = 1;
+function setKidStatPage(p) {
+  kidStatPage = p;
+  if (typeof switchStatTab === 'function') switchStatTab(kidStatActiveTab, true);
+}
+
+// Helper: render leaderboard kortelės. opts.paginate=true → pilnas sąrašas su puslapiavimu (10/psl)
+function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
   if (!entries || entries.length === 0) {
     return '<div class="cd" style="padding:30px;text-align:center;color:var(--mut);font-size:12px;">Pagal šiuos filtrus dar nėra rezultatų</div>';
   }
@@ -12278,9 +12294,16 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel) {
   const myRank = myIndex >= 0 ? myIndex + 1 : null;
   const totalCount = entries.length;
   
-  // Top 10
-  const top10 = entries.slice(0, 10);
-  
+  // Puslapiavimas (kai opts.paginate) arba TOP 10
+  const PAGE = 10;
+  const paginate = !!(opts && opts.paginate);
+  const totalPages = Math.ceil(entries.length / PAGE);
+  const page = paginate ? Math.min(Math.max(1, kidStatPage), totalPages) : 1;
+  const startIdx = paginate ? (page - 1) * PAGE : 0;
+  const top10 = entries.slice(startIdx, startIdx + PAGE);
+  // Ar mano įrašas matomas dabartiniame puslapyje/top10?
+  const myVisible = myIndex >= startIdx && myIndex < startIdx + PAGE;
+
   // Mano pozicija kortelė (tik jei vaikas yra rezultatuose)
   let myCard = '';
   if (myEntry && myRank) {
@@ -12310,9 +12333,9 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel) {
     `;
   }
   
-  // Top 10 sąrašas
+  // Sąrašas (rank pagal puslapį)
   const topList = top10.map((e, i) => {
-    const rank = i + 1;
+    const rank = startIdx + i + 1;
     const isMe = e.kidId === currentKidId;
     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
     
@@ -12329,12 +12352,31 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel) {
     `;
   }).join('');
   
+  // Puslapiavimo mygtukai (tik kai paginate ir daugiau nei 1 psl.)
+  let pagination = '';
+  if (paginate && totalPages > 1) {
+    const prevDis = page <= 1;
+    const nextDis = page >= totalPages;
+    pagination = `
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px 4px;">
+        <button onclick="setKidStatPage(${page - 1})" ${prevDis ? 'disabled' : ''} style="background:${prevDis ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDis ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDis ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:7px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDis ? 'default' : 'pointer'};opacity:${prevDis ? '.5' : '1'};">←</button>
+        <div style="font-size:12px;font-weight:800;color:var(--text);min-width:54px;text-align:center;">${page} / ${totalPages}</div>
+        <button onclick="setKidStatPage(${page + 1})" ${nextDis ? 'disabled' : ''} style="background:${nextDis ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${nextDis ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${nextDis ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:7px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${nextDis ? 'default' : 'pointer'};opacity:${nextDis ? '.5' : '1'};">→</button>
+      </div>
+    `;
+  }
+
+  const heading = paginate ? `🏆 VISI VAIKAI (${totalCount})` : '🏆 TOP 10';
+  // Puslapiuojant mano kortelę rodom tik kai manęs nėra šiame puslapyje
+  const myCardOut = (paginate && myVisible) ? '' : myCard;
+
   return `
-    ${myCard}
-    <div style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:1px;margin:0 16px 4px;">🏆 TOP 10</div>
+    ${myCardOut}
+    <div style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:1px;margin:0 16px 4px;">${heading}</div>
     <div class="cd" style="padding:5px;margin:0 16px;">
       ${topList}
     </div>
+    ${pagination}
   `;
 }
 
@@ -12645,7 +12687,7 @@ async function loadOverallStatTab() {
   
   // Render result
   const filtersHtml = renderFiltersUI('overall');
-  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP');
+  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP', { paginate: true });
   container.innerHTML = filtersHtml + leaderboardHtml;
 }
 
@@ -12671,7 +12713,7 @@ async function loadSkillsStatTab() {
   const entries = await getFilteredKidEntries('kid_records');
   
   const filtersHtml = renderFiltersUI('skills');
-  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP');
+  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP', { paginate: true });
   container.innerHTML = filtersHtml + leaderboardHtml;
   
   // Re-populate skill dropdown (po innerHTML reset'o)
@@ -12711,7 +12753,7 @@ async function loadCompetitionsStatTab() {
   const entries = await getFilteredKidEntries('competition_results');
   
   const filtersHtml = renderFiltersUI('competitions');
-  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP');
+  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP', { paginate: true });
   container.innerHTML = filtersHtml + leaderboardHtml;
   
   // Užpildyti svorio dropdown'ą
@@ -12737,7 +12779,7 @@ async function loadChallengeStatTab() {
   const entries = await getFilteredKidEntries('challenge_submissions');
   
   const filtersHtml = renderFiltersUI('challenges');
-  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP');
+  const leaderboardHtml = renderLeaderboardCard(entries, currentKid?.id, 'EXP', { paginate: true });
   container.innerHTML = filtersHtml + leaderboardHtml;
 }
 
