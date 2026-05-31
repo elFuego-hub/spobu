@@ -184,6 +184,77 @@ body.full-mobile-preview .ph { width: 100% !important; min-height: 100vh !import
 body.full-mobile-preview .sc { min-height: 100vh !important; }
 body.full-mobile-preview { padding: 0 !important; }
 body.full-mobile-preview .sb { display: none !important; }  /* Tas pats toggle režime */
+
+/* 💻 DESKTOP LAYOUT — vaiko portalas su šoniniu menu */
+#v-desktop-nav { display: none; }  /* default — mobile slepiama */
+@media (min-width: 1024px) {
+  body.am { padding: 0 !important; }
+  /* Vaiko portalas tampa grid: 260px sidebar + likęs ekranas turiniui */
+  body.am #pv { display: grid !important; grid-template-columns: 260px 1fr; height: 100vh; overflow: hidden; }
+  /* Šoninis nav matomas */
+  #v-desktop-nav {
+    display: flex; flex-direction: column;
+    background: var(--card); border-right: 1px solid var(--bdr);
+    padding: 24px 14px 18px; height: 100vh; overflow-y: auto;
+  }
+  .vdn-logo {
+    font-family: 'Bebas Neue', sans-serif; font-size: 28px;
+    letter-spacing: 3px; color: white; padding: 0 8px 18px;
+    border-bottom: .5px solid var(--bdr); margin-bottom: 16px;
+  }
+  .vdn-user { display: flex; align-items: center; gap: 10px; padding: 0 4px 16px; border-bottom: .5px solid var(--bdr); margin-bottom: 14px; }
+  .vdn-av {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: white;
+    background-size: cover; background-position: center; flex-shrink: 0;
+  }
+  .vdn-user-info { flex: 1; min-width: 0; }
+  .vdn-name { font-size: 13px; font-weight: 800; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vdn-level { font-size: 10px; color: var(--br); font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; margin-top: 2px; }
+  .vdn-nav { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .vdn-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 13px; border-radius: 10px;
+    font-weight: 700; font-size: 13px; color: var(--mut);
+    cursor: pointer; transition: all .15s;
+  }
+  .vdn-item:hover { background: rgba(255,255,255,.05); color: white; }
+  .vdn-item.on { background: rgba(255,77,0,.15); color: var(--br); }
+  .vdn-ico { font-size: 18px; }
+  .vdn-bottom { display: flex; flex-direction: column; gap: 5px; padding-top: 14px; border-top: .5px solid var(--bdr); margin-top: 10px; }
+  .vdn-btn {
+    background: transparent; border: .5px solid var(--bdr); color: var(--mut);
+    padding: 9px 12px; border-radius: 9px; font-weight: 700; font-size: 12px;
+    cursor: pointer; text-align: left; font-family: inherit;
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    transition: all .15s;
+  }
+  .vdn-btn:hover { background: rgba(255,255,255,.06); color: white; }
+  .vdn-badge { background: var(--br); color: white; font-size: 10px; font-weight: 800; min-width: 18px; height: 18px; border-radius: 99px; display: none; align-items: center; justify-content: center; padding: 0 5px; }
+  .vdn-badge.on { display: inline-flex; }
+  /* .df praranda telefono rėmelį — užima visą main plotą */
+  body.am #pv .df {
+    width: 100% !important; max-width: 100% !important;
+    padding: 0 !important; border-radius: 0 !important;
+    background: var(--bg) !important; box-shadow: none !important;
+    height: 100vh; overflow-y: auto;
+  }
+  /* .ds (ekranas) — centruotas su max-width, kad turinys neišsiplėstų per platų */
+  body.am #pv .ds {
+    width: 100% !important; max-width: 920px !important;
+    margin: 0 auto !important;
+    border-radius: 0 !important; background: var(--bg) !important;
+  }
+  body.am #pv .ph { width: 100% !important; min-height: auto !important; padding: 24px 16px 60px !important; }
+  body.am #pv .sc { min-height: auto !important; }
+  body.am #pv .sc.on { min-height: auto !important; }
+  /* Apačios bnav ir status bar paslepiame — vietoje jų side nav */
+  body.am #pv .bn2 { display: none !important; }
+  body.am #pv .sb { display: none !important; }
+}
+
 .sc{display:none;flex-direction:column;min-height:780px;}
 .sc.on{display:flex;}
 .sa{overflow-y:auto;flex:1;padding-bottom:8px;}
@@ -895,7 +966,31 @@ select.inp option{background:#222;}
 <!-- ═══════════════════════════════════ -->
 <!-- VAIKO PASKYRA -->
 <!-- ═══════════════════════════════════ -->
-<div id="pv" style="display:none;"><div class="df"><div class="ds"><div class="ph">
+<div id="pv" style="display:none;">
+  <!-- 💻 DESKTOP ŠONINIS MENU — rodomas tik @media min-width 1024px -->
+  <aside id="v-desktop-nav">
+    <div class="vdn-logo">SPO<span style="color:var(--br);">BU</span></div>
+    <div class="vdn-user">
+      <div id="vdn-avatar" class="vdn-av"></div>
+      <div class="vdn-user-info">
+        <div id="vdn-name" class="vdn-name">–</div>
+        <div id="vdn-level" class="vdn-level">LVL 1</div>
+      </div>
+    </div>
+    <nav class="vdn-nav">
+      <a class="vdn-item" data-sid="v-main" onclick="nvDesktop('v-main')"><span class="vdn-ico">🏠</span> Pagrindinis</a>
+      <a class="vdn-item" data-sid="v-kar"  onclick="nvDesktop('v-kar')"><span class="vdn-ico">📈</span> Karjera</a>
+      <a class="vdn-item" data-sid="v-ish"  onclick="nvDesktop('v-ish')"><span class="vdn-ico">🎯</span> Iššūkiai</a>
+      <a class="vdn-item" data-sid="v-comp" onclick="nvDesktop('v-comp')"><span class="vdn-ico">🏆</span> Varžybos</a>
+      <a class="vdn-item" data-sid="v-stat" onclick="nvDesktop('v-stat')"><span class="vdn-ico">📊</span> Statistika</a>
+      <a class="vdn-item" data-sid="v-prof" onclick="nvDesktop('v-prof')"><span class="vdn-ico">👤</span> Profilis</a>
+    </nav>
+    <div class="vdn-bottom">
+      <button onclick="toggleNotifications()" class="vdn-btn">🔔 Pranešimai <span id="vdn-notif-badge" class="vdn-badge">0</span></button>
+      <button onclick="openKidSettings()" class="vdn-btn">⚙️ Nustatymai</button>
+    </div>
+  </aside>
+  <div class="df"><div class="ds"><div class="ph">
 <div class="sc on" id="v-main">
   <div class="sb"><span id="v-time">9:41</span><span>📶 🔋</span></div>
   <div class="sa">
@@ -4964,6 +5059,10 @@ async function loadKidData() {
   setText('v-name', `${greeting}, ${firstName}! 🥋`);
   applyAvatarById('v-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
   setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
+  // 💻 DESKTOP side nav user info
+  applyAvatarById('vdn-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
+  setText('vdn-name', firstName);
+  setText('vdn-level', `LVL ${currentKid.current_level || 1}`);
   
   // 🥋 Karatė nuo - kiek laiko sportuoja
   {
@@ -18384,6 +18483,12 @@ function g(p,id){
 }
 let _activeSid = null; // aktyvaus lango sekimas (atsibudimui iš fono)
 
+// 💻 Desktop nav helper: vaiko puslapio perjungimas iš šoninio menu (nereikia el)
+function nvDesktop(sid) {
+  // Naudojam tą pačią nv() funkciją (el=null), kuri sinchronizuos visus nav'us
+  nv('v', null, sid);
+}
+
 function nv(p,el,sid){
   g(p,sid);
   _activeSid = sid;
@@ -18399,6 +18504,12 @@ function nv(p,el,sid){
         n.classList.remove('on');
       }
     });
+  });
+
+  // 💻 DESKTOP nav sinchronizacija
+  document.querySelectorAll('#v-desktop-nav .vdn-item').forEach(a => {
+    if (a.dataset.sid === sid) a.classList.add('on');
+    else a.classList.remove('on');
   });
   
   // Special-case loaders
@@ -21108,7 +21219,7 @@ function updateNotifCounts(seenIds) {
   });
   
   // Atnaujint globalų badge (pagrindinis + karjeros + bet kuris kitas)
-  const badgeIds = ['v-notif-badge-count', 'v-prof-notif-badge', 'v-kar-notif-badge', 'v-ish-notif-badge', 'v-comp-notif-badge'];
+  const badgeIds = ['v-notif-badge-count', 'v-prof-notif-badge', 'v-kar-notif-badge', 'v-ish-notif-badge', 'v-comp-notif-badge', 'vdn-notif-badge'];
   badgeIds.forEach(id => {
     const badge = document.getElementById(id);
     if (!badge) return;
