@@ -4962,7 +4962,6 @@ async function loadKidData() {
   const isMale = currentKid?.gender === 'male';
   const greeting = isMale ? 'SVEIKAS' : 'SVEIKA';
   setText('v-name', `${greeting}, ${firstName}! 🥋`);
-  setText('v-prof-welcome', isMale ? 'Sveikas atvykęs į savo profilį' : 'Sveika atvykusi į savo profilį');
   applyAvatarById('v-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
   setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
   
@@ -5194,9 +5193,12 @@ async function loadKidData() {
   await loadStreaks().catch(e => console.error('loadStreaks:', e));
   
   // 🆕 Pagrindinio lango duomenys (tikslai, reitingai, artimiausia varžyba)
-  await loadGoals().catch(e => console.error('loadGoals:', e));
-  await loadRankings().catch(e => console.error('loadRankings:', e));
-  await loadNextEvent().catch(e => console.error('loadNextEvent:', e));
+  // 🆕 Pagrindinio lango duomenys (tikslai, reitingai, artimiausia varžyba) — LYGIAGREČIAI
+  await Promise.allSettled([
+    loadGoals(),
+    loadRankings(),
+    loadNextEvent()
+  ]).catch(e => console.error('[main loaders parallel]', e));
   
   // Patikrinam ar yra naujų pasiekimų (po pirmo užkrovimo, kitu kartu rodys popup)
   await checkForNewAchievements().catch(e => console.error('checkForNewAchievements:', e));
@@ -8219,7 +8221,6 @@ function subscribeToNewChallenges() {
       filter: `club_id=eq.${currentProfile.club_id}`
     }, (payload) => {
       console.log('[challenge realtime] Naujas iššūkis:', payload.new);
-      if (typeof _dbg === 'function') _dbg('CH realtime INSERT!');
       // DEBOUNCE: grupės iššūkis = keli INSERT (parent + N vaikų). Laukiam kol visi
       // ateis, tada VIENĄ kartą tikrinam — kitaip popup dubliuojasi (race).
       if (_newChallengeDebounce) clearTimeout(_newChallengeDebounce);
@@ -8249,7 +8250,6 @@ function subscribeToNewCompetitions() {
       filter: `club_id=eq.${currentProfile.club_id}`
     }, (payload) => {
       console.log('[competition realtime] Naujos varžybos:', payload.new);
-      if (typeof _dbg === 'function') _dbg('COMP realtime INSERT!');
       setTimeout(() => checkForNewCompetitions(), 500);
     })
     .subscribe();
@@ -8281,8 +8281,6 @@ async function checkForNewCompetitions() {
   // Nauji = tiesiog dar nematyti (data NESVARBI — svarbu kad naujai paskelbtos)
   const fresh = comps.filter(c => !seenIds.has(c.id));
 
-  // 🔧 LAIKINA DIAGNOSTIKA (matoma paspaudus versijos žymą)
-  if (typeof _dbg === 'function') _dbg('COMP run first=' + firstRun + ' club=' + (clubId ? 'ok' : 'NULL') + ' viso=' + comps.length + ' nauji=' + fresh.length);
 
   // Pažymėti VISUS matytais (kad nepasikartotų)
   comps.forEach(c => seenIds.add(c.id));
@@ -9173,12 +9171,6 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
     totalEl.style.textShadow = `0 0 20px ${stage?.color || '#66BB6A'}80`;
   }
 }
-
-// Legacy alias (kad nesulauždytų vidinio kelio)
-async function loadChallengeStats() {
-  return; // dabar viską daro updateChallengeStatsUI iš loadChallenges
-}
-
 async function loadChallenges() {
   if (!currentKid?.id) {
     console.warn('loadChallenges: currentKid.id missing');
@@ -9344,14 +9336,13 @@ async function loadChallenges() {
   // Pasirinkti rodymui
   const challengesToShow = kidChallengesActiveTab === 'active' ? activeChallenges : completedChallenges;
   
-  // 🥊 Archyve - užkrauti dvikovas IŠ ANKSTO (kad žinotume ar sąrašas tuščias)
+  // 🥊 Užkrauti dvikovas (ir aktyvias, ir archyvo) — kad žinotume ar sąrašas tuščias
   const isArchiveTab = kidChallengesActiveTab === 'completed';
-  if (isArchiveTab) {
-    try { await renderMyDuels(); } catch(e) { console.error('[renderMyDuels]', e); }
-  }
+  try { await renderMyDuels(); } catch(e) { console.error('[renderMyDuels]', e); }
   const archiveDuelsCount = (isArchiveTab && Array.isArray(window._archiveDuelCards)) ? window._archiveDuelCards.length : 0;
+  const activeDuelsCount = (!isArchiveTab && Array.isArray(window._activeDuelCards)) ? window._activeDuelCards.length : 0;
   
-  if (!challengesToShow.length && archiveDuelsCount === 0) {
+  if (!challengesToShow.length && archiveDuelsCount === 0 && activeDuelsCount === 0) {
     const message = kidChallengesActiveTab === 'active' 
       ? 'Aktyvių iššūkių nėra'
       : 'Dar nieko neatlikai';
@@ -9491,13 +9482,6 @@ async function loadChallenges() {
   });
 
   // 🥊 Aktyvūs tabe - dvikovos rodomos v-ish-duels (archyve jau užkrautos aukščiau)
-  if (!isArchiveTab) {
-    try {
-      await renderMyDuels();
-    } catch(e) {
-      console.error('[renderMyDuels] klaida:', e);
-    }
-  }
   
   // 🎯 COLLAPSE - aktyvių tabe rodom 2 korteles (dvikovos+iššūkiai kartu), archyve 8.
   // Likę slepiami po "DAUGIAU" mygtuku / modale.
@@ -9826,7 +9810,7 @@ function generateBeltCertificateSvg(passed, newKyu, size = 80) {
 
 // Užkrauti varžybų medalius vaiko Inventoriuje
 async function loadKidCompetitionMedals() {
-  const container = document.getElementById('v-comp-medals');
+  const container = document.getElementById('v-comp-medals-table');
   if (!container || !currentKid?.id) return;
   
   // Visi patvirtinti vaiko rezultatai
@@ -12263,16 +12247,6 @@ const AGE_GROUPS = [
   { id: '16+', label: '16+ m.', min: 16, max: 999 }
 ];
 
-// Helper: apskaičiuoti vaiko amžių
-function calculateAge(birthDate) {
-  if (!birthDate) return null;
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  return age;
-}
 
 // Helper: ar vaikas patenka į amžiaus grupę
 function inAgeGroup(birthDate, groupId) {
@@ -17710,7 +17684,13 @@ function subscribeTrainerNotifications() {
     .subscribe();
 }
 
+// 🛡️ Apsaugos nuo dvigubų kvietimų (channel duplicate + missed events race)
+let _kidChannelsSubscribed = false;
+let _missedEventsRunning = false;
+
 function subscribeKidNotifications() {
+  if (_kidChannelsSubscribed) { console.log('[realtime] jau prenumeruota — praleidžiam'); return; }
+  _kidChannelsSubscribed = true;
   sb.channel('kid-'+currentUser.id)
     .on('postgres_changes', {
       event: 'UPDATE', schema: 'public', table: 'result_submissions',
@@ -18456,23 +18436,6 @@ function nv(p,el,sid){
 // 🔄 ATSIBUDIMAS IŠ FONO - hibridas + DIAGNOSTIKA
 let _lastHiddenTime = 0;
 
-// Diagnostika išjungta (buvo laikina)
-function _resumeDebug(msg) {
-  console.log('[resume]', msg);
-}
-
-// 🔧 LAIKINA DIAGNOSTIKA: rašo į localStorage (išlieka net po reload).
-// (laikina diagnostika — saugoma localStorage spobu_dbg rakte)
-function _dbg(msg) {
-  console.log('[dbg]', msg);
-  try {
-    const t = new Date().toTimeString().substring(0, 8);
-    const prev = (localStorage.getItem('spobu_dbg') || '').split('\n').filter(Boolean);
-    prev.push(t + ' ' + msg);
-    localStorage.setItem('spobu_dbg', prev.slice(-25).join('\n'));
-  } catch(e){}
-}
-
 // 📌 MATYTŲ ĮVYKIŲ SEKIMAS PER ID (ne per laiką!).
 // Kiekvienas įvykis (iššūkis/karjera/varžybos/dvikova/žinutė) turi unikalų ID.
 // Kai įvykį parodom (gyvai per realtime ARBA per showMissedEvents) — įsimenam jo ID.
@@ -18497,19 +18460,15 @@ function _addSeen(sk, id) {
 }
 
 async function handleAppResume() {
-  _resumeDebug('1. Atsibudimas paleistas');
   if (!currentUser || !sb) {
-    _resumeDebug('STOP: nera currentUser/sb');
     return;
   }
-  _dbg('RESUME start');
 
   // 1) GREITAS ryšio patikrinimas su 2.5 sek timeout
   // SVARBU: tikram DB ryšiui tikrinti naudojam TIKRĄ užklausą, ne getSession
   // (getSession grąžina sesiją iš atminties net jei tinklo ryšys miręs)
   let connectionAlive = false;
   try {
-    _resumeDebug('2. Tikrinam DB rysi...');
     const pingPromise = sb.from('kids').select('id').limit(1);
     const timeoutPromise = new Promise((_, rej) =>
       setTimeout(() => rej(new Error('timeout')), 2500)
@@ -18517,24 +18476,18 @@ async function handleAppResume() {
     const result = await Promise.race([pingPromise, timeoutPromise]);
     // Jei užklausa atsakė be klaidos - DB ryšys gyvas
     connectionAlive = !!(result && !result.error);
-    _resumeDebug('3. DB rysys: ' + (connectionAlive ? 'GYVAS' : 'klaida'));
   } catch (e) {
     connectionAlive = false;
-    _resumeDebug('3. DB rysys MIRES (' + (e.message || 'klaida') + ')');
   }
   
-  _dbg('conn=' + connectionAlive);
 
   if (!connectionAlive) {
-    _resumeDebug('4. PERKRAUNAM app...');
-    _dbg('DEAD -> reload (SME praleistas!)');
     setTimeout(() => location.reload(), 1500);
     return;
   }
   
   // 2b) RYŠYS GYVAS - tyliai perkrauti aktyvaus lango duomenis
   try {
-    _resumeDebug('4. Perkraunam duomenis: ' + _activeSid);
     const loaders = {
       'v-main': () => typeof loadKidData === 'function' && loadKidData(),
       'v-kar':  () => typeof loadCategories === 'function' && loadCategories(),
@@ -18579,9 +18532,7 @@ async function handleAppResume() {
       detectNewChallenges();
     }
     
-    _resumeDebug('5. PAVYKO - duomenys svieži');
   } catch (e) {
-    _resumeDebug('5. Klaida - perkraunam: ' + (e.message || ''));
     setTimeout(() => location.reload(), 1500);
   }
 }
@@ -18600,7 +18551,8 @@ async function resubscribeKidChannels() {
     for (const ch of myChans) {
       try { await sb.removeChannel(ch); } catch(e){}
     }
-    // Šviežias subscribe
+    // Šviežias subscribe — pirma atstatom flag',
+    _kidChannelsSubscribed = false;
     if (typeof subscribeKidNotifications === 'function') {
       subscribeKidNotifications();
     }
@@ -18613,6 +18565,8 @@ async function resubscribeKidChannels() {
 // 📬 Parodyti praleistus įvykius (po vieną su pauzėmis)
 async function showMissedEvents() {
   if (!sb || !currentUser || !currentKid) return;
+  if (_missedEventsRunning) return; // race apsauga: antras kvietimas išeina iškart
+  _missedEventsRunning = true;
   try {
     const kidId = currentKid.id;
     const userId = currentUser.id;
@@ -18677,12 +18631,6 @@ async function showMissedEvents() {
     // Surūšiuoti chronologiškai (seniausi pirma)
     events.sort((a, b) => new Date(a.ts) - new Date(b.ts));
 
-    // 🔧 LAIKINA DIAGNOSTIKA
-    try {
-      const cnt = r => r.error ? ('ERR:' + (r.error.code || r.error.message || '?')) : (r.data || []).length;
-      _dbg('SME first=' + firstRun + ' rodom=' + events.length + ' | ch:' + cnt(chs) + ' cp:' + cnt(cps) + ' ex:' + cnt(exs) + ' du:' + cnt(dus) + ' ms:' + cnt(msgs));
-      showToast('🔧 first=' + firstRun + ' rodom=' + events.length + '\nviso ch:' + cnt(chs) + ' ex:' + cnt(exs) + ' ms:' + cnt(msgs), 'info');
-    } catch (_e) {}
 
     if (events.length === 0) return;
 
@@ -18726,6 +18674,8 @@ async function showMissedEvents() {
     if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
   } catch (e) {
     console.error('[showMissedEvents] klaida:', e);
+  } finally {
+    _missedEventsRunning = false;
   }
 }
 
@@ -18735,7 +18685,6 @@ document.addEventListener('visibilitychange', () => {
     // Praleistų įvykių sekimas dabar per ID (_addSeen), ne per laiką — čia nieko nerašom.
   } else if (document.visibilityState === 'visible') {
     const hiddenDuration = Date.now() - _lastHiddenTime;
-    _resumeDebug('visible! fone buvo ' + Math.round(hiddenDuration/1000) + 's');
     if (_lastHiddenTime > 0 && hiddenDuration > 3000) {
       handleAppResume();
     }
@@ -20849,8 +20798,20 @@ function toggleNotifications() {
   }
 }
 
-async function loadAllNotifications() {
+// 🗃️ Cache — kad vartotojui atidarius varpelį kelis kartus per 8s nebūtų 7x užklausų
+let _notifCacheTs = 0;
+const _NOTIF_CACHE_TTL = 8000;
+
+async function loadAllNotifications(force) {
   if (!currentKid?.id) return;
+  // Cache short-circuit — jei užklausta < 8s atgal ir nepriverstinai, atsinaujinam tik renderį iš allNotifications atminties
+  if (!force && _notifCacheTs && (Date.now() - _notifCacheTs) < _NOTIF_CACHE_TTL && allNotifications) {
+    const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
+    const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+    updateNotifCounts(seenIds);
+    renderNotifTab(currentNotifTab);
+    return;
+  }
   
   console.log('[notifications] Užkraunam...');
   
@@ -21131,6 +21092,8 @@ async function loadAllNotifications() {
   
   // Rodyti aktyvų tabą
   renderNotifTab(currentNotifTab);
+  _notifCacheTs = Date.now();
+  renderNotifTab(currentNotifTab);
 }
 
 function updateNotifCounts(seenIds) {
@@ -21261,6 +21224,8 @@ function markAllNotifRead() {
   if (arr.length > 500) arr = arr.slice(arr.length - 500);
   localStorage.setItem(lsKey, JSON.stringify(arr));
   updateNotifCounts(new Set(arr));
+  renderNotifTab(currentNotifTab);
+  _notifCacheTs = Date.now();
   renderNotifTab(currentNotifTab);
 }
 
