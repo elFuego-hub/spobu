@@ -11176,7 +11176,11 @@ const KYU_ORDER = [
   '3 kyu',
   '2 kyu',
   '1 kyu',
-  '1 dan'
+  '1 dan',
+  '2 dan',
+  '3 dan',
+  '4 dan',
+  '5 dan'
 ];
 
 // Apskaičiuoti kitą kyu pagal dabartinį
@@ -21141,7 +21145,7 @@ function updateNotifCounts(seenIds) {
   });
   
   // Atnaujint globalų badge (pagrindinis + karjeros + bet kuris kitas)
-  const badgeIds = ['v-notif-badge-count', 'v-kar-notif-badge', 'v-ish-notif-badge', 'v-comp-notif-badge'];
+  const badgeIds = ['v-notif-badge-count', 'v-prof-notif-badge', 'v-kar-notif-badge', 'v-ish-notif-badge', 'v-comp-notif-badge'];
   badgeIds.forEach(id => {
     const badge = document.getElementById(id);
     if (!badge) return;
@@ -21920,6 +21924,18 @@ function openHowExpModal() {
           • 🤝 Lygiosios: <b style="color:#EC407A;">+35 EXP</b><br>
           • ❌ Pralaimėjimas: <b style="color:#EC407A;">+25 EXP</b> (vis tiek gauni!)<br>
           <span style="color:#FF8C00;">⏳ Iškviesti gali 1× per savaitę</span> · priimti kvietimus — be limito.
+        </div>
+      </div>
+
+      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FCD34D;">
+        <div style="font-size:13px;font-weight:800;color:#FCD34D;margin-bottom:6px;">🥋 DIRŽO EGZAMINAS</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
+          Išlaikęs gausi naują kyu/dan + EXP. Aukštesni diržai — didesnis atlygis:<br>
+          • 🟧 10-1 kyu: <b style="color:#FCD34D;">~150-600 EXP</b><br>
+          • ⚫ 1 dan (Shodan): <b style="color:#FCD34D;">~1000 EXP</b><br>
+          • ⚫ 2 dan: <b style="color:#FCD34D;">~1500 EXP</b> · 3 dan: <b style="color:#FCD34D;">~2000 EXP</b><br>
+          • ⚫ 4 dan: <b style="color:#FCD34D;">~2500 EXP</b> · 5 dan: <b style="color:#FCD34D;">~3000 EXP</b><br>
+          Diržą skiria treneris po sėkmingo egzamino.
         </div>
       </div>
 
