@@ -1167,7 +1167,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL112</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL113</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -6763,24 +6763,34 @@ async function renderMyDuels() {
   {
     const kidIds = [...new Set(duels.flatMap(d => [d.challenger_id, d.opponent_id]))];
     const { data: kids } = await sb.from('kids')
-      .select('id, user_id, is_anonymous')
+      .select('id, user_id, is_anonymous, avatar_url')
       .in('id', kidIds);
     const userIds = (kids || []).map(k => k.user_id);
     const { data: profs } = await sb.from('profiles')
       .select('id, first_name, last_name')
       .in('id', userIds);
-    
+
     const kidMap = {};
     (kids || []).forEach(k => { kidMap[k.id] = k; });
     const profMap = {};
     (profs || []).forEach(p => { profMap[p.id] = p; });
-    
+
     const getKidName = (kidId) => {
       const k = kidMap[kidId];
       if (!k) return 'Vaikas';
       // Dvikova tarp savo grupės - anonimiškumas negalioja
       const p = profMap[k.user_id];
       return p ? `${p.first_name || ''} ${(p.last_name || '').charAt(0)}${p.last_name ? '.' : ''}`.trim() : 'Vaikas';
+    };
+    // Mažas varžovo avataro burbuliukas (nuotrauka arba inicialas)
+    const getKidAvatarDot = (kidId) => {
+      const k = kidMap[kidId];
+      const initial = (getKidName(kidId)[0] || '?').toUpperCase();
+      const base = 'width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:white;vertical-align:middle;margin-right:3px;flex-shrink:0;';
+      if (k?.avatar_url) {
+        return `<span style="${base}background-image:url('${k.avatar_url}');background-size:cover;background-position:center;"></span>`;
+      }
+      return `<span style="${base}background:#EC407A;">${initial}</span>`;
     };
     
     if (!isArchive) {
@@ -6868,7 +6878,7 @@ async function renderMyDuels() {
             <div style="font-size:20px;">${t.icon}</div>
             <div style="flex:1;min-width:0;">
               <div style="font-size:12px;font-weight:800;color:white;">${t.name}</div>
-              <div style="font-size:9px;color:var(--mut);margin-top:1px;">vs ${opponentName}</div>
+              <div style="font-size:9px;color:var(--mut);margin-top:1px;">vs ${getKidAvatarDot(opponentId)}${opponentName}</div>
             </div>
             <div style="font-size:8px;color:#EC407A;font-weight:800;letter-spacing:.5px;background:rgba(236,64,122,.15);padding:3px 7px;border-radius:99px;">${isChallenger ? 'TU IŠKVIETEI' : 'TAVE IŠKVIETĖ'}</div>
           </div>
@@ -14230,7 +14240,7 @@ async function loadTrainerMembers() {
   let members = [];
   if (myKidIds.length > 0) {
     const result = await sb.from('kids')
-      .select('id, first_name, last_name, total_exp, current_level, group_id')
+      .select('id, first_name, last_name, total_exp, current_level, group_id, avatar_url')
       .in('id', myKidIds)
       .eq('approval_status', 'approved')
       .order('total_exp',{ascending:false})
@@ -14246,8 +14256,9 @@ async function loadTrainerMembers() {
   const html = members.map(m => {
     const name = `${m.first_name||'Vaikas'} ${m.last_name||''}`.trim();
     const pct = Math.min(100,(m.total_exp||0)/2000*100);
+    const avStyle = m.avatar_url ? `background-image:url('${m.avatar_url}');background-size:cover;background-position:center;` : 'background:var(--br);';
     return `<div class="ri">
-      <div class="av" style="background:var(--br);">${m.first_name?.[0]||'?'}</div>
+      <div class="av" style="${avStyle}">${m.avatar_url ? '' : (m.first_name?.[0]||'?')}</div>
       <div style="flex:1;"><div style="font-size:13px;font-weight:800;">${name}</div>
       <div class="pb2" style="margin-top:4px;"><div class="pf" style="width:${pct}%;background:var(--br);"></div></div></div>
       <div style="text-align:right;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${(m.total_exp||0).toLocaleString()}</div>
@@ -14692,7 +14703,7 @@ async function openKidDetailsModal(kidId) {
   const fullName = `${fullKid.first_name || 'Vaikas'} ${fullKid.last_name || ''}`.trim();
   document.getElementById('kd-name').textContent = fullName.toUpperCase();
   document.getElementById('kd-subname').textContent = `${genderIcon} ${age} m. · ${groupName}`;
-  document.getElementById('kd-avatar').textContent = (fullKid.first_name?.[0] || '?').toUpperCase();
+  applyAvatarById('kd-avatar', fullKid.avatar_url || null, fullKid.first_name?.[0] || '?');
   document.getElementById('kd-exp').textContent = (fullKid.total_exp || 0).toLocaleString();
   document.getElementById('kd-level').textContent = fullKid.current_level || 1;
   
