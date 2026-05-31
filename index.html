@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL110</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL111</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -4958,7 +4958,7 @@ async function loadKidData() {
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   
   setText('v-name', `SVEIKA, ${firstName}! 🥋`);
-  setText('v-avatar', currentProfile.first_name?.[0] || '?');
+  applyAvatarById('v-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
   setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
   
   // 🥋 Karatė nuo - kiek laiko sportuoja
@@ -5305,8 +5305,104 @@ function getAvatarUrl(gender, totalExp) {
   const stageIdx = STAGES.findIndex(s => s.name === info.stage);
   const stageName = stageFileNames[stageIdx] || 'naujokas';
   const genderFolder = gender === 'female' ? 'girl' : 'boy';
-  
+
   return `${SUPABASE_URL}/storage/v1/object/public/avatars/${genderFolder}/stage-${stageIdx+1}-${stageName}.jpg`;
+}
+
+// ════════════════════════════════════════
+// 📷 ASMENINĖ PROFILIO NUOTRAUKA (Supabase Storage bucket "kid-avatars")
+// ════════════════════════════════════════
+const KID_AVATAR_BUCKET = 'kid-avatars';
+
+// Universalus avataro rodymas: jei yra nuotrauka — rodom ją (cover), kitaip — inicialą.
+function applyAvatarEl(el, url, initial) {
+  if (!el) return;
+  if (url) {
+    el.textContent = '';
+    el.style.backgroundImage = `url("${url}")`;
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+  } else {
+    el.style.backgroundImage = '';
+    el.textContent = (initial || '?').toUpperCase();
+  }
+}
+function applyAvatarById(id, url, initial) {
+  applyAvatarEl(document.getElementById(id), url, initial);
+}
+
+// Suspaudžia pasirinktą failą iki kvadratinio ~320px JPEG (Blob)
+function _compressImage(file, size = 320, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const min = Math.min(img.width, img.height);
+      const sx = (img.width - min) / 2;
+      const sy = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob nepavyko')), 'image/jpeg', quality);
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Vaikas pasirenka failą → suspaudžia → įkelia į Storage → įrašo kids.avatar_url
+async function uploadKidAvatar(inputEl) {
+  try {
+    const file = inputEl?.files?.[0];
+    if (!file) return;
+    if (!currentKid?.id) { showToast('❌ Nėra vaiko profilio', 'error'); return; }
+    if (!file.type.startsWith('image/')) { showToast('❌ Pasirink nuotrauką', 'error'); return; }
+
+    showToast('📷 Įkeliama nuotrauka...', 'info');
+    const blob = await _compressImage(file);
+    const path = `${currentKid.id}.jpg`;
+    const { error: upErr } = await sb.storage.from(KID_AVATAR_BUCKET)
+      .upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '3600' });
+    if (upErr) { console.error('[avatar] upload:', upErr); showToast('❌ Įkelti nepavyko: ' + upErr.message, 'error', 5000); return; }
+
+    const { data: pub } = sb.storage.from(KID_AVATAR_BUCKET).getPublicUrl(path);
+    const cleanUrl = pub.publicUrl;
+
+    const { error: dbErr } = await sb.from('kids').update({ avatar_url: cleanUrl }).eq('id', currentKid.id);
+    if (dbErr) { console.error('[avatar] db:', dbErr); showToast('❌ Išsaugoti nepavyko: ' + dbErr.message, 'error', 5000); return; }
+
+    currentKid.avatar_url = cleanUrl;
+    const bust = cleanUrl + '?r=' + new Date().getTime();
+    applyAvatarById('v-avatar', bust, currentProfile?.first_name?.[0]);
+    applyAvatarById('kid-settings-avatar-preview', bust, currentProfile?.first_name?.[0]);
+    const _rm = document.getElementById('kid-avatar-remove');
+    if (_rm) _rm.style.display = 'block';
+    if (typeof loadKidData === 'function') loadKidData();
+    showToast('✅ Nuotrauka atnaujinta!', 'success');
+  } catch (e) {
+    console.error('[avatar] klaida:', e);
+    showToast('❌ Klaida: ' + (e.message || ''), 'error', 5000);
+  }
+}
+
+async function removeKidAvatar() {
+  if (!currentKid?.id) return;
+  if (!confirm('Pašalinti profilio nuotrauką?')) return;
+  try {
+    await sb.storage.from(KID_AVATAR_BUCKET).remove([`${currentKid.id}.jpg`]).catch(()=>{});
+    await sb.from('kids').update({ avatar_url: null }).eq('id', currentKid.id);
+    currentKid.avatar_url = null;
+    applyAvatarById('v-avatar', null, currentProfile?.first_name?.[0]);
+    applyAvatarById('kid-settings-avatar-preview', null, currentProfile?.first_name?.[0]);
+    const _rm = document.getElementById('kid-avatar-remove');
+    if (_rm) _rm.style.display = 'none';
+    showToast('✅ Nuotrauka pašalinta', 'success');
+  } catch (e) {
+    showToast('❌ Klaida: ' + (e.message || ''), 'error');
+  }
 }
 
 // Diržo informacija pagal kyu (TIKRA Kyokushin sistema)
@@ -21154,6 +21250,22 @@ async function openKidSettings() {
           </div>
         </div>
         
+        <!-- 📷 PROFILIO NUOTRAUKA -->
+        <div style="padding:12px 16px 0;">
+          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;">
+            <div id="kid-settings-avatar-preview" style="width:54px;height:54px;border-radius:50%;background:var(--bg);border:1px solid var(--br);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);flex-shrink:0;background-size:cover;background-position:center;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:800;color:white;">Profilio nuotrauka</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Tavo treneris ir draugai matys tave</div>
+            </div>
+            <label style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;">
+              📷 Keisti
+              <input type="file" accept="image/*" style="display:none;" onchange="uploadKidAvatar(this)">
+            </label>
+          </div>
+          <div onclick="removeKidAvatar()" id="kid-avatar-remove" style="display:none;text-align:center;font-size:10px;color:var(--mut);margin-top:6px;cursor:pointer;">Pašalinti nuotrauką</div>
+        </div>
+
         <!-- 🔊 GARSO JUNGIKLIS -->
         <div style="padding:12px 16px 0;">
           <div onclick="toggleAppSound()" id="kid-sound-toggle" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -21284,6 +21396,12 @@ async function openKidSettings() {
   // 📋 Užkrauti detalią info (klubas, treneris, amžius, svoris, kyu)
   await loadKidSettingsDetails();
   
+  // 📷 Atnaujint profilio nuotraukos preview
+  const _avUrl = currentKid?.avatar_url ? (currentKid.avatar_url + '?r=' + Date.now()) : null;
+  applyAvatarById('kid-settings-avatar-preview', _avUrl, currentProfile?.first_name?.[0]);
+  const _avRm = document.getElementById('kid-avatar-remove');
+  if (_avRm) _avRm.style.display = currentKid?.avatar_url ? 'block' : 'none';
+
   // 🔊 Atnaujint garso jungiklio būseną
   updateSoundToggleUI();
   // 🔔 Atnaujint pranešimų jungiklio būseną
