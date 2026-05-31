@@ -6902,34 +6902,14 @@ async function renderMyDuels() {
       return;
     }
     
-    // AKTYVŪS tabe: rodom max 2, likusias slepiam po "DAUGIAU" mygtuku (kad nereikėtų scroll'inti)
-    const SHOW_DUELS = 2;
-    const visible = duelCards.slice(0, SHOW_DUELS);
-    const hidden = duelCards.slice(SHOW_DUELS);
-    html += visible.map(c => c.html).join('');
-    if (hidden.length > 0) {
-      html += `<div id="v-ish-duels-more" style="display:none;">${hidden.map(c => c.html).join('')}</div>`;
-      html += `<div id="v-ish-duels-toggle" onclick="toggleMoreDuels()" style="text-align:center;padding:6px;margin-bottom:4px;cursor:pointer;background:rgba(236,64,122,.08);border:.5px solid rgba(236,64,122,.25);border-radius:8px;">
-        <span style="font-size:10px;color:#EC407A;font-weight:800;letter-spacing:.5px;">▼ DAUGIAU DVIKOVŲ (${hidden.length})</span>
-      </div>`;
-    }
+    // AKTYVUS tabe: NErenderinam atskirai - perduodam loadChallenges, kuris sulieja
+    // dvikovas + issukius i VIENA sarasa (bendras limitas + DAUGIAU). Konteineri istustinam.
+    window._activeDuelCards = duelCards;
+    el.innerHTML = '';
+    return;
   }
 
   el.innerHTML = html;
-}
-
-// Parodyti/slėpti likusias aktyvias dvikovas
-function toggleMoreDuels() {
-  const more = document.getElementById('v-ish-duels-more');
-  const toggle = document.getElementById('v-ish-duels-toggle');
-  if (!more || !toggle) return;
-  const isHidden = more.style.display === 'none';
-  more.style.display = isHidden ? 'block' : 'none';
-  const span = toggle.querySelector('span');
-  if (span) {
-    const n = more.children.length;
-    span.textContent = isHidden ? '▲ SLĖPTI' : `▼ DAUGIAU DVIKOVŲ (${n})`;
-  }
 }
 
 // 🥊 Atsakyti į dvikovą - priimti / atmesti
@@ -8337,7 +8317,7 @@ async function checkForNewApprovedSubmissions() {
   const dayAgo = new Date(Date.now() - 86400000).toISOString();
   
   const { data: subs } = await sb.from('challenge_submissions')
-    .select('id, challenge_id, numeric_value, exp_gain, reviewed_at, challenges(title, target_value, target_unit, allow_partial, exp_reward)')
+    .select('id, challenge_id, numeric_value, exp_gain, reviewed_at, challenges(title, type, target_value, target_unit, allow_partial, exp_reward)')
     .eq('kid_id', currentKid.id)
     .eq('status', 'approved')
     .gte('reviewed_at', dayAgo)
@@ -9519,13 +9499,17 @@ async function loadChallenges() {
     }
   }
   
-  // 🎯 COLLAPSE - rodyti tik 2 pirmus + mygtuką "Daugiau" jei daugiau
-  const SHOW_LIMIT = 2;
+  // 🎯 COLLAPSE - aktyvių tabe rodom 2 korteles (dvikovos+iššūkiai kartu), archyve 8.
+  // Likę slepiami po "DAUGIAU" mygtuku / modale.
+  const SHOW_LIMIT = (kidChallengesActiveTab === 'active') ? 2 : 8;
   
-  // Archyve - sulieti iššūkius IR dvikovas į vieną sąrašą pagal datą
+  // Sulieti iššūkius IR dvikovas į VIENĄ sąrašą pagal datą (ir aktyviems, ir archyve)
   let allItems = cardsArray; // {date, html}
   if (isArchiveTab && Array.isArray(window._archiveDuelCards)) {
     allItems = [...cardsArray, ...window._archiveDuelCards];
+  } else if (kidChallengesActiveTab === 'active' && Array.isArray(window._activeDuelCards)) {
+    allItems = [...cardsArray, ...window._activeDuelCards];
+    window._activeDuelCards = [];
   }
   // Rūšiuoti pagal datą (naujausi viršuje)
   allItems.sort((a, b) => b.date - a.date);
