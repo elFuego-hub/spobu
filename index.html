@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL107</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL108</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -7873,9 +7873,14 @@ let lastKnownTiers = {}; // { categoryId: 'bronze' }
 // ════════════════════════════════════════
 // NAUJŲ IŠŠŪKIŲ POPUP - kai treneris paskiria iššūkį
 // ════════════════════════════════════════
+let _newChallengeDebounce = null;
+let _checkingChallenges = false;
 async function checkForNewChallenges() {
   if (!currentKid?.id || !currentProfile?.club_id) return;
-  
+  if (_checkingChallenges) return; // apsauga nuo lygiagretaus vykdymo (race → dublikatas)
+  _checkingChallenges = true;
+  try {
+
   const lsKey = `spobu_kid_${currentKid.id}_seen_challenge_ids`;
   const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
   
@@ -7944,6 +7949,10 @@ async function checkForNewChallenges() {
   }
   
   setTimeout(showQueue, 800); // Pradedam po 800ms (kad streak popup'ai pirmiau pasirodyti)
+
+  } finally {
+    _checkingChallenges = false;
+  }
 }
 
 function showChallengePopup(challenge, onClose) {
@@ -8097,8 +8106,10 @@ function subscribeToNewChallenges() {
     }, (payload) => {
       console.log('[challenge realtime] Naujas iššūkis:', payload.new);
       if (typeof _dbg === 'function') _dbg('CH realtime INSERT!');
-      // Patikrinam ar vaikui pritaikomas + rodome popup
-      setTimeout(() => checkForNewChallenges(), 500);
+      // DEBOUNCE: grupės iššūkis = keli INSERT (parent + N vaikų). Laukiam kol visi
+      // ateis, tada VIENĄ kartą tikrinam — kitaip popup dubliuojasi (race).
+      if (_newChallengeDebounce) clearTimeout(_newChallengeDebounce);
+      _newChallengeDebounce = setTimeout(() => checkForNewChallenges(), 900);
     })
     .subscribe();
   
@@ -17624,7 +17635,17 @@ function subscribeKidNotifications() {
       filter: `kid_id=eq.${kidId}`
     }, async payload => {
       const sub = payload.new;
-      if (!sub || sub.status !== 'approved') return;
+      if (!sub) return;
+      // ❌ ATMESTAS iššūkis — pranešam vaikui (anksčiau jokio pranešimo nebūdavo!)
+      if (sub.status === 'rejected') {
+        if (_isSeen('chRej', sub.id)) return;
+        _addSeen('chRej', sub.id);
+        const reason = sub.rejection_reason || 'be priežasties';
+        showToast(`❌ IŠŠŪKIS ATMESTAS\n\n${reason}`, 'error', null, { sound: 'send' });
+        await loadKidData();
+        return;
+      }
+      if (sub.status !== 'approved') return;
       if (_isSeen('ch', sub.id)) return; // apsauga nuo pakartotinio handler'io
       _addSeen('ch', sub.id);
       // ⛔ Generinio žalio NEBERODOM. Tinkamą grįžtamąjį ryšį parodo:
@@ -17638,7 +17659,17 @@ function subscribeKidNotifications() {
       filter: `kid_id=eq.${kidId}`
     }, async payload => {
       const res = payload.new;
-      if (!res || res.approval_status !== 'approved') return;
+      if (!res) return;
+      // ❌ ATMESTAS varžybų rezultatas — pranešam vaikui
+      if (res.approval_status === 'rejected') {
+        if (_isSeen('cpRej', res.id)) return;
+        _addSeen('cpRej', res.id);
+        const reason = res.rejection_reason || 'be priežasties';
+        showToast(`❌ VARŽYBŲ REZULTATAS ATMESTAS\n\n${reason}`, 'error', null, { sound: 'send' });
+        await loadKidData();
+        return;
+      }
+      if (res.approval_status !== 'approved') return;
       if (_isSeen('cp', res.id)) return; // jau parodyta
       _addSeen('cp', res.id);
       // ⛔ Žalio toast'o NEBERODOM — varžybų medalio/dalyvavimo šventę parodo
