@@ -1166,7 +1166,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL106</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL107</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -17625,10 +17625,13 @@ function subscribeKidNotifications() {
     }, async payload => {
       const sub = payload.new;
       if (!sub || sub.status !== 'approved') return;
-      if (_isSeen('ch', sub.id)) return; // jau parodyta (gyvai ar kaip praleista)
+      if (_isSeen('ch', sub.id)) return; // apsauga nuo pakartotinio handler'io
       _addSeen('ch', sub.id);
-      showToast(`🎯 IŠŠŪKIS PATVIRTINTAS!\n\n+${sub.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
+      // ⛔ Generinio žalio NEBERODOM. Tinkamą grįžtamąjį ryšį parodo:
+      //  • checkForNewApprovedSubmissions → tarpinis toast / tipo popup (sava seen-tracking)
+      //  • detectNewChallenges (per loadKidData) → pilno įveikimo šventė
       await loadKidData();
+      if (typeof checkForNewApprovedSubmissions === 'function') checkForNewApprovedSubmissions();
     })
     .on('postgres_changes', {
       event: 'UPDATE', schema: 'public', table: 'competition_results',
@@ -18364,6 +18367,14 @@ async function handleAppResume() {
     if (currentProfile?.role === 'kid' && typeof detectNewMedals === 'function') {
       detectNewMedals();
     }
+
+    // 🎯 Parodyti praleistus iššūkių patvirtinimus (tarpinis/popup + pilno įveikimo šventė)
+    if (currentProfile?.role === 'kid' && typeof checkForNewApprovedSubmissions === 'function') {
+      checkForNewApprovedSubmissions();
+    }
+    if (currentProfile?.role === 'kid' && typeof detectNewChallenges === 'function') {
+      detectNewChallenges();
+    }
     
     _resumeDebug('5. PAVYKO - duomenys svieži');
   } catch (e) {
@@ -18479,7 +18490,7 @@ async function showMissedEvents() {
       _addSeen(ev.sk, ev.id); // pažymėti matytu IŠKART (kad nepasikartotų)
 
       if (ev.type === 'challenge') {
-        showToast(`🎯 IŠŠŪKIS PATVIRTINTAS!\n\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
+        // ⛔ Žalio NEBERODOM — tarpinį/pilną parodo checkForNewApprovedSubmissions + detectNewChallenges (atsibudus)
       } else if (ev.type === 'competition') {
         // ⛔ Žalio NEBERODOM — varžybų medalio/dalyvavimo šventę parodo detectNewMedals (žemiau, atsibudus)
       } else if (ev.type === 'exercise') {
