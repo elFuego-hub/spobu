@@ -1167,7 +1167,7 @@ select.inp option{background:#222;}
 <div class="sc" id="v-ish">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL116</span></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI <span onclick="alert('🔧 DIAGNOSTIKA (paskutiniai įvykiai):\n\n' + (localStorage.getItem('spobu_dbg')||'(tuščia)'))" style="font-size:9px;color:#EC407A;letter-spacing:0;cursor:pointer;">v.DUEL117</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -13187,15 +13187,16 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
   // PASTABA: užklausą darom TIK puslapio vaikams (greičiau)
   const kidIds = pageEntries.map(e => e.kidId);
   const { data: kidsTrainers } = await sb.from('kids')
-    .select('id, first_name, last_name, assigned_trainer_id, is_anonymous')
+    .select('id, first_name, last_name, assigned_trainer_id, is_anonymous, avatar_url')
     .in('id', kidIds);
-  
+
   const trainerMap = {};
   (kidsTrainers || []).forEach(k => {
     trainerMap[k.id] = {
       assigned_trainer_id: k.assigned_trainer_id,
       first_name: k.first_name,
-      last_name: k.last_name
+      last_name: k.last_name,
+      avatar_url: k.avatar_url || null
     };
   });
   
@@ -13217,6 +13218,7 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
     return `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;${bgStyle}border-radius:8px;margin-bottom:4px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${isMine ? '#FFD700' : 'var(--mut)'};min-width:32px;">${medal || '#' + rank}</div>
+        <div style="width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;${tInfo?.avatar_url ? `background-image:url('${tInfo.avatar_url}');background-size:cover;background-position:center;` : 'background:rgba(255,255,255,.12);'}">${tInfo?.avatar_url ? '' : (realName?.[0] || '?').toUpperCase()}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:${isMine ? '800' : '600'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
             ${isMine ? '⭐ ' : ''}${realName}
@@ -13545,22 +13547,26 @@ async function renderClubLeaderboard(entries, scoreLabel) {
   // Klubas mato TIKRUS vardus - užklausa TIK puslapio vaikams
   const kidIds = pageEntries.map(e => e.kidId);
   const { data: kidsRealNames } = await sb.from('kids')
-    .select('id, first_name, last_name')
+    .select('id, first_name, last_name, avatar_url')
     .in('id', kidIds);
-  
+
   const namesMap = {};
+  const avatarMap = {};
   (kidsRealNames || []).forEach(k => {
     namesMap[k.id] = `${k.first_name || ''} ${k.last_name?.[0] || ''}.`.trim();
+    avatarMap[k.id] = k.avatar_url || null;
   });
-  
+
   const list = pageEntries.map((e, i) => {
     const rank = startIdx + i + 1;
     const realName = namesMap[e.kidId] || e.name;
+    const avUrl = avatarMap[e.kidId];
     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
-    
+
     return `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:4px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);min-width:32px;">${medal || '#' + rank}</div>
+        <div style="width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;${avUrl ? `background-image:url('${avUrl}');background-size:cover;background-position:center;` : 'background:rgba(255,255,255,.12);'}">${avUrl ? '' : (realName?.[0] || '?').toUpperCase()}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${realName}</div>
           <div style="font-size:9px;color:var(--mut);">${e.kyu || 'Mu kyu'}</div>
