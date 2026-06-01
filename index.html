@@ -177,9 +177,9 @@ body.am{padding:20px 0;justify-content:flex-start;}
   .sb { display: none !important; }  /* Slepiu fake status bar - tikras telefonas turi savo */
 }
 
-/* 📱 TELEFONO PERŽIŪRA — desktop',e paspaudus mygtuką "PILNAS MOBILE" */
+/* 📱 TELEFONO PERŽIŪRA — desktop',e paspaudus mygtuką "PILNAS MOBILE" (TIK vaiko portale) */
 /* Vietoj desktop grid layout, rodom telefono rėmelį centre (kaip default mobile) */
-body.full-mobile-preview #pv { display: block !important; }
+body.portal-v.full-mobile-preview #pv { display: block !important; }
 body.full-mobile-preview #v-desktop-nav { display: none !important; }
 body.full-mobile-preview .df { width: 390px !important; max-width: 390px !important; padding: 12px !important; border-radius: 48px !important; box-shadow: 0 40px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06) !important; background: #0D0D0D !important; height: auto !important; overflow: visible !important; margin: 20px auto !important; }
 body.full-mobile-preview .ds { width: 366px !important; max-width: 366px !important; border-radius: 38px !important; margin: 0 !important; background: var(--bg) !important; }
@@ -189,14 +189,14 @@ body.full-mobile-preview .bn2 { display: flex !important; }
 body.full-mobile-preview .sb { display: flex !important; }
 body.full-mobile-preview { padding: 20px 0 !important; }
 
-/* 💻 DESKTOP LAYOUT — vaiko portalas su šoniniu menu */
+/* 💻 DESKTOP LAYOUT — TIK vaiko portalui (body.portal-v) */
 #v-desktop-nav { display: none; }  /* default — mobile slepiama */
 @media (min-width: 1024px) {
-  body.am:not(.full-mobile-preview) { padding: 0 !important; }
+  body.am.portal-v:not(.full-mobile-preview) { padding: 0 !important; }
   /* Vaiko portalas tampa grid: 260px sidebar + likęs ekranas turiniui */
-  body.am:not(.full-mobile-preview) #pv { display: grid !important; grid-template-columns: 260px 1fr; height: 100vh; overflow: hidden; }
-  /* Šoninis nav matomas */
-  #v-desktop-nav {
+  body.am.portal-v:not(.full-mobile-preview) #pv { display: grid !important; grid-template-columns: 260px 1fr; height: 100vh; overflow: hidden; }
+  /* Šoninis nav matomas TIK vaiko portale */
+  body.am.portal-v:not(.full-mobile-preview) #v-desktop-nav {
     display: flex; flex-direction: column;
     background: var(--card); border-right: 1px solid var(--bdr);
     padding: 24px 14px 18px; height: 100vh; overflow-y: auto;
@@ -239,34 +239,28 @@ body.full-mobile-preview { padding: 20px 0 !important; }
   .vdn-badge { background: var(--br); color: white; font-size: 10px; font-weight: 800; min-width: 18px; height: 18px; border-radius: 99px; display: none; align-items: center; justify-content: center; padding: 0 5px; }
   .vdn-badge.on { display: inline-flex; }
   /* .df praranda telefono rėmelį — užima visą main plotą */
-  body.am:not(.full-mobile-preview) #pv .df {
+  body.am.portal-v:not(.full-mobile-preview) #pv .df {
     width: 100% !important; max-width: 100% !important;
     padding: 0 !important; border-radius: 0 !important;
     background: var(--bg) !important; box-shadow: none !important;
     height: 100vh; overflow-y: auto;
   }
   /* .ds (ekranas) — centruotas su max-width, kad turinys neišsiplėstų per platų */
-  body.am:not(.full-mobile-preview) #pv .ds {
+  body.am.portal-v:not(.full-mobile-preview) #pv .ds {
     width: 100% !important; max-width: 920px !important;
     margin: 0 auto !important;
     border-radius: 0 !important; background: var(--bg) !important;
   }
-  body.am:not(.full-mobile-preview) #pv .ph { width: 100% !important; min-height: auto !important; padding: 24px 16px 60px !important; }
-  body.am:not(.full-mobile-preview) #pv .sc { min-height: auto !important; }
-  body.am:not(.full-mobile-preview) #pv .sc.on { min-height: auto !important; }
-  /* Apačios bnav ir status bar paslepiame — vietoje jų side nav */
+  body.am.portal-v:not(.full-mobile-preview) #pv .ph { width: 100% !important; min-height: auto !important; padding: 24px 16px 60px !important; }
+  body.am.portal-v:not(.full-mobile-preview) #pv .sc { min-height: auto !important; }
+  body.am.portal-v:not(.full-mobile-preview) #pv .sc.on { min-height: auto !important; }
   /* Desktop'e header'io varpelis/nustatymai paslepti — yra side nav'e */
-  body.am:not(.full-mobile-preview) #pv .sc [onclick*="toggleNotifications"],
-  body.am:not(.full-mobile-preview) #pv .sc [onclick*="openKidSettings"] {
+  body.am.portal-v:not(.full-mobile-preview) #pv .sc [onclick*="toggleNotifications"],
+  body.am.portal-v:not(.full-mobile-preview) #pv .sc [onclick*="openKidSettings"] {
     display: none !important;
   }
-  /* Desktop'e header'io varpelis/nustatymai paslepti — yra side nav'e */
-  body.am:not(.full-mobile-preview) #pv .sc [onclick*="toggleNotifications"],
-  body.am:not(.full-mobile-preview) #pv .sc [onclick*="openKidSettings"] {
-    display: none !important;
-  }
-  body.am:not(.full-mobile-preview) #pv .bn2 { display: none !important; }
-  body.am:not(.full-mobile-preview) #pv .sb { display: none !important; }
+  body.am.portal-v:not(.full-mobile-preview) #pv .bn2 { display: none !important; }
+  body.am.portal-v:not(.full-mobile-preview) #pv .sb { display: none !important; }
 }
 
 .sc{display:none;flex-direction:column;min-height:780px;}
@@ -18982,12 +18976,16 @@ function op(id){
   document.getElementById(portals[id]).style.display='';
   document.getElementById('sw').style.display='';
   document.body.classList.add('am');
+  // 🎯 Pažymėti aktyvų portal'ą body klasėje (kad desktop CSS žinotų)
+  ['portal-v','portal-t','portal-tr','portal-k','portal-a'].forEach(c => document.body.classList.remove(c));
+  document.body.classList.add('portal-' + id);
 }
 function sp(){
   Object.values(portals).forEach(p=>{const el=document.getElementById(p);if(el)el.style.display='none';});
   showPortalSelector();
   document.getElementById('sw').style.display='none';
   document.body.classList.remove('am');
+  ['portal-v','portal-t','portal-tr','portal-k','portal-a'].forEach(c => document.body.classList.remove(c));
 }
 function showPortalSelector(){
   document.getElementById('ps').style.display='';
