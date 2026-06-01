@@ -3626,7 +3626,12 @@ async function afterLogin() {
     } else if (profile.role === 'parent') {
       // Tėvų paskyra
       await loadParentData();
+      subscribeParentNotifications();
       op('t');
+      // 📬 Praleisti įvykiai (po reload arba prisijungimo)
+      if (typeof showParentMissedEvents === 'function') {
+        setTimeout(() => showParentMissedEvents(), 1500);
+      }
     }
     console.log('🎉 [afterLogin] BAIGTA SĖKMINGAI');
   } catch (e) {
@@ -4068,6 +4073,7 @@ async function loadParentKids() {
 // ════════════════════════════════════════════════════════════
 let parentKids = [];
 let parentActiveKid = null;
+let _parentKidIdSet = new Set(); // visų tėvo vaikų ID — realtime/missed events filtravimui
 
 async function loadParentKidsList() {
   parentKids = [];
@@ -4075,10 +4081,75 @@ async function loadParentKidsList() {
   const { data: links } = await sb.from('kid_parent_links')
     .select('kid_id').eq('parent_id', currentProfile.id);
   const kidIds = (links || []).map(l => l.kid_id);
+  _parentKidIdSet = new Set(kidIds);
   if (kidIds.length === 0) return;
   const { data: kids } = await sb.from('kids')
     .select('*').in('id', kidIds).order('total_exp', { ascending: false });
   parentKids = kids || [];
+}
+
+// ── BENDRI HELPER'IAI (naudojami visose tėvų fazėse) ──
+// Atnaujinti šiuo metu matomą tėvų ekraną pagal aktyvų vaiką
+function refreshParentActiveScreen() {
+  const sid = _activeSid || 't-main';
+  if (sid === 't-kar') loadParentKidCareer();
+  else if (sid === 't-feed') loadParentKidFeed();
+  else if (sid === 't-prof') loadParentKidProfile();
+  else if (sid === 't-main') loadParentKidMain();
+}
+
+// Gauti aktyvaus vaiko klubo ID (per vaiko profilį, ne tėvo) — su cache
+async function getActiveKidClubId() {
+  const k = parentActiveKid;
+  if (!k) return currentProfile?.club_id || null;
+  if (k._clubId !== undefined) return k._clubId;
+  let clubId = currentProfile?.club_id || null; // fallback jei vaikas be paskyros
+  if (k.user_id) {
+    try {
+      const { data: kp } = await sb.from('profiles').select('club_id').eq('id', k.user_id).maybeSingle();
+      if (kp?.club_id) clubId = kp.club_id;
+    } catch (e) {}
+  }
+  k._clubId = clubId;
+  return clubId;
+}
+
+// Sinchronizuoti tėvo cache po vaiko duomenų redagavimo (in-memory patch)
+function syncParentKidCache(kidId, updates) {
+  const inList = parentKids.find(k => k.id === kidId);
+  if (inList) Object.assign(inList, updates);
+  if (parentActiveKid && parentActiveKid.id === kidId) {
+    Object.assign(parentActiveKid, updates);
+    delete parentActiveKid._clubId; // priverstinis klubo perskaičiavimas jei reikia
+  }
+  if (typeof renderParentKidPill === 'function') renderParentKidPill();
+  refreshParentActiveScreen();
+}
+
+// Perkrauti vaiką iš DB (autoritetinis) ir atnaujinti cache + ekraną
+async function refreshParentKidById(kidId) {
+  try {
+    const { data: fresh } = await sb.from('kids').select('*').eq('id', kidId).maybeSingle();
+    if (!fresh) return;
+    const idx = parentKids.findIndex(k => k.id === kidId);
+    if (idx >= 0) parentKids[idx] = fresh;
+    if (parentActiveKid && parentActiveKid.id === kidId) parentActiveKid = fresh;
+    if (typeof renderParentKidPill === 'function') renderParentKidPill();
+    refreshParentActiveScreen();
+  } catch (e) { console.warn('refreshParentKidById', e); }
+}
+
+// Ar iššūkis taikomas šiam vaikui (audience atitikimas — kaip loadGoals)
+function challengeMatchesKid(ch, kid) {
+  if (!ch || !kid) return false;
+  const audience = ch.target_audience || 'group';
+  if (audience === 'all_club') return true;
+  if (audience === 'specific_kid') return ch.target_kid_id === kid.id;
+  if (!kid.group_id || ch.group_id !== kid.group_id) return false;
+  if (audience === 'group') return true;
+  if (audience === 'boys_in_group') return kid.gender === 'male';
+  if (audience === 'girls_in_group') return kid.gender === 'female';
+  return false;
 }
 
 function parentKidName(k) { return `${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim(); }
@@ -4242,7 +4313,7 @@ async function loadParentKidMain() {
 async function computeParentKidRanks(kid) {
   const res = { comp: '#–', exp: '#–', ish: '#–', total: 0 };
   try {
-    const clubId = currentProfile?.club_id;
+    const clubId = await getActiveKidClubId();
     if (!clubId || !kid) return res;
     const { data: profs } = await sb.from('profiles').select('id').eq('club_id', clubId).eq('role', 'kid');
     const pids = (profs || []).map(p => p.id);
@@ -4273,9 +4344,10 @@ async function computeParentKidRanks(kid) {
 async function loadParentKidWeeklyChallenge(k) {
   const card = document.getElementById('tk-week-card'); if (!card) return;
   try {
-    const clubId = currentProfile?.club_id;
-    const { data: chs } = await sb.from('challenges').select('id, title, target_value, type, expires_at').eq('club_id', clubId).eq('is_active', true).eq('type', 'weekly').order('created_at', { ascending: false }).limit(5);
-    const ch = (chs || []).find(c => !c.expires_at || new Date(c.expires_at) > new Date());
+    const clubId = await getActiveKidClubId();
+    const { data: chs } = await sb.from('challenges').select('id, title, target_value, type, expires_at, target_audience, target_kid_id, group_id').eq('club_id', clubId).eq('is_active', true).eq('type', 'weekly').order('created_at', { ascending: false }).limit(10);
+    // Tik neexpiravę IR taikomi šiam vaikui (audience)
+    const ch = (chs || []).find(c => (!c.expires_at || new Date(c.expires_at) > new Date()) && challengeMatchesKid(c, k));
     if (!ch) { card.style.display = 'none'; return; }
     const { data: prog } = await sb.from('challenge_progress').select('total_progress').eq('kid_id', k.id).eq('challenge_id', ch.id).maybeSingle();
     const cur = prog?.total_progress || 0;
@@ -4295,7 +4367,7 @@ async function loadParentKidWeeklyChallenge(k) {
 
 async function loadParentKidNextEvent() {
   try {
-    const clubId = currentProfile?.club_id;
+    const clubId = await getActiveKidClubId();
     const today = new Date().toISOString().slice(0, 10);
     const { data: comps } = await sb.from('competitions').select('title, event_date, level').eq('club_id', clubId).gte('event_date', today).order('event_date', { ascending: true }).limit(1);
     const nameEl = document.getElementById('tk-next-event-name');
@@ -4541,8 +4613,26 @@ async function loadParentBellContent() {
     if (chatHtml) sections.push(`<div class="st" style="padding:10px 0 8px;">💬 TRENERIO / KLUBO ŽINUTĖS</div>${chatHtml}`);
 
     el.innerHTML = sections.join('') || '<div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Nėra naujų pranešimų</div>';
+    // Atvaizdavus (su „nauja" taškais) — pažymim skaitytais TIK rodomus pokalbius + nuimam badge
+    const shownConvIds = [
+      ...annConvs.slice(0, 10).map(m => m.conversations?.id),
+      ...chatConvs.slice(0, 8).map(m => m.conversations?.id)
+    ].filter(Boolean);
+    await markParentBellRead(shownConvIds);
     if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
   } catch (e) { console.warn('parent bell', e); el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant pranešimus</div>'; }
+}
+
+// Pažymėti TIK rodytus tėvo pokalbius/pranešimus skaitytais (ne visus — kad nepradingtų neparodyti neperskaityti)
+async function markParentBellRead(convIds) {
+  try {
+    if (!currentProfile) return;
+    if (!convIds || convIds.length === 0) return;
+    await sb.from('conversation_members')
+      .update({ last_read_at: new Date().toISOString() })
+      .eq('user_id', currentProfile.id)
+      .in('conversation_id', convIds);
+  } catch (e) { console.warn('markParentBellRead', e); }
 }
 
 let currentParentKid = null;
@@ -5609,6 +5699,7 @@ async function parentSaveHealth() {
   if (!data || data.length === 0) { showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000); return; }
   
   Object.assign(currentParentKid, updates);
+  if (typeof syncParentKidCache === 'function') syncParentKidCache(currentParentKid.id, updates);
   showToast('✅ Sveikatos info atnaujinta', 'success');
   parentCancelHealthEdit();
   document.getElementById('t-kid-health-display').innerHTML = renderHealthInfo(currentParentKid);
@@ -5647,6 +5738,7 @@ async function parentSaveEmergency() {
   if (!data || data.length === 0) { showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000); return; }
   
   Object.assign(currentParentKid, updates);
+  if (typeof syncParentKidCache === 'function') syncParentKidCache(currentParentKid.id, updates);
   showToast('✅ Avarinis kontaktas atnaujintas', 'success');
   parentCancelEmergencyEdit();
   document.getElementById('t-kid-emergency-display').innerHTML = renderEmergencyInfo(currentParentKid);
@@ -5671,6 +5763,7 @@ async function parentToggleMediaConsent() {
   if (!data || data.length === 0) { showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000); return; }
   
   currentParentKid.media_consent = newConsent;
+  if (typeof syncParentKidCache === 'function') syncParentKidCache(currentParentKid.id, { media_consent: newConsent });
   showToast(newConsent ? '✅ Media sutikimas: leidžiama' : '🚫 Media sutikimas: neleidžiama', 'success');
   document.getElementById('t-kid-media-display').innerHTML = renderMediaConsent(currentParentKid, true);
 }
@@ -5823,11 +5916,11 @@ async function saveEditKid(kidId) {
     
     showToast('✓ Duomenys atnaujinti');
     closeEditKidModal();
-    
-    // Atnaujinam ekraną
+
+    // Atnaujinam ekraną + tėvo cache (parentActiveKid/parentKids)
     await showKidDetail(kidId);
-    await loadParentKids();
-    
+    if (typeof refreshParentKidById === 'function') await refreshParentKidById(kidId);
+
   } catch (error) {
     console.error('saveEditKid error:', error);
     showErr(errEl, 'Klaida: ' + error.message);
@@ -15290,7 +15383,11 @@ async function toggleKidAnonymity(kidId) {
   if (currentParentKid?.id === kidId) {
     currentParentKid.is_anonymous = newVal;
   }
-  
+  // Tėvo portalo cache (jei tai tėvo vaikas)
+  if (typeof parentKids !== 'undefined' && parentKids.find(k => k.id === kidId) && typeof syncParentKidCache === 'function') {
+    syncParentKidCache(kidId, { is_anonymous: newVal });
+  }
+
   // Išvalyti statistikos cache (kad rodymas atsinaujintų)
   if (typeof STAT_CACHE !== 'undefined') {
     STAT_CACHE.clear();
@@ -19184,6 +19281,115 @@ function subscribeKidNotifications() {
 }
 
 // ════════════════════════════════════════
+// 👨‍👩‍👧 TĖVŲ REALTIME — vaiko pasiekimai → tėvas iškart mato
+// Strategija: subscribe BE kid filtro, filtruoti client-side prieš _parentKidIdSet
+// (RLS serveryje vis tiek atiduoda tik šio tėvo vaikų eilutes). Atskiri kanalai/sk/flag.
+// ════════════════════════════════════════
+let _parentChannelsSubscribed = false;
+function subscribeParentNotifications() {
+  if (_parentChannelsSubscribed) { console.log('[realtime parent] jau prenumeruota — praleidžiam'); return; }
+  if (!currentProfile || currentProfile.role !== 'parent') return;
+  _parentChannelsSubscribed = true;
+  const uid = currentUser.id;
+  const kidNameById = (id) => { const k = parentKids.find(x => x.id === id); return k ? (k.first_name || 'Vaikas') : 'Vaikas'; };
+  const isActive = (id) => parentActiveKid && parentActiveKid.id === id;
+
+  // KANALAS 1: patvirtinimai (iššūkiai / varžybos / pratimai)
+  sb.channel('parent-approvals-' + uid)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'challenge_submissions' }, async payload => {
+      const sub = payload.new; if (!sub || !_parentKidIdSet.has(sub.kid_id)) return;
+      if (sub.status === 'approved') {
+        if (_isSeen('pch', sub.id)) return; _addSeen('pch', sub.id);
+        let title = 'iššūkį';
+        try { const { data: ch } = await sb.from('challenges').select('title').eq('id', sub.challenge_id).maybeSingle(); if (ch?.title) title = '„' + ch.title + '"'; } catch (e) {}
+        showToast(`🎯 ${kidNameById(sub.kid_id).toUpperCase()} įveikė ${title}\n+${sub.exp_gain || 0} EXP`, 'success', null, { confetti: 16, sound: 'exp' });
+        if (isActive(sub.kid_id)) refreshParentActiveScreen();
+      } else if (sub.status === 'rejected') {
+        if (_isSeen('pchRej', sub.id)) return; _addSeen('pchRej', sub.id);
+        showToast(`❌ ${kidNameById(sub.kid_id)}: iššūkis atmestas`, 'error');
+      }
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'competition_results' }, async payload => {
+      const res = payload.new; if (!res || !_parentKidIdSet.has(res.kid_id)) return;
+      if (res.approval_status === 'approved') {
+        if (_isSeen('pcp', res.id)) return; _addSeen('pcp', res.id);
+        let icon = '🏅', t = 'dalyvavo varžybose';
+        if (res.placement === 1) { icon = '🥇'; t = 'laimėjo AUKSĄ'; } else if (res.placement === 2) { icon = '🥈'; t = 'laimėjo SIDABRĄ'; } else if (res.placement === 3) { icon = '🥉'; t = 'laimėjo BRONZĄ'; }
+        showToast(`${icon} ${kidNameById(res.kid_id).toUpperCase()} ${t}!`, 'success', null, { confetti: 20, sound: 'victory' });
+        if (isActive(res.kid_id)) refreshParentActiveScreen();
+      } else if (res.approval_status === 'rejected') {
+        if (_isSeen('pcpRej', res.id)) return; _addSeen('pcpRej', res.id);
+        showToast(`❌ ${kidNameById(res.kid_id)}: varžybų rezultatas atmestas`, 'error');
+      }
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'result_submissions' }, async payload => {
+      const sub = payload.new; if (!sub || !_parentKidIdSet.has(sub.kid_id)) return;
+      if (sub.status !== 'approved') return;
+      if (_isSeen('pex', sub.id)) return; _addSeen('pex', sub.id);
+      let exName = 'rezultatą';
+      try { const { data: ex } = await sb.from('exercises').select('name').eq('id', sub.exercise_id).maybeSingle(); if (ex?.name) exName = ex.name; } catch (e) {}
+      showToast(`📈 ${kidNameById(sub.kid_id).toUpperCase()}: naujas rezultatas\n${exName} +${sub.exp_gain || 0} EXP`, 'success', null, { confetti: 12, sound: 'exp' });
+      if (isActive(sub.kid_id)) refreshParentActiveScreen();
+    })
+    .subscribe();
+
+  // KANALAS 2: dvikovos
+  sb.channel('parent-duels-' + uid)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels' }, async payload => {
+      const duel = payload.new; if (!duel || duel.status !== 'completed') return;
+      const kidId = _parentKidIdSet.has(duel.challenger_id) ? duel.challenger_id : (_parentKidIdSet.has(duel.opponent_id) ? duel.opponent_id : null);
+      if (!kidId) return;
+      if (_isSeen('pdu', duel.id)) return; _addSeen('pdu', duel.id);
+      const won = duel.winner_id === kidId;
+      showToast(`🥊 ${kidNameById(kidId).toUpperCase()} dvikova: ${won ? 'PERGALĖ! 🏆' : 'baigta'}`, won ? 'success' : 'info', null, won ? { confetti: 18 } : {});
+      if (isActive(kidId)) refreshParentActiveScreen();
+    })
+    .subscribe();
+
+  // KANALAS 3: žinutės / skelbimai
+  sb.channel('parent-msgs-' + uid)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
+      const msg = payload.new;
+      if (!msg || !msg.conversation_id) return;
+      if (msg.sender_id === currentProfile.id) return;
+      if (_isSeen('pms', msg.id)) return;
+      const { data: member } = await sb.from('conversation_members').select('conversation_id').eq('conversation_id', msg.conversation_id).eq('user_id', currentProfile.id).maybeSingle();
+      if (!member) return;
+      const [{ data: conv }, { data: sender }] = await Promise.all([
+        sb.from('conversations').select('type, title').eq('id', msg.conversation_id).maybeSingle(),
+        sb.from('profiles').select('first_name, last_name, role').eq('id', msg.sender_id).maybeSingle()
+      ]);
+      const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() : 'Kažkas';
+      const roleEmoji = sender?.role === 'trainer' ? '👨‍🏫' : (sender?.role === 'club_admin' ? '🏛️' : '');
+      const isAnn = conv?.type === 'announcement';
+      const preview = (msg.body || '').substring(0, 80);
+      const trimmed = (msg.body || '').length > 80 ? '...' : '';
+      _addSeen('pms', msg.id);
+      const header = isAnn ? `📢 KLUBO PRANEŠIMAS\n${roleEmoji} ${senderName}` : `💬 NUO ${roleEmoji} ${senderName.toUpperCase()}`;
+      showToast(`${header}\n\n${preview}${trimmed}`, 'info', null, { sound: 'send' });
+      if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+    })
+    .subscribe();
+
+  console.log('[realtime parent] prenumeruoti 3 kanalai');
+}
+
+// Perprenumeruoti tėvo kanalus (po app resume)
+async function resubscribeParentChannels() {
+  try {
+    const chans = sb.getChannels ? sb.getChannels() : [];
+    chans.forEach(ch => {
+      const t = ch.topic || '';
+      if (t.includes('parent-approvals-') || t.includes('parent-duels-') || t.includes('parent-msgs-')) {
+        sb.removeChannel(ch);
+      }
+    });
+  } catch (e) { console.warn('resubscribeParentChannels remove', e); }
+  _parentChannelsSubscribed = false;
+  subscribeParentNotifications();
+}
+
+// ════════════════════════════════════════
 // REJECT MODALAS
 // ════════════════════════════════════════
 function openRejectModal(subId) {
@@ -19861,7 +20067,15 @@ async function handleAppResume() {
     if (currentProfile?.role === 'kid' && typeof detectNewChallenges === 'function') {
       detectNewChallenges();
     }
-    
+
+    // 👨‍👩‍👧 TĖVAI: perregistruoti kanalus + atnaujinti ekraną + praleisti įvykiai
+    if (currentProfile?.role === 'parent') {
+      if (typeof resubscribeParentChannels === 'function') await resubscribeParentChannels();
+      if (typeof refreshParentActiveScreen === 'function') refreshParentActiveScreen();
+      if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+      if (typeof showParentMissedEvents === 'function') await showParentMissedEvents();
+    }
+
   } catch (e) {
     setTimeout(() => location.reload(), 1500);
   }
@@ -20006,6 +20220,102 @@ async function showMissedEvents() {
     console.error('[showMissedEvents] klaida:', e);
   } finally {
     _missedEventsRunning = false;
+  }
+}
+
+// 📬 TĖVAI: parodyti praleistus vaikų įvykius (po vieną). Skirtingai nei vaikas —
+// RODOM iššūkių/varžybų/pratimų toast'us (tėvas neturi detect* pipeline).
+let _parentMissedRunning = false;
+async function showParentMissedEvents() {
+  if (!sb || !currentProfile || currentProfile.role !== 'parent') return;
+  const kidIds = [..._parentKidIdSet];
+  if (kidIds.length === 0) return;
+  if (_parentMissedRunning) return;
+  _parentMissedRunning = true;
+  try {
+    const userId = currentProfile.id;
+    const firstRun = !localStorage.getItem('spobu_parent_missed_init');
+    const kidNameById = (id) => { const k = parentKids.find(x => x.id === id); return k ? (k.first_name || 'Vaikas') : 'Vaikas'; };
+
+    const [chs, cps, exs, msgs] = await Promise.all([
+      sb.from('challenge_submissions').select('id, kid_id, exp_gain, challenge_id, reviewed_at').in('kid_id', kidIds).eq('status', 'approved').order('reviewed_at', { ascending: false }).limit(40),
+      sb.from('competition_results').select('id, kid_id, exp_gained, placement, approved_at').in('kid_id', kidIds).eq('approval_status', 'approved').order('approved_at', { ascending: false }).limit(40),
+      sb.from('result_submissions').select('id, kid_id, exp_gain, exercise_id, reviewed_at').in('kid_id', kidIds).eq('status', 'approved').order('reviewed_at', { ascending: false }).limit(40),
+      sb.from('messages').select('id, conversation_id, sender_id, body, sent_at').neq('sender_id', userId).order('sent_at', { ascending: false }).limit(40)
+    ]);
+
+    const all = [];
+    (chs.data || []).forEach(c => all.push({ ts: c.reviewed_at, type: 'challenge', sk: 'pch', id: c.id, data: c }));
+    (cps.data || []).forEach(c => all.push({ ts: c.approved_at, type: 'competition', sk: 'pcp', id: c.id, data: c }));
+    (exs.data || []).forEach(e => all.push({ ts: e.reviewed_at, type: 'exercise', sk: 'pex', id: e.id, data: e }));
+
+    // Dvikovos (best-effort — RLS gali neleisti tėvui skaityti)
+    try {
+      const { data: dus } = await sb.from('duels').select('id, winner_id, challenger_id, opponent_id, created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(60);
+      (dus || []).forEach(d => {
+        const kidId = _parentKidIdSet.has(d.challenger_id) ? d.challenger_id : (_parentKidIdSet.has(d.opponent_id) ? d.opponent_id : null);
+        if (kidId) all.push({ ts: d.created_at, type: 'duel', sk: 'pdu', id: d.id, data: { ...d, _kidId: kidId } });
+      });
+    } catch (e) {}
+
+    // Žinutės — tik tos, kur tėvas yra pokalbio narys
+    if (msgs.data && msgs.data.length > 0) {
+      const convIds = [...new Set(msgs.data.map(m => m.conversation_id))];
+      const { data: myMembers } = await sb.from('conversation_members').select('conversation_id').eq('user_id', userId).in('conversation_id', convIds);
+      const myConvIds = new Set((myMembers || []).map(m => m.conversation_id));
+      msgs.data.forEach(m => { if (myConvIds.has(m.conversation_id)) all.push({ ts: m.sent_at, type: 'message', sk: 'pms', id: m.id, data: m }); });
+    }
+
+    let events = all.filter(e => !_isSeen(e.sk, e.id));
+
+    if (firstRun) {
+      const nowMs = Date.now();
+      const fresh = new Set(events.filter(e => e.ts && (nowMs - new Date(e.ts).getTime()) < 180000).map(e => e.sk + ':' + e.id));
+      events.forEach(e => { if (!fresh.has(e.sk + ':' + e.id)) _addSeen(e.sk, e.id); });
+      events = events.filter(e => fresh.has(e.sk + ':' + e.id));
+      localStorage.setItem('spobu_parent_missed_init', '1');
+    }
+
+    events.sort((a, b) => new Date(a.ts) - new Date(b.ts));
+    if (events.length === 0) return;
+
+    for (const ev of events) {
+      _addSeen(ev.sk, ev.id);
+      const kidNm = ev.data.kid_id ? kidNameById(ev.data.kid_id) : (ev.data._kidId ? kidNameById(ev.data._kidId) : '');
+      if (ev.type === 'challenge') {
+        let title = 'iššūkį';
+        try { const { data: ch } = await sb.from('challenges').select('title').eq('id', ev.data.challenge_id).maybeSingle(); if (ch?.title) title = '„' + ch.title + '"'; } catch (e) {}
+        showToast(`🎯 ${kidNm.toUpperCase()} įveikė ${title}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 14, sound: 'exp' });
+      } else if (ev.type === 'competition') {
+        let icon = '🏅', t = 'dalyvavo varžybose';
+        if (ev.data.placement === 1) { icon = '🥇'; t = 'laimėjo AUKSĄ'; } else if (ev.data.placement === 2) { icon = '🥈'; t = 'laimėjo SIDABRĄ'; } else if (ev.data.placement === 3) { icon = '🥉'; t = 'laimėjo BRONZĄ'; }
+        showToast(`${icon} ${kidNm.toUpperCase()} ${t}!`, 'success', null, { confetti: 18, sound: 'victory' });
+      } else if (ev.type === 'exercise') {
+        let exName = 'rezultatą';
+        try { const { data: ex } = await sb.from('exercises').select('name').eq('id', ev.data.exercise_id).maybeSingle(); if (ex?.name) exName = ex.name; } catch (e) {}
+        showToast(`📈 ${kidNm.toUpperCase()}: ${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 10, sound: 'exp' });
+      } else if (ev.type === 'duel') {
+        const won = ev.data.winner_id === ev.data._kidId;
+        showToast(`🥊 ${kidNm.toUpperCase()} dvikova: ${won ? 'PERGALĖ! 🏆' : 'baigta'}`, won ? 'success' : 'info', null, won ? { confetti: 14 } : {});
+      } else if (ev.type === 'message') {
+        const [{ data: conv }, { data: sender }] = await Promise.all([
+          sb.from('conversations').select('type, title').eq('id', ev.data.conversation_id).maybeSingle(),
+          sb.from('profiles').select('first_name, last_name, role').eq('id', ev.data.sender_id).maybeSingle()
+        ]);
+        const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() : 'Kažkas';
+        const roleEmoji = sender?.role === 'trainer' ? '👨‍🏫' : (sender?.role === 'club_admin' ? '🏛️' : '');
+        const isAnn = conv?.type === 'announcement';
+        const preview = (ev.data.body || '').substring(0, 80);
+        const trimmed = (ev.data.body || '').length > 80 ? '...' : '';
+        const header = isAnn ? `📢 KLUBO PRANEŠIMAS\n${roleEmoji} ${senderName}` : `💬 NUO ${roleEmoji} ${senderName.toUpperCase()}`;
+        showToast(`${header}\n\n${preview}${trimmed}`, 'info', null, { sound: 'send' });
+      }
+    }
+    if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+  } catch (e) {
+    console.error('[showParentMissedEvents] klaida:', e);
+  } finally {
+    _parentMissedRunning = false;
   }
 }
 
@@ -20449,6 +20759,11 @@ function updateSoundToggleUI() {
   if (status) status.textContent = on ? 'Įjungti · pasiekimų garsai' : 'Išjungti';
   if (sw) sw.style.background = on ? '#66BB6A' : 'rgba(255,255,255,.15)';
   if (knob) knob.style.left = on ? '21px' : '3px';
+  // Tėvų nustatymų modalas (be jungiklio — tik ikona/statusas)
+  const pIcon = document.getElementById('parent-sound-icon');
+  const pStatus = document.getElementById('parent-sound-status');
+  if (pIcon) pIcon.textContent = on ? '🔊' : '🔇';
+  if (pStatus) pStatus.textContent = on ? 'Įjungti · pranešimų garsai' : 'Išjungti';
 }
 
 // 🔔 Pranešimų jungiklis
@@ -20471,15 +20786,20 @@ async function updatePushToggleUI() {
   const status = document.getElementById('kid-push-status');
   const sw = document.getElementById('kid-push-switch');
   const knob = document.getElementById('kid-push-knob');
-  
+  // Tėvų nustatymų modalas (be jungiklio)
+  const pIcon = document.getElementById('parent-push-icon');
+  const pStatus = document.getElementById('parent-push-status');
+
   if (!pushSupported()) {
     if (icon) icon.textContent = '📵';
     if (status) status.textContent = 'Naršyklė nepalaiko';
     if (sw) sw.style.background = 'rgba(255,255,255,.15)';
     if (knob) knob.style.left = '3px';
+    if (pIcon) pIcon.textContent = '📵';
+    if (pStatus) pStatus.textContent = 'Naršyklė nepalaiko';
     return;
   }
-  
+
   // 1) IŠKART parodyti localStorage būseną (greita - be laukimo)
   const cached = localStorage.getItem('spobu_push_on') === '1';
   const applyState = (on) => {
@@ -20487,6 +20807,8 @@ async function updatePushToggleUI() {
     if (status) status.textContent = on ? 'Įjungti · gausi pranešimus' : 'Išjungti · spausk įjungti';
     if (sw) sw.style.background = on ? '#66BB6A' : 'rgba(255,255,255,.15)';
     if (knob) knob.style.left = on ? '21px' : '3px';
+    if (pIcon) pIcon.textContent = on ? '🔔' : '🔕';
+    if (pStatus) pStatus.textContent = on ? 'Įjungti · gausi pranešimus' : 'Išjungti · spausk įjungti';
   };
   applyState(cached);
   
@@ -20533,11 +20855,12 @@ async function enablePushNotifications() {
     showToast('📵 Tavo naršyklė nepalaiko pranešimų', 'error', 4000);
     return false;
   }
-  if (!currentKid?.id) {
+  const isParent = currentProfile?.role === 'parent';
+  if (!isParent && !currentKid?.id) {
     showToast('❌ Pirma prisijunk', 'error');
     return false;
   }
-  
+
   try {
     // Leidimo prašymas
     const permission = await Notification.requestPermission();
@@ -20582,7 +20905,7 @@ async function enablePushNotifications() {
     // Išsaugoti Supabase
     const subJson = sub.toJSON();
     const { error } = await sb.from('push_subscriptions').upsert({
-      kid_id: currentKid.id,
+      kid_id: isParent ? null : currentKid.id,
       user_id: currentUser.id,
       endpoint: subJson.endpoint,
       p256dh: subJson.keys.p256dh,
