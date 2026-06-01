@@ -19291,62 +19291,35 @@ function subscribeParentNotifications() {
   if (!currentProfile || currentProfile.role !== 'parent') return;
   _parentChannelsSubscribed = true;
   const uid = currentUser.id;
-  const kidNameById = (id) => { const k = parentKids.find(x => x.id === id); return k ? (k.first_name || 'Vaikas') : 'Vaikas'; };
   const isActive = (id) => parentActiveKid && parentActiveKid.id === id;
 
-  // KANALAS 1: patvirtinimai (iššūkiai / varžybos / pratimai)
+  // KANALAS 1: pasiekimai (iššūkiai / varžybos / pratimai) — TIK TYLUS Feed atnaujinimas.
+  // JOKIO toast/push! Pasiekimai keliauja tik į Feed, ne į pranešimus.
   sb.channel('parent-approvals-' + uid)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'challenge_submissions' }, async payload => {
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'challenge_submissions' }, payload => {
       const sub = payload.new; if (!sub || !_parentKidIdSet.has(sub.kid_id)) return;
-      if (sub.status === 'approved') {
-        if (_isSeen('pch', sub.id)) return; _addSeen('pch', sub.id);
-        let title = 'iššūkį';
-        try { const { data: ch } = await sb.from('challenges').select('title').eq('id', sub.challenge_id).maybeSingle(); if (ch?.title) title = '„' + ch.title + '"'; } catch (e) {}
-        showToast(`🎯 ${kidNameById(sub.kid_id).toUpperCase()} įveikė ${title}\n+${sub.exp_gain || 0} EXP`, 'success', null, { confetti: 16, sound: 'exp' });
-        if (isActive(sub.kid_id)) refreshParentActiveScreen();
-      } else if (sub.status === 'rejected') {
-        if (_isSeen('pchRej', sub.id)) return; _addSeen('pchRej', sub.id);
-        showToast(`❌ ${kidNameById(sub.kid_id)}: iššūkis atmestas`, 'error');
-      }
+      if (sub.status === 'approved' && isActive(sub.kid_id)) refreshParentActiveScreen();
     })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'competition_results' }, async payload => {
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'competition_results' }, payload => {
       const res = payload.new; if (!res || !_parentKidIdSet.has(res.kid_id)) return;
-      if (res.approval_status === 'approved') {
-        if (_isSeen('pcp', res.id)) return; _addSeen('pcp', res.id);
-        let icon = '🏅', t = 'dalyvavo varžybose';
-        if (res.placement === 1) { icon = '🥇'; t = 'laimėjo AUKSĄ'; } else if (res.placement === 2) { icon = '🥈'; t = 'laimėjo SIDABRĄ'; } else if (res.placement === 3) { icon = '🥉'; t = 'laimėjo BRONZĄ'; }
-        showToast(`${icon} ${kidNameById(res.kid_id).toUpperCase()} ${t}!`, 'success', null, { confetti: 20, sound: 'victory' });
-        if (isActive(res.kid_id)) refreshParentActiveScreen();
-      } else if (res.approval_status === 'rejected') {
-        if (_isSeen('pcpRej', res.id)) return; _addSeen('pcpRej', res.id);
-        showToast(`❌ ${kidNameById(res.kid_id)}: varžybų rezultatas atmestas`, 'error');
-      }
+      if (res.approval_status === 'approved' && isActive(res.kid_id)) refreshParentActiveScreen();
     })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'result_submissions' }, async payload => {
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'result_submissions' }, payload => {
       const sub = payload.new; if (!sub || !_parentKidIdSet.has(sub.kid_id)) return;
-      if (sub.status !== 'approved') return;
-      if (_isSeen('pex', sub.id)) return; _addSeen('pex', sub.id);
-      let exName = 'rezultatą';
-      try { const { data: ex } = await sb.from('exercises').select('name').eq('id', sub.exercise_id).maybeSingle(); if (ex?.name) exName = ex.name; } catch (e) {}
-      showToast(`📈 ${kidNameById(sub.kid_id).toUpperCase()}: naujas rezultatas\n${exName} +${sub.exp_gain || 0} EXP`, 'success', null, { confetti: 12, sound: 'exp' });
-      if (isActive(sub.kid_id)) refreshParentActiveScreen();
+      if (sub.status === 'approved' && isActive(sub.kid_id)) refreshParentActiveScreen();
     })
     .subscribe();
 
-  // KANALAS 2: dvikovos
+  // KANALAS 2: dvikovos — TIK TYLUS atnaujinimas, jokio toast/push
   sb.channel('parent-duels-' + uid)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels' }, async payload => {
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels' }, payload => {
       const duel = payload.new; if (!duel || duel.status !== 'completed') return;
       const kidId = _parentKidIdSet.has(duel.challenger_id) ? duel.challenger_id : (_parentKidIdSet.has(duel.opponent_id) ? duel.opponent_id : null);
-      if (!kidId) return;
-      if (_isSeen('pdu', duel.id)) return; _addSeen('pdu', duel.id);
-      const won = duel.winner_id === kidId;
-      showToast(`🥊 ${kidNameById(kidId).toUpperCase()} dvikova: ${won ? 'PERGALĖ! 🏆' : 'baigta'}`, won ? 'success' : 'info', null, won ? { confetti: 18 } : {});
-      if (isActive(kidId)) refreshParentActiveScreen();
+      if (kidId && isActive(kidId)) refreshParentActiveScreen();
     })
     .subscribe();
 
-  // KANALAS 3: žinutės / skelbimai
+  // KANALAS 3: žinutės / skelbimai — TIK ŠITIE rodo toast + push (trenerio/klubo pranešimai, pagyrimai, pastabos)
   sb.channel('parent-msgs-' + uid)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
       const msg = payload.new;
@@ -20223,47 +20196,28 @@ async function showMissedEvents() {
   }
 }
 
-// 📬 TĖVAI: parodyti praleistus vaikų įvykius (po vieną). Skirtingai nei vaikas —
-// RODOM iššūkių/varžybų/pratimų toast'us (tėvas neturi detect* pipeline).
+// 📬 TĖVAI: parodyti praleistus PRANEŠIMUS po atsibudimo. TIK trenerio/klubo žinutės,
+// pagyrimai, pastabos. JOKIŲ pasiekimų toast'ų — tie keliauja tik į Feed (tylus refresh).
 let _parentMissedRunning = false;
 async function showParentMissedEvents() {
   if (!sb || !currentProfile || currentProfile.role !== 'parent') return;
-  const kidIds = [..._parentKidIdSet];
-  if (kidIds.length === 0) return;
   if (_parentMissedRunning) return;
   _parentMissedRunning = true;
   try {
     const userId = currentProfile.id;
     const firstRun = !localStorage.getItem('spobu_parent_missed_init');
-    const kidNameById = (id) => { const k = parentKids.find(x => x.id === id); return k ? (k.first_name || 'Vaikas') : 'Vaikas'; };
 
-    const [chs, cps, exs, msgs] = await Promise.all([
-      sb.from('challenge_submissions').select('id, kid_id, exp_gain, challenge_id, reviewed_at').in('kid_id', kidIds).eq('status', 'approved').order('reviewed_at', { ascending: false }).limit(40),
-      sb.from('competition_results').select('id, kid_id, exp_gained, placement, approved_at').in('kid_id', kidIds).eq('approval_status', 'approved').order('approved_at', { ascending: false }).limit(40),
-      sb.from('result_submissions').select('id, kid_id, exp_gain, exercise_id, reviewed_at').in('kid_id', kidIds).eq('status', 'approved').order('reviewed_at', { ascending: false }).limit(40),
-      sb.from('messages').select('id, conversation_id, sender_id, body, sent_at').neq('sender_id', userId).order('sent_at', { ascending: false }).limit(40)
-    ]);
+    const { data: msgsData } = await sb.from('messages')
+      .select('id, conversation_id, sender_id, body, sent_at')
+      .neq('sender_id', userId)
+      .order('sent_at', { ascending: false }).limit(40);
 
     const all = [];
-    (chs.data || []).forEach(c => all.push({ ts: c.reviewed_at, type: 'challenge', sk: 'pch', id: c.id, data: c }));
-    (cps.data || []).forEach(c => all.push({ ts: c.approved_at, type: 'competition', sk: 'pcp', id: c.id, data: c }));
-    (exs.data || []).forEach(e => all.push({ ts: e.reviewed_at, type: 'exercise', sk: 'pex', id: e.id, data: e }));
-
-    // Dvikovos (best-effort — RLS gali neleisti tėvui skaityti)
-    try {
-      const { data: dus } = await sb.from('duels').select('id, winner_id, challenger_id, opponent_id, created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(60);
-      (dus || []).forEach(d => {
-        const kidId = _parentKidIdSet.has(d.challenger_id) ? d.challenger_id : (_parentKidIdSet.has(d.opponent_id) ? d.opponent_id : null);
-        if (kidId) all.push({ ts: d.created_at, type: 'duel', sk: 'pdu', id: d.id, data: { ...d, _kidId: kidId } });
-      });
-    } catch (e) {}
-
-    // Žinutės — tik tos, kur tėvas yra pokalbio narys
-    if (msgs.data && msgs.data.length > 0) {
-      const convIds = [...new Set(msgs.data.map(m => m.conversation_id))];
+    if (msgsData && msgsData.length > 0) {
+      const convIds = [...new Set(msgsData.map(m => m.conversation_id))];
       const { data: myMembers } = await sb.from('conversation_members').select('conversation_id').eq('user_id', userId).in('conversation_id', convIds);
       const myConvIds = new Set((myMembers || []).map(m => m.conversation_id));
-      msgs.data.forEach(m => { if (myConvIds.has(m.conversation_id)) all.push({ ts: m.sent_at, type: 'message', sk: 'pms', id: m.id, data: m }); });
+      msgsData.forEach(m => { if (myConvIds.has(m.conversation_id)) all.push({ ts: m.sent_at, sk: 'pms', id: m.id, data: m }); });
     }
 
     let events = all.filter(e => !_isSeen(e.sk, e.id));
@@ -20281,35 +20235,17 @@ async function showParentMissedEvents() {
 
     for (const ev of events) {
       _addSeen(ev.sk, ev.id);
-      const kidNm = ev.data.kid_id ? kidNameById(ev.data.kid_id) : (ev.data._kidId ? kidNameById(ev.data._kidId) : '');
-      if (ev.type === 'challenge') {
-        let title = 'iššūkį';
-        try { const { data: ch } = await sb.from('challenges').select('title').eq('id', ev.data.challenge_id).maybeSingle(); if (ch?.title) title = '„' + ch.title + '"'; } catch (e) {}
-        showToast(`🎯 ${kidNm.toUpperCase()} įveikė ${title}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 14, sound: 'exp' });
-      } else if (ev.type === 'competition') {
-        let icon = '🏅', t = 'dalyvavo varžybose';
-        if (ev.data.placement === 1) { icon = '🥇'; t = 'laimėjo AUKSĄ'; } else if (ev.data.placement === 2) { icon = '🥈'; t = 'laimėjo SIDABRĄ'; } else if (ev.data.placement === 3) { icon = '🥉'; t = 'laimėjo BRONZĄ'; }
-        showToast(`${icon} ${kidNm.toUpperCase()} ${t}!`, 'success', null, { confetti: 18, sound: 'victory' });
-      } else if (ev.type === 'exercise') {
-        let exName = 'rezultatą';
-        try { const { data: ex } = await sb.from('exercises').select('name').eq('id', ev.data.exercise_id).maybeSingle(); if (ex?.name) exName = ex.name; } catch (e) {}
-        showToast(`📈 ${kidNm.toUpperCase()}: ${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 10, sound: 'exp' });
-      } else if (ev.type === 'duel') {
-        const won = ev.data.winner_id === ev.data._kidId;
-        showToast(`🥊 ${kidNm.toUpperCase()} dvikova: ${won ? 'PERGALĖ! 🏆' : 'baigta'}`, won ? 'success' : 'info', null, won ? { confetti: 14 } : {});
-      } else if (ev.type === 'message') {
-        const [{ data: conv }, { data: sender }] = await Promise.all([
-          sb.from('conversations').select('type, title').eq('id', ev.data.conversation_id).maybeSingle(),
-          sb.from('profiles').select('first_name, last_name, role').eq('id', ev.data.sender_id).maybeSingle()
-        ]);
-        const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() : 'Kažkas';
-        const roleEmoji = sender?.role === 'trainer' ? '👨‍🏫' : (sender?.role === 'club_admin' ? '🏛️' : '');
-        const isAnn = conv?.type === 'announcement';
-        const preview = (ev.data.body || '').substring(0, 80);
-        const trimmed = (ev.data.body || '').length > 80 ? '...' : '';
-        const header = isAnn ? `📢 KLUBO PRANEŠIMAS\n${roleEmoji} ${senderName}` : `💬 NUO ${roleEmoji} ${senderName.toUpperCase()}`;
-        showToast(`${header}\n\n${preview}${trimmed}`, 'info', null, { sound: 'send' });
-      }
+      const [{ data: conv }, { data: sender }] = await Promise.all([
+        sb.from('conversations').select('type, title').eq('id', ev.data.conversation_id).maybeSingle(),
+        sb.from('profiles').select('first_name, last_name, role').eq('id', ev.data.sender_id).maybeSingle()
+      ]);
+      const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() : 'Kažkas';
+      const roleEmoji = sender?.role === 'trainer' ? '👨‍🏫' : (sender?.role === 'club_admin' ? '🏛️' : '');
+      const isAnn = conv?.type === 'announcement';
+      const preview = (ev.data.body || '').substring(0, 80);
+      const trimmed = (ev.data.body || '').length > 80 ? '...' : '';
+      const header = isAnn ? `📢 KLUBO PRANEŠIMAS\n${roleEmoji} ${senderName}` : `💬 NUO ${roleEmoji} ${senderName.toUpperCase()}`;
+      showToast(`${header}\n\n${preview}${trimmed}`, 'info', null, { sound: 'send' });
     }
     if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
   } catch (e) {
