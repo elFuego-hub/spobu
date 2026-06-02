@@ -21513,6 +21513,27 @@ function renderMessage(msg, sendersMap) {
 }
 
 // SIŲSTI ŽINUTĘ
+// 🔔 PUSH paleidimas pokalbio nariams (per edge function conversation_id režimą).
+// Funkcija pati randa gavėjus per conversation_members.user_id → push_subscriptions.user_id
+// (apima TĖVUS, vaikus, trenerį — visus narius, IŠSKYRUS siuntėją).
+async function triggerConvPush(conversationId, bodyText, titleOverride) {
+  try {
+    if (!conversationId || !currentUser) return;
+    const senderName = currentProfile ? `${currentProfile.first_name || ''} ${currentProfile.last_name || ''}`.trim() : '';
+    const raw = (bodyText || '').toString();
+    const preview = raw.length > 120 ? raw.slice(0, 120) + '…' : raw;
+    sb.functions.invoke('clever-processor', {
+      body: {
+        conversation_id: conversationId,
+        sender_id: currentUser.id,
+        title: titleOverride || senderName || 'SPOBU žinutė',
+        body: preview,
+        url: '/'
+      }
+    }).catch(e => console.warn('[push] siuntimo klaida:', e));
+  } catch (e) { console.warn('[push] triggerConvPush klaida:', e); }
+}
+
 async function sendMessage() {
   const input = document.getElementById('msg-input');
   const body = input.value.trim();
@@ -21543,6 +21564,9 @@ async function sendMessage() {
   input.value = '';
   input.style.height = 'auto';
   // Real-time subscription perkraus žinutes
+
+  // 🔔 PUSH pokalbio nariams (treneris/klubas/tėvai/vaikas)
+  triggerConvPush(currentConversationId, body);
 }
 
 // REAL-TIME SUBSCRIPTION (žinutės pokalbyje)
@@ -22086,9 +22110,12 @@ async function submitComposeMessage() {
       body: body,
       message_type: 'text'
     });
-    
+
     if (msgErr) throw msgErr;
-    
+
+    // 🔔 PUSH visiems pokalbio nariams (pranešimas / pagyrimas / pastaba / žinutė)
+    triggerConvPush(conv.id, body, dbType === 'announcement' ? '📢 Klubo pranešimas' : null);
+
     // 1. Iškart uždarom VISUS modal'us
     closeComposeModal();
     
