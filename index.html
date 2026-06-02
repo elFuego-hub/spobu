@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v7</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v8</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4751,16 +4751,37 @@ async function loadParentBellContent() {
       .eq('user_id', currentProfile.id).neq('conversations.type', 'announcement');
     const chatConvs = (chatMem || []).filter(m => m.conversations && m.conversations.last_message_at)
       .sort((a, b) => new Date(b.conversations.last_message_at || 0) - new Date(a.conversations.last_message_at || 0));
-    let chatHtml = '';
-    for (const m of chatConvs.slice(0, 8)) {
+    // Helper: vienas chat įrašas su tipo etikete (asmeninė / grupei / visiems)
+    const buildChatItem = async (m) => {
       const conv = m.conversations;
       const { data: msg } = await sb.from('messages').select('body, sent_at').eq('conversation_id', conv.id).order('sent_at', { ascending: false }).limit(1).maybeSingle();
       const unread = conv.last_message_sender_id !== currentProfile.id && (!m.last_read_at || new Date(conv.last_message_at) > new Date(m.last_read_at));
-      chatHtml += `<div onclick="document.getElementById('parent-bell-modal').remove(); if(typeof openMessages==='function'){ openMessages(); if(typeof openConversation==='function') openConversation('${conv.id}'); }" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;">
-        <div style="font-size:18px;">💬</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:800;color:white;">${conv.title || 'Žinutė'}</div><div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${(msg?.body || '').substring(0, 90)}</div><div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(msg?.sent_at || conv.last_message_at)}</div></div>
-        ${unread ? '<div style="width:7px;height:7px;background:var(--br);border-radius:50%;margin-top:5px;flex-shrink:0;"></div>' : ''}
+      let tIcon, tLabel, tColor;
+      if (conv.type === 'direct') { tIcon = '👤'; tLabel = 'Asmeninė'; tColor = '#22C55E'; }
+      else if (conv.type === 'group') { tIcon = '👥'; tLabel = 'Grupei'; tColor = '#A855F7'; }
+      else { tIcon = '📣'; tLabel = 'Visiems'; tColor = '#FF8C00'; }
+      return `<div onclick="document.getElementById('parent-bell-modal').remove(); if(typeof openMessages==='function'){ openMessages(); if(typeof openConversation==='function') openConversation('${conv.id}'); }" style="background:var(--card);border:.5px solid var(--bdr);border-left:3px solid ${tColor};border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;">
+        <div style="font-size:18px;">${tIcon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:${tColor};background:${tColor}22;padding:1px 7px;border-radius:99px;margin-bottom:3px;">${tIcon} ${tLabel}</div>
+          <div style="font-size:11px;font-weight:800;color:white;">${conv.title || 'Žinutė'}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${(msg?.body || '').substring(0, 90)}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(msg?.sent_at || conv.last_message_at)}</div>
+        </div>
+        ${unread ? `<div style="width:7px;height:7px;background:${tColor};border-radius:50%;margin-top:5px;flex-shrink:0;"></div>` : ''}
       </div>`;
+    };
+    // Skaidom: asmeninės (direct) vs grupinės/bendros (group/broadcast)
+    const personalConvs = chatConvs.filter(m => m.conversations.type === 'direct');
+    const groupConvs = chatConvs.filter(m => m.conversations.type !== 'direct');
+    let chatHtml = '';
+    if (personalConvs.length) {
+      chatHtml += `<div class="st" style="padding:2px 0 8px;">👤 ASMENINĖS ŽINUTĖS</div>`;
+      for (const m of personalConvs.slice(0, 10)) chatHtml += await buildChatItem(m);
+    }
+    if (groupConvs.length) {
+      chatHtml += `<div class="st" style="padding:10px 0 8px;">👥 GRUPINĖS / BENDROS</div>`;
+      for (const m of groupConvs.slice(0, 10)) chatHtml += await buildChatItem(m);
     }
     _parentBellHtml.chat = chatHtml || '<div style="text-align:center;padding:24px 14px;color:var(--mut);font-size:11px;">💬 Pokalbių su treneriu ar klubu dar nėra</div>';
 
