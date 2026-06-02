@@ -4621,7 +4621,7 @@ async function loadParentBellContent() {
         ${unread ? '<div style="width:7px;height:7px;background:var(--br);border-radius:50%;margin-top:5px;flex-shrink:0;"></div>' : ''}
       </div>`;
     }
-    if (annHtml) sections.push(`<div class="st" style="padding:4px 0 8px;">📌 KLUBO PRANEŠIMAI</div>${annHtml}`);
+    sections.push(`<div class="st" style="padding:4px 0 8px;">📢 KLUBO IR TRENERIO PRANEŠIMAI</div>${annHtml || '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;margin-bottom:8px;">Naujų pranešimų nėra</div>'}`);
 
     // 2) Trenerio / klubo žinutės (pokalbiai)
     const { data: chatMem } = await sb.from('conversation_members')
@@ -4640,9 +4640,9 @@ async function loadParentBellContent() {
         ${unread ? '<div style="width:7px;height:7px;background:var(--br);border-radius:50%;margin-top:5px;flex-shrink:0;"></div>' : ''}
       </div>`;
     }
-    if (chatHtml) sections.push(`<div class="st" style="padding:10px 0 8px;">💬 TRENERIO / KLUBO ŽINUTĖS</div>${chatHtml}`);
+    sections.push(`<div class="st" style="padding:12px 0 8px;">💬 ŽINUTĖS SU TRENERIU / KLUBU</div>${chatHtml || '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;">Pokalbių su treneriu ar klubu dar nėra</div>'}`);
 
-    el.innerHTML = sections.join('') || '<div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Nėra naujų pranešimų</div>';
+    el.innerHTML = sections.join('');
     // Atvaizdavus (su „nauja" taškais) — pažymim skaitytais TIK rodomus pokalbius + nuimam badge
     const shownConvIds = [
       ...annConvs.slice(0, 10).map(m => m.conversations?.id),
