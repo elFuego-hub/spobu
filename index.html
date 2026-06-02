@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v5</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v6</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4611,6 +4611,7 @@ function _renderParentNotifPopup() {
     : (isTrainer ? '🥋 TRENERIO PRANEŠIMAS' : '🏢 KLUBO PRANEŠIMAS');
   const senderName = opts.name || (isTrainer ? 'Treneris' : 'Klubas');
   const esc = (s) => (typeof escapeHtml === 'function') ? escapeHtml(s || '') : (s || '');
+  const catObj = (opts.category && typeof ANNOUNCEMENT_CATEGORIES !== 'undefined') ? ANNOUNCEMENT_CATEGORIES[opts.category] : null;
   let modal = document.getElementById('parent-notif-popup');
   if (!modal) {
     modal = document.createElement('div');
@@ -4627,6 +4628,7 @@ function _renderParentNotifPopup() {
         <div style="position:relative;z-index:1;">
           <div style="font-size:42px;margin-bottom:6px;">${icon}</div>
           <div style="font-size:10px;letter-spacing:1.5px;font-weight:800;opacity:.92;">${kindLabel}</div>
+          ${catObj ? `<div style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.2);padding:3px 11px;border-radius:99px;font-size:11px;font-weight:700;margin-top:10px;">${catObj.icon} ${catObj.name}</div>` : ''}
         </div>
       </div>
       <div style="padding:20px;text-align:center;">
@@ -4694,7 +4696,7 @@ async function loadParentBellContent() {
   try {
     // 1) Klubo pranešimai (announcement pokalbiai)
     const { data: annMem } = await sb.from('conversation_members')
-      .select('last_read_at, conversations!inner(id, type, title, created_by, last_message_at, last_message_sender_id)')
+      .select('last_read_at, conversations!inner(id, type, title, category, created_by, last_message_at, last_message_sender_id)')
       .eq('user_id', currentProfile.id).eq('conversations.type', 'announcement');
     const annConvs = (annMem || []).filter(m => m.conversations)
       .sort((a, b) => new Date(b.conversations.last_message_at || 0) - new Date(a.conversations.last_message_at || 0));
@@ -4712,10 +4714,12 @@ async function loadParentBellContent() {
       const isTr = sndRole === 'trainer';
       const accent = isTr ? '#3B82F6' : '#FF4D00';
       const tag = isTr ? ('🥋 ' + (sndName || 'Treneris')) : '🏢 Klubas';
+      const catObj = (typeof ANNOUNCEMENT_CATEGORIES !== 'undefined' && conv.category) ? ANNOUNCEMENT_CATEGORIES[conv.category] : null;
+      const catBadge = catObj ? `<span style="display:inline-block;font-size:8px;font-weight:700;color:var(--mut);background:rgba(255,255,255,.08);padding:1px 7px;border-radius:99px;margin-left:4px;">${catObj.icon} ${catObj.name}</span>` : '';
       annHtml += `<div onclick="document.getElementById('parent-bell-modal').remove(); if(typeof openAnnouncement==='function') openAnnouncement('${conv.id}');" style="background:var(--card);border:.5px solid var(--bdr);border-left:3px solid ${accent};border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;">
         <div style="font-size:18px;">${isTr ? '🥋' : '📢'}</div>
         <div style="flex:1;min-width:0;">
-          <div style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:${accent};background:${accent}22;padding:1px 7px;border-radius:99px;margin-bottom:3px;">${tag}</div>
+          <div style="margin-bottom:3px;"><span style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:${accent};background:${accent}22;padding:1px 7px;border-radius:99px;">${tag}</span>${catBadge}</div>
           <div style="font-size:11px;font-weight:800;color:white;">${conv.title || (isTr ? 'Trenerio pranešimas' : 'Klubo pranešimas')}</div>
           <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${(msg?.body || '').substring(0, 90)}</div>
           <div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(msg?.sent_at || conv.last_message_at)}</div>
@@ -19465,7 +19469,7 @@ function subscribeParentNotifications() {
       const { data: member } = await sb.from('conversation_members').select('conversation_id').eq('conversation_id', msg.conversation_id).eq('user_id', currentProfile.id).maybeSingle();
       if (!member) return;
       const [{ data: conv }, { data: sender }] = await Promise.all([
-        sb.from('conversations').select('type, title').eq('id', msg.conversation_id).maybeSingle(),
+        sb.from('conversations').select('type, title, category').eq('id', msg.conversation_id).maybeSingle(),
         sb.from('profiles').select('first_name, last_name, role').eq('id', msg.sender_id).maybeSingle()
       ]);
       const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() : 'Kažkas';
@@ -19479,7 +19483,7 @@ function subscribeParentNotifications() {
         if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
         return;
       }
-      showParentNotifPopup({ title: isAnn ? (conv?.title || '') : '', body: preview + trimmed, role: sender?.role, name: senderName, kind: isAnn ? 'ann' : 'chat' });
+      showParentNotifPopup({ title: isAnn ? (conv?.title || '') : '', body: preview + trimmed, role: sender?.role, name: senderName, kind: isAnn ? 'ann' : 'chat', category: conv?.category });
       if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
     })
     .subscribe();
@@ -20376,7 +20380,7 @@ async function showParentMissedEvents() {
     for (const ev of events) {
       _addSeen(ev.sk, ev.id);
       const [{ data: conv }, { data: sender }] = await Promise.all([
-        sb.from('conversations').select('type, title').eq('id', ev.data.conversation_id).maybeSingle(),
+        sb.from('conversations').select('type, title, category').eq('id', ev.data.conversation_id).maybeSingle(),
         sb.from('profiles').select('first_name, last_name, role').eq('id', ev.data.sender_id).maybeSingle()
       ]);
       const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() : 'Kažkas';
@@ -20384,7 +20388,7 @@ async function showParentMissedEvents() {
       const isAnn = conv?.type === 'announcement';
       const preview = (ev.data.body || '').substring(0, 80);
       const trimmed = (ev.data.body || '').length > 80 ? '...' : '';
-      showParentNotifPopup({ title: isAnn ? (conv?.title || '') : '', body: preview + trimmed, role: sender?.role, name: senderName, kind: isAnn ? 'ann' : 'chat' });
+      showParentNotifPopup({ title: isAnn ? (conv?.title || '') : '', body: preview + trimmed, role: sender?.role, name: senderName, kind: isAnn ? 'ann' : 'chat', category: conv?.category });
     }
     if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
   } catch (e) {
