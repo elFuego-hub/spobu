@@ -4558,13 +4558,10 @@ async function parentTestPush(btn) {
   const reset = () => { if (btn) { btn.disabled = false; btn.textContent = '🔔 IŠBANDYTI PUSH (siųsti sau)'; } };
   try {
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Bandoma...'; }
-    // 1) Užtikrinti, kad push įjungtas (yra prenumerata su mano user_id)
-    let enabled = false;
-    try { enabled = await isPushEnabled(); } catch (e) {}
-    if (!enabled) {
-      const ok = await enablePushNotifications();
-      if (!ok) { showToast('🐛 Push neįsijungė (leidimas?)', 'error', 8000); reset(); return; }
-    }
+    // 1) VISADA užregistruoti ŠIO įrenginio prenumeratą TĖVUI (upsert pagal endpoint → user_id=tėvas).
+    //    Net jei naršyklė jau turi push (nuo vaiko) — perrašom, kad priklausytų tėvui.
+    const ok = await enablePushNotifications();
+    if (!ok) { showToast('🐛 Push neįsiregistravo — leidimas atmestas ARBA klaida saugant DB', 'error', 9000); reset(); return; }
     // 2) Iškviesti funkciją — siųsti SAU (user_id režimas)
     const { data, error } = await sb.functions.invoke('clever-processor', {
       body: { user_id: currentUser.id, title: 'SPOBU testas 🔔', body: 'Jei matai šitą — push VEIKIA! 🎉', url: '/' }
