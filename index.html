@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v4</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v5</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4585,6 +4585,71 @@ async function parentTestPush(btn) {
 
 let _parentBellTab = 'ann';
 let _parentBellHtml = { ann: '', chat: '' };
+
+// ════════════════════════════════════════
+// 🔔 GRAŽUS TĖVŲ PRANEŠIMO POPUP (vietoj paprasto toast) — užsidaro TIK su GERAI
+// Su eile: jei ateina keli, rodomi po vieną (GERAI rodo kitą).
+// ════════════════════════════════════════
+let _parentPopupQueue = [];
+let _parentPopupShowing = false;
+
+function showParentNotifPopup(opts) {
+  _parentPopupQueue.push(opts || {});
+  if (!_parentPopupShowing) _renderParentNotifPopup();
+}
+
+function _renderParentNotifPopup() {
+  const opts = _parentPopupQueue[0];
+  if (!opts) { _parentPopupShowing = false; return; }
+  _parentPopupShowing = true;
+  const isTrainer = opts.role === 'trainer';
+  const c1 = isTrainer ? '#3B82F6' : '#FF4D00';
+  const c2 = isTrainer ? '#1E40AF' : '#FF7A33';
+  const icon = isTrainer ? '🥋' : '🏢';
+  const kindLabel = opts.kind === 'chat'
+    ? (isTrainer ? '💬 TRENERIO ŽINUTĖ' : '💬 KLUBO ŽINUTĖ')
+    : (isTrainer ? '🥋 TRENERIO PRANEŠIMAS' : '🏢 KLUBO PRANEŠIMAS');
+  const senderName = opts.name || (isTrainer ? 'Treneris' : 'Klubas');
+  const esc = (s) => (typeof escapeHtml === 'function') ? escapeHtml(s || '') : (s || '');
+  let modal = document.getElementById('parent-notif-popup');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'parent-notif-popup';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px;';
+    document.body.appendChild(modal);
+  }
+  modal.onclick = null; // backdrop NEUŽDARO
+  const remaining = _parentPopupQueue.length - 1;
+  modal.innerHTML = `
+    <div style="max-width:420px;width:100%;background:var(--card);border-radius:22px;border:1px solid ${c1}55;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6);animation:slideUp .3s ease-out;">
+      <div style="background:linear-gradient(135deg, ${c1}, ${c2});padding:22px;color:white;position:relative;overflow:hidden;text-align:center;">
+        <div style="position:absolute;right:-15px;top:-15px;font-size:110px;opacity:.12;line-height:1;">${icon}</div>
+        <div style="position:relative;z-index:1;">
+          <div style="font-size:42px;margin-bottom:6px;">${icon}</div>
+          <div style="font-size:10px;letter-spacing:1.5px;font-weight:800;opacity:.92;">${kindLabel}</div>
+        </div>
+      </div>
+      <div style="padding:20px;text-align:center;">
+        <div style="font-size:11px;color:${c1};font-weight:800;margin-bottom:8px;">${esc(senderName)}</div>
+        ${opts.title ? `<div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.5px;color:white;margin-bottom:8px;line-height:1.2;">${esc(opts.title)}</div>` : ''}
+        <div style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.55;white-space:pre-wrap;word-wrap:break-word;">${esc(opts.body)}</div>
+        <button onclick="closeParentNotifPopup()" style="width:100%;background:linear-gradient(135deg, ${c1}, ${c2});color:white;border:none;padding:15px;border-radius:14px;font-size:14px;font-weight:800;letter-spacing:1.5px;cursor:pointer;margin-top:18px;font-family:inherit;box-shadow:0 6px 18px ${c1}44;">GERAI ✓${remaining > 0 ? ' (dar ' + remaining + ')' : ''}</button>
+      </div>
+    </div>`;
+  modal.style.display = 'flex';
+  if (typeof playSound === 'function') { try { playSound('send'); } catch (e) {} }
+}
+
+function closeParentNotifPopup() {
+  _parentPopupQueue.shift();
+  if (_parentPopupQueue.length > 0) {
+    _renderParentNotifPopup();
+  } else {
+    _parentPopupShowing = false;
+    const modal = document.getElementById('parent-notif-popup');
+    if (modal) modal.remove();
+  }
+}
 
 async function toggleParentNotifications() {
   let modal = document.getElementById('parent-bell-modal');
@@ -19409,8 +19474,12 @@ function subscribeParentNotifications() {
       const preview = (msg.body || '').substring(0, 80);
       const trimmed = (msg.body || '').length > 80 ? '...' : '';
       _addSeen('pms', msg.id);
-      const header = isAnn ? `📢 KLUBO PRANEŠIMAS\n${roleEmoji} ${senderName}` : `💬 NUO ${roleEmoji} ${senderName.toUpperCase()}`;
-      showToast(`${header}\n\n${preview}${trimmed}`, 'info', null, { sound: 'send' });
+      // Jei tėvas šiuo metu žiūri TĄ pokalbį — nerodom popup (matosi gijoje)
+      if (typeof currentConversationId !== 'undefined' && currentConversationId === msg.conversation_id) {
+        if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+        return;
+      }
+      showParentNotifPopup({ title: isAnn ? (conv?.title || '') : '', body: preview + trimmed, role: sender?.role, name: senderName, kind: isAnn ? 'ann' : 'chat' });
       if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
     })
     .subscribe();
@@ -20315,8 +20384,7 @@ async function showParentMissedEvents() {
       const isAnn = conv?.type === 'announcement';
       const preview = (ev.data.body || '').substring(0, 80);
       const trimmed = (ev.data.body || '').length > 80 ? '...' : '';
-      const header = isAnn ? `📢 KLUBO PRANEŠIMAS\n${roleEmoji} ${senderName}` : `💬 NUO ${roleEmoji} ${senderName.toUpperCase()}`;
-      showToast(`${header}\n\n${preview}${trimmed}`, 'info', null, { sound: 'send' });
+      showParentNotifPopup({ title: isAnn ? (conv?.title || '') : '', body: preview + trimmed, role: sender?.role, name: senderName, kind: isAnn ? 'ann' : 'chat' });
     }
     if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
   } catch (e) {
