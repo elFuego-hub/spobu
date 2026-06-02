@@ -3751,6 +3751,9 @@ async function openParentSettings() {
           </div>
         </div>
         <div style="padding:8px 16px 0;">
+          <button onclick="parentTestPush(this)" style="width:100%;background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);color:var(--br);border-radius:14px;padding:12px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;">🔔 IŠBANDYTI PUSH (siųsti sau)</button>
+        </div>
+        <div style="padding:8px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
             <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
               <div style="font-size:28px;">🔍</div>
@@ -4547,6 +4550,36 @@ function parentEditActiveKid() {
     showKidDetail(parentActiveKid.id);
   } else {
     showToast('Pirma pasirinkite vaiką', 'error');
+  }
+}
+
+// 🔔 TEST PUSH — vienas paspaudimas, siunčia push SAU (diagnostikai)
+async function parentTestPush(btn) {
+  const reset = () => { if (btn) { btn.disabled = false; btn.textContent = '🔔 IŠBANDYTI PUSH (siųsti sau)'; } };
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Bandoma...'; }
+    // 1) Užtikrinti, kad push įjungtas (yra prenumerata su mano user_id)
+    let enabled = false;
+    try { enabled = await isPushEnabled(); } catch (e) {}
+    if (!enabled) {
+      const ok = await enablePushNotifications();
+      if (!ok) { showToast('🐛 Push neįsijungė (leidimas?)', 'error', 8000); reset(); return; }
+    }
+    // 2) Iškviesti funkciją — siųsti SAU (user_id režimas)
+    const { data, error } = await sb.functions.invoke('clever-processor', {
+      body: { user_id: currentUser.id, title: 'SPOBU testas 🔔', body: 'Jei matai šitą — push VEIKIA! 🎉', url: '/' }
+    });
+    if (error) {
+      let detail = error.message || String(error);
+      try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
+      showToast('🐛 PUSH KLAIDA:\n' + detail, 'error', 9000);
+    } else {
+      showToast('🐛 REZULTATAS: sent=' + (data?.sent ?? '?') + ' failed=' + (data?.failed ?? '?') + ' total=' + (data?.total ?? '?') + (data?.message ? '\n' + data.message : ''), 'info', 9000);
+    }
+  } catch (e) {
+    showToast('🐛 EXCEPTION:\n' + (e?.message || e), 'error', 9000);
+  } finally {
+    reset();
   }
 }
 
@@ -21522,7 +21555,7 @@ async function triggerConvPush(conversationId, bodyText, titleOverride) {
     const senderName = currentProfile ? `${currentProfile.first_name || ''} ${currentProfile.last_name || ''}`.trim() : '';
     const raw = (bodyText || '').toString();
     const preview = raw.length > 120 ? raw.slice(0, 120) + '…' : raw;
-    sb.functions.invoke('clever-processor', {
+    const { data, error } = await sb.functions.invoke('clever-processor', {
       body: {
         conversation_id: conversationId,
         sender_id: currentUser.id,
@@ -21530,8 +21563,18 @@ async function triggerConvPush(conversationId, bodyText, titleOverride) {
         body: preview,
         url: '/'
       }
-    }).catch(e => console.warn('[push] siuntimo klaida:', e));
-  } catch (e) { console.warn('[push] triggerConvPush klaida:', e); }
+    });
+    // 🐛 LAIKINAS DEBUG — parodo ką grąžino push funkcija (vėliau pašalinsim)
+    if (error) {
+      console.warn('[push] klaida:', error);
+      let detail = error.message || String(error);
+      try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
+      showToast('🐛 PUSH KLAIDA:\n' + detail, 'error', 8000);
+    } else {
+      console.log('[push] rezultatas:', data);
+      showToast('🐛 PUSH: sent=' + (data?.sent ?? '?') + ' failed=' + (data?.failed ?? '?') + ' total=' + (data?.total ?? '?') + (data?.message ? '\n' + data.message : ''), 'info', 8000);
+    }
+  } catch (e) { console.warn('[push] triggerConvPush klaida:', e); showToast('🐛 PUSH EXCEPTION:\n' + (e?.message || e), 'error', 8000); }
 }
 
 async function sendMessage() {
