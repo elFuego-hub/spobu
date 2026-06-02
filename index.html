@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v9</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v10</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4206,6 +4206,7 @@ function parentSelectKid(kidId) {
   else if (sid === 't-feed') loadParentKidFeed();
   else if (sid === 't-prof') loadParentKidProfile();
   else loadParentKidMain();
+  if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge(); // badge → naujo vaiko neperskaityti
   const m = document.getElementById('parent-kid-switcher'); if (m) m.remove();
 }
 
@@ -4539,9 +4540,24 @@ async function loadParentKidProfile() {
 async function updateParentNotifBadge() {
   try {
     if (!currentProfile) return;
-    const { data: mem } = await sb.from('conversation_members').select('last_read_at, conversations(last_message_at, last_message_sender_id)').eq('user_id', currentProfile.id);
+    // Per-aktyvų vaiką (kad sutaptų su varpelio tabų skaičiais)
+    const activeKid = (typeof parentActiveKid !== 'undefined') ? parentActiveKid : null;
+    const activeKidClubId = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : (currentProfile?.club_id || null);
+    const { data: mem } = await sb.from('conversation_members').select('last_read_at, conversations(kid_id, club_id, last_message_at, last_message_sender_id)').eq('user_id', currentProfile.id);
     let unread = 0;
-    (mem || []).forEach(m => { if (!m.conversations) return; const lm = new Date(m.conversations.last_message_at); const lr = m.last_read_at ? new Date(m.last_read_at) : new Date(0); if (lm > lr && m.conversations.last_message_sender_id !== currentProfile.id) unread++; });
+    (mem || []).forEach(m => {
+      const c = m.conversations; if (!c) return;
+      // per-vaiko filtras (toks pat kaip varpelyje)
+      let rel = true;
+      if (activeKid) {
+        if (c.kid_id) rel = c.kid_id === activeKid.id;
+        else if (activeKidClubId) rel = !c.club_id || c.club_id === activeKidClubId;
+      }
+      if (!rel) return;
+      const lm = new Date(c.last_message_at);
+      const lr = m.last_read_at ? new Date(m.last_read_at) : new Date(0);
+      if (lm > lr && c.last_message_sender_id !== currentProfile.id) unread++;
+    });
     document.querySelectorAll('.tk-notif-badge').forEach(b => { b.textContent = unread; b.style.display = unread > 0 ? 'flex' : 'none'; });
   } catch (e) {}
 }
@@ -4711,11 +4727,21 @@ function switchParentBellTab(tab) {
 async function loadParentBellContent() {
   const el = document.getElementById('parent-bell-list'); if (!el) return;
   try {
+    // 🎯 PER-VAIKO filtras: rodom tik aktyvaus vaiko pranešimus/žinutes
+    const activeKid = parentActiveKid;
+    const activeKidClubId = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : (currentProfile?.club_id || null);
+    const relatesToActiveKid = (m) => {
+      const c = m.conversations; if (!c) return false;
+      if (!activeKid) return true;                          // nėra vaiko — rodom viską
+      if (c.kid_id) return c.kid_id === activeKid.id;       // skirta konkrečiam vaikui
+      if (!activeKidClubId) return true;                    // legacy be klubo
+      return !c.club_id || c.club_id === activeKidClubId;   // klubo lygio (be kid_id)
+    };
     // 1) Klubo pranešimai (announcement pokalbiai)
     const { data: annMem } = await sb.from('conversation_members')
-      .select('last_read_at, conversations!inner(id, type, title, category, created_by, last_message_at, last_message_sender_id)')
+      .select('last_read_at, conversations!inner(id, type, title, category, kid_id, club_id, created_by, last_message_at, last_message_sender_id)')
       .eq('user_id', currentProfile.id).eq('conversations.type', 'announcement');
-    const annConvs = (annMem || []).filter(m => m.conversations)
+    const annConvs = (annMem || []).filter(m => m.conversations).filter(relatesToActiveKid)
       .sort((a, b) => new Date(b.conversations.last_message_at || 0) - new Date(a.conversations.last_message_at || 0));
     let annHtml = '';
     for (const m of annConvs.slice(0, 10)) {
@@ -4748,9 +4774,9 @@ async function loadParentBellContent() {
 
     // 2) Trenerio / klubo žinutės (pokalbiai)
     const { data: chatMem } = await sb.from('conversation_members')
-      .select('last_read_at, conversations!inner(id, type, title, last_message_at, last_message_sender_id)')
+      .select('last_read_at, conversations!inner(id, type, title, kid_id, club_id, last_message_at, last_message_sender_id)')
       .eq('user_id', currentProfile.id).neq('conversations.type', 'announcement');
-    const chatConvs = (chatMem || []).filter(m => m.conversations && m.conversations.last_message_at)
+    const chatConvs = (chatMem || []).filter(m => m.conversations && m.conversations.last_message_at).filter(relatesToActiveKid)
       .sort((a, b) => new Date(b.conversations.last_message_at || 0) - new Date(a.conversations.last_message_at || 0));
     // Helper: vienas chat įrašas su tipo etikete (asmeninė / grupei / visiems)
     const buildChatItem = async (m) => {
