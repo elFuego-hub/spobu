@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v6</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v7</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4671,11 +4671,27 @@ async function toggleParentNotifications() {
     <div id="parent-bell-list" style="flex:1;overflow-y:auto;padding:12px 16px;">
       <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
     </div>
+    <div style="padding:10px 16px;border-top:.5px solid var(--bdr);">
+      <button onclick="markAllParentRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;font-family:inherit;">✓ Žymėti visus skaitytus</button>
+    </div>
   </div>`;
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
   document.body.appendChild(modal);
   _parentBellTab = 'ann';
   loadParentBellContent();
+}
+
+// Pažymėti VISUS tėvo pokalbius/pranešimus skaitytais
+async function markAllParentRead() {
+  try {
+    if (!currentProfile) return;
+    await sb.from('conversation_members')
+      .update({ last_read_at: new Date().toISOString() })
+      .eq('user_id', currentProfile.id);
+    if (typeof showToast === 'function') showToast('✓ Visi pažymėti skaitytais', 'success');
+    if (typeof loadParentBellContent === 'function') loadParentBellContent();
+    if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+  } catch (e) { console.warn('markAllParentRead', e); }
 }
 
 // Perjungti tėvo varpelio tabą (kaip vaikų switchNotifTab)
@@ -4748,17 +4764,19 @@ async function loadParentBellContent() {
     }
     _parentBellHtml.chat = chatHtml || '<div style="text-align:center;padding:24px 14px;color:var(--mut);font-size:11px;">💬 Pokalbių su treneriu ar klubu dar nėra</div>';
 
-    // Tab skaičiai + atvaizduoti aktyvų tabą
-    document.querySelectorAll('.pbell-cnt-ann').forEach(e => e.textContent = annConvs.length ? '(' + annConvs.length + ')' : '');
-    document.querySelectorAll('.pbell-cnt-chat').forEach(e => e.textContent = chatConvs.length ? '(' + chatConvs.length + ')' : '');
+    // 🔢 NEPERSKAITYTŲ skaičiai (sutampa su varpelio badge logika)
+    const isUnreadConv = (m) => {
+      const lm = m.conversations?.last_message_at ? new Date(m.conversations.last_message_at) : null;
+      if (!lm) return false;
+      const lr = m.last_read_at ? new Date(m.last_read_at) : new Date(0);
+      return lm > lr && m.conversations.last_message_sender_id !== currentProfile.id;
+    };
+    const annUnread = annConvs.filter(isUnreadConv).length;
+    const chatUnread = chatConvs.filter(isUnreadConv).length;
+    document.querySelectorAll('.pbell-cnt-ann').forEach(e => e.textContent = annUnread ? '(' + annUnread + ')' : '');
+    document.querySelectorAll('.pbell-cnt-chat').forEach(e => e.textContent = chatUnread ? '(' + chatUnread + ')' : '');
     switchParentBellTab(_parentBellTab || 'ann');
-
-    // Pažymim skaitytais rodomus pokalbius + nuimam badge
-    const shownConvIds = [
-      ...annConvs.slice(0, 10).map(m => m.conversations?.id),
-      ...chatConvs.slice(0, 8).map(m => m.conversations?.id)
-    ].filter(Boolean);
-    await markParentBellRead(shownConvIds);
+    // Badge atnaujinam (NEžymim auto-skaitytais — tam yra mygtukas + individualus paspaudimas)
     if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
   } catch (e) { console.warn('parent bell', e); el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant pranešimus</div>'; }
 }
