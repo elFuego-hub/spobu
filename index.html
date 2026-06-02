@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v10</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v12</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4120,7 +4120,17 @@ async function getActiveKidClubId() {
   return clubId;
 }
 
-// Sinchronizuoti tėvo cache po vaiko duomenų redagavimo (in-memory patch)
+// Ar pokalbis (conv) susijęs su AKTYVIU vaiku? (sinchroninis — naudoja _clubId cache)
+// Logika: kid_id → konkretus vaikas; group_id → vaiko grupė; kitaip → klubo lygio.
+function parentConvRelatesToActiveKid(conv) {
+  const k = parentActiveKid;
+  if (!k || !conv) return true;
+  if (conv.kid_id) return conv.kid_id === k.id;
+  if (conv.group_id) return conv.group_id === (k.group_id || null);
+  const clubId = (k._clubId !== undefined) ? k._clubId : (currentProfile?.club_id || null);
+  if (!clubId) return true;
+  return !conv.club_id || conv.club_id === clubId;
+}
 function syncParentKidCache(kidId, updates) {
   const inList = parentKids.find(k => k.id === kidId);
   if (inList) Object.assign(inList, updates);
@@ -4541,19 +4551,12 @@ async function updateParentNotifBadge() {
   try {
     if (!currentProfile) return;
     // Per-aktyvų vaiką (kad sutaptų su varpelio tabų skaičiais)
-    const activeKid = (typeof parentActiveKid !== 'undefined') ? parentActiveKid : null;
-    const activeKidClubId = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : (currentProfile?.club_id || null);
-    const { data: mem } = await sb.from('conversation_members').select('last_read_at, conversations(kid_id, club_id, last_message_at, last_message_sender_id)').eq('user_id', currentProfile.id);
+    if (typeof getActiveKidClubId === 'function') { try { await getActiveKidClubId(); } catch (e) {} } // cache _clubId
+    const { data: mem } = await sb.from('conversation_members').select('last_read_at, conversations(kid_id, group_id, club_id, last_message_at, last_message_sender_id)').eq('user_id', currentProfile.id);
     let unread = 0;
     (mem || []).forEach(m => {
       const c = m.conversations; if (!c) return;
-      // per-vaiko filtras (toks pat kaip varpelyje)
-      let rel = true;
-      if (activeKid) {
-        if (c.kid_id) rel = c.kid_id === activeKid.id;
-        else if (activeKidClubId) rel = !c.club_id || c.club_id === activeKidClubId;
-      }
-      if (!rel) return;
+      if (!parentConvRelatesToActiveKid(c)) return; // per-vaiko filtras (kid_id/group_id/club)
       const lm = new Date(c.last_message_at);
       const lr = m.last_read_at ? new Date(m.last_read_at) : new Date(0);
       if (lm > lr && c.last_message_sender_id !== currentProfile.id) unread++;
@@ -4730,30 +4733,26 @@ async function loadParentBellContent() {
     // 🎯 PER-VAIKO filtras: rodom tik aktyvaus vaiko pranešimus/žinutes
     const activeKid = parentActiveKid;
     const activeKidClubId = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : (currentProfile?.club_id || null);
-    const relatesToActiveKid = (m) => {
-      const c = m.conversations; if (!c) return false;
-      if (!activeKid) return true;                          // nėra vaiko — rodom viską
-      if (c.kid_id) return c.kid_id === activeKid.id;       // skirta konkrečiam vaikui
-      if (!activeKidClubId) return true;                    // legacy be klubo
-      return !c.club_id || c.club_id === activeKidClubId;   // klubo lygio (be kid_id)
-    };
+    const relatesToActiveKid = (m) => parentConvRelatesToActiveKid(m.conversations); // kid_id / group_id / club
     // 1) Klubo pranešimai (announcement pokalbiai)
     const { data: annMem } = await sb.from('conversation_members')
-      .select('last_read_at, conversations!inner(id, type, title, category, kid_id, club_id, created_by, last_message_at, last_message_sender_id)')
+      .select('last_read_at, conversations!inner(id, type, title, category, kid_id, group_id, club_id, created_by, last_message_at, last_message_preview, last_message_sender_id)')
       .eq('user_id', currentProfile.id).eq('conversations.type', 'announcement');
     const annConvs = (annMem || []).filter(m => m.conversations).filter(relatesToActiveKid)
       .sort((a, b) => new Date(b.conversations.last_message_at || 0) - new Date(a.conversations.last_message_at || 0));
+    // ⚡ Batch siuntėjų profiliai (viena užklausa vietoj N)
+    const annCreatorIds = [...new Set(annConvs.slice(0, 15).map(m => m.conversations.created_by).filter(Boolean))];
+    const sndMap = {};
+    if (annCreatorIds.length) {
+      const { data: snds } = await sb.from('profiles').select('id, first_name, last_name, role').in('id', annCreatorIds);
+      (snds || []).forEach(p => { sndMap[p.id] = p; });
+    }
     let annHtml = '';
-    for (const m of annConvs.slice(0, 10)) {
+    for (const m of annConvs.slice(0, 15)) {
       const conv = m.conversations;
-      const { data: msg } = await sb.from('messages').select('body, sent_at').eq('conversation_id', conv.id).order('sent_at', { ascending: false }).limit(1).maybeSingle();
-      const unread = msg && (!m.last_read_at || new Date(msg.sent_at) > new Date(m.last_read_at));
-      // 🎨 Siuntėjas: treneris (mėlyna) ar klubas (oranžinė)?
-      let sndRole = null, sndName = '';
-      if (conv.created_by) {
-        const { data: snd } = await sb.from('profiles').select('first_name, last_name, role').eq('id', conv.created_by).maybeSingle();
-        sndRole = snd?.role; sndName = `${snd?.first_name || ''} ${snd?.last_name || ''}`.trim();
-      }
+      const unread = !m.last_read_at || (conv.last_message_at && new Date(conv.last_message_at) > new Date(m.last_read_at));
+      const snd = sndMap[conv.created_by];
+      const sndRole = snd?.role; const sndName = snd ? `${snd.first_name || ''} ${snd.last_name || ''}`.trim() : '';
       const isTr = sndRole === 'trainer';
       const accent = isTr ? '#3B82F6' : '#FF4D00';
       const tag = isTr ? ('🥋 ' + (sndName || 'Treneris')) : '🏢 Klubas';
@@ -4764,8 +4763,8 @@ async function loadParentBellContent() {
         <div style="flex:1;min-width:0;">
           <div style="margin-bottom:3px;"><span style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:${accent};background:${accent}22;padding:1px 7px;border-radius:99px;">${tag}</span>${catBadge}</div>
           <div style="font-size:11px;font-weight:800;color:white;">${conv.title || (isTr ? 'Trenerio pranešimas' : 'Klubo pranešimas')}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${(msg?.body || '').substring(0, 90)}</div>
-          <div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(msg?.sent_at || conv.last_message_at)}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${(conv.last_message_preview || '').substring(0, 90)}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(conv.last_message_at)}</div>
         </div>
         ${unread ? `<div style="width:7px;height:7px;background:${accent};border-radius:50%;margin-top:5px;flex-shrink:0;"></div>` : ''}
       </div>`;
@@ -4774,14 +4773,13 @@ async function loadParentBellContent() {
 
     // 2) Trenerio / klubo žinutės (pokalbiai)
     const { data: chatMem } = await sb.from('conversation_members')
-      .select('last_read_at, conversations!inner(id, type, title, kid_id, club_id, last_message_at, last_message_sender_id)')
+      .select('last_read_at, conversations!inner(id, type, title, kid_id, group_id, club_id, last_message_at, last_message_preview, last_message_sender_id)')
       .eq('user_id', currentProfile.id).neq('conversations.type', 'announcement');
     const chatConvs = (chatMem || []).filter(m => m.conversations && m.conversations.last_message_at).filter(relatesToActiveKid)
       .sort((a, b) => new Date(b.conversations.last_message_at || 0) - new Date(a.conversations.last_message_at || 0));
-    // Helper: vienas chat įrašas su tipo etikete (asmeninė / grupei / visiems)
-    const buildChatItem = async (m) => {
+    // Helper: vienas chat įrašas su tipo etikete (be papildomų užklausų — naudoja last_message_preview)
+    const buildChatItem = (m) => {
       const conv = m.conversations;
-      const { data: msg } = await sb.from('messages').select('body, sent_at').eq('conversation_id', conv.id).order('sent_at', { ascending: false }).limit(1).maybeSingle();
       const unread = conv.last_message_sender_id !== currentProfile.id && (!m.last_read_at || new Date(conv.last_message_at) > new Date(m.last_read_at));
       let tIcon, tLabel, tColor;
       if (conv.type === 'direct') { tIcon = '👤'; tLabel = 'Asmeninė'; tColor = '#22C55E'; }
@@ -4792,8 +4790,8 @@ async function loadParentBellContent() {
         <div style="flex:1;min-width:0;">
           <div style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:${tColor};background:${tColor}22;padding:1px 7px;border-radius:99px;margin-bottom:3px;">${tIcon} ${tLabel}</div>
           <div style="font-size:11px;font-weight:800;color:white;">${conv.title || 'Žinutė'}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${(msg?.body || '').substring(0, 90)}</div>
-          <div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(msg?.sent_at || conv.last_message_at)}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${(conv.last_message_preview || '').substring(0, 90)}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(conv.last_message_at)}</div>
         </div>
         ${unread ? `<div style="width:7px;height:7px;background:${tColor};border-radius:50%;margin-top:5px;flex-shrink:0;"></div>` : ''}
       </div>`;
@@ -4802,10 +4800,10 @@ async function loadParentBellContent() {
     const personalConvs = chatConvs.filter(m => m.conversations.type === 'direct');
     const groupConvs = chatConvs.filter(m => m.conversations.type !== 'direct');
     let personalHtml = '';
-    for (const m of personalConvs.slice(0, 15)) personalHtml += await buildChatItem(m);
+    for (const m of personalConvs.slice(0, 15)) personalHtml += buildChatItem(m);
     _parentBellHtml.personal = personalHtml || '<div style="text-align:center;padding:24px 14px;color:var(--mut);font-size:11px;">👤 Asmeninių žinučių dar nėra</div>';
     let groupHtml = '';
-    for (const m of groupConvs.slice(0, 15)) groupHtml += await buildChatItem(m);
+    for (const m of groupConvs.slice(0, 15)) groupHtml += buildChatItem(m);
     _parentBellHtml.group = groupHtml || '<div style="text-align:center;padding:24px 14px;color:var(--mut);font-size:11px;">👥 Grupinių / bendrų žinučių dar nėra</div>';
 
     // 🔢 NEPERSKAITYTŲ skaičiai (sutampa su varpelio badge logika)
@@ -19533,7 +19531,7 @@ function subscribeParentNotifications() {
       const { data: member } = await sb.from('conversation_members').select('conversation_id').eq('conversation_id', msg.conversation_id).eq('user_id', currentProfile.id).maybeSingle();
       if (!member) return;
       const [{ data: conv }, { data: sender }] = await Promise.all([
-        sb.from('conversations').select('type, title, category').eq('id', msg.conversation_id).maybeSingle(),
+        sb.from('conversations').select('type, title, category, kid_id, group_id, club_id').eq('id', msg.conversation_id).maybeSingle(),
         sb.from('profiles').select('first_name, last_name, role').eq('id', msg.sender_id).maybeSingle()
       ]);
       const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() : 'Kažkas';
@@ -19544,6 +19542,11 @@ function subscribeParentNotifications() {
       _addSeen('pms', msg.id);
       // Jei tėvas šiuo metu žiūri TĄ pokalbį — nerodom popup (matosi gijoje)
       if (typeof currentConversationId !== 'undefined' && currentConversationId === msg.conversation_id) {
+        if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+        return;
+      }
+      // 🎯 Popup TIK jei žinutė susijusi su AKTYVIU vaiku (kito vaiko — matysis perjungus anketą)
+      if (typeof parentConvRelatesToActiveKid === 'function' && !parentConvRelatesToActiveKid(conv)) {
         if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
         return;
       }
@@ -20444,7 +20447,7 @@ async function showParentMissedEvents() {
     for (const ev of events) {
       _addSeen(ev.sk, ev.id);
       const [{ data: conv }, { data: sender }] = await Promise.all([
-        sb.from('conversations').select('type, title, category').eq('id', ev.data.conversation_id).maybeSingle(),
+        sb.from('conversations').select('type, title, category, kid_id, group_id, club_id').eq('id', ev.data.conversation_id).maybeSingle(),
         sb.from('profiles').select('first_name, last_name, role').eq('id', ev.data.sender_id).maybeSingle()
       ]);
       const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() : 'Kažkas';
@@ -20452,6 +20455,8 @@ async function showParentMissedEvents() {
       const isAnn = conv?.type === 'announcement';
       const preview = (ev.data.body || '').substring(0, 80);
       const trimmed = (ev.data.body || '').length > 80 ? '...' : '';
+      // 🎯 TIK jei susiję su aktyviu vaiku
+      if (typeof parentConvRelatesToActiveKid === 'function' && !parentConvRelatesToActiveKid(conv)) continue;
       showParentNotifPopup({ title: isAnn ? (conv?.title || '') : '', body: preview + trimmed, role: sender?.role, name: senderName, kind: isAnn ? 'ann' : 'chat', category: conv?.category });
     }
     if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
@@ -22170,6 +22175,7 @@ async function submitComposeMessage() {
       title: title,
       category: category,
       kid_id: composeContext.kidId || null,
+      group_id: composeContext.groupId || null,
       club_id: currentProfile?.club_id,
       created_by: currentUser.id
     };
