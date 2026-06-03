@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v17</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v18</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4768,39 +4768,77 @@ async function loadParentKidFeed() {
   try {
     const items = [];
     const cut = new Date(Date.now() - 180 * 86400000).toISOString();
-    const { data: chs } = await sb.from('challenge_submissions').select('reviewed_at, exp_gain, challenges(title)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(20);
-    (chs || []).forEach(s => items.push({ icon: '🎯', cls: 'orange', title: 'IŠŠŪKIS ĮVEIKTAS', sub: s.challenges?.title || '', exp: s.exp_gain, date: s.reviewed_at }));
-    const { data: comps } = await sb.from('competition_results').select('approved_at, exp_gained, placement, competitions(title)').eq('kid_id', k.id).eq('approval_status', 'approved').gte('approved_at', cut).order('approved_at', { ascending: false }).limit(20);
-    (comps || []).forEach(s => {
-      let icon = '🏅', t = 'VARŽYBOS';
-      if (s.placement === 1) { icon = '🥇'; t = 'AUKSO MEDALIS'; } else if (s.placement === 2) { icon = '🥈'; t = 'SIDABRO MEDALIS'; } else if (s.placement === 3) { icon = '🥉'; t = 'BRONZOS MEDALIS'; }
-      items.push({ icon, cls: 'gold', title: t, sub: s.competitions?.title || '', exp: s.exp_gained, date: s.approved_at });
+    const kname = (k.first_name || 'Vaikas');
+
+    const { data: chs } = await sb.from('challenge_submissions').select('reviewed_at, exp_gain, challenges(title, type)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(20);
+    (chs || []).forEach(s => {
+      const typeName = { weekly: 'Savaitinis iššūkis', monthly: 'Mėnesinis iššūkis', training: 'Treniruotės iššūkis', one_time: 'Vienkartinis iššūkis', permanent: 'Nuolatinis iššūkis' }[s.challenges?.type] || 'Iššūkis';
+      items.push({ icon: '🎯', cls: 'orange', chip: '🎯 Iššūkis', title: 'IŠŠŪKIS ĮVEIKTAS', desc: `${kname} įveikė iššūkį 💪`, sub: s.challenges?.title || '', meta: typeName, exp: s.exp_gain, date: s.reviewed_at });
     });
+
+    const { data: comps } = await sb.from('competition_results').select('approved_at, exp_gained, placement, competitions(title, event_date, level)').eq('kid_id', k.id).eq('approval_status', 'approved').gte('approved_at', cut).order('approved_at', { ascending: false }).limit(20);
+    (comps || []).forEach(s => {
+      let icon = '🏅', t = 'DALYVAVO VARŽYBOSE', desc = `${kname} dalyvavo varžybose`;
+      if (s.placement === 1) { icon = '🥇'; t = 'AUKSO MEDALIS'; desc = `${kname} iškovojo aukso medalį! 🎉`; }
+      else if (s.placement === 2) { icon = '🥈'; t = 'SIDABRO MEDALIS'; desc = `${kname} iškovojo sidabro medalį! 🎉`; }
+      else if (s.placement === 3) { icon = '🥉'; t = 'BRONZOS MEDALIS'; desc = `${kname} iškovojo bronzos medalį! 🎉`; }
+      const lvl = s.competitions?.level;
+      const dt = s.competitions?.event_date ? String(s.competitions.event_date).slice(0, 10) : '';
+      const meta = [lvl, dt].filter(Boolean).join(' · ');
+      items.push({ icon, cls: 'gold', chip: '🏆 Varžybos', title: t, desc, sub: s.competitions?.title || '', meta, exp: s.exp_gained, date: s.approved_at });
+    });
+
     try {
-      const { data: rs } = await sb.from('result_submissions').select('reviewed_at, exp_gain, new_value, exercises(name)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(20);
-      (rs || []).forEach(s => items.push({ icon: '📈', cls: 'blue', title: 'NAUJAS REZULTATAS', sub: (s.exercises?.name || '') + (s.new_value ? ' · ' + s.new_value : ''), exp: s.exp_gain, date: s.reviewed_at }));
+      const { data: rs } = await sb.from('result_submissions').select('reviewed_at, exp_gain, new_value, exercises(name, unit)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(20);
+      (rs || []).forEach(s => {
+        const unit = s.exercises?.unit ? ' ' + s.exercises.unit : '';
+        items.push({ icon: '📈', cls: 'blue', chip: '📈 Rekordas', title: 'NAUJAS REKORDAS', desc: `${kname} pagerino asmeninį rekordą`, sub: (s.exercises?.name || '') + (s.new_value ? ` → ${s.new_value}${unit}` : ''), meta: '', exp: s.exp_gain, date: s.reviewed_at });
+      });
     } catch (e) {}
+
     try {
       const { data: sl } = await sb.from('streak_bonus_log').select('created_at, exp_awarded, streak_type, streak_count').eq('kid_id', k.id).gte('created_at', cut).order('created_at', { ascending: false }).limit(20);
-      (sl || []).forEach(s => { const tn = s.streak_type === 'training' ? 'treniruočių' : s.streak_type === 'weekly' ? 'savaičių' : 'mėnesių'; items.push({ icon: '🔥', cls: 'orange', title: 'SERIJOS BONUSAS', sub: `${s.streak_count} ${tn} iš eilės`, exp: s.exp_awarded, date: s.created_at }); });
+      (sl || []).forEach(s => { const tn = s.streak_type === 'training' ? 'treniruočių' : s.streak_type === 'weekly' ? 'savaičių' : 'mėnesių'; items.push({ icon: '🔥', cls: 'orange', chip: '🔥 Serija', title: 'SERIJOS BONUSAS', desc: `${kname} nepraleidžia — serija dega!`, sub: `${s.streak_count} ${tn} iš eilės`, meta: '', exp: s.exp_awarded, date: s.created_at }); });
     } catch (e) {}
-    if (items.length === 0) { list.innerHTML = '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:24px;text-align:center;"><div style="font-size:34px;margin-bottom:8px;">📭</div><div style="font-size:12px;color:var(--mut);">Dar nėra patvirtintų pasiekimų</div></div>'; return; }
+
+    if (items.length === 0) { list.innerHTML = '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:24px;text-align:center;"><div style="font-size:34px;margin-bottom:8px;">📭</div><div style="font-size:12px;color:var(--mut);">Dar nėra patvirtintų pasiekimų</div><div style="font-size:10px;color:var(--mut);margin-top:5px;line-height:1.5;">Čia atsiras vaiko medaliai, įveikti iššūkiai ir nauji rekordai</div></div>'; return; }
     items.sort((a, b) => new Date(b.date) - new Date(a.date));
-    const grad = { gold: 'linear-gradient(180deg, rgba(255,215,0,.1) 0%, transparent 60%)', orange: 'linear-gradient(180deg, rgba(255,77,0,.1) 0%, transparent 60%)', blue: 'linear-gradient(180deg, rgba(59,130,246,.1) 0%, transparent 60%)' };
-    const bord = { gold: 'rgba(255,215,0,.25)', orange: 'rgba(255,77,0,.25)', blue: 'rgba(59,130,246,.25)' };
+
+    // 🏅 Suvestinės juosta viršuje
+    const totalExp = items.reduce((sum, it) => sum + (it.exp || 0), 0);
+    const summaryBar = `<div style="margin:0 0 12px;background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,128,0,.04));border:.5px solid rgba(255,77,0,.25);border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:12px;">
+      <div style="font-size:26px;line-height:1;">🏅</div>
+      <div style="flex:1;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px;color:white;line-height:1;">${items.length} PASIEKIMAI</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:3px;">per 6 mėn. · <span style="color:var(--grn);font-weight:800;">+${totalExp.toLocaleString('lt-LT')} EXP</span></div>
+      </div>
+    </div>`;
+
+    const grad = { gold: 'linear-gradient(180deg, rgba(255,215,0,.12) 0%, transparent 55%)', orange: 'linear-gradient(180deg, rgba(255,77,0,.12) 0%, transparent 55%)', blue: 'linear-gradient(180deg, rgba(59,130,246,.12) 0%, transparent 55%)' };
+    const bord = { gold: 'rgba(255,215,0,.3)', orange: 'rgba(255,77,0,.3)', blue: 'rgba(59,130,246,.3)' };
+    const chipBg = { gold: 'rgba(255,215,0,.15)', orange: 'rgba(255,77,0,.15)', blue: 'rgba(59,130,246,.15)' };
+    const chipCol = { gold: '#FFD700', orange: '#FF8C00', blue: '#60A5FA' };
+    const glow = { gold: 'rgba(255,215,0,.45)', orange: 'rgba(255,77,0,.45)', blue: 'rgba(59,130,246,.45)' };
     const initials = parentKidInitials(k);
     const avStyle = k.avatar_url ? `background-image:url('${k.avatar_url}');background-size:cover;background-position:center;` : 'background:linear-gradient(135deg,#FF4D00,#FFA500);';
-    list.innerHTML = items.slice(0, 15).map(it => `
-      <div style="margin:0 0 12px;background:var(--card);border:.5px solid ${bord[it.cls] || 'var(--bdr)'};border-radius:14px;overflow:hidden;background-image:${grad[it.cls] || 'none'};">
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;">
-          <div style="width:32px;height:32px;border-radius:50%;${avStyle}display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:white;flex-shrink:0;">${k.avatar_url ? '' : initials}</div>
-          <div style="flex:1;min-width:0;"><div style="font-size:11px;font-weight:800;color:white;">${parentKidName(k)}</div><div style="font-size:9px;color:var(--mut);">${tkTimeAgo(it.date)}</div></div>
-          <div style="font-size:18px;">${it.icon}</div>
+
+    list.innerHTML = summaryBar + items.slice(0, 20).map(it => `
+      <div style="margin:0 0 12px;background:var(--card);border:.5px solid ${bord[it.cls] || 'var(--bdr)'};border-radius:16px;overflow:hidden;background-image:${grad[it.cls] || 'none'};">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px 4px;">
+          <div style="width:34px;height:34px;border-radius:50%;${avStyle}display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:white;flex-shrink:0;">${k.avatar_url ? '' : initials}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${parentKidName(k)}</div>
+            <div style="font-size:9px;color:var(--mut);">${tkTimeAgo(it.date)}${it.date ? ' · ' + new Date(it.date).toLocaleDateString('lt-LT') : ''}</div>
+          </div>
+          <div style="font-size:8px;font-weight:800;letter-spacing:.5px;color:${chipCol[it.cls] || 'var(--mut)'};background:${chipBg[it.cls] || 'rgba(255,255,255,.06)'};padding:3px 8px;border-radius:99px;white-space:nowrap;flex-shrink:0;">${it.chip || ''}</div>
         </div>
-        <div style="padding:0 12px 12px;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.2px;text-align:center;color:white;margin-bottom:3px;">${it.title}</div>
-          ${it.sub ? `<div style="font-size:11px;color:rgba(255,255,255,.7);text-align:center;line-height:1.4;">${it.sub}</div>` : ''}
-          ${it.exp ? `<div style="text-align:center;margin-top:6px;"><span style="font-size:10px;font-weight:800;color:var(--grn);background:rgba(34,197,94,.12);padding:2px 8px;border-radius:99px;">+${it.exp} EXP</span></div>` : ''}
+        <div style="padding:4px 14px 14px;text-align:center;">
+          <div style="font-size:44px;line-height:1;margin:2px 0 6px;filter:drop-shadow(0 0 14px ${glow[it.cls] || 'transparent'});">${it.icon}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.4px;color:white;line-height:1;margin-bottom:5px;">${it.title}</div>
+          ${it.desc ? `<div style="font-size:12px;color:rgba(255,255,255,.85);line-height:1.45;">${it.desc}</div>` : ''}
+          ${it.sub ? `<div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:3px;">${it.sub}</div>` : ''}
+          ${it.meta ? `<div style="font-size:9px;color:var(--mut);margin-top:4px;opacity:.85;">${it.meta}</div>` : ''}
+          ${it.exp ? `<div style="margin-top:9px;"><span style="font-size:11px;font-weight:800;color:var(--grn);background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.3);padding:3px 12px;border-radius:99px;">+${it.exp} EXP</span></div>` : ''}
         </div>
       </div>`).join('');
   } catch (e) { console.warn('parent feed', e); list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant feed</div>'; }
