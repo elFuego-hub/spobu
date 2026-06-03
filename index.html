@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v16</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v17</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2085,7 +2085,7 @@ select.inp option{background:#222;}
       <div id="tk-kar-medals" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;"></div>
     </div>
 
-    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">📂 7 KATEGORIJOS</div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">📂 7 KATEGORIJOS · SPAUSK PERŽIŪRAI</div>
     <div id="tk-categories-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 8px 12px;">
       <div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Kraunama...</div>
     </div>
@@ -4623,7 +4623,7 @@ async function loadParentKidCareer() {
       let iconGlowClass = '';
       if (tierClass === 'completed' || tierClass === 'gold') iconGlowClass = 'glow-strong'; else if (tierClass === 'silver' || tierClass === 'bronze') iconGlowClass = 'glow-soft';
 
-      return `<div style="background:${bgStyle};border:1px solid ${borderStyle};border-radius:12px;padding:8px 6px;text-align:center;position:relative;${shadow}">
+      return `<div class="tap-react" onclick="showParentExercises('${cat.id}','${cat.name}')" style="background:${bgStyle};border:1px solid ${borderStyle};border-radius:12px;padding:8px 6px;text-align:center;cursor:pointer;position:relative;${shadow}-webkit-tap-highlight-color:rgba(255,77,0,.2);">
         ${medal ? `<div style="position:absolute;top:4px;right:4px;font-size:13px;">${medal}</div>` : ''}
         <div class="${iconGlowClass}" style="font-size:26px;line-height:1;margin-bottom:2px;--glow-color:${tierColor};">${CATEGORY_ICONS[cat.name] || '💪'}</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1px;margin-bottom:2px;color:white;">${(cat.name || '').toUpperCase()}</div>
@@ -4672,6 +4672,88 @@ async function loadParentKidCareer() {
       nextTierEl.textContent = remaining <= 0 ? '🏆 PILNAI ATLIKTA - 4 200 EXP!' : `Iki MASTER: ${remaining.toLocaleString('lt-LT')} EXP`;
     }
   } catch (e) { console.warn('loadParentKidCareer', e); if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--br);grid-column:span 2;">Klaida kraunant</div>'; }
+}
+
+// 📋 Pratimų PERŽIŪRA tėvui — read-only (rodo kiek vaikas atliko, BE pateikimo). Perpanaudoja `exo` modalą.
+async function showParentExercises(categoryId, categoryName) {
+  const k = parentActiveKid;
+  const listEl = document.getElementById('exo-list');
+  const titleEl = document.getElementById('exo-title');
+  const formEl = document.getElementById('exo-form');
+  if (!listEl) return;
+  if (titleEl) titleEl.textContent = (categoryName || 'PRATIMAI').toUpperCase();
+  listEl.style.display = 'block';
+  if (formEl) formEl.style.display = 'none';
+  document.getElementById('exo').classList.add('open');
+  listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>';
+  if (!k) { listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--mut);">Pasirinkite vaiką</div>'; return; }
+  try {
+    // Vaiko amžiaus grupė (pagal parentActiveKid)
+    const age = k.birth_date ? calculateAge(k.birth_date) : (k.birth_year ? new Date().getFullYear() - k.birth_year : null);
+    if (!k.gender || age === null) {
+      listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--br);">Vaiko duomenys neužpildyti (lytis arba amžius)</div>';
+      return;
+    }
+    const { data: groups } = await sb.from('exercise_age_groups').select('*').eq('gender', k.gender);
+    const ageGroup = (groups || []).find(g => age >= g.age_min && age <= g.age_max);
+    if (!ageGroup) {
+      listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--br);">Šiam amžiui ribų dar nėra</div>';
+      return;
+    }
+    // Pratimai kategorijoje
+    const { data: exercises } = await sb.from('exercises').select('*').eq('category_id', categoryId).eq('is_active', true).order('sort_order');
+    if (!exercises?.length) {
+      listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--mut);">Pratimų šioje kategorijoje dar nėra</div>';
+      return;
+    }
+    const exerciseIds = exercises.map(e => e.id);
+    const clubId = await getActiveKidClubId();
+    const { data: targets } = await sb.from('exercise_targets').select('*').in('exercise_id', exerciseIds).eq('age_group_id', ageGroup.id);
+    const { data: records } = await sb.from('kid_records').select('exercise_id, current_pr').eq('kid_id', k.id).in('exercise_id', exerciseIds);
+
+    let doneCount = 0, attemptedCount = 0;
+    const rows = exercises.map(ex => {
+      const exTargets = (targets || []).filter(t => t.exercise_id === ex.id);
+      const target = exTargets.find(t => t.club_id === clubId) || exTargets.find(t => t.club_id === null);
+      const rec = (records || []).find(r => r.exercise_id === ex.id);
+      const current_pr = rec?.current_pr || 0;
+      if (current_pr > 0) attemptedCount++;
+      if (!target) {
+        return `<div class="ri" style="opacity:.4;"><div style="flex:1;"><span style="font-size:13px;font-weight:800;">${ex.name}</span><div style="font-size:10px;color:var(--mut);margin-top:3px;">⚠️ Ribos dar nenustatytos</div></div></div>`;
+      }
+      const completedTarget = parseFloat(target.completed);
+      const lower = ex.lower_is_better;
+      let pct, completed;
+      if (lower) {
+        if (current_pr === 0) { pct = 0; completed = false; }
+        else if (current_pr <= completedTarget) { pct = 100; completed = true; }
+        else { pct = Math.round((completedTarget / current_pr) * 100); completed = false; }
+      } else {
+        pct = completedTarget > 0 ? Math.min(100, Math.round((current_pr / completedTarget) * 100)) : 0;
+        completed = current_pr > 0 && current_pr >= completedTarget;
+      }
+      if (completed) doneCount++;
+      return `<div class="ri" style="${completed ? 'opacity:.7;' : ''}">
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="font-size:13px;font-weight:800;">${ex.name}</span>
+            <span style="font-size:11px;color:var(--mut);">${current_pr}/${completedTarget} ${ex.unit}</span>
+          </div>
+          <div class="pb2"><div class="pf" style="width:${pct}%;background:${completed ? 'var(--gld)' : 'var(--br)'};"></div></div>
+          <div style="font-size:10px;color:var(--mut);margin-top:3px;">
+            🥉 ${target.bronze} · 🥈 ${target.silver} · 🥇 ${target.gold} · 🏆 ${completedTarget} ${ex.unit}
+          </div>
+        </div>
+        <div style="font-size:18px;">${completed ? '🏆' : (current_pr > 0 ? '✅' : '·')}</div>
+      </div>`;
+    }).join('');
+
+    const summary = `<div style="background:rgba(59,130,246,.08);border:.5px solid rgba(59,130,246,.25);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--mut);text-align:center;">👁️ Peržiūra — vaikas bandė <strong style="color:white;">${attemptedCount}</strong>/<strong>${exercises.length}</strong> pratimų${doneCount ? ` · 🏆 <strong style="color:var(--gld);">${doneCount}</strong> užbaigti` : ''}</div>`;
+    listEl.innerHTML = summary + rows;
+  } catch (e) {
+    console.warn('showParentExercises', e);
+    listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--br);">Klaida kraunant pratimus</div>';
+  }
 }
 
 // 📰 FEED — vaiko patvirtinti pasiekimai (postai)
