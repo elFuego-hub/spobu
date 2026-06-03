@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v14</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v15</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4375,8 +4375,7 @@ async function loadParentKidMain() {
     const mo = document.getElementById('tk-streak-month'); if (mo) mo.textContent = s?.monthly_current || 0;
   } catch (e) {}
 
-  // Reitingų kategorija
-  const catInfo = document.getElementById('tk-rank-cat-info'); if (catInfo) catInfo.textContent = `(${info.stage})`;
+  // Reitingų kategorija — etiketę nustato computeParentKidRanks (lytis + amžiaus grupė, kaip vaiko)
   computeParentKidRanks(k).then(r => {
     const setR = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setR('tk-rank-comp', r.comp); setR('tk-rank-exp', r.exp); setR('tk-rank-ish', r.ish);
@@ -4401,7 +4400,18 @@ async function loadParentKidMain() {
   loadParentKidPending(k);
 }
 
-// Reitingų skaičiavimas (tas pats principas kaip loadRankings)
+// Vaiko kategorija reitingams/statistikai — lytis + amžiaus grupė (kaip vaiko loadRankings)
+function parentKidCategory(k) {
+  const gender = k?.gender || null;
+  let age = null;
+  if (k?.birth_date && typeof calculateAge === 'function') age = calculateAge(k.birth_date);
+  else if (k?.birth_year) age = new Date().getFullYear() - k.birth_year;
+  let ageGroup = null;
+  if (age !== null && typeof AGE_GROUPS !== 'undefined') ageGroup = AGE_GROUPS.find(g => g.id !== 'all' && age >= g.min && age <= g.max);
+  return { gender, age, ageGroup };
+}
+
+// Reitingų skaičiavimas — IDENTIŠKAI vaiko loadRankings (filtras: lytis + amžiaus grupė)
 async function computeParentKidRanks(kid) {
   const res = { comp: '#–', exp: '#–', ish: '#–', total: 0 };
   try {
@@ -4410,10 +4420,26 @@ async function computeParentKidRanks(kid) {
     const { data: profs } = await sb.from('profiles').select('id').eq('club_id', clubId).eq('role', 'kid');
     const pids = (profs || []).map(p => p.id);
     if (pids.length === 0) return res;
-    const { data: kids } = await sb.from('kids').select('id, total_exp, gender').in('user_id', pids).eq('approval_status', 'approved');
-    let pool = kids || [];
-    if (kid.gender) pool = pool.filter(x => x.gender === kid.gender);
-    if (!pool.find(x => x.id === kid.id)) pool.push({ id: kid.id, total_exp: kid.total_exp, gender: kid.gender });
+    const { data: allKids } = await sb.from('kids').select('id, total_exp, gender, birth_date, birth_year').in('user_id', pids).eq('approval_status', 'approved');
+    if (!allKids || !allKids.length) return res;
+    const cat = parentKidCategory(kid);
+    // Kategorijos etiketė (kaip vaiko: „(vaikinai, 8-10 m.)" arba „(visame klube)")
+    const catInfo = document.getElementById('tk-rank-cat-info');
+    if (catInfo) {
+      if (cat.gender && cat.ageGroup) {
+        const gl = cat.gender === 'male' ? 'vaikinai' : cat.gender === 'female' ? 'merginos' : '';
+        catInfo.textContent = `(${gl}, ${cat.ageGroup.label})`;
+      } else catInfo.textContent = '(visame klube)';
+    }
+    // Filtruojam TIK tos pačios lyties IR amžiaus grupės vaikus (kaip vaiko loadRankings)
+    let pool = allKids.filter(x => {
+      if (!cat.gender || !cat.ageGroup) return true;
+      if (x.gender !== cat.gender) return false;
+      const xAge = x.birth_date ? calculateAge(x.birth_date) : (x.birth_year ? new Date().getFullYear() - x.birth_year : null);
+      if (xAge === null) return false;
+      return xAge >= cat.ageGroup.min && xAge <= cat.ageGroup.max;
+    });
+    if (!pool.find(x => x.id === kid.id)) pool.push(kid);
     const kidIds = pool.map(x => x.id);
     const { data: comps } = await sb.from('competition_results').select('kid_id, exp_gained').in('kid_id', kidIds).eq('approval_status', 'approved');
     const { data: chs } = await sb.from('challenge_submissions').select('kid_id, exp_gain').in('kid_id', kidIds).eq('status', 'approved');
@@ -4500,6 +4526,18 @@ async function loadParentKidChallenges(k) {
 async function openParentKidStats(tab) {
   if (!parentActiveKid) { showToast('⚠️ Nėra pasirinkto vaiko'); return; }
   parentStatPage = 1;
+  // Iš reitingų kortelės (tab nurodytas) → filtruojam pagal vaiko kategoriją (lytis+amžius), kad sutaptų su REITINGAI.
+  // „VISA STATISTIKA" (be tab) → visas klubas (kaip vaiko openMainStat).
+  if (typeof parentStatFilters !== 'undefined') {
+    if (tab) {
+      const cat = parentKidCategory(parentActiveKid);
+      parentStatFilters.gender = cat.gender || 'all';
+      parentStatFilters.ageGroup = cat.ageGroup ? cat.ageGroup.id : 'all';
+    } else {
+      parentStatFilters.gender = 'all';
+      parentStatFilters.ageGroup = 'all';
+    }
+  }
   if (typeof showKidDetail === 'function') await showKidDetail(parentActiveKid.id);
   if (typeof switchParentKidTab === 'function') switchParentKidTab('stats');
   if (tab && tab !== 'overall' && typeof switchParentStatTab === 'function') switchParentStatTab(tab);
