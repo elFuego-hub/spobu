@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v25</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v26</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4780,10 +4780,10 @@ async function loadParentKidFeed() {
       permanent: { color: '#66BB6A', icon: '♾️', label: 'Nuolatinis iššūkis' }
     };
 
-    const { data: chs } = await sb.from('challenge_submissions').select('reviewed_at, exp_gain, challenges(title, type)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(50);
+    const { data: chs } = await sb.from('challenge_submissions').select('reviewed_at, exp_gain, challenges(title, type, exp_reward)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(50);
     (chs || []).forEach(s => {
       const cfg = CH_TYPE[s.challenges?.type] || { color: '#FF8C00', icon: '🎯', label: 'Iššūkis' };
-      items.push({ kind: 'challenge', color: cfg.color, icon: cfg.icon, title: s.challenges?.title || 'Iššūkis', label: cfg.label + ' įveiktas', exp: s.exp_gain, date: s.reviewed_at });
+      items.push({ kind: 'challenge', color: cfg.color, icon: cfg.icon, title: s.challenges?.title || 'Iššūkis', label: cfg.label + ' įveiktas', exp: s.exp_gain || s.challenges?.exp_reward || 0, date: s.reviewed_at });
     });
 
     const { data: comps } = await sb.from('competition_results').select('approved_at, exp_gained, placement, competitions(title)').eq('kid_id', k.id).eq('approval_status', 'approved').gte('approved_at', cut).order('approved_at', { ascending: false }).limit(50);
@@ -4797,7 +4797,7 @@ async function loadParentKidFeed() {
 
     // Karjeros rekordai — iš kid_records (current_pr per pratimą). result_submissions dažnai tuščia (EXP įvestas be pateikimo įvykio).
     try {
-      const { data: kr, error: krErr } = await sb.from('kid_records').select('exercise_id, current_pr, category_exp, updated_at').eq('kid_id', k.id).not('exercise_id', 'is', null).gt('current_pr', 0);
+      const { data: kr, error: krErr } = await sb.from('kid_records').select('exercise_id, current_pr, category_exp, updated_at').eq('kid_id', k.id).not('exercise_id', 'is', null).gt('current_pr', 0).gte('updated_at', cut);
       if (krErr) console.warn('feed records error', krErr);
       const prRows = (kr || []).filter(r => r.exercise_id && (r.current_pr || 0) > 0);
       if (prRows.length) {
@@ -4824,7 +4824,7 @@ async function loadParentKidFeed() {
     const chCount = items.filter(i => i.kind === 'challenge').length;
     const recCount = items.filter(i => i.kind === 'record').length;
     const medalCount = items.filter(i => i.kind === 'comp' && i.won).length;
-    const monthExp = items.filter(i => i.kind !== 'record').reduce((sum, it) => sum + (it.exp || 0), 0);
+    const monthExp = items.reduce((sum, it) => sum + (it.exp || 0), 0);
     // Hero fonas pagal vaiko stadiją (toks pat kaip karjeros / pagrindinio hero)
     const stageInfo = getStageInfo(k.total_exp || 0);
     const stage = STAGES.find(s => s.name === stageInfo.stage) || STAGES[0];
