@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v12</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v13</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1977,6 +1977,24 @@ select.inp option{background:#222;}
       </div>
     </div>
 
+    <!-- 🎯 AKTYVUS MĖNESINIS IŠŠŪKIS -->
+    <div id="tk-month-card" style="margin:6px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(186,104,200,.12), rgba(186,104,200,.04));border:1px solid rgba(186,104,200,.25);border-radius:10px;display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:13px;flex-shrink:0;">🎯</span>
+          <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="tk-month-title">–</span>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#BA68C8;line-height:1;flex-shrink:0;" id="tk-month-progress">0 / 0</div>
+      </div>
+      <div style="height:4px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;">
+        <div style="height:100%;background:linear-gradient(90deg,#BA68C8,#8E24AA);box-shadow:0 0 6px rgba(186,104,200,.5);border-radius:2px;width:0%;" id="tk-month-bar"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:8px;color:var(--mut);">
+        <span id="tk-month-pct">0% atlikta</span>
+        <span id="tk-month-days">– d. liko</span>
+      </div>
+    </div>
+
     <!-- 📊 VAIKO REITINGAI -->
     <div class="st" id="tk-rank-title">📊 REITINGAI <span style="font-size:10px;color:rgba(255,255,255,.55);font-weight:700;text-transform:none;letter-spacing:.5px;" id="tk-rank-cat-info">(kategorija)</span></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 16px;">
@@ -2002,7 +2020,7 @@ select.inp option{background:#222;}
       </div>
     </div>
     <div style="padding:4px 16px 0;">
-      <button onclick="nv('t',null,'t-kar')" style="width:100%;padding:6px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:9px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA KARJERA →</button>
+      <button onclick="openParentKidStats()" style="width:100%;padding:6px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:9px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA →</button>
     </div>
 
     <!-- 📅 ARTIMIAUSIOS VARŽYBOS -->
@@ -3732,8 +3750,13 @@ async function openParentSettings() {
         </div>
         <div style="padding:14px 20px;border-bottom:.5px solid var(--bdr);background:rgba(99,102,241,.05);">
           <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:800;margin-bottom:6px;">PRISIJUNGTAS KAIP</div>
-          <div style="font-size:14px;font-weight:800;color:white;" id="parent-settings-user">–</div>
-          <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="parent-settings-email">–</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:800;color:white;" id="parent-settings-user">–</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="parent-settings-email">–</div>
+            </div>
+            <button onclick="openEditParentNameModal()" style="background:rgba(99,102,241,.15);border:.5px solid rgba(99,102,241,.4);color:#8B5CF6;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ Vardas</button>
+          </div>
         </div>
         <div style="padding:12px 16px 0;">
           <div onclick="toggleAppSound()" id="parent-sound-toggle" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -3821,6 +3844,56 @@ async function openParentSettings() {
   if (typeof updatePushToggleUI === 'function') updatePushToggleUI();
   if (typeof updateZoomButtonsUI === 'function') updateZoomButtonsUI();
   modal.style.display = 'flex';
+}
+
+// ✏️ Tėvo vardo redagavimas (placeholder „Tėvas/globėjas" → tikras vardas)
+function openEditParentNameModal() {
+  let m = document.getElementById('edit-parent-name-modal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'edit-parent-name-modal';
+    m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;align-items:center;justify-content:center;padding:20px;';
+    m.innerHTML = `
+      <div style="width:100%;max-width:360px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:20px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:14px;">✏️ JŪSŲ VARDAS</div>
+        <label style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">VARDAS</label>
+        <input class="inp" id="epn-fname" type="text" maxlength="40" placeholder="Pvz. Petras" style="margin:4px 0 12px;">
+        <label style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">PAVARDĖ</label>
+        <input class="inp" id="epn-lname" type="text" maxlength="40" placeholder="Pvz. Petraitis" style="margin:4px 0 16px;">
+        <div style="display:flex;gap:8px;">
+          <button onclick="document.getElementById('edit-parent-name-modal').remove()" style="flex:1;padding:12px;background:var(--card);border:.5px solid var(--bdr);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">Atšaukti</button>
+          <button onclick="saveParentName(this)" style="flex:1;padding:12px;background:linear-gradient(135deg,#6366f1,#8B5CF6);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">Išsaugoti</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+  }
+  m.style.display = 'flex';
+  const fn = document.getElementById('epn-fname');
+  const ln = document.getElementById('epn-lname');
+  const cur = (currentProfile?.first_name || '').trim();
+  if (fn) fn.value = /^t[ėe]vas\s*\/\s*glob[ėe]jas$/i.test(cur) ? '' : cur;
+  if (ln) ln.value = currentProfile?.last_name || '';
+}
+
+async function saveParentName(btn) {
+  const fn = (document.getElementById('epn-fname')?.value || '').trim();
+  const ln = (document.getElementById('epn-lname')?.value || '').trim();
+  if (!fn) { showToast('⚠️ Įveskite vardą'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Saugoma...'; }
+  try {
+    const { error } = await sb.from('profiles').update({ first_name: fn, last_name: ln }).eq('id', currentUser.id);
+    if (error) throw error;
+    if (currentProfile) { currentProfile.first_name = fn; currentProfile.last_name = ln; }
+    showToast('✓ Vardas atnaujintas');
+    const m = document.getElementById('edit-parent-name-modal'); if (m) m.remove();
+    const userEl = document.getElementById('parent-settings-user'); if (userEl) userEl.textContent = `${fn} ${ln}`.trim();
+    if (typeof loadParentKidMain === 'function') loadParentKidMain();
+    if (typeof loadParentProfile === 'function') loadParentProfile();
+  } catch (e) {
+    console.warn('saveParentName', e);
+    showToast('❌ Nepavyko išsaugoti vardo');
+    if (btn) { btn.disabled = false; btn.textContent = 'Išsaugoti'; }
+  }
 }
 
 // ════════════════════════════════════════
@@ -4255,7 +4328,9 @@ function openParentKidSwitcher() {
 // 🏠 PAGRINDINIS — vaiko dashboard
 async function loadParentKidMain() {
   const k = parentActiveKid;
-  const pName = (currentProfile?.first_name || '').toUpperCase();
+  let pName = (currentProfile?.first_name || '').trim();
+  if (/^t[ėe]vas\s*\/\s*glob[ėe]jas$/i.test(pName)) pName = ''; // ignoruoti placeholder'į
+  pName = pName.toUpperCase();
   const greetEl = document.getElementById('tk-greet');
   if (greetEl) greetEl.textContent = `SVEIKI, ${pName || 'TĖVAI'}! 👋`;
 
@@ -4321,7 +4396,7 @@ async function loadParentKidMain() {
     } else if (ts) ts.textContent = '–';
   } catch (e) {}
 
-  loadParentKidWeeklyChallenge(k);
+  loadParentKidChallenges(k);
   loadParentKidNextEvent();
   loadParentKidPending(k);
 }
@@ -4358,28 +4433,74 @@ async function computeParentKidRanks(kid) {
   return res;
 }
 
-async function loadParentKidWeeklyChallenge(k) {
-  const card = document.getElementById('tk-week-card'); if (!card) return;
+// Aktyvūs iššūkiai (weekly + monthly) — mirror vaiko loadGoals: slepia ATLIKTUS
+async function loadParentKidChallenges(k) {
+  const weekCard = document.getElementById('tk-week-card');
+  const monthCard = document.getElementById('tk-month-card');
+  const hide = (c) => { if (c) c.style.display = 'none'; };
+  if (!k) { hide(weekCard); hide(monthCard); return; }
   try {
     const clubId = await getActiveKidClubId();
-    const { data: chs } = await sb.from('challenges').select('id, title, target_value, type, expires_at, target_audience, target_kid_id, group_id').eq('club_id', clubId).eq('is_active', true).eq('type', 'weekly').order('created_at', { ascending: false }).limit(10);
-    // Tik neexpiravę IR taikomi šiam vaikui (audience)
-    const ch = (chs || []).find(c => (!c.expires_at || new Date(c.expires_at) > new Date()) && challengeMatchesKid(c, k));
-    if (!ch) { card.style.display = 'none'; return; }
-    const { data: prog } = await sb.from('challenge_progress').select('total_progress').eq('kid_id', k.id).eq('challenge_id', ch.id).maybeSingle();
-    const cur = prog?.total_progress || 0;
-    const tgt = ch.target_value || 0;
-    const pct = tgt > 0 ? Math.min(100, Math.round(cur / tgt * 100)) : 0;
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    set('tk-week-title', ch.title || 'Savaitinis iššūkis');
-    set('tk-week-progress', `${cur} / ${tgt}`);
-    const wb = document.getElementById('tk-week-bar'); if (wb) wb.style.width = pct + '%';
-    set('tk-week-pct', pct + '% atlikta');
-    let daysLeft = '–';
-    if (ch.expires_at) { const d = Math.ceil((new Date(ch.expires_at) - new Date()) / 86400000); daysLeft = d > 0 ? d + ' d. liko' : 'baigiasi'; }
-    set('tk-week-days', daysLeft);
-    card.style.display = 'block';
-  } catch (e) { card.style.display = 'none'; }
+    const nowISO = new Date().toISOString();
+    const { data: allCh } = await sb.from('challenges')
+      .select('id, title, type, target_value, target_unit, exp_reward, expires_at, allow_partial, target_audience, target_kid_id, group_id, created_at')
+      .eq('club_id', clubId).eq('is_active', true)
+      .in('type', ['weekly', 'monthly'])
+      .or(`expires_at.is.null,expires_at.gt.${nowISO}`)
+      .order('created_at', { ascending: false });
+    // Tik taikomi šiam vaikui (audience) — tas pats filtras kaip vaiko portale
+    const eligible = (allCh || []).filter(c => challengeMatchesKid(c, k));
+    const ids = eligible.map(c => c.id);
+    const progressMap = {}, subsMap = {};
+    if (ids.length) {
+      const [pr, sr] = await Promise.all([
+        sb.from('challenge_progress').select('challenge_id, total_progress, is_completed').eq('kid_id', k.id).in('challenge_id', ids),
+        sb.from('challenge_submissions').select('challenge_id, status').eq('kid_id', k.id).in('challenge_id', ids)
+      ]);
+      (pr.data || []).forEach(p => { progressMap[p.challenge_id] = p; });
+      (sr.data || []).forEach(s => { (subsMap[s.challenge_id] = subsMap[s.challenge_id] || []).push(s); });
+    }
+    // Aktyvus = dar NEPILNAI atliktas (partial → !is_completed; standartinis → nėra approved submission)
+    const isActive = (ch) => ch.allow_partial
+      ? !progressMap[ch.id]?.is_completed
+      : !(subsMap[ch.id] || []).some(s => s.status === 'approved');
+    const activeWeekly = eligible.find(c => c.type === 'weekly' && isActive(c));
+    const activeMonthly = eligible.find(c => c.type === 'monthly' && isActive(c));
+    const renderCard = (ch, prefix, fallbackTitle) => {
+      const card = document.getElementById(`tk-${prefix}-card`);
+      if (!card) return;
+      if (!ch) { card.style.display = 'none'; return; }
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      const prog = progressMap[ch.id];
+      const isPartial = ch.allow_partial === true;
+      const cur = isPartial ? (prog?.total_progress || 0) : 0;
+      const tgt = ch.target_value || 0;
+      const pct = tgt > 0 ? Math.min(100, Math.round(cur / tgt * 100)) : 0;
+      set(`tk-${prefix}-title`, ch.title || fallbackTitle);
+      if (isPartial) {
+        set(`tk-${prefix}-progress`, `${cur} / ${tgt}`);
+        set(`tk-${prefix}-pct`, `${pct}% atlikta`);
+      } else {
+        const hasPending = (subsMap[ch.id] || []).some(s => s.status === 'pending');
+        set(`tk-${prefix}-progress`, hasPending ? '⏳ Laukia' : '🎯 Dalyvauja');
+        set(`tk-${prefix}-pct`, hasPending ? 'Pateikta, laukia trenerio' : 'Pradėta');
+      }
+      const bar = document.getElementById(`tk-${prefix}-bar`); if (bar) bar.style.width = pct + '%';
+      let daysLeft = '–';
+      if (ch.expires_at) { const d = Math.ceil((new Date(ch.expires_at) - new Date()) / 86400000); daysLeft = d > 0 ? d + ' d. liko' : 'baigiasi'; }
+      set(`tk-${prefix}-days`, daysLeft);
+      card.style.display = 'block';
+    };
+    renderCard(activeWeekly, 'week', 'Savaitinis iššūkis');
+    renderCard(activeMonthly, 'month', 'Mėnesinis iššūkis');
+  } catch (e) { hide(weekCard); hide(monthCard); }
+}
+
+// „VISA STATISTIKA" — atidaro aktyvaus vaiko statistikos langą (tą patį kaip ⚙️→Vaiko duomenys→STATISTIKA)
+async function openParentKidStats() {
+  if (!parentActiveKid) { showToast('⚠️ Nėra pasirinkto vaiko'); return; }
+  if (typeof showKidDetail === 'function') await showKidDetail(parentActiveKid.id);
+  if (typeof switchParentKidTab === 'function') switchParentKidTab('stats');
 }
 
 async function loadParentKidNextEvent() {
