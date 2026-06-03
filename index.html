@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v15</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v16</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2070,8 +2070,6 @@ select.inp option{background:#222;}
       </div>
     </div>
   </div>
-  <!-- PERŽIŪROS REŽIMAS -->
-  <div style="background:rgba(59,130,246,.1);border:.5px solid rgba(59,130,246,.3);color:var(--blu);font-size:10px;font-weight:800;letter-spacing:1px;padding:7px 12px;border-radius:8px;margin:0 16px 4px;display:flex;align-items:center;gap:6px;">👁️ <span>PERŽIŪROS REŽIMAS — pateikti gali tik vaikas</span></div>
   <div class="sa">
     <!-- KARJEROS HERO -->
     <div id="tk-kar-hero" style="margin:8px 12px;padding:12px;background:linear-gradient(135deg,rgba(79,195,247,.12),rgba(79,195,247,.04));border:1px solid rgba(79,195,247,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
@@ -2087,7 +2085,7 @@ select.inp option{background:#222;}
       <div id="tk-kar-medals" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;"></div>
     </div>
 
-    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">📂 KATEGORIJOS</div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">📂 7 KATEGORIJOS</div>
     <div id="tk-categories-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 8px 12px;">
       <div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Kraunama...</div>
     </div>
@@ -4584,37 +4582,96 @@ async function loadParentKidPending(k) {
 }
 
 // 📈 KARJERA — review
+// 📈 KARJERA — IDENTIŠKA vaiko loadCategories (tik be pateikimo — kortelės neklikinamos)
 async function loadParentKidCareer() {
   const k = parentActiveKid;
   const list = document.getElementById('tk-categories-list');
   if (!k) { if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Pasirinkite vaiką</div>'; return; }
   try {
-    const { data: cats } = await sb.from('career_categories').select('*').order('sort_order', { ascending: true });
-    const { data: recs } = await sb.from('kid_records').select('category_id, category_exp').eq('kid_id', k.id);
-    const sumMap = {}; (recs || []).forEach(r => { sumMap[r.category_id] = (sumMap[r.category_id] || 0) + (r.category_exp || 0); });
-    let total = 0, gold = 0, silver = 0, bronze = 0, master = 0;
-    const cards = (cats || []).map(cat => {
-      const capped = Math.min(600, sumMap[cat.id] || 0); total += capped;
-      const tier = getTierFromExp(capped);
-      if (tier === 'completed') master++; else if (tier === 'gold') gold++; else if (tier === 'silver') silver++; else if (tier === 'bronze') bronze++;
-      const icon = CATEGORY_ICONS[cat.name] || '⭐';
-      const emoji = TIER_EMOJI[tier] || '';
-      return `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;text-align:center;">
-        <div style="font-size:24px;margin-bottom:4px;">${icon}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1px;">${(cat.name || '').toUpperCase()}</div>
-        <div style="font-size:9px;color:var(--mut);margin-top:2px;">EXP ${capped}${emoji ? ' · ' + emoji : ''}</div>
+    const { data: cats } = await sb.from('career_categories').select('*').order('sort_order').limit(7);
+    if (!cats || !cats.length) { if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Kategorijų nerasta</div>'; return; }
+    const { data: records } = await sb.from('kid_records').select('category_id, category_exp, medal').eq('kid_id', k.id);
+    const expByCategory = {};
+    (records || []).forEach(r => { expByCategory[r.category_id] = (expByCategory[r.category_id] || 0) + (r.category_exp || 0); });
+
+    let totalCareerExp = 0, countMaster = 0, countGold = 0, countSilver = 0, countBronze = 0;
+    const html = cats.map(cat => {
+      const exp = expByCategory[cat.id] || 0;
+      const cappedExp = Math.min(exp, 600);
+      totalCareerExp += cappedExp;
+      let cardClass = '', tierClass = '', tierLabel = '', medal = '', pct = 0, target = 600;
+      if (cappedExp >= 600) { cardClass = 'completed'; tierClass = 'completed'; tierLabel = 'MAX'; medal = '🏆'; countMaster++; pct = 100; }
+      else if (cappedExp >= 500) { cardClass = 'gold'; tierClass = 'gold'; tierLabel = 'GOLD'; medal = '🥇'; countGold++; pct = (cappedExp / 600) * 100; }
+      else if (cappedExp >= 300) { cardClass = 'silver'; tierClass = 'silver'; tierLabel = 'SILVER'; medal = '🥈'; countSilver++; pct = (cappedExp / 500) * 100; target = 500; }
+      else if (cappedExp >= 100) { cardClass = 'bronze'; tierClass = 'bronze'; tierLabel = 'BRONZE'; medal = '🥉'; countBronze++; pct = (cappedExp / 300) * 100; target = 300; }
+      else { cardClass = ''; tierClass = 'pradinis'; tierLabel = 'PRADINIS'; medal = ''; pct = (cappedExp / 100) * 100; target = 100; }
+
+      let bgStyle, borderStyle, shadow = '';
+      if (cardClass === 'completed') { bgStyle = 'linear-gradient(135deg, rgba(255,77,0,.2), rgba(255,128,0,.05))'; borderStyle = 'rgba(255,77,0,.5)'; shadow = 'box-shadow:0 4px 16px rgba(255,77,0,.2);'; }
+      else if (cardClass === 'gold') { bgStyle = 'linear-gradient(135deg, rgba(255,215,0,.15), rgba(255,215,0,.04))'; borderStyle = 'rgba(255,215,0,.4)'; shadow = 'box-shadow:0 4px 16px rgba(255,215,0,.15);'; }
+      else if (cardClass === 'silver') { bgStyle = 'linear-gradient(135deg, rgba(192,192,192,.12), rgba(192,192,192,.04))'; borderStyle = 'rgba(192,192,192,.3)'; }
+      else if (cardClass === 'bronze') { bgStyle = 'linear-gradient(135deg, rgba(205,127,50,.12), rgba(205,127,50,.04))'; borderStyle = 'rgba(205,127,50,.3)'; }
+      else { bgStyle = '#1A1A1A'; borderStyle = 'rgba(255,255,255,.08)'; }
+
+      let tierColor = 'rgba(255,255,255,.4)';
+      if (tierClass === 'gold') tierColor = '#FFD700'; else if (tierClass === 'silver') tierColor = '#C0C0C0'; else if (tierClass === 'bronze') tierColor = '#CD7F32'; else if (tierClass === 'completed') tierColor = '#FF4D00';
+
+      let fillStyle = 'rgba(255,255,255,.3)';
+      if (tierClass === 'bronze') fillStyle = 'linear-gradient(90deg, #CD7F32, #E0986A)'; else if (tierClass === 'silver') fillStyle = 'linear-gradient(90deg, #C0C0C0, #E5E5E5)'; else if (tierClass === 'gold') fillStyle = 'linear-gradient(90deg, #FFD700, #FFA500)'; else if (tierClass === 'completed') fillStyle = 'linear-gradient(90deg, #FF4D00, #FF8000)';
+
+      const expText = cardClass === 'completed' ? `${cappedExp} EXP` : `${cappedExp}/${target} EXP`;
+      let iconGlowClass = '';
+      if (tierClass === 'completed' || tierClass === 'gold') iconGlowClass = 'glow-strong'; else if (tierClass === 'silver' || tierClass === 'bronze') iconGlowClass = 'glow-soft';
+
+      return `<div style="background:${bgStyle};border:1px solid ${borderStyle};border-radius:12px;padding:8px 6px;text-align:center;position:relative;${shadow}">
+        ${medal ? `<div style="position:absolute;top:4px;right:4px;font-size:13px;">${medal}</div>` : ''}
+        <div class="${iconGlowClass}" style="font-size:26px;line-height:1;margin-bottom:2px;--glow-color:${tierColor};">${CATEGORY_ICONS[cat.name] || '💪'}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1px;margin-bottom:2px;color:white;">${(cat.name || '').toUpperCase()}</div>
+        <div style="font-size:7px;font-weight:800;letter-spacing:.5px;margin-bottom:3px;color:${tierColor};">${tierLabel}</div>
+        <div style="background:rgba(0,0,0,.4);height:3px;border-radius:2px;overflow:hidden;margin-bottom:2px;">
+          <div style="height:100%;border-radius:2px;background:${fillStyle};width:${Math.min(100, pct)}%;"></div>
+        </div>
+        <div style="font-size:7px;color:rgba(255,255,255,.6);">${expText}</div>
       </div>`;
-    });
-    if (list) list.innerHTML = cards.join('') || '<div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Nėra kategorijų</div>';
-    const totalEl = document.getElementById('tk-kar-total'); if (totalEl) totalEl.textContent = total.toLocaleString('lt-LT');
-    const maxTotal = (cats?.length || 7) * 600;
-    const nextEl = document.getElementById('tk-kar-next-tier'); if (nextEl) nextEl.textContent = total >= maxTotal ? '⭐ Visos kategorijos MAX!' : `Iki MAX: ${(maxTotal - total).toLocaleString('lt-LT')} EXP`;
-    const medals = document.getElementById('tk-kar-medals');
-    if (medals) medals.innerHTML = `
-      <div style="background:rgba(255,215,0,.08);border:.5px solid rgba(255,215,0,.2);border-radius:8px;padding:6px;text-align:center;"><div style="font-size:16px;">🥇</div><div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FFD700;">${gold + master}</div><div style="font-size:7px;color:var(--mut);">AUKSO</div></div>
-      <div style="background:rgba(192,192,192,.08);border:.5px solid rgba(192,192,192,.2);border-radius:8px;padding:6px;text-align:center;"><div style="font-size:16px;">🥈</div><div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#C0C0C0;">${silver}</div><div style="font-size:7px;color:var(--mut);">SIDABRO</div></div>
-      <div style="background:rgba(205,127,50,.08);border:.5px solid rgba(205,127,50,.2);border-radius:8px;padding:6px;text-align:center;"><div style="font-size:16px;">🥉</div><div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#CD7F32;">${bronze}</div><div style="font-size:7px;color:var(--mut);">BRONZOS</div></div>`;
-  } catch (e) { if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--br);grid-column:span 2;">Klaida kraunant</div>'; }
+    }).join('');
+    if (list) list.innerHTML = html;
+
+    // 🎨 HERO fonas pagal stadiją (kaip vaiko)
+    const totalExp = k.total_exp || 0;
+    const stageInfo = getStageInfo(totalExp);
+    const stage = STAGES.find(s => s.name === stageInfo.stage) || STAGES[0];
+    const heroEl = document.getElementById('tk-kar-hero');
+    if (heroEl && stage?.bgGradient) { heroEl.style.background = stage.bgGradient; heroEl.style.borderColor = (stage.color || '#FFFFFF') + '40'; }
+    const totalEl = document.getElementById('tk-kar-total');
+    if (totalEl) { totalEl.textContent = totalCareerExp.toLocaleString('lt-LT'); totalEl.style.color = stage?.color || '#4FC3F7'; totalEl.style.textShadow = `0 0 20px ${stage?.color || '#4FC3F7'}80`; }
+
+    // 🎖️ Medalių grid — 3 aukščiausi turimi tipai (kaip vaiko)
+    const medalsGrid = document.getElementById('tk-kar-medals');
+    if (medalsGrid) {
+      const allMedals = [
+        { count: countMaster, icon: '🏆', label: 'Master', color: '#FF4D00' },
+        { count: countGold,   icon: '🥇', label: 'Gold',   color: '#FFD700' },
+        { count: countSilver, icon: '🥈', label: 'Silver', color: '#C0C0C0' },
+        { count: countBronze, icon: '🥉', label: 'Bronze', color: '#CD7F32' }
+      ];
+      let medalsToShow = allMedals.filter(m => m.count > 0);
+      if (medalsToShow.length < 3) { const remaining = allMedals.filter(m => m.count === 0); medalsToShow = [...medalsToShow, ...remaining].slice(0, 3); }
+      else medalsToShow = medalsToShow.slice(0, 3);
+      medalsGrid.innerHTML = medalsToShow.map(m => `
+        <div style="text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${m.count > 0 ? m.color : 'white'};line-height:1;text-shadow:${m.count > 0 ? `0 0 8px ${m.color}66` : 'none'};">${m.count}</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">${m.icon} ${m.label}</div>
+        </div>
+      `).join('');
+    }
+
+    // Next tier tekstas — kaip vaiko
+    const nextTierEl = document.getElementById('tk-kar-next-tier');
+    if (nextTierEl) {
+      const remaining = 4200 - totalCareerExp;
+      nextTierEl.textContent = remaining <= 0 ? '🏆 PILNAI ATLIKTA - 4 200 EXP!' : `Iki MASTER: ${remaining.toLocaleString('lt-LT')} EXP`;
+    }
+  } catch (e) { console.warn('loadParentKidCareer', e); if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--br);grid-column:span 2;">Klaida kraunant</div>'; }
 }
 
 // 📰 FEED — vaiko patvirtinti pasiekimai (postai)
