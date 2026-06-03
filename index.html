@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v22</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v23</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4792,13 +4792,21 @@ async function loadParentKidFeed() {
       items.push({ kind: 'comp', won, color, icon, title: s.competitions?.title || 'Varžybos', label: ml + ' · Varžybos', exp: s.exp_gained, date: s.approved_at });
     });
 
+    // Karjeros rekordai — iš kid_records (current_pr per pratimą). result_submissions dažnai tuščia (EXP įvestas be pateikimo įvykio).
     try {
-      const cutRec = new Date(Date.now() - 365 * 86400000).toISOString(); // rekordai = reti milestone'ai → ilgesnis langas
-      const { data: rs, error: rsErr } = await sb.from('result_submissions').select('reviewed_at, exp_gain, new_value, exercises(name)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cutRec).order('reviewed_at', { ascending: false }).limit(50);
-      if (rsErr) console.warn('feed records error', rsErr);
-      (rs || []).forEach(s => {
-        items.push({ kind: 'record', color: '#22C55E', icon: '📈', title: (s.exercises?.name || 'Pratimas') + (s.new_value ? ` → ${s.new_value}` : ''), label: 'Naujas karjeros rekordas', exp: s.exp_gain, date: s.reviewed_at });
-      });
+      const { data: kr, error: krErr } = await sb.from('kid_records').select('exercise_id, current_pr, updated_at').eq('kid_id', k.id).not('exercise_id', 'is', null).gt('current_pr', 0);
+      if (krErr) console.warn('feed records error', krErr);
+      const prRows = (kr || []).filter(r => r.exercise_id && (r.current_pr || 0) > 0);
+      if (prRows.length) {
+        const exIds = [...new Set(prRows.map(r => r.exercise_id))];
+        const { data: exs } = await sb.from('exercises').select('id, name, unit').in('id', exIds);
+        const exMap = {}; (exs || []).forEach(e => { exMap[e.id] = e; });
+        prRows.forEach(r => {
+          const ex = exMap[r.exercise_id];
+          const unit = ex?.unit ? ' ' + ex.unit : '';
+          items.push({ kind: 'record', color: '#22C55E', icon: '📈', title: (ex?.name || 'Pratimas') + ` → ${r.current_pr}${unit}`, label: 'Karjeros rekordas', exp: 0, date: r.updated_at });
+        });
+      }
     } catch (e) { console.warn('feed records', e); }
 
     try {
