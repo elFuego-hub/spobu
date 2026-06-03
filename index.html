@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v13</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v14</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1998,22 +1998,22 @@ select.inp option{background:#222;}
     <!-- 📊 VAIKO REITINGAI -->
     <div class="st" id="tk-rank-title">📊 REITINGAI <span style="font-size:10px;color:rgba(255,255,255,.55);font-weight:700;text-transform:none;letter-spacing:.5px;" id="tk-rank-cat-info">(kategorija)</span></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 16px;">
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
+      <div onclick="openParentKidStats('competitions')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;">
         <div style="font-size:16px;line-height:1;margin-bottom:2px;">🏆</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#FFD700;text-shadow:0 0 6px rgba(255,215,0,.4);line-height:1;" id="tk-rank-comp">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Varžybos</div>
       </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
+      <div onclick="openParentKidStats('overall')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;">
         <div style="font-size:16px;line-height:1;margin-bottom:2px;">⚡</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#C0C0C0;text-shadow:0 0 6px rgba(192,192,192,.4);line-height:1;" id="tk-rank-exp">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">EXP</div>
       </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
+      <div onclick="openParentKidStats('challenges')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;">
         <div style="font-size:16px;line-height:1;margin-bottom:2px;">🎯</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#CD7F32;text-shadow:0 0 6px rgba(205,127,50,.4);line-height:1;" id="tk-rank-ish">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Iššūkiai</div>
       </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;">
+      <div onclick="openParentKidStats('skills')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;">
         <div style="font-size:16px;line-height:1;margin-bottom:2px;">🥋</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:#FF4D00;text-shadow:0 0 6px rgba(255,77,0,.4);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="tk-top-skill">–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">TOP skil</div>
@@ -4497,10 +4497,12 @@ async function loadParentKidChallenges(k) {
 }
 
 // „VISA STATISTIKA" — atidaro aktyvaus vaiko statistikos langą (tą patį kaip ⚙️→Vaiko duomenys→STATISTIKA)
-async function openParentKidStats() {
+async function openParentKidStats(tab) {
   if (!parentActiveKid) { showToast('⚠️ Nėra pasirinkto vaiko'); return; }
+  parentStatPage = 1;
   if (typeof showKidDetail === 'function') await showKidDetail(parentActiveKid.id);
   if (typeof switchParentKidTab === 'function') switchParentKidTab('stats');
+  if (tab && tab !== 'overall' && typeof switchParentStatTab === 'function') switchParentStatTab(tab);
 }
 
 async function loadParentKidNextEvent() {
@@ -13915,7 +13917,9 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
   const PAGE = 10;
   const paginate = !!(opts && opts.paginate);
   const totalPages = Math.ceil(entries.length / PAGE);
-  const page = paginate ? Math.min(Math.max(1, kidStatPage), totalPages) : 1;
+  const pageVar = (opts && opts.page != null) ? opts.page : kidStatPage;
+  const pageFn = (opts && opts.pageFn) ? opts.pageFn : 'setKidStatPage';
+  const page = paginate ? Math.min(Math.max(1, pageVar), totalPages) : 1;
   const startIdx = paginate ? (page - 1) * PAGE : 0;
   const top10 = entries.slice(startIdx, startIdx + PAGE);
   // Ar mano įrašas matomas dabartiniame puslapyje/top10?
@@ -13976,9 +13980,9 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
     const nextDis = page >= totalPages;
     pagination = `
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px 4px;">
-        <button onclick="setKidStatPage(${page - 1})" ${prevDis ? 'disabled' : ''} style="background:${prevDis ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDis ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDis ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:7px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDis ? 'default' : 'pointer'};opacity:${prevDis ? '.5' : '1'};">←</button>
+        <button onclick="${pageFn}(${page - 1})" ${prevDis ? 'disabled' : ''} style="background:${prevDis ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDis ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDis ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:7px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDis ? 'default' : 'pointer'};opacity:${prevDis ? '.5' : '1'};">←</button>
         <div style="font-size:12px;font-weight:800;color:var(--text);min-width:54px;text-align:center;">${page} / ${totalPages}</div>
-        <button onclick="setKidStatPage(${page + 1})" ${nextDis ? 'disabled' : ''} style="background:${nextDis ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${nextDis ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${nextDis ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:7px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${nextDis ? 'default' : 'pointer'};opacity:${nextDis ? '.5' : '1'};">→</button>
+        <button onclick="${pageFn}(${page + 1})" ${nextDis ? 'disabled' : ''} style="background:${nextDis ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${nextDis ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${nextDis ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:7px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${nextDis ? 'default' : 'pointer'};opacity:${nextDis ? '.5' : '1'};">→</button>
       </div>
     `;
   }
@@ -14437,7 +14441,7 @@ function switchParentKidTab(tabName) {
   const activeTab = document.getElementById(`parent-kid-tab-${tabName}`);
   if (activeTab) activeTab.style.display = 'block';
   // Užkrauti tinkamą tab'ą
-  if (tabName === 'stats' && typeof loadParentOverallStatTab === 'function') loadParentOverallStatTab();
+  if (tabName === 'stats') { parentStatPage = 1; if (typeof loadParentOverallStatTab === 'function') loadParentOverallStatTab(); }
   if (tabName === 'progress' && typeof loadKidProgress === 'function') loadKidProgress();
 }
 
@@ -14472,7 +14476,14 @@ function setParentStatFilter(key, value) {
 }
 
 // Perjungti leaderboard tab'ą
-function switchParentStatTab(tabName) {
+let parentStatPage = 1;
+function setParentStatPage(p) {
+  parentStatPage = p;
+  const a = document.querySelector('.parent-stat-tab.on');
+  if (a) switchParentStatTab(a.dataset.tab, true);
+}
+function switchParentStatTab(tabName, keepPage) {
+  if (!keepPage) parentStatPage = 1;
   document.querySelectorAll('.parent-stat-tab').forEach(btn => {
     if (btn.dataset.tab === tabName) {
       btn.classList.add('on');
@@ -14716,7 +14727,7 @@ async function loadParentOverallStatTab() {
   }
   
   container.innerHTML = renderParentFiltersUI('overall') + 
-    renderLeaderboardCard(entries, currentParentKid.id, 'EXP');
+    renderLeaderboardCard(entries, currentParentKid.id, 'EXP', { paginate: true, page: parentStatPage, pageFn: 'setParentStatPage' });
 }
 
 // 🏋️ SKILLS TAB tėvams
@@ -14733,7 +14744,7 @@ async function loadParentSkillsStatTab() {
   const entries = await getParentFilteredKidEntries('kid_records');
   
   container.innerHTML = renderParentFiltersUI('skills') +
-    renderLeaderboardCard(entries, currentParentKid.id, 'EXP');
+    renderLeaderboardCard(entries, currentParentKid.id, 'EXP', { paginate: true, page: parentStatPage, pageFn: 'setParentStatPage' });
   
   // Užpildyti skill dropdown'ą
   const skillSelect = document.getElementById('parent-skill-filter-select');
@@ -14755,7 +14766,7 @@ async function loadParentChallengeStatTab() {
   const entries = await getParentFilteredKidEntries('challenge_submissions');
   
   container.innerHTML = renderParentFiltersUI('challenges') +
-    renderLeaderboardCard(entries, currentParentKid.id, 'EXP');
+    renderLeaderboardCard(entries, currentParentKid.id, 'EXP', { paginate: true, page: parentStatPage, pageFn: 'setParentStatPage' });
 }
 
 // 🥇 COMPETITIONS TAB tėvams
@@ -14773,7 +14784,7 @@ async function loadParentCompetitionsStatTab() {
   const entries = await getParentFilteredKidEntries('competition_results');
   
   container.innerHTML = renderParentFiltersUI('competitions') +
-    renderLeaderboardCard(entries, currentParentKid.id, 'EXP');
+    renderLeaderboardCard(entries, currentParentKid.id, 'EXP', { paginate: true, page: parentStatPage, pageFn: 'setParentStatPage' });
   
   const weightSelect = document.getElementById('parent-weight-filter-select');
   if (weightSelect) {
