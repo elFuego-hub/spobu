@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v21</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v22</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4793,7 +4793,8 @@ async function loadParentKidFeed() {
     });
 
     try {
-      const { data: rs, error: rsErr } = await sb.from('result_submissions').select('reviewed_at, exp_gain, new_value, exercises(name)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(50);
+      const cutRec = new Date(Date.now() - 365 * 86400000).toISOString(); // rekordai = reti milestone'ai → ilgesnis langas
+      const { data: rs, error: rsErr } = await sb.from('result_submissions').select('reviewed_at, exp_gain, new_value, exercises(name)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cutRec).order('reviewed_at', { ascending: false }).limit(50);
       if (rsErr) console.warn('feed records error', rsErr);
       (rs || []).forEach(s => {
         items.push({ kind: 'record', color: '#22C55E', icon: '📈', title: (s.exercises?.name || 'Pratimas') + (s.new_value ? ` → ${s.new_value}` : ''), label: 'Naujas karjeros rekordas', exp: s.exp_gain, date: s.reviewed_at });
@@ -4821,8 +4822,8 @@ async function loadParentKidFeed() {
     const heroReport = `<div style="margin:0 0 14px;padding:14px;background:${stage?.bgGradient || 'linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,128,0,.04))'};border:1px solid ${stColor}55;border-radius:16px;position:relative;overflow:hidden;">
       <div style="position:absolute;font-family:'Noto Serif JP',serif;font-size:90px;right:-10px;top:-20px;opacity:.1;line-height:1;color:${stColor};font-weight:900;">${stage?.kanji || '武'}</div>
       <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">📊 MĖNESIO ATASKAITA</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:${stColor};line-height:1;margin:4px 0 1px;text-shadow:0 0 18px ${stColor}66;position:relative;">+${monthExp.toLocaleString('lt-LT')} EXP</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.65);position:relative;">per paskutines 30 dienų</div>
+      <div class="glow-soft" style="display:inline-block;font-family:'Bebas Neue',sans-serif;font-size:32px;color:${stColor};line-height:1;margin:4px 0 1px;text-shadow:0 0 20px ${stColor}80;--glow-color:${stColor};position:relative;">+${monthExp.toLocaleString('lt-LT')} EXP</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.65);position:relative;">naujausi vaiko pasiekimai</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid rgba(255,255,255,.12);position:relative;">
         ${cell('🎯', chCount, 'Iššūkiai')}
         ${cell('📈', recCount, 'Rekordai')}
