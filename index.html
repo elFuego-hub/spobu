@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v26</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v27</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4574,6 +4574,10 @@ async function loadParentKidPending(k) {
       const { data: rs } = await sb.from('result_submissions').select('created_at, exercises(name)').eq('kid_id', k.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(5);
       (rs || []).forEach(s => items.push({ icon: '📈', title: s.exercises?.name || 'Rezultatas', date: s.created_at }));
     } catch (e) {}
+    try {
+      const { data: cr } = await sb.from('competition_results').select('created_at, competitions(title)').eq('kid_id', k.id).eq('status', 'participated').eq('approval_status', 'pending').order('created_at', { ascending: false }).limit(5);
+      (cr || []).forEach(s => items.push({ icon: '🏆', title: s.competitions?.title || 'Varžybos / egzaminas', date: s.created_at }));
+    } catch (e) {}
     if (items.length === 0) { el.innerHTML = '<div style="text-align:center;padding:8px;color:var(--mut);font-size:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;">Nėra laukiančių pateikimų</div>'; return; }
     items.sort((a, b) => new Date(b.date) - new Date(a.date));
     el.innerHTML = items.slice(0, 5).map(it => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;"><div style="font-size:18px;">${it.icon}</div><div style="flex:1;"><div style="font-size:11px;font-weight:800;">${it.title}</div><div style="font-size:9px;color:var(--mut);margin-top:2px;">Pateikta ${tkTimeAgo(it.date)} · laukia trenerio</div></div></div>`).join('');
@@ -4780,11 +4784,29 @@ async function loadParentKidFeed() {
       permanent: { color: '#66BB6A', icon: '♾️', label: 'Nuolatinis iššūkis' }
     };
 
-    const { data: chs } = await sb.from('challenge_submissions').select('reviewed_at, exp_gain, challenges(title, type, exp_reward)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(50);
+    const seenChIds = new Set();
+    const { data: chs } = await sb.from('challenge_submissions').select('challenge_id, reviewed_at, exp_gain, challenges(title, type, exp_reward)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(50);
     (chs || []).forEach(s => {
+      if (s.challenge_id) seenChIds.add(s.challenge_id);
       const cfg = CH_TYPE[s.challenges?.type] || { color: '#FF8C00', icon: '🎯', label: 'Iššūkis' };
       items.push({ kind: 'challenge', color: cfg.color, icon: cfg.icon, title: s.challenges?.title || 'Iššūkis', label: cfg.label + ' įveiktas', exp: s.exp_gain || s.challenges?.exp_reward || 0, date: s.reviewed_at });
     });
+    // Daliniai (partial) įveikti iššūkiai — užsiskaito per challenge_progress.is_completed, NE per submissions
+    try {
+      const { data: cp } = await sb.from('challenge_progress').select('challenge_id, completed_at, exp_awarded').eq('kid_id', k.id).eq('is_completed', true).gte('completed_at', cut);
+      const freshIds = (cp || []).map(p => p.challenge_id).filter(id => id && !seenChIds.has(id));
+      if (freshIds.length) {
+        const { data: chDefs } = await sb.from('challenges').select('id, title, type, exp_reward').in('id', freshIds);
+        const chMap = {}; (chDefs || []).forEach(c => { chMap[c.id] = c; });
+        (cp || []).forEach(p => {
+          if (!p.challenge_id || seenChIds.has(p.challenge_id)) return;
+          seenChIds.add(p.challenge_id);
+          const ch = chMap[p.challenge_id];
+          const cfg = CH_TYPE[ch?.type] || { color: '#FF8C00', icon: '🎯', label: 'Iššūkis' };
+          items.push({ kind: 'challenge', color: cfg.color, icon: cfg.icon, title: ch?.title || 'Iššūkis', label: cfg.label + ' įveiktas', exp: p.exp_awarded || ch?.exp_reward || 0, date: p.completed_at });
+        });
+      }
+    } catch (e) { console.warn('feed challenge_progress', e); }
 
     const { data: comps } = await sb.from('competition_results').select('approved_at, exp_gained, placement, competitions(title)').eq('kid_id', k.id).eq('approval_status', 'approved').gte('approved_at', cut).order('approved_at', { ascending: false }).limit(50);
     (comps || []).forEach(s => {
@@ -4846,8 +4868,8 @@ async function loadParentKidFeed() {
     const renderPost = (it) => `<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;margin-bottom:7px;background:var(--card);border:.5px solid var(--bdr);border-left:3px solid ${it.color};border-radius:10px;">
       <div style="width:30px;height:30px;border-radius:8px;background:${it.color}22;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${it.icon}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;">${it.title}</div>
-        <div style="font-size:9px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${it.label} · ${tkTimeAgo(it.date)}</div>
+        <div style="font-size:12px;font-weight:800;color:white;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${it.title}</div>
+        <div style="font-size:9px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">${it.label} · ${tkTimeAgo(it.date)}</div>
       </div>
       ${it.exp ? `<div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--grn);line-height:1;">+${it.exp}</div><div style="font-size:7px;color:var(--mut);letter-spacing:.5px;">EXP</div></div>` : ''}
     </div>`;
