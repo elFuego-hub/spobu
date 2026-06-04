@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v37</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v38</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -16173,13 +16173,18 @@ async function loadTrainerData() {
   const name = `${currentProfile.first_name} ${currentProfile.last_name}`.toUpperCase();
   document.getElementById('tr-name').textContent = name + ' 🥋';
   document.getElementById('tr-avatar').textContent = currentProfile.first_name?.[0]||'T';
-  await loadNewKids();
-  await loadPendingSubmissions();
-  await loadPendingChallengeSubmissions();
-  await loadPendingCompetitionResults();
-  await loadPendingDuels().catch(e => console.error('loadPendingDuels:', e));
-  await loadTrainerMembers();
-  await loadTrainerGroups();
+  // Lygiagrečiai (anksčiau 7 sekvencinių await → lėtas pradžios langas). allSettled — vienas kritęs nelaužo kitų.
+  await Promise.allSettled([
+    loadNewKids(),
+    loadPendingSubmissions(),
+    loadPendingChallengeSubmissions(),
+    loadPendingCompetitionResults(),
+    loadPendingDuels(),
+    loadTrainerMembers(),
+    loadTrainerGroups()
+  ]);
+  // Vienas autoritetingas badge perskaičiavimas (po to, kai visi skaičiai užpildyti)
+  if (typeof updateTrainerPendingBadge === 'function') updateTrainerPendingBadge();
 }
 
 async function loadNewKids() {
@@ -16359,7 +16364,7 @@ async function loadPendingSubmissions() {
   const kidIds = [...new Set((subs || []).map(s => s.kid_id))];
   let kidsMap = {};
   if (kidIds.length > 0) {
-    const { data: kidsData } = await sb.from('profiles')
+    const { data: kidsData } = await sb.from('kids')
       .select('id, first_name, last_name')
       .in('id', kidIds);
     (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
@@ -16411,14 +16416,16 @@ async function loadPendingSubmissions() {
 }
 
 async function approveSubmission(subId) {
+  const el = document.getElementById(`sub-${subId}`);
+  if (el) { if (el.dataset.busy) return; el.dataset.busy = '1'; el.style.opacity = '.3'; el.style.pointerEvents = 'none'; } // blokuoti dvigubą paspaudimą
   const { error } = await sb.rpc('approve_submission', {
     submission_id: subId, trainer: currentUser.id
   });
-  if (error) { showToast('❌ Klaida: ' + error.message, 'error'); return; }
-  document.getElementById(`sub-${subId}`).style.opacity = '.3';
-  document.getElementById(`sub-${subId}`).style.pointerEvents = 'none';
+  if (error) {
+    if (el) { el.style.opacity = ''; el.style.pointerEvents = ''; delete el.dataset.busy; }
+    showToast('❌ Klaida: ' + error.message, 'error'); return;
+  }
   showToast('✅ Patvirtinta! EXP priskaičiuota', 'success');
-  // Atnaujinti skaičių
   loadPendingSubmissions();
 }
 
@@ -18233,64 +18240,68 @@ async function loadPendingDuels() {
 }
 
 // Treneris patvirtina dvikovą
+let _approvingDuels = new Set();
 async function approveDuel(duelId) {
-  const { data: duel } = await sb.from('duels').select('*').eq('id', duelId).single();
-  if (!duel) {
-    showToast('❌ Dvikova nerasta', 'error');
-    return;
-  }
-  
-  const t = DUEL_TYPES[duel.duel_type] || { moreIsBetter: true };
-  const chVal = duel.challenger_value;
-  const opVal = duel.opponent_value;
-  
-  let winnerId = null;
-  if (chVal !== opVal) {
-    if (t.moreIsBetter) {
-      winnerId = chVal > opVal ? duel.challenger_id : duel.opponent_id;
-    } else {
-      winnerId = chVal < opVal ? duel.challenger_id : duel.opponent_id;
-    }
-  }
-  
-  const { error } = await sb.from('duels')
-    .update({
-      status: 'completed',
-      winner_id: winnerId,
-      trainer_id: currentUser.id,
-      completed_at: new Date().toISOString()
-    })
-    .eq('id', duelId);
-  
-  if (error) {
-    showToast('❌ Klaida: ' + error.message, 'error');
-    return;
-  }
-  
-  // 🎯 EXP paskirstymas
+  if (_approvingDuels.has(duelId)) return; // blokuoti dvigubą paspaudimą — kitaip EXP pridedamas du kartus
+  _approvingDuels.add(duelId);
   try {
-    let chExp, opExp;
-    if (winnerId === null) {
-      chExp = DUEL_EXP.draw;
-      opExp = DUEL_EXP.draw;
-    } else if (winnerId === duel.challenger_id) {
-      chExp = DUEL_EXP.winner;
-      opExp = DUEL_EXP.loser;
-    } else {
-      chExp = DUEL_EXP.loser;
-      opExp = DUEL_EXP.winner;
+    const { data: duel } = await sb.from('duels').select('*').eq('id', duelId).single();
+    if (!duel) { showToast('❌ Dvikova nerasta', 'error'); return; }
+    if (duel.status === 'completed') { showToast('Dvikova jau patvirtinta'); loadPendingDuels(); return; }
+
+    const t = DUEL_TYPES[duel.duel_type] || { moreIsBetter: true };
+    const chVal = duel.challenger_value;
+    const opVal = duel.opponent_value;
+
+    let winnerId = null;
+    if (chVal !== opVal) {
+      if (t.moreIsBetter) {
+        winnerId = chVal > opVal ? duel.challenger_id : duel.opponent_id;
+      } else {
+        winnerId = chVal < opVal ? duel.challenger_id : duel.opponent_id;
+      }
     }
-    
-    await addExpToKid(duel.challenger_id, chExp);
-    await addExpToKid(duel.opponent_id, opExp);
-    
-    console.log('[approveDuel] EXP paskirta:', { challenger: chExp, opponent: opExp, winnerId });
-  } catch(e) {
-    console.error('[approveDuel] EXP klaida:', e);
+
+    // Užbaigti TIK jei dar ne completed; .select() patvirtina, kad TIKRAI pakeitėme (race apsauga)
+    const { data: upd, error } = await sb.from('duels')
+      .update({
+        status: 'completed',
+        winner_id: winnerId,
+        trainer_id: currentUser.id,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', duelId)
+      .neq('status', 'completed')
+      .select();
+
+    if (error) { showToast('❌ Klaida: ' + error.message, 'error'); return; }
+    if (!upd || !upd.length) { showToast('Dvikova jau patvirtinta'); loadPendingDuels(); return; } // kažkas spėjo anksčiau — EXP nepridedam
+
+    // 🎯 EXP paskirstymas (tik kai TIKRAI užbaigėme šiuo paspaudimu)
+    try {
+      let chExp, opExp;
+      if (winnerId === null) {
+        chExp = DUEL_EXP.draw;
+        opExp = DUEL_EXP.draw;
+      } else if (winnerId === duel.challenger_id) {
+        chExp = DUEL_EXP.winner;
+        opExp = DUEL_EXP.loser;
+      } else {
+        chExp = DUEL_EXP.loser;
+        opExp = DUEL_EXP.winner;
+      }
+      await addExpToKid(duel.challenger_id, chExp);
+      await addExpToKid(duel.opponent_id, opExp);
+      console.log('[approveDuel] EXP paskirta:', { challenger: chExp, opponent: opExp, winnerId });
+    } catch(e) {
+      console.error('[approveDuel] EXP klaida:', e);
+    }
+
+    showToast('✅ Dvikova patvirtinta! EXP paskirta abiem vaikams.', 'success');
+    loadPendingDuels();
+  } finally {
+    _approvingDuels.delete(duelId);
   }
-  
-  showToast('✅ Dvikova patvirtinta! EXP paskirta abiem vaikams.', 'success');
-  loadPendingDuels();
 }
 
 // Pridėti EXP vaikui (helper)
@@ -19620,22 +19631,20 @@ async function loadPendingChallengeSubmissions() {
 }
 
 async function approveChallengeSubmission(subId) {
+  const el = document.getElementById(`csub-${subId}`);
+  if (el) { if (el.dataset.busy) return; el.dataset.busy = '1'; el.style.opacity = '.3'; el.style.pointerEvents = 'none'; }
   const { error } = await sb.from('challenge_submissions')
-    .update({ 
+    .update({
       status: 'approved',
       reviewed_at: new Date().toISOString()
     })
-    .eq('id', subId);
-  
+    .eq('id', subId)
+    .eq('status', 'pending'); // tik jei dar pending — apsauga nuo dvigubo EXP
+
   if (error) {
+    if (el) { el.style.opacity = ''; el.style.pointerEvents = ''; delete el.dataset.busy; }
     showToast('❌ Klaida: ' + error.message, 'error');
     return;
-  }
-  
-  const el = document.getElementById(`csub-${subId}`);
-  if (el) {
-    el.style.opacity = '.3';
-    el.style.pointerEvents = 'none';
   }
   showToast('✅ Patvirtinta! EXP priskaičiuota', 'success');
   loadPendingChallengeSubmissions();
@@ -19780,24 +19789,22 @@ async function loadPendingCompetitionResults() {
 }
 
 async function approveCompetitionResult(resultId) {
+  const el = document.getElementById(`comp-result-${resultId}`);
+  if (el) { if (el.dataset.busy) return; el.dataset.busy = '1'; el.style.opacity = '.3'; el.style.pointerEvents = 'none'; }
   const { error } = await sb.from('competition_results')
-    .update({ 
+    .update({
       approval_status: 'approved',
       approved_by: currentUser.id,
       approved_at: new Date().toISOString()
     })
-    .eq('id', resultId);
-  
+    .eq('id', resultId)
+    .eq('approval_status', 'pending'); // tik jei dar pending — apsauga nuo dvigubo EXP/medalio
+
   if (error) {
+    if (el) { el.style.opacity = ''; el.style.pointerEvents = ''; delete el.dataset.busy; }
     console.error('approveCompetitionResult:', error);
     showToast('❌ Klaida: ' + error.message, 'error', 5000);
     return;
-  }
-  
-  const el = document.getElementById(`comp-result-${resultId}`);
-  if (el) {
-    el.style.opacity = '.3';
-    el.style.pointerEvents = 'none';
   }
   showToast('✅ Patvirtinta! EXP pridėtas vaikui.', 'success', 4000);
   loadPendingCompetitionResults();
@@ -20167,11 +20174,12 @@ function sr(el) {
 async function cr() {
   if (!rejectTargetId) return;
   const reason = document.querySelector('#rmo .ch.on')?.textContent || 'Nepateikta priežastis';
-  const comment = document.getElementById('reject-comment').value;
-  await sb.from('result_submissions').update({
+  const comment = document.getElementById('reject-comment')?.value || '';
+  const { error } = await sb.from('result_submissions').update({
     status:'rejected', rejection_reason:reason,
     rejection_comment:comment, reviewed_at:new Date().toISOString()
-  }).eq('id', rejectTargetId);
+  }).eq('id', rejectTargetId).eq('status', 'pending');
+  if (error) { showToast('❌ Klaida: ' + error.message, 'error'); return; } // anksčiau klaida buvo nutylima
   cm();
   showToast('Atmesta su priežastimi', 'error');
   loadPendingSubmissions();
@@ -22417,7 +22425,8 @@ let composeContext = {
 
 // Atidaryti modal'ą su pre-set'intu kontekstu
 function openComposeModal(context) {
-  composeContext = { ...composeContext, ...context };
+  // Reset į švarius defaults PRIEŠ merge — kitaip groupId/parentIds/category iš ankstesnės žinutės užsilieka ant naujos
+  composeContext = { type: 'direct', parentIds: [], groupId: null, kidId: null, title: '', recipientLabel: '', category: null, audience: null, mode: null, ...context };
   
   // Antraštė
   const titleEl = document.getElementById('msg-compose-title');
