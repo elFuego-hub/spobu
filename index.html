@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v27</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v28</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2238,7 +2238,7 @@ select.inp option{background:#222;}
           <circle cx="70" cy="70" r="63" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="5"/>
           <circle id="tk-prof-ring" cx="70" cy="70" r="63" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="396" style="transition:stroke-dashoffset .8s ease-out;filter:drop-shadow(0 0 6px rgba(255,255,255,.6));"/>
         </svg>
-        <div style="position:absolute;inset:8px;border-radius:50%;background:rgba(0,0,0,.4);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 30px rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.3);">
+        <div id="tk-prof-kanji-circle" style="position:absolute;inset:8px;border-radius:50%;background:rgba(0,0,0,.4);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 30px rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.3);">
           <div id="tk-prof-kanji" style="font-family:'Noto Serif JP', serif;font-size:40px;font-weight:900;line-height:1;text-shadow:0 4px 12px rgba(0,0,0,.4);margin-bottom:1px;color:#FFFFFF;">始</div>
           <div id="tk-prof-lvl-num" style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1.5px;color:white;line-height:1;">LVL 1</div>
           <div id="tk-prof-lvl-exp" style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:1px;font-weight:700;margin-top:1px;">0 EXP</div>
@@ -2264,17 +2264,17 @@ select.inp option{background:#222;}
 
     <!-- 🏆 TROFĖJAI / 🏅 BADGES / 🎯 IŠŠŪKIAI -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:0 12px 10px;">
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;">
+      <div class="tap-react" onclick="openParentTrophies()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
         <div style="font-size:20px;line-height:1;margin-bottom:3px;">🏆</div>
         <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">TROFĖJAI</div>
         <div id="tk-prof-trophies" style="font-size:8px;color:var(--mut);margin-top:2px;">🥇0 🥈0 🥉0</div>
       </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;">
+      <div class="tap-react" onclick="openParentBadges()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
         <div style="font-size:20px;line-height:1;margin-bottom:3px;">🏅</div>
         <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">SKILL BADGES</div>
         <div id="tk-prof-badges" style="font-size:8px;color:var(--mut);margin-top:2px;">🏆0 🥇0 🥈0 🥉0</div>
       </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;">
+      <div class="tap-react" onclick="openParentChallengeTypes()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
         <div style="font-size:20px;line-height:1;margin-bottom:3px;">🎯</div>
         <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">IŠŠŪKIAI</div>
         <div id="tk-prof-challenges" style="font-size:8px;color:var(--mut);margin-top:3px;">0 įveikta</div>
@@ -4904,20 +4904,55 @@ function openParentFeedModal() {
 }
 
 // 👤 PROFILIS — vaiko profilis (be draugų)
+// Profilio kortelės → modalai (perpanaudoja vaiko parametrizuotus modalus su aktyvaus vaiko id)
+function openParentTrophies() { if (parentActiveKid && typeof openTrophiesModal === 'function') openTrophiesModal(parentActiveKid.id, parentKidName(parentActiveKid)); }
+function openParentBadges() { if (parentActiveKid && typeof openBadgesModal === 'function') openBadgesModal(parentActiveKid.id, parentKidName(parentActiveKid)); }
+function openParentChallengeTypes() { if (parentActiveKid && typeof openChallengeTypesModal === 'function') openChallengeTypesModal(parentActiveKid.id, parentKidName(parentActiveKid)); }
+
 async function loadParentKidProfile() {
   const k = parentActiveKid;
   if (!k) return;
   const info = getStageInfo(k.total_exp || 0);
   const stageObj = STAGES.find(s => s.name === info.stage) || STAGES[0];
+  const stageIdx = STAGES.indexOf(stageObj);
+  const totalExp = k.total_exp || 0;
+  const heroEl = document.getElementById('tk-prof-hero'); if (heroEl) heroEl.style.background = 'transparent';
+  // Progress ring — iki kitos STADIJOS (kaip vaiko) + stadijos spalva/švytėjimas
   const ring = document.getElementById('tk-prof-ring');
-  if (ring) { ring.style.strokeDashoffset = 396 * (1 - (info.progressPercent || 0) / 100); ring.style.stroke = stageObj.color; }
-  const kanji = document.getElementById('tk-prof-kanji'); if (kanji) { kanji.textContent = stageObj.kanji; kanji.style.color = stageObj.color; }
+  if (ring) {
+    ring.style.strokeDashoffset = 396 - ((info.stageProgressPercent || 0) / 100) * 396;
+    ring.setAttribute('stroke', stageObj.color);
+    ring.style.filter = stageIdx >= 5 ? `drop-shadow(0 0 8px ${stageObj.color})` : 'none';
+  }
+  // Kanji — spalva + glow pagal stadiją
+  const kanji = document.getElementById('tk-prof-kanji');
+  if (kanji) {
+    kanji.textContent = stageObj.kanji;
+    kanji.style.color = stageObj.color;
+    kanji.style.setProperty('--glow-color', stageObj.color);
+    kanji.classList.remove('glow-soft', 'glow-strong', 'glow-halo');
+    if (stageIdx >= 4) { kanji.classList.add('glow-strong'); kanji.style.textShadow = `0 0 20px ${stageObj.color}`; }
+    else { kanji.classList.add('glow-soft'); kanji.style.textShadow = `0 0 12px ${stageObj.color}80`; }
+  }
+  // Kanji apskritimas — halo aukštoms stadijoms
+  const kanjiCircle = document.getElementById('tk-prof-kanji-circle');
+  if (kanjiCircle) { kanjiCircle.classList.remove('glow-halo'); kanjiCircle.style.setProperty('--glow-color', stageObj.color); if (stageIdx >= 4) kanjiCircle.classList.add('glow-halo'); }
   const lvlNum = document.getElementById('tk-prof-lvl-num'); if (lvlNum) lvlNum.textContent = 'LVL ' + info.globalLevel;
-  const lvlExp = document.getElementById('tk-prof-lvl-exp'); if (lvlExp) lvlExp.textContent = info.isHallOfFame ? '⭐ MAX ⭐' : (k.total_exp || 0).toLocaleString('lt-LT') + ' EXP';
-  const stTitle = document.getElementById('tk-prof-stage-title'); if (stTitle) stTitle.textContent = `${stageObj.emoji} ${stageObj.name.toUpperCase()}`;
+  const lvlExp = document.getElementById('tk-prof-lvl-exp'); if (lvlExp) lvlExp.textContent = info.isHallOfFame ? '⭐ MAX ⭐' : totalExp.toLocaleString('lt-LT') + ' EXP';
+  const stTitle = document.getElementById('tk-prof-stage-title');
+  if (stTitle) { stTitle.textContent = `${stageObj.emoji} ${stageObj.name.toUpperCase()}`; stTitle.style.color = stageIdx >= 5 ? stageObj.color : 'white'; if (stageIdx >= 5) stTitle.style.textShadow = `0 0 12px ${stageObj.color}`; }
   const stMean = document.getElementById('tk-prof-stage-meaning'); if (stMean) stMean.textContent = stageObj.meaning;
   const nameEl = document.getElementById('tk-prof-name'); if (nameEl) nameEl.textContent = parentKidName(k).toUpperCase();
-  const since = document.getElementById('tk-prof-karate-since'); if (since) since.textContent = k.karate_since ? `🥋 Karatė nuo ${String(k.karate_since).slice(0, 10)}` : '🥋 –';
+  // 🥋 Kiek lanko (iš karate_since) — jei nėra (sena registracija), rodo „–"
+  const since = document.getElementById('tk-prof-karate-since');
+  if (since) {
+    if (k.karate_since) {
+      const ms = Date.now() - new Date(k.karate_since).getTime();
+      const yrs = Math.floor(ms / (365.25 * 86400000));
+      const mos = Math.floor((ms % (365.25 * 86400000)) / (30.44 * 86400000));
+      since.textContent = yrs >= 1 ? `🥋 Lanko ${yrs} m.${mos ? ' ' + mos + ' mėn.' : ''}` : (mos >= 1 ? `🥋 Lanko ${mos} mėn.` : '🥋 Lanko < 1 mėn.');
+    } else { since.textContent = '🥋 –'; }
+  }
   const bio = document.getElementById('tk-prof-bio'); if (bio) bio.textContent = k.bio || '"Karatė nėra kovos sportas - tai kelias į asmenybės ugdymą."';
   const belt = document.getElementById('tk-prof-belt');
   if (belt && typeof renderBeltCertificate === 'function') { belt.style.background = 'transparent'; belt.style.border = 'none'; belt.innerHTML = renderBeltCertificate(k.kyu || 'Mu kyu', true); }
