@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v32</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v33</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3810,12 +3810,13 @@ async function openParentSettings() {
           </button>
         </div>
         <div style="padding:0 16px 14px;">
-          <div style="background:rgba(255,255,255,.04);border:.5px solid var(--bdr);border-radius:14px;padding:12px;display:flex;align-items:center;gap:12px;">
+          <div onclick="openParentInfoModal()" style="background:rgba(99,102,241,.08);border:.5px solid rgba(99,102,241,.3);border-radius:14px;padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;-webkit-tap-highlight-color:rgba(99,102,241,.2);">
             <div style="font-size:24px;">💡</div>
             <div style="flex:1;">
-              <div style="font-size:12px;font-weight:800;color:white;">Tėvų galimybės</div>
-              <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">Stebėk vaiko progresą, redaguok sveikatos info, valdyk anonimiškumą statistikoje. Vaiką kuria klubas — tu jį priimi.</div>
+              <div style="font-size:12px;font-weight:800;color:white;">Tėvų gidas · kaip viskas veikia</div>
+              <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">Ką matai, kokia tavo rolė, ką gauna vaikas, apie ataskaitas ir premium</div>
             </div>
+            <div style="font-size:18px;color:#8B5CF6;">›</div>
           </div>
         </div>
         <div style="padding:6px 16px 20px;">
@@ -3838,6 +3839,32 @@ async function openParentSettings() {
   if (typeof updatePushToggleUI === 'function') updatePushToggleUI();
   if (typeof updateZoomButtonsUI === 'function') updateZoomButtonsUI();
   modal.style.display = 'flex';
+}
+
+// 💡 Tėvų gidas — paaiškina rolę, ką mato, ką gauna vaikas, ataskaitas, premium
+function openParentInfoModal() {
+  const old = document.getElementById('parent-info-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'parent-info-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;align-items:flex-end;justify-content:center;padding:0;';
+  const sec = (icon, title, body) => `<div style="margin-bottom:15px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;"><span style="font-size:18px;">${icon}</span><span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:white;">${title}</span></div><div style="font-size:12px;color:var(--mut);line-height:1.55;">${body}</div></div>`;
+  m.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+      <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">💡 TĖVŲ GIDAS</div>
+        <button onclick="document.getElementById('parent-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+      </div>
+      <div style="padding:16px 18px 28px;">
+        ${sec('👀', 'KĄ MATAI', 'Realiu laiku matai vaiko progresą: lygį ir stadiją, karjeros statistiką pagal 7 kategorijas, varžybų medalius, įveiktus iššūkius, diržą ir naujausių pasiekimų srautą. Esi pasyvus stebėtojas — pateikti gali tik pats vaikas.')}
+        ${sec('🎯', 'TAVO ROLĖ', 'Stebėk ir palaikyk. Valdai administracinius/saugumo duomenis: sveikatą (alergijos, vaistai), avarinį kontaktą, foto/video sutikimą, svorį ir matomumą statistikose. Vaiką sukuria klubas — tu jį priimi prie savo paskyros.')}
+        ${sec('🥋', 'KĄ GAUNA VAIKAS', 'Žaidybinę motyvaciją: kelia lygį, renka EXP, kyla diržo laiptais, įveikinėja trenerio iššūkius, kovoja dvikovose ir dalyvauja varžybose. Tai paverčia treniruotes įdomesnėmis ir padeda nepamesti motyvacijos ilgam.')}
+        ${sec('📊', 'ATASKAITOS', '„Pasiekimų" lange kiekvieną mėnesį matai vaiko mėnesio ataskaitą — kiek iššūkių įveikė, kiek karjeros rekordų pagerino, kiek varžybų laimėjo. Ateityje — ketvirtinės AI ataskaitos su stipriųjų/silpnųjų pusių analize.')}
+        ${sec('💎', 'PREMIUM', 'Premium prenumerata atrakins gilesnę statistiką ir ketvirtines AI ataskaitas apie tavo vaiką. Netrukus — ieškok „Parduotuvės" lange.')}
+        ${sec('🔔', 'PRANEŠIMAI', 'Į varpelį ateina klubo ir trenerio pranešimai bei žinutės, susijusios būtent su tavo vaiku. Vaiko pasiekimai (medaliai, iššūkiai, rekordai) tyliai keliauja į „Pasiekimų" srautą.')}
+      </div>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
 }
 
 // ✏️ Tėvo vardo redagavimas (placeholder „Tėvas/globėjas" → tikras vardas)
@@ -6466,6 +6493,7 @@ function showEditKidModal(kidId) {
           <div style="color:var(--mut);">${kid.gender === 'male' ? '👦 Vaikinas' : '👧 Mergina'} · ${birthDateText}</div>
           <div style="color:var(--mut);">${age} m. · ${groupName}</div>
           <div style="color:var(--mut);">Kyu: <strong>${kid.kyu || '10 kyu'}</strong></div>
+          <div style="color:var(--mut);">📧 ${kid.pending_email || 'paštas nenurodytas'}</div>
         </div>
       </div>
       
@@ -6483,47 +6511,12 @@ function showEditKidModal(kidId) {
         ${weightOptions}
       </select>
       
-      <!-- Anonimiškumas -->
-      <label class="lbl">ANONIMIŠKUMAS</label>
-      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-          <div style="flex:1;">
-            <div style="font-weight:700;font-size:13px;margin-bottom:4px;">
-              ${isAnonymous ? '🔒 Anoniminis vaikas' : '👁️ Vaikas matomas viešai'}
-            </div>
-            <div style="font-size:11px;color:var(--mut);line-height:1.5;">
-              ${isAnonymous 
-                ? 'Vaikas slepiamas viešose statistikose ir leaderboard\'uose. Rodo "anonimas".'
-                : 'Vaikas matomas statistikose savo vardu. Gali būti TOP sąrašuose.'}
-            </div>
-          </div>
-          <label class="switch" style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
-            <input type="checkbox" id="edit-anonymous" ${isAnonymous ? 'checked' : ''} style="opacity:0;width:0;height:0;">
-            <span class="slider" id="edit-anonymous-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${isAnonymous ? 'var(--br)' : 'var(--bdr)'};transition:.3s;border-radius:28px;">
-              <span style="position:absolute;height:22px;width:22px;left:${isAnonymous ? '25px' : '3px'};top:3px;background:white;transition:.3s;border-radius:50%;"></span>
-            </span>
-          </label>
-        </div>
-      </div>
-      
       <button class="btn-auth" onclick="saveEditKid('${kidId}')">IŠSAUGOTI</button>
       <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="closeEditKidModal()">ATŠAUKTI</button>
     </div>
   `;
   
   modal.style.display = 'block';
-  
-  // Pridėt event listener kad slider'is animuotai veiktų
-  const checkbox = document.getElementById('edit-anonymous');
-  const slider = document.getElementById('edit-anonymous-slider');
-  if (checkbox && slider) {
-    checkbox.addEventListener('change', () => {
-      const checked = checkbox.checked;
-      slider.style.background = checked ? 'var(--br)' : 'var(--bdr)';
-      const ball = slider.querySelector('span');
-      if (ball) ball.style.left = checked ? '25px' : '3px';
-    });
-  }
 }
 
 function closeEditKidModal() {
@@ -6536,15 +6529,13 @@ async function saveEditKid(kidId) {
   errEl.style.display = 'none';
   
   const weight = document.getElementById('edit-weight').value;
-  const isAnonymous = document.getElementById('edit-anonymous').checked;
-  
+
   if (!weight) { showErr(errEl, 'Pasirink svorį'); return; }
-  
+
   try {
     const { error } = await sb.from('kids')
       .update({
-        weight_range: weight,
-        is_anonymous: isAnonymous
+        weight_range: weight
       })
       .eq('id', kidId);
     
