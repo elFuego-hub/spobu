@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v38</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v39</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3882,7 +3882,7 @@ async function submitParentReport(btn) {
   try {
     const appV = document.getElementById('app-version')?.textContent || '';
     const fullName = `${currentProfile?.first_name || ''} ${currentProfile?.last_name || ''}`.trim();
-    const { error } = await sb.from('feedback').insert({
+    const { data: ins, error } = await sb.from('feedback').insert({
       user_id: currentUser?.id || null,
       role: currentProfile?.role || 'parent',
       name: fullName || null,
@@ -3890,8 +3890,9 @@ async function submitParentReport(btn) {
       message: txt,
       app_version: appV,
       type: 'bug'
-    });
+    }).select('id');
     if (error) throw error;
+    if (!ins || !ins.length) throw new Error('Pranešimas neįrašytas — parašyk pagalba@spobu.lt');
     showToast('✓ Ačiū! Pranešimas išsiųstas administratoriui');
     const rm = document.getElementById('parent-report-modal'); if (rm) rm.remove();
     const hm = document.getElementById('parent-help-modal'); if (hm) hm.remove();
@@ -4506,8 +4507,12 @@ async function loadParentKidMain() {
     const mo = document.getElementById('tk-streak-month'); if (mo) mo.textContent = s?.monthly_current || 0;
   } catch (e) {}
 
+  // Pašildom vaiko klubo cache vieną kartą — kad rankai/iššūkiai/renginys/laukiama nekartotų po profiles užklausą
+  await getActiveKidClubId();
+
   // Reitingų kategorija — etiketę nustato computeParentKidRanks (lytis + amžiaus grupė, kaip vaiko)
   computeParentKidRanks(k).then(r => {
+    if (parentActiveKid?.id !== k.id) return; // vaikas perjungtas kol skaičiavo — nerašom pasenusių reitingų
     const setR = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setR('tk-rank-comp', r.comp); setR('tk-rank-exp', r.exp); setR('tk-rank-ish', r.ish);
   });
@@ -6166,13 +6171,6 @@ async function showKidDetail(kidId) {
     return;
   }
   
-  // Jei vaikas turi auth paskyrą - paimam jos email
-  let kidEmail = null;
-  if (kid.user_id) {
-    const { data: profile } = await sb.from('profiles').select('*').eq('id', kid.user_id).maybeSingle();
-    // Email gausim kitu būdu (RLS gali blokuoti auth.users iš client'o)
-  }
-  
   currentParentKid = kid;
   
   const fullName = `${kid.first_name || 'Vaikas'} ${kid.last_name || ''}`.trim();
@@ -6636,9 +6634,11 @@ function closeEditKidModal() {
 
 async function saveEditKid(kidId) {
   const errEl = document.getElementById('edit-kid-err');
+  if (!errEl) return; // modalo nebėra — nieko nedarom (anksčiau metė null deref)
   errEl.style.display = 'none';
-  
-  const weight = document.getElementById('edit-weight').value;
+
+  const weightEl = document.getElementById('edit-weight');
+  const weight = weightEl ? weightEl.value : '';
 
   if (!weight) { showErr(errEl, 'Pasirink svorį'); return; }
 
@@ -14853,7 +14853,7 @@ function switchParentKidTab(tabName) {
   const activeTab = document.getElementById(`parent-kid-tab-${tabName}`);
   if (activeTab) activeTab.style.display = 'block';
   // Užkrauti tinkamą tab'ą
-  if (tabName === 'stats') { parentStatPage = 1; if (typeof loadParentOverallStatTab === 'function') loadParentOverallStatTab(); }
+  if (tabName === 'stats') { if (typeof switchParentStatTab === 'function') switchParentStatTab('overall'); }
   if (tabName === 'progress' && typeof loadKidProgress === 'function') loadKidProgress();
 }
 
@@ -14949,20 +14949,20 @@ async function getParentFilteredKidEntries(scoreSource) {
   
   statSeasonFilter = parentStatSeasonFilter;
   Object.assign(statFilters, parentStatFilters);
-  
+
   // Laikinai pakeičiam currentProfile.club_id į vaiko klubą
   if (kidClubId) {
     currentProfile = { ...currentProfile, club_id: kidClubId };
   }
-  
-  const result = await getFilteredKidEntries(scoreSource);
-  
-  // Atkurti
-  statSeasonFilter = savedSeason;
-  Object.assign(statFilters, savedFilters);
-  currentProfile = savedProfile;
-  
-  return result;
+
+  try {
+    return await getFilteredKidEntries(scoreSource);
+  } finally {
+    // Atkurti VISADA — net jei getFilteredKidEntries meta klaidą (kitaip currentProfile liktų sugadintas → klubo painiava visur)
+    statSeasonFilter = savedSeason;
+    Object.assign(statFilters, savedFilters);
+    currentProfile = savedProfile;
+  }
 }
 
 // Filtrų UI render (tėvų versija)
@@ -23090,7 +23090,9 @@ async function openAnnouncement(convId) {
     .update({ last_read_at: new Date().toISOString() })
     .eq('conversation_id', convId)
     .eq('user_id', currentUser.id);
-  
+  // Tėvui — nedelsiant atnaujinti varpelio badge (kitaip „neperskaityta" lieka kaboti perskaičius)
+  if (currentProfile?.role === 'parent' && typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+
   const { data: sender } = await sb.from('profiles')
     .select('first_name, last_name, role')
     .eq('id', conv.created_by)
@@ -24445,6 +24447,7 @@ async function markAnnouncementRead(convId) {
   setTimeout(() => {
     loadAnnouncements();
     updateUnreadBadge();
+    if (currentProfile?.role === 'parent' && typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
   }, 300);
 }
 
