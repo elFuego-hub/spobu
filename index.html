@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v34</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v35</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3851,6 +3851,52 @@ async function openParentSettings() {
   modal.style.display = 'flex';
 }
 
+// 🐞 Problemos pranešimo forma → įrašo į `feedback` lentelę (mato admin)
+function openParentReportModal() {
+  const old = document.getElementById('parent-report-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'parent-report-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100000;align-items:center;justify-content:center;padding:20px;';
+  m.innerHTML = `
+    <div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:20px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:6px;">🐞 PRANEŠTI PROBLEMĄ</div>
+      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Aprašyk ką darei ir kas nutiko. Pranešimas keliaus tiesiai administratoriui.</div>
+      <textarea id="preport-text" class="inp" rows="5" maxlength="1000" placeholder="Pvz. Bandžiau pakeisti vardą, bet išmetė klaidą..." style="width:100%;resize:vertical;margin-bottom:14px;font-family:inherit;"></textarea>
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('parent-report-modal').remove()" style="flex:1;padding:12px;background:var(--card);border:.5px solid var(--bdr);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">Atšaukti</button>
+        <button onclick="submitParentReport(this)" style="flex:1;padding:12px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">Siųsti</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+async function submitParentReport(btn) {
+  const txt = (document.getElementById('preport-text')?.value || '').trim();
+  if (!txt) { showToast('⚠️ Aprašyk problemą'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Siunčiama...'; }
+  try {
+    const appV = document.getElementById('app-version')?.textContent || '';
+    const fullName = `${currentProfile?.first_name || ''} ${currentProfile?.last_name || ''}`.trim();
+    const { error } = await sb.from('feedback').insert({
+      user_id: currentUser?.id || null,
+      role: currentProfile?.role || 'parent',
+      name: fullName || null,
+      kid_name: parentActiveKid ? parentKidName(parentActiveKid) : null,
+      message: txt,
+      app_version: appV,
+      type: 'bug'
+    });
+    if (error) throw error;
+    showToast('✓ Ačiū! Pranešimas išsiųstas administratoriui');
+    const rm = document.getElementById('parent-report-modal'); if (rm) rm.remove();
+    const hm = document.getElementById('parent-help-modal'); if (hm) hm.remove();
+  } catch (e) {
+    console.warn('submitParentReport', e);
+    showToast('❌ Nepavyko išsiųsti. Bandyk vėliau.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Siųsti'; }
+  }
+}
+
 // ❓ Pagalba ir atsiliepimai — Susisiekti / Pranešti problemą / DUK
 function openParentHelpModal() {
   const SUPPORT_EMAIL = 'pagalba@spobu.lt'; // ⚠️ PAKEISK Į SAVO TIKRĄ EL. PAŠTĄ
@@ -3886,13 +3932,13 @@ function openParentHelpModal() {
             <div style="font-size:18px;color:#8B5CF6;">›</div>
           </div>
         </a>
-        <a href="${bugHref}" style="text-decoration:none;display:block;margin-bottom:16px;">
+        <div onclick="openParentReportModal()" style="cursor:pointer;margin-bottom:16px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
           <div style="background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">🐞</div>
-            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Radai klaidą? Pranešk su detalėmis</div></div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Radai klaidą? Keliaus tiesiai administratoriui</div></div>
             <div style="font-size:18px;color:var(--br);">›</div>
           </div>
-        </a>
+        </div>
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:4px 2px 8px;">❓ DAŽNIAUSI KLAUSIMAI</div>
         ${faqHtml}
       </div>
@@ -3969,7 +4015,6 @@ async function saveParentName(btn) {
     const m = document.getElementById('edit-parent-name-modal'); if (m) m.remove();
     const userEl = document.getElementById('parent-settings-user'); if (userEl) userEl.textContent = `${fn} ${ln}`.trim();
     if (typeof loadParentKidMain === 'function') loadParentKidMain();
-    if (typeof loadParentProfile === 'function') loadParentProfile();
   } catch (e) {
     console.warn('saveParentName', e);
     showToast('❌ Nepavyko išsaugoti vardo');
