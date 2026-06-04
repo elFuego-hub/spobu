@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v36</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v37</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2956,7 +2956,12 @@ select.inp option{background:#222;}
         <div style="font-size:10px;color:var(--mut);font-weight:700;">TĖVAI</div>
       </div>
     </div>
-    
+
+    <div class="st">📨 ATSILIEPIMAI <span id="a-feedback-badge" style="display:none;font-size:9px;font-weight:800;color:white;background:#FF4D00;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:middle;">0</span></div>
+    <div class="cd" id="a-feedback-list" style="padding:4px 14px;max-height:320px;overflow-y:auto;">
+      <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Kraunama...</div>
+    </div>
+
     <div class="st">VEIKSMAI</div>
     <div class="cd" style="padding:12px;">
       <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openCreateClub()">➕ Sukurti naują klubą</button>
@@ -17603,7 +17608,42 @@ async function loadAdminData() {
   console.log('👑 [loadAdminData] 3. Kraunam klubų sąrašą...');
   // Klubų sąrašas
   await loadAdminClubs();
+  await loadAdminFeedback();
   console.log('✅ [loadAdminData] BAIGTA');
+}
+
+// 📨 Tėvų/vartotojų atsiliepimai ir problemų pranešimai (admin mato)
+async function loadAdminFeedback() {
+  const list = document.getElementById('a-feedback-list');
+  const badge = document.getElementById('a-feedback-badge');
+  if (!list) return;
+  try {
+    const { data, error } = await sb.from('feedback').select('*').order('created_at', { ascending: false }).limit(50);
+    if (error) throw error;
+    const items = data || [];
+    const newCount = items.filter(f => (f.status || 'new') === 'new').length;
+    if (badge) { badge.textContent = newCount; badge.style.display = newCount > 0 ? 'inline-block' : 'none'; }
+    if (!items.length) { list.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:13px;">Atsiliepimų dar nėra</div>'; return; }
+    const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    list.innerHTML = items.map(f => {
+      const typeIcon = f.type === 'bug' ? '🐞' : '💬';
+      const when = f.created_at ? new Date(f.created_at).toLocaleString('lt-LT') : '';
+      const who = [f.name, f.role].filter(Boolean).join(' · ');
+      const isNew = (f.status || 'new') === 'new';
+      return `<div style="padding:10px 2px;border-bottom:.5px solid var(--bdr);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:16px;">${typeIcon}</span>
+          <span style="font-size:12px;font-weight:800;color:white;flex:1;min-width:0;">${esc(who) || 'Vartotojas'}</span>
+          ${isNew ? '<span style="font-size:8px;font-weight:800;color:#FF4D00;background:rgba(255,77,0,.15);padding:2px 6px;border-radius:99px;">NAUJA</span>' : ''}
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,.85);line-height:1.45;white-space:pre-wrap;word-break:break-word;">${esc(f.message)}</div>
+        <div style="font-size:9px;color:var(--mut);margin-top:4px;">${f.kid_name ? '👦 ' + esc(f.kid_name) + ' · ' : ''}${f.app_version ? esc(f.app_version) + ' · ' : ''}${when}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.warn('loadAdminFeedback', e);
+    list.innerHTML = `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nepavyko užkrauti atsiliepimų (${e?.message || 'klaida'})</div>`;
+  }
 }
 
 async function loadAdminClubs() {
