@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v28</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v29</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4917,6 +4917,9 @@ async function loadParentKidProfile() {
   const stageIdx = STAGES.indexOf(stageObj);
   const totalExp = k.total_exp || 0;
   const heroEl = document.getElementById('tk-prof-hero'); if (heroEl) heroEl.style.background = 'transparent';
+  // 🎨 Stadijos fonas VISAM profilio langui (.sc + .sa) — kaip vaiko (hero transparent → matosi pro jį)
+  const profSc = document.getElementById('t-prof');
+  if (profSc) { const profSa = profSc.querySelector('.sa'); if (profSa) profSa.style.background = stageObj.bgGradient || 'transparent'; profSc.style.background = stageObj.bgGradient || 'transparent'; }
   // Progress ring — iki kitos STADIJOS (kaip vaiko) + stadijos spalva/švytėjimas
   const ring = document.getElementById('tk-prof-ring');
   if (ring) {
@@ -4945,9 +4948,10 @@ async function loadParentKidProfile() {
   const nameEl = document.getElementById('tk-prof-name'); if (nameEl) nameEl.textContent = parentKidName(k).toUpperCase();
   // 🥋 Kiek lanko (iš karate_since) — jei nėra (sena registracija), rodo „–"
   const since = document.getElementById('tk-prof-karate-since');
+  const sinceDate = k.karate_since || k.created_at; // fallback į registracijos datą (kaip vaiko)
   if (since) {
-    if (k.karate_since) {
-      const ms = Date.now() - new Date(k.karate_since).getTime();
+    if (sinceDate) {
+      const ms = Date.now() - new Date(sinceDate).getTime();
       const yrs = Math.floor(ms / (365.25 * 86400000));
       const mos = Math.floor((ms % (365.25 * 86400000)) / (30.44 * 86400000));
       since.textContent = yrs >= 1 ? `🥋 Lanko ${yrs} m.${mos ? ' ' + mos + ' mėn.' : ''}` : (mos >= 1 ? `🥋 Lanko ${mos} mėn.` : '🥋 Lanko < 1 mėn.');
@@ -4973,7 +4977,7 @@ async function loadParentKidProfile() {
     const { data: subs } = await sb.from('challenge_submissions').select('challenge_id').eq('kid_id', k.id).eq('status', 'approved');
     const uniq = new Set((subs || []).map(s => s.challenge_id)).size;
     let duelWins = 0;
-    try { const { data: duels } = await sb.from('duels').select('winner_id').eq('winner_id', k.id).eq('status', 'completed'); duelWins = (duels || []).length; } catch (e) {}
+    try { const { data: duels } = await sb.from('duels').select('winner_id').or(`challenger_id.eq.${k.id},opponent_id.eq.${k.id}`).eq('status', 'completed'); duelWins = (duels || []).filter(d => d.winner_id === k.id).length; } catch (e) {}
     const cEl = document.getElementById('tk-prof-challenges'); if (cEl) cEl.textContent = `${uniq + duelWins} įveikta`;
   } catch (e) {}
 }
