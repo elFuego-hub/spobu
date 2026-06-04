@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v31</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v32</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3774,9 +3774,6 @@ async function openParentSettings() {
           </div>
         </div>
         <div style="padding:8px 16px 0;">
-          <button onclick="parentTestPush(this)" style="width:100%;background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);color:var(--br);border-radius:14px;padding:12px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;">🔔 IŠBANDYTI PUSH (siųsti sau)</button>
-        </div>
-        <div style="padding:8px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
             <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
               <div style="font-size:28px;">🔍</div>
@@ -6175,8 +6172,8 @@ async function showKidDetail(kidId) {
   
   // Apvyniojam į 2 tab'ų struktūrą (INFO + STATISTIKA)
   const finalHtml = `
-    <!-- Tab nav -->
-    <div style="display:flex;gap:6px;padding:0 16px;margin-bottom:14px;">
+    <!-- Tab nav PASLĖPTAS: „Vaiko duomenys" = tik INFO; statistika atskirai per „VISA STATISTIKA" -->
+    <div style="display:none;">
       <button class="parent-kid-tab on" data-tab="info" onclick="switchParentKidTab('info')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">📋 INFO</button>
       <button class="parent-kid-tab" data-tab="stats" onclick="switchParentKidTab('stats')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">📊 STATISTIKA</button>
       <button class="parent-kid-tab" data-tab="progress" onclick="switchParentKidTab('progress')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">🥋 PROGRESAS</button>
