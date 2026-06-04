@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v33</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v34</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3799,6 +3799,16 @@ async function openParentSettings() {
             <div style="font-size:18px;color:var(--mut);">›</div>
           </div>
         </div>
+        <div style="padding:8px 16px 0;">
+          <div onclick="openParentHelpModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;">❓</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Pagalba ir atsiliepimai</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Susisiekti, pranešti problemą, DUK</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
+        </div>
         <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
           <button onclick="openInstallAppModal()" style="background:linear-gradient(135deg, rgba(99,102,241,.12), rgba(139,92,246,.04));border:.5px solid rgba(99,102,241,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
             <div style="font-size:28px;">📱</div>
@@ -3839,6 +3849,56 @@ async function openParentSettings() {
   if (typeof updatePushToggleUI === 'function') updatePushToggleUI();
   if (typeof updateZoomButtonsUI === 'function') updateZoomButtonsUI();
   modal.style.display = 'flex';
+}
+
+// ❓ Pagalba ir atsiliepimai — Susisiekti / Pranešti problemą / DUK
+function openParentHelpModal() {
+  const SUPPORT_EMAIL = 'pagalba@spobu.lt'; // ⚠️ PAKEISK Į SAVO TIKRĄ EL. PAŠTĄ
+  const appV = (document.getElementById('app-version')?.textContent || '');
+  const contactHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – klausimas')}`;
+  const bugBody = encodeURIComponent(`Aprašyk, kas nutiko:\n\n• Ką dariau: \n• Kas nutiko: \n• Vaiko vardas: \n• Telefonas / naršyklė: \n• App versija: ${appV}\n`);
+  const bugHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – problema / klaida')}&body=${bugBody}`;
+  const faq = [
+    ['Kaip matau vaiko progresą?', 'Pagrindiniame lange — vaiko hero, reitingai, artimiausios varžybos. „Karjera" — statistika pagal kategorijas. „Pasiekimai" — naujausi medaliai, iššūkiai ir rekordai.'],
+    ['Kodėl negaliu pateikti rezultatų?', 'Tu esi stebėtojas — pateikti iššūkius/rezultatus gali tik pats vaikas savo paskyroje. Tu matai progresą ir palaikai.'],
+    ['Kaip pridėti antrą vaiką?', 'Paspausk avatarą viršuje → „Pridėti vaiką". Vaiką sukuria klubas, tu jį priimi prie savo paskyros.'],
+    ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsas turi būti įdiegtas į pradžios ekraną ir duotas pranešimų leidimas.'],
+    ['Kaip pakeisti savo vardą?', 'Nustatymai → prie tavo paskyros paspausk „✏️ Vardas".'],
+    ['Kas yra anonimiškumas?', 'Vaiko duomenyse gali paslėpti vaiką viešose statistikose — tada leaderboard\'uose rodys „anonimas".'],
+    ['Kada bus ataskaitos ir premium?', 'Mėnesio ataskaita jau yra „Pasiekimų" lange. Ketvirtinės AI ataskaitos ir premium — netrukus.']
+  ];
+  const old = document.getElementById('parent-help-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'parent-help-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;align-items:flex-end;justify-content:center;padding:0;';
+  const faqHtml = faq.map(([q, a]) => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:8px;"><div style="font-size:12px;font-weight:800;color:white;margin-bottom:4px;">${q}</div><div style="font-size:11px;color:var(--mut);line-height:1.5;">${a}</div></div>`).join('');
+  m.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+      <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">❓ PAGALBA</div>
+        <button onclick="document.getElementById('parent-help-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+      </div>
+      <div style="padding:16px 18px 28px;">
+        <a href="${contactHref}" style="text-decoration:none;display:block;margin-bottom:8px;">
+          <div style="background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.05));border:.5px solid rgba(99,102,241,.4);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">📧</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Parašyk klausimą el. paštu</div></div>
+            <div style="font-size:18px;color:#8B5CF6;">›</div>
+          </div>
+        </a>
+        <a href="${bugHref}" style="text-decoration:none;display:block;margin-bottom:16px;">
+          <div style="background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">🐞</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Radai klaidą? Pranešk su detalėmis</div></div>
+            <div style="font-size:18px;color:var(--br);">›</div>
+          </div>
+        </a>
+        <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:4px 2px 8px;">❓ DAŽNIAUSI KLAUSIMAI</div>
+        ${faqHtml}
+      </div>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
 }
 
 // 💡 Tėvų gidas — paaiškina rolę, ką mato, ką gauna vaikas, ataskaitas, premium
