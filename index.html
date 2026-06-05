@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v41</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v42</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5192,7 +5192,7 @@ function _reportRadar(skills){
 // Vienas renderintojas — naudojamas IR peržiūrai, IR PDF spausdinimui
 function buildReportPrintDoc(r){
   r = r || {};
-  const c=r.cover||{}, s=r.summary||{}, g=r.growth||{}, mo=r.month||{}, tech=r.technique||{}, par=r.parents||{}, st=r.standing||{};
+  const c=r.cover||{}, s=r.summary||{}, g=r.growth||{}, mo=r.month||{}, tech=r.technique||{}, par=r.parents||{}, st=r.standing||{}, cont=r.continuity||{};
   const skills = Array.isArray(r.skills)?r.skills:[];
   const E=_rEsc;
   const gradeCls = gr => { gr=(gr||'').toLowerCase(); if(gr.indexOf('stipr')>=0||gr.indexOf('ger')>=0) return 'g-strong'; if(gr.indexOf('silp')>=0||gr.indexOf('ribot')>=0) return 'g-weak'; return 'g-med'; };
@@ -5292,10 +5292,16 @@ table.t td.n{text-align:center;font-weight:600;}
     (c.belt?'<div style="margin-top:7px;"><span class="belt">🥋 '+E((c.belt||'').toUpperCase())+'</span></div>':'')+'</div></div>'+
     '<div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;color:rgba(255,255,255,.5);font-size:9px;"><div>SPOBU · spobu.lt</div><div style="text-align:right;">Periodas: '+E(c.period_label||'')+'</div></div></section>';
 
+  const contProg = (cont.progress_lt||[]).map(function(x){ return '<li style="margin-bottom:3px;">'+E(x)+'</li>'; }).join('');
+  const continuityBlock = cont.is_first
+    ? '<div class="callout" style="border-left:4px solid #6B7280;margin:10px 0 0;"><div class="co-h">🎯 Pradinis taškas</div><p style="margin:0;" class="small">'+E(cont.intro_lt||'Tai pirma ataskaita — su ja lyginsime vaiko progresą kitose ataskaitose.')+'</p></div>'
+    : ((cont.intro_lt||contProg||cont.followup_lt) ? ('<div class="callout co-phys" style="margin:10px 0 0;"><div class="co-h"><span class="chip">TĘSTINUMAS</span> Pažanga nuo praeitos ataskaitos</div>'+(cont.intro_lt?'<p style="margin:0 0 6px;">'+E(cont.intro_lt)+'</p>':'')+(contProg?'<ul style="margin:0 0 6px;padding-left:18px;" class="small">'+contProg+'</ul>':'')+(cont.followup_lt?'<p style="margin:0;" class="small"><b>Toliau:</b> '+E(cont.followup_lt)+'</p>':'')+'</div>') : '');
+
   const pageSummary = '<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Bendras vertinimas</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'<br>'+E(_rCap(c.focus_month_lt||''))+' mėn.</div></div>'+
     '<div class="summarybox"><div class="verdict"><div class="score-ring" style="background:conic-gradient(#FF4D00 0 '+idx+'%,#eee '+idx+'% 100%);"><b>'+(s.index!=null?E(s.index):'–')+'</b><small>INDEKSAS</small></div>'+
     '<div><div class="sec-h" style="margin:0 0 4px;">'+E(s.headline_lt||'')+'</div><p style="margin:0;">'+E(s.paragraph_lt||'')+'</p></div></div>'+
     ((strTags||growTags)?('<table class="t" style="margin:0;"><tr>'+(strTags?'<td style="border:none;"><span class="grade g-strong">STIPRYBĖ</span> '+strTags+'</td>':'')+(growTags?'<td style="border:none;"><span class="grade g-weak">AUGINTI</span> '+growTags+'</td>':'')+'</tr></table>'):'')+'</div>'+
+    continuityBlock+
     (skills.length?('<div class="sec-h"><span class="num">1</span> Fizinio pasirengimo profilis</div><div class="radar-wrap">'+radar+'<div style="flex:1;">'+skillBars+'</div></div>'):'')+
     (standRows?('<div class="sec-h"><span class="num">2</span> Kaip atrodo statistikoje</div>'+(st.intro_lt?'<p class="small mut">'+E(st.intro_lt)+'</p>':'')+'<table class="t"><thead><tr><th>Rodiklis</th><th style="text-align:center">Reikšmė</th><th>Vertinimas</th></tr></thead><tbody>'+standRows+'</tbody></table>'):'')+
     '<div class="footer"><span>SPOBU · AI ataskaita</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>';
