@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v39</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v40</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5018,7 +5018,17 @@ async function loadParentKidFeed() {
     const rest = items.slice(5);
     const moreBlock = rest.length ? `<button onclick="openParentFeedModal()" style="width:100%;padding:11px;margin-top:2px;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;border-radius:10px;cursor:pointer;font-family:inherit;">Rodyti visus (${items.length}) →</button>` : '';
 
-    list.innerHTML = heroReport + visible + moreBlock;
+    // 📋 CTA — užsisakyti išsamią AI ataskaitą (premium funkcija)
+    const reportCta = `<div onclick="openReportOrderModal()" style="margin:0 0 14px;padding:13px 14px;background:linear-gradient(135deg,rgba(255,77,0,.16),rgba(255,128,0,.05));border:1px solid rgba(255,77,0,.4);border-radius:14px;cursor:pointer;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#FF4D00,#FF8C00);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📋</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12.5px;font-weight:800;color:white;">Išsami AI ataskaita <span style="font-size:8px;background:#FF4D00;color:white;padding:1px 6px;border-radius:20px;letter-spacing:.5px;vertical-align:middle;">NAUJA</span></div>
+        <div style="font-size:9.5px;color:var(--mut);margin-top:2px;line-height:1.35;">Ekspertinė fizinio pasirengimo, technikos ir augimo analizė su rekomendacijomis.</div>
+      </div>
+      <div style="font-size:20px;color:var(--br);flex-shrink:0;">›</div>
+    </div>`;
+
+    list.innerHTML = heroReport + reportCta + visible + moreBlock;
   } catch (e) { console.warn('parent feed', e); list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant feed</div>'; }
 }
 
@@ -5040,6 +5050,286 @@ function openParentFeedModal() {
     </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
+}
+
+// ════════════════════════════════════════════════════════════
+// 📋 AI ATASKAITOS — tėvas užsisako, Edge Function generuoja
+// ════════════════════════════════════════════════════════════
+let _myReportsCache = {};
+
+function _rEsc(s){ return String(s==null?'':s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;'); }
+function _rCap(x){ x=String(x||''); return x.charAt(0).toUpperCase()+x.slice(1); }
+function _rInitials(name){ const p=String(name||'').trim().split(' ').filter(Boolean); return (((p[0]||'?')[0]||'?')+((p[1]||'')[0]||'')).toUpperCase(); }
+
+// Užsakymo + ataskaitų sąrašo modalas
+function openReportOrderModal(){
+  const k = parentActiveKid;
+  if (!k) { showToast('Nėra pasirinkto vaiko'); return; }
+  const old = document.getElementById('report-order-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'report-order-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+      <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">📋 AI ATASKAITA</div>
+        <button onclick="document.getElementById('report-order-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+      </div>
+      <div style="padding:16px 18px 26px;">
+        <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;">
+          <div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div>
+          <div style="display:flex;gap:10px;">
+            <div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div>
+            <div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div>
+          </div>
+          <div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div>
+          <button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:13px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button>
+          <div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--mut);letter-spacing:1px;font-weight:800;margin:4px 2px 8px;">MANO ATASKAITOS</div>
+        <div id="rep-list">${typeof loadingSpinnerHtml==='function'?loadingSpinnerHtml('Kraunama...'):'Kraunama...'}</div>
+      </div>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+  loadMyReports();
+}
+
+async function loadMyReports(){
+  const el = document.getElementById('rep-list');
+  if (!el) return;
+  const k = parentActiveKid;
+  if (!k) { el.innerHTML = ''; return; }
+  try {
+    const { data, error } = await sb.from('reports')
+      .select('id, period_month, status, created_at, report_json')
+      .eq('kid_id', k.id).order('created_at', { ascending: false }).limit(12);
+    if (error) throw error;
+    if (!data || !data.length) { el.innerHTML = '<div style="text-align:center;padding:18px;color:var(--mut);font-size:11px;">Dar nėra ataskaitų</div>'; return; }
+    _myReportsCache = {};
+    el.innerHTML = data.map(r => {
+      _myReportsCache[r.id] = r.report_json;
+      const done = r.status === 'done' && r.report_json;
+      const dt = new Date(r.created_at).toLocaleDateString('lt-LT');
+      const mon = r.report_json?.cover?.focus_month_lt;
+      const statusTxt = done ? (mon ? (_rCap(mon)+' mėn.') : 'Paruošta') : (r.status === 'error' ? '❌ Klaida' : '⏳ Generuojama');
+      return `<div ${done?`onclick="openReportViewer(_myReportsCache['${r.id}'])"`:''} class="rep-item-row" style="display:flex;align-items:center;gap:11px;padding:11px;margin-bottom:7px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;${done?'cursor:pointer;':''}">
+        <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#FF4D00,#FF8C00);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">📄</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;color:white;">Ataskaita · ${statusTxt}</div><div style="font-size:9px;color:var(--mut);">${dt}</div></div>
+        ${done?'<div style="color:var(--br);font-size:16px;flex-shrink:0;">›</div>':''}
+      </div>`;
+    }).join('');
+  } catch (e) { console.warn('loadMyReports', e); el.innerHTML = '<div style="text-align:center;padding:18px;color:var(--br);font-size:11px;">Nepavyko įkelti sąrašo</div>'; }
+}
+
+async function submitReportOrder(btn){
+  const k = parentActiveKid;
+  if (!k) return;
+  const h = document.getElementById('rep-height')?.value;
+  const w = document.getElementById('rep-weight')?.value;
+  const status = document.getElementById('rep-gen-status');
+  if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = '⏳ Generuojama...';
+  if (status) { status.style.display = 'block'; status.style.color = 'var(--mut)'; status.textContent = 'AI analizuoja vaiko duomenis… tai gali užtrukti iki ~40 s. Neuždaryk lango.'; }
+  try {
+    const { data, error } = await sb.functions.invoke('generate-report', {
+      body: { kid_id: k.id, height_cm: h ? Number(h) : null, weight_kg: w ? Number(w) : null }
+    });
+    if (error) {
+      let detail = error.message || String(error);
+      try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
+      throw new Error(detail);
+    }
+    if (data && data.report_json) {
+      if (h) k.height_cm = Number(h);
+      if (w) k.weight_kg = Number(w);
+      if (status) { status.style.color = 'var(--grn)'; status.textContent = '✅ Ataskaita paruošta!'; }
+      loadMyReports();
+      openReportViewer(data.report_json);
+    } else { throw new Error((data && data.error) || 'Tuščias atsakymas'); }
+  } catch (e) {
+    if (status) { status.style.display = 'block'; status.style.color = 'var(--br)'; status.textContent = '❌ ' + (e?.message || e); }
+  } finally {
+    btn.disabled = false; btn.textContent = '✨ Generuoti ataskaitą';
+  }
+}
+
+// Peržiūra — pildo iframe tuo PAČIU dokumentu, kuris spausdinamas į PDF
+function openReportViewer(r){
+  if (!r) { showToast('Ataskaita tuščia'); return; }
+  const old = document.getElementById('report-viewer-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'report-viewer-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:#0b0b0f;z-index:100000;display:flex;flex-direction:column;';
+  m.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#14141b;border-bottom:1px solid #26262e;flex-shrink:0;">
+      <button onclick="document.getElementById('report-viewer-modal').remove()" style="background:none;border:none;color:white;font-size:14px;cursor:pointer;font-weight:700;">‹ Uždaryti</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:white;">ATASKAITA</div>
+      <button onclick="printReportFrame()" style="background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;color:white;font-size:12px;font-weight:800;padding:8px 14px;border-radius:9px;cursor:pointer;">🖨️ PDF</button>
+    </div>
+    <iframe id="report-frame" style="flex:1;width:100%;border:none;background:#9a9aa3;"></iframe>`;
+  document.body.appendChild(m);
+  const f = document.getElementById('report-frame');
+  try { const d = f.contentDocument || f.contentWindow.document; d.open(); d.write(buildReportPrintDoc(r)); d.close(); }
+  catch (e) { console.warn('report viewer', e); }
+}
+function printReportFrame(){
+  const f = document.getElementById('report-frame');
+  if (f && f.contentWindow) { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { window.print(); } }
+}
+
+// Radaro SVG iš skills (N ašių)
+function _reportRadar(skills){
+  const n = skills.length;
+  if (n < 3) return '';
+  const cx=200, cy=200, R=130, Rl=153;
+  const ang = i => (-90 + i*(360/n)) * Math.PI/180;
+  const pt = (a,r) => [cx + r*Math.cos(a), cy + r*Math.sin(a)];
+  const ring = f => { let p=''; for(let i=0;i<n;i++){ const q=pt(ang(i),R*f); p += q[0].toFixed(1)+','+q[1].toFixed(1)+' '; } return '<polygon points="'+p.trim()+'" fill="none" stroke="#e6e6ec" stroke-width="'+(f===1?1.5:1)+'"/>'; };
+  let grid = ring(1)+ring(0.66)+ring(0.33), axes='', dataP='', dots='', labels='';
+  for(let i=0;i<n;i++){
+    const a=ang(i), av=pt(a,R);
+    axes += '<line x1="'+cx+'" y1="'+cy+'" x2="'+av[0].toFixed(1)+'" y2="'+av[1].toFixed(1)+'" stroke="#e6e6ec" stroke-width="1"/>';
+    const v = Math.max(0, Math.min(100, skills[i].pct||0)), dv = pt(a, R*v/100);
+    dataP += dv[0].toFixed(1)+','+dv[1].toFixed(1)+' ';
+    dots += '<circle cx="'+dv[0].toFixed(1)+'" cy="'+dv[1].toFixed(1)+'" r="3.2" fill="#FF4D00"/>';
+    const lv = pt(a, Rl), anchor = Math.abs(lv[0]-cx)<6?'middle':(lv[0]>cx?'start':'end');
+    labels += '<text x="'+lv[0].toFixed(1)+'" y="'+(lv[1]+3).toFixed(1)+'" text-anchor="'+anchor+'" font-size="11" font-weight="800" fill="#16161D">'+_rEsc((skills[i].label||'').toUpperCase().slice(0,9))+'</text>';
+  }
+  return '<svg width="248" height="248" viewBox="0 0 400 400">'+grid+axes+'<polygon points="'+dataP.trim()+'" fill="rgba(255,77,0,.18)" stroke="#FF4D00" stroke-width="2.5"/>'+dots+labels+'</svg>';
+}
+
+// Vienas renderintojas — naudojamas IR peržiūrai, IR PDF spausdinimui
+function buildReportPrintDoc(r){
+  r = r || {};
+  const c=r.cover||{}, s=r.summary||{}, g=r.growth||{}, mo=r.month||{}, tech=r.technique||{}, par=r.parents||{}, st=r.standing||{};
+  const skills = Array.isArray(r.skills)?r.skills:[];
+  const E=_rEsc;
+  const gradeCls = gr => { gr=(gr||'').toLowerCase(); if(gr.indexOf('stipr')>=0||gr.indexOf('ger')>=0) return 'g-strong'; if(gr.indexOf('silp')>=0||gr.indexOf('ribot')>=0) return 'g-weak'; return 'g-med'; };
+  const toneCls = t => t==='good'?'g-strong':(t==='weak'?'g-weak':'g-med');
+  const barFill = gr => { const cl=gradeCls(gr); return cl==='g-strong'?'linear-gradient(90deg,#16A34A,#22c55e)':(cl==='g-weak'?'linear-gradient(90deg,#f87171,#DC2626)':'linear-gradient(90deg,#FF8C00,#FF4D00)'); };
+
+  const skillBars = skills.map(k => '<div class="bar-row"><div class="bar-name">'+E(k.label)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.max(4,Math.min(100,k.pct||0))+'%;background:'+barFill(k.grade)+'"></div></div><div class="bar-val"><span class="grade '+gradeCls(k.grade)+'">'+E(k.grade||'')+'</span></div></div>').join('');
+  const radar = _reportRadar(skills);
+  const standRows = (st.rows||[]).map(x => '<tr><td>'+E(x.label_lt)+'</td><td class="n">'+E(x.value_lt)+'</td><td><span class="grade '+toneCls(x.tone)+'">'+E(x.verdict_lt)+'</span></td></tr>').join('');
+  const kpis = (mo.kpis||[]).map(x => '<div class="kpi"><div class="kv">'+E(x.value)+'</div><div class="kl">'+E(x.label_lt)+'</div>'+(x.delta_lt?'<div class="kd '+(x.tone==='weak'?'dn':'up')+'">'+E(x.delta_lt)+'</div>':'')+'</div>').join('');
+  const trend = Array.isArray(mo.trend)?mo.trend:[];
+  const maxT = Math.max(1, ...trend.map(t=>t.exp||0));
+  const trendBars = trend.map(t => '<div class="tb"><div class="col" style="height:'+Math.max(8,Math.round((t.exp||0)/maxT*100))+'%;">'+(t.exp||0).toLocaleString('lt-LT')+'</div><div class="lab">'+E(_rCap(t.label))+'</div></div>').join('');
+  const techRows = (tech.rows||[]).map(x => '<tr><td>'+E(x.area_lt)+'</td><td class="n"><span class="grade '+gradeCls(x.grade)+'">'+E(x.grade)+'</span></td><td>'+E(x.comment_lt)+'</td></tr>').join('');
+  const nutri = (r.nutrition||[]).map(x => '<tr><td style="width:32%;"><b>'+E(x.icon||'•')+' '+E(x.title_lt)+'</b></td><td>'+E(x.text_lt)+'</td></tr>').join('');
+  const prioTxt={high:'PRIORITETAS',mid:'SVARBU',low:'PALAIKYTI'}, prioCls={high:'p-hi',mid:'p-mid',low:'p-lo'};
+  const plan = (r.plan||[]).map((x,i) => '<div class="planitem"><div class="plannum">'+(i+1)+'</div><div><div class="pi-h">'+E(x.title_lt)+' <span class="prio '+(prioCls[x.priority]||'p-mid')+'">'+(prioTxt[x.priority]||'SVARBU')+'</span></div><p style="margin:0;" class="small">'+E(x.text_lt)+'</p></div></div>').join('');
+  const strTags=(s.strengths_lt||[]).map(E).join(' · '), growTags=(s.grow_lt||[]).map(E).join(' · ');
+  const idx = Math.max(0,Math.min(100, s.index||0));
+
+  const css = `*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0;}
+body{font-family:'Inter',system-ui,Arial,sans-serif;color:#16161D;background:#9a9aa3;font-size:11px;line-height:1.55;}
+.page{width:210mm;min-height:296mm;background:#fff;margin:12px auto;padding:15mm 14mm;position:relative;box-shadow:0 6px 24px rgba(0,0,0,.3);overflow:hidden;}
+.disp,h1,h2{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1px;}
+.mut{color:#6B7280;}.small{font-size:9.5px;}.tiny{font-size:8.5px;}
+.cover{background:radial-gradient(120% 90% at 78% 8%,#2a0f00,#14070b 45%,#0b0b0f 100%);color:#fff;}
+.cover-kanji{position:absolute;right:-30px;top:40px;font-size:300px;line-height:.8;color:rgba(255,77,0,.1);}
+.brand-badge{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#FF4D00,#FF8C00);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:26px;color:#fff;}
+.brand-name{font-family:'Bebas Neue';font-size:26px;letter-spacing:3px;}
+.cover-title{font-family:'Bebas Neue';font-size:64px;line-height:.92;}.cover-title span{color:#FF4D00;}
+.kid-av{width:70px;height:70px;border-radius:18px;background:linear-gradient(135deg,#FF4D00,#FF8C00);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:36px;color:#fff;flex:none;}
+.belt{display:inline-block;padding:2px 9px;border-radius:20px;font-size:9px;font-weight:800;background:linear-gradient(90deg,#ff9d00,#ff7a00);color:#1a1200;}
+.pagehead{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #16161D;padding-bottom:8px;margin-bottom:14px;}
+.ph-badge{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#FF4D00,#FF8C00);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:17px;color:#fff;}
+.ph-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:1.5px;}
+.sec-h{font-family:'Bebas Neue';font-size:19px;letter-spacing:1px;margin:16px 0 8px;display:flex;align-items:center;gap:9px;}
+.sec-h .num{width:22px;height:22px;border-radius:6px;background:#16161D;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';}
+p{margin:0 0 8px;}
+.grade{display:inline-block;padding:1px 8px;border-radius:6px;font-weight:800;font-size:9px;}
+.g-strong{background:#e7f6ec;color:#16A34A;}.g-med{background:#fef3e0;color:#B45309;}.g-weak{background:#fdeaea;color:#DC2626;}
+.callout{border-radius:12px;padding:12px 14px;margin:9px 0;border:1px solid #E6E6EC;background:#F7F7FA;}
+.co-h{font-weight:800;font-size:10.5px;display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.chip{font-size:8px;font-weight:800;padding:2px 7px;border-radius:20px;color:#fff;}
+.co-med{border-left:4px solid #2563EB;}.co-med .chip{background:#2563EB;}
+.co-fight{border-left:4px solid #FF4D00;}.co-fight .chip{background:#FF4D00;}
+.co-phys{border-left:4px solid #16A34A;}.co-phys .chip{background:#16A34A;}
+.summarybox{background:linear-gradient(135deg,#fff7f2,#fff);border:1px solid #ffd9c2;border-radius:14px;padding:15px 17px;}
+.verdict{display:flex;gap:15px;align-items:center;margin-bottom:10px;}
+.score-ring{width:74px;height:74px;border-radius:50%;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
+.score-ring::before{content:'';position:absolute;inset:7px;border-radius:50%;background:#fff;}
+.score-ring b{position:relative;font-family:'Bebas Neue';font-size:28px;}
+.score-ring small{position:relative;font-size:7px;color:#6B7280;letter-spacing:1px;}
+table.t{width:100%;border-collapse:collapse;margin:5px 0;}
+table.t th,table.t td{padding:6px 9px;text-align:left;border-bottom:1px solid #E6E6EC;font-size:10px;}
+table.t th{font-size:8.5px;text-transform:uppercase;letter-spacing:.6px;color:#6B7280;}
+table.t td.n{text-align:center;font-weight:600;}
+.up{color:#16A34A;font-weight:700;}.dn{color:#DC2626;font-weight:700;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.kpi{border:1px solid #E6E6EC;border-radius:12px;padding:11px;text-align:center;}
+.kpi .kv{font-family:'Bebas Neue';font-size:28px;line-height:1;color:#FF4D00;}
+.kpi .kl{font-size:8.5px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
+.kpi .kd{font-size:8.5px;margin-top:2px;}
+.bar-row{display:flex;align-items:center;gap:10px;margin:6px 0;}
+.bar-name{width:90px;font-size:10px;font-weight:700;}
+.bar-track{flex:1;height:13px;background:#eef0f4;border-radius:7px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:7px;}
+.bar-val{width:78px;text-align:right;}
+.radar-wrap{display:flex;gap:14px;align-items:center;}
+.planitem{display:flex;gap:11px;margin:8px 0;padding:10px 13px;border:1px solid #E6E6EC;border-radius:11px;}
+.plannum{width:26px;height:26px;border-radius:8px;flex:none;background:#16161D;color:#fff;font-family:'Bebas Neue';font-size:15px;display:flex;align-items:center;justify-content:center;}
+.pi-h{font-weight:800;font-size:11px;margin-bottom:2px;}
+.prio{font-size:7.5px;font-weight:800;padding:1px 6px;border-radius:5px;margin-left:5px;}
+.p-hi{background:#fdeaea;color:#DC2626;}.p-mid{background:#fef3e0;color:#B45309;}.p-lo{background:#eef2ff;color:#2563EB;}
+.trendbars{display:flex;gap:14px;align-items:flex-end;height:110px;padding:0 6px;}
+.tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:flex-end;}
+.tb .col{width:58%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#FF8C00,#FF4D00);color:#fff;font-size:9px;font-weight:800;padding-top:4px;text-align:center;}
+.tb .lab{font-size:9px;color:#6B7280;font-weight:600;}
+.disc{font-size:8px;color:#6B7280;line-height:1.6;border:1px dashed #E6E6EC;border-radius:10px;padding:11px 13px;background:#fafafb;margin-top:14px;}
+.footer{border-top:1px solid #E6E6EC;padding-top:6px;margin-top:14px;display:flex;justify-content:space-between;font-size:8px;color:#6B7280;}
+@media print{body{background:#fff;}.page{margin:0;box-shadow:none;page-break-after:always;}.page:last-child{page-break-after:auto;}}
+@page{size:A4;margin:0;}`;
+
+  const growthBlock = (g.bmi_value!=null) ? ('<div class="sec-h"><span class="num">4</span> Augimas ir kūno sudėjimas</div>'+
+    '<div class="callout co-med"><div class="co-h"><span class="chip">AUGIMO MEDICINA</span> KMI '+E(g.bmi_value)+(g.bmi_category?' · '+E(g.bmi_category):'')+(g.bmi_percentile!=null?' · ~'+E(g.bmi_percentile)+' perc.':'')+'</div>'+
+    (g.bmi_line_lt?'<p style="margin:0 0 6px;">'+E(g.bmi_line_lt)+'</p>':'')+(g.trajectory_lt?'<p style="margin:0 0 6px;">'+E(g.trajectory_lt)+'</p>':'')+(g.parent_note_lt?'<p style="margin:0;"><b>Tėvams:</b> '+E(g.parent_note_lt)+'</p>':'')+
+    (g.refer_to_doctor?'<p style="margin:8px 0 0;color:#B45309;"><b>⚠️ '+E(g.refer_lt||'Verta pasitarti su vaiko gydytoju.')+'</b></p>':'')+'</div>') : '';
+
+  const pageCover = '<section class="page cover" style="display:flex;flex-direction:column;justify-content:space-between;">'+
+    '<div class="cover-kanji">力</div>'+
+    '<div style="display:flex;align-items:center;gap:10px;position:relative;z-index:2;"><div class="brand-badge">空</div><div><div class="brand-name">SPOBU</div><div style="font-size:9px;letter-spacing:4px;color:#FF8C00;text-transform:uppercase;">Karate · Pažanga · Charakteris</div></div></div>'+
+    '<div style="position:relative;z-index:2;"><div style="font-size:11px;letter-spacing:6px;color:rgba(255,255,255,.5);text-transform:uppercase;">Mėnesio AI ataskaita</div>'+
+    '<div class="cover-title">'+E((c.focus_month_lt||'').toUpperCase())+'<br><span>PAŽANGA</span></div>'+
+    '<div style="font-size:12px;color:#fff;opacity:.85;max-width:380px;line-height:1.5;">Vaiko fizinio pasirengimo, technikos ir augimo analizė — parengta SPOBU AI ekspertų sistemos.</div></div>'+
+    '<div style="position:relative;z-index:2;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:16px 18px;display:flex;gap:16px;align-items:center;">'+
+    '<div class="kid-av">'+E(_rInitials(c.kid_name))+'</div><div style="flex:1;"><div style="font-family:\'Bebas Neue\';font-size:30px;color:#fff;letter-spacing:1px;line-height:1;">'+E((c.kid_name||'').toUpperCase())+'</div>'+
+    '<div style="font-size:11px;color:#fff;opacity:.8;margin-top:3px;">'+E(c.age_label||'')+(c.period_label?' · '+E(c.period_label):'')+'</div>'+
+    (c.belt?'<div style="margin-top:7px;"><span class="belt">🥋 '+E((c.belt||'').toUpperCase())+'</span></div>':'')+'</div></div>'+
+    '<div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;color:rgba(255,255,255,.5);font-size:9px;"><div>SPOBU · spobu.lt</div><div style="text-align:right;">Periodas: '+E(c.period_label||'')+'</div></div></section>';
+
+  const pageSummary = '<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Bendras vertinimas</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'<br>'+E(_rCap(c.focus_month_lt||''))+' mėn.</div></div>'+
+    '<div class="summarybox"><div class="verdict"><div class="score-ring" style="background:conic-gradient(#FF4D00 0 '+idx+'%,#eee '+idx+'% 100%);"><b>'+(s.index!=null?E(s.index):'–')+'</b><small>INDEKSAS</small></div>'+
+    '<div><div class="sec-h" style="margin:0 0 4px;">'+E(s.headline_lt||'')+'</div><p style="margin:0;">'+E(s.paragraph_lt||'')+'</p></div></div>'+
+    ((strTags||growTags)?('<table class="t" style="margin:0;"><tr>'+(strTags?'<td style="border:none;"><span class="grade g-strong">STIPRYBĖ</span> '+strTags+'</td>':'')+(growTags?'<td style="border:none;"><span class="grade g-weak">AUGINTI</span> '+growTags+'</td>':'')+'</tr></table>'):'')+'</div>'+
+    (skills.length?('<div class="sec-h"><span class="num">1</span> Fizinio pasirengimo profilis</div><div class="radar-wrap">'+radar+'<div style="flex:1;">'+skillBars+'</div></div>'):'')+
+    (standRows?('<div class="sec-h"><span class="num">2</span> Kaip atrodo statistikoje</div>'+(st.intro_lt?'<p class="small mut">'+E(st.intro_lt)+'</p>':'')+'<table class="t"><thead><tr><th>Rodiklis</th><th style="text-align:center">Reikšmė</th><th>Vertinimas</th></tr></thead><tbody>'+standRows+'</tbody></table>'):'')+
+    '<div class="footer"><span>SPOBU · AI ataskaita</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>';
+
+  const pageMonth = (kpis||trendBars||growthBlock) ? ('<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">'+E(_rCap(c.focus_month_lt||'Mėnesio'))+' apžvalga</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
+    (kpis?'<div class="grid3" style="margin-bottom:4px;">'+kpis+'</div>':'')+
+    (trendBars?('<div class="sec-h"><span class="num">3</span> Trijų mėnesių tendencija</div><div class="trendbars">'+trendBars+'</div>'+(mo.trend_note_lt?'<p class="small mut" style="margin-top:8px;">'+E(mo.trend_note_lt)+'</p>':'')):'')+
+    growthBlock+
+    '<div class="footer"><span>SPOBU · AI ataskaita</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>') : '';
+
+  const pageTech = (tech.intro_lt||techRows||nutri) ? ('<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Technika ir mityba</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
+    ((tech.intro_lt||techRows)?('<div class="sec-h"><span class="num">5</span> Kovos technikos vertinimas</div>'+(tech.intro_lt?'<div class="callout co-fight"><div class="co-h"><span class="chip">TECHNIKA</span> Kyokushin</div><p style="margin:0;">'+E(tech.intro_lt)+'</p></div>':'')+(techRows?'<table class="t"><thead><tr><th>Sritis</th><th style="text-align:center">Lygis</th><th>Komentaras</th></tr></thead><tbody>'+techRows+'</tbody></table>':'')):'')+
+    (nutri?('<div class="sec-h"><span class="num">6</span> Mityba — sveiki įpročiai</div><div class="callout co-phys"><div class="co-h"><span class="chip">MITYBA</span> Be dietų — tik įpročiai</div><table class="t" style="margin:0;"><tbody>'+nutri+'</tbody></table></div>'):'')+
+    '<div class="footer"><span>SPOBU · AI ataskaita</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>') : '';
+
+  const pagePlan = '<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Veiksmų planas</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
+    (plan?('<div class="sec-h"><span class="num">7</span> Ateinančių 30 dienų planas</div>'+plan):'')+
+    ((par.celebrate_lt||par.help_lt)?('<div class="sec-h"><span class="num">★</span> Trumpai tėvams</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+(par.celebrate_lt?'<div class="callout co-phys" style="margin:0;"><div class="co-h">✅ Kuo pasidžiaugti</div><p style="margin:0;" class="small">'+E(par.celebrate_lt)+'</p></div>':'')+(par.help_lt?'<div class="callout co-med" style="margin:0;"><div class="co-h">🎯 Kur padėti</div><p style="margin:0;" class="small">'+E(par.help_lt)+'</p></div>':'')+'</div>'):'')+
+    '<div class="disc"><b>SVARBU.</b> Ši ataskaita parengta SPOBU AI sistemos pagal vaiko treniruočių duomenis ir yra bendro pobūdžio fizinio ugdymo bei sveikos gyvensenos rekomendacija, o <b>ne medicininė diagnozė ar gydymo planas</b>. Dėl individualių sveikatos, mitybos ar augimo klausimų kreipkitės į vaiko gydytoją. Treniruočių krūvį derinkite su treneriu. Duomenys konfidencialūs.</div>'+
+    '<div style="text-align:center;margin-top:20px;"><div class="brand-badge" style="margin:0 auto 8px;">空</div><div style="font-family:\'Bebas Neue\';font-size:22px;letter-spacing:3px;">SPOBU</div><div class="tiny mut" style="letter-spacing:2px;">spobu.lt</div></div>'+
+    '<div class="footer"><span>SPOBU · AI ataskaita</span><span>© 2026 SPOBU</span><span>Konfidencialu</span></div></section>';
+
+  // viewport width=820 → A4 puslapis telefone tilpsta per plotį (preview kaip PDF); spausdinant galioja @page A4
+  return '<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"><style>'+css+'</style></head><body>'+pageCover+pageSummary+pageMonth+pageTech+pagePlan+'</body></html>';
 }
 
 // 👤 PROFILIS — vaiko profilis (be draugų)
