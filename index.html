@@ -398,7 +398,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v53</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v54</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5170,12 +5170,7 @@ function openReportInfoModal(){
           <div style="font-size:11px;color:var(--mut);">Privati sporto specialisto analizė galėtų kainuoti <b style="color:#fff;">50–100€</b></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gld);margin-top:4px;letter-spacing:1px;">SPOBU — TIK 9,99€</div>
         </div>
-        <div style="font-size:10px;letter-spacing:1.5px;color:var(--mut);font-weight:800;margin-bottom:8px;">DAUGIAU SPOBU TRENIRUOČIŲ</div>
-        <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:4px 14px;margin-bottom:16px;">
-          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">🏋️</div><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:white;">Namų treniruočių planas · <span style="color:var(--gld);">19,99€</span></div><div style="font-size:10px;color:var(--mut);">Treniruotės tarp dojo užsiėmimų — jėga, lankstumas, ištvermė. Papildo techniką, ne dubliuoja.</div></div></div>
-          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">☀️</div><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:white;">Vasaros programa · <span style="color:var(--gld);">29,99€</span></div><div style="font-size:10px;color:var(--mut);">12 savaičių planas vasarai — kad forma neprarasta per atostogas.</div></div></div>
-          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;"><div style="font-size:19px;">👑</div><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:white;">Premium+ — viskas kartu · <span style="color:var(--gld);">99€/sez.</span></div><div style="font-size:10px;color:var(--mut);">3 ketvirtinės ataskaitos + 1 namų planas + vasaros programa. Sutaupai ~53€.</div></div></div>
-        </div>
+        <div style="background:rgba(255,140,0,.1);border:.5px solid rgba(255,140,0,.3);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#d6d6dd;line-height:1.5;">👑 Ataskaita įskaičiuota į <b style="color:var(--gld);">Premium+</b> — kartu su namų planais ir vasaros programa.</div>
         <button onclick="document.getElementById('report-info-modal').remove(); openReportOrderModal();" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">✨ Užsisakyti ataskaitą</button>
         <div style="text-align:center;font-size:9.5px;color:var(--mut);margin-top:9px;line-height:1.4;">Galima kas mėnesį (rekomenduojama kas 3 mėn.) · Ataskaita — ne medicininė diagnozė, o sportinės pažangos gairės.</div>
       </div>
@@ -5209,7 +5204,11 @@ function openHomePlanInfoModal(){
           <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Vaikas <b style="color:#fff;">progresuoja ir tarp treniruočių</b>.</span></div>
           <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Sudaromas <b style="color:#fff;">3 mėnesiams</b> → atnaujinamas kas ketvirtį.</span></div>
         </div>
-        <div style="background:rgba(255,140,0,.1);border:.5px solid rgba(255,140,0,.3);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#d6d6dd;line-height:1.5;">🔁 <b style="color:#fff;">Sudaromas 3 mėnesiams</b> (daugiau gali pirkti à la carte). 👑 Įskaičiuota į <b style="color:var(--gld);">Premium+</b> — 1 planas sezonui.</div>
+        <div style="background:linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;">
+          <div style="font-size:11px;color:var(--mut);">Asmeninė sporto specialisto programa kainuotų <b style="color:#fff;">60–120€</b></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gld);margin-top:4px;letter-spacing:1px;">SPOBU — TIK 19,99€</div>
+        </div>
+        <div style="background:rgba(255,140,0,.1);border:.5px solid rgba(255,140,0,.3);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#d6d6dd;line-height:1.5;">🔁 <b style="color:#fff;">Kas 3 mėn. užduotys keičiasi pagal vaiko progresą</b> (reaguojant į naują ataskaitą). 👑 Įskaičiuota į <b style="color:var(--gld);">Premium+</b>.</div>
         <button onclick="showToast('🔜 Namų planai — netrukus','success',4000)" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">🔜 Netrukus</button>
       </div>
     </div>`;
@@ -5239,6 +5238,10 @@ function openSummerInfoModal(){
         <div style="margin-bottom:16px;">
           <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Vasara = forma prarandama; <b style="color:#fff;">programa tai sustabdo</b>.</span></div>
           <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Rugsėjį grįžta <b style="color:#fff;">pranašesnis</b> už nesitreniravusius.</span></div>
+        </div>
+        <div style="background:linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;">
+          <div style="font-size:11px;color:var(--mut);">Vasaros stovykla ar individuali programa kainuotų <b style="color:#fff;">100€+</b></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gld);margin-top:4px;letter-spacing:1px;">SPOBU — TIK 29,99€</div>
         </div>
         <div style="background:rgba(255,140,0,.1);border:.5px solid rgba(255,140,0,.3);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#d6d6dd;line-height:1.5;">📅 <b style="color:#fff;">Prieinama nuo gegužės vidurio</b> (sezoninė). 👑 Įskaičiuota į <b style="color:var(--gld);">Premium+</b>.</div>
         <button onclick="showToast('🔜 Vasaros programa — netrukus','success',4000)" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">🔜 Netrukus</button>
@@ -5274,8 +5277,8 @@ function _kidDataDays(k, gateDays){
 }
 function _summerDaysLeft(){
   const now = new Date();
-  const target = new Date(now.getFullYear(), 4, 15); // gegužės 15
-  if (now >= target) return 0;
+  let target = new Date(now.getFullYear(), 4, 15); // gegužės 15
+  if (now >= target) target = new Date(now.getFullYear() + 1, 4, 15);
   return Math.ceil((target.getTime() - now.getTime()) / 86400000);
 }
 function _setShopCard(key, credits, redeemFn, buyFn, priceLabel){
@@ -5307,7 +5310,7 @@ function redeemHome(){
   const e = parentEntitlements || {};
   if ((e.homeplan_credits || 0) <= 0) { showToast('Nebėra namų planų kreditų', 'error'); return; }
   const days = Math.max(_kidDataDays(parentActiveKid, 90), _entCdDays(e.homeplan_last_used, 3));
-  if (days > 0) { const m = Math.max(1, Math.ceil(days / 30)); showToast('Dar negali panaudoti — liko ~' + m + ' mėn. iki kito plano (renkami duomenys)', 'error', 4500); return; }
+  if (days > 0) { showToast('Dar negali panaudoti — liko ' + days + ' d. iki kito plano (renkami duomenys)', 'error', 4500); return; }
   showToast('🔜 Namų plano generavimas — netrukus', 'success', 4000);
 }
 function redeemSummer(){
