@@ -394,7 +394,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v43</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v44</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2151,51 +2151,109 @@ select.inp option{background:#222;}
     </div>
   </div>
   <div class="sa">
-    <!-- Prenumeratos statusas -->
-    <div style="margin:6px 16px 14px;background:linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.05));border:.5px solid rgba(34,197,94,.4);border-radius:14px;padding:14px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-size:13px;font-weight:800;color:white;" id="tk-shop-status-title">ANKETA AKTYVI</div>
-        <div style="background:var(--grn);color:white;font-size:10px;font-weight:800;padding:3px 8px;border-radius:99px;">2025/26 SEZONAS</div>
-      </div>
-      <div style="font-size:11px;color:var(--mut);margin-top:6px;" id="tk-shop-status-body">Galioja iki 2026-08-31</div>
+
+    <div style="text-align:center;margin:8px 16px 4px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:23px;letter-spacing:1px;line-height:1.05;">PAŽINK SAVO VAIKO <span style="color:var(--gld);">PAŽANGĄ</span></div>
+      <div style="font-size:11px;color:var(--mut);margin-top:5px;">Nuo žaidimo iki ekspertinių gairių</div>
     </div>
 
-    <div class="st">💎 PREMIUM</div>
-    <div style="margin:0 16px 10px;background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,77,0,.08));border:.5px solid rgba(255,215,0,.3);border-radius:14px;padding:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-        <div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:white;">PREMIUM+</div>
-          <div style="font-size:10px;color:var(--gld);font-weight:800;letter-spacing:1px;">REKOMENDUOJAMA</div>
-        </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">19.99€<span style="font-size:11px;color:var(--mut);">/mėn.</span></div>
-      </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.5;margin-bottom:10px;">Visapusiškas vaiko sportinio progreso įvertinimas</div>
-      <ul style="font-size:11px;color:var(--mut);line-height:1.7;margin-bottom:10px;list-style:none;padding:0;">
-        <li style="padding-left:18px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:800;">✓</span> Ketvirtinė AI ataskaita</li>
-        <li style="padding-left:18px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:800;">✓</span> PDF dokumentas el. paštu</li>
-        <li style="padding-left:18px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:800;">✓</span> Personalizuotos rekomendacijos</li>
-        <li style="padding-left:18px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:800;">✓</span> Konsultacijos su sporto specialistu</li>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 16px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;">
+      <div style="text-align:center;flex:1;"><div style="font-size:18px;">📊</div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">DIAGNOZĖ</div></div>
+      <div style="color:var(--br);font-size:13px;">→</div>
+      <div style="text-align:center;flex:1;"><div style="font-size:18px;">🏋️</div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">PLANAS</div></div>
+      <div style="color:var(--br);font-size:13px;">→</div>
+      <div style="text-align:center;flex:1;"><div style="font-size:18px;">📈</div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">PROGRESAS</div></div>
+    </div>
+
+    <div class="st">PRENUMERATOS</div>
+
+    <!-- FREE -->
+    <div style="margin:0 16px 11px;background:var(--card);border:.5px solid var(--bdr);border-radius:16px;padding:15px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;">NEMOKAMA</div>
+      <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Vaiko žaidimas ir ryšys</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--grn);margin:8px 0 6px;">0€</div>
+      <ul style="list-style:none;margin:0 0 12px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Vaiko žaidimas: iššūkiai, karjera, dvikovos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Trenerio žinutės ir pranešimai</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Laimėjimai realiu laiku (medaliai, lygiai)</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Lygis, diržas, serijos</li>
       </ul>
-      <button onclick="showToast('🔜 Pirkimai bus įjungti netrukus','success')" style="width:100%;background:linear-gradient(135deg,#FFD700,#FF4D00);color:white;border:none;padding:10px;border-radius:10px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽSISAKYTI PREMIUM+</button>
+      <div style="width:100%;text-align:center;padding:11px;border-radius:11px;font-size:11.5px;font-weight:800;background:var(--bg);color:var(--mut);border:.5px solid var(--bdr);box-sizing:border-box;">✓ TAVO DABARTINIS PLANAS</div>
     </div>
 
-    <div class="st">📊 VIENKARTINIAI</div>
-    <div style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:white;">AI ATASKAITA</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">9.99€</div>
-      </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.5;margin-bottom:10px;">Detalus dabartinio vaiko įvertinimas — fizinis pasirengimas, technika, augimas, mityba ir 30 d. planas. PDF.</div>
-      <button onclick="openReportOrderModal()" style="width:100%;background:var(--br);color:white;border:none;padding:10px;border-radius:10px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">📋 GAUTI ATASKAITĄ</button>
+    <!-- PREMIUM -->
+    <div style="margin:0 16px 11px;background:var(--card);border:.5px solid var(--bdr);border-radius:16px;padding:15px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;color:#4FC3F7;">PREMIUM</div>
+      <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Pažink vaiko progresą giliau</div>
+      <div style="margin:9px 0 6px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:30px;">5,99€</span><span style="font-size:11px;color:var(--mut);"> /mėn</span></div>
+      <ul style="list-style:none;margin:0 0 12px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
+        <li style="padding:3px 0 3px 20px;position:relative;color:var(--mut);"><span style="position:absolute;left:0;">·</span> Viskas iš Nemokamos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> 📊 Mėnesio pasiekimų suvestinė</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Gili karjeros statistika ir istorija</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> 👥 Bendraamžių percentiliai</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Pilni reitingai ir tendencijos</li>
+      </ul>
+      <button onclick="showToast('🔜 Prenumeratos netrukus! Šiuo metu — vienkartinė ataskaita.','success',5000)" style="width:100%;padding:12px;border-radius:11px;font-size:12px;font-weight:800;background:rgba(255,255,255,.1);color:white;border:.5px solid var(--bdr);cursor:pointer;">Rinktis Premium</button>
     </div>
-    <div style="margin:0 16px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:white;">VASAROS SPORTO PROGRAMA</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">29.99€</div>
+
+    <!-- PREMIUM+ -->
+    <div style="margin:0 16px 11px;position:relative;background:linear-gradient(160deg,rgba(255,77,0,.15),rgba(255,140,0,.04) 60%,var(--card));border:1.5px solid var(--br);border-radius:16px;padding:15px;box-shadow:0 8px 30px rgba(255,77,0,.18);">
+      <div style="position:absolute;top:-9px;right:14px;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:white;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 10px;border-radius:20px;">★ GERIAUSIA VERTĖ</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;color:var(--gld);">PREMIUM+</div>
+      <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Visa vaiko sportinė kelionė — ekspertų rankose</div>
+      <div style="margin:9px 0 6px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:30px;">99€</span><span style="font-size:11px;color:var(--mut);"> /sezonui · ≈8€/mėn</span></div>
+      <ul style="list-style:none;margin:0 0 10px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
+        <li style="padding:3px 0 3px 20px;position:relative;color:var(--mut);"><span style="position:absolute;left:0;">·</span> Viskas iš Premium</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> 📋 3 ketvirtinės AI ataskaitos (tęstinės)</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> 🏋️ 3 namų treniruočių planai</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> ☀️ Vasaros treniruočių programa</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Pristatoma automatiškai, visą sezoną</li>
+      </ul>
+      <div style="background:rgba(0,0,0,.28);border:.5px solid var(--bdr);border-radius:10px;padding:9px 11px;margin:2px 0 9px;font-size:10.5px;color:var(--mut);">
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>💎 Premium (statistika) metams</span><span style="color:#cfcfd6;font-weight:600;">71.88€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>📋 3 ataskaitos (3 × 9.99€)</span><span style="color:#cfcfd6;font-weight:600;">29.97€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>🏋️ 3 namų planai (3 × 19.99€)</span><span style="color:#cfcfd6;font-weight:600;">59.97€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>☀️ Vasaros programa</span><span style="color:#cfcfd6;font-weight:600;">29.99€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0 2px;margin-top:3px;border-top:.5px solid var(--bdr);"><span style="color:white;font-weight:700;">Viskas atskirai</span><span style="text-decoration:line-through;">191.81€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span style="color:var(--gld);font-weight:900;font-size:12px;">Su Premium+</span><span style="color:var(--gld);font-weight:900;font-size:12px;">99.00€</span></div>
       </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.5;margin-bottom:10px;">12 savaičių individualus pratimų planas namuose</div>
-      <button onclick="showToast('🔜 Pirkimai bus įjungti netrukus','success')" style="width:100%;background:var(--br);color:white;border:none;padding:10px;border-radius:10px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">PIRKTI</button>
+      <div style="text-align:center;background:rgba(34,197,94,.15);color:var(--grn);font-size:10px;font-weight:800;padding:6px;border-radius:8px;margin-bottom:10px;">💰 SUTAUPAI 92.81€ — primoki tik 27€ vietoj 120€</div>
+      <button onclick="showToast('🔜 Prenumeratos netrukus! Šiuo metu — vienkartinė ataskaita.','success',5000)" style="width:100%;padding:12px;border-radius:11px;font-size:12px;font-weight:800;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:white;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(255,77,0,.4);">Gauti Premium+ 👑</button>
+      <div style="text-align:center;font-size:9px;color:var(--mut);margin-top:7px;">📋 Pirma ataskaita — po 3 mėn., toliau kas ketvirtį</div>
     </div>
+
+    <div class="st">PERKI VIENĄ KARTĄ</div>
+
+    <!-- AI ataskaita -->
+    <div style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">📋</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12.5px;font-weight:800;color:white;">AI ataskaita</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">Detali vaiko analizė + rekomendacijos · PDF</div>
+      </div>
+      <button onclick="openReportOrderModal()" style="flex-shrink:0;background:var(--br);color:white;border:none;padding:9px 13px;border-radius:9px;font-size:11.5px;font-weight:800;cursor:pointer;">9,99€ ›</button>
+    </div>
+
+    <!-- Namų planas -->
+    <div style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">🏋️</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12.5px;font-weight:800;color:white;">Namų treniruočių planas</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">Asmeninis planas tarp treniruočių · ketvirčiui</div>
+      </div>
+      <button onclick="showToast('🔜 Namų planai netrukus','success')" style="flex-shrink:0;background:var(--bg);color:var(--mut);border:.5px solid var(--bdr);padding:9px 13px;border-radius:9px;font-size:11.5px;font-weight:800;cursor:pointer;">19,99€</button>
+    </div>
+
+    <!-- Vasaros programa -->
+    <div style="margin:0 16px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">☀️</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12.5px;font-weight:800;color:white;">Vasaros programa</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">12 savaičių individualus planas namuose</div>
+      </div>
+      <button onclick="showToast('🔜 Vasaros programa netrukus','success')" style="flex-shrink:0;background:var(--bg);color:var(--mut);border:.5px solid var(--bdr);padding:9px 13px;border-radius:9px;font-size:11.5px;font-weight:800;cursor:pointer;">29,99€</button>
+    </div>
+
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -5052,10 +5110,21 @@ function _rCap(x){ x=String(x||''); return x.charAt(0).toUpperCase()+x.slice(1);
 function _rInitials(name){ const p=String(name||'').trim().split(' ').filter(Boolean); return (((p[0]||'?')[0]||'?')+((p[1]||'')[0]||'')).toUpperCase(); }
 
 // Užsakymo + ataskaitų sąrašo modalas
+function reportLockDays(k){
+  if (!k) return 0;
+  const since = k.karate_since || k.created_at;
+  if (!since) return 0;
+  const days = Math.floor((Date.now() - new Date(since).getTime()) / 86400000);
+  return Math.max(0, 90 - days);
+}
 function openReportOrderModal(){
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko'); return; }
   const old = document.getElementById('report-order-modal'); if (old) old.remove();
+  const lockDays = reportLockDays(k);
+  const orderCard = lockDays > 0
+    ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:20px 14px;margin-bottom:16px;text-align:center;"><div style="font-size:36px;margin-bottom:8px;">🔒</div><div style="font-size:14px;font-weight:800;color:white;margin-bottom:7px;">Ataskaita dar kaupia duomenis</div><div style="font-size:11px;color:var(--mut);line-height:1.55;">Pirmai išsamiai ataskaitai reikia ~3 mėn. treniruočių duomenų, kad būtų ką tiksliai analizuoti.</div><div style="margin-top:11px;font-size:12px;color:var(--br);font-weight:800;">⏳ Prieinama po ${lockDays} d.</div></div>`
+    : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div><div style="display:flex;gap:10px;"><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div></div><div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div><button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:13px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button><div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div></div>`;
   const m = document.createElement('div');
   m.id = 'report-order-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
@@ -5066,16 +5135,7 @@ function openReportOrderModal(){
         <button onclick="document.getElementById('report-order-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
       </div>
       <div style="padding:16px 18px 26px;">
-        <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;">
-          <div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div>
-          <div style="display:flex;gap:10px;">
-            <div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div>
-            <div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div>
-          </div>
-          <div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div>
-          <button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:13px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button>
-          <div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div>
-        </div>
+        ${orderCard}
         <div style="font-size:10px;color:var(--mut);letter-spacing:1px;font-weight:800;margin:4px 2px 8px;">MANO ATASKAITOS</div>
         <div id="rep-list">${typeof loadingSpinnerHtml==='function'?loadingSpinnerHtml('Kraunama...'):'Kraunama...'}</div>
       </div>
