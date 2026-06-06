@@ -398,7 +398,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v46</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v47</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5144,9 +5144,19 @@ function openReportInfoModal(){
           <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Tęstinumas</b> — kita ataskaita parodo pažangą, tad matai ar planas veikia.</span></div>
           <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Ekspertinė metodika</b> — paremta jaunių sporto ir Kyokushin principais.</span></div>
         </div>
+        <div style="background:rgba(34,197,94,.1);border:.5px solid rgba(34,197,94,.3);border-radius:12px;padding:13px 14px;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:800;color:var(--grn);letter-spacing:.5px;margin-bottom:4px;">💡 KAIP DAŽNAI UŽSISAKYTI</div>
+          <div style="font-size:11px;color:#d6d6dd;line-height:1.5;">Geriausia — <b style="color:#fff;">kas 3 mėnesius</b>: per tą laiką susikaupia daugiau duomenų, tad analizė išsamesnė, o vaiko pažanga aiškiai matoma. Galima ir kas mėnesį, bet <b style="color:#fff;">kas 3 mėn. rekomenduojama</b> — prasmingiausia ir vertingiausia.</div>
+        </div>
         <div style="background:linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;text-align:center;margin-bottom:16px;">
           <div style="font-size:11px;color:var(--mut);">Privati sporto specialisto analizė galėtų kainuoti <b style="color:#fff;">50–100€</b></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gld);margin-top:4px;letter-spacing:1px;">SPOBU — TIK 9,99€</div>
+        </div>
+        <div style="font-size:10px;letter-spacing:1.5px;color:var(--mut);font-weight:800;margin-bottom:8px;">DAUGIAU SPOBU TRENIRUOČIŲ</div>
+        <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:4px 14px;margin-bottom:16px;">
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">🏋️</div><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:white;">Namų treniruočių planas · <span style="color:var(--gld);">19,99€</span></div><div style="font-size:10px;color:var(--mut);">Treniruotės tarp dojo užsiėmimų — jėga, lankstumas, ištvermė. Papildo techniką, ne dubliuoja.</div></div></div>
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">☀️</div><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:white;">Vasaros programa · <span style="color:var(--gld);">29,99€</span></div><div style="font-size:10px;color:var(--mut);">12 savaičių planas vasarai — kad forma neprarasta per atostogas.</div></div></div>
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;"><div style="font-size:19px;">👑</div><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:white;">Premium+ — viskas kartu · <span style="color:var(--gld);">99€/sez.</span></div><div style="font-size:10px;color:var(--mut);">3 ketvirtinės ataskaitos + 3 namų planai + vasaros programa. Sutaupai ~93€.</div></div></div>
         </div>
         <button onclick="document.getElementById('report-info-modal').remove(); openReportOrderModal();" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">✨ Užsisakyti ataskaitą</button>
         <div style="text-align:center;font-size:9.5px;color:var(--mut);margin-top:9px;line-height:1.4;">Reikia ~3 mėn. treniruočių duomenų · Ataskaita — ne medicininė diagnozė, o sportinės pažangos gairės.</div>
