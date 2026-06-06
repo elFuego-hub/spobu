@@ -398,7 +398,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v50</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v51</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2223,7 +2223,7 @@ select.inp option{background:#222;}
       </div>
       <div style="text-align:center;background:rgba(34,197,94,.15);color:var(--grn);font-size:10px;font-weight:800;padding:6px;border-radius:8px;margin-bottom:10px;">💰 SUTAUPAI 52.83€ — primoki tik 27€ vietoj 80€</div>
       <button onclick="showToast('🔜 Prenumeratos netrukus! Šiuo metu — vienkartinė ataskaita.','success',5000)" style="width:100%;padding:12px;border-radius:11px;font-size:12px;font-weight:800;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:white;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(255,77,0,.4);">Gauti Premium+ 👑</button>
-      <div style="text-align:center;font-size:9px;color:var(--mut);margin-top:7px;">📋 Pirma ataskaita — po 3 mėn., toliau kas ketvirtį</div>
+      <div style="text-align:center;font-size:9px;color:var(--mut);margin-top:7px;">📋 Galima kas mėnesį · rekomenduojama kas 3 mėn.</div>
     </div>
 
     <div class="st">PERKI VIENĄ KARTĄ</div>
@@ -5177,7 +5177,7 @@ function openReportInfoModal(){
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;"><div style="font-size:19px;">👑</div><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:white;">Premium+ — viskas kartu · <span style="color:var(--gld);">99€/sez.</span></div><div style="font-size:10px;color:var(--mut);">3 ketvirtinės ataskaitos + 1 namų planas + vasaros programa. Sutaupai ~53€.</div></div></div>
         </div>
         <button onclick="document.getElementById('report-info-modal').remove(); openReportOrderModal();" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">✨ Užsisakyti ataskaitą</button>
-        <div style="text-align:center;font-size:9.5px;color:var(--mut);margin-top:9px;line-height:1.4;">Reikia ~3 mėn. treniruočių duomenų · Ataskaita — ne medicininė diagnozė, o sportinės pažangos gairės.</div>
+        <div style="text-align:center;font-size:9.5px;color:var(--mut);margin-top:9px;line-height:1.4;">Galima kas mėnesį (rekomenduojama kas 3 mėn.) · Ataskaita — ne medicininė diagnozė, o sportinės pažangos gairės.</div>
       </div>
     </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
@@ -5265,7 +5265,13 @@ function _entCdMsg(lastUsed, months){
   const left = Math.ceil((next.getTime() - Date.now()) / 86400000);
   return left > 0 ? ('Kita po ' + left + ' d.') : '';
 }
-function _summerOpen(){ const n = new Date(); return n >= new Date(n.getFullYear(), 4, 15); }
+function _summerCdMsg(){
+  const now = new Date();
+  const target = new Date(now.getFullYear(), 4, 15); // gegužės 15
+  if (now >= target) return '';
+  const left = Math.ceil((target.getTime() - now.getTime()) / 86400000);
+  return 'Po ' + left + ' d.';
+}
 function _setShopCard(key, credits, lockMsg, redeemFn, buyFn, priceLabel){
   const cnt = document.getElementById('shop-cnt-' + key), act = document.getElementById('shop-act-' + key);
   if (!act) return;
@@ -5283,7 +5289,7 @@ function renderShopCredits(){
   const e = parentEntitlements || {};
   _setShopCard('report', e.report_credits || 0, _entCdMsg(e.report_last_used, 1), 'redeemReport()', 'openReportOrderModal()', 'Užsisakyti · 9,99€');
   _setShopCard('home', e.homeplan_credits || 0, _entCdMsg(e.homeplan_last_used, 3), 'redeemHome()', 'openHomePlanInfoModal()', 'Sužinoti · 19,99€');
-  _setShopCard('summer', e.summer_credits || 0, _summerOpen() ? '' : 'Nuo geg. 15', 'redeemSummer()', 'openSummerInfoModal()', 'Sužinoti · 29,99€');
+  _setShopCard('summer', e.summer_credits || 0, _summerCdMsg(), 'redeemSummer()', 'openSummerInfoModal()', 'Sužinoti · 29,99€');
 }
 function redeemReport(){
   const e = parentEntitlements || {};
@@ -5307,7 +5313,7 @@ function reportLockDays(k){
   const since = k.karate_since || k.created_at;
   if (!since) return 0;
   const days = Math.floor((Date.now() - new Date(since).getTime()) / 86400000);
-  return Math.max(0, 90 - days);
+  return Math.max(0, 30 - days);
 }
 function openReportOrderModal(useCredit){
   const k = parentActiveKid;
@@ -5316,7 +5322,7 @@ function openReportOrderModal(useCredit){
   const old = document.getElementById('report-order-modal'); if (old) old.remove();
   const lockDays = reportLockDays(k);
   const orderCard = lockDays > 0
-    ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:20px 14px;margin-bottom:16px;text-align:center;"><div style="font-size:36px;margin-bottom:8px;">🔒</div><div style="font-size:14px;font-weight:800;color:white;margin-bottom:7px;">Ataskaita dar kaupia duomenis</div><div style="font-size:11px;color:var(--mut);line-height:1.55;">Pirmai išsamiai ataskaitai reikia ~3 mėn. treniruočių duomenų, kad būtų ką tiksliai analizuoti.</div><div style="margin-top:11px;font-size:12px;color:var(--br);font-weight:800;">⏳ Prieinama po ${lockDays} d.</div></div>`
+    ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:20px 14px;margin-bottom:16px;text-align:center;"><div style="font-size:36px;margin-bottom:8px;">🔒</div><div style="font-size:14px;font-weight:800;color:white;margin-bottom:7px;">Ataskaita dar kaupia duomenis</div><div style="font-size:11px;color:var(--mut);line-height:1.55;">Pirmai ataskaitai reikia ~1 mėn. treniruočių duomenų, kad būtų ką analizuoti. Vėliau — kas mėnesį (rekomenduojama kas 3 mėn.).</div><div style="margin-top:11px;font-size:12px;color:var(--br);font-weight:800;">⏳ Prieinama po ${lockDays} d.</div></div>`
     : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div><div style="display:flex;gap:10px;"><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div></div><div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div><button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:13px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button><div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div></div>`;
   const m = document.createElement('div');
   m.id = 'report-order-modal';
