@@ -266,6 +266,10 @@ body.full-mobile-preview { padding: 20px 0 !important; }
 .sc{display:none;flex-direction:column;min-height:780px;}
 .sc.on{display:flex;}
 .sa{overflow-y:auto;flex:1;padding-bottom:8px;}
+/* 🛍️ Parduotuvė: fiksuotas ekrano aukštis — scrollinasi TIK turinys (.sa), header+nav lieka vietoje */
+#t-shop{height:780px;}
+#t-shop .sa{min-height:0;}
+@media (max-width:500px){#t-shop{height:100dvh!important;min-height:0!important;}}
 .sb{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:12px;font-weight:700;}
 .hero{border-radius:var(--r);margin:0 16px;padding:20px;color:white;position:relative;overflow:hidden;}
 .hero::before{content:'';position:absolute;right:-20px;top:-20px;width:130px;height:130px;background:rgba(255,255,255,.06);border-radius:50%;}
@@ -394,7 +398,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v44</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v45</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
