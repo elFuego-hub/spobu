@@ -398,7 +398,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v51</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v52</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5287,13 +5287,19 @@ function _setShopCard(key, credits, lockMsg, redeemFn, buyFn, priceLabel){
 }
 function renderShopCredits(){
   const e = parentEntitlements || {};
-  _setShopCard('report', e.report_credits || 0, _entCdMsg(e.report_last_used, 1), 'redeemReport()', 'openReportOrderModal()', 'Užsisakyti · 9,99€');
+  const k = parentActiveKid;
+  const gate = (k && typeof reportLockDays === 'function') ? reportLockDays(k) : 0;
+  const reportLock = gate > 0 ? ('Po ' + gate + ' d.') : _entCdMsg(e.report_last_used, 1);
+  _setShopCard('report', e.report_credits || 0, reportLock, 'redeemReport()', 'openReportOrderModal()', 'Užsisakyti · 9,99€');
   _setShopCard('home', e.homeplan_credits || 0, _entCdMsg(e.homeplan_last_used, 3), 'redeemHome()', 'openHomePlanInfoModal()', 'Sužinoti · 19,99€');
   _setShopCard('summer', e.summer_credits || 0, _summerCdMsg(), 'redeemSummer()', 'openSummerInfoModal()', 'Sužinoti · 29,99€');
 }
 function redeemReport(){
   const e = parentEntitlements || {};
   if ((e.report_credits || 0) <= 0) { showToast('Nebėra ataskaitų kreditų'); return; }
+  const k = parentActiveKid;
+  const gate = (k && typeof reportLockDays === 'function') ? reportLockDays(k) : 0;
+  if (gate > 0) { showToast('Dar renkami duomenys — prieinama po ' + gate + ' d.'); return; }
   const msg = _entCdMsg(e.report_last_used, 1);
   if (msg) { showToast(msg); return; }
   openReportOrderModal(true);
