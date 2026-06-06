@@ -398,7 +398,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v45</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v46</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2234,6 +2234,7 @@ select.inp option{background:#222;}
       <div style="flex:1;min-width:0;">
         <div style="font-size:12.5px;font-weight:800;color:white;">AI ataskaita</div>
         <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">Detali vaiko analizė + rekomendacijos · PDF</div>
+        <div onclick="openReportInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;">ℹ️ Kas tai ir kodėl verta? ›</div>
       </div>
       <button onclick="openReportOrderModal()" style="flex-shrink:0;background:var(--br);color:white;border:none;padding:9px 13px;border-radius:9px;font-size:11.5px;font-weight:800;cursor:pointer;">9,99€ ›</button>
     </div>
@@ -5114,6 +5115,46 @@ function _rCap(x){ x=String(x||''); return x.charAt(0).toUpperCase()+x.slice(1);
 function _rInitials(name){ const p=String(name||'').trim().split(' ').filter(Boolean); return (((p[0]||'?')[0]||'?')+((p[1]||'')[0]||'')).toUpperCase(); }
 
 // Užsakymo + ataskaitų sąrašo modalas
+function openReportInfoModal(){
+  const old = document.getElementById('report-info-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'report-info-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+      <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:21px;letter-spacing:2px;">📋 IŠSAMI AI ATASKAITA</div>
+        <button onclick="document.getElementById('report-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);">✕</button>
+      </div>
+      <div style="padding:18px;">
+        <div style="font-size:12.5px;color:var(--mut);line-height:1.55;margin-bottom:16px;">Tavo vaiko sportinė analizė — tarsi asmeninė trenerio-analitiko konsultacija, paruošta dirbtinio intelekto pagal tikrus SPOBU duomenis ir ekspertinę metodiką.</div>
+        <div style="font-size:10px;letter-spacing:1.5px;color:var(--mut);font-weight:800;margin-bottom:8px;">KĄ GAUNI UŽ 9,99€</div>
+        <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:4px 14px;margin-bottom:16px;">
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">📊</div><div><div style="font-size:12px;font-weight:700;color:white;">Fizinio pasirengimo analizė</div><div style="font-size:10px;color:var(--mut);">Jėga, ištvermė, greitis, lankstumas, technika</div></div></div>
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">👥</div><div><div style="font-size:12px;font-weight:700;color:white;">Bendraamžių percentiliai</div><div style="font-size:10px;color:var(--mut);">Kaip vaikas atrodo tarp savo grupės (lytis + amžius)</div></div></div>
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">📈</div><div><div style="font-size:12px;font-weight:700;color:white;">Augimo įvertinimas</div><div style="font-size:10px;color:var(--mut);">Ūgis, svoris, KMI amžiaus kontekste — saugiai</div></div></div>
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">🍎</div><div><div style="font-size:12px;font-weight:700;color:white;">Mitybos gairės</div><div style="font-size:10px;color:var(--mut);">Vaikui saugios, be dietų</div></div></div>
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">🎯</div><div><div style="font-size:12px;font-weight:700;color:white;">Individualus planas</div><div style="font-size:10px;color:var(--mut);">Ką tobulinti ir KAIP — konkretūs žingsniai</div></div></div>
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;"><div style="font-size:19px;">📄</div><div><div style="font-size:12px;font-weight:700;color:white;">Gražus PDF</div><div style="font-size:10px;color:var(--mut);">Parsisiųsk, atsispausdink, parodyk treneriui</div></div></div>
+        </div>
+        <div style="font-size:10px;letter-spacing:1.5px;color:var(--mut);font-weight:800;margin-bottom:8px;">KODĖL VERTA</div>
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Tikri vaiko duomenys</b>, ne bendros frazės — analizė būtent apie tavo vaiką.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Konkretu ir aišku</b> — stipriosios pusės, ką tobulinti ir kaip tai daryti.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Tęstinumas</b> — kita ataskaita parodo pažangą, tad matai ar planas veikia.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Ekspertinė metodika</b> — paremta jaunių sporto ir Kyokushin principais.</span></div>
+        </div>
+        <div style="background:linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;text-align:center;margin-bottom:16px;">
+          <div style="font-size:11px;color:var(--mut);">Privati sporto specialisto analizė galėtų kainuoti <b style="color:#fff;">50–100€</b></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gld);margin-top:4px;letter-spacing:1px;">SPOBU — TIK 9,99€</div>
+        </div>
+        <button onclick="document.getElementById('report-info-modal').remove(); openReportOrderModal();" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">✨ Užsisakyti ataskaitą</button>
+        <div style="text-align:center;font-size:9.5px;color:var(--mut);margin-top:9px;line-height:1.4;">Reikia ~3 mėn. treniruočių duomenų · Ataskaita — ne medicininė diagnozė, o sportinės pažangos gairės.</div>
+      </div>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+}
 function reportLockDays(k){
   if (!k) return 0;
   const since = k.karate_since || k.created_at;
