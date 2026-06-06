@@ -4386,6 +4386,7 @@ function refreshParentActiveScreen() {
   if (sid === 't-kar') loadParentKidCareer();
   else if (sid === 't-feed') loadParentKidFeed();
   else if (sid === 't-prof') loadParentKidProfile();
+  else if (sid === 't-shop' && typeof loadParentShopCredits === 'function') loadParentShopCredits();
   else if (sid === 't-main') loadParentKidMain();
 }
 
