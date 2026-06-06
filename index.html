@@ -398,7 +398,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v48</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v49</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2229,36 +2229,51 @@ select.inp option{background:#222;}
     <div class="st">PERKI VIENĄ KARTĄ</div>
 
     <!-- AI ataskaita -->
-    <div style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;display:flex;align-items:center;gap:12px;">
-      <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">📋</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12.5px;font-weight:800;color:white;">AI ataskaita</div>
-        <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">Detali vaiko analizė + rekomendacijos · PDF</div>
-        <div onclick="openReportInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;">ℹ️ Kas tai ir kodėl verta? ›</div>
+    <div style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">📋</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:800;color:white;">AI ataskaita</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">Detali vaiko analizė + rekomendacijos · PDF</div>
+          <div onclick="openReportInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;">ℹ️ Kas tai ir kodėl verta? ›</div>
+        </div>
+        <div id="shop-cnt-report" style="flex-shrink:0;"></div>
       </div>
-      <button onclick="openReportOrderModal()" style="flex-shrink:0;background:var(--br);color:white;border:none;padding:9px 13px;border-radius:9px;font-size:11.5px;font-weight:800;cursor:pointer;">9,99€ ›</button>
+      <div id="shop-act-report" style="margin-top:10px;">
+        <button onclick="openReportOrderModal()" style="width:100%;background:var(--br);color:white;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">Užsisakyti · 9,99€ ›</button>
+      </div>
     </div>
 
     <!-- Namų planas -->
-    <div style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;display:flex;align-items:center;gap:12px;">
-      <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">🏋️</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12.5px;font-weight:800;color:white;">Namų treniruočių planas</div>
-        <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">Asmeninis planas tarp treniruočių · ketvirčiui</div>
-        <div onclick="openHomePlanInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;">ℹ️ Kas tai ir kodėl verta? ›</div>
+    <div style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">🏋️</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:800;color:white;">Namų treniruočių planas</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">Asmeninis planas tarp treniruočių · ketvirčiui</div>
+          <div onclick="openHomePlanInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;">ℹ️ Kas tai ir kodėl verta? ›</div>
+        </div>
+        <div id="shop-cnt-home" style="flex-shrink:0;"></div>
       </div>
-      <button onclick="openHomePlanInfoModal()" style="flex-shrink:0;background:var(--bg);color:var(--mut);border:.5px solid var(--bdr);padding:9px 13px;border-radius:9px;font-size:11.5px;font-weight:800;cursor:pointer;">19,99€</button>
+      <div id="shop-act-home" style="margin-top:10px;">
+        <button onclick="openHomePlanInfoModal()" style="width:100%;background:var(--br);color:white;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">Sužinoti · 19,99€ ›</button>
+      </div>
     </div>
 
     <!-- Vasaros programa -->
-    <div style="margin:0 16px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;display:flex;align-items:center;gap:12px;">
-      <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">☀️</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12.5px;font-weight:800;color:white;">Vasaros programa</div>
-        <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">12 savaičių individualus planas namuose</div>
-        <div onclick="openSummerInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;">ℹ️ Kas tai ir kodėl verta? ›</div>
+    <div style="margin:0 16px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">☀️</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:800;color:white;">Vasaros programa</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">12 savaičių individualus planas namuose</div>
+          <div onclick="openSummerInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;">ℹ️ Kas tai ir kodėl verta? ›</div>
+        </div>
+        <div id="shop-cnt-summer" style="flex-shrink:0;"></div>
       </div>
-      <button onclick="openSummerInfoModal()" style="flex-shrink:0;background:var(--bg);color:var(--mut);border:.5px solid var(--bdr);padding:9px 13px;border-radius:9px;font-size:11.5px;font-weight:800;cursor:pointer;">29,99€</button>
+      <div id="shop-act-summer" style="margin-top:10px;">
+        <button onclick="openSummerInfoModal()" style="width:100%;background:var(--br);color:white;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">Sužinoti · 29,99€ ›</button>
+      </div>
     </div>
 
   </div>
@@ -5231,6 +5246,61 @@ function openSummerInfoModal(){
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
 }
+// ── PARDUOTUVĖS KREDITAI (entitlements) — Premium+ suteikia, naudojami su cooldown ──
+let parentEntitlements = null;
+let _reportCreditMode = false;
+async function loadParentShopCredits(){
+  const k = parentActiveKid;
+  if (!k) { parentEntitlements = null; renderShopCredits(); return; }
+  try {
+    const { data } = await sb.from('kid_entitlements').select('*').eq('kid_id', k.id).limit(1);
+    parentEntitlements = (data && data[0]) || {};
+  } catch (e) { console.warn('loadParentShopCredits', e); parentEntitlements = {}; }
+  renderShopCredits();
+}
+function _entCdMsg(lastUsed, months){
+  if (!lastUsed) return '';
+  const next = new Date(lastUsed); next.setMonth(next.getMonth() + months);
+  const left = Math.ceil((next.getTime() - Date.now()) / 86400000);
+  return left > 0 ? ('Kita po ' + left + ' d.') : '';
+}
+function _summerOpen(){ const n = new Date(); return n >= new Date(n.getFullYear(), 4, 15); }
+function _setShopCard(key, credits, lockMsg, redeemFn, buyFn, priceLabel){
+  const cnt = document.getElementById('shop-cnt-' + key), act = document.getElementById('shop-act-' + key);
+  if (!act) return;
+  if (cnt) cnt.innerHTML = credits > 0 ? '<span style="display:inline-block;background:rgba(34,197,94,.15);color:var(--grn);font-size:10px;font-weight:800;padding:3px 9px;border-radius:99px;white-space:nowrap;">🎟️ ' + credits + '</span>' : '';
+  if (credits > 0) {
+    const redeem = lockMsg
+      ? '<button disabled style="flex:1;background:rgba(255,255,255,.05);color:var(--mut);border:.5px solid var(--bdr);padding:11px;border-radius:10px;font-size:11px;font-weight:800;">🔒 ' + lockMsg + '</button>'
+      : '<button onclick="' + redeemFn + '" style="flex:1;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;border:none;padding:11px;border-radius:10px;font-size:11.5px;font-weight:800;cursor:pointer;">✨ Panaudoti</button>';
+    act.innerHTML = '<div style="display:flex;gap:8px;align-items:stretch;">' + redeem + '<button onclick="' + buyFn + '" style="flex-shrink:0;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);padding:11px 13px;border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;">Pirkti dar</button></div>';
+  } else {
+    act.innerHTML = '<button onclick="' + buyFn + '" style="width:100%;background:var(--br);color:#fff;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">' + priceLabel + ' ›</button>';
+  }
+}
+function renderShopCredits(){
+  const e = parentEntitlements || {};
+  _setShopCard('report', e.report_credits || 0, _entCdMsg(e.report_last_used, 1), 'redeemReport()', 'openReportOrderModal()', 'Užsisakyti · 9,99€');
+  _setShopCard('home', e.homeplan_credits || 0, _entCdMsg(e.homeplan_last_used, 3), 'redeemHome()', 'openHomePlanInfoModal()', 'Sužinoti · 19,99€');
+  _setShopCard('summer', e.summer_credits || 0, _summerOpen() ? '' : 'Nuo geg. 15', 'redeemSummer()', 'openSummerInfoModal()', 'Sužinoti · 29,99€');
+}
+function redeemReport(){
+  const e = parentEntitlements || {};
+  if ((e.report_credits || 0) <= 0) { showToast('Nebėra ataskaitų kreditų'); return; }
+  const msg = _entCdMsg(e.report_last_used, 1);
+  if (msg) { showToast(msg); return; }
+  openReportOrderModal(true);
+}
+function redeemHome(){ showToast('🔜 Namų plano generavimas — netrukus', 'success', 4000); }
+function redeemSummer(){ showToast('🔜 Vasaros programos generavimas — netrukus', 'success', 4000); }
+async function consumeReportCredit(){
+  const k = parentActiveKid; if (!k) return;
+  const e = parentEntitlements || {};
+  try {
+    await sb.from('kid_entitlements').update({ report_credits: Math.max(0, (e.report_credits || 0) - 1), report_last_used: new Date().toISOString() }).eq('kid_id', k.id);
+  } catch (err) { console.warn('consumeReportCredit', err); }
+  await loadParentShopCredits();
+}
 function reportLockDays(k){
   if (!k) return 0;
   const since = k.karate_since || k.created_at;
@@ -5238,9 +5308,10 @@ function reportLockDays(k){
   const days = Math.floor((Date.now() - new Date(since).getTime()) / 86400000);
   return Math.max(0, 90 - days);
 }
-function openReportOrderModal(){
+function openReportOrderModal(useCredit){
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko'); return; }
+  _reportCreditMode = !!useCredit;
   const old = document.getElementById('report-order-modal'); if (old) old.remove();
   const lockDays = reportLockDays(k);
   const orderCard = lockDays > 0
@@ -5316,6 +5387,7 @@ async function submitReportOrder(btn){
       if (w) k.weight_kg = Number(w);
       if (status) { status.style.color = 'var(--grn)'; status.textContent = '✅ Ataskaita paruošta!'; }
       loadMyReports();
+      if (_reportCreditMode) { consumeReportCredit(); _reportCreditMode = false; }
       openReportViewer(data.report_json);
     } else { throw new Error((data && data.error) || 'Tuščias atsakymas'); }
   } catch (e) {
@@ -21194,7 +21266,7 @@ function nv(p,el,sid){
   if (sid === 't-kar' && typeof loadParentKidCareer === 'function') loadParentKidCareer();
   if (sid === 't-feed' && typeof loadParentKidFeed === 'function') loadParentKidFeed();
   if (sid === 't-prof' && typeof loadParentKidProfile === 'function') loadParentKidProfile();
-  // t-shop — statinis vizualas, loaderio nereikia
+  if (sid === 't-shop' && typeof loadParentShopCredits === 'function') loadParentShopCredits();
   
   // 🔢 Count-up animacija HERO skaičiams - kai langas tampa matomas
   if (typeof triggerCountUp === 'function') {
