@@ -409,7 +409,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v62</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v63</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2202,7 +2202,7 @@ select.inp option{background:#222;}
     <div style="margin:0 16px 11px;background:var(--card);border:.5px solid var(--bdr);border-radius:16px;padding:15px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;color:#4FC3F7;">PREMIUM</div>
       <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Pažink vaiko progresą giliau</div>
-      <div style="margin:9px 0 6px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:30px;">5,99€</span><span style="font-size:11px;color:var(--mut);"> /mėn</span></div>
+      <div style="margin:9px 0 6px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:30px;">6,99€</span><span style="font-size:11px;color:var(--mut);"> /mėn</span></div>
       <ul style="list-style:none;margin:0 0 12px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
         <li style="padding:3px 0 3px 20px;position:relative;color:var(--mut);"><span style="position:absolute;left:0;">·</span> Viskas iš Nemokamos</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> 📊 Mėnesio pasiekimų suvestinė</li>
@@ -2210,7 +2210,13 @@ select.inp option{background:#222;}
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> 👥 Bendraamžių percentiliai</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Pilni reitingai ir tendencijos</li>
       </ul>
-      <button onclick="setKidTier('premium')" style="width:100%;padding:12px;border-radius:11px;font-size:12px;font-weight:800;background:rgba(255,255,255,.1);color:white;border:.5px solid var(--bdr);cursor:pointer;">Rinktis Premium</button>
+      <div style="background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(34,197,94,.04));border:1px solid rgba(34,197,94,.45);border-radius:12px;padding:12px 14px;margin-bottom:10px;text-align:center;">
+        <div style="font-size:10px;font-weight:900;color:var(--grn);letter-spacing:.5px;">🔥 GERIAUSIA VERTĖ — UŽ METUS IŠ KARTO</div>
+        <div style="margin-top:6px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#fff;">41,94€</span> <span style="font-size:13px;color:var(--mut);text-decoration:line-through;">83,88€</span></div>
+        <div style="font-size:10.5px;color:#d6d6dd;margin-top:3px;">–50 % · tik <b style="color:#fff;">≈3,50€/mėn</b> · sutaupai <b style="color:var(--grn);">41,94€</b></div>
+      </div>
+      <button onclick="setKidTier('premium')" style="width:100%;padding:13px;border-radius:11px;font-size:12.5px;font-weight:800;background:linear-gradient(90deg,#22C55E,#16A34A);color:#fff;border:none;cursor:pointer;margin-bottom:7px;box-shadow:0 6px 16px rgba(34,197,94,.3);">Užsisakyti metams · 41,94€ (–50 %)</button>
+      <button onclick="setKidTier('premium')" style="width:100%;padding:11px;border-radius:11px;font-size:11.5px;font-weight:800;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);cursor:pointer;">Mėnesinis · 6,99€/mėn</button>
     </div>
 
     <!-- PREMIUM+ -->
@@ -2227,14 +2233,14 @@ select.inp option{background:#222;}
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Pristatoma automatiškai, visą sezoną</li>
       </ul>
       <div style="background:rgba(0,0,0,.28);border:.5px solid var(--bdr);border-radius:10px;padding:9px 11px;margin:2px 0 9px;font-size:10.5px;color:var(--mut);">
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>💎 Premium (statistika) metams</span><span style="color:#cfcfd6;font-weight:600;">71.88€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>💎 Premium (statistika) metams</span><span style="color:#cfcfd6;font-weight:600;">41.94€</span></div>
         <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>📋 3 ataskaitos (3 × 9.99€)</span><span style="color:#cfcfd6;font-weight:600;">29.97€</span></div>
         <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>🏋️ 1 namų planas (1 × 19.99€)</span><span style="color:#cfcfd6;font-weight:600;">19.99€</span></div>
         <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>☀️ Vasaros programa</span><span style="color:#cfcfd6;font-weight:600;">29.99€</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0 2px;margin-top:3px;border-top:.5px solid var(--bdr);"><span style="color:white;font-weight:700;">Viskas atskirai</span><span style="text-decoration:line-through;">151.83€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0 2px;margin-top:3px;border-top:.5px solid var(--bdr);"><span style="color:white;font-weight:700;">Viskas atskirai</span><span style="text-decoration:line-through;">121.89€</span></div>
         <div style="display:flex;justify-content:space-between;padding:2px 0;"><span style="color:var(--gld);font-weight:900;font-size:12px;">Su Premium+</span><span style="color:var(--gld);font-weight:900;font-size:12px;">99.00€</span></div>
       </div>
-      <div style="text-align:center;background:rgba(34,197,94,.15);color:var(--grn);font-size:10px;font-weight:800;padding:6px;border-radius:8px;margin-bottom:10px;">💰 SUTAUPAI 52.83€ — primoki tik 27€ vietoj 80€</div>
+      <div style="text-align:center;background:rgba(34,197,94,.15);color:var(--grn);font-size:10px;font-weight:800;padding:6px;border-radius:8px;margin-bottom:10px;">💰 SUTAUPAI 22.89€ — viskas viename pakete, automatiškai</div>
       <button onclick="setKidTier('premium_plus')" style="width:100%;padding:12px;border-radius:11px;font-size:12px;font-weight:800;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:white;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(255,77,0,.4);">Gauti Premium+ 👑</button>
       <div style="text-align:center;font-size:9px;color:var(--mut);margin-top:7px;">📋 Galima kas mėnesį · rekomenduojama kas 3 mėn.</div>
     </div>
