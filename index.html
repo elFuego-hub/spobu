@@ -409,7 +409,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v58</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v59</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5373,36 +5373,32 @@ function gateElement(elId, locked, ctaHtml){
   }
 }
 const _PG_STATS = '<div class="pg-card" style="padding:12px 14px;max-width:240px;"><div class="pg-title" style="font-size:16px;margin-top:0;">📊 PREMIUM</div><div class="pg-sub" style="margin:3px 0 9px;font-size:10.5px;">Statistika — su Premium prenumerata.</div><button class="pg-btn" style="padding:9px 14px;font-size:11.5px;" onclick="nv(\'t\',null,\'t-shop\')">💎 Užsisakyti Premium</button></div>';
-async function applyParentTierGating(){
-  try { await loadParentShopCredits(); } catch(e){}
-  const free = !parentEntitlements || (parentEntitlements.tier || 'free') === 'free';
+function _kidTierKey(id){ return 'spobu_tier_' + id; }
+function getKidTierLocal(id){ try { return localStorage.getItem(_kidTierKey(id)) || 'free'; } catch(e){ return 'free'; } }
+function applyParentTierGating(){
+  const k = parentActiveKid;
+  const free = !k || getKidTierLocal(k.id) === 'free';
   gateElement('tk-stats-gate', free, _PG_STATS);
   gateScreen('t-feed', free, _PG_PARENT);
 }
 let _kidTier = 'free';
-async function loadKidTierGate(){
+function loadKidTierGate(){
   if (!currentKid || !currentKid.id) return;
-  try {
-    const { data } = await sb.from('kid_entitlements').select('tier').eq('kid_id', currentKid.id).limit(1);
-    _kidTier = (data && data[0] && data[0].tier) || 'free';
-  } catch(e){ _kidTier = 'free'; }
-  gateScreen('v-stat', _kidTier === 'free', _PG_KID);
+  gateScreen('v-stat', getKidTierLocal(currentKid.id) === 'free', _PG_KID);
 }
 async function setKidTier(tier){
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
-  try {
-    let cur = {};
-    try { const { data } = await sb.from('kid_entitlements').select('*').eq('kid_id', k.id).limit(1); cur = (data && data[0]) || {}; } catch(_e){}
-    const row = { kid_id: k.id, tier: tier,
-      report_credits: cur.report_credits || 0, homeplan_credits: cur.homeplan_credits || 0, summer_credits: cur.summer_credits || 0 };
-    if (tier === 'premium_plus') { row.report_credits = 3; row.homeplan_credits = 1; row.summer_credits = 1; }
-    const { error } = await sb.from('kid_entitlements').upsert(row, { onConflict: 'kid_id' });
-    if (error) throw error;
-    showToast(tier === 'free' ? 'Pakeista į Nemokamą planą' : (tier === 'premium' ? '✅ Premium aktyvuotas (testas)' : '👑 Premium+! Pridėta 3 ataskaitos + 1 namų planas + vasaros programa.'), 'success', 4500);
-    await loadParentShopCredits();
-    applyParentTierGating();
-  } catch(e){ console.warn('setKidTier', e); showToast('Nepavyko pakeisti pakopos', 'error'); }
+  // Pakopa — localStorage (mokėjimo stand-in; vėliau DB per webhook). Veikia be jokio SQL.
+  try { localStorage.setItem(_kidTierKey(k.id), tier); } catch(e){}
+  // Premium+ → kreditai į DB (esami stulpeliai report/homeplan/summer_credits)
+  if (tier === 'premium_plus') {
+    try { await sb.from('kid_entitlements').upsert({ kid_id: k.id, report_credits: 3, homeplan_credits: 1, summer_credits: 1 }, { onConflict: 'kid_id' }); }
+    catch(e){ console.warn('grant credits', e); showToast('⚠️ Kreditų nepavyko pridėti — paleisk server-kreditai.sql', 'error', 5000); }
+  }
+  showToast(tier === 'free' ? 'Pakeista į Nemokamą planą' : (tier === 'premium' ? '✅ Premium aktyvuotas (testas)' : '👑 Premium+! Pridėta 3 ataskaitos + 1 namų planas + vasaros programa.'), 'success', 4500);
+  await loadParentShopCredits();
+  applyParentTierGating();
 }
 function reportLockDays(k){
   if (!k) return 0;
