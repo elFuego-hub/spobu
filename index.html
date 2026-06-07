@@ -273,6 +273,7 @@ body.full-mobile-preview { padding: 20px 0 !important; }
 /* 🔒 Pakopų (Premium) gating — užblurina turinį + užsklanda su CTA */
 #t-feed,#t-kar,#v-stat{position:relative;}
 .sa.premium-blur{filter:blur(7px);pointer-events:none;user-select:none;}
+.premium-blur-el > *:not(.premium-gate){filter:blur(6px);pointer-events:none;user-select:none;}
 .premium-gate{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(11,11,15,.55);z-index:20;padding:24px;}
 .premium-gate .pg-card{text-align:center;background:var(--card);border:1px solid var(--br);border-radius:18px;padding:24px 20px;max-width:300px;box-shadow:0 14px 44px rgba(0,0,0,.55);}
 .premium-gate .pg-emoji{font-size:42px;}
@@ -408,7 +409,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v56</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v57</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2009,7 +2010,8 @@ select.inp option{background:#222;}
       </div>
     </div>
 
-    <!-- 📊 VAIKO REITINGAI -->
+    <!-- 📊 VAIKO REITINGAI (gated) -->
+    <div id="tk-stats-gate" style="position:relative;overflow:hidden;border-radius:14px;">
     <div class="st" id="tk-rank-title">📊 REITINGAI <span style="font-size:10px;color:rgba(255,255,255,.55);font-weight:700;text-transform:none;letter-spacing:.5px;" id="tk-rank-cat-info">(kategorija)</span></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 16px;">
       <div onclick="openParentKidStats('competitions')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;">
@@ -2036,6 +2038,7 @@ select.inp option{background:#222;}
     <div style="padding:4px 16px 0;">
       <button onclick="openParentKidStats()" style="width:100%;padding:6px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:9px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA →</button>
     </div>
+    </div><!-- /tk-stats-gate -->
 
     <!-- 📅 ARTIMIAUSIOS VARŽYBOS -->
     <div class="st">📅 ARTIMIAUSIOS VARŽYBOS</div>
@@ -5355,11 +5358,25 @@ function gateScreen(screenId, locked, ctaHtml){
 }
 const _PG_PARENT = '<div class="pg-card"><div class="pg-emoji">📊</div><div class="pg-title">PREMIUM FUNKCIJA</div><div class="pg-sub">Statistika ir pasiekimai matomi su Premium prenumerata.</div><button class="pg-btn" onclick="nv(\'t\',null,\'t-shop\')">💎 Užsisakyti Premium</button></div>';
 const _PG_KID = '<div class="pg-card"><div class="pg-emoji">📊</div><div class="pg-title">PREMIUM FUNKCIJA</div><div class="pg-sub">Detalią statistiką atrakina tėvai su Premium.</div><button class="pg-btn" onclick="showToast(\'Paprašyk tėvų užsakyti Premium 💎\',\'\',4000)">Sužinoti</button></div>';
+function gateElement(elId, locked, ctaHtml){
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const gate = el.querySelector(':scope > .premium-gate');
+  if (!locked){ if (gate) gate.remove(); el.classList.remove('premium-blur-el'); return; }
+  el.classList.add('premium-blur-el');
+  if (!gate){
+    const g = document.createElement('div');
+    g.className = 'premium-gate';
+    g.innerHTML = ctaHtml;
+    el.appendChild(g);
+  }
+}
+const _PG_STATS = '<div class="pg-card" style="padding:12px 14px;max-width:240px;"><div class="pg-title" style="font-size:16px;margin-top:0;">📊 PREMIUM</div><div class="pg-sub" style="margin:3px 0 9px;font-size:10.5px;">Statistika — su Premium prenumerata.</div><button class="pg-btn" style="padding:9px 14px;font-size:11.5px;" onclick="nv(\'t\',null,\'t-shop\')">💎 Užsisakyti Premium</button></div>';
 async function applyParentTierGating(){
   try { await loadParentShopCredits(); } catch(e){}
   const free = !parentEntitlements || (parentEntitlements.tier || 'free') === 'free';
+  gateElement('tk-stats-gate', free, _PG_STATS);
   gateScreen('t-feed', free, _PG_PARENT);
-  gateScreen('t-kar', free, _PG_PARENT);
 }
 let _kidTier = 'free';
 async function loadKidTierGate(){
@@ -5374,14 +5391,16 @@ async function setKidTier(tier){
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
   try {
-    const row = { kid_id: k.id, tier: tier };
+    let cur = {};
+    try { const { data } = await sb.from('kid_entitlements').select('*').eq('kid_id', k.id).limit(1); cur = (data && data[0]) || {}; } catch(_e){}
+    const row = { kid_id: k.id, tier: tier,
+      report_credits: cur.report_credits || 0, homeplan_credits: cur.homeplan_credits || 0, summer_credits: cur.summer_credits || 0 };
     if (tier === 'premium_plus') { row.report_credits = 3; row.homeplan_credits = 1; row.summer_credits = 1; }
     const { error } = await sb.from('kid_entitlements').upsert(row, { onConflict: 'kid_id' });
     if (error) throw error;
-    showToast(tier === 'free' ? 'Pakeista į Nemokamą planą' : (tier === 'premium' ? '✅ Premium aktyvuotas (testas)' : '👑 Premium+ aktyvuotas (testas)'), 'success', 4000);
+    showToast(tier === 'free' ? 'Pakeista į Nemokamą planą' : (tier === 'premium' ? '✅ Premium aktyvuotas (testas)' : '👑 Premium+! Pridėta 3 ataskaitos + 1 namų planas + vasaros programa.'), 'success', 4500);
     await loadParentShopCredits();
-    gateScreen('t-feed', tier === 'free', _PG_PARENT);
-    gateScreen('t-kar', tier === 'free', _PG_PARENT);
+    applyParentTierGating();
   } catch(e){ console.warn('setKidTier', e); showToast('Nepavyko pakeisti pakopos', 'error'); }
 }
 function reportLockDays(k){
@@ -21351,7 +21370,7 @@ function nv(p,el,sid){
   if (sid === 't-feed' && typeof loadParentKidFeed === 'function') loadParentKidFeed();
   if (sid === 't-prof' && typeof loadParentKidProfile === 'function') loadParentKidProfile();
   if (sid === 't-shop' && typeof loadParentShopCredits === 'function') loadParentShopCredits();
-  if ((sid === 't-feed' || sid === 't-kar') && typeof applyParentTierGating === 'function') { applyParentTierGating(); setTimeout(applyParentTierGating, 500); setTimeout(applyParentTierGating, 1200); }
+  if ((sid === 't-main' || sid === 't-feed') && typeof applyParentTierGating === 'function') { applyParentTierGating(); setTimeout(applyParentTierGating, 500); setTimeout(applyParentTierGating, 1200); }
   
   // 🔢 Count-up animacija HERO skaičiams - kai langas tampa matomas
   if (typeof triggerCountUp === 'function') {
