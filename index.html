@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v69</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v70</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5084,6 +5084,7 @@ function _mcStat(icon, val, lbl, color) {
 function _monthCardInner(d) {
   const info = getStageInfo(d.total_exp || 0);
   const stage = STAGES.find(s => s.name === info.stage) || STAGES[0];
+  const extras = _monthExtras(d.year, d.month);
   const avatar = d.avatar_url
     ? `<img src="${d.avatar_url}" crossorigin="anonymous" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.4);flex:none;">`
     : `<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;border:2px solid rgba(255,255,255,.4);flex:none;">${d.initials || '?'}</div>`;
@@ -5108,6 +5109,7 @@ function _monthCardInner(d) {
           ${_mcStat('📈', d.records || 0, 'Rekordai', '#22C55E')}
           ${_mcStat('🏆', d.medals || 0, 'Medaliai', '#FFD700')}
         </div>
+        ${extras.compare}${extras.trend}
         <div style="background:rgba(0,0,0,.35);border-top:.5px solid var(--bdr);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:relative;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:#fff;">SPO<span style="color:var(--gold);">BU</span></div>
           <div style="font-size:9px;color:var(--mut);text-align:right;line-height:1.3;">Vaiko sportinė kelionė<br>spobu.lt</div>
@@ -5116,6 +5118,50 @@ function _monthCardInner(d) {
 
 let _pmArchive = [];     // praeitų mėnesių snapshot'ai (monthly_reports)
 let _pmCurrentD = null;  // dabartinio mėnesio kortelės duomenys („Šis mėnuo")
+let _pmAllMonths = [];   // visi mėnesiai (archyvas + dabartinis), chronologiškai — palyginimui/trendui
+
+// Trumpas mėnesio pavadinimas trendo stulpeliams
+function _mLabelShort(mo) {
+  return ['Sau', 'Vas', 'Kov', 'Bal', 'Geg', 'Bir', 'Lie', 'Rgp', 'Rgs', 'Spa', 'Lap', 'Gru'][(mo || 1) - 1] || '';
+}
+
+// Palyginimas su praeitu mėn. + trendas (paskut. 4 mėn.) rodomam mėnesiui (year, month)
+function _monthExtras(year, month) {
+  const all = _pmAllMonths || [];
+  const idx = all.findIndex(x => x.year === year && x.month === month);
+  if (idx < 0) return { compare: '', trend: '' };
+  // PALYGINIMAS su prieš tai buvusiu mėn. — rodom TIK jei augimas (kad kortelė visada glostytų)
+  let compare = '';
+  if (idx > 0) {
+    const cur = all[idx], prev = all[idx - 1];
+    let pct = 0, metric = '';
+    if (prev.exp > 0 && cur.exp > prev.exp) { pct = Math.round((cur.exp - prev.exp) / prev.exp * 100); metric = 'EXP'; }
+    else if (prev.challenges > 0 && cur.challenges > prev.challenges) { pct = Math.round((cur.challenges - prev.challenges) / prev.challenges * 100); metric = 'iššūkių'; }
+    else if (prev.exp === 0 && cur.exp > 0) { pct = 100; metric = 'EXP'; }
+    if (pct > 0 && metric) {
+      const pm = (prev.month_label || _mLabelShort(prev.month)).toLowerCase();
+      const txt = pct >= 100
+        ? '🚀 Rekordinis šuolis — daug daugiau ' + metric + ' nei ' + pm + '!'
+        : '📈 <b style="color:#22C55E;">+' + pct + '%</b> daugiau ' + metric + ' nei ' + pm + ' — auga! 💪';
+      compare = '<div style="margin:0 20px 14px;background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.3);border-radius:12px;padding:10px 13px;display:flex;align-items:center;gap:10px;position:relative;"><div style="font-size:18px;flex:none;">📈</div><div style="font-size:11.5px;color:#d6f5e0;font-weight:600;line-height:1.4;">' + txt + '</div></div>';
+    }
+  }
+  // TRENDAS — iki 4 mėn. baigiant rodomu mėn. (tik jei bent 2)
+  let trend = '';
+  const start = Math.max(0, idx - 3);
+  const win = all.slice(start, idx + 1);
+  if (win.length >= 2) {
+    const maxExp = Math.max.apply(null, win.map(w => w.exp || 0).concat([1]));
+    let bars = '';
+    win.forEach((w, i) => {
+      const h = Math.max(6, Math.round((w.exp || 0) / maxExp * 100));
+      const op = (start + i === idx) ? '1' : '.4';
+      bars += '<div style="flex:1;height:' + h + '%;background:linear-gradient(180deg,#FF8C00,#FF4D00);border-radius:5px 5px 0 0;opacity:' + op + ';position:relative;"><div style="position:absolute;bottom:-15px;left:0;right:0;text-align:center;font-size:8px;color:var(--mut);font-weight:700;">' + _mLabelShort(w.month) + '</div></div>';
+    });
+    trend = '<div style="margin:0 20px 20px;position:relative;"><div style="font-size:8.5px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">PASKUTINIAI ' + win.length + ' MĖN. · EXP</div><div style="display:flex;align-items:flex-end;gap:8px;height:54px;">' + bars + '</div></div>';
+  }
+  return { compare, trend };
+}
 
 // Atidaryti mėnesio kortelę (modalas: kortelė + mėnesių juosta + Dalintis/Uždaryti)
 async function openMonthCard() {
@@ -5128,7 +5174,7 @@ async function openMonthCard() {
   _pmCurrentD = {
     name: c.name, avatar_url: k.avatar_url || null, initials: parentKidInitials(k),
     kyu: k.kyu || null, total_exp: k.total_exp || 0,
-    monthLabel: c.monthLabel, year: c.year,
+    monthLabel: c.monthLabel, year: c.year, month: curMonth,
     exp: c.exp, challenges: c.challenges, records: c.records, medals: c.medals, narrative
   };
   // Archyvas — praeitų mėnesių snapshot'ai (be dabartinio)
@@ -5137,6 +5183,10 @@ async function openMonthCard() {
     const { data: arch } = await sb.from('monthly_reports').select('*').eq('kid_id', k.id).order('year', { ascending: false }).order('month', { ascending: false });
     _pmArchive = (arch || []).filter(r => !(r.year === c.year && r.month === curMonth));
   } catch (e) { console.warn('archive load', e); }
+  // Visi mėnesiai (archyvas + dabartinis) chronologiškai — palyginimui ir trendui
+  _pmAllMonths = _pmArchive.map(r => ({ year: r.year, month: r.month, month_label: r.month_label, exp: r.exp || 0, challenges: r.challenges || 0, records: r.records || 0, medals: r.medals || 0 }))
+    .concat([{ year: c.year, month: curMonth, month_label: c.monthLabel, exp: c.exp, challenges: c.challenges, records: c.records, medals: c.medals }])
+    .sort((a, b) => a.year - b.year || a.month - b.month);
   // Išsaugom dabartinį mėnesį (kad kitą mėnesį atsirastų archyve) — best-effort, netrukdo UI
   _snapshotMonth(c, narrative);
   // Mėnesių juosta (chips) — tik jei yra archyvo
@@ -5170,7 +5220,7 @@ function _showMonthCardData(idx) {
   else {
     const r = _pmArchive[idx]; if (!r || !_pmCurrentD) return;
     d = { name: _pmCurrentD.name, avatar_url: _pmCurrentD.avatar_url, initials: _pmCurrentD.initials,
-          kyu: r.kyu, total_exp: r.total_exp, monthLabel: r.month_label, year: r.year,
+          kyu: r.kyu, total_exp: r.total_exp, monthLabel: r.month_label, year: r.year, month: r.month,
           exp: r.exp, challenges: r.challenges, records: r.records, medals: r.medals,
           narrative: r.narrative || '🥋 Gražus mėnuo SPOBU kelyje!' };
   }
