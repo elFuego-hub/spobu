@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#FF4D00">
 <!-- Šriftai: pagrindinis Google Fonts + atsarginis bunny.net (jei Google neprieinamas) -->
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;800;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <link href="https://fonts.bunny.net/css?family=bebas-neue:400|nunito:400,700,800,900|noto-serif-jp:700,900&display=swap" rel="stylesheet">
 <!-- GLOBAL ERROR CATCHER - rodo VISKĄ ant ekrano (debugging) -->
 <script>
@@ -409,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v66</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v67</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4999,6 +5000,158 @@ async function showParentExercises(categoryId, categoryName) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+// 📲 MĖNESIO KORTELĖ — dalinimosi paveikslėlis (Premium vertė)
+// ═══════════════════════════════════════════════════════════
+let _pmCard = null;  // pildoma loadParentKidFeed — šio mėnesio statistika dalinimosi kortelei
+
+// „Mėnesio momentas" — ką pabrėžti (prioritetas: medalis → stiprus rekordas(auksas) → iššūkiai → aktyvumas → ramu)
+async function computeMonthHighlight() {
+  const c = _pmCard;
+  if (!c) return '🌱 Gražus mėnuo SPOBU kelyje!';
+  const name = c.name;
+  // 1) Varžybų medalis
+  if (c.medals > 0) {
+    if (c.medals === 1) {
+      const w = (c.wonComps && c.wonComps[0]) || {};
+      return (w.icon || '🥇') + ' ' + name + ' iškovojo medalį varžybose! 🎉';
+    }
+    return '🥇 ' + name + ' iškovojo ' + c.medals + ' medalius varžybose šį mėnesį! 🔥';
+  }
+  // 2) Stiprus rekordas — TIK jei pasiektas auksas / maksimumas
+  try {
+    if (c.records > 0) {
+      const rec = await _findGoldRecord(c.kid);
+      if (rec) {
+        const val = rec.pr + (rec.unit ? (' ' + rec.unit) : '');
+        return rec.max
+          ? '🏆 ' + name + ' pasiekė MAKSIMUMĄ — ' + rec.name + ' ' + val + '! Neįtikėtina! 🔥'
+          : '📈 Naujas stiprus rekordas — ' + rec.name + ' ' + val + '! 💪';
+      }
+    }
+  } catch (e) { console.warn('highlight record', e); }
+  // 3) Daug iššūkių
+  if (c.challenges >= 5) return '🔥 Darbštus mėnuo — ' + name + ' įveikė ' + c.challenges + ' iššūkius!';
+  // 4) Aktyvus
+  if (c.challenges > 0 || c.exp > 0) return '💪 ' + name + ' treniravosi ir augo: ' + c.challenges + ' iššūkiai, +' + c.exp.toLocaleString('lt-LT') + ' EXP.';
+  // 5) Ramus mėnuo (visada teigiamai)
+  return '🌱 Ramesnis mėnuo — bet kelias tęsiasi. Pirmyn į kitą! 🥋';
+}
+
+// Ar yra šį mėnesį pasiektas AUKSO lygio (ar max) rekordas? Grąžina geriausią (arčiausiai max) arba null.
+async function _findGoldRecord(k) {
+  const now = new Date();
+  const cut = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { data: kr } = await sb.from('kid_records').select('exercise_id, current_pr').eq('kid_id', k.id).not('exercise_id', 'is', null).gt('current_pr', 0).gte('updated_at', cut);
+  const rows = (kr || []).filter(r => r.exercise_id && (r.current_pr || 0) > 0);
+  if (!rows.length) return null;
+  const age = k.birth_date ? calculateAge(k.birth_date) : (k.birth_year ? (now.getFullYear() - k.birth_year) : null);
+  if (!k.gender || age === null) return null;
+  const { data: groups } = await sb.from('exercise_age_groups').select('*').eq('gender', k.gender);
+  const ag = (groups || []).find(g => age >= g.age_min && age <= g.age_max);
+  if (!ag) return null;
+  const exIds = [...new Set(rows.map(r => r.exercise_id))];
+  const { data: exs } = await sb.from('exercises').select('id, name, unit, lower_is_better').in('id', exIds);
+  const exMap = {}; (exs || []).forEach(e => { exMap[e.id] = e; });
+  let clubId = null;
+  try { if (typeof getActiveKidClubId === 'function') clubId = await getActiveKidClubId(); } catch (e) {}
+  const { data: targets } = await sb.from('exercise_targets').select('*').in('exercise_id', exIds).eq('age_group_id', ag.id);
+  let best = null, bestPct = -1;
+  rows.forEach(r => {
+    const ex = exMap[r.exercise_id]; if (!ex) return;
+    const exT = (targets || []).filter(t => t.exercise_id === r.exercise_id);
+    const t = exT.find(tt => tt.club_id === clubId) || exT.find(tt => tt.club_id === null) || exT[0];
+    if (!t) return;
+    const gold = parseFloat(t.gold), completed = parseFloat(t.completed);
+    if (!gold || !completed) return;
+    const pr = parseFloat(r.current_pr);
+    let reached, pct, isMax;
+    if (ex.lower_is_better) { reached = pr <= gold; isMax = pr <= completed; pct = Math.min(100, completed / pr * 100); }
+    else { reached = pr >= gold; isMax = pr >= completed; pct = Math.min(100, pr / completed * 100); }
+    if (reached && pct > bestPct) { bestPct = pct; best = { name: ex.name, pr: r.current_pr, unit: ex.unit, max: isMax }; }
+  });
+  return best;
+}
+
+// Stat plytelė kortelėje
+function _mcStat(icon, val, lbl, color) {
+  return `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:10px;"><div style="font-size:22px;line-height:1;">${icon}</div><div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;line-height:1;color:${color};">${val}</div><div style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-top:2px;">${lbl}</div></div></div>`;
+}
+
+// Atidaryti mėnesio kortelę (modalas: kortelė + Dalintis / Uždaryti)
+async function openMonthCard() {
+  const c = _pmCard;
+  if (!c) { showToast('Atidaryk „Pasiekimai", kad būtų duomenų 📊'); return; }
+  const old = document.getElementById('month-card-modal'); if (old) old.remove();
+  const k = c.kid;
+  const info = getStageInfo(k.total_exp || 0);
+  const stage = STAGES.find(s => s.name === info.stage) || STAGES[0];
+  const initials = parentKidInitials(k);
+  const narrative = await computeMonthHighlight();
+  const m = document.createElement('div');
+  m.id = 'month-card-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:99998;align-items:center;justify-content:center;padding:18px;overflow-y:auto;';
+  m.innerHTML = `
+    <div style="width:100%;max-width:380px;margin:auto;">
+      <div id="month-card" style="border-radius:24px;overflow:hidden;background:linear-gradient(165deg,#15151c,#0b0b0f 55%);border:1px solid #26262f;position:relative;">
+        <div style="position:absolute;top:-70px;right:-70px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,rgba(255,77,0,.32),transparent 65%);"></div>
+        <div style="position:absolute;font-family:'Noto Serif JP',serif;font-size:120px;right:6px;bottom:24px;opacity:.06;line-height:1;color:${stage.color};font-weight:900;">${stage.kanji}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0;position:relative;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:23px;letter-spacing:2px;color:#fff;">SPO<span style="color:var(--gold);">BU</span></div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--gold);background:rgba(255,140,0,.14);border:.5px solid rgba(255,140,0,.35);padding:4px 10px;border-radius:99px;">📅 ${c.monthLabel} ${c.year}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:13px;padding:15px 20px 12px;position:relative;">
+          <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;border:2px solid rgba(255,255,255,.4);flex:none;">${initials}</div>
+          <div style="min-width:0;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:.95;letter-spacing:1px;color:#fff;">${(c.name || '').toUpperCase()}</div>
+            <div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${stage.emoji} ${(k.kyu || 'Be kyu').toUpperCase()} · LYGIS ${info.globalLevel}</div>
+          </div>
+        </div>
+        <div style="margin:0 20px 14px;background:rgba(255,255,255,.04);border-left:3px solid var(--br);border-radius:0 12px 12px 0;padding:11px 13px;font-size:12.5px;line-height:1.45;color:#e8e8ee;font-weight:600;position:relative;">${narrative}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 20px 18px;position:relative;">
+          ${_mcStat('⚡', '+' + c.exp.toLocaleString('lt-LT'), 'EXP', 'var(--gold)')}
+          ${_mcStat('🎯', c.challenges, 'Iššūkiai', '#4FC3F7')}
+          ${_mcStat('📈', c.records, 'Rekordai', '#22C55E')}
+          ${_mcStat('🏆', c.medals, 'Medaliai', '#FFD700')}
+        </div>
+        <div style="background:rgba(0,0,0,.35);border-top:.5px solid var(--bdr);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:relative;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:#fff;">SPO<span style="color:var(--gold);">BU</span></div>
+          <div style="font-size:9px;color:var(--mut);text-align:right;line-height:1.3;">Vaiko sportinė kelionė<br>spobu.lt</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button onclick="shareMonthCard()" style="flex:1;border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;">📲 Dalintis</button>
+        <button onclick="document.getElementById('month-card-modal').remove()" style="flex:none;border-radius:13px;padding:14px 18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);">Uždaryti</button>
+      </div>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+}
+
+// Sugeneruoti paveikslėlį iš kortelės ir atidaryti telefono dalinimąsi (atsarginė — atsisiuntimas)
+async function shareMonthCard() {
+  const card = document.getElementById('month-card');
+  if (!card) return;
+  if (typeof html2canvas !== 'function') { showToast('Pasidaryk ekrano nuotrauką ir dalinkis 📸', '', 4000); return; }
+  showToast('Ruošiama kortelė…', '', 2000);
+  try {
+    const canvas = await html2canvas(card, { backgroundColor: '#0b0b0f', scale: 2, useCORS: true, logging: false });
+    canvas.toBlob(async (blob) => {
+      if (!blob) { showToast('Nepavyko sukurti paveikslėlio', 'error'); return; }
+      const file = new File([blob], 'spobu-menesio-kortele.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: 'SPOBU', text: 'Mūsų vaiko mėnuo SPOBU! 🥋🔥' }); }
+        catch (e) { /* vartotojas atšaukė — nieko nedarom */ }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'spobu-menesio-kortele.png'; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('Paveikslėlis išsaugotas 💾', 'success', 3000);
+      }
+    }, 'image/png');
+  } catch (e) { console.warn('shareMonthCard', e); showToast('Pasidaryk ekrano nuotrauką ir dalinkis 📸', '', 4000); }
+}
+
 // 📰 FEED — vaiko patvirtinti pasiekimai (postai)
 async function loadParentKidFeed() {
   const k = parentActiveKid;
@@ -5087,6 +5240,8 @@ async function loadParentKidFeed() {
     const recCount = items.filter(i => i.kind === 'record').length;
     const medalCount = items.filter(i => i.kind === 'comp' && i.won).length;
     const monthExp = items.reduce((sum, it) => sum + (it.exp || 0), 0);
+    // 📲 Mėnesio kortelei (dalinimasis) — išsaugom šio mėnesio statistiką
+    _pmCard = { kid: k, name: (k.first_name || 'VAIKAS'), monthLabel, year: now.getFullYear(), exp: monthExp, challenges: chCount, records: recCount, medals: medalCount, wonComps: items.filter(i => i.kind === 'comp' && i.won) };
     // Hero fonas pagal vaiko stadiją (toks pat kaip karjeros / pagrindinio hero)
     const stageInfo = getStageInfo(k.total_exp || 0);
     const stage = STAGES.find(s => s.name === stageInfo.stage) || STAGES[0];
@@ -5119,7 +5274,8 @@ async function loadParentKidFeed() {
     const rest = items.slice(5);
     const moreBlock = rest.length ? `<button onclick="openParentFeedModal()" style="width:100%;padding:11px;margin-top:2px;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;border-radius:10px;cursor:pointer;font-family:inherit;">Rodyti visus (${items.length}) →</button>` : '';
 
-    list.innerHTML = heroReport + visible + moreBlock;
+    const mcBtn = '<button onclick="openMonthCard()" style="width:100%;padding:12px;margin:0 0 12px;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;border:none;border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📲 Mėnesio kortelė · dalintis</button>';
+    list.innerHTML = heroReport + mcBtn + visible + moreBlock;
   } catch (e) { console.warn('parent feed', e); list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant feed</div>'; }
 }
 
