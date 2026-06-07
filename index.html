@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v67</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v68</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5010,13 +5010,15 @@ async function computeMonthHighlight() {
   const c = _pmCard;
   if (!c) return '🌱 Gražus mėnuo SPOBU kelyje!';
   const name = c.name;
-  // 1) Varžybų medalis
-  if (c.medals > 0) {
+  // 1) Varžybų medalis — su KONKREČIU varžybų pavadinimu
+  if (c.medals > 0 && c.wonComps && c.wonComps.length) {
     if (c.medals === 1) {
-      const w = (c.wonComps && c.wonComps[0]) || {};
-      return (w.icon || '🥇') + ' ' + name + ' iškovojo medalį varžybose! 🎉';
+      const w = c.wonComps[0];
+      const medal = ((w.label || '').split(' · ')[0] || 'medalį').toLowerCase();
+      return (w.icon || '🥇') + ' ' + name + ' iškovojo ' + medal + ' — ' + (w.title || 'varžybos') + '! 🎉';
     }
-    return '🥇 ' + name + ' iškovojo ' + c.medals + ' medalius varžybose šį mėnesį! 🔥';
+    const titles = c.wonComps.map(w => w.title).filter(Boolean).join(', ');
+    return '🥇 ' + name + ' iškovojo ' + c.medals + ' medalius: ' + titles + '! 🔥';
   }
   // 2) Stiprus rekordas — TIK jei pasiektas auksas / maksimumas
   try {
@@ -5026,7 +5028,7 @@ async function computeMonthHighlight() {
         const val = rec.pr + (rec.unit ? (' ' + rec.unit) : '');
         return rec.max
           ? '🏆 ' + name + ' pasiekė MAKSIMUMĄ — ' + rec.name + ' ' + val + '! Neįtikėtina! 🔥'
-          : '📈 Naujas stiprus rekordas — ' + rec.name + ' ' + val + '! 💪';
+          : '📈 Naujas rekordas — ' + rec.name + ' ' + val + '! Solidu 💪';
       }
     }
   } catch (e) { console.warn('highlight record', e); }
@@ -5078,47 +5080,80 @@ function _mcStat(icon, val, lbl, color) {
   return `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:10px;"><div style="font-size:22px;line-height:1;">${icon}</div><div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;line-height:1;color:${color};">${val}</div><div style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-top:2px;">${lbl}</div></div></div>`;
 }
 
-// Atidaryti mėnesio kortelę (modalas: kortelė + Dalintis / Uždaryti)
+// Vidinė kortelės HTML iš duomenų objekto d — naudojama IR dabartiniam, IR archyvuotam mėnesiui
+function _monthCardInner(d) {
+  const info = getStageInfo(d.total_exp || 0);
+  const stage = STAGES.find(s => s.name === info.stage) || STAGES[0];
+  const avatar = d.avatar_url
+    ? `<img src="${d.avatar_url}" crossorigin="anonymous" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.4);flex:none;">`
+    : `<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;border:2px solid rgba(255,255,255,.4);flex:none;">${d.initials || '?'}</div>`;
+  return `
+        <div style="position:absolute;top:-70px;right:-70px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,rgba(255,77,0,.32),transparent 65%);"></div>
+        <div style="position:absolute;font-family:'Noto Serif JP',serif;font-size:120px;right:6px;bottom:24px;opacity:.06;line-height:1;color:${stage.color};font-weight:900;">${stage.kanji}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0;position:relative;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:23px;letter-spacing:2px;color:#fff;">SPO<span style="color:var(--gold);">BU</span></div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--gold);background:rgba(255,140,0,.14);border:.5px solid rgba(255,140,0,.35);padding:4px 10px;border-radius:99px;">📅 ${d.monthLabel} ${d.year}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:13px;padding:15px 20px 12px;position:relative;">
+          ${avatar}
+          <div style="min-width:0;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:.95;letter-spacing:1px;color:#fff;">${(d.name || '').toUpperCase()}</div>
+            <div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${stage.emoji} ${(d.kyu || 'Be kyu').toUpperCase()} · LYGIS ${info.globalLevel}</div>
+          </div>
+        </div>
+        <div style="margin:0 20px 14px;background:rgba(255,255,255,.04);border-left:3px solid var(--br);border-radius:0 12px 12px 0;padding:11px 13px;font-size:12.5px;line-height:1.45;color:#e8e8ee;font-weight:600;position:relative;">${d.narrative}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 20px 18px;position:relative;">
+          ${_mcStat('⚡', '+' + (d.exp || 0).toLocaleString('lt-LT'), 'EXP', 'var(--gold)')}
+          ${_mcStat('🎯', d.challenges || 0, 'Iššūkiai', '#4FC3F7')}
+          ${_mcStat('📈', d.records || 0, 'Rekordai', '#22C55E')}
+          ${_mcStat('🏆', d.medals || 0, 'Medaliai', '#FFD700')}
+        </div>
+        <div style="background:rgba(0,0,0,.35);border-top:.5px solid var(--bdr);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:relative;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:#fff;">SPO<span style="color:var(--gold);">BU</span></div>
+          <div style="font-size:9px;color:var(--mut);text-align:right;line-height:1.3;">Vaiko sportinė kelionė<br>spobu.lt</div>
+        </div>`;
+}
+
+let _pmArchive = [];     // praeitų mėnesių snapshot'ai (monthly_reports)
+let _pmCurrentD = null;  // dabartinio mėnesio kortelės duomenys („Šis mėnuo")
+
+// Atidaryti mėnesio kortelę (modalas: kortelė + mėnesių juosta + Dalintis/Uždaryti)
 async function openMonthCard() {
   const c = _pmCard;
   if (!c) { showToast('Atidaryk „Pasiekimai", kad būtų duomenų 📊'); return; }
   const old = document.getElementById('month-card-modal'); if (old) old.remove();
   const k = c.kid;
-  const info = getStageInfo(k.total_exp || 0);
-  const stage = STAGES.find(s => s.name === info.stage) || STAGES[0];
-  const initials = parentKidInitials(k);
   const narrative = await computeMonthHighlight();
+  const curMonth = new Date().getMonth() + 1;
+  _pmCurrentD = {
+    name: c.name, avatar_url: k.avatar_url || null, initials: parentKidInitials(k),
+    kyu: k.kyu || null, total_exp: k.total_exp || 0,
+    monthLabel: c.monthLabel, year: c.year,
+    exp: c.exp, challenges: c.challenges, records: c.records, medals: c.medals, narrative
+  };
+  // Archyvas — praeitų mėnesių snapshot'ai (be dabartinio)
+  _pmArchive = [];
+  try {
+    const { data: arch } = await sb.from('monthly_reports').select('*').eq('kid_id', k.id).order('year', { ascending: false }).order('month', { ascending: false });
+    _pmArchive = (arch || []).filter(r => !(r.year === c.year && r.month === curMonth));
+  } catch (e) { console.warn('archive load', e); }
+  // Išsaugom dabartinį mėnesį (kad kitą mėnesį atsirastų archyve) — best-effort, netrukdo UI
+  _snapshotMonth(c, narrative);
+  // Mėnesių juosta (chips) — tik jei yra archyvo
+  let chips = '';
+  if (_pmArchive.length) {
+    const chip = (label, idx, active) => '<button data-mcchip="' + idx + '" onclick="_showMonthCardData(' + idx + ')" style="flex:none;padding:7px 12px;border-radius:99px;font-size:10.5px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap;border:.5px solid var(--bdr);background:' + (active ? 'linear-gradient(90deg,#FF4D00,#FF8C00)' : 'var(--card)') + ';color:#fff;opacity:' + (active ? '1' : '.6') + ';">' + label + '</button>';
+    let row = chip('● Šis mėnuo', -1, true);
+    _pmArchive.forEach((r, i) => { row += chip('📅 ' + (r.month_label || '') + ' ' + r.year, i, false); });
+    chips = '<div style="display:flex;gap:7px;overflow-x:auto;margin-top:12px;padding-bottom:2px;-webkit-overflow-scrolling:touch;">' + row + '</div>';
+  }
   const m = document.createElement('div');
   m.id = 'month-card-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:99998;align-items:center;justify-content:center;padding:18px;overflow-y:auto;';
   m.innerHTML = `
     <div style="width:100%;max-width:380px;margin:auto;">
-      <div id="month-card" style="border-radius:24px;overflow:hidden;background:linear-gradient(165deg,#15151c,#0b0b0f 55%);border:1px solid #26262f;position:relative;">
-        <div style="position:absolute;top:-70px;right:-70px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,rgba(255,77,0,.32),transparent 65%);"></div>
-        <div style="position:absolute;font-family:'Noto Serif JP',serif;font-size:120px;right:6px;bottom:24px;opacity:.06;line-height:1;color:${stage.color};font-weight:900;">${stage.kanji}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0;position:relative;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:23px;letter-spacing:2px;color:#fff;">SPO<span style="color:var(--gold);">BU</span></div>
-          <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--gold);background:rgba(255,140,0,.14);border:.5px solid rgba(255,140,0,.35);padding:4px 10px;border-radius:99px;">📅 ${c.monthLabel} ${c.year}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:13px;padding:15px 20px 12px;position:relative;">
-          <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;border:2px solid rgba(255,255,255,.4);flex:none;">${initials}</div>
-          <div style="min-width:0;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:.95;letter-spacing:1px;color:#fff;">${(c.name || '').toUpperCase()}</div>
-            <div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${stage.emoji} ${(k.kyu || 'Be kyu').toUpperCase()} · LYGIS ${info.globalLevel}</div>
-          </div>
-        </div>
-        <div style="margin:0 20px 14px;background:rgba(255,255,255,.04);border-left:3px solid var(--br);border-radius:0 12px 12px 0;padding:11px 13px;font-size:12.5px;line-height:1.45;color:#e8e8ee;font-weight:600;position:relative;">${narrative}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 20px 18px;position:relative;">
-          ${_mcStat('⚡', '+' + c.exp.toLocaleString('lt-LT'), 'EXP', 'var(--gold)')}
-          ${_mcStat('🎯', c.challenges, 'Iššūkiai', '#4FC3F7')}
-          ${_mcStat('📈', c.records, 'Rekordai', '#22C55E')}
-          ${_mcStat('🏆', c.medals, 'Medaliai', '#FFD700')}
-        </div>
-        <div style="background:rgba(0,0,0,.35);border-top:.5px solid var(--bdr);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:relative;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:#fff;">SPO<span style="color:var(--gold);">BU</span></div>
-          <div style="font-size:9px;color:var(--mut);text-align:right;line-height:1.3;">Vaiko sportinė kelionė<br>spobu.lt</div>
-        </div>
-      </div>
+      <div id="month-card" style="border-radius:24px;overflow:hidden;background:linear-gradient(165deg,#15151c,#0b0b0f 55%);border:1px solid #26262f;position:relative;">${_monthCardInner(_pmCurrentD)}</div>
+      ${chips}
       <div style="display:flex;gap:10px;margin-top:14px;">
         <button onclick="shareMonthCard()" style="flex:1;border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;">📲 Dalintis</button>
         <button onclick="document.getElementById('month-card-modal').remove()" style="flex:none;border-radius:13px;padding:14px 18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);">Uždaryti</button>
@@ -5126,6 +5161,40 @@ async function openMonthCard() {
     </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
+}
+
+// Perjungti rodomą mėnesį juostoje (idx -1 = dabartinis; >=0 = _pmArchive[idx])
+function _showMonthCardData(idx) {
+  let d;
+  if (idx === -1) { d = _pmCurrentD; }
+  else {
+    const r = _pmArchive[idx]; if (!r || !_pmCurrentD) return;
+    d = { name: _pmCurrentD.name, avatar_url: _pmCurrentD.avatar_url, initials: _pmCurrentD.initials,
+          kyu: r.kyu, total_exp: r.total_exp, monthLabel: r.month_label, year: r.year,
+          exp: r.exp, challenges: r.challenges, records: r.records, medals: r.medals,
+          narrative: r.narrative || '🥋 Gražus mėnuo SPOBU kelyje!' };
+  }
+  if (!d) return;
+  const card = document.getElementById('month-card');
+  if (card) card.innerHTML = _monthCardInner(d);
+  document.querySelectorAll('#month-card-modal [data-mcchip]').forEach(el => {
+    const active = el.getAttribute('data-mcchip') === String(idx);
+    el.style.background = active ? 'linear-gradient(90deg,#FF4D00,#FF8C00)' : 'var(--card)';
+    el.style.opacity = active ? '1' : '.6';
+  });
+}
+
+// Išsaugoti šio mėnesio snapshot'ą archyvui (monthly_reports) — best-effort
+async function _snapshotMonth(c, narrative) {
+  try {
+    const k = c.kid;
+    await sb.from('monthly_reports').upsert({
+      kid_id: k.id, year: c.year, month: (new Date().getMonth() + 1),
+      month_label: c.monthLabel, exp: c.exp, challenges: c.challenges,
+      records: c.records, medals: c.medals, narrative: narrative || null,
+      kyu: k.kyu || null, total_exp: k.total_exp || 0, updated_at: new Date().toISOString()
+    }, { onConflict: 'kid_id,year,month' });
+  } catch (e) { console.warn('snapshot month', e); }
 }
 
 // Sugeneruoti paveikslėlį iš kortelės ir atidaryti telefono dalinimąsi (atsarginė — atsisiuntimas)
