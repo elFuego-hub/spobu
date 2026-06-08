@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v74</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v75</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5592,6 +5592,7 @@ async function loadParentShopCredits(){
   renderShopCredits();
 }
 function _entCdDays(lastUsed, months){
+  if (localStorage.getItem('spobu_nocd') === '1') return 0;  // 🧪 TEST: apeiti cooldown (console: localStorage.spobu_nocd='1')
   if (!lastUsed) return 0;
   const next = new Date(lastUsed); next.setMonth(next.getMonth() + months);
   const left = Math.ceil((next.getTime() - Date.now()) / 86400000);
@@ -5605,6 +5606,7 @@ function _kidDataDays(k, gateDays){
   return Math.max(0, gateDays - d);
 }
 function _summerDaysLeft(){
+  if (localStorage.getItem('spobu_nocd') === '1') return 0;  // 🧪 TEST: apeiti vasaros terminą
   const now = new Date();
   let target = new Date(now.getFullYear(), 4, 15); // gegužės 15
   if (now >= target) target = new Date(now.getFullYear() + 1, 4, 15);
