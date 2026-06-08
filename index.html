@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v73</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v74</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5997,12 +5997,15 @@ table.t td.n{text-align:center;font-weight:600;}
     (g.bmi_line_lt?'<p style="margin:0 0 6px;">'+E(g.bmi_line_lt)+'</p>':'')+(g.trajectory_lt?'<p style="margin:0 0 6px;">'+E(g.trajectory_lt)+'</p>':'')+(g.parent_note_lt?'<p style="margin:0;"><b>Tėvams:</b> '+E(g.parent_note_lt)+'</p>':'')+
     (g.refer_to_doctor?'<p style="margin:8px 0 0;color:#B45309;"><b>⚠️ '+E(g.refer_lt||'Verta pasitarti su vaiko gydytoju.')+'</b></p>':'')+'</div>') : '';
 
+  const edu = r.education || null;
+  const eduBlock = (edu && edu.content) ? ('<div class="sec-h">💡 Žinok daugiau</div><div class="callout co-med"><div class="co-h"><span class="chip">SPOBU</span> '+E(edu.title||'')+'</div><p style="margin:0 0 6px;" class="small">'+E(edu.content||'')+'</p>'+(edu.url?'<a href="'+E(edu.url)+'" target="_blank" rel="noopener" style="font-size:9px;font-weight:800;color:#FF4D00;text-decoration:none;">▶️ Plačiau · vaizdo įrašas</a>':'')+'</div>') : '';
+
   const pageCover = '<section class="page cover" style="display:flex;flex-direction:column;justify-content:space-between;">'+
     '<div class="cover-kanji">力</div>'+
     '<div style="display:flex;align-items:center;gap:10px;position:relative;z-index:2;"><div class="brand-badge">空</div><div><div class="brand-name">SPOBU</div><div style="font-size:9px;letter-spacing:4px;color:#FF8C00;text-transform:uppercase;">Karate · Pažanga · Charakteris</div></div></div>'+
-    '<div style="position:relative;z-index:2;"><div style="font-size:11px;letter-spacing:6px;color:rgba(255,255,255,.5);text-transform:uppercase;">Mėnesio AI ataskaita</div>'+
+    '<div style="position:relative;z-index:2;"><div style="font-size:11px;letter-spacing:6px;color:rgba(255,255,255,.5);text-transform:uppercase;">Vaiko progreso analizė</div>'+
     '<div class="cover-title">'+E((c.focus_month_lt||'').toUpperCase())+'<br><span>PAŽANGA</span></div>'+
-    '<div style="font-size:12px;color:#fff;opacity:.85;max-width:380px;line-height:1.5;">Vaiko fizinio pasirengimo, technikos ir augimo analizė — parengta SPOBU AI ekspertų sistemos.</div></div>'+
+    '<div style="font-size:12px;color:#fff;opacity:.85;max-width:380px;line-height:1.5;">Realūs vaiko duomenys + patikrintas sporto mokslas. Mūsų vizija — būti geresniu nei vakar: geriausi kovotojai stiprūs ne dėl vieno dalyko, o dėl <b>pilno paketo</b> — kūno, technikos, charakterio ir gyvensenos.</div></div>'+
     '<div style="position:relative;z-index:2;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:16px 18px;display:flex;gap:16px;align-items:center;">'+
     '<div class="kid-av">'+E(_rInitials(c.kid_name))+'</div><div style="flex:1;"><div style="font-family:\'Bebas Neue\';font-size:30px;color:#fff;letter-spacing:1px;line-height:1;">'+E((c.kid_name||'').toUpperCase())+'</div>'+
     '<div style="font-size:11px;color:#fff;opacity:.8;margin-top:3px;">'+E(c.age_label||'')+(c.period_label?' · '+E(c.period_label):'')+'</div>'+
@@ -6021,25 +6024,26 @@ table.t td.n{text-align:center;font-weight:600;}
     continuityBlock+
     (skills.length?('<div class="sec-h"><span class="num">1</span> Fizinio pasirengimo profilis</div><div class="radar-wrap">'+radar+'<div style="flex:1;">'+skillBars+'</div></div>'):'')+
     (standRows?('<div class="sec-h"><span class="num">2</span> '+(st.peer_note?'Kaip atrodo tarp bendraamžių':'Kaip atrodo statistikoje')+'</div>'+(st.intro_lt?'<p class="small mut">'+E(st.intro_lt)+'</p>':'')+(st.peer_note?'<p class="tiny mut" style="margin-top:-3px;margin-bottom:6px;">👥 '+E(st.peer_note)+'</p>':'')+'<table class="t"><thead><tr><th>Rodiklis</th><th style="text-align:center">'+(st.peer_note?'Percentilis':'Reikšmė')+'</th><th>Vertinimas</th></tr></thead><tbody>'+standRows+'</tbody></table>'):'')+
-    '<div class="footer"><span>SPOBU · AI ataskaita</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>';
+    '<div class="footer"><span>SPOBU · progreso analizė</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>';
 
   const pageMonth = (kpis||trendBars||growthBlock) ? ('<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">'+E(_rCap(c.focus_month_lt||'Mėnesio'))+' apžvalga</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
     (kpis?'<div class="grid3" style="margin-bottom:4px;">'+kpis+'</div>':'')+
     (trendBars?('<div class="sec-h"><span class="num">3</span> Trijų mėnesių tendencija</div><div class="trendbars">'+trendBars+'</div>'+(mo.trend_note_lt?'<p class="small mut" style="margin-top:8px;">'+E(mo.trend_note_lt)+'</p>':'')):'')+
     growthBlock+
-    '<div class="footer"><span>SPOBU · AI ataskaita</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>') : '';
+    '<div class="footer"><span>SPOBU · progreso analizė</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>') : '';
 
   const pageTech = (tech.intro_lt||techRows||nutri) ? ('<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Technika ir mityba</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
     ((tech.intro_lt||techRows)?('<div class="sec-h"><span class="num">5</span> Kovos technikos vertinimas</div>'+(tech.intro_lt?'<div class="callout co-fight"><div class="co-h"><span class="chip">TECHNIKA</span> Kyokushin</div><p style="margin:0;">'+E(tech.intro_lt)+'</p></div>':'')+(techRows?'<table class="t"><thead><tr><th>Sritis</th><th style="text-align:center">Lygis</th><th>Komentaras</th></tr></thead><tbody>'+techRows+'</tbody></table>':'')):'')+
     (nutri?('<div class="sec-h"><span class="num">6</span> Mityba — sveiki įpročiai</div><div class="callout co-phys"><div class="co-h"><span class="chip">MITYBA</span> Be dietų — tik įpročiai</div><table class="t" style="margin:0;"><tbody>'+nutri+'</tbody></table></div>'):'')+
-    '<div class="footer"><span>SPOBU · AI ataskaita</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>') : '';
+    '<div class="footer"><span>SPOBU · progreso analizė</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>') : '';
 
   const pagePlan = '<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Veiksmų planas</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
     (plan?('<div class="sec-h"><span class="num">7</span> Ateinančių 30 dienų planas</div>'+plan):'')+
     ((par.celebrate_lt||par.help_lt)?('<div class="sec-h"><span class="num">★</span> Trumpai tėvams</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+(par.celebrate_lt?'<div class="callout co-phys" style="margin:0;"><div class="co-h">✅ Kuo pasidžiaugti</div><p style="margin:0;" class="small">'+E(par.celebrate_lt)+'</p></div>':'')+(par.help_lt?'<div class="callout co-med" style="margin:0;"><div class="co-h">🎯 Kur padėti</div><p style="margin:0;" class="small">'+E(par.help_lt)+'</p></div>':'')+'</div>'):'')+
-    '<div class="disc"><b>SVARBU.</b> Ši ataskaita parengta SPOBU AI sistemos pagal vaiko treniruočių duomenis ir yra bendro pobūdžio fizinio ugdymo bei sveikos gyvensenos rekomendacija, o <b>ne medicininė diagnozė ar gydymo planas</b>. Dėl individualių sveikatos, mitybos ar augimo klausimų kreipkitės į vaiko gydytoją. Treniruočių krūvį derinkite su treneriu. Duomenys konfidencialūs.</div>'+
+    eduBlock+
+    '<div class="disc"><b>SVARBU.</b> Ši analizė parengta naudojant dirbtinį intelektą pagal vaiko treniruočių duomenis ir yra bendro pobūdžio fizinio ugdymo bei sveikos gyvensenos rekomendacija, o <b>ne medicininė diagnozė ar gydymo planas</b>. Dėl individualių sveikatos, mitybos ar augimo klausimų kreipkitės į vaiko gydytoją. Treniruočių krūvį derinkite su treneriu. Duomenys konfidencialūs.</div>'+
     '<div style="text-align:center;margin-top:20px;"><div class="brand-badge" style="margin:0 auto 8px;">空</div><div style="font-family:\'Bebas Neue\';font-size:22px;letter-spacing:3px;">SPOBU</div><div class="tiny mut" style="letter-spacing:2px;">spobu.lt</div></div>'+
-    '<div class="footer"><span>SPOBU · AI ataskaita</span><span>© 2026 SPOBU</span><span>Konfidencialu</span></div></section>';
+    '<div class="footer"><span>SPOBU · progreso analizė</span><span>© 2026 SPOBU</span><span>Konfidencialu</span></div></section>';
 
   // viewport width=820 → A4 puslapis telefone tilpsta per plotį (preview kaip PDF); spausdinant galioja @page A4
   return '<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"><style>'+css+'</style></head><body>'+pageCover+pageSummary+pageMonth+pageTech+pagePlan+'</body></html>';
