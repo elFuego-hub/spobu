@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v71</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v73</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4133,29 +4133,33 @@ async function saveParentName(btn) {
 // ════════════════════════════════════════
 async function loadParentMain() {
   if (!currentProfile) return;
+  // ⚡ NAŠUMAS: klubas + vaikų sk. + žinutės + pranešimai — lygiagrečiai (nepriklausomi)
+  const [clubR, kidsCountR, membersR, annR] = await Promise.allSettled([
+    currentProfile.club_id ? sb.from('clubs').select('name, city').eq('id', currentProfile.club_id).maybeSingle() : Promise.resolve({ data: null }),
+    sb.from('kid_parent_links').select('id', { count: 'exact', head: true }).eq('parent_id', currentProfile.id),
+    sb.from('conversation_members').select('last_read_at, conversations(last_message_at, last_message_sender_id)').eq('user_id', currentProfile.id),
+    sb.from('conversation_members').select('last_read_at, conversations!inner(id, type, last_message_at)').eq('user_id', currentProfile.id).eq('conversations.type', 'announcement')
+  ]);
+
   // Klubo pavadinimas
   if (currentProfile.club_id) {
-    const { data: club } = await sb.from('clubs').select('name, city').eq('id', currentProfile.club_id).maybeSingle();
+    const club = clubR.status === 'fulfilled' ? clubR.value?.data : null;
     const clubText = club ? `${club.name}${club.city ? ' · ' + club.city : ''}` : '';
     const clubEl = document.getElementById('t-club');
     if (clubEl) clubEl.textContent = clubText;
   }
 
   // Vaikų skaičius
-  const { count: kidsCount } = await sb.from('kid_parent_links')
-    .select('id', { count: 'exact', head: true })
-    .eq('parent_id', currentProfile.id);
+  const kidsCount = kidsCountR.status === 'fulfilled' ? (kidsCountR.value?.count || 0) : 0;
   const kidsEl = document.getElementById('t-mini-kids');
-  if (kidsEl) kidsEl.textContent = kidsCount || 0;
+  if (kidsEl) kidsEl.textContent = kidsCount;
   const pkc = document.getElementById('t-prof-kids-count');
-  if (pkc) pkc.textContent = kidsCount || 0;
+  if (pkc) pkc.textContent = kidsCount;
 
-  // Žinučių (neperskaitytų) skaičius — naudoja updateUnreadBadge logiką, paimsim per memberships
-  const { data: memberships } = await sb.from('conversation_members')
-    .select('last_read_at, conversations(last_message_at, last_message_sender_id)')
-    .eq('user_id', currentProfile.id);
+  // Žinučių (neperskaitytų) skaičius
+  const memberships = membersR.status === 'fulfilled' ? (membersR.value?.data || []) : [];
   let unreadMsgs = 0;
-  (memberships || []).forEach(m => {
+  memberships.forEach(m => {
     if (!m.conversations) return;
     const lastMsg = new Date(m.conversations.last_message_at);
     const lastRead = m.last_read_at ? new Date(m.last_read_at) : new Date(0);
@@ -4165,11 +4169,7 @@ async function loadParentMain() {
   if (msgsEl) msgsEl.textContent = unreadMsgs;
 
   // Pranešimų (announcement) skaičius — neperskaityti
-  // Visus announcement-tipo pokalbius, kur tėvas yra narys
-  const { data: annMemberships } = await sb.from('conversation_members')
-    .select('last_read_at, conversations!inner(id, type, last_message_at)')
-    .eq('user_id', currentProfile.id)
-    .eq('conversations.type', 'announcement');
+  const annMemberships = annR.status === 'fulfilled' ? (annR.value?.data || []) : [];
   let unreadAnn = 0;
   (annMemberships || []).forEach(m => {
     const lastMsg = m.conversations?.last_message_at ? new Date(m.conversations.last_message_at) : null;
@@ -4558,6 +4558,17 @@ function openParentKidSwitcher() {
   document.body.appendChild(m);
 }
 
+// 📂 Karjeros kategorijos (statinė nuoroda) — kraunam VIENĄ kartą, perpanaudojam (main/karjera/profilis)
+let _careerCatsCache = null;
+async function getCareerCategories() {
+  if (_careerCatsCache) return _careerCatsCache;
+  try {
+    const { data } = await sb.from('career_categories').select('*');
+    _careerCatsCache = data || [];
+  } catch (e) { _careerCatsCache = []; }
+  return _careerCatsCache;
+}
+
 // 🏠 PAGRINDINIS — vaiko dashboard
 async function loadParentKidMain() {
   const k = parentActiveKid;
@@ -4600,34 +4611,37 @@ async function loadParentKidMain() {
     if (nextTxt) nextTxt.textContent = `DAR ${info.expToNextLevel} EXP IKI LVL ${info.globalLevel + 1}`;
   }
 
+  // ⚡ NAŠUMAS: streakai + klubo cache + rekordai (top skill) — lygiagrečiai (nepriklausomi)
+  const [stR, , recsR] = await Promise.allSettled([
+    sb.from('kid_streaks').select('training_current, weekly_current, monthly_current').eq('kid_id', k.id).maybeSingle(),
+    getActiveKidClubId(),  // pašildo vaiko klubo cache (rankai/iššūkiai/renginys/laukiama nekartos profiles užklausos)
+    sb.from('kid_records').select('category_id, category_exp').eq('kid_id', k.id)
+  ]);
   // Streakai
-  try {
-    const { data: s } = await sb.from('kid_streaks').select('training_current, weekly_current, monthly_current').eq('kid_id', k.id).maybeSingle();
-    const t = document.getElementById('tk-streak-train'); if (t) t.textContent = s?.training_current || 0;
-    const w = document.getElementById('tk-streak-week'); if (w) w.textContent = s?.weekly_current || 0;
-    const mo = document.getElementById('tk-streak-month'); if (mo) mo.textContent = s?.monthly_current || 0;
-  } catch (e) {}
+  const sStreak = stR.status === 'fulfilled' ? stR.value?.data : null;
+  const elT = document.getElementById('tk-streak-train'); if (elT) elT.textContent = sStreak?.training_current || 0;
+  const elW = document.getElementById('tk-streak-week'); if (elW) elW.textContent = sStreak?.weekly_current || 0;
+  const elM = document.getElementById('tk-streak-month'); if (elM) elM.textContent = sStreak?.monthly_current || 0;
 
-  // Pašildom vaiko klubo cache vieną kartą — kad rankai/iššūkiai/renginys/laukiama nekartotų po profiles užklausą
-  await getActiveKidClubId();
-  if (typeof applyParentTierGating === 'function') applyParentTierGating();  // pakopų gating (REITINGAI) — veikia ir po prisijungimo, ir perjungus vaiką
+  if (typeof applyParentTierGating === 'function') applyParentTierGating();  // pakopų gating (REITINGAI)
 
-  // Reitingų kategorija — etiketę nustato computeParentKidRanks (lytis + amžiaus grupė, kaip vaiko)
+  // Reitingų kategorija — etiketę nustato computeParentKidRanks (lytis + amžiaus grupė, kaip vaiko) — non-blocking
   computeParentKidRanks(k).then(r => {
     if (parentActiveKid?.id !== k.id) return; // vaikas perjungtas kol skaičiavo — nerašom pasenusių reitingų
     const setR = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setR('tk-rank-comp', r.comp); setR('tk-rank-exp', r.exp); setR('tk-rank-ish', r.ish);
   });
 
-  // Top skill
+  // Top skill — iš jau gautų rekordų (kategorijų vardai iš cache)
   try {
-    const { data: recs } = await sb.from('kid_records').select('category_id, category_exp').eq('kid_id', k.id);
+    const recs = recsR.status === 'fulfilled' ? (recsR.value?.data || []) : [];
     const ts = document.getElementById('tk-top-skill');
-    if (recs && recs.length) {
+    if (recs.length) {
       const sumMap = {}; recs.forEach(r => { sumMap[r.category_id] = (sumMap[r.category_id] || 0) + (r.category_exp || 0); });
       let topId = null, topExp = -1; Object.keys(sumMap).forEach(cid => { if (sumMap[cid] > topExp) { topExp = sumMap[cid]; topId = cid; } });
       if (topId) {
-        const { data: cat } = await sb.from('career_categories').select('name').eq('id', topId).maybeSingle();
+        const cats = await getCareerCategories();
+        const cat = cats.find(c => String(c.id) === String(topId));
         if (ts) ts.textContent = cat?.name || '–';
       } else if (ts) ts.textContent = '–';
     } else if (ts) ts.textContent = '–';
@@ -4679,8 +4693,11 @@ async function computeParentKidRanks(kid) {
     });
     if (!pool.find(x => x.id === kid.id)) pool.push(kid);
     const kidIds = pool.map(x => x.id);
-    const { data: comps } = await sb.from('competition_results').select('kid_id, exp_gained').in('kid_id', kidIds).eq('approval_status', 'approved');
-    const { data: chs } = await sb.from('challenge_submissions').select('kid_id, exp_gain').in('kid_id', kidIds).eq('status', 'approved');
+    const [compsR, chsR] = await Promise.all([
+      sb.from('competition_results').select('kid_id, exp_gained').in('kid_id', kidIds).eq('approval_status', 'approved'),
+      sb.from('challenge_submissions').select('kid_id, exp_gain').in('kid_id', kidIds).eq('status', 'approved')
+    ]);
+    const comps = compsR.data, chs = chsR.data;
     const compMap = {}, chMap = {};
     (comps || []).forEach(r => { compMap[r.kid_id] = (compMap[r.kid_id] || 0) + (r.exp_gained || 0); });
     (chs || []).forEach(r => { chMap[r.kid_id] = (chMap[r.kid_id] || 0) + (r.exp_gain || 0); });
@@ -4809,16 +4826,16 @@ async function loadParentKidPending(k) {
   const el = document.getElementById('tk-pending-list'); if (!el) return;
   try {
     const items = [];
-    const { data: chs } = await sb.from('challenge_submissions').select('created_at, challenges(title)').eq('kid_id', k.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(5);
-    (chs || []).forEach(s => items.push({ icon: '🎯', title: s.challenges?.title || 'Iššūkis', date: s.created_at }));
-    try {
-      const { data: rs } = await sb.from('result_submissions').select('created_at, exercises(name)').eq('kid_id', k.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(5);
-      (rs || []).forEach(s => items.push({ icon: '📈', title: s.exercises?.name || 'Rezultatas', date: s.created_at }));
-    } catch (e) {}
-    try {
-      const { data: cr } = await sb.from('competition_results').select('created_at, competitions(title)').eq('kid_id', k.id).eq('status', 'participated').eq('approval_status', 'pending').order('created_at', { ascending: false }).limit(5);
-      (cr || []).forEach(s => items.push({ icon: '🏆', title: s.competitions?.title || 'Varžybos / egzaminas', date: s.created_at }));
-    } catch (e) {}
+    // ⚡ NAŠUMAS: 3 nepriklausomos „laukiančių pateikimų" užklausos lygiagrečiai
+    const [chsR, rsR, crR] = await Promise.allSettled([
+      sb.from('challenge_submissions').select('created_at, challenges(title)').eq('kid_id', k.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
+      sb.from('result_submissions').select('created_at, exercises(name)').eq('kid_id', k.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
+      sb.from('competition_results').select('created_at, competitions(title)').eq('kid_id', k.id).eq('status', 'participated').eq('approval_status', 'pending').order('created_at', { ascending: false }).limit(5)
+    ]);
+    const _pd = (r) => (r.status === 'fulfilled' ? (r.value?.data || []) : []);
+    _pd(chsR).forEach(s => items.push({ icon: '🎯', title: s.challenges?.title || 'Iššūkis', date: s.created_at }));
+    _pd(rsR).forEach(s => items.push({ icon: '📈', title: s.exercises?.name || 'Rezultatas', date: s.created_at }));
+    _pd(crR).forEach(s => items.push({ icon: '🏆', title: s.competitions?.title || 'Varžybos / egzaminas', date: s.created_at }));
     if (items.length === 0) { el.innerHTML = '<div style="text-align:center;padding:8px;color:var(--mut);font-size:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;">Nėra laukiančių pateikimų</div>'; return; }
     items.sort((a, b) => new Date(b.date) - new Date(a.date));
     el.innerHTML = items.slice(0, 5).map(it => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;"><div style="font-size:18px;">${it.icon}</div><div style="flex:1;"><div style="font-size:11px;font-weight:800;">${it.title}</div><div style="font-size:9px;color:var(--mut);margin-top:2px;">Pateikta ${tkTimeAgo(it.date)} · laukia trenerio</div></div></div>`).join('');
@@ -4832,9 +4849,14 @@ async function loadParentKidCareer() {
   const list = document.getElementById('tk-categories-list');
   if (!k) { if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Pasirinkite vaiką</div>'; return; }
   try {
-    const { data: cats } = await sb.from('career_categories').select('*').order('sort_order').limit(7);
-    if (!cats || !cats.length) { if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Kategorijų nerasta</div>'; return; }
-    const { data: records } = await sb.from('kid_records').select('category_id, category_exp, medal').eq('kid_id', k.id);
+    // ⚡ Kategorijos iš cache (statinės) + rekordai lygiagrečiai
+    const [catsAll, recsR] = await Promise.all([
+      getCareerCategories(),
+      sb.from('kid_records').select('category_id, category_exp, medal').eq('kid_id', k.id)
+    ]);
+    const cats = (catsAll || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).slice(0, 7);
+    if (!cats.length) { if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Kategorijų nerasta</div>'; return; }
+    const records = recsR.data;
     const expByCategory = {};
     (records || []).forEach(r => { expByCategory[r.category_id] = (expByCategory[r.category_id] || 0) + (r.category_exp || 0); });
 
@@ -4938,22 +4960,30 @@ async function showParentExercises(categoryId, categoryName) {
       listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--br);">Vaiko duomenys neužpildyti (lytis arba amžius)</div>';
       return;
     }
-    const { data: groups } = await sb.from('exercise_age_groups').select('*').eq('gender', k.gender);
-    const ageGroup = (groups || []).find(g => age >= g.age_min && age <= g.age_max);
+    // ⚡ NAŠUMAS: amžiaus grupės + pratimai + klubas lygiagrečiai (nepriklausomi)
+    const [groupsR, exercisesR, clubId] = await Promise.all([
+      sb.from('exercise_age_groups').select('*').eq('gender', k.gender),
+      sb.from('exercises').select('*').eq('category_id', categoryId).eq('is_active', true).order('sort_order'),
+      getActiveKidClubId()
+    ]);
+    const ageGroup = (groupsR.data || []).find(g => age >= g.age_min && age <= g.age_max);
     if (!ageGroup) {
       listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--br);">Šiam amžiui ribų dar nėra</div>';
       return;
     }
-    // Pratimai kategorijoje
-    const { data: exercises } = await sb.from('exercises').select('*').eq('category_id', categoryId).eq('is_active', true).order('sort_order');
+    const exercises = exercisesR.data;
     if (!exercises?.length) {
       listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--mut);">Pratimų šioje kategorijoje dar nėra</div>';
       return;
     }
     const exerciseIds = exercises.map(e => e.id);
-    const clubId = await getActiveKidClubId();
-    const { data: targets } = await sb.from('exercise_targets').select('*').in('exercise_id', exerciseIds).eq('age_group_id', ageGroup.id);
-    const { data: records } = await sb.from('kid_records').select('exercise_id, current_pr').eq('kid_id', k.id).in('exercise_id', exerciseIds);
+    // ⚡ Tikslai + rekordai lygiagrečiai (abu priklauso TIK nuo exerciseIds)
+    const [targetsR, recordsR] = await Promise.all([
+      sb.from('exercise_targets').select('*').in('exercise_id', exerciseIds).eq('age_group_id', ageGroup.id),
+      sb.from('kid_records').select('exercise_id, current_pr').eq('kid_id', k.id).in('exercise_id', exerciseIds)
+    ]);
+    const targets = targetsR.data;
+    const records = recordsR.data;
 
     let doneCount = 0, attemptedCount = 0;
     const rows = exercises.map(ex => {
@@ -5130,19 +5160,18 @@ function _monthExtras(year, month) {
   const all = _pmAllMonths || [];
   const idx = all.findIndex(x => x.year === year && x.month === month);
   if (idx < 0) return { compare: '', trend: '' };
-  // PALYGINIMAS su prieš tai buvusiu mėn. — rodom TIK jei augimas (kad kortelė visada glostytų)
+  // PALYGINIMAS su prieš tai buvusiu mėn. — rodom TIK jei EXP IŠAUGO. Jei ne — nieko (be akcento, be procentų).
   let compare = '';
   if (idx > 0) {
     const cur = all[idx], prev = all[idx - 1];
-    let pct = 0, metric = '';
-    if (prev.exp > 0 && cur.exp > prev.exp) { pct = Math.round((cur.exp - prev.exp) / prev.exp * 100); metric = 'EXP'; }
-    else if (prev.challenges > 0 && cur.challenges > prev.challenges) { pct = Math.round((cur.challenges - prev.challenges) / prev.challenges * 100); metric = 'iššūkių'; }
-    else if (prev.exp === 0 && cur.exp > 0) { pct = 100; metric = 'EXP'; }
-    if (pct > 0 && metric) {
+    let pct = 0;
+    if (prev.exp > 0 && cur.exp > prev.exp) pct = Math.round((cur.exp - prev.exp) / prev.exp * 100);
+    else if (prev.exp === 0 && cur.exp > 0) pct = 100;
+    if (pct > 0) {
       const pm = (prev.month_label || _mLabelShort(prev.month)).toLowerCase();
       const txt = pct >= 100
-        ? '🚀 Rekordinis šuolis — daug daugiau ' + metric + ' nei ' + pm + '!'
-        : '📈 <b style="color:#22C55E;">+' + pct + '%</b> daugiau ' + metric + ' nei ' + pm + ' — auga! 💪';
+        ? '🚀 Rekordinis šuolis — daug daugiau EXP nei ' + pm + '!'
+        : '📈 <b style="color:#22C55E;">+' + pct + '%</b> daugiau EXP nei ' + pm + ' — auga! 💪';
       compare = '<div style="margin:0 20px 14px;background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.3);border-radius:12px;padding:10px 13px;display:flex;align-items:center;gap:10px;position:relative;"><div style="font-size:18px;flex:none;">📈</div><div style="font-size:11.5px;color:#d6f5e0;font-weight:600;line-height:1.4;">' + txt + '</div></div>';
     }
   }
@@ -5302,60 +5331,59 @@ async function loadParentKidFeed() {
       permanent: { color: '#66BB6A', icon: '♾️', label: 'Nuolatinis iššūkis' }
     };
 
+    // ⚡ NAŠUMAS: 5 nepriklausomos užklausos LYGIAGREČIAI (vietoj 5 serijinių round-trip'ų)
+    const _settle = (r) => (r.status === 'fulfilled' ? (r.value?.data || []) : []);
+    const [chsR, cpR, compsR, krR, slR] = await Promise.allSettled([
+      sb.from('challenge_submissions').select('challenge_id, reviewed_at, exp_gain, challenges(title, type, exp_reward)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(50),
+      sb.from('challenge_progress').select('challenge_id, completed_at, exp_awarded').eq('kid_id', k.id).eq('is_completed', true).gte('completed_at', cut),
+      sb.from('competition_results').select('approved_at, exp_gained, placement, competitions(title)').eq('kid_id', k.id).eq('approval_status', 'approved').gte('approved_at', cut).order('approved_at', { ascending: false }).limit(50),
+      sb.from('kid_records').select('exercise_id, current_pr, category_exp, updated_at').eq('kid_id', k.id).not('exercise_id', 'is', null).gt('current_pr', 0).gte('updated_at', cut),
+      sb.from('streak_bonus_log').select('created_at, exp_awarded, streak_type, streak_count').eq('kid_id', k.id).gte('created_at', cut).order('created_at', { ascending: false }).limit(50)
+    ]);
+    const chs = _settle(chsR), cpRows = _settle(cpR), comps = _settle(compsR), slRows = _settle(slR);
+    const krRows = _settle(krR).filter(r => r.exercise_id && (r.current_pr || 0) > 0);
+
     const seenChIds = new Set();
-    const { data: chs } = await sb.from('challenge_submissions').select('challenge_id, reviewed_at, exp_gain, challenges(title, type, exp_reward)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(50);
-    (chs || []).forEach(s => {
+    // Pateikti iššūkiai (submissions)
+    chs.forEach(s => {
       if (s.challenge_id) seenChIds.add(s.challenge_id);
       const cfg = CH_TYPE[s.challenges?.type] || { color: '#FF8C00', icon: '🎯', label: 'Iššūkis' };
       items.push({ kind: 'challenge', color: cfg.color, icon: cfg.icon, title: s.challenges?.title || 'Iššūkis', label: cfg.label + ' įveiktas', exp: s.exp_gain || s.challenges?.exp_reward || 0, date: s.reviewed_at });
     });
-    // Daliniai (partial) įveikti iššūkiai — užsiskaito per challenge_progress.is_completed, NE per submissions
-    try {
-      const { data: cp } = await sb.from('challenge_progress').select('challenge_id, completed_at, exp_awarded').eq('kid_id', k.id).eq('is_completed', true).gte('completed_at', cut);
-      const freshIds = (cp || []).map(p => p.challenge_id).filter(id => id && !seenChIds.has(id));
-      if (freshIds.length) {
-        const { data: chDefs } = await sb.from('challenges').select('id, title, type, exp_reward').in('id', freshIds);
-        const chMap = {}; (chDefs || []).forEach(c => { chMap[c.id] = c; });
-        (cp || []).forEach(p => {
-          if (!p.challenge_id || seenChIds.has(p.challenge_id)) return;
-          seenChIds.add(p.challenge_id);
-          const ch = chMap[p.challenge_id];
-          const cfg = CH_TYPE[ch?.type] || { color: '#FF8C00', icon: '🎯', label: 'Iššūkis' };
-          items.push({ kind: 'challenge', color: cfg.color, icon: cfg.icon, title: ch?.title || 'Iššūkis', label: cfg.label + ' įveiktas', exp: p.exp_awarded || ch?.exp_reward || 0, date: p.completed_at });
-        });
-      }
-    } catch (e) { console.warn('feed challenge_progress', e); }
-
-    const { data: comps } = await sb.from('competition_results').select('approved_at, exp_gained, placement, competitions(title)').eq('kid_id', k.id).eq('approval_status', 'approved').gte('approved_at', cut).order('approved_at', { ascending: false }).limit(50);
-    (comps || []).forEach(s => {
+    // Varžybos
+    comps.forEach(s => {
       let color = '#FF8C00', icon = '🏅', ml = 'Dalyvavo', won = false;
       if (s.placement === 1) { color = '#FFD700'; icon = '🥇'; ml = 'Aukso medalis'; won = true; }
       else if (s.placement === 2) { color = '#C0C0C0'; icon = '🥈'; ml = 'Sidabro medalis'; won = true; }
       else if (s.placement === 3) { color = '#CD7F32'; icon = '🥉'; ml = 'Bronzos medalis'; won = true; }
       items.push({ kind: 'comp', won, color, icon, title: s.competitions?.title || 'Varžybos', label: ml + ' · Varžybos', exp: s.exp_gained, date: s.approved_at });
     });
+    // Serijos bonusai
+    slRows.forEach(s => { const tn = s.streak_type === 'training' ? 'treniruočių' : s.streak_type === 'weekly' ? 'savaičių' : 'mėnesių'; items.push({ kind: 'streak', color: '#FB923C', icon: '🔥', title: `${s.streak_count} ${tn} iš eilės`, label: 'Serijos bonusas', exp: s.exp_awarded, date: s.created_at }); });
 
-    // Karjeros rekordai — iš kid_records (current_pr per pratimą). result_submissions dažnai tuščia (EXP įvestas be pateikimo įvykio).
-    try {
-      const { data: kr, error: krErr } = await sb.from('kid_records').select('exercise_id, current_pr, category_exp, updated_at').eq('kid_id', k.id).not('exercise_id', 'is', null).gt('current_pr', 0).gte('updated_at', cut);
-      if (krErr) console.warn('feed records error', krErr);
-      const prRows = (kr || []).filter(r => r.exercise_id && (r.current_pr || 0) > 0);
-      if (prRows.length) {
-        const exIds = [...new Set(prRows.map(r => r.exercise_id))];
-        const { data: exs } = await sb.from('exercises').select('id, name, unit').in('id', exIds);
-        const exMap = {}; (exs || []).forEach(e => { exMap[e.id] = e; });
-        prRows.forEach(r => {
-          const ex = exMap[r.exercise_id];
-          const unit = ex?.unit ? ' ' + ex.unit : '';
-          items.push({ kind: 'record', color: '#22C55E', icon: '📈', title: (ex?.name || 'Pratimas') + ` → ${r.current_pr}${unit}`, label: 'Karjeros rekordas', exp: r.category_exp || 0, date: r.updated_at });
-        });
-      }
-    } catch (e) { console.warn('feed records', e); }
-
-    try {
-      const { data: sl } = await sb.from('streak_bonus_log').select('created_at, exp_awarded, streak_type, streak_count').eq('kid_id', k.id).gte('created_at', cut).order('created_at', { ascending: false }).limit(50);
-      (sl || []).forEach(s => { const tn = s.streak_type === 'training' ? 'treniruočių' : s.streak_type === 'weekly' ? 'savaičių' : 'mėnesių'; items.push({ kind: 'streak', color: '#FB923C', icon: '🔥', title: `${s.streak_count} ${tn} iš eilės`, label: 'Serijos bonusas', exp: s.exp_awarded, date: s.created_at }); });
-    } catch (e) {}
+    // ⚡ Antro lygio užklausos (vardai) — priklauso nuo cp/kr, bet tarpusavyje nepriklausomos → lygiagrečiai
+    const freshIds = cpRows.map(p => p.challenge_id).filter(id => id && !seenChIds.has(id));
+    const exIds = [...new Set(krRows.map(r => r.exercise_id))];
+    const [chDefsR, exsR] = await Promise.allSettled([
+      freshIds.length ? sb.from('challenges').select('id, title, type, exp_reward').in('id', freshIds) : Promise.resolve({ data: [] }),
+      exIds.length ? sb.from('exercises').select('id, name, unit').in('id', exIds) : Promise.resolve({ data: [] })
+    ]);
+    // Daliniai (partial) iššūkiai — per challenge_progress.is_completed (NE submissions)
+    const chMap = {}; _settle(chDefsR).forEach(c => { chMap[c.id] = c; });
+    cpRows.forEach(p => {
+      if (!p.challenge_id || seenChIds.has(p.challenge_id)) return;
+      seenChIds.add(p.challenge_id);
+      const ch = chMap[p.challenge_id];
+      const cfg = CH_TYPE[ch?.type] || { color: '#FF8C00', icon: '🎯', label: 'Iššūkis' };
+      items.push({ kind: 'challenge', color: cfg.color, icon: cfg.icon, title: ch?.title || 'Iššūkis', label: cfg.label + ' įveiktas', exp: p.exp_awarded || ch?.exp_reward || 0, date: p.completed_at });
+    });
+    // Karjeros rekordai — iš kid_records (current_pr per pratimą)
+    const exMap = {}; _settle(exsR).forEach(e => { exMap[e.id] = e; });
+    krRows.forEach(r => {
+      const ex = exMap[r.exercise_id];
+      const unit = ex?.unit ? ' ' + ex.unit : '';
+      items.push({ kind: 'record', color: '#22C55E', icon: '📈', title: (ex?.name || 'Pratimas') + ` → ${r.current_pr}${unit}`, label: 'Karjeros rekordas', exp: r.category_exp || 0, date: r.updated_at });
+    });
 
     if (items.length === 0) { list.innerHTML = '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:24px;text-align:center;"><div style="font-size:34px;margin-bottom:8px;">📭</div><div style="font-size:12px;color:var(--mut);">Dar nėra pasiekimų šį mėnesį</div><div style="font-size:10px;color:var(--mut);margin-top:5px;line-height:1.5;">Čia atsiras vaiko medaliai, įveikti iššūkiai ir nauji rekordai</div></div>'; return; }
     items.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -6075,26 +6103,28 @@ async function loadParentKidProfile() {
   const belt = document.getElementById('tk-prof-belt');
   if (belt && typeof renderBeltCertificate === 'function') { belt.style.background = 'transparent'; belt.style.border = 'none'; belt.innerHTML = renderBeltCertificate(k.kyu || 'Mu kyu', true); }
 
+  // ⚡ NAŠUMAS: trofėjai + ženkliukai + iššūkiai + dvikovos — lygiagrečiai (kategorijos iš cache)
   try {
-    const { data: cr } = await sb.from('competition_results').select('placement').eq('kid_id', k.id).eq('status', 'participated').eq('approval_status', 'approved');
-    let g = 0, s = 0, b = 0; (cr || []).forEach(r => { if (r.placement === 1) g++; else if (r.placement === 2) s++; else if (r.placement === 3) b++; });
-    const tEl = document.getElementById('tk-prof-trophies'); if (tEl) tEl.textContent = `🥇${g} 🥈${s} 🥉${b}`;
-  } catch (e) {}
-  try {
-    const { data: cats } = await sb.from('career_categories').select('id');
-    const { data: recs } = await sb.from('kid_records').select('category_id, category_exp').eq('kid_id', k.id);
-    const sumMap = {}; (recs || []).forEach(r => { sumMap[r.category_id] = (sumMap[r.category_id] || 0) + (r.category_exp || 0); });
-    let m = 0, g = 0, si = 0, b = 0; (cats || []).forEach(c => { const e = Math.min(600, sumMap[c.id] || 0); const t = getTierFromExp(e); if (t === 'completed') m++; else if (t === 'gold') g++; else if (t === 'silver') si++; else if (t === 'bronze') b++; });
-    const bEl = document.getElementById('tk-prof-badges'); if (bEl) bEl.textContent = `🏆${m} 🥇${g} 🥈${si} 🥉${b}`;
-  } catch (e) {}
-  try {
-    const { data: subs } = await sb.from('challenge_submissions').select('challenge_id').eq('kid_id', k.id).eq('status', 'approved');
-    const uniq = new Set((subs || []).map(s => s.challenge_id)).size;
-    // Dvikovų pergalės — TA PATI užklausa kaip vaiko updateProfileCounts (su RLS policy tėvui veiks; be jos grąžins 0 → rodo tik iššūkius)
-    let duelWins = 0;
-    try { const { data: dWins } = await sb.from('duels').select('winner_id').or(`challenger_id.eq.${k.id},opponent_id.eq.${k.id}`).eq('status', 'completed'); duelWins = (dWins || []).filter(d => d.winner_id === k.id).length; } catch (e) {}
+    const cats = await getCareerCategories();
+    const [crR, recsR, subsR, duelsR] = await Promise.allSettled([
+      sb.from('competition_results').select('placement').eq('kid_id', k.id).eq('status', 'participated').eq('approval_status', 'approved'),
+      sb.from('kid_records').select('category_id, category_exp').eq('kid_id', k.id),
+      sb.from('challenge_submissions').select('challenge_id').eq('kid_id', k.id).eq('status', 'approved'),
+      sb.from('duels').select('winner_id').or(`challenger_id.eq.${k.id},opponent_id.eq.${k.id}`).eq('status', 'completed')
+    ]);
+    const _pd = (r) => (r.status === 'fulfilled' ? (r.value?.data || []) : []);
+    // Trofėjai (varžybų medaliai)
+    let g1 = 0, s1 = 0, b1 = 0; _pd(crR).forEach(r => { if (r.placement === 1) g1++; else if (r.placement === 2) s1++; else if (r.placement === 3) b1++; });
+    const tEl = document.getElementById('tk-prof-trophies'); if (tEl) tEl.textContent = `🥇${g1} 🥈${s1} 🥉${b1}`;
+    // Ženkliukai (kategorijų tier'ai)
+    const sumMap = {}; _pd(recsR).forEach(r => { sumMap[r.category_id] = (sumMap[r.category_id] || 0) + (r.category_exp || 0); });
+    let m = 0, g2 = 0, si = 0, b2 = 0; (cats || []).forEach(c => { const e = Math.min(600, sumMap[c.id] || 0); const t = getTierFromExp(e); if (t === 'completed') m++; else if (t === 'gold') g2++; else if (t === 'silver') si++; else if (t === 'bronze') b2++; });
+    const bEl = document.getElementById('tk-prof-badges'); if (bEl) bEl.textContent = `🏆${m} 🥇${g2} 🥈${si} 🥉${b2}`;
+    // Iššūkiai + dvikovų pergalės (dvikovoms reikia RLS policy tėvui; be jos grąžins 0)
+    const uniq = new Set(_pd(subsR).map(s => s.challenge_id)).size;
+    const duelWins = _pd(duelsR).filter(d => d.winner_id === k.id).length;
     const cEl = document.getElementById('tk-prof-challenges'); if (cEl) cEl.textContent = `${uniq + duelWins} įveikta`;
-  } catch (e) {}
+  } catch (e) { console.warn('loadParentKidProfile stats', e); }
 }
 
 // 🔔 TĖVŲ VARPELIS — klubo/trenerio pranešimai + paskutinė info
@@ -6285,10 +6315,17 @@ async function loadParentBellContent() {
     const activeKid = parentActiveKid;
     const activeKidClubId = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : (currentProfile?.club_id || null);
     const relatesToActiveKid = (m) => parentConvRelatesToActiveKid(m.conversations); // kid_id / group_id / club
+    // ⚡ NAŠUMAS: announcement + chat narystės lygiagrečiai (nepriklausomos)
+    const [annMemR, chatMemR] = await Promise.all([
+      sb.from('conversation_members')
+        .select('last_read_at, conversations!inner(id, type, title, category, kid_id, group_id, club_id, created_by, last_message_at, last_message_preview, last_message_sender_id)')
+        .eq('user_id', currentProfile.id).eq('conversations.type', 'announcement'),
+      sb.from('conversation_members')
+        .select('last_read_at, conversations!inner(id, type, title, kid_id, group_id, club_id, last_message_at, last_message_preview, last_message_sender_id)')
+        .eq('user_id', currentProfile.id).neq('conversations.type', 'announcement')
+    ]);
     // 1) Klubo pranešimai (announcement pokalbiai)
-    const { data: annMem } = await sb.from('conversation_members')
-      .select('last_read_at, conversations!inner(id, type, title, category, kid_id, group_id, club_id, created_by, last_message_at, last_message_preview, last_message_sender_id)')
-      .eq('user_id', currentProfile.id).eq('conversations.type', 'announcement');
+    const annMem = annMemR.data, chatMem = chatMemR.data;
     const annConvs = (annMem || []).filter(m => m.conversations).filter(relatesToActiveKid)
       .sort((a, b) => new Date(b.conversations.last_message_at || 0) - new Date(a.conversations.last_message_at || 0));
     // ⚡ Batch siuntėjų profiliai (viena užklausa vietoj N)
@@ -6322,10 +6359,7 @@ async function loadParentBellContent() {
     }
     _parentBellHtml.ann = annHtml || '<div style="text-align:center;padding:24px 14px;color:var(--mut);font-size:11px;">📭 Naujų pranešimų nėra</div>';
 
-    // 2) Trenerio / klubo žinutės (pokalbiai)
-    const { data: chatMem } = await sb.from('conversation_members')
-      .select('last_read_at, conversations!inner(id, type, title, kid_id, group_id, club_id, last_message_at, last_message_preview, last_message_sender_id)')
-      .eq('user_id', currentProfile.id).neq('conversations.type', 'announcement');
+    // 2) Trenerio / klubo žinutės (pokalbiai) — chatMem jau gautas lygiagrečiai aukščiau
     const chatConvs = (chatMem || []).filter(m => m.conversations && m.conversations.last_message_at).filter(relatesToActiveKid)
       .sort((a, b) => new Date(b.conversations.last_message_at || 0) - new Date(a.conversations.last_message_at || 0));
     // Helper: vienas chat įrašas su tipo etikete (be papildomų užklausų — naudoja last_message_preview)
