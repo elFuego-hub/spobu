@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v76</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v77</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3059,6 +3059,11 @@ select.inp option{background:#222;}
 
     <div class="st">📨 ATSILIEPIMAI <span id="a-feedback-badge" style="display:none;font-size:9px;font-weight:800;color:white;background:#FF4D00;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:middle;">0</span></div>
     <div class="cd" id="a-feedback-list" style="padding:4px 14px;max-height:320px;overflow-y:auto;">
+      <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Kraunama...</div>
+    </div>
+
+    <div class="st">📋 AI ATASKAITOS <span id="a-reports-badge" style="display:none;font-size:9px;font-weight:800;color:white;background:#FF4D00;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:middle;">0</span></div>
+    <div class="cd" id="a-reports-list" style="padding:4px 14px;max-height:380px;overflow-y:auto;">
       <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Kraunama...</div>
     </div>
 
@@ -5820,7 +5825,7 @@ async function loadMyReports(){
       const done = r.status === 'done' && r.report_json;
       const dt = new Date(r.created_at).toLocaleDateString('lt-LT');
       const mon = r.report_json?.cover?.focus_month_lt;
-      const statusTxt = done ? (mon ? (_rCap(mon)+' mėn.') : 'Paruošta') : (r.status === 'error' ? '❌ Klaida' : '⏳ Generuojama');
+      const statusTxt = done ? (mon ? (_rCap(mon)+' mėn.') : 'Paruošta') : (r.status === 'error' ? '❌ Klaida' : (r.status === 'pending_review' ? '⏳ Ruošiama (iki 24 val.)' : '⏳ Generuojama'));
       return `<div ${done?`onclick="openReportViewer(_myReportsCache['${r.id}'])"`:''} class="rep-item-row" style="display:flex;align-items:center;gap:11px;padding:11px;margin-bottom:7px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;${done?'cursor:pointer;':''}">
         <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#FF4D00,#FF8C00);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">📄</div>
         <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;color:white;">Ataskaita · ${statusTxt}</div><div style="font-size:9px;color:var(--mut);">${dt}</div></div>
@@ -5848,13 +5853,18 @@ async function submitReportOrder(btn){
       try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
       throw new Error(detail);
     }
-    if (data && data.report_json) {
+    if (data && (data.report_json || data.status === 'pending_review')) {
       if (h) k.height_cm = Number(h);
       if (w) k.weight_kg = Number(w);
-      if (status) { status.style.color = 'var(--grn)'; status.textContent = '✅ Ataskaita paruošta!'; }
       loadMyReports();
       if (_reportCreditMode) { consumeReportCredit(); _reportCreditMode = false; }
-      openReportViewer(data.report_json);
+      if (data.status === 'pending_review') {
+        // Peržiūros vartai — tėvas negauna iškart; SPOBU specialistai patikrina
+        if (status) { status.style.color = 'var(--grn)'; status.textContent = '✅ Užsakyta! SPOBU specialistai peržiūrės ir paruoš per 24 val. — pranešim, kai bus gatava.'; }
+      } else {
+        if (status) { status.style.color = 'var(--grn)'; status.textContent = '✅ Ataskaita paruošta!'; }
+        openReportViewer(data.report_json);
+      }
     } else { throw new Error((data && data.error) || 'Tuščias atsakymas'); }
   } catch (e) {
     if (status) { status.style.display = 'block'; status.style.color = 'var(--br)'; status.textContent = '❌ ' + (e?.message || e); }
@@ -18632,6 +18642,7 @@ async function loadAdminData() {
   // Klubų sąrašas
   await loadAdminClubs();
   await loadAdminFeedback();
+  await loadAdminReports();
   console.log('✅ [loadAdminData] BAIGTA');
 }
 
@@ -18667,6 +18678,68 @@ async function loadAdminFeedback() {
     console.warn('loadAdminFeedback', e);
     list.innerHTML = `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nepavyko užkrauti atsiliepimų (${e?.message || 'klaida'})</div>`;
   }
+}
+
+// 📋 AI ataskaitų PERŽIŪROS VARTAI — admin tikrina/tvirtina prieš tėvui (pending_review → done)
+let _adminReportsCache = {};
+async function loadAdminReports() {
+  const list = document.getElementById('a-reports-list');
+  const badge = document.getElementById('a-reports-badge');
+  if (!list) return;
+  try {
+    const { data, error } = await sb.from('reports')
+      .select('id, kid_id, status, created_at, report_json, kids(first_name, last_name)')
+      .in('status', ['pending_review', 'done', 'error'])
+      .order('created_at', { ascending: false }).limit(40);
+    if (error) throw error;
+    const items = data || [];
+    const pending = items.filter(r => r.status === 'pending_review').length;
+    if (badge) { badge.textContent = pending; badge.style.display = pending > 0 ? 'inline-block' : 'none'; }
+    if (!items.length) { list.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:13px;">Užsakytų ataskaitų dar nėra</div>'; return; }
+    const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    _adminReportsCache = {};
+    list.innerHTML = items.map(r => {
+      _adminReportsCache[r.id] = r.report_json;
+      const kidName = r.kids ? `${r.kids.first_name || ''} ${r.kids.last_name || ''}`.trim() : 'Vaikas';
+      const ordered = r.created_at ? new Date(r.created_at) : null;
+      const when = ordered ? ordered.toLocaleString('lt-LT') : '';
+      let deadlineHtml = '';
+      if (r.status === 'pending_review' && ordered) {
+        const left = Math.round((ordered.getTime() + 86400000 - Date.now()) / 3600000);
+        const col = left <= 4 ? '#FF4D00' : (left <= 12 ? '#FF8C00' : '#22C55E');
+        deadlineHtml = `<span style="font-size:9px;font-weight:800;color:${col};">⏳ ${left > 0 ? 'liko ~' + left + ' val.' : 'VĖLUOJA!'}</span>`;
+      }
+      const stBadge = r.status === 'pending_review' ? '<span style="font-size:8px;font-weight:800;color:#FF4D00;background:rgba(255,77,0,.15);padding:2px 6px;border-radius:99px;">LAUKIA</span>'
+        : (r.status === 'done' ? '<span style="font-size:8px;font-weight:800;color:#22C55E;background:rgba(34,197,94,.15);padding:2px 6px;border-radius:99px;">PATVIRTINTA</span>'
+        : '<span style="font-size:8px;font-weight:800;color:#aaa;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:99px;">KLAIDA</span>');
+      const canReview = r.status === 'pending_review' && r.report_json;
+      return `<div style="padding:10px 2px;border-bottom:.5px solid var(--bdr);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <span style="font-size:16px;">📄</span>
+          <span style="font-size:12px;font-weight:800;color:white;flex:1;min-width:0;">${esc(kidName)}</span>
+          ${stBadge}
+        </div>
+        <div style="font-size:9px;color:var(--mut);margin-bottom:7px;">Užsakyta: ${when}${deadlineHtml ? ' · ' + deadlineHtml : ''}</div>
+        <div style="display:flex;gap:6px;">
+          ${r.report_json ? `<button onclick="openReportViewer(_adminReportsCache['${r.id}'])" style="font-size:11px;font-weight:700;padding:6px 11px;border-radius:8px;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);cursor:pointer;">👁️ Peržiūrėti</button>` : ''}
+          ${canReview ? `<button onclick="approveReport('${r.id}')" style="font-size:11px;font-weight:800;padding:6px 13px;border-radius:8px;background:linear-gradient(90deg,#16A34A,#22C55E);color:#fff;border:none;cursor:pointer;">✅ Patvirtinti tėvui</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.warn('loadAdminReports', e);
+    list.innerHTML = `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nepavyko užkrauti (${e?.message || 'klaida'})</div>`;
+  }
+}
+
+async function approveReport(id) {
+  if (!confirm('Patvirtinti šią ataskaitą? Tėvas galės ją matyti.')) return;
+  try {
+    const { error } = await sb.from('reports').update({ status: 'done', reviewed_at: new Date().toISOString(), reviewed_by: currentProfile?.id || null }).eq('id', id);
+    if (error) throw error;
+    showToast('✅ Patvirtinta — tėvas gali matyti', 'success', 3000);
+    loadAdminReports();
+  } catch (e) { showToast('Nepavyko patvirtinti: ' + (e?.message || ''), 'error'); }
 }
 
 async function loadAdminClubs() {
