@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v78</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v79</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -917,7 +917,7 @@ select.inp option{background:#222;}
         <div style="font-size:13px;font-weight:900;margin-bottom:4px;" id="exo-form-name">Pratimas</div>
         <div style="font-size:11px;color:var(--mut);" id="exo-form-info">–</div>
       </div>
-      <div style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-around;align-items:center;">
+      <div id="exo-form-numrow" style="background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-around;align-items:center;">
         <div style="text-align:center;">
           <div style="font-size:10px;color:var(--mut);">DABARTINIS PR</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;" id="exo-form-pr">0</div>
@@ -925,9 +925,10 @@ select.inp option{background:#222;}
         <div style="color:var(--mut);font-size:24px;">→</div>
         <div style="text-align:center;">
           <div style="font-size:10px;color:var(--mut);">NAUJAS REKORDAS</div>
-          <input type="number" class="inp" id="exo-form-new" min="1" step="1" style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:24px;width:90px;margin:0;padding:6px;" oninput="recalcExpGain()">
+          <input type="number" class="inp" id="exo-form-new" min="1" step="any" style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:24px;width:90px;margin:0;padding:6px;" oninput="recalcExpGain()">
         </div>
       </div>
+      <div id="exo-form-levels" style="display:none;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;"></div>
       <div style="background:linear-gradient(135deg,var(--br),var(--br2));border-radius:12px;padding:14px;text-align:center;color:white;margin-bottom:14px;">
         <div style="font-size:11px;opacity:.85;letter-spacing:1px;">UŽDIRBSI</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;" id="exo-form-exp">+0 EXP</div>
@@ -947,6 +948,31 @@ select.inp option{background:#222;}
       <div class="mt" style="margin:0;">💡 KAIP VEIKIA KARJERA</div>
       <button class="bb" onclick="closeKarjeraInfo()">✕</button>
     </div>
+    <div id="kinfo-kid" style="display:none;">
+      <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:11px;color:#c9c9d4;line-height:1.6;">
+        <b style="color:#fff;">Geriausi kovotojai — universaliausi.</b> Jėga be ištvermės pavargsta, greitis be technikos nepataiko,
+        talentas be drausmės užgęsta. Tavo tikslas — <b style="color:#fff;">visos 7 kryptys</b>: vienas pilnas kovotojas, ne viena savybė.
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
+        <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;">🏅 Nesikrauk dėl lygių</div>
+        Lygiai matuoja <b style="color:#e8d9c5;">TAVO kelią</b>, ne lenktynes su kitais. Jei dabar 🥉 ar 🥈 — viskas gerai:
+        <b style="color:#e8d9c5;">kiekvienas čempionas ten pradėjo</b>. Lygiai auga kartu su tavimi — su amžiumi, stažu ir darbu.
+        🏆 Completed — ilgametis elito tikslas: nepasiekti jo šiandien yra normalu, siekti — privaloma.
+      </div>
+      <div style="background:rgba(255,77,0,.08);border:1px solid rgba(255,77,0,.35);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
+        <div style="font-size:11px;color:#FF4D00;font-weight:800;margin-bottom:4px;">🥋 OSU dvasia — kai matuojiesi, atiduok VISKĄ</div>
+        Osu reiškia <b style="color:#e8d9c5;">ištverti ir nepasiduoti</b>. Testo dieną sudirbk maksimaliai: dar vienas kartojimas,
+        dar viena plankos sekundė, dar vienas spyris — <b style="color:#e8d9c5;">iki paskutinio lašo</b>. Ir fiksuok sąžiningai:
+        suapvalinęs į viršų apgausi tik save.
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
+        <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;">📈 Kaip auga EXP</div>
+        Kiekvienas pratimas duoda iki <b style="color:#e8d9c5;">100 EXP</b>: 🥉 lygis ≈ 25 · 🥈 50 · 🥇 75 · 🏆 100.
+        Kategorijoje surink <b style="color:#e8d9c5;">100 → 🥉, 300 → 🥈, 500 → 🥇, 600 → 🏆</b>.
+        Pateik rezultatą, treneris patvirtins — ir žiūrėk, kaip auga tavo kovotojas!
+      </div>
+    </div>
+    <div id="kinfo-parent">
     <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:11px;color:#c9c9d4;line-height:1.6;">
       <b style="color:#fff;">Geriausi kovotojai — universaliausi.</b> Čempionu netampama dėl vienos savybės: jėga be ištvermės pavargsta,
       greitis be technikos nepataiko, talentas be drausmės užgęsta. Karjeros tikslas — <b style="color:#fff;">viso kūno ir charakterio
@@ -972,6 +998,7 @@ select.inp option{background:#222;}
       Kiekvienas rezultatas tampa <b style="color:#e8d9c5;">asmeninės statistikos</b> dalimi: AI ataskaitos palygina su bendraamžiais,
       parodo stipriąsias puses ir tiksliai pasako, ką treniruoti. O užsisakius <b style="color:#e8d9c5;">asmeninį treniruočių planą</b>,
       šie normatyvai virsta konkrečiais savaitės tikslais — aiškus kelias ir progresas skaičiais.
+    </div>
     </div>
   </div>
 </div>
@@ -1306,7 +1333,7 @@ select.inp option{background:#222;}
     
     <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 6px;">
       <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;">📂 7 KATEGORIJOS · SPAUSK PRATIMAMS</div>
-      <div onclick="openKarjeraInfo()" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid rgba(255,140,0,.5);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;flex:none;">💡</div>
+      <div onclick="openKarjeraInfo('kid')" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid rgba(255,140,0,.5);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;flex:none;">💡</div>
     </div>
     
     <!-- 7 KATEGORIJŲ GRID 2x4 -->
@@ -2144,7 +2171,7 @@ select.inp option{background:#222;}
 
     <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 6px;">
       <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;">📂 7 KATEGORIJOS · SPAUSK PERŽIŪRAI</div>
-      <div onclick="openKarjeraInfo()" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid rgba(255,140,0,.5);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;flex:none;">💡</div>
+      <div onclick="openKarjeraInfo('parent')" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid rgba(255,140,0,.5);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;flex:none;">💡</div>
     </div>
     <div id="tk-categories-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 8px 12px;">
       <div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Kraunama...</div>
@@ -9584,6 +9611,9 @@ async function loadCategories() {
     `).join('');
   }
   
+  // 🏅 Tier-up patikra kaskart atidarius Karjerą (idempotentiška — baseline localStorage)
+  if (currentKid?.id) checkForNewAchievements().catch(e => console.warn('checkForNewAchievements:', e));
+
   // Next tier text
   const nextTierEl = document.getElementById('v-kar-next-tier');
   if (nextTierEl) {
@@ -11075,7 +11105,14 @@ const CAREER_ICONS = {
 'Osu dvasia': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><line x1='11' y1='18' x2='11' y2='27.5'/><line x1='11' y1='18' x2='20' y2='12'/><circle cx='22.2' cy='11' r='2.5'/><line x1='15' y1='15' x2='17' y2='20'/>"+_kb(12.2,16.6,14.4,15.2))
 };
 
-function openKarjeraInfo() { document.getElementById('kinfo').classList.add('open'); }
+function openKarjeraInfo(mode) {
+  const kid = mode === 'kid';
+  const kEl = document.getElementById('kinfo-kid');
+  const pEl = document.getElementById('kinfo-parent');
+  if (kEl) kEl.style.display = kid ? 'block' : 'none';
+  if (pEl) pEl.style.display = kid ? 'none' : 'block';
+  document.getElementById('kinfo').classList.add('open');
+}
 function closeKarjeraInfo() { document.getElementById('kinfo').classList.remove('open'); }
 
 const TIER_NAMES = {
@@ -12050,24 +12087,33 @@ function showStreakBonusPopup(bonus, submissionInfo, onClose) {
 }
 
 async function checkForNewAchievements() {
+  const kidId = currentKid?.id || currentUser?.id;
+  if (!kidId) return;
   const { data: cats } = await sb.from('career_categories')
     .select('id, name').limit(7);
   if (!cats?.length) return;
 
   const { data: records } = await sb.from('kid_records')
     .select('category_id, category_exp')
-    .eq('kid_id', currentKid?.id || currentUser.id);
+    .eq('kid_id', kidId);
 
   const expByCategory = {};
   (records || []).forEach(r => {
     expByCategory[r.category_id] = (expByCategory[r.category_id] || 0) + (r.category_exp || 0);
   });
 
+  // 🏅 Bazinė būsena localStorage — popup veikia ir po app perkrovimo/atsijungimo
+  const lsKey = `spobu_cat_tiers_${kidId}`;
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(lsKey) || 'null'); } catch (e) { stored = null; }
+
+  const tiersNow = {};
   for (const cat of cats) {
     const exp = expByCategory[cat.id] || 0;
     const newTier = getTierFromExp(exp);
-    const oldTier = lastKnownTiers[cat.id];
-    
+    tiersNow[cat.id] = newTier;
+    const oldTier = (stored && stored[cat.id] !== undefined) ? stored[cat.id] : lastKnownTiers[cat.id];
+
     // Jei tier'as pakilo (ne pirmas užkrovimas)
     if (oldTier !== undefined && newTier !== oldTier && newTier !== 'pradinis') {
       const tierOrder = ['pradinis', 'bronze', 'silver', 'gold', 'completed'];
@@ -12077,6 +12123,7 @@ async function checkForNewAchievements() {
     }
     lastKnownTiers[cat.id] = newTier;
   }
+  try { localStorage.setItem(lsKey, JSON.stringify(tiersNow)); } catch (e) {}
 }
 
 function showAchievement(catName, tier) {
@@ -21457,18 +21504,27 @@ let exoReadOnly = false;
 let exoSummaryHtml = '';
 const EXO_SRC = { sci:['#7fd4a0','🔬 FITNESSGRAM'], elite:['#ffd24a','⭐ Eurofit P95'], est:['#9ab0ff','🧠 Įvertinimas'], kar:['#ff9d6b','🥋 Karatė'], spobu:['#ff9d6b','🥋 SPOBU'], fiz:['#9ab0ff','🧠 Fizika'], eur:['#9ab0ff','🧠 Eurofit testas'] };
 
+// 🧮 Karjeros EXP v2: tier-inkarinė skalė — 🥉=25 · 🥈=50 · 🥇=75 · 🏆=100, tarp inkarų linijinė
+// interpoliacija, žemiau bronze proporcingai 0–24. Veikia abiem kryptim (lower_is_better),
+// laikams sekundėmis ir ordinaliems lygiams (1–4). val<=0 = nebandyta.
+function careerExpPct(ex, val) {
+  const t = ex.target;
+  if (!t || val === null || val === undefined || isNaN(val) || val <= 0) return 0;
+  const lower = ex.lower_is_better;
+  const b = parseFloat(t.bronze), s = parseFloat(t.silver), g = parseFloat(t.gold), c = parseFloat(t.completed);
+  const hit = x => lower ? val <= x : val >= x;
+  const seg = (a1, a2, base) => base + Math.round(25 * Math.abs(val - a1) / (Math.abs(a2 - a1) || 1));
+  if (hit(c)) return 100;
+  if (hit(g)) return Math.min(99, seg(g, c, 75));
+  if (hit(s)) return seg(s, g, 50);
+  if (hit(b)) return seg(b, s, 25);
+  return Math.max(0, Math.min(24, Math.round(lower ? (b / val) * 25 : (val / b) * 25)));
+}
+
 function exoExpOf(ex) {
-  const completedTarget = parseFloat(ex.target.completed);
-  let pct, completed;
-  if (ex.lower_is_better) {
-    if (!ex.current_pr) { pct = 0; completed = false; }
-    else if (ex.current_pr <= completedTarget) { pct = 100; completed = true; }
-    else { pct = Math.round((completedTarget / ex.current_pr) * 100); completed = false; }
-  } else {
-    pct = Math.min(100, Math.round((ex.current_pr / completedTarget) * 100));
-    completed = ex.current_pr >= completedTarget;
-  }
-  return { pct, exp: pct, completed };
+  if (!ex.target) return { pct: 0, exp: 0, completed: false };
+  const pct = ex.current_pr ? careerExpPct(ex, ex.current_pr) : 0;
+  return { pct, exp: pct, completed: pct >= 100 };
 }
 
 function exoReached(ex, t) {
@@ -21555,15 +21611,44 @@ function openSubmissionForm(exerciseId) {
   document.getElementById('exo-form-comment').value = '';
   document.getElementById('exo-form-exp').textContent = '+0 EXP';
   
-  // Naujo rezultato min/max ribos
+  // Naujo rezultato įvedimas: ordinalams (lygis 1–4) — mygtukai, kitiems — skaičius
   const newInput = document.getElementById('exo-form-new');
-  if (lower) {
-    newInput.removeAttribute('min');
+  const numRow = document.getElementById('exo-form-numrow');
+  const levelsEl = document.getElementById('exo-form-levels');
+  const isOrdinal = (ex.unit || '').indexOf('lygis') === 0;
+  if (levelsEl) levelsEl.style.display = isOrdinal ? 'block' : 'none';
+  if (numRow) numRow.style.display = isOrdinal ? 'none' : 'flex';
+
+  if (isOrdinal && levelsEl) {
+    const names = ['Juosmuo', 'Krūtinė', 'Galva', 'Virš galvos'];
+    const cur = ex.current_pr || 0;
+    levelsEl.innerHTML =
+      `<div style="font-size:10px;color:var(--mut);margin-bottom:8px;">DABARTINIS: <b style="color:#FFD700;">${cur ? cur + ' · ' + (names[cur - 1] || '') : 'dar nebandyta'}</b> · pasirink pasiektą lygį:</div>` +
+      `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;">` +
+      names.map((n, i) => `<div id="exo-lvl-${i + 1}" onclick="selectExoLevel(${i + 1})" style="padding:10px 6px;border-radius:11px;border:1px solid ${ (i + 1) <= cur ? 'var(--bdr)' : 'var(--bdr)'};background:rgba(255,255,255,.03);text-align:center;cursor:pointer;font-size:12px;font-weight:800;${(i + 1) <= cur ? 'opacity:.4;' : ''}">${['🥉','🥈','🥇','🏆'][i]} ${i + 1} · ${n}</div>`).join('') +
+      `</div>`;
+  } else if (lower) {
+    newInput.min = 1;
     newInput.removeAttribute('max');
   } else {
     newInput.min = (ex.current_pr || 0) + 1;
     newInput.removeAttribute('max');
   }
+}
+
+// Ordinalo lygio pasirinkimas (pvz. mawashi aukštis 1–4)
+function selectExoLevel(n) {
+  if (!currentExercise) return;
+  const cur = currentExercise.current_pr || 0;
+  if (n <= cur) { showToast('Šis lygis jau pasiektas 💪', 'error'); return; }
+  document.getElementById('exo-form-new').value = n;
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('exo-lvl-' + i);
+    if (!el) continue;
+    el.style.borderColor = (i === n) ? 'var(--br)' : 'var(--bdr)';
+    el.style.background = (i === n) ? 'rgba(255,77,0,.15)' : 'rgba(255,255,255,.03)';
+  }
+  recalcExpGain();
 }
 
 function backToExerciseList() {
@@ -21584,32 +21669,14 @@ function recalcExpGain() {
     document.getElementById('exo-form-exp').textContent = '+0 EXP';
     return;
   }
-  
-  // Skaičiuojam EXP pagal procentą nuo target
-  let newExp;
-  if (lower) {
-    if (newVal <= completed) {
-      newExp = 100;
-    } else {
-      newExp = Math.round((completed / newVal) * 100);
-    }
-  } else {
-    newExp = Math.min(100, Math.round((newVal / completed) * 100));
-  }
-  
-  // Skaičiuojam senąjį EXP
-  let oldExp = 0;
-  if (oldPr > 0) {
-    if (lower) {
-      oldExp = oldPr <= completed ? 100 : Math.round((completed / oldPr) * 100);
-    } else {
-      oldExp = Math.min(100, Math.round((oldPr / completed) * 100));
-    }
-  }
-  
+
+  // 🧮 Tier-inkarinė EXP skalė (ta pati kaip sąraše ir siuntime)
+  const newExp = careerExpPct(currentExercise, newVal);
+  const oldExp = oldPr > 0 ? careerExpPct(currentExercise, oldPr) : 0;
+
   // Delta
   const delta = newExp - oldExp;
-  
+
   // Tikrinam ar tai PR (geresnis rezultatas)
   let isPR = false;
   if (lower) {
@@ -21617,19 +21684,20 @@ function recalcExpGain() {
   } else {
     isPR = newVal > oldPr;
   }
-  
+
   if (!isPR) {
     document.getElementById('exo-form-exp').textContent = '+0 EXP (ne PR)';
     document.getElementById('exo-form-exp').style.color = 'var(--mut)';
     return;
   }
-  
-  // Medalio info
+
+  // Medalio info — pagal pasiektą tier reikšmę (veikia abiem kryptim)
+  const rch = x => lower ? newVal <= parseFloat(x) : newVal >= parseFloat(x);
   let medal = '';
-  if (newExp >= 100) medal = ' 🏆 LEGEND!';
-  else if (newExp >= parseFloat(t.gold) / completed * 100) medal = ' 🥇 Gold!';
-  else if (newExp >= parseFloat(t.silver) / completed * 100) medal = ' 🥈 Silver!';
-  else if (newExp >= parseFloat(t.bronze) / completed * 100) medal = ' 🥉 Bronze!';
+  if (rch(t.completed)) medal = ' 🏆 LEGEND!';
+  else if (rch(t.gold)) medal = ' 🥇 Gold!';
+  else if (rch(t.silver)) medal = ' 🥈 Silver!';
+  else if (rch(t.bronze)) medal = ' 🥉 Bronze!';
   
   document.getElementById('exo-form-exp').textContent = `+${delta} EXP${medal}`;
   document.getElementById('exo-form-exp').style.color = delta > 0 ? 'var(--grn)' : 'var(--mut)';
@@ -21755,25 +21823,10 @@ async function selectTrainerAndSubmit(trainerId) {
 async function sendSubmissionToTrainer(trainerId, newVal, oldPr, comment, lower) {
   const kidId = currentKid?.id || currentUser.id;
   const t = currentExercise.target;
-  const completed = parseFloat(t.completed);
-  
-  // Skaičiuojam EXP procente nuo target
-  let newExp;
-  if (lower) {
-    newExp = newVal <= completed ? 100 : Math.round((completed / newVal) * 100);
-  } else {
-    newExp = Math.min(100, Math.round((newVal / completed) * 100));
-  }
-  
-  // Senasis EXP
-  let oldExp = 0;
-  if (oldPr > 0) {
-    if (lower) {
-      oldExp = oldPr <= completed ? 100 : Math.round((completed / oldPr) * 100);
-    } else {
-      oldExp = Math.min(100, Math.round((oldPr / completed) * 100));
-    }
-  }
+
+  // 🧮 Tier-inkarinė EXP skalė (ta pati kaip recalcExpGain ir sąraše)
+  const newExp = careerExpPct(currentExercise, newVal);
+  const oldExp = oldPr > 0 ? careerExpPct(currentExercise, oldPr) : 0;
   
   // expGain - karjeros pratimo EXP, GARANTUOTAI 0-100 ribose (apsauga nuo bug'ų)
   let expGain = Math.max(0, newExp - oldExp);
