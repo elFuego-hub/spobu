@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v77</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v78</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -940,6 +940,42 @@ select.inp option{background:#222;}
   </div>
 </div>
 
+<!-- KARJEROS INFO MODAL (💡) -->
+<div class="mo" id="kinfo">
+  <div class="mbox" style="max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="mt" style="margin:0;">💡 KAIP VEIKIA KARJERA</div>
+      <button class="bb" onclick="closeKarjeraInfo()">✕</button>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:11px;color:#c9c9d4;line-height:1.6;">
+      <b style="color:#fff;">Geriausi kovotojai — universaliausi.</b> Čempionu netampama dėl vienos savybės: jėga be ištvermės pavargsta,
+      greitis be technikos nepataiko, talentas be drausmės užgęsta. Karjeros tikslas — <b style="color:#fff;">viso kūno ir charakterio
+      tobulumas</b>: 7 kryptys, vienas kovotojas.
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
+      <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;">🏅 Ką reiškia lygiai</div>
+      Normatyvai bendri visai amžiaus grupei, todėl lygį natūraliai lemia <b style="color:#e8d9c5;">amžius ir treniruočių stažas</b> — tai ne trūkumas, o kelias:
+      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;">🥉🥈</span><span><b style="color:#e8d9c5;">Bronze ir Silver</b> — jei vaikui 8–10 m. arba jis <b style="color:#e8d9c5;">neseniai pradėjo lankyti</b>, ši zona reiškia, kad jis puikiai juda pagal savo amžių ir patirtį.</span></div>
+      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;">🥇</span><span><b style="color:#e8d9c5;">Gold</b> ateina su branda ir stažu — augančia jėga, ūgiu ir treniruočių metais.</span></div>
+      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;">🏆</span><span><b style="color:#e8d9c5;">Completed</b> — elito tikslas, kurio siekiama metais. Nepasiekti jo šiandien — normalu. Siekti — privaloma.</span></div>
+      <div style="margin-top:6px;color:#d9d9e2;"><b>Pasiekimai ateina su laiku</b> — svarbiausia ne greitis, o kryptis ir nuoseklumas.</div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
+      <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;">🔬 Iš kur normatyvai</div>
+      <div style="display:flex;gap:7px;margin-top:4px;"><span style="flex:none;">🔬</span><span><b style="color:#e8d9c5;">Mokslas</b> — apatiniai lygiai pagrįsti tarptautinėmis vaikų fizinio pajėgumo normomis (FITNESSGRAM — Cooper instituto standartas JAV mokyklose).</span></div>
+      <div style="display:flex;gap:7px;margin-top:4px;"><span style="flex:none;">⭐</span><span><b style="color:#e8d9c5;">Elitas</b> — viršutiniai lygiai kalibruoti pagal Europos vaikų tyrimų top 5% (Eurofit P95).</span></div>
+      <div style="display:flex;gap:7px;margin-top:4px;"><span style="flex:none;">🥋</span><span><b style="color:#e8d9c5;">Karatė</b> — kur pasaulinių normų nėra (technika, kumite), tikslus nustato Kyokushin ekspertizė.</span></div>
+      <div style="display:flex;gap:7px;margin-top:4px;"><span style="flex:none;">🧠</span><span><b style="color:#e8d9c5;">Įvertinimas</b> — sporto praktika, nuolat tikslinama pagal realius SPOBU vaikų duomenis.</span></div>
+    </div>
+    <div style="background:rgba(255,140,0,.07);border:1px solid rgba(255,140,0,.3);border-radius:12px;padding:10px 12px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
+      <div style="font-size:11px;color:#FF8C00;font-weight:800;margin-bottom:4px;">📊 Kam tai naudojama</div>
+      Kiekvienas rezultatas tampa <b style="color:#e8d9c5;">asmeninės statistikos</b> dalimi: AI ataskaitos palygina su bendraamžiais,
+      parodo stipriąsias puses ir tiksliai pasako, ką treniruoti. O užsisakius <b style="color:#e8d9c5;">asmeninį treniruočių planą</b>,
+      šie normatyvai virsta konkrečiais savaitės tikslais — aiškus kelias ir progresas skaičiais.
+    </div>
+  </div>
+</div>
+
 <!-- REJECT MODAL -->
 <div class="mo" id="rmo">
   <div class="mbox">
@@ -1268,7 +1304,10 @@ select.inp option{background:#222;}
       </div>
     </div>
     
-    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">📂 7 KATEGORIJOS · SPAUSK PRATIMAMS</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 6px;">
+      <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;">📂 7 KATEGORIJOS · SPAUSK PRATIMAMS</div>
+      <div onclick="openKarjeraInfo()" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid rgba(255,140,0,.5);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;flex:none;">💡</div>
+    </div>
     
     <!-- 7 KATEGORIJŲ GRID 2x4 -->
     <div id="v-categories-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 8px 12px;">
@@ -2103,7 +2142,10 @@ select.inp option{background:#222;}
       <div id="tk-kar-medals" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;"></div>
     </div>
 
-    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">📂 7 KATEGORIJOS · SPAUSK PERŽIŪRAI</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 6px;">
+      <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;">📂 7 KATEGORIJOS · SPAUSK PERŽIŪRAI</div>
+      <div onclick="openKarjeraInfo()" style="width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid rgba(255,140,0,.5);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;flex:none;">💡</div>
+    </div>
     <div id="tk-categories-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 8px 12px;">
       <div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Kraunama...</div>
     </div>
@@ -4991,44 +5033,24 @@ async function showParentExercises(categoryId, categoryName) {
     const records = recordsR.data;
 
     let doneCount = 0, attemptedCount = 0;
-    const rows = exercises.map(ex => {
+    currentExerciseList = exercises.map(ex => {
       const exTargets = (targets || []).filter(t => t.exercise_id === ex.id);
       const target = exTargets.find(t => t.club_id === clubId) || exTargets.find(t => t.club_id === null);
       const rec = (records || []).find(r => r.exercise_id === ex.id);
       const current_pr = rec?.current_pr || 0;
       if (current_pr > 0) attemptedCount++;
-      if (!target) {
-        return `<div class="ri" style="opacity:.4;"><div style="flex:1;"><span style="font-size:13px;font-weight:800;">${ex.name}</span><div style="font-size:10px;color:var(--mut);margin-top:3px;">⚠️ Ribos dar nenustatytos</div></div></div>`;
+      if (target) {
+        const ct = parseFloat(target.completed);
+        const done = ex.lower_is_better ? (current_pr > 0 && current_pr <= ct) : (current_pr > 0 && current_pr >= ct);
+        if (done) doneCount++;
       }
-      const completedTarget = parseFloat(target.completed);
-      const lower = ex.lower_is_better;
-      let pct, completed;
-      if (lower) {
-        if (current_pr === 0) { pct = 0; completed = false; }
-        else if (current_pr <= completedTarget) { pct = 100; completed = true; }
-        else { pct = Math.round((completedTarget / current_pr) * 100); completed = false; }
-      } else {
-        pct = completedTarget > 0 ? Math.min(100, Math.round((current_pr / completedTarget) * 100)) : 0;
-        completed = current_pr > 0 && current_pr >= completedTarget;
-      }
-      if (completed) doneCount++;
-      return `<div class="ri" style="${completed ? 'opacity:.7;' : ''}">
-        <div style="flex:1;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-            <span style="font-size:13px;font-weight:800;">${ex.name}</span>
-            <span style="font-size:11px;color:var(--mut);">${current_pr}/${completedTarget} ${ex.unit}</span>
-          </div>
-          <div class="pb2"><div class="pf" style="width:${pct}%;background:${completed ? 'var(--gld)' : 'var(--br)'};"></div></div>
-          <div style="font-size:10px;color:var(--mut);margin-top:3px;">
-            🥉 ${target.bronze} · 🥈 ${target.silver} · 🥇 ${target.gold} · 🏆 ${completedTarget} ${ex.unit}
-          </div>
-        </div>
-        <div style="font-size:18px;">${completed ? '🏆' : (current_pr > 0 ? '✅' : '·')}</div>
-      </div>`;
-    }).join('');
+      return { ...ex, target: target || null, current_pr, category_exp: 0, ageGroup };
+    });
 
-    const summary = `<div style="background:rgba(59,130,246,.08);border:.5px solid rgba(59,130,246,.25);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--mut);text-align:center;">👁️ Peržiūra — vaikas bandė <strong style="color:white;">${attemptedCount}</strong>/<strong>${exercises.length}</strong> pratimų${doneCount ? ` · 🏆 <strong style="color:var(--gld);">${doneCount}</strong> užbaigti` : ''}</div>`;
-    listEl.innerHTML = summary + rows;
+    exoReadOnly = true;
+    exoOpenSet = {};
+    exoSummaryHtml = `<div style="background:rgba(59,130,246,.08);border:.5px solid rgba(59,130,246,.25);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--mut);text-align:center;">👁️ Peržiūra — vaikas bandė <strong style="color:white;">${attemptedCount}</strong>/<strong>${exercises.length}</strong> pratimų${doneCount ? ` · 🏆 <strong style="color:var(--gld);">${doneCount}</strong> užbaigti` : ''}</div>`;
+    renderExoList();
   } catch (e) {
     console.warn('showParentExercises', e);
     listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--br);">Klaida kraunant pratimus</div>';
@@ -10986,15 +11008,75 @@ function openBioEdit() {
 
 const CATEGORY_ICONS = {
   'Jėga': '💪',
+  'Jėga ir korpusas': '💪',
   'Ištvermė': '🏃',
   'Technika': '🥋',
   'Lankstumas': '🤸',
   'Greitis': '⚡',
+  'Greitis ir vikrumas': '⚡',
   'Karate atributika': '🎓',
   'Atributika': '🎓',
   'Karate Atributika': '🎓',
   'Drausmė': '🧘'
 };
+
+// 🥋 Karjeros pratimų piktogramos (stick-karateka su juodu diržu). Raktas = pratimo pavadinimas DB.
+function _ki(b){return "<svg width='30' height='30' viewBox='0 0 32 32' fill='none' stroke='#c9c9d4' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'>"+b+"</svg>";}
+function _kb(x1,y1,x2,y2){return "<line x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"' stroke='#8a8a96' stroke-width='4.2'/><line x1='"+x1+"' y1='"+y1+"' x2='"+x2+"' y2='"+y2+"' stroke='#000' stroke-width='2.4'/>";}
+const CAREER_ICONS = {
+'Atsispaudimai ant kumščių': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='6' cy='17' r='2.6'/><line x1='9' y1='18.5' x2='25' y2='22'/><line x1='12' y1='19' x2='12' y2='26.5'/><circle cx='12' cy='27.3' r='1.1'/><line x1='25' y1='22' x2='29' y2='27'/>"+_kb(17,19.5,17.8,22.3)),
+'Kojų kėlimas kybant': _ki("<line x1='6' y1='4' x2='26' y2='4'/><line x1='12' y1='4' x2='15' y2='9'/><line x1='20' y1='4' x2='17' y2='9'/><circle cx='16' cy='7' r='2.4'/><line x1='16' y1='9.5' x2='16' y2='19'/><line x1='16' y1='19' x2='26' y2='17'/>"+_kb(14.6,15.5,17.4,15.5)),
+'Pritūpimai (2 min)': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='14' cy='9' r='2.6'/><line x1='14.5' y1='11.5' x2='15' y2='18'/><line x1='15' y1='13' x2='23' y2='12'/><line x1='15' y1='18' x2='21' y2='20'/><line x1='21' y1='20' x2='21' y2='27.5'/><line x1='21' y1='27.5' x2='24' y2='27.5'/>"+_kb(13.8,16.4,16.6,17)),
+'Pilvo preso (2 min)': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='8' cy='18' r='2.6'/><line x1='10' y1='20' x2='16' y2='26'/><line x1='16' y1='26' x2='22' y2='21'/><line x1='22' y1='21' x2='25' y2='27.5'/><line x1='11' y1='21' x2='17' y2='22'/>"+_kb(12.6,22,13.8,24.2)),
+'Prisitraukimai': _ki("<line x1='6' y1='4' x2='26' y2='4'/><circle cx='16' cy='5.5' r='2.4'/><line x1='11' y1='4' x2='13.5' y2='8.5'/><line x1='21' y1='4' x2='18.5' y2='8.5'/><line x1='16' y1='8' x2='16' y2='17'/><line x1='16' y1='17' x2='14' y2='24'/><line x1='16' y1='17' x2='18.5' y2='23.5'/>"+_kb(14.6,14,17.4,14)),
+'Planka': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='6' cy='18' r='2.6'/><line x1='9' y1='19.5' x2='25' y2='23'/><line x1='11' y1='20' x2='11' y2='27'/><line x1='11' y1='27' x2='16' y2='27'/><line x1='25' y1='23' x2='29' y2='27'/>"+_kb(17,20.6,17.8,23.4)),
+'Šuolis į tolį iš vietos': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='11' cy='8' r='2.6'/><line x1='13' y1='10' x2='17' y2='15'/><line x1='13' y1='11' x2='21' y2='7'/><line x1='17' y1='15' x2='23' y2='17'/><line x1='23' y1='17' x2='27' y2='13'/><path d='M6 26 Q14 20 24 24' stroke-dasharray='2 2' opacity='.5'/>"+_kb(14.6,12.4,16.2,14.6)),
+'Bėgimas 1 km': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='13' cy='7.5' r='2.6'/><line x1='14' y1='10' x2='17' y2='17'/><line x1='14.5' y1='11.5' x2='21' y2='13'/><line x1='14.5' y1='12' x2='9' y2='14.5'/><line x1='17' y1='17' x2='23' y2='20'/><line x1='23' y1='20' x2='25' y2='27'/><line x1='17' y1='17' x2='12' y2='21'/><line x1='12' y1='21' x2='9' y2='26.5'/>"+_kb(14.9,13.5,16.2,16.2)),
+'Laimėtos kovos po pratęsimo': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='8' cy='9' r='2.4'/><line x1='8' y1='11.4' x2='8' y2='19'/><line x1='8' y1='13' x2='15' y2='12'/><line x1='8' y1='19' x2='5' y2='27'/><line x1='8' y1='19' x2='11' y2='27'/><circle cx='24' cy='9' r='2.4'/><line x1='24' y1='11.4' x2='24' y2='19'/><line x1='24' y1='13' x2='17' y2='14'/><line x1='24' y1='19' x2='21' y2='27'/><line x1='24' y1='19' x2='27' y2='27'/>"+_kb(6.8,16,9.2,16)+_kb(22.8,16,25.2,16)),
+'Ilgas bėgimas be sustojimo': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><line x1='3' y1='12' x2='8' y2='12' stroke-dasharray='2 2' opacity='.5'/><circle cx='14' cy='7.5' r='2.6'/><line x1='15' y1='10' x2='18' y2='17'/><line x1='15.5' y1='11.5' x2='22' y2='13'/><line x1='15.5' y1='12' x2='10' y2='14.5'/><line x1='18' y1='17' x2='24' y2='20'/><line x1='24' y1='20' x2='26' y2='27'/><line x1='18' y1='17' x2='13' y2='21'/><line x1='13' y1='21' x2='10' y2='26.5'/>"+_kb(15.9,13.5,17.2,16.2)),
+'Dviratis vienu važiavimu': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='9' cy='23' r='4.2'/><circle cx='24' cy='23' r='4.2'/><line x1='9' y1='23' x2='14' y2='14'/><line x1='14' y1='14' x2='21' y2='14'/><line x1='21' y1='14' x2='24' y2='23'/><line x1='14' y1='14' x2='17' y2='23'/><circle cx='15' cy='7' r='2.2'/><line x1='15.5' y1='9' x2='14' y2='14'/><line x1='15.5' y1='10' x2='21' y2='13.5'/>"),
+'Žygis pėsčiomis': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='14' cy='7.5' r='2.6'/><line x1='14' y1='10' x2='14' y2='18'/><line x1='11' y1='11' x2='11' y2='16'/><line x1='11' y1='11' x2='14' y2='11'/><line x1='11' y1='16' x2='14' y2='16'/><line x1='14' y1='18' x2='10' y2='27'/><line x1='14' y1='18' x2='18' y2='22'/><line x1='18' y1='22' x2='19' y2='27.5'/><line x1='14' y1='12.5' x2='20' y2='14'/><line x1='21' y1='12' x2='23' y2='27.5'/>"+_kb(12.7,15,15.3,15)),
+'Burpees (2 min)': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='16' cy='8' r='2.6'/><line x1='16' y1='10.5' x2='16' y2='18'/><line x1='16' y1='12' x2='11' y2='6'/><line x1='16' y1='12' x2='21' y2='6'/><line x1='16' y1='18' x2='12' y2='26'/><line x1='16' y1='18' x2='20' y2='26'/>"+_kb(14.6,15,17.4,15)),
+'Smūgių serija ant maišo (2 min)': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><line x1='25' y1='3' x2='25' y2='6'/><rect x='21.5' y='6' width='7' height='14' rx='2.5'/><circle cx='9' cy='10' r='2.5'/><line x1='9' y1='12.5' x2='9' y2='19'/><line x1='9' y1='14' x2='21' y2='12.5'/><line x1='9' y1='19' x2='6' y2='27'/><line x1='9' y1='19' x2='12' y2='27'/>"+_kb(7.8,16,10.2,16)),
+'Spyrių tikslumas': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='26' cy='9' r='3.4'/><circle cx='26' cy='9' r='1' stroke='#FF4D00'/><circle cx='9' cy='10' r='2.5'/><line x1='9.5' y1='12.5' x2='11' y2='19'/><line x1='11' y1='19' x2='22.5' y2='10.5'/><line x1='11' y1='19' x2='10' y2='27.5'/><line x1='9.5' y1='14' x2='5.5' y2='16'/>"+_kb(9.5,16.2,12,16.8)),
+'Mawashi serija nenuleidžiant kojos': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='11' cy='8.5' r='2.6'/><line x1='11.5' y1='11' x2='13' y2='18'/><line x1='13' y1='18' x2='26' y2='15'/><line x1='13' y1='18' x2='12' y2='27.5'/><line x1='11.5' y1='12.5' x2='7' y2='15'/>"+_kb(11.6,14.8,14.2,15.6)),
+'Kombinacijų arsenalas': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='10' cy='9' r='2.6'/><line x1='10.5' y1='11.5' x2='11' y2='19'/><line x1='10.5' y1='13' x2='20' y2='11'/><line x1='10.5' y1='14.5' x2='19' y2='16'/><line x1='11' y1='19' x2='8' y2='27'/><line x1='11' y1='19' x2='14' y2='27'/><line x1='22' y1='10' x2='25' y2='9.5' opacity='.5'/><line x1='21' y1='16.5' x2='24' y2='17' opacity='.5'/>"+_kb(9.4,16,12,16)),
+'Įsisavintos katos': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='16' cy='7' r='2.6'/><line x1='16' y1='9.5' x2='16' y2='17'/><line x1='16' y1='11' x2='24' y2='13'/><line x1='16' y1='12' x2='10' y2='13.5'/><line x1='16' y1='17' x2='9' y2='27.5'/><line x1='16' y1='17' x2='22' y2='22'/><line x1='22' y1='22' x2='22' y2='27.5'/>"+_kb(14.6,14,17.4,14)),
+'Įsisavintos technikos': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='10' cy='9' r='2.6'/><line x1='10' y1='11.5' x2='10' y2='19'/><line x1='10' y1='13' x2='17' y2='11'/><line x1='10' y1='14' x2='5' y2='16'/><line x1='10' y1='19' x2='7' y2='27'/><line x1='10' y1='19' x2='13' y2='27'/><line x1='21' y1='9' x2='27' y2='9'/><line x1='21' y1='14' x2='27' y2='14'/><line x1='21' y1='19' x2='27' y2='19'/>"+_kb(8.7,16,11.3,16)),
+'Taškai spyriais varžybose': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='9' cy='10' r='2.5'/><line x1='9.5' y1='12.5' x2='11' y2='19'/><line x1='11' y1='19' x2='21.5' y2='12'/><line x1='11' y1='19' x2='10' y2='27.5'/><circle cx='26' cy='8' r='3'/><line x1='24.5' y1='5.5' x2='23' y2='3'/><line x1='27.5' y1='5.5' x2='29' y2='3'/>"+_kb(9.5,16.2,12,16.8)),
+'Sudėtingos technikos': _ki("<circle cx='12' cy='13' r='2.5'/><line x1='13' y1='15' x2='18' y2='18'/><line x1='18' y1='18' x2='27' y2='9'/><line x1='18' y1='18' x2='21' y2='23'/><line x1='13' y1='16' x2='8' y2='19'/><path d='M7 8 A10 10 0 0 1 20 4' stroke-dasharray='2 2' opacity='.5'/>"+_kb(14.8,16,17,17.4)),
+'Šoninis špagatas': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='16' cy='10' r='2.6'/><line x1='16' y1='12.5' x2='16' y2='20'/><line x1='10' y1='15' x2='22' y2='15'/><line x1='16' y1='20' x2='5' y2='27.5'/><line x1='16' y1='20' x2='27' y2='27.5'/>"+_kb(14.6,17.5,17.4,17.5)),
+'Išilginis špagatas': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='15' cy='10' r='2.6'/><line x1='15' y1='12.5' x2='15' y2='20'/><line x1='15' y1='14' x2='21' y2='11'/><line x1='15' y1='20' x2='5' y2='27.5'/><line x1='5' y1='27.5' x2='3.5' y2='25.5'/><line x1='15' y1='20' x2='26' y2='27.5'/><line x1='26' y1='27.5' x2='28' y2='25.5'/>"+_kb(13.6,17.5,16.4,17.5)),
+'Sėdimas pasilenkimas': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><line x1='8' y1='26' x2='25' y2='26'/><line x1='25' y1='21.5' x2='25' y2='26'/><line x1='8' y1='26' x2='14' y2='13'/><circle cx='15.5' cy='10.8' r='2.5'/><line x1='14.5' y1='15' x2='24' y2='22'/>"+_kb(10.6,20.6,13,22)),
+'Mawashi-geri aukštis': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='11' cy='9' r='2.5'/><line x1='11.5' y1='11.5' x2='13' y2='18'/><line x1='13' y1='18' x2='24' y2='5'/><line x1='13' y1='18' x2='12' y2='27.5'/><line x1='20' y1='5' x2='28' y2='5' stroke-dasharray='2 2' opacity='.6'/>"+_kb(11.7,14.8,14.3,15.4)),
+'Spyrio fiksavimas': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='10' cy='9.5' r='2.5'/><line x1='10.5' y1='12' x2='12' y2='18.5'/><line x1='12' y1='18.5' x2='23' y2='16'/><line x1='12' y1='18.5' x2='11' y2='27.5'/><circle cx='26.5' cy='7' r='3.2'/><line x1='26.5' y1='7' x2='26.5' y2='5'/><line x1='26.5' y1='7' x2='28' y2='7.6'/>"+_kb(10.7,15.2,13.3,15.8)),
+'Rankų suglaudimas už nugaros': _ki("<circle cx='16' cy='7' r='2.6'/><line x1='16' y1='9.5' x2='16' y2='21'/><line x1='16' y1='21' x2='12' y2='28'/><line x1='16' y1='21' x2='20' y2='28'/><line x1='14' y1='11' x2='20' y2='9'/><line x1='20' y1='9' x2='20' y2='13.5'/><line x1='17' y1='19' x2='20.5' y2='19.5'/><line x1='20.5' y1='19.5' x2='20.5' y2='16.5'/><line x1='20.4' y1='14' x2='20.4' y2='16' stroke='#FF4D00' stroke-width='1.6' stroke-dasharray='1.5 1.5'/>"+_kb(14.7,15,17.3,15)),
+'Tiltas (laikymas)': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><path d='M7 27 Q16 10 25 27'/><circle cx='6.2' cy='23.5' r='2.2'/>"+_kb(14.7,13.4,17.3,13.4)),
+'20 m sprintas': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><line x1='2.5' y1='10' x2='7' y2='10' opacity='.5'/><line x1='2' y1='14' x2='6' y2='14' opacity='.4'/><line x1='2.5' y1='18' x2='6.5' y2='18' opacity='.3'/><circle cx='15' cy='7.5' r='2.6'/><line x1='16' y1='10' x2='19' y2='17'/><line x1='16.5' y1='11.5' x2='23' y2='13'/><line x1='16.5' y1='12' x2='11' y2='14.5'/><line x1='19' y1='17' x2='25' y2='20'/><line x1='25' y1='20' x2='27' y2='27'/><line x1='19' y1='17' x2='14' y2='21'/><line x1='14' y1='21' x2='11' y2='26.5'/>"+_kb(16.9,13.5,18.2,16.2)),
+'10 gyaku-tsuki greitis': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='10' cy='9' r='2.6'/><line x1='10.5' y1='11.5' x2='11' y2='19'/><line x1='10.5' y1='13' x2='21' y2='11.5'/><line x1='11' y1='19' x2='8' y2='27'/><line x1='11' y1='19' x2='14' y2='27'/><line x1='23' y1='9' x2='27' y2='8' opacity='.5'/><line x1='23' y1='12' x2='27' y2='12' opacity='.5'/>"+_kb(9.4,16,12,16)),
+'Šaudyklė 10×5 m': _ki("<line x1='5' y1='7' x2='5' y2='27'/><line x1='27' y1='7' x2='27' y2='27'/><line x1='9' y1='12' x2='23' y2='12'/><path d='M20 9.5 L23 12 L20 14.5'/><line x1='23' y1='20' x2='9' y2='20'/><path d='M12 17.5 L9 20 L12 22.5'/>"),
+'Šokdynė — dvigubi sukimai (30 s)': _ki("<circle cx='16' cy='9' r='2.5'/><line x1='16' y1='11.5' x2='16' y2='18'/><line x1='16' y1='13' x2='11.5' y2='15.5'/><line x1='16' y1='13' x2='20.5' y2='15.5'/><line x1='16' y1='18' x2='13' y2='23'/><line x1='16' y1='18' x2='19' y2='23'/><path d='M11.5 15.5 Q16 30 20.5 15.5'/><path d='M11.5 15.5 Q16 -1 20.5 15.5' opacity='.4'/>"+_kb(14.7,15.6,17.3,15.6)),
+'Reakcija — liniuotės gaudymas': _ki("<line x1='19' y1='4' x2='19' y2='21'/><line x1='19' y1='7' x2='22' y2='7'/><line x1='19' y1='11' x2='22' y2='11'/><line x1='19' y1='15' x2='22' y2='15'/><line x1='19' y1='19' x2='22' y2='19'/><line x1='10' y1='5' x2='10' y2='12' stroke='#FF4D00'/><path d='M8.5 10 L10 12.8 L11.5 10' stroke='#FF4D00'/><path d='M13 24 Q16 21.5 19 24'/><path d='M13 24 L12 27'/><path d='M19 24 L20 27'/>"),
+'Pusiausvyra ant vienos kojos': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='16' cy='7.5' r='2.6'/><line x1='16' y1='10' x2='16' y2='18'/><line x1='16' y1='12' x2='9' y2='14'/><line x1='16' y1='12' x2='23' y2='14'/><line x1='16' y1='18' x2='16' y2='27.5'/><line x1='16' y1='18' x2='21' y2='21'/><line x1='21' y1='21' x2='20' y2='25'/>"+_kb(14.6,15,17.4,15)),
+'Šuoliukai šonu per liniją (30 s)': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><line x1='16' y1='19' x2='16' y2='27.5' opacity='.6'/><circle cx='10' cy='8' r='2.4'/><line x1='10' y1='10.4' x2='10' y2='16.5'/><line x1='10' y1='16.5' x2='8' y2='22'/><line x1='10' y1='16.5' x2='12.5' y2='21.5'/><line x1='10' y1='12' x2='6' y2='13.5'/><line x1='10' y1='12' x2='14' y2='13.5'/><path d='M19 8 L26 8'/><path d='M24 6 L26 8 L24 10'/><path d='M26 13 L19 13'/><path d='M21 11 L19 13 L21 15'/>"+_kb(8.8,14,11.2,14)),
+'Kumite raundai iš eilės': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='7.5' cy='9' r='2.4'/><line x1='8' y1='11.4' x2='9' y2='18'/><line x1='9' y1='18' x2='18' y2='13'/><line x1='9' y1='18' x2='8' y2='27'/><circle cx='24.5' cy='9' r='2.4'/><line x1='24' y1='11.4' x2='23.5' y2='19'/><line x1='24' y1='13' x2='19.5' y2='11.5'/><line x1='23.5' y1='19' x2='21' y2='27'/><line x1='23.5' y1='19' x2='27' y2='27'/>"+_kb(7.6,15,10.2,15)+_kb(22.7,15.6,25.3,15.6)),
+'Varžybos per metus': _ki("<line x1='3' y1='27.5' x2='29' y2='27.5' opacity='.4'/><path d='M4 27 L4 20 L12 20'/><path d='M12 27 L12 14 L20 14'/><path d='M20 27 L20 18 L28 18'/><circle cx='16' cy='6' r='2.2'/><line x1='16' y1='8.2' x2='16' y2='12'/><line x1='16' y1='9.5' x2='12.5' y2='7'/><line x1='16' y1='9.5' x2='19.5' y2='7'/>"),
+'Iškovoti medaliai': _ki("<line x1='12' y1='4' x2='16' y2='12'/><line x1='20' y1='4' x2='16' y2='12'/><circle cx='16' cy='17.5' r='5.5'/><path d='M16 14.8 L17 16.8 L19.2 17 L17.6 18.5 L18 20.7 L16 19.6 L14 20.7 L14.4 18.5 L12.8 17 L15 16.8 Z' stroke='#FF4D00' stroke-width='1.2'/>"),
+'Japonų terminai': _ki("<rect x='6' y='6' width='20' height='14' rx='3'/><path d='M11 20 L9 25 L15 20'/><text x='16' y='16.5' font-size='9' fill='#c9c9d4' stroke='none' text-anchor='middle' font-family='serif'>空</text>"),
+'Diržo lygis': _ki("<line x1='5' y1='14' x2='27' y2='14'/><line x1='5' y1='17.5' x2='27' y2='17.5'/><line x1='5' y1='14' x2='5' y2='17.5'/><line x1='27' y1='14' x2='27' y2='17.5'/><path d='M13 14 L19 17.5 M19 14 L13 17.5'/><line x1='14' y1='17.5' x2='11.5' y2='25' stroke='#FF4D00'/><line x1='18' y1='17.5' x2='20.5' y2='25' stroke='#FF4D00'/>"),
+'Tameshiwari — lentelių laužymas': _ki("<line x1='6' y1='19' x2='14' y2='21.5'/><line x1='18' y1='21.5' x2='26' y2='19'/><line x1='6' y1='19' x2='6' y2='21.5'/><line x1='26' y1='19' x2='26' y2='21.5'/><line x1='16' y1='4' x2='16' y2='14' stroke='#FF4D00'/><path d='M14 11.5 L16 15.5 L18 11.5' stroke='#FF4D00'/><line x1='10' y1='8' x2='12.5' y2='10' opacity='.5'/><line x1='22' y1='8' x2='19.5' y2='10' opacity='.5'/>"),
+'Apšilimų pravedimas': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='10' cy='7.5' r='2.5'/><line x1='10' y1='10' x2='10' y2='18'/><line x1='10' y1='11.5' x2='5.5' y2='8'/><line x1='10' y1='11.5' x2='14.5' y2='8'/><line x1='10' y1='18' x2='7.5' y2='27'/><line x1='10' y1='18' x2='12.5' y2='27'/><circle cx='22' cy='13' r='1.8'/><line x1='22' y1='14.8' x2='22' y2='20'/><line x1='22' y1='20' x2='20.5' y2='25'/><line x1='22' y1='20' x2='23.5' y2='25'/><circle cx='27.5' cy='13' r='1.8'/><line x1='27.5' y1='14.8' x2='27.5' y2='20'/><line x1='27.5' y1='20' x2='26' y2='25'/><line x1='27.5' y1='20' x2='29' y2='25'/>"+_kb(8.8,14.5,11.2,14.5)),
+'Lankomumas': _ki("<rect x='6' y='7' width='20' height='18' rx='2.5'/><line x1='6' y1='12' x2='26' y2='12'/><line x1='11' y1='4.5' x2='11' y2='9'/><line x1='21' y1='4.5' x2='21' y2='9'/><path d='M11.5 18.5 L15 21.5 L21 15.5' stroke='#FF4D00'/>"),
+'Treniruočių serija': _ki("<path d='M16 5 C19 9 23 12 23 18 A7 7 0 0 1 9 18 C9 13 13 10 16 5 Z' stroke='#FF4D00'/><path d='M16 14 C17.5 16 19 17 19 19.5 A3 3 0 0 1 13 19.5 C13 17.5 14.5 16 16 14 Z'/>"),
+'Savaitinių iššūkių serija': _ki("<circle cx='16' cy='16' r='10'/><path d='M11 16.5 L14.5 20 L21.5 12' stroke='#FF4D00'/>"),
+'Stovyklų dalyvavimas': _ki("<line x1='3' y1='27' x2='29' y2='27' opacity='.4'/><path d='M5 27 L16 7 L27 27'/><path d='M12.5 27 L16 18 L19.5 27'/>"),
+'Karatė stažas': _ki("<line x1='10' y1='5' x2='22' y2='5'/><line x1='10' y1='27' x2='22' y2='27'/><path d='M11 5 C11 12 15 13 15 16 C15 19 11 20 11 27'/><path d='M21 5 C21 12 17 13 17 16 C17 19 21 20 21 27'/><line x1='14.5' y1='23' x2='17.5' y2='23' stroke='#FF4D00'/><line x1='15.2' y1='25' x2='16.8' y2='25' stroke='#FF4D00'/>"),
+'Pagalba dojo ir draugams': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><circle cx='9' cy='7.5' r='2.5'/><line x1='9' y1='10' x2='9' y2='18'/><line x1='9' y1='18' x2='7' y2='27'/><line x1='9' y1='18' x2='11.5' y2='27'/><line x1='9' y1='12' x2='17' y2='16.5' stroke='#FF4D00'/><circle cx='21.5' cy='15' r='2.3'/><line x1='21.5' y1='17.3' x2='23' y2='22'/><line x1='23' y1='22' x2='27' y2='22.5'/><line x1='27' y1='22.5' x2='27' y2='27.5'/><line x1='23' y1='22' x2='22' y2='27.5'/><line x1='20.5' y1='17.5' x2='17' y2='16.5'/>"),
+'Osu dvasia': _ki("<line x1='3' y1='28' x2='29' y2='28' opacity='.3'/><line x1='11' y1='18' x2='11' y2='27.5'/><line x1='11' y1='18' x2='20' y2='12'/><circle cx='22.2' cy='11' r='2.5'/><line x1='15' y1='15' x2='17' y2='20'/>"+_kb(12.2,16.6,14.4,15.2))
+};
+
+function openKarjeraInfo() { document.getElementById('kinfo').classList.add('open'); }
+function closeKarjeraInfo() { document.getElementById('kinfo').classList.remove('open'); }
 
 const TIER_NAMES = {
   pradinis: 'Pradinis',
@@ -21350,9 +21432,9 @@ async function showExercises(categoryId, categoryName) {
 
   currentExerciseList = exercises.map(ex => {
     const exTargets = (targets || []).filter(t => t.exercise_id === ex.id);
-    const target = exTargets.find(t => t.club_id === currentProfile.club_id) 
+    const target = exTargets.find(t => t.club_id === currentProfile.club_id)
                 || exTargets.find(t => t.club_id === null);
-    
+
     const rec = records?.find(r => r.exercise_id === ex.id);
     return {
       ...ex,
@@ -21363,54 +21445,94 @@ async function showExercises(categoryId, categoryName) {
     };
   });
 
+  exoReadOnly = false;
+  exoSummaryHtml = '';
+  exoOpenSet = {};
+  renderExoList();
+}
+
+// 🥋 Karjeros v2: pratimų sąrašo renderis (3 sluoksnis — detalės su tier kortelėmis)
+let exoOpenSet = {};
+let exoReadOnly = false;
+let exoSummaryHtml = '';
+const EXO_SRC = { sci:['#7fd4a0','🔬 FITNESSGRAM'], elite:['#ffd24a','⭐ Eurofit P95'], est:['#9ab0ff','🧠 Įvertinimas'], kar:['#ff9d6b','🥋 Karatė'], spobu:['#ff9d6b','🥋 SPOBU'], fiz:['#9ab0ff','🧠 Fizika'], eur:['#9ab0ff','🧠 Eurofit testas'] };
+
+function exoExpOf(ex) {
+  const completedTarget = parseFloat(ex.target.completed);
+  let pct, completed;
+  if (ex.lower_is_better) {
+    if (!ex.current_pr) { pct = 0; completed = false; }
+    else if (ex.current_pr <= completedTarget) { pct = 100; completed = true; }
+    else { pct = Math.round((completedTarget / ex.current_pr) * 100); completed = false; }
+  } else {
+    pct = Math.min(100, Math.round((ex.current_pr / completedTarget) * 100));
+    completed = ex.current_pr >= completedTarget;
+  }
+  return { pct, exp: pct, completed };
+}
+
+function exoReached(ex, t) {
+  if (!ex.current_pr) return false;
+  return ex.lower_is_better ? ex.current_pr <= parseFloat(t) : ex.current_pr >= parseFloat(t);
+}
+
+function toggleExo(id) { exoOpenSet[id] = !exoOpenSet[id]; renderExoList(); }
+
+function renderExoList() {
   const html = currentExerciseList.map(ex => {
+    const icon = (typeof CAREER_ICONS !== 'undefined' && CAREER_ICONS[ex.name]) || `<span style="font-size:18px;">🥋</span>`;
     if (!ex.target) {
-      return `<div class="ri" style="opacity:.4;">
-        <div style="flex:1;">
-          <span style="font-size:13px;font-weight:800;">${ex.name}</span>
-          <div style="font-size:10px;color:var(--mut);margin-top:3px;">⚠️ Ribos dar nenustatytos</div>
+      return `<div class="ri" style="opacity:.4;"><div style="flex:1;"><span style="font-size:13px;font-weight:800;">${ex.name}</span><div style="font-size:10px;color:var(--mut);margin-top:3px;">⚠️ Ribos dar nenustatytos</div></div></div>`;
+    }
+    const { pct, exp } = exoExpOf(ex);
+    const open = exoOpenSet[ex.id];
+    const tiers = [['🥉', ex.target.bronze], ['🥈', ex.target.silver], ['🥇', ex.target.gold], ['🏆', ex.target.completed]];
+
+    let h = `<div style="background:var(--card);border:1px solid var(--bdr);border-radius:14px;margin-bottom:9px;overflow:hidden;">
+      <div onclick="toggleExo('${ex.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex:none;">${icon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:800;line-height:1.25;">${ex.name}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;">${ex.current_pr ? `Rekordas: <b style="color:#FFD700;">${ex.current_pr}</b> ${ex.unit}` : `Dar nebandyta · ${ex.unit}`}</div>
+        </div>
+        <div style="text-align:right;flex:none;width:54px;">
+          <div style="font-size:10.5px;font-weight:800;">${exp}<span style="color:var(--mut);font-size:8px;">/100</span></div>
+          <div style="height:3.5px;background:var(--bg);border-radius:3px;margin-top:3px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8C00,#FF4D00);"></div></div>
+        </div>
+        <div style="color:var(--mut);font-size:11px;flex:none;">${open ? '▴' : '▾'}</div>
+      </div>`;
+
+    if (open) {
+      const sc = EXO_SRC[ex.source_tag] || null;
+      const tierCols = [['#cd7f32','#5a3a18','#2a1c0c'], ['#b8c0c8','#3a4048','#1a1d22'], ['#ffd24a','#5a4e18','#2a2608'], ['#fff','#FF4D00','rgba(255,77,0,.25)']];
+      const tierHtml = tiers.map((t, i) => {
+        const got = exoReached(ex, t[1]);
+        const c = tierCols[i];
+        return `<div style="flex:1;text-align:center;border:1px solid ${c[1]};background:${c[2]};border-radius:9px;padding:5px 2px;position:relative;color:${c[0]};${got ? '' : 'opacity:.45;'}">${got ? `<span style='position:absolute;top:-6px;right:-3px;font-size:9px;'>✅</span>` : ''}<div style="font-size:10px;">${t[0]}</div><div style="font-size:11.5px;font-weight:800;">${t[1]}</div></div>`;
+      }).join('');
+      let nxt = '';
+      for (const t of tiers) { if (!exoReached(ex, t[1])) { nxt = `Kitas tikslas: <b style="color:#ffd24a;">${t[0]} ${t[1]} ${ex.unit}</b>`; break; } }
+      if (!nxt) nxt = `<b style="color:#FF4D00;">🏆 Pasiektas maksimumas!</b>`;
+
+      h += `<div style="border-top:1px solid var(--bdr);padding:10px 12px 12px;">
+        ${ex.description ? `<div style="font-size:11px;color:#c9c9d4;line-height:1.55;">${ex.description}</div>` : ''}
+        ${ex.why_text ? `<div style="font-size:10px;color:#9a9aa8;margin-top:7px;line-height:1.5;background:rgba(0,0,0,.25);border-left:2px solid #3a3a48;padding:6px 9px;border-radius:0 8px 8px 0;">🎯 <b style="color:#c9c9d4;">Kodėl:</b> ${ex.why_text}</div>` : ''}
+        ${ex.report_text ? `<div style="font-size:10px;color:#9a9aa8;margin-top:6px;line-height:1.5;background:rgba(0,0,0,.25);border-left:2px solid #FF8C00;padding:6px 9px;border-radius:0 8px 8px 0;">📊 <b style="color:#c9c9d4;">Ataskaitoje:</b> ${ex.report_text}</div>` : ''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+          ${sc ? `<span style="font-size:8.5px;font-weight:800;letter-spacing:.4px;border:1px solid ${sc[0]}55;color:${sc[0]};border-radius:20px;padding:2px 8px;">${sc[1]}</span>` : ''}
+          ${ex.strava ? `<span style="font-size:8.5px;font-weight:800;border:1px solid #7a3414;color:#ff7a3d;border-radius:20px;padding:2px 8px;">📍 STRAVA ĮRODYMAS</span>` : ''}
+        </div>
+        <div style="display:flex;gap:5px;margin-top:9px;">${tierHtml}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+          <div style="font-size:10px;color:#d9d9e2;font-weight:700;flex:1;">${nxt}</div>
+          ${exoReadOnly ? '' : `<button class="btn btng" style="margin:0;width:auto;padding:8px 14px;font-size:11px;" onclick="openSubmissionForm('${ex.id}')">📤 Pateikti</button>`}
         </div>
       </div>`;
     }
-    
-    const completedTarget = parseFloat(ex.target.completed);
-    const lower = ex.lower_is_better;
-    
-    // Skaičiuojam progress
-    let pct, completed, exp;
-    if (lower) {
-      // Mažiau geriau: jei PR <= completed, esi 100%
-      if (ex.current_pr === 0) {
-        pct = 0; exp = 0; completed = false;
-      } else if (ex.current_pr <= completedTarget) {
-        pct = 100; exp = 100; completed = true;
-      } else {
-        pct = Math.round((completedTarget / ex.current_pr) * 100);
-        exp = pct; completed = false;
-      }
-    } else {
-      // Daugiau geriau
-      pct = Math.min(100, Math.round((ex.current_pr / completedTarget) * 100));
-      exp = pct;
-      completed = ex.current_pr >= completedTarget;
-    }
-    
-    return `<div class="ri" style="cursor:pointer;${completed?'opacity:.7;':''}" onclick="openSubmissionForm('${ex.id}')">
-      <div style="flex:1;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-          <span style="font-size:13px;font-weight:800;">${ex.name}</span>
-          <span style="font-size:11px;color:var(--mut);">${ex.current_pr}/${completedTarget} ${ex.unit}</span>
-        </div>
-        <div class="pb2"><div class="pf" style="width:${pct}%;background:${completed?'var(--gld)':'var(--br)'};"></div></div>
-        <div style="font-size:10px;color:var(--mut);margin-top:3px;">
-          🥉 ${ex.target.bronze} · 🥈 ${ex.target.silver} · 🥇 ${ex.target.gold} · 🏆 ${completedTarget} ${ex.unit}
-        </div>
-      </div>
-      <div style="font-size:18px;color:var(--br);">${completed?'🏆':'→'}</div>
-    </div>`;
+    return h + `</div>`;
   }).join('');
 
-  document.getElementById('exo-list').innerHTML = html;
+  document.getElementById('exo-list').innerHTML = (exoSummaryHtml || '') + html;
 }
 
 function openSubmissionForm(exerciseId) {
