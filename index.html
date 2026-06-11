@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v97</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v98</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -6533,8 +6533,10 @@ table.t td.n{text-align:center;font-weight:600;}
 @media print{body{background:#fff;}.page{margin:0;box-shadow:none;page-break-after:always;}.page:last-child{page-break-after:auto;}}
 @page{size:A4;margin:0;}`;
 
+  // Jautrumas: antsvorio/nutukimo ŽODŽIO nerodome antraštėje (vaikas skaitys) — tik skaičiai; švelni formuluotė lieka AI tekste tėvams
+  const bmiCatShow = (g.bmi_category && !/antsvor|nutuk/i.test(g.bmi_category)) ? ' · '+E(g.bmi_category) : '';
   const growthBlock = (g.bmi_value!=null) ? ('<div class="sec-h"><span class="num">__N__</span> Augimas ir kūno sudėjimas</div>'+
-    '<div class="callout co-med"><div class="co-h"><span class="chip">AUGIMO MEDICINA</span> KMI '+E(g.bmi_value)+(g.bmi_category?' · '+E(g.bmi_category):'')+(g.bmi_percentile!=null?' · ~'+E(g.bmi_percentile)+' perc.':'')+'</div>'+
+    '<div class="callout co-med"><div class="co-h"><span class="chip">AUGIMAS</span> KMI '+E(g.bmi_value)+bmiCatShow+(g.bmi_percentile!=null?' · ~'+E(g.bmi_percentile)+' perc.':'')+'</div>'+
     (g.bmi_line_lt?'<p style="margin:0 0 6px;">'+E(g.bmi_line_lt)+'</p>':'')+(g.trajectory_lt?'<p style="margin:0 0 6px;">'+E(g.trajectory_lt)+'</p>':'')+(g.parent_note_lt?'<p style="margin:0;"><b>Tėvams:</b> '+E(g.parent_note_lt)+'</p>':'')+
     (g.refer_to_doctor?'<p style="margin:8px 0 0;color:#B45309;"><b>⚠️ '+E(g.refer_lt||'Verta pasitarti su vaiko gydytoju.')+'</b></p>':'')+'</div>') : '';
 
