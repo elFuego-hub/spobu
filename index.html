@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v91</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v92</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5695,6 +5695,121 @@ function redeemReport(){
   if (days > 0) { showToast('Dar negali panaudoti — kita ataskaita po ' + days + ' d. (kas mėnesį)', 'error', 4500); return; }
   openReportOrderModal(true);
 }
+// ── PRODUKTO KLAUSIMYNAS (planas/vasara) — personalizacija prieš generavimą.
+// Atsakymai saugomi kids.report_prefs (jsonb) → kitą kartą užpildyti, tėvas tik patvirtina.
+const _PQ_CONFIG = {
+  plan: {
+    title: '🏋️ Veiksmų planas', btn: '✨ Generuoti planą',
+    sub: 'Keli klausimai (~30 sek.) — planas bus pritaikytas būtent jūsų sąlygoms. Kitą kartą atsakymai jau bus užpildyti.',
+    questions: [
+      { key: 'equipment', label: 'Kokią įrangą turite namuose?', multi: true, opts: [['skersinis','Skersinis'],['sokdyne','Šokdynė'],['guma','Pasipriešinimo guma'],['maisas','Maišas / smūgių pagalvė'],['dviratis','Dviratis'],['nieko','Nieko iš sąrašo']] },
+      { key: 'sessions', label: 'Kiek realiai sesijų per savaitę pavyks?', multi: false, def: '3', opts: [['2','2 / sav.'],['3','3 / sav. · rekomenduojama'],['4','4+ / sav.']] },
+      { key: 'place', label: 'Kur vaikas treniruosis?', multi: false, def: 'abu', opts: [['kambarys','Kambaryje'],['laukas','Lauke (kiemas/parkas)'],['abu','Abu']] },
+      { key: 'focus', label: 'Plano fokusas', multi: false, def: 'silpnos', opts: [['silpnos','🎯 Silpniausios sritys · rekomenduojama'],['jega','💪 Jėga'],['istverme','🏃 Ištvermė'],['lankstumas','🤸 Lankstumas'],['greitis','⚡ Greitis'],['varzybos','🏆 Varžyboms']] },
+    ],
+  },
+  summer: {
+    title: '☀️ Vasaros programa', btn: '✨ Generuoti programą',
+    sub: 'Keli klausimai (~30 sek.) — programa prisitaikys prie jūsų vasaros. Kitą kartą atsakymai jau bus užpildyti.',
+    questions: [
+      { key: 'away', label: 'Ar vasarą būsite išvykę?', multi: false, def: 'namie', opts: [['namie','Daugiausia namie'],['1-2sav','Išvykę 1–2 sav.'],['3+sav','Išvykę 3+ sav. / stovyklos']] },
+      { key: 'outdoor', label: 'Lauko galimybės', multi: true, opts: [['kiemas','Kiemas'],['parkas','Parkas / miškas'],['dviratis','Dviratis'],['vanduo','Vandens telkinys'],['stadionas','Stadionas / aikštelė']] },
+      { key: 'goal', label: 'Vasaros tikslas', multi: false, def: 'stipresnis', opts: [['forma','Neprarasti formos'],['stipresnis','🔥 Grįžti stipresniam · rekomenduojama'],['smagumas','Smagi aktyvi vasara']] },
+      { key: 'time', label: 'Kiek laiko skirsite?', multi: false, def: 'rutina+2', opts: [['rutina+2','Rutina + 2 sesijos · rekomenduojama'],['rutina','Tik kasdienė rutina (10–15 min)'],['laisvas','Laisvas grafikas']] },
+    ],
+  },
+};
+let _pqType = null;
+async function openProductQuestionsModal(type){
+  const k = parentActiveKid; if (!k) return;
+  _pqType = type;
+  const cfg = _PQ_CONFIG[type];
+  let saved = {};
+  try { const { data } = await sb.from('kids').select('report_prefs').eq('id', k.id).single(); saved = (data?.report_prefs && data.report_prefs[type]) || {}; } catch (e) { /* stulpelio dar nėra — tuščia forma */ }
+  const old = document.getElementById('pq-modal'); if (old) old.remove();
+  const qHtml = cfg.questions.map(q => {
+    const cur = saved[q.key] != null ? saved[q.key] : (q.multi ? [] : (q.def || ''));
+    const chips = q.opts.map(([v, lab]) => {
+      const on = q.multi ? (Array.isArray(cur) && cur.includes(v)) : (cur === v);
+      return `<div class="pq-chip${on ? ' on' : ''}" data-q="${q.key}" data-v="${v}" onclick="pqToggle(this, ${q.multi})">${lab}</div>`;
+    }).join('');
+    return `<div style="margin-bottom:14px;"><div style="font-size:11px;font-weight:800;color:#fff;margin-bottom:7px;">${q.label}</div><div style="display:flex;flex-wrap:wrap;gap:7px;">${chips}</div></div>`;
+  }).join('');
+  const m = document.createElement('div');
+  m.id = 'pq-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<style>#pq-modal .pq-chip{background:rgba(255,255,255,.06);border:.5px solid var(--bdr);color:#d6d6dd;font-size:11px;font-weight:700;padding:8px 12px;border-radius:99px;cursor:pointer;user-select:none;}#pq-modal .pq-chip.on{background:rgba(255,77,0,.16);border-color:var(--br);color:#fff;}</style>
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;padding:18px 16px 26px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <div style="font-size:15px;font-weight:900;color:#fff;">${cfg.title}</div>
+        <div onclick="document.getElementById('pq-modal').remove()" style="font-size:20px;color:var(--mut);cursor:pointer;padding:4px 8px;">✕</div>
+      </div>
+      <div style="font-size:10.5px;color:var(--mut);line-height:1.5;margin-bottom:15px;">${cfg.sub}</div>
+      ${qHtml}
+      <button onclick="pqSubmit()" class="btn btng" style="width:100%;margin-top:6px;padding:13px;font-size:13px;font-weight:800;">${cfg.btn}</button>
+    </div>`;
+  m.onclick = (ev) => { if (ev.target === m) m.remove(); };
+  document.body.appendChild(m);
+}
+function pqToggle(el, multi){
+  if (multi) {
+    el.classList.toggle('on');
+    // „Nieko" išskirtinis: pažymėjus jį — nuimami kiti; pažymėjus kitą — nuimamas „nieko"
+    if (el.dataset.v === 'nieko' && el.classList.contains('on')) {
+      document.querySelectorAll(`#pq-modal .pq-chip[data-q="${el.dataset.q}"]`).forEach(c => { if (c !== el) c.classList.remove('on'); });
+    } else if (el.classList.contains('on')) {
+      const none = document.querySelector(`#pq-modal .pq-chip[data-q="${el.dataset.q}"][data-v="nieko"]`);
+      if (none) none.classList.remove('on');
+    }
+  } else {
+    document.querySelectorAll(`#pq-modal .pq-chip[data-q="${el.dataset.q}"]`).forEach(c => c.classList.remove('on'));
+    el.classList.add('on');
+  }
+}
+async function _savePrefs(kidId, type, prefs){
+  try {
+    const { data } = await sb.from('kids').select('report_prefs').eq('id', kidId).single();
+    const all = (data && data.report_prefs) || {};
+    all[type] = prefs;
+    await sb.from('kids').update({ report_prefs: all }).eq('id', kidId);
+  } catch (e) { console.warn('report_prefs save', e); }
+}
+async function pqSubmit(){
+  const type = _pqType; const cfg = _PQ_CONFIG[type]; const k = parentActiveKid;
+  if (!cfg || !k) return;
+  const prefs = {};
+  for (const q of cfg.questions) {
+    const on = [...document.querySelectorAll(`#pq-modal .pq-chip[data-q="${q.key}"].on`)].map(c => c.dataset.v);
+    if (q.multi) prefs[q.key] = on;
+    else { if (!on.length) { showToast('Atsakyk: ' + q.label, 'error'); return; } prefs[q.key] = on[0]; }
+  }
+  document.getElementById('pq-modal')?.remove();
+  _savePrefs(k.id, type, prefs);
+  await _runProductGeneration(type, prefs);
+}
+async function _runProductGeneration(type, prefs){
+  const k = parentActiveKid; if (!k) return;
+  const isPlan = type === 'plan';
+  if (isPlan ? _planGenBusy : _summerGenBusy) return;
+  if (isPlan) _planGenBusy = true; else _summerGenBusy = true;
+  showToast(isPlan ? '⏳ AI ruošia planą pagal vaiko duomenis ir jūsų atsakymus...' : '⏳ AI ruošia vasaros programą pagal jūsų atsakymus...', 'success', 6000);
+  try {
+    const { data, error } = await sb.functions.invoke('generate-report', { body: { kid_id: k.id, type, prefs: prefs || null } });
+    if (error) {
+      let detail = error.message || String(error);
+      try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
+      throw new Error(detail);
+    }
+    if (data && (data.report_json || data.status === 'pending_review')) {
+      if (isPlan) await consumeHomeCredit(); else await consumeSummerCredit();
+      showToast(isPlan
+        ? '✅ Užsakyta! SPOBU specialistai peržiūrės ir planas bus paruoštas per 24 val. Rasi „Mano namų planai".'
+        : '✅ Užsakyta! SPOBU specialistai peržiūrės ir programa bus paruošta per 24 val. Rasi „Mano vasaros programos".', 'success', 6000);
+    } else { throw new Error((data && data.error) || 'Tuščias atsakymas'); }
+  } catch (err) {
+    showToast('❌ ' + (err?.message || err), 'error', 5000);
+  } finally { if (isPlan) _planGenBusy = false; else _summerGenBusy = false; }
+}
 let _planGenBusy = false;
 async function redeemHome(){
   const e = parentEntitlements || {};
@@ -5704,23 +5819,8 @@ async function redeemHome(){
   const days = _entCdDays(e.homeplan_last_used, 2);
   if (days > 0) { showToast('Dar negali panaudoti — kitas planas po ' + days + ' d. (kas 2 mėn.)', 'error', 4500); return; }
   if (_planGenBusy) return;
-  if (!confirm('Generuoti asmeninį 2 mėn. veiksmų planą? Bus panaudotas 1 kreditas.')) return;
-  _planGenBusy = true;
-  showToast('⏳ AI ruošia planą pagal vaiko duomenis... (iki ~60 s, neuždaryk)', 'success', 7000);
-  try {
-    const { data, error } = await sb.functions.invoke('generate-report', { body: { kid_id: k.id, type: 'plan' } });
-    if (error) {
-      let detail = error.message || String(error);
-      try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
-      throw new Error(detail);
-    }
-    if (data && (data.report_json || data.status === 'pending_review')) {
-      await consumeHomeCredit();
-      showToast('✅ Užsakyta! SPOBU specialistai peržiūrės ir planas bus paruoštas per 24 val. Rasi „Mano namų planai".', 'success', 6000);
-    } else { throw new Error((data && data.error) || 'Tuščias atsakymas'); }
-  } catch (err) {
-    showToast('❌ ' + (err?.message || err), 'error', 5000);
-  } finally { _planGenBusy = false; }
+  // Klausimynas (įranga/laikas/vieta/fokusas) → tada generavimas su atsakymais
+  openProductQuestionsModal('plan');
 }
 async function consumeHomeCredit(){
   const k = parentActiveKid; if (!k) return;
@@ -5739,23 +5839,8 @@ async function redeemSummer(){
   const days = _summerDaysLeft();
   if (days > 0) { showToast('Dar negali panaudoti — vasaros programa po ' + days + ' d. (nuo gegužės 15)', 'error', 4500); return; }
   if (_summerGenBusy) return;
-  if (!confirm('Generuoti asmeninę 12 savaičių vasaros programą? Bus panaudotas 1 kreditas.')) return;
-  _summerGenBusy = true;
-  showToast('⏳ AI ruošia vasaros programą... (iki ~60 s, neuždaryk)', 'success', 7000);
-  try {
-    const { data, error } = await sb.functions.invoke('generate-report', { body: { kid_id: k.id, type: 'summer' } });
-    if (error) {
-      let detail = error.message || String(error);
-      try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
-      throw new Error(detail);
-    }
-    if (data && (data.report_json || data.status === 'pending_review')) {
-      await consumeSummerCredit();
-      showToast('✅ Užsakyta! SPOBU specialistai peržiūrės ir programa bus paruošta per 24 val. Rasi „Mano vasaros programos".', 'success', 6000);
-    } else { throw new Error((data && data.error) || 'Tuščias atsakymas'); }
-  } catch (err) {
-    showToast('❌ ' + (err?.message || err), 'error', 5000);
-  } finally { _summerGenBusy = false; }
+  // Klausimynas (išvykimai/lauko galimybės/tikslas/laikas) → tada generavimas su atsakymais
+  openProductQuestionsModal('summer');
 }
 async function consumeSummerCredit(){
   const k = parentActiveKid; if (!k) return;
@@ -5895,7 +5980,7 @@ function openReportOrderModal(useCredit){
   const lockDays = 0;  // duomenų vartai pašalinti — cooldown valdo redeemReport (kreditai), à la carte visada prieinama
   const orderCard = lockDays > 0
     ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:20px 14px;margin-bottom:16px;text-align:center;"><div style="font-size:36px;margin-bottom:8px;">🔒</div><div style="font-size:14px;font-weight:800;color:white;margin-bottom:7px;">Ataskaita dar kaupia duomenis</div><div style="font-size:11px;color:var(--mut);line-height:1.55;">Pirmai ataskaitai reikia ~1 mėn. treniruočių duomenų, kad būtų ką analizuoti. Vėliau — kas mėnesį (rekomenduojama kas 3 mėn.).</div><div style="margin-top:11px;font-size:12px;color:var(--br);font-weight:800;">⏳ Prieinama po ${lockDays} d.</div></div>`
-    : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div><div style="display:flex;gap:10px;"><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div></div><div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div><button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:13px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button><div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div></div>`;
+    : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div><div style="display:flex;gap:10px;"><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div></div><div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div><div style="margin-top:11px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">TRAUMOS / APRIBOJIMAI (NEBŪTINA)</label><input id="rep-injuries" type="text" placeholder="pvz. neseniai skaudėjo kelį" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><div style="margin-top:10px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">KO LABIAUSIAI TIKITĖS IŠ ATASKAITOS? (NEBŪTINA)</label><input id="rep-goal" type="text" placeholder="pvz. ar verta ruoštis varžyboms" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:13px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button><div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div></div>`;
   const m = document.createElement('div');
   m.id = 'report-order-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
@@ -5914,6 +5999,12 @@ function openReportOrderModal(useCredit){
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
   loadMyReports();
+  // Prefill iš profilio (kids.report_prefs.report) — kitą kartą tik patvirtina
+  sb.from('kids').select('report_prefs').eq('id', k.id).single().then(({ data }) => {
+    const rp = data?.report_prefs?.report || {};
+    const i = document.getElementById('rep-injuries'); if (i && rp.injuries) i.value = rp.injuries;
+    const g = document.getElementById('rep-goal'); if (g && rp.parent_goal) g.value = rp.parent_goal;
+  }).catch(() => {});
 }
 
 async function loadMyReports(){
@@ -5948,13 +6039,16 @@ async function submitReportOrder(btn){
   if (!k) return;
   const h = document.getElementById('rep-height')?.value;
   const w = document.getElementById('rep-weight')?.value;
+  const inj = document.getElementById('rep-injuries')?.value?.trim() || '';
+  const gl = document.getElementById('rep-goal')?.value?.trim() || '';
   const status = document.getElementById('rep-gen-status');
   if (btn.disabled) return;
   btn.disabled = true; btn.textContent = '⏳ Generuojama...';
   if (status) { status.style.display = 'block'; status.style.color = 'var(--mut)'; status.textContent = 'AI analizuoja vaiko duomenis… tai gali užtrukti iki ~40 s. Neuždaryk lango.'; }
+  _savePrefs(k.id, 'report', { injuries: inj || null, parent_goal: gl || null });
   try {
     const { data, error } = await sb.functions.invoke('generate-report', {
-      body: { kid_id: k.id, height_cm: h ? Number(h) : null, weight_kg: w ? Number(w) : null }
+      body: { kid_id: k.id, height_cm: h ? Number(h) : null, weight_kg: w ? Number(w) : null, prefs: { injuries: inj || null, parent_goal: gl || null } }
     });
     if (error) {
       let detail = error.message || String(error);
