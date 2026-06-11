@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v90</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v91</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2359,7 +2359,7 @@ select.inp option{background:#222;}
         <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">☀️</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12.5px;font-weight:800;color:white;">Vasaros programa</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">12 savaičių individualus planas namuose</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">8 savaičių individualus planas namuose</div>
           <div onclick="openSummerInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;">ℹ️ Kas tai ir kodėl verta? ›</div>
         </div>
         <div id="shop-cnt-summer" style="flex-shrink:0;"></div>
@@ -5577,25 +5577,25 @@ function openHomePlanInfoModal(){
         <button onclick="document.getElementById('home-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);">✕</button>
       </div>
       <div style="padding:18px;">
-        <div style="font-size:12.5px;color:var(--mut);line-height:1.55;margin-bottom:16px;">Individualios treniruotės <b style="color:#fff;">tarp dojo užsiėmimų</b> — kad vaikas progresuotų ir namuose. Sudaromas 3 mėnesiams pagal vaiko poreikius.</div>
+        <div style="font-size:12.5px;color:var(--mut);line-height:1.55;margin-bottom:16px;">Individualios treniruotės <b style="color:#fff;">tarp dojo užsiėmimų</b> — kad vaikas progresuotų ir namuose. Sudaromas 2 mėnesiams pagal vaiko poreikius.</div>
         <div style="font-size:10px;letter-spacing:1.5px;color:var(--mut);font-weight:800;margin-bottom:8px;">KĄ GAUNI UŽ 19,99€</div>
         <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:4px 14px;margin-bottom:16px;">
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">💪</div><div><div style="font-size:12px;font-weight:700;color:white;">Jėga ir kūno valdymas</div><div style="font-size:10px;color:var(--mut);">Saugūs pratimai pagal amžių</div></div></div>
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">🤸</div><div><div style="font-size:12px;font-weight:700;color:white;">Lankstumas</div><div style="font-size:10px;color:var(--mut);">Aukštesni spyriai, mažiau traumų</div></div></div>
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">🏃</div><div><div style="font-size:12px;font-weight:700;color:white;">Ištvermės blokai</div><div style="font-size:10px;color:var(--mut);">Kondicijai ir kvėpavimui</div></div></div>
-          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">📅</div><div><div style="font-size:12px;font-weight:700;color:white;">3 mėnesių planas</div><div style="font-size:10px;color:var(--mut);">Išdėliota po savaitę — aišku ką daryti</div></div></div>
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">📅</div><div><div style="font-size:12px;font-weight:700;color:white;">2 mėnesių planas</div><div style="font-size:10px;color:var(--mut);">Išdėliota po savaitę — aišku ką daryti</div></div></div>
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;"><div style="font-size:19px;">🎯</div><div><div style="font-size:12px;font-weight:700;color:white;">Pagal vaiko silpnąsias puses</div><div style="font-size:10px;color:var(--mut);">Sustiprina tai, ko trūksta (iš ataskaitos)</div></div></div>
         </div>
         <div style="margin-bottom:16px;">
           <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Papildo dojo</b>, ne dubliuoja techniką.</span></div>
           <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Vaikas <b style="color:#fff;">progresuoja ir tarp treniruočių</b>.</span></div>
-          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Sudaromas <b style="color:#fff;">3 mėnesiams</b> → atnaujinamas kas ketvirtį.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Sudaromas <b style="color:#fff;">2 mėnesiams</b> → atnaujinamas kas 2 mėn.</span></div>
         </div>
         <div style="background:linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;">
           <div style="font-size:11px;color:var(--mut);">Asmeninė sporto specialisto programa kainuotų <b style="color:#fff;">60–120€</b></div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gld);margin-top:4px;letter-spacing:1px;">SPOBU — TIK 19,99€</div>
         </div>
-        <div style="background:rgba(255,140,0,.1);border:.5px solid rgba(255,140,0,.3);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#d6d6dd;line-height:1.5;">🔁 <b style="color:#fff;">Kas 3 mėn. užduotys keičiasi pagal vaiko progresą</b> (reaguojant į naują ataskaitą). 👑 Įskaičiuota į <b style="color:var(--gld);">Premium+</b>.</div>
+        <div style="background:rgba(255,140,0,.1);border:.5px solid rgba(255,140,0,.3);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#d6d6dd;line-height:1.5;">🔁 <b style="color:#fff;">Kas 2 mėn. užduotys keičiasi pagal vaiko progresą</b> (reaguojant į naują ataskaitą). 👑 Įskaičiuota į <b style="color:var(--gld);">Premium+</b>.</div>
         <button onclick="showToast('🔜 Namų planai — netrukus','success',4000)" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">🔜 Netrukus</button>
       </div>
     </div>`;
@@ -5701,10 +5701,10 @@ async function redeemHome(){
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
   if ((e.homeplan_credits || 0) <= 0) { showToast('Nebėra namų planų kreditų', 'error'); return; }
-  const days = _entCdDays(e.homeplan_last_used, 3);
-  if (days > 0) { showToast('Dar negali panaudoti — kitas planas po ' + days + ' d. (kas 3 mėn.)', 'error', 4500); return; }
+  const days = _entCdDays(e.homeplan_last_used, 2);
+  if (days > 0) { showToast('Dar negali panaudoti — kitas planas po ' + days + ' d. (kas 2 mėn.)', 'error', 4500); return; }
   if (_planGenBusy) return;
-  if (!confirm('Generuoti asmeninį 3 mėn. veiksmų planą? Bus panaudotas 1 kreditas.')) return;
+  if (!confirm('Generuoti asmeninį 2 mėn. veiksmų planą? Bus panaudotas 1 kreditas.')) return;
   _planGenBusy = true;
   showToast('⏳ AI ruošia planą pagal vaiko duomenis... (iki ~60 s, neuždaryk)', 'success', 7000);
   try {
@@ -5824,7 +5824,7 @@ async function setKidTier(tier){
   try { localStorage.setItem(_kidTierKey(k.id), tier); } catch(e){}
   // Premium+ → kreditai į DB (esami stulpeliai report/homeplan/summer_credits)
   if (tier === 'premium_plus') {
-    const nowIso = new Date().toISOString();  // countdown'as skaičiuojamas NUO pirkimo (ataskaita +1 mėn, namų +3 mėn)
+    const nowIso = new Date().toISOString();  // countdown'as skaičiuojamas NUO pirkimo (ataskaita +1 mėn, namų +2 mėn)
     try { await sb.from('kid_entitlements').upsert({ kid_id: k.id, report_credits: 3, homeplan_credits: 3, summer_credits: 1, report_last_used: nowIso, homeplan_last_used: nowIso }, { onConflict: 'kid_id' }); }
     catch(e){ console.warn('grant credits', e); showToast('⚠️ Kreditų nepavyko pridėti — paleisk server-kreditai.sql', 'error', 5000); }
   }
@@ -5869,7 +5869,7 @@ async function loadHistory(type){
       const done = r.status === 'done' && r.report_json;
       const dt = new Date(r.created_at).toLocaleDateString('lt-LT');
       const mon = r.report_json && r.report_json.cover ? r.report_json.cover.focus_month_lt : null;
-      const statusTxt = done ? ((type === 'home' || type === 'summer') ? '12 savaičių' : (mon ? (_rCap(mon) + ' mėn.') : 'Paruošta')) : (r.status === 'error' ? '❌ Klaida' : (r.status === 'pending_review' ? '⏳ Ruošiama (iki 24 val.)' : '⏳ Generuojama'));
+      const statusTxt = done ? (type === 'home' ? '8 savaičių' : (type === 'summer' ? '12 savaičių' : (mon ? (_rCap(mon) + ' mėn.') : 'Paruošta'))) : (r.status === 'error' ? '❌ Klaida' : (r.status === 'pending_review' ? '⏳ Ruošiama (iki 24 val.)' : '⏳ Generuojama'));
       const tGrad = type === 'home' ? 'linear-gradient(135deg,#0F766E,#14B8A6)' : (type === 'summer' ? 'linear-gradient(135deg,#B45309,#F59E0B)' : 'linear-gradient(135deg,#FF4D00,#FF8C00)');
       const tIcoH = type === 'home' ? '🏋️' : (type === 'summer' ? '☀️' : '📄');
       return `<div ${done ? `onclick="openReportViewer(_myReportsCache['${r.id}'],'${r.id}',${r.rating_up == null ? 'null' : r.rating_up})"` : ''} style="display:flex;align-items:center;gap:11px;padding:11px;margin-bottom:7px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;${done ? 'cursor:pointer;' : ''}">
@@ -6149,11 +6149,13 @@ function buildPlanPrintDoc(r){
   const recipes = Array.isArray(nu.recipes) ? nu.recipes : [];
   const focus = Array.isArray(intro.focus_areas_lt) ? intro.focus_areas_lt : [];
 
+  const isSummer = r.type === 'summer';
+  const tgtLabel = isSummer ? 'Vasaros pabaigoje' : 'Po 8 sav.';
   const goalsHtml = goals.map((g, i) => `<div class="goal">
       <div class="goal-n">${i + 1}</div>
       <div style="flex:1;">
         <div class="goal-t">${E(g.title_lt)}</div>
-        <div class="goal-vals"><span class="cur">Dabar: <b>${E(g.current_lt)}</b></span><span class="arr">→</span><span class="tgt">Po 12 sav.: <b>${E(g.target_lt)}</b></span></div>
+        <div class="goal-vals"><span class="cur">Dabar: <b>${E(g.current_lt)}</b></span><span class="arr">→</span><span class="tgt">${tgtLabel}: <b>${E(g.target_lt)}</b></span></div>
         <div class="goal-why">${E(g.why_lt)}</div>
       </div>
     </div>`).join('');
@@ -6190,13 +6192,12 @@ function buildPlanPrintDoc(r){
     </div>` : '';
 
   // 🎨 Tas pats dizainas kaip diagnostikos (A4 puslapiai, Bebas Neue, pilnas titulinis) — tik teal/gintaro paletė
-  const isSummer = r.type === 'summer';
   const coverKanji = isSummer ? '夏' : '道';
   const coverSub = isSummer ? 'Vasaros treniruočių programa' : 'Asmeninė treniruočių programa';
   const coverTitle = isSummer ? 'VASAROS<br><span>PROGRAMA</span>' : 'VEIKSMŲ<br><span>PLANAS</span>';
   const coverPar = isSummer
     ? 'Vasara — ne pertrauka, o slaptas ginklas: misijos lauke, saulė ir OSU dvasia. Kol kiti ilsisi — tu augi.'
-    : 'Konkretus 12 savaičių kelias pagal realius vaiko rezultatus: 3 tikslai, savaitės ritmas, pratimai namuose ir mityba. Geriausi kovotojai auga ne šuoliais, o nuosekliais žingsniais — OSU.';
+    : 'Konkretus 8 savaičių kelias pagal realius vaiko rezultatus: 3 tikslai, savaitės ritmas, pratimai namuose ir mityba. Geriausi kovotojai auga ne šuoliais, o nuosekliais žingsniais — OSU.';
   const prodLabel = isSummer ? 'vasaros programa' : 'veiksmų planas';
   const pgFoot = '<div class="footer"><span>SPOBU · ' + prodLabel + '</span><span>' + E(c.kid_name || '') + '</span><span>Konfidencialu</span></div>';
 
@@ -6283,7 +6284,7 @@ function buildPlanPrintDoc(r){
       ${cont.intro_lt ? `<p class="small mut" style="margin-top:5px;">${E(cont.intro_lt)}</p>` : ''}
       <div class="sec-h"><span class="num">1</span> Tavo 3 tikslai</div>
       ${goalsHtml}
-      <div class="sec-h"><span class="num">2</span> ${isSummer ? 'Kelias per vasarą' : 'Kelias per 12 savaičių'}</div>
+      <div class="sec-h"><span class="num">2</span> ${isSummer ? 'Kelias per vasarą' : 'Kelias per 8 savaites'}</div>
       ${roadHtml}
       ${Array.isArray(r.missions) && r.missions.length ? `<div class="sec-h"><span class="num">★</span> Vasaros misijos</div>` + r.missions.map(ms => `<div class="goal"><div class="goal-n">🏁</div><div style="flex:1;"><div class="goal-t">${E(ms.title_lt)}${ms.month_lt ? ` <span style="font-weight:600;color:#666;font-size:10px;">· ${E(ms.month_lt)}</span>` : ''}</div><div class="goal-why">${E(ms.desc_lt)}</div></div></div>`).join('') : ''}
       ${pgFoot}
@@ -6468,7 +6469,7 @@ table.t td.n{text-align:center;font-weight:600;}
 
   const pagePlan = '<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Rekomendacijos</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
     (plan?('<div class="sec-h"><span class="num">7</span> Į ką sutelkti dėmesį</div>'+plan):'')+
-    '<div class="callout co-fight" style="margin:12px 0;"><div class="co-h"><span class="chip">PAPILDOMAI</span> 🏋️ Nori konkretaus plano?</div><p style="margin:0;" class="small">Ši analizė rodo, <b>ką</b> tobulinti. Detalų profesionalų <b>3 mėn. namų treniruočių planą</b> — su konkrečiais pratimais, progresija ir <b>mitybos planu (ką valgyti)</b> pagal vaiko silpnąsias sritis — gali užsisakyti papildomai.</p></div>'+
+    '<div class="callout co-fight" style="margin:12px 0;"><div class="co-h"><span class="chip">PAPILDOMAI</span> 🏋️ Nori konkretaus plano?</div><p style="margin:0;" class="small">Ši analizė rodo, <b>ką</b> tobulinti. Detalų profesionalų <b>2 mėn. namų treniruočių planą</b> — su konkrečiais pratimais, progresija ir <b>mitybos planu (ką valgyti)</b> pagal vaiko silpnąsias sritis — gali užsisakyti papildomai.</p></div>'+
     ((par.celebrate_lt||par.help_lt)?('<div class="sec-h"><span class="num">★</span> Trumpai tėvams</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+(par.celebrate_lt?'<div class="callout co-phys" style="margin:0;"><div class="co-h">✅ Kuo pasidžiaugti</div><p style="margin:0;" class="small">'+E(par.celebrate_lt)+'</p></div>':'')+(par.help_lt?'<div class="callout co-med" style="margin:0;"><div class="co-h">🎯 Kur padėti</div><p style="margin:0;" class="small">'+E(par.help_lt)+'</p></div>':'')+'</div>'):'')+
     eduBlock+
     '<div class="disc"><b>SVARBU.</b> Ši analizė parengta naudojant dirbtinį intelektą pagal vaiko treniruočių duomenis ir yra bendro pobūdžio fizinio ugdymo bei sveikos gyvensenos rekomendacija, o <b>ne medicininė diagnozė ar gydymo planas</b>. Dėl individualių sveikatos, mitybos ar augimo klausimų kreipkitės į vaiko gydytoją. Treniruočių krūvį derinkite su treneriu. Duomenys konfidencialūs.</div>'+
