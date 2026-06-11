@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v96</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v97</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -6289,12 +6289,12 @@ function buildPlanPrintDoc(r){
 
   const eduBlock = (edu, chip) => {
     if (!(edu && edu.content)) return '';
-    // Rodom ir domeną — kad nuoroda nekabotų „ore" spausdintame/kopijuotame tekste
-    const host = edu.url ? String(edu.url).replace(/^https?:\/\/(www\.)?/, '').split('/')[0] : '';
+    // Rodom TIKRĄ (trumpą) adresą — kad nuoroda veiktų ir atspausdintame/nukopijuotame tekste
+    const shortUrl = edu.url ? String(edu.url).replace(/^https?:\/\/(www\.)?/, '').replace('youtube.com/watch?v=', 'youtu.be/') : '';
     return `<div class="callout">
       <div class="co-h"><span class="chip">${chip}</span> ${E(edu.title)}</div>
       <p>${E(edu.content)}</p>
-      ${edu.url ? `<a href="${E(edu.url)}" target="_blank" class="vid">▶️ Plačiau · vaizdo įrašas <span style="font-weight:600;color:#999;">(${E(host)})</span></a>` : ''}
+      ${edu.url ? `<a href="${E(edu.url)}" target="_blank" class="vid">▶️ Vaizdo įrašas: <span style="font-weight:600;">${E(shortUrl)}</span></a>` : ''}
     </div>`;
   };
 
@@ -6389,9 +6389,9 @@ function buildPlanPrintDoc(r){
       ${intro.paragraph_lt ? `<p style="margin-top:5px;">${E(intro.paragraph_lt)}</p>` : ''}
       ${focus.length ? `<div class="chips">${focus.map(f => `<span class="fchip">🎯 ${E(f)}</span>`).join('')}</div>` : ''}
       ${cont.intro_lt ? `<p class="small mut" style="margin-top:5px;">${E(cont.intro_lt)}</p>` : ''}
-      <div class="sec-h"><span class="num">1</span> Tavo 3 tikslai</div>
+      <div class="sec-h"><span class="num">__N__</span> Tavo 3 tikslai</div>
       ${goalsHtml}
-      <div class="sec-h"><span class="num">2</span> ${isSummer ? 'Kelias per vasarą' : 'Kelias per 8 savaites'}</div>
+      <div class="sec-h"><span class="num">__N__</span> ${isSummer ? 'Kelias per vasarą' : 'Kelias per 8 savaites'}</div>
       ${roadHtml}
       ${Array.isArray(r.missions) && r.missions.length ? `<div class="sec-h"><span class="num">★</span> Vasaros misijos</div>` + r.missions.map(ms => `<div class="goal"><div class="goal-n">🏁</div><div style="flex:1;"><div class="goal-t">${E(ms.title_lt)}${ms.month_lt ? ` <span style="font-weight:600;color:#666;font-size:10px;">· ${E(ms.month_lt)}</span>` : ''}</div><div class="goal-why">${E(ms.desc_lt)}</div></div></div>`).join('') : ''}
       ${pgFoot}
@@ -6399,11 +6399,11 @@ function buildPlanPrintDoc(r){
 
     <section class="page">
       <div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Savaitės ritmas ir pratimai</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">${E(c.kid_name || '')}</div></div>
-      <div class="sec-h"><span class="num">3</span> Savaitės ritmas</div>
+      <div class="sec-h"><span class="num">__N__</span> Savaitės ritmas</div>
       ${wk.intro_lt ? `<p style="margin-bottom:7px;">${E(wk.intro_lt)}</p>` : ''}
       ${r.daily_lt ? `<div class="legend">🌅 <b>Kasdien (10–15 min):</b> ${E(r.daily_lt)}</div>` : ''}
       ${sessHtml}
-      <div class="sec-h"><span class="num">4</span> Pratimai — kaip atlikti</div>
+      <div class="sec-h"><span class="num">__N__</span> Pratimai — kaip atlikti</div>
       ${r.legend_lt ? `<div class="legend">ℹ️ ${E(r.legend_lt)}</div>` : ''}
       ${exHtml}
       ${pgFoot}
@@ -6411,7 +6411,7 @@ function buildPlanPrintDoc(r){
 
     <section class="page">
       <div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Mityba</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">${E(c.kid_name || '')}</div></div>
-      <div class="sec-h"><span class="num">5</span> Mityba — kas ant stalo</div>
+      <div class="sec-h"><span class="num">__N__</span> Mityba — kas ant stalo</div>
       ${nu.intro_lt ? `<p style="margin-bottom:7px;">${E(nu.intro_lt)}</p>` : ''}
       ${princHtml ? `<table class="t"><tbody>${princHtml}</tbody></table>` : ''}
       <div style="margin-top:10px;">${recHtml}</div>
@@ -6424,7 +6424,7 @@ function buildPlanPrintDoc(r){
       ${(mot.text_lt) ? `<div class="mot"><b>🥋 ${E(mot.title_lt || 'OSU dvasia')}</b><p style="margin-top:5px;font-size:11.5px;">${E(mot.text_lt)}</p></div>` : ''}
       ${eduBlock(r.education, 'KOVOTOJO ISTORIJA')}
       ${eduBlock(r.education2, 'KARATĖ KULTŪRA')}
-      ${(par.support_lt || par.watch_lt) ? `<div class="sec-h"><span class="num">6</span> Tėvams</div>
+      ${(par.support_lt || par.watch_lt) ? `<div class="sec-h"><span class="num">__N__</span> Tėvams</div>
         ${par.support_lt ? `<p><b style="color:#0F766E;">🤝 Kaip padėti:</b> ${E(par.support_lt)}</p>` : ''}
         ${par.watch_lt ? `<p style="margin-top:5px;"><b style="color:#0F766E;">👀 Ką stebėti:</b> ${E(par.watch_lt)}</p>` : ''}` : ''}
       ${cont.followup_lt ? `<p class="small mut" style="margin-top:8px;">📏 ${E(cont.followup_lt)}</p>` : ''}
@@ -6440,6 +6440,9 @@ function buildPlanPrintDoc(r){
                .split('#F0FDFA').join('#FFFBEB')
                .split('#0b2a26').join('#2a1c0b').split('#0e1a18').join('#1a140e');
   }
+  // Dinaminė sekcijų numeracija (praleista sekcija nepalieka skylės numeriuose)
+  let _pn = 0;
+  html = html.replace(/__N__/g, function(){ return String(++_pn); });
   return html;
 }
 
@@ -6530,14 +6533,14 @@ table.t td.n{text-align:center;font-weight:600;}
 @media print{body{background:#fff;}.page{margin:0;box-shadow:none;page-break-after:always;}.page:last-child{page-break-after:auto;}}
 @page{size:A4;margin:0;}`;
 
-  const growthBlock = (g.bmi_value!=null) ? ('<div class="sec-h"><span class="num">4</span> Augimas ir kūno sudėjimas</div>'+
+  const growthBlock = (g.bmi_value!=null) ? ('<div class="sec-h"><span class="num">__N__</span> Augimas ir kūno sudėjimas</div>'+
     '<div class="callout co-med"><div class="co-h"><span class="chip">AUGIMO MEDICINA</span> KMI '+E(g.bmi_value)+(g.bmi_category?' · '+E(g.bmi_category):'')+(g.bmi_percentile!=null?' · ~'+E(g.bmi_percentile)+' perc.':'')+'</div>'+
     (g.bmi_line_lt?'<p style="margin:0 0 6px;">'+E(g.bmi_line_lt)+'</p>':'')+(g.trajectory_lt?'<p style="margin:0 0 6px;">'+E(g.trajectory_lt)+'</p>':'')+(g.parent_note_lt?'<p style="margin:0;"><b>Tėvams:</b> '+E(g.parent_note_lt)+'</p>':'')+
     (g.refer_to_doctor?'<p style="margin:8px 0 0;color:#B45309;"><b>⚠️ '+E(g.refer_lt||'Verta pasitarti su vaiko gydytoju.')+'</b></p>':'')+'</div>') : '';
 
   const edu = r.education || null;
-  const eduHost = (edu && edu.url) ? String(edu.url).replace(/^https?:\/\/(www\.)?/, '').split('/')[0] : '';
-  const eduBlock = (edu && edu.content) ? ('<div class="sec-h">💡 Žinok daugiau</div><div class="callout co-med"><div class="co-h"><span class="chip">SPOBU</span> '+E(edu.title||'')+'</div><p style="margin:0 0 6px;" class="small">'+E(edu.content||'')+'</p>'+(edu.url?'<a href="'+E(edu.url)+'" target="_blank" rel="noopener" style="font-size:9px;font-weight:800;color:#FF4D00;text-decoration:none;">▶️ Plačiau · vaizdo įrašas <span style="font-weight:600;color:#999;">('+E(eduHost)+')</span></a>':'')+'</div>') : '';
+  const eduShortUrl = (edu && edu.url) ? String(edu.url).replace(/^https?:\/\/(www\.)?/, '').replace('youtube.com/watch?v=', 'youtu.be/') : '';
+  const eduBlock = (edu && edu.content) ? ('<div class="sec-h">💡 Žinok daugiau</div><div class="callout co-med"><div class="co-h"><span class="chip">SPOBU</span> '+E(edu.title||'')+'</div><p style="margin:0 0 6px;" class="small">'+E(edu.content||'')+'</p>'+(edu.url?'<a href="'+E(edu.url)+'" target="_blank" rel="noopener" style="font-size:9px;font-weight:800;color:#FF4D00;text-decoration:none;">▶️ Vaizdo įrašas: '+E(eduShortUrl)+'</a>':'')+'</div>') : '';
 
   const pageCover = '<section class="page cover" style="display:flex;flex-direction:column;justify-content:space-between;">'+
     '<div class="cover-kanji">力</div>'+
@@ -6561,23 +6564,23 @@ table.t td.n{text-align:center;font-weight:600;}
     '<div><div class="sec-h" style="margin:0 0 4px;">'+E(s.headline_lt||'')+'</div><p style="margin:0;">'+E(s.paragraph_lt||'')+'</p></div></div>'+
     ((strTags||growTags)?('<table class="t" style="margin:0;"><tr>'+(strTags?'<td style="border:none;"><span class="grade g-strong">STIPRYBĖ</span> '+strTags+'</td>':'')+(growTags?'<td style="border:none;"><span class="grade g-weak">AUGINTI</span> '+growTags+'</td>':'')+'</tr></table>'):'')+'</div>'+
     continuityBlock+
-    (skills.length?('<div class="sec-h"><span class="num">1</span> Fizinio pasirengimo profilis</div><div class="radar-wrap">'+radar+'<div style="flex:1;">'+skillBars+'</div></div>'):'')+
-    (standRows?('<div class="sec-h"><span class="num">2</span> '+(st.peer_note?'Kaip atrodo tarp bendraamžių':'Kaip atrodo statistikoje')+'</div>'+(st.intro_lt?'<p class="small mut">'+E(st.intro_lt)+'</p>':'')+(st.peer_note?'<p class="tiny mut" style="margin-top:-3px;margin-bottom:6px;">👥 '+E(st.peer_note)+'</p>':'')+'<table class="t"><thead><tr><th>Rodiklis</th><th style="text-align:center">'+(st.peer_note?'Percentilis':'Reikšmė')+'</th><th>Vertinimas</th></tr></thead><tbody>'+standRows+'</tbody></table>'):'')+
+    (skills.length?('<div class="sec-h"><span class="num">__N__</span> Fizinio pasirengimo profilis</div><div class="radar-wrap">'+radar+'<div style="flex:1;">'+skillBars+'</div></div>'):'')+
+    (standRows?('<div class="sec-h"><span class="num">__N__</span> '+(st.peer_note?'Kaip atrodo tarp bendraamžių':'Kaip atrodo statistikoje')+'</div>'+(st.intro_lt?'<p class="small mut">'+E(st.intro_lt)+'</p>':'')+(st.peer_note?'<p class="tiny mut" style="margin-top:-3px;margin-bottom:6px;">👥 '+E(st.peer_note)+'</p>':'')+'<table class="t"><thead><tr><th>Rodiklis</th><th style="text-align:center">'+(st.peer_note?'Percentilis':'Reikšmė')+'</th><th>Vertinimas</th></tr></thead><tbody>'+standRows+'</tbody></table>'):'')+
     '<div class="footer"><span>SPOBU · progreso analizė</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>';
 
   const pageMonth = (kpis||trendBars||growthBlock) ? ('<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">'+E(_rCap(c.focus_month_lt||'Mėnesio'))+' apžvalga</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
     (kpis?'<div class="grid3" style="margin-bottom:4px;">'+kpis+'</div>':'')+
-    (trendBars?('<div class="sec-h"><span class="num">3</span> Trijų mėnesių tendencija</div><div class="trendbars">'+trendBars+'</div>'+(mo.trend_note_lt?'<p class="small mut" style="margin-top:8px;">'+E(mo.trend_note_lt)+'</p>':'')):'')+
+    (trendBars?('<div class="sec-h"><span class="num">__N__</span> Trijų mėnesių tendencija</div><div class="trendbars">'+trendBars+'</div>'+(mo.trend_note_lt?'<p class="small mut" style="margin-top:8px;">'+E(mo.trend_note_lt)+'</p>':'')):'')+
     growthBlock+
     '<div class="footer"><span>SPOBU · progreso analizė</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>') : '';
 
   const pageTech = (tech.intro_lt||techRows||nutri) ? ('<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Technika ir mityba</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
-    ((tech.intro_lt||techRows)?('<div class="sec-h"><span class="num">5</span> Kovos technikos vertinimas</div>'+(tech.intro_lt?'<div class="callout co-fight"><div class="co-h"><span class="chip">TECHNIKA</span> Kyokushin</div><p style="margin:0;">'+E(tech.intro_lt)+'</p></div>':'')+(techRows?'<table class="t"><thead><tr><th>Sritis</th><th style="text-align:center">Lygis</th><th>Komentaras</th></tr></thead><tbody>'+techRows+'</tbody></table>':'')):'')+
-    (nutri?('<div class="sec-h"><span class="num">6</span> Mityba — sveiki įpročiai</div><div class="callout co-phys"><div class="co-h"><span class="chip">MITYBA</span> Pagrindiniai įpročiai (be dietų)</div><table class="t" style="margin:0;"><tbody>'+nutri+'</tbody></table><p class="tiny mut" style="margin:7px 0 0;">🍽️ Detalų mitybos planą — <b>ką tiksliai valgyti</b> — gausi užsisakę atskirą produktą „Veiksmų planas".</p></div>'):'')+
+    ((tech.intro_lt||techRows)?('<div class="sec-h"><span class="num">__N__</span> Kovos technikos vertinimas</div>'+(tech.intro_lt?'<div class="callout co-fight"><div class="co-h"><span class="chip">TECHNIKA</span> Kyokushin</div><p style="margin:0;">'+E(tech.intro_lt)+'</p></div>':'')+(techRows?'<table class="t"><thead><tr><th>Sritis</th><th style="text-align:center">Lygis</th><th>Komentaras</th></tr></thead><tbody>'+techRows+'</tbody></table>':'')):'')+
+    (nutri?('<div class="sec-h"><span class="num">__N__</span> Mityba — sveiki įpročiai</div><div class="callout co-phys"><div class="co-h"><span class="chip">MITYBA</span> Pagrindiniai įpročiai (be dietų)</div><table class="t" style="margin:0;"><tbody>'+nutri+'</tbody></table><p class="tiny mut" style="margin:7px 0 0;">🍽️ Detalų mitybos planą — <b>ką tiksliai valgyti</b> — gausite užsisakę atskirą produktą „Veiksmų planas".</p></div>'):'')+
     '<div class="footer"><span>SPOBU · progreso analizė</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>') : '';
 
   const pagePlan = '<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Rekomendacijos</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
-    (plan?('<div class="sec-h"><span class="num">7</span> Į ką sutelkti dėmesį</div>'+plan):'')+
+    (plan?('<div class="sec-h"><span class="num">__N__</span> Į ką sutelkti dėmesį</div>'+plan):'')+
     '<div class="callout co-fight" style="margin:12px 0;"><div class="co-h"><span class="chip">PAPILDOMAI</span> 🏋️ Nori konkretaus plano?</div><p style="margin:0;" class="small">Ši analizė rodo, <b>ką</b> tobulinti. Detalų profesionalų <b>2 mėn. namų treniruočių planą</b> — su konkrečiais pratimais, progresija ir <b>mitybos planu (ką valgyti)</b> pagal vaiko silpnąsias sritis — gali užsisakyti papildomai.</p></div>'+
     ((par.celebrate_lt||par.help_lt)?('<div class="sec-h"><span class="num">★</span> Trumpai tėvams</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+(par.celebrate_lt?'<div class="callout co-phys" style="margin:0;"><div class="co-h">✅ Kuo pasidžiaugti</div><p style="margin:0;" class="small">'+E(par.celebrate_lt)+'</p></div>':'')+(par.help_lt?'<div class="callout co-med" style="margin:0;"><div class="co-h">🎯 Kur padėti</div><p style="margin:0;" class="small">'+E(par.help_lt)+'</p></div>':'')+'</div>'):'')+
     eduBlock+
@@ -6586,7 +6589,10 @@ table.t td.n{text-align:center;font-weight:600;}
     '<div class="footer"><span>SPOBU · progreso analizė</span><span>© 2026 SPOBU</span><span>Konfidencialu</span></div></section>';
 
   // viewport width=820 → A4 puslapis telefone tilpsta per plotį (preview kaip PDF); spausdinant galioja @page A4
-  return '<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"><style>'+css+'</style></head><body>'+pageCover+pageSummary+pageMonth+pageTech+pagePlan+'</body></html>';
+  let _docHtml = '<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"><style>'+css+'</style></head><body>'+pageCover+pageSummary+pageMonth+pageTech+pagePlan+'</body></html>';
+  // Dinaminė sekcijų numeracija — praleidus sekciją (nėra duomenų) numeriai nešokinėja (1→5 bug)
+  let _sn = 0;
+  return _docHtml.replace(/__N__/g, function(){ return String(++_sn); });
 }
 
 // 👤 PROFILIS — vaiko profilis (be draugų)
