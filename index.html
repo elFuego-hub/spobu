@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v88</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v89</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19150,7 +19150,7 @@ async function loadAdminReports() {
   if (!list) return;
   try {
     const { data, error } = await sb.from('reports')
-      .select('id, kid_id, status, created_at, report_json, type, rating_up, rating_tags, rating_comment, kids(first_name, last_name)')
+      .select('id, kid_id, status, created_at, report_json, type, rating_up, rating_tags, rating_comment, error_text, kids(first_name, last_name)')
       .in('status', ['pending_review', 'done', 'error'])
       .order('created_at', { ascending: false }).limit(40);
     if (error) throw error;
@@ -19186,6 +19186,7 @@ async function loadAdminReports() {
         <div style="font-size:9px;color:var(--mut);margin-bottom:7px;">Užsakyta: ${when}${deadlineHtml ? ' · ' + deadlineHtml : ''}</div>
         ${(r.rating_tags || []).length ? `<div style="font-size:9px;color:#d9b970;margin:-3px 0 4px;">🏷️ ${esc(r.rating_tags.join(' · '))}</div>` : ''}
         ${r.rating_comment ? `<div style="font-size:9.5px;color:#d9b970;margin:-1px 0 7px;line-height:1.4;">💬 ${esc(r.rating_comment)}</div>` : ''}
+        ${r.status === 'error' && r.error_text ? `<div style="font-size:9.5px;color:#ff8a8a;margin:-1px 0 7px;line-height:1.4;">⚠️ ${esc(r.error_text)}</div>` : ''}
         <div style="display:flex;gap:6px;">
           ${r.report_json ? `<button onclick="openReportViewer(_adminReportsCache['${r.id}'])" style="font-size:11px;font-weight:700;padding:6px 11px;border-radius:8px;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);cursor:pointer;">👁️ Peržiūrėti</button>` : ''}
           ${canReview ? `<button onclick="approveReport('${r.id}')" style="font-size:11px;font-weight:800;padding:6px 13px;border-radius:8px;background:linear-gradient(90deg,#16A34A,#22C55E);color:#fff;border:none;cursor:pointer;">✅ Patvirtinti tėvui</button>` : ''}
