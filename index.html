@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v93</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v94</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5715,8 +5715,10 @@ const _PQ_CONFIG = {
     questions: [
       { key: 'away', label: 'Ar vasarą būsite išvykę?', multi: false, def: 'namie', opts: [['namie','Daugiausia namie'],['1-2sav','Išvykę 1–2 sav.'],['3+sav','Išvykę 3+ sav. / stovyklos']] },
       { key: 'outdoor', label: 'Lauko galimybės', multi: true, opts: [['kiemas','Kiemas'],['parkas','Parkas / miškas'],['dviratis','Dviratis'],['vanduo','Vandens telkinys'],['stadionas','Stadionas / aikštelė']] },
+      { key: 'othersport', label: 'Ar vasarą sportuos dar kažką (stovyklos, kitas sportas)?', multi: false, def: 'ne', opts: [['ne','Ne'],['1-2','Taip, 1–2 k./sav.'],['3+','Taip, 3+ k./sav.']] },
+      { key: 'focus', label: 'Į ką koncentruojamės vasarą?', multi: false, def: 'silpnos', opts: [['silpnos','🎯 Silpniausios sritys · rekomenduojama'],['jega','💪 Jėga'],['istverme','🏃 Ištvermė'],['lankstumas','🤸 Lankstumas'],['greitis','⚡ Greitis'],['varzybos','🏆 Varžyboms']] },
       { key: 'goal', label: 'Vasaros tikslas', multi: false, def: 'stipresnis', opts: [['forma','Neprarasti formos'],['stipresnis','🔥 Grįžti stipresniam · rekomenduojama'],['smagumas','Smagi aktyvi vasara']] },
-      { key: 'time', label: 'Kiek laiko skirsite?', multi: false, def: 'rutina+2', opts: [['rutina+2','Rutina + 2 sesijos · rekomenduojama'],['rutina','Tik kasdienė rutina (10–15 min)'],['laisvas','Laisvas grafikas']] },
+      { key: 'time', label: 'Kiek laiko skirsite?', multi: false, def: 'rutina+3', opts: [['rutina+2','Rutina + 2 sesijos'],['rutina+3','Rutina + 3–4 sesijos · rekomenduojama'],['rutina','Tik kasdienė rutina (10–15 min)'],['laisvas','Laisvas grafikas']] },
     ],
   },
 };
