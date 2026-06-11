@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v89</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v90</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -6189,113 +6189,148 @@ function buildPlanPrintDoc(r){
       ${edu.url ? `<a href="${E(edu.url)}" target="_blank" class="vid">▶️ Plačiau · vaizdo įrašas</a>` : ''}
     </div>` : '';
 
-  let html = `<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><title>SPOBU planas</title><style>
-    @page{margin:14mm;}
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Segoe UI',Arial,sans-serif;background:#9a9aa3;color:#16161D;font-size:13px;line-height:1.55;}
-    .pg{max-width:800px;margin:14px auto;background:#fff;padding:34px 38px;border-radius:6px;}
-    .cover{background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff;border-radius:12px;padding:26px 28px;margin-bottom:22px;}
-    .cover .k{font-size:11px;letter-spacing:3px;opacity:.85;font-weight:700;}
-    .cover h1{font-size:27px;letter-spacing:1px;margin:5px 0 7px;}
-    .cover .who{font-size:13px;opacity:.95;}
-    .sec-h{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:800;color:#0F766E;margin:24px 0 10px;border-bottom:2px solid #CCFBF1;padding-bottom:6px;}
-    .num{background:#0F766E;color:#fff;width:23px;height:23px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex:none;}
+  // 🎨 Tas pats dizainas kaip diagnostikos (A4 puslapiai, Bebas Neue, pilnas titulinis) — tik teal/gintaro paletė
+  const isSummer = r.type === 'summer';
+  const coverKanji = isSummer ? '夏' : '道';
+  const coverSub = isSummer ? 'Vasaros treniruočių programa' : 'Asmeninė treniruočių programa';
+  const coverTitle = isSummer ? 'VASAROS<br><span>PROGRAMA</span>' : 'VEIKSMŲ<br><span>PLANAS</span>';
+  const coverPar = isSummer
+    ? 'Vasara — ne pertrauka, o slaptas ginklas: misijos lauke, saulė ir OSU dvasia. Kol kiti ilsisi — tu augi.'
+    : 'Konkretus 12 savaičių kelias pagal realius vaiko rezultatus: 3 tikslai, savaitės ritmas, pratimai namuose ir mityba. Geriausi kovotojai auga ne šuoliais, o nuosekliais žingsniais — OSU.';
+  const prodLabel = isSummer ? 'vasaros programa' : 'veiksmų planas';
+  const pgFoot = '<div class="footer"><span>SPOBU · ' + prodLabel + '</span><span>' + E(c.kid_name || '') + '</span><span>Konfidencialu</span></div>';
+
+  let html = `<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><title>${isSummer ? 'SPOBU vasaros programa' : 'SPOBU veiksmų planas'}</title><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"><style>
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0;}
+    body{font-family:'Inter',system-ui,Arial,sans-serif;color:#16161D;background:#9a9aa3;font-size:11px;line-height:1.55;}
+    .page{width:210mm;min-height:296mm;background:#fff;margin:12px auto;padding:15mm 14mm;position:relative;box-shadow:0 6px 24px rgba(0,0,0,.3);}
+    .mut{color:#6B7280;}.small{font-size:9.5px;}.tiny{font-size:8.5px;}
+    .cover{background:radial-gradient(120% 90% at 78% 8%,#0b2a26,#0e1a18 45%,#0b0b0f 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;}
+    .cover-kanji{position:absolute;right:-30px;top:40px;font-size:300px;line-height:.8;color:#14B8A621;}
+    .brand-badge{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#0F766E,#14B8A6);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:26px;color:#fff;}
+    .brand-name{font-family:'Bebas Neue';font-size:26px;letter-spacing:3px;}
+    .cover-title{font-family:'Bebas Neue';font-size:64px;line-height:.92;}.cover-title span{color:#14B8A6;}
+    .kid-av{width:70px;height:70px;border-radius:18px;background:linear-gradient(135deg,#0F766E,#14B8A6);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:36px;color:#fff;flex:none;}
+    .belt{display:inline-block;padding:2px 9px;border-radius:20px;font-size:9px;font-weight:800;background:linear-gradient(90deg,#ff9d00,#ff7a00);color:#1a1200;}
+    .pagehead{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #16161D;padding-bottom:8px;margin-bottom:14px;}
+    .ph-badge{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#0F766E,#14B8A6);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:17px;color:#fff;}
+    .ph-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:1.5px;}
+    .sec-h{font-family:'Bebas Neue';font-size:19px;letter-spacing:1px;margin:16px 0 8px;display:flex;align-items:center;gap:9px;color:#0F766E;}
+    .sec-h .num{width:22px;height:22px;border-radius:6px;background:#0F766E;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';flex:none;}
+    p{margin:0 0 8px;}
     .chips{margin:8px 0 2px;}
-    .fchip{display:inline-block;background:#F0FDFA;border:1px solid #99F6E4;color:#0F766E;font-weight:700;font-size:11.5px;border-radius:99px;padding:4px 12px;margin:0 6px 6px 0;}
-    .goal{display:flex;gap:12px;background:#F0FDFA;border:1px solid #99F6E4;border-radius:11px;padding:13px 15px;margin-bottom:9px;}
-    .goal-n{background:#0F766E;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none;}
-    .goal-t{font-weight:800;font-size:13.5px;}
-    .goal-vals{font-size:12px;margin:3px 0;}
+    .fchip{display:inline-block;background:#F0FDFA;border:1px solid #99F6E4;color:#0F766E;font-weight:700;font-size:10px;border-radius:99px;padding:3px 11px;margin:0 6px 6px 0;}
+    .goal{display:flex;gap:12px;background:#F0FDFA;border:1px solid #99F6E4;border-radius:11px;padding:12px 14px;margin-bottom:8px;page-break-inside:avoid;}
+    .goal-n{background:#0F766E;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none;font-size:12px;}
+    .goal-t{font-weight:800;font-size:11.5px;}
+    .goal-vals{font-size:10.5px;margin:3px 0;}
     .goal-vals .cur{color:#555;}
     .goal-vals .arr{margin:0 7px;color:#0F766E;font-weight:800;}
     .goal-vals .tgt{color:#0F766E;}
-    .goal-why{font-size:11.5px;color:#555;}
-    .stage{border-left:3px solid #14B8A6;padding:2px 0 2px 14px;margin-bottom:12px;}
-    .stage-h{font-weight:800;color:#0F766E;}
-    .stage-f{font-size:12px;color:#444;margin:2px 0 4px;}
-    .ml{margin:4px 0 0 16px;font-size:12px;color:#333;}
+    .goal-why{font-size:10px;color:#555;}
+    .stage{border-left:3px solid #14B8A6;padding:2px 0 2px 14px;margin-bottom:11px;page-break-inside:avoid;}
+    .stage-h{font-weight:800;color:#0F766E;font-size:11.5px;}
+    .stage-f{font-size:10.5px;color:#444;margin:2px 0 4px;}
+    .ml{margin:4px 0 0 16px;font-size:10.5px;color:#333;}
     .ml li{margin-bottom:3px;}
-    .sess{background:#fafafa;border:1px solid #e7e7ee;border-radius:10px;padding:11px 14px;margin-bottom:8px;}
-    .sess-h{font-weight:800;color:#0F766E;font-size:12.5px;}
-    .legend{background:#FFFBEB;border:1px solid #FDE68A;border-radius:9px;padding:8px 12px;font-size:11.5px;color:#7a5b00;margin:8px 0 12px;}
-    .exr{border:1px solid #e7e7ee;border-radius:10px;padding:11px 14px;margin-bottom:8px;page-break-inside:avoid;}
+    .sess{background:#fafafa;border:1px solid #e7e7ee;border-radius:10px;padding:10px 13px;margin-bottom:8px;page-break-inside:avoid;}
+    .sess-h{font-weight:800;color:#0F766E;font-size:11px;}
+    .legend{background:#F0FDFA;border:1px solid #99F6E4;border-radius:9px;padding:8px 12px;font-size:10px;color:#0F766E;margin:8px 0 12px;}
+    .exr{border:1px solid #e7e7ee;border-radius:10px;padding:10px 13px;margin-bottom:7px;page-break-inside:avoid;}
     .exr-top{display:flex;align-items:center;gap:9px;}
-    .exr-n{background:#CCFBF1;color:#0F766E;width:21px;height:21px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex:none;}
-    .exr-name{font-weight:800;flex:1;}
-    .exr-sets{background:#0F766E;color:#fff;border-radius:7px;padding:3px 10px;font-weight:800;font-size:11.5px;}
-    .exr-mus{font-size:11px;color:#0F766E;margin-top:4px;}
-    .exr-how{font-size:12px;color:#333;margin-top:5px;}
-    .exr-prog{font-size:11px;color:#666;margin-top:4px;}
-    .t{width:100%;border-collapse:collapse;font-size:12px;}
+    .exr-n{background:#CCFBF1;color:#0F766E;width:21px;height:21px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;flex:none;}
+    .exr-name{font-weight:800;flex:1;font-size:11px;}
+    .exr-sets{background:#0F766E;color:#fff;border-radius:7px;padding:3px 10px;font-weight:800;font-size:10px;}
+    .exr-mus{font-size:9.5px;color:#0F766E;margin-top:4px;}
+    .exr-how{font-size:10.5px;color:#333;margin-top:5px;}
+    .exr-prog{font-size:9.5px;color:#666;margin-top:4px;}
+    .t{width:100%;border-collapse:collapse;font-size:10.5px;}
     .t td{border-top:1px solid #eee;padding:7px 9px;vertical-align:top;}
     .t .pi{white-space:nowrap;width:36%;}
-    .rec{background:#F0FDFA;border:1px solid #99F6E4;border-radius:10px;padding:11px 14px;margin-bottom:8px;page-break-inside:avoid;}
-    .rec-t{font-weight:800;color:#0F766E;}
-    .rec-i{font-size:11.5px;color:#555;margin:3px 0 4px;}
-    .callout{background:#fafafa;border-left:3px solid #14B8A6;border-radius:0 9px 9px 0;padding:11px 14px;margin:10px 0;page-break-inside:avoid;}
-    .co-h{font-weight:800;color:#0F766E;margin-bottom:4px;}
-    .callout p{font-size:12px;color:#333;}
-    .chip{background:#0F766E;color:#fff;font-size:9.5px;border-radius:99px;padding:2px 8px;letter-spacing:1px;}
-    .vid{display:inline-block;margin-top:6px;color:#0F766E;font-weight:800;font-size:11.5px;text-decoration:none;}
-    .mot{background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff;border-radius:11px;padding:15px 18px;margin:14px 0;}
-    .mot b{font-size:13.5px;}
-    .disc{border:1px dashed #ccc;border-radius:9px;padding:10px 13px;font-size:10px;color:#777;margin-top:18px;}
-    .foot{text-align:center;margin-top:20px;color:#999;font-size:10.5px;}
-    .foot .lg{background:#0F766E;color:#fff;width:42px;height:42px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:5px;}
-  </style></head><body><div class="pg">
-    <div class="cover">
-      <div class="k">SPOBU · ASMENINĖ PROGRAMA</div>
-      <h1>${E(c.title_lt || '3 MĖNESIŲ VEIKSMŲ PLANAS')}</h1>
-      <div class="who">${E(c.kid_name)}${c.age_label ? ' · ' + E(c.age_label) : ''}${c.belt ? ' · 🥋 ' + E(c.belt) : ''}</div>
-      ${c.period_label ? `<div class="who" style="opacity:.8;font-size:11.5px;margin-top:3px;">${E(c.period_label)}</div>` : ''}
-    </div>
+    .rec{background:#F0FDFA;border:1px solid #99F6E4;border-radius:10px;padding:10px 13px;margin-bottom:8px;page-break-inside:avoid;}
+    .rec-t{font-weight:800;color:#0F766E;font-size:11px;}
+    .rec-i{font-size:10px;color:#555;margin:3px 0 4px;}
+    .callout{background:#fafafa;border-left:3px solid #14B8A6;border-radius:0 9px 9px 0;padding:10px 13px;margin:10px 0;page-break-inside:avoid;}
+    .co-h{font-weight:800;color:#0F766E;margin-bottom:4px;font-size:11px;}
+    .callout p{font-size:10.5px;color:#333;}
+    .chip{background:#0F766E;color:#fff;font-size:8.5px;border-radius:99px;padding:2px 8px;letter-spacing:1px;}
+    .vid{display:inline-block;margin-top:6px;color:#0F766E;font-weight:800;font-size:10px;text-decoration:none;}
+    .mot{background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff;border-radius:11px;padding:14px 17px;margin:14px 0;page-break-inside:avoid;}
+    .mot b{font-size:12.5px;}
+    .disc{border:1px dashed #ccc;border-radius:9px;padding:10px 13px;font-size:8.5px;color:#777;margin-top:16px;}
+    .footer{border-top:1px solid #E6E6EC;padding-top:6px;margin-top:14px;display:flex;justify-content:space-between;font-size:8px;color:#6B7280;}
+    @media print{body{background:#fff;}.page{margin:0;box-shadow:none;page-break-after:always;}.page:last-child{page-break-after:auto;}}
+    @page{size:A4;margin:0;}
+  </style></head><body>
+    <section class="page cover">
+      <div class="cover-kanji">${coverKanji}</div>
+      <div style="display:flex;align-items:center;gap:10px;position:relative;z-index:2;"><div class="brand-badge">空</div><div><div class="brand-name">SPOBU</div><div style="font-size:9px;letter-spacing:4px;color:#14B8A6;text-transform:uppercase;">Karate · Pažanga · Charakteris</div></div></div>
+      <div style="position:relative;z-index:2;"><div style="font-size:11px;letter-spacing:6px;color:rgba(255,255,255,.5);text-transform:uppercase;">${coverSub}</div>
+      <div class="cover-title">${coverTitle}</div>
+      <div style="font-size:12px;color:#fff;opacity:.85;max-width:380px;line-height:1.5;">${coverPar}</div></div>
+      <div style="position:relative;z-index:2;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:16px 18px;display:flex;gap:16px;align-items:center;">
+        <div class="kid-av">${E(_rInitials(c.kid_name))}</div><div style="flex:1;"><div style="font-family:'Bebas Neue';font-size:30px;color:#fff;letter-spacing:1px;line-height:1;">${E((c.kid_name || '').toUpperCase())}</div>
+        <div style="font-size:11px;color:#fff;opacity:.8;margin-top:3px;">${E(c.age_label || '')}${c.period_label ? ' · ' + E(c.period_label) : ''}</div>
+        ${c.belt ? `<div style="margin-top:7px;"><span class="belt">🥋 ${E((c.belt || '').toUpperCase())}</span></div>` : ''}</div></div>
+      <div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;color:rgba(255,255,255,.5);font-size:9px;"><div>SPOBU · spobu.lt</div><div style="text-align:right;">${E(c.period_label || '')}</div></div>
+    </section>
 
-    ${intro.headline_lt ? `<div style="font-size:17px;font-weight:800;color:#0F766E;">${E(intro.headline_lt)}</div>` : ''}
-    ${intro.paragraph_lt ? `<p style="margin-top:6px;">${E(intro.paragraph_lt)}</p>` : ''}
-    ${focus.length ? `<div class="chips">${focus.map(f => `<span class="fchip">🎯 ${E(f)}</span>`).join('')}</div>` : ''}
-    ${cont.intro_lt ? `<p style="font-size:11.5px;color:#666;margin-top:6px;">${E(cont.intro_lt)}</p>` : ''}
+    <section class="page">
+      <div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Tikslai ir kelias</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">${E(c.kid_name || '')}<br>${E(c.period_label || '')}</div></div>
+      ${intro.headline_lt ? `<div style="font-size:16px;font-weight:800;color:#0F766E;">${E(intro.headline_lt)}</div>` : ''}
+      ${intro.paragraph_lt ? `<p style="margin-top:5px;">${E(intro.paragraph_lt)}</p>` : ''}
+      ${focus.length ? `<div class="chips">${focus.map(f => `<span class="fchip">🎯 ${E(f)}</span>`).join('')}</div>` : ''}
+      ${cont.intro_lt ? `<p class="small mut" style="margin-top:5px;">${E(cont.intro_lt)}</p>` : ''}
+      <div class="sec-h"><span class="num">1</span> Tavo 3 tikslai</div>
+      ${goalsHtml}
+      <div class="sec-h"><span class="num">2</span> ${isSummer ? 'Kelias per vasarą' : 'Kelias per 12 savaičių'}</div>
+      ${roadHtml}
+      ${Array.isArray(r.missions) && r.missions.length ? `<div class="sec-h"><span class="num">★</span> Vasaros misijos</div>` + r.missions.map(ms => `<div class="goal"><div class="goal-n">🏁</div><div style="flex:1;"><div class="goal-t">${E(ms.title_lt)}${ms.month_lt ? ` <span style="font-weight:600;color:#666;font-size:10px;">· ${E(ms.month_lt)}</span>` : ''}</div><div class="goal-why">${E(ms.desc_lt)}</div></div></div>`).join('') : ''}
+      ${pgFoot}
+    </section>
 
-    <div class="sec-h"><span class="num">1</span> Tavo 3 tikslai</div>
-    ${goalsHtml}
+    <section class="page">
+      <div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Savaitės ritmas ir pratimai</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">${E(c.kid_name || '')}</div></div>
+      <div class="sec-h"><span class="num">3</span> Savaitės ritmas</div>
+      ${wk.intro_lt ? `<p style="margin-bottom:7px;">${E(wk.intro_lt)}</p>` : ''}
+      ${r.daily_lt ? `<div class="legend">🌅 <b>Kasdien (10–15 min):</b> ${E(r.daily_lt)}</div>` : ''}
+      ${sessHtml}
+      <div class="sec-h"><span class="num">4</span> Pratimai — kaip atlikti</div>
+      ${r.legend_lt ? `<div class="legend">ℹ️ ${E(r.legend_lt)}</div>` : ''}
+      ${exHtml}
+      ${pgFoot}
+    </section>
 
-    <div class="sec-h"><span class="num">2</span> Kelias per 12 savaičių</div>
-    ${roadHtml}
+    <section class="page">
+      <div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Mityba</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">${E(c.kid_name || '')}</div></div>
+      <div class="sec-h"><span class="num">5</span> Mityba — kas ant stalo</div>
+      ${nu.intro_lt ? `<p style="margin-bottom:7px;">${E(nu.intro_lt)}</p>` : ''}
+      ${princHtml ? `<table class="t"><tbody>${princHtml}</tbody></table>` : ''}
+      <div style="margin-top:10px;">${recHtml}</div>
+      ${nu.week_tip_lt ? `<div class="legend">💡 ${E(nu.week_tip_lt)}</div>` : ''}
+      ${pgFoot}
+    </section>
 
-    ${Array.isArray(r.missions) && r.missions.length ? `<div class="sec-h"><span class="num">★</span> Vasaros misijos</div>` + r.missions.map(ms => `<div class="goal"><div class="goal-n">🏁</div><div style="flex:1;"><div class="goal-t">${E(ms.title_lt)}${ms.month_lt ? ` <span style="font-weight:600;color:#666;font-size:11px;">· ${E(ms.month_lt)}</span>` : ''}</div><div class="goal-why">${E(ms.desc_lt)}</div></div></div>`).join('') : ''}
-
-    <div class="sec-h"><span class="num">3</span> Savaitės ritmas</div>
-    ${wk.intro_lt ? `<p style="font-size:12px;color:#444;margin-bottom:7px;">${E(wk.intro_lt)}</p>` : ''}
-    ${r.daily_lt ? `<div class="legend">🌅 <b>Kasdien (10–15 min):</b> ${E(r.daily_lt)}</div>` : ''}
-    ${sessHtml}
-
-    <div class="sec-h"><span class="num">4</span> Pratimai — kaip atlikti</div>
-    ${r.legend_lt ? `<div class="legend">ℹ️ ${E(r.legend_lt)}</div>` : ''}
-    ${exHtml}
-
-    <div class="sec-h"><span class="num">5</span> Mityba — kas ant stalo</div>
-    ${nu.intro_lt ? `<p style="font-size:12px;color:#444;margin-bottom:7px;">${E(nu.intro_lt)}</p>` : ''}
-    ${princHtml ? `<table class="t"><tbody>${princHtml}</tbody></table>` : ''}
-    <div style="margin-top:10px;">${recHtml}</div>
-    ${nu.week_tip_lt ? `<div class="legend" style="background:#F0FDFA;border-color:#99F6E4;color:#0F766E;">💡 ${E(nu.week_tip_lt)}</div>` : ''}
-
-    ${(mot.text_lt) ? `<div class="mot"><b>🥋 ${E(mot.title_lt || 'OSU dvasia')}</b><p style="margin-top:5px;font-size:12.5px;">${E(mot.text_lt)}</p></div>` : ''}
-
-    ${eduBlock(r.education, 'KOVOTOJO ISTORIJA')}
-    ${eduBlock(r.education2, 'KARATĖ KULTŪRA')}
-
-    ${(par.support_lt || par.watch_lt) ? `<div class="sec-h"><span class="num">6</span> Tėvams</div>
-      ${par.support_lt ? `<p style="font-size:12px;"><b style="color:#0F766E;">🤝 Kaip padėti:</b> ${E(par.support_lt)}</p>` : ''}
-      ${par.watch_lt ? `<p style="font-size:12px;margin-top:5px;"><b style="color:#0F766E;">👀 Ką stebėti:</b> ${E(par.watch_lt)}</p>` : ''}` : ''}
-    ${cont.followup_lt ? `<p style="font-size:11.5px;color:#666;margin-top:8px;">📏 ${E(cont.followup_lt)}</p>` : ''}
-
-    <div class="disc"><b>SVARBU.</b> Šis planas parengtas naudojant dirbtinį intelektą pagal vaiko treniruočių duomenis ir yra bendro pobūdžio fizinio ugdymo rekomendacija, o ne medicininė programa. Krūvį derinkite su treneriu; dėl sveikatos klausimų kreipkitės į gydytoją. Duomenys konfidencialūs.</div>
-    <div class="foot"><div class="lg">空</div><div><b style="color:#0F766E;">SPOBU</b> · spobu.lt</div><div>© ${new Date().getFullYear()} SPOBU · Konfidencialu</div></div>
-  </div></body></html>`;
-  // ☀️ Vasaros programa — ta pati struktūra, gintarinė paletė vietoj teal
+    <section class="page">
+      <div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Motyvacija ir tėvams</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">${E(c.kid_name || '')}</div></div>
+      ${(mot.text_lt) ? `<div class="mot"><b>🥋 ${E(mot.title_lt || 'OSU dvasia')}</b><p style="margin-top:5px;font-size:11.5px;">${E(mot.text_lt)}</p></div>` : ''}
+      ${eduBlock(r.education, 'KOVOTOJO ISTORIJA')}
+      ${eduBlock(r.education2, 'KARATĖ KULTŪRA')}
+      ${(par.support_lt || par.watch_lt) ? `<div class="sec-h"><span class="num">6</span> Tėvams</div>
+        ${par.support_lt ? `<p><b style="color:#0F766E;">🤝 Kaip padėti:</b> ${E(par.support_lt)}</p>` : ''}
+        ${par.watch_lt ? `<p style="margin-top:5px;"><b style="color:#0F766E;">👀 Ką stebėti:</b> ${E(par.watch_lt)}</p>` : ''}` : ''}
+      ${cont.followup_lt ? `<p class="small mut" style="margin-top:8px;">📏 ${E(cont.followup_lt)}</p>` : ''}
+      <div class="disc"><b>SVARBU.</b> Šis planas parengtas naudojant dirbtinį intelektą pagal vaiko treniruočių duomenis ir yra bendro pobūdžio fizinio ugdymo rekomendacija, o ne medicininė programa. Krūvį derinkite su treneriu; dėl sveikatos klausimų kreipkitės į gydytoją. Duomenys konfidencialūs.</div>
+      <div style="text-align:center;margin-top:20px;"><div class="brand-badge" style="margin:0 auto 8px;">空</div><div style="font-family:'Bebas Neue';font-size:22px;letter-spacing:3px;color:#16161D;">SPOBU</div><div class="tiny mut" style="letter-spacing:2px;">spobu.lt</div></div>
+      ${pgFoot}
+    </section>
+  </body></html>`;
+  // ☀️ Vasaros programa — ta pati struktūra, gintarinė paletė vietoj teal (+ tamsus viršelio atspalvis)
   if (r.type === 'summer') {
     html = html.split('#0F766E').join('#B45309').split('#14B8A6').join('#F59E0B')
                .split('#CCFBF1').join('#FDE68A').split('#99F6E4').join('#FCD34D')
-               .split('#F0FDFA').join('#FFFBEB');
+               .split('#F0FDFA').join('#FFFBEB')
+               .split('#0b2a26').join('#2a1c0b').split('#0e1a18').join('#1a140e');
   }
   return html;
 }
