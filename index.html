@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v95</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v96</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -6282,16 +6282,21 @@ function buildPlanPrintDoc(r){
 
   const princHtml = princ.map(p => `<tr><td class="pi">${E(p.icon || '🥗')} <b>${E(p.title_lt)}</b></td><td>${E(p.text_lt)}</td></tr>`).join('');
   const recHtml = recipes.map(rc => `<div class="rec">
-      <div class="rec-t">🍽️ ${E(rc.title_lt)}</div>
+      <div class="rec-t">🍽️ ${E(rc.title_lt || 'Receptas')}</div>
       <div class="rec-i">${(Array.isArray(rc.ingredients_lt) ? rc.ingredients_lt : []).map(E).join(' · ')}</div>
       <ol class="ml">${(Array.isArray(rc.steps_lt) ? rc.steps_lt : []).map(s2 => `<li>${E(s2)}</li>`).join('')}</ol>
     </div>`).join('');
 
-  const eduBlock = (edu, chip) => (edu && edu.content) ? `<div class="callout">
+  const eduBlock = (edu, chip) => {
+    if (!(edu && edu.content)) return '';
+    // Rodom ir domeną — kad nuoroda nekabotų „ore" spausdintame/kopijuotame tekste
+    const host = edu.url ? String(edu.url).replace(/^https?:\/\/(www\.)?/, '').split('/')[0] : '';
+    return `<div class="callout">
       <div class="co-h"><span class="chip">${chip}</span> ${E(edu.title)}</div>
       <p>${E(edu.content)}</p>
-      ${edu.url ? `<a href="${E(edu.url)}" target="_blank" class="vid">▶️ Plačiau · vaizdo įrašas</a>` : ''}
-    </div>` : '';
+      ${edu.url ? `<a href="${E(edu.url)}" target="_blank" class="vid">▶️ Plačiau · vaizdo įrašas <span style="font-weight:600;color:#999;">(${E(host)})</span></a>` : ''}
+    </div>`;
+  };
 
   // 🎨 Tas pats dizainas kaip diagnostikos (A4 puslapiai, Bebas Neue, pilnas titulinis) — tik teal/gintaro paletė
   const coverKanji = isSummer ? '夏' : '道';
@@ -6454,7 +6459,8 @@ function buildReportPrintDoc(r){
   const kpis = (mo.kpis||[]).map(x => '<div class="kpi"><div class="kv">'+E(x.value)+'</div><div class="kl">'+E(x.label_lt)+'</div>'+(x.delta_lt?'<div class="kd '+(x.tone==='weak'?'dn':'up')+'">'+E(x.delta_lt)+'</div>':'')+'</div>').join('');
   const trend = Array.isArray(mo.trend)?mo.trend:[];
   const maxT = Math.max(1, ...trend.map(t=>t.exp||0));
-  const trendBars = trend.map(t => '<div class="tb"><div class="col" style="height:'+Math.max(8,Math.round((t.exp||0)/maxT*100))+'%;">'+(t.exp||0).toLocaleString('lt-LT')+'</div><div class="lab">'+E(_rCap(t.label))+'</div></div>').join('');
+  // Jei visi mėnesiai 0 — vietoj tuščio grafiko rodom paaiškinimą (neprieštarauja KPI tekstui)
+  const trendBars = trend.every(t=>!(t.exp>0)) ? '' : trend.map(t => '<div class="tb"><div class="col" style="height:'+Math.max(8,Math.round((t.exp||0)/maxT*100))+'%;">'+(t.exp||0).toLocaleString('lt-LT')+'</div><div class="lab">'+E(_rCap(t.label))+'</div></div>').join('');
   const techRows = (tech.rows||[]).map(x => '<tr><td>'+E(x.area_lt)+'</td><td class="n"><span class="grade '+gradeCls(x.grade)+'">'+E(x.grade)+'</span></td><td>'+E(x.comment_lt)+'</td></tr>').join('');
   const nutri = (r.nutrition||[]).map(x => '<tr><td style="width:32%;"><b>'+E(x.icon||'•')+' '+E(x.title_lt)+'</b></td><td>'+E(x.text_lt)+'</td></tr>').join('');
   const prioTxt={high:'PRIORITETAS',mid:'SVARBU',low:'PALAIKYTI'}, prioCls={high:'p-hi',mid:'p-mid',low:'p-lo'};
@@ -6505,7 +6511,7 @@ table.t td.n{text-align:center;font-weight:600;}
 .kpi .kl{font-size:8.5px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
 .kpi .kd{font-size:8.5px;margin-top:2px;}
 .bar-row{display:flex;align-items:center;gap:10px;margin:6px 0;}
-.bar-name{width:90px;font-size:10px;font-weight:700;}
+.bar-name{width:118px;font-size:9px;font-weight:700;line-height:1.2;}
 .bar-track{flex:1;height:13px;background:#eef0f4;border-radius:7px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:7px;}
 .bar-val{width:78px;text-align:right;}
@@ -6530,7 +6536,8 @@ table.t td.n{text-align:center;font-weight:600;}
     (g.refer_to_doctor?'<p style="margin:8px 0 0;color:#B45309;"><b>⚠️ '+E(g.refer_lt||'Verta pasitarti su vaiko gydytoju.')+'</b></p>':'')+'</div>') : '';
 
   const edu = r.education || null;
-  const eduBlock = (edu && edu.content) ? ('<div class="sec-h">💡 Žinok daugiau</div><div class="callout co-med"><div class="co-h"><span class="chip">SPOBU</span> '+E(edu.title||'')+'</div><p style="margin:0 0 6px;" class="small">'+E(edu.content||'')+'</p>'+(edu.url?'<a href="'+E(edu.url)+'" target="_blank" rel="noopener" style="font-size:9px;font-weight:800;color:#FF4D00;text-decoration:none;">▶️ Plačiau · vaizdo įrašas</a>':'')+'</div>') : '';
+  const eduHost = (edu && edu.url) ? String(edu.url).replace(/^https?:\/\/(www\.)?/, '').split('/')[0] : '';
+  const eduBlock = (edu && edu.content) ? ('<div class="sec-h">💡 Žinok daugiau</div><div class="callout co-med"><div class="co-h"><span class="chip">SPOBU</span> '+E(edu.title||'')+'</div><p style="margin:0 0 6px;" class="small">'+E(edu.content||'')+'</p>'+(edu.url?'<a href="'+E(edu.url)+'" target="_blank" rel="noopener" style="font-size:9px;font-weight:800;color:#FF4D00;text-decoration:none;">▶️ Plačiau · vaizdo įrašas <span style="font-weight:600;color:#999;">('+E(eduHost)+')</span></a>':'')+'</div>') : '';
 
   const pageCover = '<section class="page cover" style="display:flex;flex-direction:column;justify-content:space-between;">'+
     '<div class="cover-kanji">力</div>'+
@@ -6550,7 +6557,7 @@ table.t td.n{text-align:center;font-weight:600;}
     : ((cont.intro_lt||contProg||cont.followup_lt) ? ('<div class="callout co-phys" style="margin:10px 0 0;"><div class="co-h"><span class="chip">TĘSTINUMAS</span> Pažanga nuo praeitos ataskaitos</div>'+(cont.intro_lt?'<p style="margin:0 0 6px;">'+E(cont.intro_lt)+'</p>':'')+(contProg?'<ul style="margin:0 0 6px;padding-left:18px;" class="small">'+contProg+'</ul>':'')+(cont.followup_lt?'<p style="margin:0;" class="small"><b>Toliau:</b> '+E(cont.followup_lt)+'</p>':'')+'</div>') : '');
 
   const pageSummary = '<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Bendras vertinimas</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'<br>'+E(_rCap(c.focus_month_lt||''))+' mėn.</div></div>'+
-    '<div class="summarybox"><div class="verdict"><div class="score-ring" style="background:conic-gradient(#FF4D00 0 '+idx+'%,#eee '+idx+'% 100%);"><b>'+(s.index!=null?E(s.index):'–')+'</b><small>INDEKSAS</small></div>'+
+    '<div class="summarybox"><div class="verdict"><div class="score-ring" style="background:conic-gradient(#FF4D00 0 '+idx+'%,#eee '+idx+'% 100%);"><b>'+(s.index!=null?E(s.index):'–')+'</b><small>INDEKSAS /100</small></div>'+
     '<div><div class="sec-h" style="margin:0 0 4px;">'+E(s.headline_lt||'')+'</div><p style="margin:0;">'+E(s.paragraph_lt||'')+'</p></div></div>'+
     ((strTags||growTags)?('<table class="t" style="margin:0;"><tr>'+(strTags?'<td style="border:none;"><span class="grade g-strong">STIPRYBĖ</span> '+strTags+'</td>':'')+(growTags?'<td style="border:none;"><span class="grade g-weak">AUGINTI</span> '+growTags+'</td>':'')+'</tr></table>'):'')+'</div>'+
     continuityBlock+
@@ -6566,7 +6573,7 @@ table.t td.n{text-align:center;font-weight:600;}
 
   const pageTech = (tech.intro_lt||techRows||nutri) ? ('<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Technika ir mityba</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
     ((tech.intro_lt||techRows)?('<div class="sec-h"><span class="num">5</span> Kovos technikos vertinimas</div>'+(tech.intro_lt?'<div class="callout co-fight"><div class="co-h"><span class="chip">TECHNIKA</span> Kyokushin</div><p style="margin:0;">'+E(tech.intro_lt)+'</p></div>':'')+(techRows?'<table class="t"><thead><tr><th>Sritis</th><th style="text-align:center">Lygis</th><th>Komentaras</th></tr></thead><tbody>'+techRows+'</tbody></table>':'')):'')+
-    (nutri?('<div class="sec-h"><span class="num">6</span> Mityba — sveiki įpročiai</div><div class="callout co-phys"><div class="co-h"><span class="chip">MITYBA</span> Pagrindiniai įpročiai (be dietų)</div><table class="t" style="margin:0;"><tbody>'+nutri+'</tbody></table><p class="tiny mut" style="margin:7px 0 0;">🍽️ Detalų mitybos planą — <b>ką tiksliai valgyti</b> — rasi „Veiksmų plane".</p></div>'):'')+
+    (nutri?('<div class="sec-h"><span class="num">6</span> Mityba — sveiki įpročiai</div><div class="callout co-phys"><div class="co-h"><span class="chip">MITYBA</span> Pagrindiniai įpročiai (be dietų)</div><table class="t" style="margin:0;"><tbody>'+nutri+'</tbody></table><p class="tiny mut" style="margin:7px 0 0;">🍽️ Detalų mitybos planą — <b>ką tiksliai valgyti</b> — gausi užsisakę atskirą produktą „Veiksmų planas".</p></div>'):'')+
     '<div class="footer"><span>SPOBU · progreso analizė</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>') : '';
 
   const pagePlan = '<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Rekomendacijos</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
