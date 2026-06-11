@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v87</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v88</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5730,12 +5730,40 @@ async function consumeHomeCredit(){
   } catch (err) { console.warn('consumeHomeCredit', err); }
   await loadParentShopCredits();
 }
-function redeemSummer(){
+let _summerGenBusy = false;
+async function redeemSummer(){
   const e = parentEntitlements || {};
+  const k = parentActiveKid;
+  if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
   if ((e.summer_credits || 0) <= 0) { showToast('Nebėra vasaros kreditų', 'error'); return; }
   const days = _summerDaysLeft();
   if (days > 0) { showToast('Dar negali panaudoti — vasaros programa po ' + days + ' d. (nuo gegužės 15)', 'error', 4500); return; }
-  showToast('🔜 Vasaros programos generavimas — netrukus', 'success', 4000);
+  if (_summerGenBusy) return;
+  if (!confirm('Generuoti asmeninę 12 savaičių vasaros programą? Bus panaudotas 1 kreditas.')) return;
+  _summerGenBusy = true;
+  showToast('⏳ AI ruošia vasaros programą... (iki ~60 s, neuždaryk)', 'success', 7000);
+  try {
+    const { data, error } = await sb.functions.invoke('generate-report', { body: { kid_id: k.id, type: 'summer' } });
+    if (error) {
+      let detail = error.message || String(error);
+      try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
+      throw new Error(detail);
+    }
+    if (data && (data.report_json || data.status === 'pending_review')) {
+      await consumeSummerCredit();
+      showToast('✅ Užsakyta! SPOBU specialistai peržiūrės ir programa bus paruošta per 24 val. Rasi „Mano vasaros programos".', 'success', 6000);
+    } else { throw new Error((data && data.error) || 'Tuščias atsakymas'); }
+  } catch (err) {
+    showToast('❌ ' + (err?.message || err), 'error', 5000);
+  } finally { _summerGenBusy = false; }
+}
+async function consumeSummerCredit(){
+  const k = parentActiveKid; if (!k) return;
+  const e = parentEntitlements || {};
+  try {
+    await sb.from('kid_entitlements').update({ summer_credits: Math.max(0, (e.summer_credits || 0) - 1) }).eq('kid_id', k.id);
+  } catch (err) { console.warn('consumeSummerCredit', err); }
+  await loadParentShopCredits();
 }
 async function consumeReportCredit(){
   const k = parentActiveKid; if (!k) return;
@@ -5829,12 +5857,8 @@ async function loadHistory(type){
   if (!el) return;
   const k = parentActiveKid;
   if (!k) { el.innerHTML = ''; return; }
-  if (type === 'summer') {
-    el.innerHTML = '<div style="text-align:center;padding:26px 16px;color:var(--mut);font-size:11.5px;line-height:1.55;">Dar nėra — generavimas netrukus.<br>Čia matysi visas savo užsakytas vasaros programas.</div>';
-    return;
-  }
-  const dbType = type === 'home' ? 'plan' : 'report';
-  const baseLbl = type === 'home' ? 'Veiksmų planas' : 'Ataskaita';
+  const dbType = type === 'home' ? 'plan' : (type === 'summer' ? 'summer' : 'report');
+  const baseLbl = type === 'home' ? 'Veiksmų planas' : (type === 'summer' ? 'Vasaros programa' : 'Ataskaita');
   try {
     const { data, error } = await sb.from('reports').select('id, status, created_at, report_json, rating_up').eq('kid_id', k.id).eq('type', dbType).order('created_at', { ascending: false }).limit(24);
     if (error) throw error;
@@ -5845,9 +5869,11 @@ async function loadHistory(type){
       const done = r.status === 'done' && r.report_json;
       const dt = new Date(r.created_at).toLocaleDateString('lt-LT');
       const mon = r.report_json && r.report_json.cover ? r.report_json.cover.focus_month_lt : null;
-      const statusTxt = done ? (type === 'home' ? '12 savaičių' : (mon ? (_rCap(mon) + ' mėn.') : 'Paruošta')) : (r.status === 'error' ? '❌ Klaida' : (r.status === 'pending_review' ? '⏳ Ruošiama (iki 24 val.)' : '⏳ Generuojama'));
+      const statusTxt = done ? ((type === 'home' || type === 'summer') ? '12 savaičių' : (mon ? (_rCap(mon) + ' mėn.') : 'Paruošta')) : (r.status === 'error' ? '❌ Klaida' : (r.status === 'pending_review' ? '⏳ Ruošiama (iki 24 val.)' : '⏳ Generuojama'));
+      const tGrad = type === 'home' ? 'linear-gradient(135deg,#0F766E,#14B8A6)' : (type === 'summer' ? 'linear-gradient(135deg,#B45309,#F59E0B)' : 'linear-gradient(135deg,#FF4D00,#FF8C00)');
+      const tIcoH = type === 'home' ? '🏋️' : (type === 'summer' ? '☀️' : '📄');
       return `<div ${done ? `onclick="openReportViewer(_myReportsCache['${r.id}'],'${r.id}',${r.rating_up == null ? 'null' : r.rating_up})"` : ''} style="display:flex;align-items:center;gap:11px;padding:11px;margin-bottom:7px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;${done ? 'cursor:pointer;' : ''}">
-        <div style="width:34px;height:34px;border-radius:9px;background:${type === 'home' ? 'linear-gradient(135deg,#0F766E,#14B8A6)' : 'linear-gradient(135deg,#FF4D00,#FF8C00)'};display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${type === 'home' ? '🏋️' : '📄'}</div>
+        <div style="width:34px;height:34px;border-radius:9px;background:${tGrad};display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${tIcoH}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;color:white;">${baseLbl} · ${statusTxt}</div><div style="font-size:9px;color:var(--mut);">${dt}</div></div>
         ${done ? '<div style="color:var(--br);font-size:16px;flex-shrink:0;">›</div>' : ''}
       </div>`;
@@ -6163,7 +6189,7 @@ function buildPlanPrintDoc(r){
       ${edu.url ? `<a href="${E(edu.url)}" target="_blank" class="vid">▶️ Plačiau · vaizdo įrašas</a>` : ''}
     </div>` : '';
 
-  return `<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><title>SPOBU planas</title><style>
+  let html = `<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><title>SPOBU planas</title><style>
     @page{margin:14mm;}
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Segoe UI',Arial,sans-serif;background:#9a9aa3;color:#16161D;font-size:13px;line-height:1.55;}
@@ -6235,8 +6261,11 @@ function buildPlanPrintDoc(r){
     <div class="sec-h"><span class="num">2</span> Kelias per 12 savaičių</div>
     ${roadHtml}
 
+    ${Array.isArray(r.missions) && r.missions.length ? `<div class="sec-h"><span class="num">★</span> Vasaros misijos</div>` + r.missions.map(ms => `<div class="goal"><div class="goal-n">🏁</div><div style="flex:1;"><div class="goal-t">${E(ms.title_lt)}${ms.month_lt ? ` <span style="font-weight:600;color:#666;font-size:11px;">· ${E(ms.month_lt)}</span>` : ''}</div><div class="goal-why">${E(ms.desc_lt)}</div></div></div>`).join('') : ''}
+
     <div class="sec-h"><span class="num">3</span> Savaitės ritmas</div>
     ${wk.intro_lt ? `<p style="font-size:12px;color:#444;margin-bottom:7px;">${E(wk.intro_lt)}</p>` : ''}
+    ${r.daily_lt ? `<div class="legend">🌅 <b>Kasdien (10–15 min):</b> ${E(r.daily_lt)}</div>` : ''}
     ${sessHtml}
 
     <div class="sec-h"><span class="num">4</span> Pratimai — kaip atlikti</div>
@@ -6262,10 +6291,17 @@ function buildPlanPrintDoc(r){
     <div class="disc"><b>SVARBU.</b> Šis planas parengtas naudojant dirbtinį intelektą pagal vaiko treniruočių duomenis ir yra bendro pobūdžio fizinio ugdymo rekomendacija, o ne medicininė programa. Krūvį derinkite su treneriu; dėl sveikatos klausimų kreipkitės į gydytoją. Duomenys konfidencialūs.</div>
     <div class="foot"><div class="lg">空</div><div><b style="color:#0F766E;">SPOBU</b> · spobu.lt</div><div>© ${new Date().getFullYear()} SPOBU · Konfidencialu</div></div>
   </div></body></html>`;
+  // ☀️ Vasaros programa — ta pati struktūra, gintarinė paletė vietoj teal
+  if (r.type === 'summer') {
+    html = html.split('#0F766E').join('#B45309').split('#14B8A6').join('#F59E0B')
+               .split('#CCFBF1').join('#FDE68A').split('#99F6E4').join('#FCD34D')
+               .split('#F0FDFA').join('#FFFBEB');
+  }
+  return html;
 }
 
 function buildReportPrintDoc(r){
-  if (r && r.type === 'plan') return buildPlanPrintDoc(r);
+  if (r && (r.type === 'plan' || r.type === 'summer')) return buildPlanPrintDoc(r);
   r = r || {};
   const c=r.cover||{}, s=r.summary||{}, g=r.growth||{}, mo=r.month||{}, tech=r.technique||{}, par=r.parents||{}, st=r.standing||{}, cont=r.continuity||{};
   const skills = Array.isArray(r.skills)?r.skills:[];
