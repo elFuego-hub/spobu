@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v84</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v85</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5936,7 +5936,7 @@ function openReportViewer(r, reportId, rating){
   m.style.cssText = 'position:fixed;inset:0;background:#0b0b0f;z-index:100000;display:flex;flex-direction:column;';
   m.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#14141b;border-bottom:1px solid #26262e;flex-shrink:0;">
-      <button onclick="document.getElementById('report-viewer-modal').remove()" style="background:none;border:none;color:white;font-size:14px;cursor:pointer;font-weight:700;">‹ Uždaryti</button>
+      <button onclick="closeReportViewer()" style="background:none;border:none;color:white;font-size:14px;cursor:pointer;font-weight:700;">‹ Uždaryti</button>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:white;">ATASKAITA</div>
       <button onclick="printReportFrame()" style="background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;color:white;font-size:12px;font-weight:800;padding:8px 14px;border-radius:9px;cursor:pointer;">🖨️ PDF</button>
     </div>
@@ -5946,7 +5946,30 @@ function openReportViewer(r, reportId, rating){
   const f = document.getElementById('report-frame');
   try { const d = f.contentDocument || f.contentWindow.document; d.open(); d.write(buildReportPrintDoc(r)); d.close(); }
   catch (e) { console.warn('report viewer', e); }
+  _repViewState = { id: reportId || null, rated: (rating === true || rating === false) };
   if (reportId) _renderRateBar(reportId, rating);
+}
+
+// Uždarymas su feedback'o popup'u (Uber/App Store praktika: klausiam suvartojus turinį).
+// Praleidus — daugiau tos ataskaitos nebeklausiam (localStorage). Admin kelias (be id) uždaro iškart.
+let _repViewState = null;
+function closeReportViewer(){
+  const m = document.getElementById('report-viewer-modal');
+  const st = _repViewState;
+  const skipKey = (st && st.id) ? ('spobu_rskip_' + st.id) : null;
+  let skipped = false;
+  try { skipped = skipKey ? !!localStorage.getItem(skipKey) : false; } catch (e) {}
+  if (!st || !st.id || st.rated || skipped || document.getElementById('rep-rate-overlay')) { if (m) m.remove(); return; }
+  const oldBar = document.getElementById('rep-rate-bar'); if (oldBar) oldBar.remove();
+  const ov = document.createElement('div');
+  ov.id = 'rep-rate-overlay';
+  ov.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:10;padding:20px;';
+  ov.innerHTML = `<div style="background:#14141b;border:1px solid #2e2e38;border-radius:16px;padding:16px;width:100%;max-width:360px;">
+      <div id="rep-rate-bar"></div>
+      <button onclick="try{localStorage.setItem('${skipKey}','1')}catch(e){};document.getElementById('report-viewer-modal').remove()" style="margin-top:10px;width:100%;background:none;border:none;color:var(--mut);font-size:11px;cursor:pointer;">Praleisti</button>
+    </div>`;
+  if (m) m.appendChild(ov);
+  _renderRateBar(st.id, null);
 }
 
 // 👍/👎 Ataskaitos feedback (Bolt praktika): binarinis pirmas paspaudimas;
@@ -6019,10 +6042,15 @@ async function _saveReportFeedback(reportId, up, tags, comment, silent){
       rated_at: new Date().toISOString()
     }).eq('id', reportId);
     if (error) throw error;
+    if (_repViewState && _repViewState.id === reportId) _repViewState.rated = true;
     if (!silent) {
       _renderRateBar(reportId, up);
       showToast(up ? '👍 Ačiū!' : '🙏 Ačiū už pastabas!', 'success');
       if (typeof loadMyReports === 'function') loadMyReports();
+      // Jei vertinta uždarymo popup'e — po padėkos uždarom visą peržiūrą
+      if (document.getElementById('rep-rate-overlay')) {
+        setTimeout(() => { const mm = document.getElementById('report-viewer-modal'); if (mm) mm.remove(); }, 1100);
+      }
     }
   } catch (e) { if (!silent) showToast('Nepavyko išsaugoti: ' + (e?.message || ''), 'error'); }
 }
