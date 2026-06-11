@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v85</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v86</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5807,7 +5807,7 @@ async function loadHistory(type){
     return;
   }
   try {
-    const { data, error } = await sb.from('reports').select('id, status, created_at, report_json').eq('kid_id', k.id).order('created_at', { ascending: false }).limit(24);
+    const { data, error } = await sb.from('reports').select('id, status, created_at, report_json, rating_up').eq('kid_id', k.id).order('created_at', { ascending: false }).limit(24);
     if (error) throw error;
     if (!data || !data.length) { el.innerHTML = '<div style="text-align:center;padding:26px;color:var(--mut);font-size:11.5px;">Dar nėra ataskaitų</div>'; return; }
     if (!_myReportsCache) _myReportsCache = {};
@@ -5816,8 +5816,8 @@ async function loadHistory(type){
       const done = r.status === 'done' && r.report_json;
       const dt = new Date(r.created_at).toLocaleDateString('lt-LT');
       const mon = r.report_json && r.report_json.cover ? r.report_json.cover.focus_month_lt : null;
-      const statusTxt = done ? (mon ? (_rCap(mon) + ' mėn.') : 'Paruošta') : (r.status === 'error' ? '❌ Klaida' : '⏳ Generuojama');
-      return `<div ${done ? `onclick="openReportViewer(_myReportsCache['${r.id}'])"` : ''} style="display:flex;align-items:center;gap:11px;padding:11px;margin-bottom:7px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;${done ? 'cursor:pointer;' : ''}">
+      const statusTxt = done ? (mon ? (_rCap(mon) + ' mėn.') : 'Paruošta') : (r.status === 'error' ? '❌ Klaida' : (r.status === 'pending_review' ? '⏳ Ruošiama (iki 24 val.)' : '⏳ Generuojama'));
+      return `<div ${done ? `onclick="openReportViewer(_myReportsCache['${r.id}'],'${r.id}',${r.rating_up == null ? 'null' : r.rating_up})"` : ''} style="display:flex;align-items:center;gap:11px;padding:11px;margin-bottom:7px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;${done ? 'cursor:pointer;' : ''}">
         <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#FF4D00,#FF8C00);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">📄</div>
         <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;color:white;">Ataskaita · ${statusTxt}</div><div style="font-size:9px;color:var(--mut);">${dt}</div></div>
         ${done ? '<div style="color:var(--br);font-size:16px;flex-shrink:0;">›</div>' : ''}
