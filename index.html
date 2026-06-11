@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v79</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v81</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -925,7 +925,7 @@ select.inp option{background:#222;}
         <div style="color:var(--mut);font-size:24px;">→</div>
         <div style="text-align:center;">
           <div style="font-size:10px;color:var(--mut);">NAUJAS REKORDAS</div>
-          <input type="number" class="inp" id="exo-form-new" min="1" step="any" style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:24px;width:90px;margin:0;padding:6px;" oninput="recalcExpGain()">
+          <input type="text" inputmode="decimal" autocomplete="off" class="inp" id="exo-form-new" style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:24px;width:90px;margin:0;padding:6px;" oninput="recalcExpGain()">
         </div>
       </div>
       <div id="exo-form-levels" style="display:none;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;"></div>
@@ -936,7 +936,8 @@ select.inp option{background:#222;}
       <label class="lbl">KOMENTARAS (neprivalomai)</label>
       <textarea class="inp" id="exo-form-comment" placeholder="Pvz. nufilmavau, ant kilimėlio..." rows="2" style="resize:none;"></textarea>
       <button class="btn btng" id="exo-form-submit" style="margin:8px 0 0;width:100%;" onclick="submitExerciseResult()">SIŲSTI TRENERIUI</button>
-      <div style="font-size:11px;color:var(--mut);text-align:center;margin-top:8px;">⚠️ Galima siųsti tik rezultatą, didesnį už PR</div>
+      <div style="font-size:11px;color:var(--mut);text-align:center;margin-top:8px;">⚠️ Galima siųsti tik geresnį rezultatą už PR</div>
+      <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:6px;line-height:1.5;">🙏 Treneris peržiūri kiekvieną pateikimą — siųsk tik <b style="color:#c9c9d4;">tikrą pagerėjimą</b>, idealiai po testavimo treniruotėje, ne po kelis kartus per dieną.</div>
     </div>
   </div>
 </div>
@@ -963,7 +964,8 @@ select.inp option{background:#222;}
         <div style="font-size:11px;color:#FF4D00;font-weight:800;margin-bottom:4px;">🥋 OSU dvasia — kai matuojiesi, atiduok VISKĄ</div>
         Osu reiškia <b style="color:#e8d9c5;">ištverti ir nepasiduoti</b>. Testo dieną sudirbk maksimaliai: dar vienas kartojimas,
         dar viena plankos sekundė, dar vienas spyris — <b style="color:#e8d9c5;">iki paskutinio lašo</b>. Ir fiksuok sąžiningai:
-        suapvalinęs į viršų apgausi tik save.
+        suapvalinęs į viršų apgausi tik save. Atmink — <b style="color:#e8d9c5;">treneris peržiūri kiekvieną rezultatą</b>:
+        siųsk tada, kai tikrai pagerėjai, o ne po kelis kartus per dieną.
       </div>
       <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
         <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;">📈 Kaip auga EXP</div>
@@ -5071,7 +5073,7 @@ async function showParentExercises(categoryId, categoryName) {
         const done = ex.lower_is_better ? (current_pr > 0 && current_pr <= ct) : (current_pr > 0 && current_pr >= ct);
         if (done) doneCount++;
       }
-      return { ...ex, target: target || null, current_pr, category_exp: 0, ageGroup };
+      return { ...ex, target: target || null, has_pr: !!rec, current_pr, category_exp: 0, ageGroup };
     });
 
     exoReadOnly = true;
@@ -21486,6 +21488,7 @@ async function showExercises(categoryId, categoryName) {
     return {
       ...ex,
       target: target || null,
+      has_pr: !!rec,
       current_pr: rec?.current_pr || 0,
       category_exp: rec?.category_exp || 0,
       ageGroup: ageGroup
@@ -21509,8 +21512,10 @@ const EXO_SRC = { sci:['#7fd4a0','🔬 FITNESSGRAM'], elite:['#ffd24a','⭐ Euro
 // laikams sekundėmis ir ordinaliems lygiams (1–4). val<=0 = nebandyta.
 function careerExpPct(ex, val) {
   const t = ex.target;
-  if (!t || val === null || val === undefined || isNaN(val) || val <= 0) return 0;
+  if (!t || val === null || val === undefined || isNaN(val)) return 0;
   const lower = ex.lower_is_better;
+  if (!lower && val <= 0) return 0;
+  if (lower && val < 0) return 0; // lankstumui 0 = pilnas (galioja)
   const b = parseFloat(t.bronze), s = parseFloat(t.silver), g = parseFloat(t.gold), c = parseFloat(t.completed);
   const hit = x => lower ? val <= x : val >= x;
   const seg = (a1, a2, base) => base + Math.round(25 * Math.abs(val - a1) / (Math.abs(a2 - a1) || 1));
@@ -21523,12 +21528,12 @@ function careerExpPct(ex, val) {
 
 function exoExpOf(ex) {
   if (!ex.target) return { pct: 0, exp: 0, completed: false };
-  const pct = ex.current_pr ? careerExpPct(ex, ex.current_pr) : 0;
+  const pct = ex.has_pr ? careerExpPct(ex, ex.current_pr) : 0;
   return { pct, exp: pct, completed: pct >= 100 };
 }
 
 function exoReached(ex, t) {
-  if (!ex.current_pr) return false;
+  if (!ex.has_pr) return false;
   return ex.lower_is_better ? ex.current_pr <= parseFloat(t) : ex.current_pr >= parseFloat(t);
 }
 
@@ -21549,7 +21554,7 @@ function renderExoList() {
         <div style="width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex:none;">${icon}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:800;line-height:1.25;">${ex.name}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:1px;">${ex.current_pr ? `Rekordas: <b style="color:#FFD700;">${ex.current_pr}</b> ${ex.unit}` : `Dar nebandyta · ${ex.unit}`}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;">${ex.has_pr ? `Rekordas: <b style="color:#FFD700;">${ex.current_pr}</b> ${ex.unit}` : `Dar nebandyta · ${ex.unit}`}</div>
         </div>
         <div style="text-align:right;flex:none;width:54px;">
           <div style="font-size:10.5px;font-weight:800;">${exp}<span style="color:var(--mut);font-size:8px;">/100</span></div>
@@ -21606,7 +21611,7 @@ function openSubmissionForm(exerciseId) {
     `<strong>${ex.ageGroup.name}</strong> · ${lower?'mažiau geriau':'daugiau geriau'} ${arrow}<br>` +
     `🥉 Bronze: ${t.bronze} · 🥈 Silver: ${t.silver} · 🥇 Gold: ${t.gold} · 🏆 Max: ${t.completed} ${ex.unit}`;
   
-  document.getElementById('exo-form-pr').textContent = ex.current_pr || 0;
+  document.getElementById('exo-form-pr').textContent = ex.has_pr ? ex.current_pr : '–';
   document.getElementById('exo-form-new').value = '';
   document.getElementById('exo-form-comment').value = '';
   document.getElementById('exo-form-exp').textContent = '+0 EXP';
@@ -21627,12 +21632,9 @@ function openSubmissionForm(exerciseId) {
       `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;">` +
       names.map((n, i) => `<div id="exo-lvl-${i + 1}" onclick="selectExoLevel(${i + 1})" style="padding:10px 6px;border-radius:11px;border:1px solid ${ (i + 1) <= cur ? 'var(--bdr)' : 'var(--bdr)'};background:rgba(255,255,255,.03);text-align:center;cursor:pointer;font-size:12px;font-weight:800;${(i + 1) <= cur ? 'opacity:.4;' : ''}">${['🥉','🥈','🥇','🏆'][i]} ${i + 1} · ${n}</div>`).join('') +
       `</div>`;
-  } else if (lower) {
-    newInput.min = 1;
-    newInput.removeAttribute('max');
   } else {
-    newInput.min = (ex.current_pr || 0) + 1;
-    newInput.removeAttribute('max');
+    // Tekstinis įvedimas — kablelis IR taškas leidžiami (parse'inam patys); lankstumui galima 0 (pilnas)
+    newInput.placeholder = lower ? 'pvz. 4,5' : '';
   }
 }
 
@@ -21659,20 +21661,21 @@ function backToExerciseList() {
 
 function recalcExpGain() {
   if (!currentExercise || !currentExercise.target) return;
-  const newVal = parseFloat(document.getElementById('exo-form-new').value) || 0;
+  const _rawNew = (document.getElementById('exo-form-new').value || '').trim().replace(',', '.');
+  const newVal = parseFloat(_rawNew);
   const oldPr = currentExercise.current_pr || 0;
   const t = currentExercise.target;
   const completed = parseFloat(t.completed);
   const lower = currentExercise.lower_is_better;
   
-  if (newVal === 0) {
+  if (_rawNew === '' || isNaN(newVal) || (!lower && newVal <= 0) || (lower && newVal < 0)) {
     document.getElementById('exo-form-exp').textContent = '+0 EXP';
     return;
   }
 
   // 🧮 Tier-inkarinė EXP skalė (ta pati kaip sąraše ir siuntime)
   const newExp = careerExpPct(currentExercise, newVal);
-  const oldExp = oldPr > 0 ? careerExpPct(currentExercise, oldPr) : 0;
+  const oldExp = currentExercise.has_pr ? careerExpPct(currentExercise, oldPr) : 0;
 
   // Delta
   const delta = newExp - oldExp;
@@ -21680,7 +21683,7 @@ function recalcExpGain() {
   // Tikrinam ar tai PR (geresnis rezultatas)
   let isPR = false;
   if (lower) {
-    isPR = oldPr === 0 || newVal < oldPr;
+    isPR = !currentExercise.has_pr || newVal < oldPr;
   } else {
     isPR = newVal > oldPr;
   }
@@ -21711,20 +21714,29 @@ function closeExercises() {
 
 async function submitExerciseResult() {
   if (!currentExercise || !currentExercise.target) return;
-  const newVal = parseFloat(document.getElementById('exo-form-new').value);
+  const _raw = (document.getElementById('exo-form-new').value || '').trim().replace(',', '.');
+  const newVal = parseFloat(_raw);
   const comment = document.getElementById('exo-form-comment').value.trim();
   const oldPr = currentExercise.current_pr || 0;
   const lower = currentExercise.lower_is_better;
 
-  if (!newVal) {
+  if (_raw === '' || isNaN(newVal)) {
     showToast('❌ Įvesk rezultatą', 'error');
+    return;
+  }
+  if (!lower && newVal <= 0) {
+    showToast('❌ Rezultatas turi būti didesnis už 0', 'error');
+    return;
+  }
+  if (lower && newVal < 0) {
+    showToast('❌ Rezultatas negali būti neigiamas', 'error');
     return;
   }
   
   // Validuojam PR
   let isPR = false;
   if (lower) {
-    isPR = oldPr === 0 || newVal < oldPr;
+    isPR = !currentExercise.has_pr || newVal < oldPr;
   } else {
     isPR = newVal > oldPr;
   }
@@ -21733,9 +21745,23 @@ async function submitExerciseResult() {
     showToast(lower ? '❌ Rezultatas turi būti mažesnis už PR' : '❌ Rezultatas turi būti didesnis už PR', 'error');
     return;
   }
-  
+
   // M:N: surasti VISUS vaiko trenerius
   const kidId = currentKid?.id || currentUser.id;
+
+  // 🙏 Trenerio apsauga: dublikatas to paties pratimo + per daug laukiančių pateikimų
+  const { data: pendSubs } = await sb.from('result_submissions')
+    .select('id, exercise_id')
+    .eq('kid_id', kidId)
+    .eq('status', 'pending');
+  if ((pendSubs || []).some(p => p.exercise_id === currentExercise.id)) {
+    showToast('⏳ Šio pratimo rezultatas jau laukia trenerio patvirtinimo', 'error', 4000);
+    return;
+  }
+  if ((pendSubs || []).length >= 5) {
+    showToast(`🙏 Jau laukia ${pendSubs.length} pateikimai — palauk, kol treneris patvirtins`, 'error', 4500);
+    return;
+  }
   
   const { data: trainers } = await sb.from('kid_trainers')
     .select('trainer_id, role, profiles!kid_trainers_trainer_id_fkey(first_name, last_name)')
@@ -21826,7 +21852,7 @@ async function sendSubmissionToTrainer(trainerId, newVal, oldPr, comment, lower)
 
   // 🧮 Tier-inkarinė EXP skalė (ta pati kaip recalcExpGain ir sąraše)
   const newExp = careerExpPct(currentExercise, newVal);
-  const oldExp = oldPr > 0 ? careerExpPct(currentExercise, oldPr) : 0;
+  const oldExp = currentExercise.has_pr ? careerExpPct(currentExercise, oldPr) : 0;
   
   // expGain - karjeros pratimo EXP, GARANTUOTAI 0-100 ribose (apsauga nuo bug'ų)
   let expGain = Math.max(0, newExp - oldExp);
