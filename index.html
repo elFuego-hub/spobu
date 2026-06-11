@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v83</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v84</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5868,7 +5868,7 @@ async function loadMyReports(){
   if (!k) { el.innerHTML = ''; return; }
   try {
     const { data, error } = await sb.from('reports')
-      .select('id, period_month, status, created_at, report_json, rating')
+      .select('id, period_month, status, created_at, report_json, rating_up')
       .eq('kid_id', k.id).order('created_at', { ascending: false }).limit(12);
     if (error) throw error;
     if (!data || !data.length) { el.innerHTML = '<div style="text-align:center;padding:18px;color:var(--mut);font-size:11px;">Dar nėra ataskaitų</div>'; return; }
@@ -5879,7 +5879,7 @@ async function loadMyReports(){
       const dt = new Date(r.created_at).toLocaleDateString('lt-LT');
       const mon = r.report_json?.cover?.focus_month_lt;
       const statusTxt = done ? (mon ? (_rCap(mon)+' mėn.') : 'Paruošta') : (r.status === 'error' ? '❌ Klaida' : (r.status === 'pending_review' ? '⏳ Ruošiama (iki 24 val.)' : '⏳ Generuojama'));
-      return `<div ${done?`onclick="openReportViewer(_myReportsCache['${r.id}'],'${r.id}',${r.rating || 'null'})"`:''} class="rep-item-row" style="display:flex;align-items:center;gap:11px;padding:11px;margin-bottom:7px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;${done?'cursor:pointer;':''}">
+      return `<div ${done?`onclick="openReportViewer(_myReportsCache['${r.id}'],'${r.id}',${r.rating_up == null ? 'null' : r.rating_up})"`:''} class="rep-item-row" style="display:flex;align-items:center;gap:11px;padding:11px;margin-bottom:7px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;${done?'cursor:pointer;':''}">
         <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#FF4D00,#FF8C00);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">📄</div>
         <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;color:white;">Ataskaita · ${statusTxt}</div><div style="font-size:9px;color:var(--mut);">${dt}</div></div>
         ${done?'<div style="color:var(--br);font-size:16px;flex-shrink:0;">›</div>':''}
@@ -5946,44 +5946,85 @@ function openReportViewer(r, reportId, rating){
   const f = document.getElementById('report-frame');
   try { const d = f.contentDocument || f.contentWindow.document; d.open(); d.write(buildReportPrintDoc(r)); d.close(); }
   catch (e) { console.warn('report viewer', e); }
-  if (reportId) _renderRateBar(reportId, rating || null);
+  if (reportId) _renderRateBar(reportId, rating);
 }
 
-// ⭐ Ataskaitos įvertinimas 1–10 (<7 — prašom komentaro, kas pritrūko)
-function _renderRateBar(reportId, rating){
+// 👍/👎 Ataskaitos feedback (Bolt praktika): binarinis pirmas paspaudimas;
+// 👎 → struktūruotos žymos ko pritrūko + komentaras; 👍 → neprivaloma „kas patiko" žyma.
+// Žymos saugomos masyve — AI jas naudoja generuojant KITĄ ataskaitą (uždaras ciklas).
+const REP_NEG_TAGS = ['Per mažai konkretumo', 'Per daug bendro teksto', 'Netikslūs duomenys', 'Tikėjausi daugiau už kainą', 'Kita'];
+const REP_POS_TAGS = ['Konkretūs patarimai', 'Palyginimas su bendraamžiais', 'Aiškios kryptys'];
+let _rateCtx = null;
+
+function _renderRateBar(reportId, ratedUp){
   const bar = document.getElementById('rep-rate-bar');
   if (!bar) return;
-  if (rating) {
-    bar.innerHTML = `<div style="text-align:center;font-size:12px;color:#FFD24A;font-weight:800;">⭐ Jūsų įvertinimas: ${rating}/10 — ačiū!</div>`;
-    return;
-  }
-  let btns = '';
-  for (let i = 1; i <= 10; i++) {
-    btns += `<button onclick="rateReport('${reportId}',${i})" style="flex:1;min-width:26px;padding:7px 0;border-radius:8px;border:1px solid #2e2e38;background:#1a1a22;color:${i >= 7 ? '#7fd4a0' : (i >= 4 ? '#ffd24a' : '#ff9d6b')};font-size:12px;font-weight:800;cursor:pointer;">${i}</button>`;
-  }
-  bar.innerHTML = `<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-bottom:7px;text-align:center;">Kaip vertinate šią ataskaitą? Jūsų nuomonė padeda tobulėti.</div>
-    <div style="display:flex;gap:5px;">${btns}</div>`;
+  if (ratedUp === true || ratedUp === false) { bar.innerHTML = _rateThanks(ratedUp); return; }
+  bar.innerHTML = `<div style="font-size:11px;color:var(--mut);font-weight:700;margin-bottom:8px;text-align:center;">Ar ši ataskaita buvo naudinga?</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="rateReportThumb('${reportId}',true)" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(127,212,160,.4);background:rgba(127,212,160,.08);color:#7fd4a0;font-size:13px;font-weight:800;cursor:pointer;">👍 Taip</button>
+      <button onclick="rateReportThumb('${reportId}',false)" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,157,107,.4);background:rgba(255,157,107,.08);color:#ff9d6b;font-size:13px;font-weight:800;cursor:pointer;">👎 Ne visai</button>
+    </div>`;
 }
-
-function rateReport(reportId, n){
-  if (n >= 7) { saveReportRating(reportId, n, null); return; }
+function _rateThanks(up){
+  return `<div style="text-align:center;font-size:12px;color:${up ? '#7fd4a0' : '#ffd24a'};font-weight:800;">${up ? '👍 Ačiū už įvertinimą!' : '🙏 Ačiū — jūsų pastabos tiesiogiai pagerins kitas ataskaitas.'}</div>`;
+}
+function rateReportThumb(reportId, up){
+  _rateCtx = { id: reportId, up, tags: [] };
+  _saveReportFeedback(reportId, up, [], null, true); // pirminis įrašas iškart — signalas neprarandamas net uždarius
   const bar = document.getElementById('rep-rate-bar');
   if (!bar) return;
-  bar.innerHTML = `<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-bottom:6px;">Įvertinimas: <b style="color:#ff9d6b;">${n}/10</b> — parašykite, ko pritrūko (tai tiesiogiai pagerins kitas ataskaitas):</div>
-    <textarea id="rep-rate-comment" rows="2" placeholder="Pvz.: norėčiau daugiau konkrečių patarimų apie..." style="width:100%;background:#1a1a22;border:1px solid #2e2e38;border-radius:9px;color:#fff;font-size:12px;padding:8px;resize:none;box-sizing:border-box;"></textarea>
-    <button onclick="saveReportRating('${reportId}',${n},document.getElementById('rep-rate-comment').value)" style="margin-top:7px;width:100%;background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;color:white;font-size:12px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">Siųsti įvertinimą</button>`;
+  if (up) {
+    bar.innerHTML = `<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-bottom:7px;text-align:center;">Ačiū! Kas labiausiai patiko? <span style="font-weight:600;">(neprivaloma)</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">` +
+      REP_POS_TAGS.map((t, i) => `<button onclick="pickPosTag(${i})" style="padding:7px 11px;border-radius:99px;border:1px solid #2e2e38;background:#1a1a22;color:#c9c9d4;font-size:11px;font-weight:700;cursor:pointer;">${t}</button>`).join('') +
+      `<button onclick="_renderRateBar('${reportId}',true);if(typeof loadMyReports==='function')loadMyReports()" style="padding:7px 11px;border-radius:99px;border:none;background:none;color:var(--mut);font-size:11px;cursor:pointer;">Praleisti</button></div>`;
+  } else {
+    bar.innerHTML = `<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-bottom:7px;">Ko pritrūko? <span style="font-weight:600;">(galima pažymėti kelis)</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">` +
+      REP_NEG_TAGS.map((t, i) => `<button id="rep-ntag-${i}" onclick="toggleNegTag(${i})" style="padding:7px 11px;border-radius:99px;border:1px solid #2e2e38;background:#1a1a22;color:#c9c9d4;font-size:11px;font-weight:700;cursor:pointer;">${t}</button>`).join('') +
+      `</div>
+      <textarea id="rep-rate-comment" rows="2" placeholder="Papildomas komentaras (neprivaloma)..." style="width:100%;background:#1a1a22;border:1px solid #2e2e38;border-radius:9px;color:#fff;font-size:12px;padding:8px;resize:none;box-sizing:border-box;"></textarea>
+      <button onclick="sendNegFeedback()" style="margin-top:7px;width:100%;background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;color:white;font-size:12px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">Siųsti</button>`;
+  }
 }
-
-async function saveReportRating(reportId, n, comment){
+function pickPosTag(i){
+  if (!_rateCtx) return;
+  _saveReportFeedback(_rateCtx.id, true, [REP_POS_TAGS[i]], null, false);
+}
+function toggleNegTag(i){
+  if (!_rateCtx) return;
+  const t = REP_NEG_TAGS[i];
+  const idx = _rateCtx.tags.indexOf(t);
+  if (idx >= 0) _rateCtx.tags.splice(idx, 1); else _rateCtx.tags.push(t);
+  const el = document.getElementById('rep-ntag-' + i);
+  if (el) {
+    const on = idx < 0;
+    el.style.borderColor = on ? '#FF4D00' : '#2e2e38';
+    el.style.background = on ? 'rgba(255,77,0,.15)' : '#1a1a22';
+    el.style.color = on ? '#ff9d6b' : '#c9c9d4';
+  }
+}
+function sendNegFeedback(){
+  if (!_rateCtx) return;
+  const comment = document.getElementById('rep-rate-comment')?.value || '';
+  _saveReportFeedback(_rateCtx.id, false, _rateCtx.tags.slice(), comment, false);
+}
+async function _saveReportFeedback(reportId, up, tags, comment, silent){
   try {
     const { error } = await sb.from('reports').update({
-      rating: n, rating_comment: (comment || '').trim() || null, rated_at: new Date().toISOString()
+      rating_up: up,
+      rating_tags: (tags && tags.length) ? tags : null,
+      rating_comment: (comment || '').trim() || null,
+      rated_at: new Date().toISOString()
     }).eq('id', reportId);
     if (error) throw error;
-    _renderRateBar(reportId, n);
-    showToast('⭐ Ačiū už įvertinimą!', 'success');
-    if (typeof loadMyReports === 'function') loadMyReports();
-  } catch (e) { showToast('Nepavyko išsaugoti: ' + (e?.message || ''), 'error'); }
+    if (!silent) {
+      _renderRateBar(reportId, up);
+      showToast(up ? '👍 Ačiū!' : '🙏 Ačiū už pastabas!', 'success');
+      if (typeof loadMyReports === 'function') loadMyReports();
+    }
+  } catch (e) { if (!silent) showToast('Nepavyko išsaugoti: ' + (e?.message || ''), 'error'); }
 }
 function printReportFrame(){
   const f = document.getElementById('report-frame');
@@ -18861,7 +18902,7 @@ async function loadAdminReports() {
   if (!list) return;
   try {
     const { data, error } = await sb.from('reports')
-      .select('id, kid_id, status, created_at, report_json, rating, rating_comment, kids(first_name, last_name)')
+      .select('id, kid_id, status, created_at, report_json, rating_up, rating_tags, rating_comment, kids(first_name, last_name)')
       .in('status', ['pending_review', 'done', 'error'])
       .order('created_at', { ascending: false }).limit(40);
     if (error) throw error;
@@ -18890,11 +18931,12 @@ async function loadAdminReports() {
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
           <span style="font-size:16px;">📄</span>
           <span style="font-size:12px;font-weight:800;color:white;flex:1;min-width:0;">${esc(kidName)}</span>
-          ${r.rating ? `<span style="font-size:8px;font-weight:800;color:#FFD24A;background:rgba(255,210,74,.13);padding:2px 6px;border-radius:99px;">⭐ ${r.rating}/10</span>` : ''}
+          ${r.rating_up === true ? '<span style="font-size:8px;font-weight:800;color:#7fd4a0;background:rgba(127,212,160,.13);padding:2px 6px;border-radius:99px;">👍</span>' : (r.rating_up === false ? '<span style="font-size:8px;font-weight:800;color:#ff9d6b;background:rgba(255,157,107,.13);padding:2px 6px;border-radius:99px;">👎</span>' : '')}
           ${stBadge}
         </div>
         <div style="font-size:9px;color:var(--mut);margin-bottom:7px;">Užsakyta: ${when}${deadlineHtml ? ' · ' + deadlineHtml : ''}</div>
-        ${r.rating_comment ? `<div style="font-size:9.5px;color:#d9b970;margin:-3px 0 7px;line-height:1.4;">💬 ${esc(r.rating_comment)}</div>` : ''}
+        ${(r.rating_tags || []).length ? `<div style="font-size:9px;color:#d9b970;margin:-3px 0 4px;">🏷️ ${esc(r.rating_tags.join(' · '))}</div>` : ''}
+        ${r.rating_comment ? `<div style="font-size:9.5px;color:#d9b970;margin:-1px 0 7px;line-height:1.4;">💬 ${esc(r.rating_comment)}</div>` : ''}
         <div style="display:flex;gap:6px;">
           ${r.report_json ? `<button onclick="openReportViewer(_adminReportsCache['${r.id}'])" style="font-size:11px;font-weight:700;padding:6px 11px;border-radius:8px;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);cursor:pointer;">👁️ Peržiūrėti</button>` : ''}
           ${canReview ? `<button onclick="approveReport('${r.id}')" style="font-size:11px;font-weight:800;padding:6px 13px;border-radius:8px;background:linear-gradient(90deg,#16A34A,#22C55E);color:#fff;border:none;cursor:pointer;">✅ Patvirtinti tėvui</button>` : ''}
