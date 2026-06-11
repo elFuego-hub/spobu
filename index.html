@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v86</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v87</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5695,12 +5695,40 @@ function redeemReport(){
   if (days > 0) { showToast('Dar negali panaudoti — kita ataskaita po ' + days + ' d. (kas mėnesį)', 'error', 4500); return; }
   openReportOrderModal(true);
 }
-function redeemHome(){
+let _planGenBusy = false;
+async function redeemHome(){
   const e = parentEntitlements || {};
+  const k = parentActiveKid;
+  if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
   if ((e.homeplan_credits || 0) <= 0) { showToast('Nebėra namų planų kreditų', 'error'); return; }
   const days = _entCdDays(e.homeplan_last_used, 3);
   if (days > 0) { showToast('Dar negali panaudoti — kitas planas po ' + days + ' d. (kas 3 mėn.)', 'error', 4500); return; }
-  showToast('🔜 Namų plano generavimas — netrukus', 'success', 4000);
+  if (_planGenBusy) return;
+  if (!confirm('Generuoti asmeninį 3 mėn. veiksmų planą? Bus panaudotas 1 kreditas.')) return;
+  _planGenBusy = true;
+  showToast('⏳ AI ruošia planą pagal vaiko duomenis... (iki ~60 s, neuždaryk)', 'success', 7000);
+  try {
+    const { data, error } = await sb.functions.invoke('generate-report', { body: { kid_id: k.id, type: 'plan' } });
+    if (error) {
+      let detail = error.message || String(error);
+      try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
+      throw new Error(detail);
+    }
+    if (data && (data.report_json || data.status === 'pending_review')) {
+      await consumeHomeCredit();
+      showToast('✅ Užsakyta! SPOBU specialistai peržiūrės ir planas bus paruoštas per 24 val. Rasi „Mano namų planai".', 'success', 6000);
+    } else { throw new Error((data && data.error) || 'Tuščias atsakymas'); }
+  } catch (err) {
+    showToast('❌ ' + (err?.message || err), 'error', 5000);
+  } finally { _planGenBusy = false; }
+}
+async function consumeHomeCredit(){
+  const k = parentActiveKid; if (!k) return;
+  const e = parentEntitlements || {};
+  try {
+    await sb.from('kid_entitlements').update({ homeplan_credits: Math.max(0, (e.homeplan_credits || 0) - 1), homeplan_last_used: new Date().toISOString() }).eq('kid_id', k.id);
+  } catch (err) { console.warn('consumeHomeCredit', err); }
+  await loadParentShopCredits();
 }
 function redeemSummer(){
   const e = parentEntitlements || {};
@@ -5801,25 +5829,26 @@ async function loadHistory(type){
   if (!el) return;
   const k = parentActiveKid;
   if (!k) { el.innerHTML = ''; return; }
-  if (type !== 'report') {
-    const what = type === 'home' ? 'namų planus' : 'vasaros programas';
-    el.innerHTML = '<div style="text-align:center;padding:26px 16px;color:var(--mut);font-size:11.5px;line-height:1.55;">Dar nėra — generavimas netrukus.<br>Čia matysi visus savo užsakytus ' + what + '.</div>';
+  if (type === 'summer') {
+    el.innerHTML = '<div style="text-align:center;padding:26px 16px;color:var(--mut);font-size:11.5px;line-height:1.55;">Dar nėra — generavimas netrukus.<br>Čia matysi visas savo užsakytas vasaros programas.</div>';
     return;
   }
+  const dbType = type === 'home' ? 'plan' : 'report';
+  const baseLbl = type === 'home' ? 'Veiksmų planas' : 'Ataskaita';
   try {
-    const { data, error } = await sb.from('reports').select('id, status, created_at, report_json, rating_up').eq('kid_id', k.id).order('created_at', { ascending: false }).limit(24);
+    const { data, error } = await sb.from('reports').select('id, status, created_at, report_json, rating_up').eq('kid_id', k.id).eq('type', dbType).order('created_at', { ascending: false }).limit(24);
     if (error) throw error;
-    if (!data || !data.length) { el.innerHTML = '<div style="text-align:center;padding:26px;color:var(--mut);font-size:11.5px;">Dar nėra ataskaitų</div>'; return; }
+    if (!data || !data.length) { el.innerHTML = '<div style="text-align:center;padding:26px;color:var(--mut);font-size:11.5px;">Dar nėra</div>'; return; }
     if (!_myReportsCache) _myReportsCache = {};
     el.innerHTML = data.map(r => {
       _myReportsCache[r.id] = r.report_json;
       const done = r.status === 'done' && r.report_json;
       const dt = new Date(r.created_at).toLocaleDateString('lt-LT');
       const mon = r.report_json && r.report_json.cover ? r.report_json.cover.focus_month_lt : null;
-      const statusTxt = done ? (mon ? (_rCap(mon) + ' mėn.') : 'Paruošta') : (r.status === 'error' ? '❌ Klaida' : (r.status === 'pending_review' ? '⏳ Ruošiama (iki 24 val.)' : '⏳ Generuojama'));
+      const statusTxt = done ? (type === 'home' ? '12 savaičių' : (mon ? (_rCap(mon) + ' mėn.') : 'Paruošta')) : (r.status === 'error' ? '❌ Klaida' : (r.status === 'pending_review' ? '⏳ Ruošiama (iki 24 val.)' : '⏳ Generuojama'));
       return `<div ${done ? `onclick="openReportViewer(_myReportsCache['${r.id}'],'${r.id}',${r.rating_up == null ? 'null' : r.rating_up})"` : ''} style="display:flex;align-items:center;gap:11px;padding:11px;margin-bottom:7px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;${done ? 'cursor:pointer;' : ''}">
-        <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#FF4D00,#FF8C00);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">📄</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;color:white;">Ataskaita · ${statusTxt}</div><div style="font-size:9px;color:var(--mut);">${dt}</div></div>
+        <div style="width:34px;height:34px;border-radius:9px;background:${type === 'home' ? 'linear-gradient(135deg,#0F766E,#14B8A6)' : 'linear-gradient(135deg,#FF4D00,#FF8C00)'};display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">${type === 'home' ? '🏋️' : '📄'}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;color:white;">${baseLbl} · ${statusTxt}</div><div style="font-size:9px;color:var(--mut);">${dt}</div></div>
         ${done ? '<div style="color:var(--br);font-size:16px;flex-shrink:0;">›</div>' : ''}
       </div>`;
     }).join('');
@@ -6081,7 +6110,162 @@ function _reportRadar(skills){
 }
 
 // Vienas renderintojas — naudojamas IR peržiūrai, IR PDF spausdinimui
+// 🏋️ VEIKSMŲ PLANO spausdinimo dokumentas (teal tema, pagal patvirtintą demo v2)
+function buildPlanPrintDoc(r){
+  r = r || {};
+  const E = _rEsc;
+  const c = r.cover || {}, intro = r.intro || {}, wk = r.weekly || {}, nu = r.nutrition || {}, mot = r.motivation || {}, par = r.parents || {}, cont = r.continuity || {};
+  const goals = Array.isArray(r.goals) ? r.goals : [];
+  const road = Array.isArray(r.roadmap) ? r.roadmap : [];
+  const sessions = Array.isArray(wk.sessions) ? wk.sessions : [];
+  const exs = Array.isArray(r.exercises) ? r.exercises : [];
+  const princ = Array.isArray(nu.principles) ? nu.principles : [];
+  const recipes = Array.isArray(nu.recipes) ? nu.recipes : [];
+  const focus = Array.isArray(intro.focus_areas_lt) ? intro.focus_areas_lt : [];
+
+  const goalsHtml = goals.map((g, i) => `<div class="goal">
+      <div class="goal-n">${i + 1}</div>
+      <div style="flex:1;">
+        <div class="goal-t">${E(g.title_lt)}</div>
+        <div class="goal-vals"><span class="cur">Dabar: <b>${E(g.current_lt)}</b></span><span class="arr">→</span><span class="tgt">Po 12 sav.: <b>${E(g.target_lt)}</b></span></div>
+        <div class="goal-why">${E(g.why_lt)}</div>
+      </div>
+    </div>`).join('');
+
+  const roadHtml = road.map(st => `<div class="stage">
+      <div class="stage-h">${E(st.stage_lt)}</div>
+      <div class="stage-f">${E(st.focus_lt)}</div>
+      <ul class="ml">${(Array.isArray(st.milestones_lt) ? st.milestones_lt : []).map(m => `<li>${E(m)}</li>`).join('')}</ul>
+    </div>`).join('');
+
+  const sessHtml = sessions.map(sx => `<div class="sess">
+      <div class="sess-h">${E(sx.label_lt)}</div>
+      <ul class="ml">${(Array.isArray(sx.blocks_lt) ? sx.blocks_lt : []).map(b => `<li>${E(b)}</li>`).join('')}</ul>
+    </div>`).join('');
+
+  const exHtml = exs.map((x, i) => `<div class="exr">
+      <div class="exr-top"><span class="exr-n">${i + 1}</span><span class="exr-name">${E(x.name_lt)}</span><span class="exr-sets">${E(x.sets_lt)}</span></div>
+      ${x.muscles_lt ? `<div class="exr-mus">🎯 ${E(x.muscles_lt)}</div>` : ''}
+      <div class="exr-how">${E(x.how_lt)}</div>
+      ${x.progression_lt ? `<div class="exr-prog">📈 Progresija: ${E(x.progression_lt)}</div>` : ''}
+    </div>`).join('');
+
+  const princHtml = princ.map(p => `<tr><td class="pi">${E(p.icon || '🥗')} <b>${E(p.title_lt)}</b></td><td>${E(p.text_lt)}</td></tr>`).join('');
+  const recHtml = recipes.map(rc => `<div class="rec">
+      <div class="rec-t">🍽️ ${E(rc.title_lt)}</div>
+      <div class="rec-i">${(Array.isArray(rc.ingredients_lt) ? rc.ingredients_lt : []).map(E).join(' · ')}</div>
+      <ol class="ml">${(Array.isArray(rc.steps_lt) ? rc.steps_lt : []).map(s2 => `<li>${E(s2)}</li>`).join('')}</ol>
+    </div>`).join('');
+
+  const eduBlock = (edu, chip) => (edu && edu.content) ? `<div class="callout">
+      <div class="co-h"><span class="chip">${chip}</span> ${E(edu.title)}</div>
+      <p>${E(edu.content)}</p>
+      ${edu.url ? `<a href="${E(edu.url)}" target="_blank" class="vid">▶️ Plačiau · vaizdo įrašas</a>` : ''}
+    </div>` : '';
+
+  return `<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><title>SPOBU planas</title><style>
+    @page{margin:14mm;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#9a9aa3;color:#16161D;font-size:13px;line-height:1.55;}
+    .pg{max-width:800px;margin:14px auto;background:#fff;padding:34px 38px;border-radius:6px;}
+    .cover{background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff;border-radius:12px;padding:26px 28px;margin-bottom:22px;}
+    .cover .k{font-size:11px;letter-spacing:3px;opacity:.85;font-weight:700;}
+    .cover h1{font-size:27px;letter-spacing:1px;margin:5px 0 7px;}
+    .cover .who{font-size:13px;opacity:.95;}
+    .sec-h{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:800;color:#0F766E;margin:24px 0 10px;border-bottom:2px solid #CCFBF1;padding-bottom:6px;}
+    .num{background:#0F766E;color:#fff;width:23px;height:23px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex:none;}
+    .chips{margin:8px 0 2px;}
+    .fchip{display:inline-block;background:#F0FDFA;border:1px solid #99F6E4;color:#0F766E;font-weight:700;font-size:11.5px;border-radius:99px;padding:4px 12px;margin:0 6px 6px 0;}
+    .goal{display:flex;gap:12px;background:#F0FDFA;border:1px solid #99F6E4;border-radius:11px;padding:13px 15px;margin-bottom:9px;}
+    .goal-n{background:#0F766E;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none;}
+    .goal-t{font-weight:800;font-size:13.5px;}
+    .goal-vals{font-size:12px;margin:3px 0;}
+    .goal-vals .cur{color:#555;}
+    .goal-vals .arr{margin:0 7px;color:#0F766E;font-weight:800;}
+    .goal-vals .tgt{color:#0F766E;}
+    .goal-why{font-size:11.5px;color:#555;}
+    .stage{border-left:3px solid #14B8A6;padding:2px 0 2px 14px;margin-bottom:12px;}
+    .stage-h{font-weight:800;color:#0F766E;}
+    .stage-f{font-size:12px;color:#444;margin:2px 0 4px;}
+    .ml{margin:4px 0 0 16px;font-size:12px;color:#333;}
+    .ml li{margin-bottom:3px;}
+    .sess{background:#fafafa;border:1px solid #e7e7ee;border-radius:10px;padding:11px 14px;margin-bottom:8px;}
+    .sess-h{font-weight:800;color:#0F766E;font-size:12.5px;}
+    .legend{background:#FFFBEB;border:1px solid #FDE68A;border-radius:9px;padding:8px 12px;font-size:11.5px;color:#7a5b00;margin:8px 0 12px;}
+    .exr{border:1px solid #e7e7ee;border-radius:10px;padding:11px 14px;margin-bottom:8px;page-break-inside:avoid;}
+    .exr-top{display:flex;align-items:center;gap:9px;}
+    .exr-n{background:#CCFBF1;color:#0F766E;width:21px;height:21px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex:none;}
+    .exr-name{font-weight:800;flex:1;}
+    .exr-sets{background:#0F766E;color:#fff;border-radius:7px;padding:3px 10px;font-weight:800;font-size:11.5px;}
+    .exr-mus{font-size:11px;color:#0F766E;margin-top:4px;}
+    .exr-how{font-size:12px;color:#333;margin-top:5px;}
+    .exr-prog{font-size:11px;color:#666;margin-top:4px;}
+    .t{width:100%;border-collapse:collapse;font-size:12px;}
+    .t td{border-top:1px solid #eee;padding:7px 9px;vertical-align:top;}
+    .t .pi{white-space:nowrap;width:36%;}
+    .rec{background:#F0FDFA;border:1px solid #99F6E4;border-radius:10px;padding:11px 14px;margin-bottom:8px;page-break-inside:avoid;}
+    .rec-t{font-weight:800;color:#0F766E;}
+    .rec-i{font-size:11.5px;color:#555;margin:3px 0 4px;}
+    .callout{background:#fafafa;border-left:3px solid #14B8A6;border-radius:0 9px 9px 0;padding:11px 14px;margin:10px 0;page-break-inside:avoid;}
+    .co-h{font-weight:800;color:#0F766E;margin-bottom:4px;}
+    .callout p{font-size:12px;color:#333;}
+    .chip{background:#0F766E;color:#fff;font-size:9.5px;border-radius:99px;padding:2px 8px;letter-spacing:1px;}
+    .vid{display:inline-block;margin-top:6px;color:#0F766E;font-weight:800;font-size:11.5px;text-decoration:none;}
+    .mot{background:linear-gradient(135deg,#0F766E,#14B8A6);color:#fff;border-radius:11px;padding:15px 18px;margin:14px 0;}
+    .mot b{font-size:13.5px;}
+    .disc{border:1px dashed #ccc;border-radius:9px;padding:10px 13px;font-size:10px;color:#777;margin-top:18px;}
+    .foot{text-align:center;margin-top:20px;color:#999;font-size:10.5px;}
+    .foot .lg{background:#0F766E;color:#fff;width:42px;height:42px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:5px;}
+  </style></head><body><div class="pg">
+    <div class="cover">
+      <div class="k">SPOBU · ASMENINĖ PROGRAMA</div>
+      <h1>${E(c.title_lt || '3 MĖNESIŲ VEIKSMŲ PLANAS')}</h1>
+      <div class="who">${E(c.kid_name)}${c.age_label ? ' · ' + E(c.age_label) : ''}${c.belt ? ' · 🥋 ' + E(c.belt) : ''}</div>
+      ${c.period_label ? `<div class="who" style="opacity:.8;font-size:11.5px;margin-top:3px;">${E(c.period_label)}</div>` : ''}
+    </div>
+
+    ${intro.headline_lt ? `<div style="font-size:17px;font-weight:800;color:#0F766E;">${E(intro.headline_lt)}</div>` : ''}
+    ${intro.paragraph_lt ? `<p style="margin-top:6px;">${E(intro.paragraph_lt)}</p>` : ''}
+    ${focus.length ? `<div class="chips">${focus.map(f => `<span class="fchip">🎯 ${E(f)}</span>`).join('')}</div>` : ''}
+    ${cont.intro_lt ? `<p style="font-size:11.5px;color:#666;margin-top:6px;">${E(cont.intro_lt)}</p>` : ''}
+
+    <div class="sec-h"><span class="num">1</span> Tavo 3 tikslai</div>
+    ${goalsHtml}
+
+    <div class="sec-h"><span class="num">2</span> Kelias per 12 savaičių</div>
+    ${roadHtml}
+
+    <div class="sec-h"><span class="num">3</span> Savaitės ritmas</div>
+    ${wk.intro_lt ? `<p style="font-size:12px;color:#444;margin-bottom:7px;">${E(wk.intro_lt)}</p>` : ''}
+    ${sessHtml}
+
+    <div class="sec-h"><span class="num">4</span> Pratimai — kaip atlikti</div>
+    ${r.legend_lt ? `<div class="legend">ℹ️ ${E(r.legend_lt)}</div>` : ''}
+    ${exHtml}
+
+    <div class="sec-h"><span class="num">5</span> Mityba — kas ant stalo</div>
+    ${nu.intro_lt ? `<p style="font-size:12px;color:#444;margin-bottom:7px;">${E(nu.intro_lt)}</p>` : ''}
+    ${princHtml ? `<table class="t"><tbody>${princHtml}</tbody></table>` : ''}
+    <div style="margin-top:10px;">${recHtml}</div>
+    ${nu.week_tip_lt ? `<div class="legend" style="background:#F0FDFA;border-color:#99F6E4;color:#0F766E;">💡 ${E(nu.week_tip_lt)}</div>` : ''}
+
+    ${(mot.text_lt) ? `<div class="mot"><b>🥋 ${E(mot.title_lt || 'OSU dvasia')}</b><p style="margin-top:5px;font-size:12.5px;">${E(mot.text_lt)}</p></div>` : ''}
+
+    ${eduBlock(r.education, 'KOVOTOJO ISTORIJA')}
+    ${eduBlock(r.education2, 'KARATĖ KULTŪRA')}
+
+    ${(par.support_lt || par.watch_lt) ? `<div class="sec-h"><span class="num">6</span> Tėvams</div>
+      ${par.support_lt ? `<p style="font-size:12px;"><b style="color:#0F766E;">🤝 Kaip padėti:</b> ${E(par.support_lt)}</p>` : ''}
+      ${par.watch_lt ? `<p style="font-size:12px;margin-top:5px;"><b style="color:#0F766E;">👀 Ką stebėti:</b> ${E(par.watch_lt)}</p>` : ''}` : ''}
+    ${cont.followup_lt ? `<p style="font-size:11.5px;color:#666;margin-top:8px;">📏 ${E(cont.followup_lt)}</p>` : ''}
+
+    <div class="disc"><b>SVARBU.</b> Šis planas parengtas naudojant dirbtinį intelektą pagal vaiko treniruočių duomenis ir yra bendro pobūdžio fizinio ugdymo rekomendacija, o ne medicininė programa. Krūvį derinkite su treneriu; dėl sveikatos klausimų kreipkitės į gydytoją. Duomenys konfidencialūs.</div>
+    <div class="foot"><div class="lg">空</div><div><b style="color:#0F766E;">SPOBU</b> · spobu.lt</div><div>© ${new Date().getFullYear()} SPOBU · Konfidencialu</div></div>
+  </div></body></html>`;
+}
+
 function buildReportPrintDoc(r){
+  if (r && r.type === 'plan') return buildPlanPrintDoc(r);
   r = r || {};
   const c=r.cover||{}, s=r.summary||{}, g=r.growth||{}, mo=r.month||{}, tech=r.technique||{}, par=r.parents||{}, st=r.standing||{}, cont=r.continuity||{};
   const skills = Array.isArray(r.skills)?r.skills:[];
@@ -18930,7 +19114,7 @@ async function loadAdminReports() {
   if (!list) return;
   try {
     const { data, error } = await sb.from('reports')
-      .select('id, kid_id, status, created_at, report_json, rating_up, rating_tags, rating_comment, kids(first_name, last_name)')
+      .select('id, kid_id, status, created_at, report_json, type, rating_up, rating_tags, rating_comment, kids(first_name, last_name)')
       .in('status', ['pending_review', 'done', 'error'])
       .order('created_at', { ascending: false }).limit(40);
     if (error) throw error;
@@ -18955,9 +19139,10 @@ async function loadAdminReports() {
         : (r.status === 'done' ? '<span style="font-size:8px;font-weight:800;color:#22C55E;background:rgba(34,197,94,.15);padding:2px 6px;border-radius:99px;">PATVIRTINTA</span>'
         : '<span style="font-size:8px;font-weight:800;color:#aaa;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:99px;">KLAIDA</span>');
       const canReview = r.status === 'pending_review' && r.report_json;
+      const tIco = r.type === 'plan' ? '🏋️' : (r.type === 'summer' ? '☀️' : '📄');
       return `<div style="padding:10px 2px;border-bottom:.5px solid var(--bdr);">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-          <span style="font-size:16px;">📄</span>
+          <span style="font-size:16px;">${tIco}</span>
           <span style="font-size:12px;font-weight:800;color:white;flex:1;min-width:0;">${esc(kidName)}</span>
           ${r.rating_up === true ? '<span style="font-size:8px;font-weight:800;color:#7fd4a0;background:rgba(127,212,160,.13);padding:2px 6px;border-radius:99px;">👍</span>' : (r.rating_up === false ? '<span style="font-size:8px;font-weight:800;color:#ff9d6b;background:rgba(255,157,107,.13);padding:2px 6px;border-radius:99px;">👎</span>' : '')}
           ${stBadge}
