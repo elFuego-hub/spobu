@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v98</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v99</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -6227,7 +6227,12 @@ function _reportRadar(skills){
     dataP += dv[0].toFixed(1)+','+dv[1].toFixed(1)+' ';
     dots += '<circle cx="'+dv[0].toFixed(1)+'" cy="'+dv[1].toFixed(1)+'" r="3.2" fill="#FF4D00"/>';
     const lv = pt(a, Rl), anchor = Math.abs(lv[0]-cx)<6?'middle':(lv[0]>cx?'start':'end');
-    labels += '<text x="'+lv[0].toFixed(1)+'" y="'+(lv[1]+3).toFixed(1)+'" text-anchor="'+anchor+'" font-size="11" font-weight="800" fill="#16161D">'+_rEsc((skills[i].label||'').toUpperCase().slice(0,9))+'</text>';
+    // Pilnas pavadinimas dviem eilutėmis (anksčiau slice(0,9) nukirsdavo į „JĖGA IR K")
+    const lbl = (skills[i].label||'').toUpperCase();
+    let l1 = lbl, l2 = '';
+    if (lbl.length > 11) { const sp = lbl.lastIndexOf(' ', 11); if (sp > 0) { l1 = lbl.slice(0, sp); l2 = lbl.slice(sp + 1); } }
+    const ly = lv[1] + 3 - (l2 ? 5 : 0);
+    labels += '<text x="'+lv[0].toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+anchor+'" font-size="10" font-weight="800" fill="#16161D">'+(l2 ? '<tspan x="'+lv[0].toFixed(1)+'" dy="0">'+_rEsc(l1)+'</tspan><tspan x="'+lv[0].toFixed(1)+'" dy="11">'+_rEsc(l2)+'</tspan>' : _rEsc(l1))+'</text>';
   }
   return '<svg width="248" height="248" viewBox="0 0 400 400">'+grid+axes+'<polygon points="'+dataP.trim()+'" fill="rgba(255,77,0,.18)" stroke="#FF4D00" stroke-width="2.5"/>'+dots+labels+'</svg>';
 }
@@ -6542,7 +6547,7 @@ table.t td.n{text-align:center;font-weight:600;}
 
   const edu = r.education || null;
   const eduShortUrl = (edu && edu.url) ? String(edu.url).replace(/^https?:\/\/(www\.)?/, '').replace('youtube.com/watch?v=', 'youtu.be/') : '';
-  const eduBlock = (edu && edu.content) ? ('<div class="sec-h">💡 Žinok daugiau</div><div class="callout co-med"><div class="co-h"><span class="chip">SPOBU</span> '+E(edu.title||'')+'</div><p style="margin:0 0 6px;" class="small">'+E(edu.content||'')+'</p>'+(edu.url?'<a href="'+E(edu.url)+'" target="_blank" rel="noopener" style="font-size:9px;font-weight:800;color:#FF4D00;text-decoration:none;">▶️ Vaizdo įrašas: '+E(eduShortUrl)+'</a>':'')+'</div>') : '';
+  const eduBlock = (edu && edu.content) ? ('<div class="sec-h">💡 Sužinok daugiau</div><div class="callout co-med"><div class="co-h"><span class="chip">SPOBU</span> '+E(edu.title||'')+'</div><p style="margin:0 0 6px;" class="small">'+E(edu.content||'')+'</p>'+(edu.url?'<a href="'+E(edu.url)+'" target="_blank" rel="noopener" style="font-size:9px;font-weight:800;color:#FF4D00;text-decoration:none;">▶️ Vaizdo įrašas: '+E(eduShortUrl)+'</a>':'')+'</div>') : '';
 
   const pageCover = '<section class="page cover" style="display:flex;flex-direction:column;justify-content:space-between;">'+
     '<div class="cover-kanji">力</div>'+
@@ -6564,6 +6569,7 @@ table.t td.n{text-align:center;font-weight:600;}
   const pageSummary = '<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Bendras vertinimas</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'<br>'+E(_rCap(c.focus_month_lt||''))+' mėn.</div></div>'+
     '<div class="summarybox"><div class="verdict"><div class="score-ring" style="background:conic-gradient(#FF4D00 0 '+idx+'%,#eee '+idx+'% 100%);"><b>'+(s.index!=null?E(s.index):'–')+'</b><small>INDEKSAS /100</small></div>'+
     '<div><div class="sec-h" style="margin:0 0 4px;">'+E(s.headline_lt||'')+'</div><p style="margin:0;">'+E(s.paragraph_lt||'')+'</p></div></div>'+
+    ((r._facts && r._facts.coverage && r._facts.coverage.attempted < 10) ? '<div class="tiny mut" style="margin:0 0 7px;">ℹ️ Indeksas preliminarus — pagal '+r._facts.coverage.attempted+' iš '+r._facts.coverage.total+' išmatuotų pratimų. Daugiau matavimų = tikslesnė analizė.</div>' : '')+
     ((strTags||growTags)?('<table class="t" style="margin:0;"><tr>'+(strTags?'<td style="border:none;"><span class="grade g-strong">STIPRYBĖ</span> '+strTags+'</td>':'')+(growTags?'<td style="border:none;"><span class="grade g-weak">AUGINTI</span> '+growTags+'</td>':'')+'</tr></table>'):'')+'</div>'+
     continuityBlock+
     (skills.length?('<div class="sec-h"><span class="num">__N__</span> Fizinio pasirengimo profilis</div><div class="radar-wrap">'+radar+'<div style="flex:1;">'+skillBars+'</div></div>'):'')+
