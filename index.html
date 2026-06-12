@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v103</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v104</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -6105,7 +6105,12 @@ function openReportViewer(r, reportId, rating){
     ${reportId ? `<div id="rep-rate-bar" style="flex-shrink:0;background:#14141b;border-top:1px solid #26262e;padding:10px 14px;"></div>` : ''}`;
   document.body.appendChild(m);
   const f = document.getElementById('report-frame');
-  try { const d = f.contentDocument || f.contentWindow.document; d.open(); d.write(buildReportPrintDoc(r)); d.close(); _fitReportZoom(); }
+  try {
+    const d = f.contentDocument || f.contentWindow.document; d.open(); d.write(buildReportPrintDoc(r)); d.close();
+    // Mastelis po layout'o IR dar kartą po šriftų užkrovimo (iOS kitaip kartais iškraipo)
+    requestAnimationFrame(_fitReportZoom);
+    setTimeout(_fitReportZoom, 300);
+  }
   catch (e) { console.warn('report viewer', e); }
   _repViewState = { id: reportId || null, rated: (rating === true || rating === false) };
   if (reportId) _renderRateBar(reportId, rating);
@@ -6355,7 +6360,7 @@ function buildPlanPrintDoc(r){
 
   let html = `<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><meta name="viewport" content="width=820"><title>${isSummer ? 'SPOBU vasaros programa' : 'SPOBU veiksmų planas'}</title><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet"><style>
     *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0;}
-    body{font-family:'Inter',system-ui,Arial,sans-serif;color:#16161D;background:#9a9aa3;font-size:11px;line-height:1.55;}
+    body{font-family:'Inter',system-ui,Arial,sans-serif;color:#16161D;background:#9a9aa3;font-size:11px;line-height:1.55;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
     .page{width:210mm;min-height:296mm;background:#fff;margin:12px auto;padding:15mm 14mm;position:relative;box-shadow:0 6px 24px rgba(0,0,0,.3);}
     .mut{color:#6B7280;}.small{font-size:9.5px;}.tiny{font-size:8.5px;}
     .cover{background:radial-gradient(120% 90% at 78% 8%,#0b2a26,#0e1a18 45%,#0b0b0f 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;}
@@ -6517,7 +6522,7 @@ function buildReportPrintDoc(r){
   const idx = Math.max(0,Math.min(100, s.index||0));
 
   const css = `*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0;}
-body{font-family:'Inter',system-ui,Arial,sans-serif;color:#16161D;background:#9a9aa3;font-size:11px;line-height:1.55;}
+body{font-family:'Inter',system-ui,Arial,sans-serif;color:#16161D;background:#9a9aa3;font-size:11px;line-height:1.55;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .page{width:210mm;min-height:296mm;background:#fff;margin:12px auto;padding:15mm 14mm;position:relative;box-shadow:0 6px 24px rgba(0,0,0,.3);overflow:hidden;}
 .disp,h1,h2{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:1px;}
 .mut{color:#6B7280;}.small{font-size:9.5px;}.tiny{font-size:8.5px;}
@@ -22869,6 +22874,27 @@ async function showParentMissedEvents() {
       const myConvIds = new Set((myMembers || []).map(m => m.conversation_id));
       msgsData.forEach(m => { if (myConvIds.has(m.conversation_id)) all.push({ ts: m.sent_at, sk: 'pms', id: m.id, data: m }); });
     }
+
+    // 📄 Praleisti AI ataskaitų patvirtinimai (realtime atsarginis kelias): jei admin
+    // patvirtino, kol tėvas buvo išėjęs — parodom dabar. Tik paskutinių 48 val. langas.
+    try {
+      const repKidIds = [..._parentKidIdSet];
+      if (repKidIds.length) {
+        const { data: reps } = await sb.from('reports')
+          .select('id, kid_id, type, reviewed_at')
+          .in('kid_id', repKidIds).eq('status', 'done')
+          .gte('reviewed_at', new Date(Date.now() - 48 * 3600 * 1000).toISOString())
+          .order('reviewed_at', { ascending: false }).limit(6);
+        (reps || []).forEach(rep => {
+          if (_isSeen('prep', rep.id)) return;
+          _addSeen('prep', rep.id);
+          if (firstRun && rep.reviewed_at && (Date.now() - new Date(rep.reviewed_at).getTime()) > 180000) return;
+          const tLabel = rep.type === 'plan' ? '🏋️ Veiksmų planas' : (rep.type === 'summer' ? '☀️ Vasaros programa' : '📄 Progreso ataskaita');
+          const pk = (parentKids || []).find(k => k.id === rep.kid_id);
+          showToast('✅ ' + tLabel + (pk ? ' (' + (pk.first_name || '') + ')' : '') + ' paruošta! Rasi Parduotuvėje.', 'success', 6500);
+        });
+      }
+    } catch (e) { /* tylu — nekritinis */ }
 
     let events = all.filter(e => !_isSeen(e.sk, e.id));
 
