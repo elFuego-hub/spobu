@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v104</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v105</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -6085,8 +6085,11 @@ async function submitReportOrder(btn){
 
 // Peržiūra — pildo iframe tuo PAČIU dokumentu, kuris spausdinamas į PDF.
 // reportId + rating (neprivalomi) — tėvo įvertinimo juosta apačioje (admin atidaro be jų).
+// Sesijos atmintis: ką tik įvertintos ataskaitos (kad atidarius iš PASENUSIO sąrašo nerodytų „Įvertink" dar kartą)
+let _ratedLocal = {};
 function openReportViewer(r, reportId, rating){
   if (!r) { showToast('Ataskaita tuščia'); return; }
+  if ((rating !== true && rating !== false) && reportId && Object.prototype.hasOwnProperty.call(_ratedLocal, reportId)) rating = _ratedLocal[reportId];
   const old = document.getElementById('report-viewer-modal'); if (old) old.remove();
   const m = document.createElement('div');
   m.id = 'report-viewer-modal';
@@ -6208,7 +6211,9 @@ async function _saveReportFeedback(reportId, up, tags, comment, silent){
       rated_at: new Date().toISOString()
     }).eq('id', reportId);
     if (error) throw error;
+    _ratedLocal[reportId] = up;  // įsimenam sesijoje — pasenęs sąrašas nebeprašys vertinti dar kartą
     if (_repViewState && _repViewState.id === reportId) _repViewState.rated = true;
+    if (typeof loadMyReports === 'function') loadMyReports();  // atnaujinam sąrašo cache, jei atidarytas
     if (!silent) {
       _renderRateBar(reportId, up);
       showToast(up ? '👍 Ačiū!' : '🙏 Ačiū už pastabas!', 'success');
@@ -6749,6 +6754,14 @@ async function updateParentNotifBadge() {
       const lr = m.last_read_at ? new Date(m.last_read_at) : new Date(0);
       if (lm > lr && c.last_message_sender_id !== currentProfile.id) unread++;
     });
+    // 📄 Nepamatytos PARUOŠTOS ataskaitos (aktyvaus vaiko, 14 d. langas) — irgi kelia badge
+    try {
+      if (parentActiveKid) {
+        const { data: reps } = await sb.from('reports').select('id').eq('kid_id', parentActiveKid.id).eq('status', 'done')
+          .gte('reviewed_at', new Date(Date.now() - 14 * 86400000).toISOString()).limit(10);
+        (reps || []).forEach(r => { if (!_isSeen('prepb', r.id)) unread++; });
+      }
+    } catch (e) {}
     document.querySelectorAll('.tk-notif-badge').forEach(b => { b.textContent = unread; b.style.display = unread > 0 ? 'flex' : 'none'; });
   } catch (e) {}
 }
@@ -6964,7 +6977,34 @@ async function loadParentBellContent() {
         ${unread ? `<div style="width:7px;height:7px;background:${accent};border-radius:50%;margin-top:5px;flex-shrink:0;"></div>` : ''}
       </div>`;
     }
-    _parentBellHtml.ann = annHtml || '<div style="text-align:center;padding:24px 14px;color:var(--mut);font-size:11px;">📭 Naujų pranešimų nėra</div>';
+    // 📄 PARUOŠTOS AI ATASKAITOS varpelyje (aktyvaus vaiko, 14 d.) — viršuje, su NAUJA tašku
+    let repHtml = '';
+    try {
+      if (activeKid) {
+        const { data: bellReps } = await sb.from('reports').select('id, type, reviewed_at').eq('kid_id', activeKid.id).eq('status', 'done')
+          .gte('reviewed_at', new Date(Date.now() - 14 * 86400000).toISOString())
+          .order('reviewed_at', { ascending: false }).limit(8);
+        (bellReps || []).forEach(rep => {
+          const fresh = !_isSeen('prepb', rep.id);
+          const tIco = rep.type === 'plan' ? '🏋️' : (rep.type === 'summer' ? '☀️' : '📄');
+          const tLabel = rep.type === 'plan' ? 'Veiksmų planas' : (rep.type === 'summer' ? 'Vasaros programa' : 'Progreso ataskaita');
+          const histKey = rep.type === 'plan' ? 'home' : (rep.type === 'summer' ? 'summer' : 'report');
+          repHtml += `<div onclick="document.getElementById('parent-bell-modal').remove(); if(typeof openHistoryModal==='function') openHistoryModal('${histKey}');" style="background:var(--card);border:.5px solid var(--bdr);border-left:3px solid #22C55E;border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;">
+            <div style="font-size:18px;">${tIco}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:#22C55E;background:#22C55E22;padding:1px 7px;border-radius:99px;margin-bottom:3px;">✅ PARUOŠTA</div>
+              <div style="font-size:11px;font-weight:800;color:white;">${tLabel} paruošta!</div>
+              <div style="font-size:10px;color:var(--mut);margin-top:2px;">Paspausk ir atsidaryk dokumentą</div>
+              <div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(rep.reviewed_at)}</div>
+            </div>
+            ${fresh ? '<div style="width:7px;height:7px;background:#22C55E;border-radius:50%;margin-top:5px;flex-shrink:0;"></div>' : ''}
+          </div>`;
+        });
+        // Pažymim matytais — kitą kartą atidarius varpelį taškas (ir badge) nebesirodys
+        (bellReps || []).forEach(rep => _addSeen('prepb', rep.id));
+      }
+    } catch (e) { /* nekritinis */ }
+    _parentBellHtml.ann = (repHtml || annHtml) ? (repHtml + annHtml) : '<div style="text-align:center;padding:24px 14px;color:var(--mut);font-size:11px;">📭 Naujų pranešimų nėra</div>';
 
     // 2) Trenerio / klubo žinutės (pokalbiai) — chatMem jau gautas lygiagrečiai aukščiau
     const chatConvs = (chatMem || []).filter(m => m.conversations && m.conversations.last_message_at).filter(relatesToActiveKid)
