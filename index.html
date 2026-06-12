@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v105</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v106</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19459,6 +19459,23 @@ async function approveReport(id) {
     if (error) throw error;
     showToast('✅ Patvirtinta — tėvas gali matyti', 'success', 3000);
     loadAdminReports();
+    // 🔔 PUSH visiems vaiko tėvams (clever-processor user_id režimas) — kad sužinotų net su uždarytu appsu.
+    // Fire-and-forget: push klaida netrukdo patvirtinimui (realtime + varpelis vis tiek veikia).
+    try {
+      const { data: rep } = await sb.from('reports').select('kid_id, type').eq('id', id).maybeSingle();
+      if (rep && rep.kid_id) {
+        const tLabel = rep.type === 'plan' ? 'Veiksmų planas' : (rep.type === 'summer' ? 'Vasaros programa' : 'Progreso ataskaita');
+        const [{ data: kid }, { data: links }] = await Promise.all([
+          sb.from('kids').select('first_name').eq('id', rep.kid_id).maybeSingle(),
+          sb.from('kid_parent_links').select('parent_id').eq('kid_id', rep.kid_id)
+        ]);
+        (links || []).forEach(l => {
+          sb.functions.invoke('clever-processor', {
+            body: { user_id: l.parent_id, title: '📄 ' + tLabel + ' paruošta!', body: (kid?.first_name ? kid.first_name + ' — ' : '') + 'dokumentas jau laukia SPOBU programėlėje. Atsidaryk ir peržiūrėk!', url: '/' }
+          }).catch(() => {});
+        });
+      }
+    } catch (e) { console.warn('report push', e); }
   } catch (e) { showToast('Nepavyko patvirtinti: ' + (e?.message || ''), 'error'); }
 }
 
