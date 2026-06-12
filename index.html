@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v101</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v103</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -6095,13 +6095,17 @@ function openReportViewer(r, reportId, rating){
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#14141b;border-bottom:1px solid #26262e;flex-shrink:0;">
       <button onclick="closeReportViewer()" style="background:none;border:none;color:white;font-size:14px;cursor:pointer;font-weight:700;">‹ Uždaryti</button>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:white;">ATASKAITA</div>
-      <button onclick="printReportFrame()" style="background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;color:white;font-size:12px;font-weight:800;padding:8px 14px;border-radius:9px;cursor:pointer;">🖨️ PDF</button>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button onclick="repZoom(-1)" style="background:rgba(255,255,255,.08);border:.5px solid #2e2e38;color:white;font-size:15px;font-weight:800;width:34px;height:34px;border-radius:9px;cursor:pointer;">−</button>
+        <button onclick="repZoom(1)" style="background:rgba(255,255,255,.08);border:.5px solid #2e2e38;color:white;font-size:15px;font-weight:800;width:34px;height:34px;border-radius:9px;cursor:pointer;">+</button>
+        <button onclick="printReportFrame()" style="background:linear-gradient(135deg,#FF4D00,#FF8C00);border:none;color:white;font-size:12px;font-weight:800;padding:8px 14px;border-radius:9px;cursor:pointer;">🖨️ PDF</button>
+      </div>
     </div>
     <iframe id="report-frame" style="flex:1;width:100%;border:none;background:#9a9aa3;"></iframe>
     ${reportId ? `<div id="rep-rate-bar" style="flex-shrink:0;background:#14141b;border-top:1px solid #26262e;padding:10px 14px;"></div>` : ''}`;
   document.body.appendChild(m);
   const f = document.getElementById('report-frame');
-  try { const d = f.contentDocument || f.contentWindow.document; d.open(); d.write(buildReportPrintDoc(r)); d.close(); }
+  try { const d = f.contentDocument || f.contentWindow.document; d.open(); d.write(buildReportPrintDoc(r)); d.close(); _fitReportZoom(); }
   catch (e) { console.warn('report viewer', e); }
   _repViewState = { id: reportId || null, rated: (rating === true || rating === false) };
   if (reportId) _renderRateBar(reportId, rating);
@@ -6213,7 +6217,37 @@ async function _saveReportFeedback(reportId, up, tags, comment, silent){
 }
 function printReportFrame(){
   const f = document.getElementById('report-frame');
-  if (f && f.contentWindow) { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { window.print(); } }
+  if (f && f.contentWindow) {
+    try {
+      // Spausdinimui zoom grąžinam į 1 (kad PDF būtų tikro dydžio), po — atstatom
+      const d = f.contentDocument || f.contentWindow.document;
+      const z = f.dataset.z || '';
+      if (d && d.body) d.body.style.zoom = 1;
+      f.contentWindow.focus(); f.contentWindow.print();
+      if (d && d.body && z) setTimeout(() => { d.body.style.zoom = z; }, 500);
+    } catch (e) { window.print(); }
+  }
+}
+
+// 📱 Mobilus mastelis: A4 dokumentas (820px) sutalpinamas į ekrano plotį; − / + mygtukai keičia
+function _fitReportZoom(){
+  const f = document.getElementById('report-frame');
+  const d = f && (f.contentDocument || f.contentWindow.document);
+  if (!d || !d.body) return;
+  const w = f.clientWidth || window.innerWidth;
+  const z = Math.min(1, Math.max(0.3, Math.round(((w - 6) / 820) * 100) / 100));
+  d.body.style.zoom = z;
+  f.dataset.z = z;
+}
+function repZoom(dir){
+  const f = document.getElementById('report-frame');
+  const d = f && (f.contentDocument || f.contentWindow.document);
+  if (!d || !d.body) return;
+  let z = parseFloat(f.dataset.z) || 1;
+  z = dir > 0 ? z * 1.2 : z / 1.2;
+  z = Math.min(2, Math.max(0.3, Math.round(z * 100) / 100));
+  d.body.style.zoom = z;
+  f.dataset.z = z;
 }
 
 // Radaro SVG iš skills (N ašių)
@@ -6433,7 +6467,7 @@ function buildPlanPrintDoc(r){
     <section class="page">
       <div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Motyvacija ir tėvams</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">${E(c.kid_name || '')}</div></div>
       ${(mot.text_lt) ? `<div class="mot"><b>🥋 ${E(mot.title_lt || 'OSU dvasia')}</b><p style="margin-top:5px;font-size:11.5px;">${E(mot.text_lt)}</p></div>` : ''}
-      ${eduBlock(r.education, 'KOVOTOJO ISTORIJA')}
+      ${eduBlock(r.education, isSummer ? 'VASAROS DVASIA' : 'KOVOTOJO ISTORIJA')}
       ${eduBlock(r.education2, 'KARATĖ KULTŪRA')}
       ${(par.support_lt || par.watch_lt) ? `<div class="sec-h"><span class="num">__N__</span> Tėvams</div>
         ${par.support_lt ? `<p><b style="color:#0F766E;">🤝 Kaip padėti:</b> ${E(par.support_lt)}</p>` : ''}
@@ -18004,7 +18038,7 @@ async function rejectKid(kidId) {
 async function loadPendingSubmissions() {
   // Gauti pateikimus, kuriuose trainer_id = aš
   const { data: subs, error } = await sb.from('result_submissions')
-    .select(`*, exercises(name,category_id,career_categories(name))`)
+    .select(`*, exercises(name,category_id,lower_is_better,unit,career_categories(name))`)
     .eq('status','pending')
     .eq('trainer_id', currentUser.id)
     .order('created_at',{ascending:false})
@@ -18047,8 +18081,13 @@ async function loadPendingSubmissions() {
     const kid = kidsMap[s.kid_id];
     const kidName = kid ? `${kid.first_name} ${kid.last_name}` : 'Nežinomas';
     const catName = s.exercises?.career_categories?.name || '';
-    const delta = (s.new_value||0) - (s.old_pr||0);
-    const expG = s.exp_gain || delta;
+    // DELTA: lower_is_better pratimui pagerėjimas = MAŽESNĖ reikšmė (nebe „+-1.5")
+    const lower = !!s.exercises?.lower_is_better;
+    const hasOld = s.old_pr != null;
+    const deltaRaw = hasOld ? Math.round(((s.new_value || 0) - (s.old_pr || 0)) * 100) / 100 : null;
+    const deltaTxt = deltaRaw == null ? 'pirmas' : (deltaRaw > 0 ? '+' + deltaRaw : String(deltaRaw));
+    const deltaGood = deltaRaw == null ? true : (lower ? deltaRaw < 0 : deltaRaw > 0);
+    const expG = s.exp_gain || 0;
     return `<div class="cd" style="margin-bottom:12px;" id="sub-${s.id}">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
         <div class="av" style="width:36px;height:36px;font-size:14px;background:var(--br);">${kid?.first_name?.[0]||'?'}</div>
@@ -18056,10 +18095,10 @@ async function loadPendingSubmissions() {
         <div style="font-size:11px;color:var(--mut);">${s.exercises?.name||'Pratimas'} · ${catName}</div></div>
       </div>
       <div style="background:var(--bg);border-radius:12px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-around;align-items:center;">
-        <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">SENAS PR</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;">${s.old_pr||0}</div></div>
+        <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">SENAS PR</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;">${hasOld ? s.old_pr : '–'}</div></div>
         <div style="color:var(--mut);">→</div>
         <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">NAUJAS</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--grn);">${s.new_value}</div></div>
-        <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">DELTA</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);">+${delta}</div></div>
+        <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">DELTA</div><div style="font-family:'Bebas Neue',sans-serif;font-size:${deltaRaw == null ? 15 : 24}px;color:${deltaGood ? 'var(--grn)' : 'var(--br)'};">${deltaTxt}</div></div>
         <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">EXP</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);">+${expG}</div></div>
       </div>
       ${s.comment?`<div style="font-size:11px;color:var(--mut);margin-bottom:10px;">💬 ${s.comment}</div>`:''}
@@ -21866,7 +21905,23 @@ function subscribeParentNotifications() {
     })
     .subscribe();
 
-  console.log('[realtime parent] prenumeruoti 3 kanalai');
+  // KANALAS 4: AI ataskaitos — kai admin patvirtina (status → done), tėvas gauna pranešimą
+  sb.channel('parent-reports-' + uid)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'reports' }, payload => {
+      const rep = payload.new;
+      if (!rep || !_parentKidIdSet.has(rep.kid_id)) return;
+      if (rep.status !== 'done') return;
+      if (_isSeen('prep', rep.id)) return;
+      _addSeen('prep', rep.id);
+      const tLabel = rep.type === 'plan' ? '🏋️ Veiksmų planas' : (rep.type === 'summer' ? '☀️ Vasaros programa' : '📄 Progreso ataskaita');
+      const pk = (parentKids || []).find(k => k.id === rep.kid_id);
+      const kidName = pk ? (pk.first_name || '') : '';
+      showToast('✅ ' + tLabel + (kidName ? ' (' + kidName + ')' : '') + ' paruošta! Rasi Parduotuvėje.', 'success', 7000);
+      if (typeof loadMyReports === 'function') loadMyReports();  // jei atidarytas ataskaitų sąrašas — atsinaujina
+    })
+    .subscribe();
+
+  console.log('[realtime parent] prenumeruoti 4 kanalai');
 }
 
 // Perprenumeruoti tėvo kanalus (po app resume)
@@ -21875,7 +21930,7 @@ async function resubscribeParentChannels() {
     const chans = sb.getChannels ? sb.getChannels() : [];
     chans.forEach(ch => {
       const t = ch.topic || '';
-      if (t.includes('parent-approvals-') || t.includes('parent-duels-') || t.includes('parent-msgs-')) {
+      if (t.includes('parent-approvals-') || t.includes('parent-duels-') || t.includes('parent-msgs-') || t.includes('parent-reports-')) {
         sb.removeChannel(ch);
       }
     });
