@@ -410,7 +410,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v99</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v101</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5657,6 +5657,7 @@ function _entCdDays(lastUsed, months){
   return left > 0 ? left : 0;
 }
 function _kidDataDays(k, gateDays){
+  if (localStorage.getItem('spobu_nocd') === '1') return 0;  // 🧪 TEST: apeiti duomenų vartus
   if (!k) return 0;
   const since = k.karate_since || k.created_at;
   if (!since) return 0;
@@ -5818,6 +5819,8 @@ async function redeemHome(){
   const e = parentEntitlements || {};
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
+  const gdH = _kidDataDays(k, 60);
+  if (gdH > 0) { showToast('📊 Ataskaitos atrakinamos po 2 mėn. treniruočių (liko ' + gdH + ' d.) — kol kas vaikas kaupia duomenis Karjeros lange.', 'error', 5500); return; }
   if ((e.homeplan_credits || 0) <= 0) { showToast('Nebėra namų planų kreditų', 'error'); return; }
   const days = _entCdDays(e.homeplan_last_used, 2);
   if (days > 0) { showToast('Dar negali panaudoti — kitas planas po ' + days + ' d. (kas 2 mėn.)', 'error', 4500); return; }
@@ -5838,6 +5841,8 @@ async function redeemSummer(){
   const e = parentEntitlements || {};
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
+  const gdS = _kidDataDays(k, 60);
+  if (gdS > 0) { showToast('📊 Ataskaitos atrakinamos po 2 mėn. treniruočių (liko ' + gdS + ' d.) — kol kas vaikas kaupia duomenis Karjeros lange.', 'error', 5500); return; }
   if ((e.summer_credits || 0) <= 0) { showToast('Nebėra vasaros kreditų', 'error'); return; }
   const days = _summerDaysLeft();
   if (days > 0) { showToast('Dar negali panaudoti — vasaros programa po ' + days + ' d. (nuo gegužės 15)', 'error', 4500); return; }
@@ -5980,9 +5985,9 @@ function openReportOrderModal(useCredit){
   if (!k) { showToast('Nėra pasirinkto vaiko'); return; }
   _reportCreditMode = !!useCredit;
   const old = document.getElementById('report-order-modal'); if (old) old.remove();
-  const lockDays = 0;  // duomenų vartai pašalinti — cooldown valdo redeemReport (kreditai), à la carte visada prieinama
+  const lockDays = _kidDataDays(k, 60);  // 📊 duomenų vartai: ataskaitos atrakinamos po 2 mėn. treniruočių (kol susikaupia duomenys)
   const orderCard = lockDays > 0
-    ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:20px 14px;margin-bottom:16px;text-align:center;"><div style="font-size:36px;margin-bottom:8px;">🔒</div><div style="font-size:14px;font-weight:800;color:white;margin-bottom:7px;">Ataskaita dar kaupia duomenis</div><div style="font-size:11px;color:var(--mut);line-height:1.55;">Pirmai ataskaitai reikia ~1 mėn. treniruočių duomenų, kad būtų ką analizuoti. Vėliau — kas mėnesį (rekomenduojama kas 3 mėn.).</div><div style="margin-top:11px;font-size:12px;color:var(--br);font-weight:800;">⏳ Prieinama po ${lockDays} d.</div></div>`
+    ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:20px 14px;margin-bottom:16px;text-align:center;"><div style="font-size:36px;margin-bottom:8px;">🔒</div><div style="font-size:14px;font-weight:800;color:white;margin-bottom:7px;">Ataskaita dar kaupia duomenis</div><div style="font-size:11px;color:var(--mut);line-height:1.55;">Pirmoms ataskaitoms reikia ~2 mėn. treniruočių duomenų, kad būtų ką analizuoti. Kol kas vaikas kaupia rezultatus Karjeros lange — kuo daugiau jų užfiksuos, tuo asmeniškesnė bus analizė.</div><div style="margin-top:11px;font-size:12px;color:var(--br);font-weight:800;">⏳ Prieinama po ${lockDays} d.</div></div>`
     : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div><div style="display:flex;gap:10px;"><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div></div><div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div><div style="margin-top:11px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">TRAUMOS / APRIBOJIMAI (NEBŪTINA)</label><input id="rep-injuries" type="text" placeholder="pvz. neseniai skaudėjo kelį" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><div style="margin-top:10px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">KO LABIAUSIAI TIKITĖS IŠ ATASKAITOS? (NEBŪTINA)</label><input id="rep-goal" type="text" placeholder="pvz. ar verta ruoštis varžyboms" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:13px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button><div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div></div>`;
   const m = document.createElement('div');
   m.id = 'report-order-modal';
@@ -6232,7 +6237,8 @@ function _reportRadar(skills){
     let l1 = lbl, l2 = '';
     if (lbl.length > 11) { const sp = lbl.lastIndexOf(' ', 11); if (sp > 0) { l1 = lbl.slice(0, sp); l2 = lbl.slice(sp + 1); } }
     const ly = lv[1] + 3 - (l2 ? 5 : 0);
-    labels += '<text x="'+lv[0].toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+anchor+'" font-size="10" font-weight="800" fill="#16161D">'+(l2 ? '<tspan x="'+lv[0].toFixed(1)+'" dy="0">'+_rEsc(l1)+'</tspan><tspan x="'+lv[0].toFixed(1)+'" dy="11">'+_rEsc(l2)+'</tspan>' : _rEsc(l1))+'</text>';
+    // l1 gale tarpas — kad kopijuojant tekstą eilutės nesuliptų („JĖGA IRKORPUSAS")
+    labels += '<text x="'+lv[0].toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+anchor+'" font-size="10" font-weight="800" fill="#16161D">'+(l2 ? '<tspan x="'+lv[0].toFixed(1)+'" dy="0">'+_rEsc(l1)+' </tspan><tspan x="'+lv[0].toFixed(1)+'" dy="11">'+_rEsc(l2)+'</tspan>' : _rEsc(l1))+'</text>';
   }
   return '<svg width="248" height="248" viewBox="0 0 400 400">'+grid+axes+'<polygon points="'+dataP.trim()+'" fill="rgba(255,77,0,.18)" stroke="#FF4D00" stroke-width="2.5"/>'+dots+labels+'</svg>';
 }
@@ -6256,7 +6262,7 @@ function buildPlanPrintDoc(r){
   // Apsauga nuo tuščių laukų: rodom tik tai, ką AI užpildė (be tuščio „Dabar: →")
   const goalsHtml = goals.map((g, i) => {
     const cur = (g.current_lt || '').trim(), tgt = (g.target_lt || '').trim();
-    const vals = (cur || tgt) ? `<div class="goal-vals">${cur ? `<span class="cur">Dabar: <b>${E(cur)}</b></span>` : ''}${(cur && tgt) ? '<span class="arr">→</span>' : ''}${tgt ? `<span class="tgt">${tgtLabel}: <b>${E(tgt)}</b></span>` : ''}</div>` : '';
+    const vals = (cur || tgt) ? `<div class="goal-vals">${cur ? `<span class="cur">Dabar: <b>${E(cur)}</b></span>` : ''}${(cur && tgt) ? '<span class="arr"> → </span>' : ''}${tgt ? `<span class="tgt">${tgtLabel}: <b>${E(tgt)}</b></span>` : ''}</div>` : '';
     return `<div class="goal">
       <div class="goal-n">${i + 1}</div>
       <div style="flex:1;">
@@ -6392,7 +6398,7 @@ function buildPlanPrintDoc(r){
       <div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Tikslai ir kelias</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">${E(c.kid_name || '')}<br>${E(c.period_label || '')}</div></div>
       ${intro.headline_lt ? `<div style="font-size:16px;font-weight:800;color:#0F766E;">${E(intro.headline_lt)}</div>` : ''}
       ${intro.paragraph_lt ? `<p style="margin-top:5px;">${E(intro.paragraph_lt)}</p>` : ''}
-      ${focus.length ? `<div class="chips">${focus.map(f => `<span class="fchip">🎯 ${E(f)}</span>`).join('')}</div>` : ''}
+      ${focus.length ? `<div class="chips">${focus.map(f => `<span class="fchip">🎯 ${E(f)}</span>`).join(' ')}</div>` : ''}
       ${cont.intro_lt ? `<p class="small mut" style="margin-top:5px;">${E(cont.intro_lt)}</p>` : ''}
       <div class="sec-h"><span class="num">__N__</span> Tavo 3 tikslai</div>
       ${goalsHtml}
@@ -6472,7 +6478,7 @@ function buildReportPrintDoc(r){
   const techRows = (tech.rows||[]).map(x => '<tr><td>'+E(x.area_lt)+'</td><td class="n"><span class="grade '+gradeCls(x.grade)+'">'+E(x.grade)+'</span></td><td>'+E(x.comment_lt)+'</td></tr>').join('');
   const nutri = (r.nutrition||[]).map(x => '<tr><td style="width:32%;"><b>'+E(x.icon||'•')+' '+E(x.title_lt)+'</b></td><td>'+E(x.text_lt)+'</td></tr>').join('');
   const prioTxt={high:'PRIORITETAS',mid:'SVARBU',low:'PALAIKYTI'}, prioCls={high:'p-hi',mid:'p-mid',low:'p-lo'};
-  const plan = (r.plan||[]).map((x,i) => '<div class="planitem"><div class="plannum">'+(i+1)+'</div><div><div class="pi-h">'+E(x.title_lt)+' <span class="prio '+(prioCls[x.priority]||'p-mid')+'">'+(prioTxt[x.priority]||'SVARBU')+'</span></div><p style="margin:0;" class="small">'+E(x.text_lt)+'</p></div></div>').join('');
+  const plan = (r.plan||[]).map((x,i) => '<div class="planitem"><div class="plannum">'+(i+1)+'</div><div><div class="pi-h">'+E(x.title_lt)+' <span class="prio '+(prioCls[x.priority]||'p-mid')+'">'+(prioTxt[x.priority]||'SVARBU')+'</span></div><p style="margin:0;" class="small">'+E(x.text_lt)+'</p>'+(x.first_step_lt?'<p style="margin:4px 0 0;" class="small"><b style="color:#16A34A;">▶ Pirmas žingsnis (nemokamas):</b> '+E(x.first_step_lt)+'</p>':'')+'</div></div>').join('');
   const strTags=(s.strengths_lt||[]).map(E).join(' · '), growTags=(s.grow_lt||[]).map(E).join(' · ');
   const idx = Math.max(0,Math.min(100, s.index||0));
 
@@ -6544,6 +6550,9 @@ table.t td.n{text-align:center;font-weight:600;}
     '<div class="callout co-med"><div class="co-h"><span class="chip">AUGIMAS</span> KMI '+E(g.bmi_value)+bmiCatShow+(g.bmi_percentile!=null?' · ~'+E(g.bmi_percentile)+' perc.':'')+'</div>'+
     (g.bmi_line_lt?'<p style="margin:0 0 6px;">'+E(g.bmi_line_lt)+'</p>':'')+(g.trajectory_lt?'<p style="margin:0 0 6px;">'+E(g.trajectory_lt)+'</p>':'')+(g.parent_note_lt?'<p style="margin:0;"><b>Tėvams:</b> '+E(g.parent_note_lt)+'</p>':'')+
     (g.refer_to_doctor?'<p style="margin:8px 0 0;color:#B45309;"><b>⚠️ '+E(g.refer_lt||'Verta pasitarti su vaiko gydytoju.')+'</b></p>':'')+'</div>') : '';
+  // Jei mėnesio puslapyje liktų TIK KPI kortelės (be trendo ir KMI) — neleidžiam pustuščio lapo:
+  // KPI keliasi į pirmą puslapį, atskiras mėnesio puslapis nerodomas.
+  const monthHasExtras = !!(trendBars || growthBlock);
 
   const edu = r.education || null;
   const eduShortUrl = (edu && edu.url) ? String(edu.url).replace(/^https?:\/\/(www\.)?/, '').replace('youtube.com/watch?v=', 'youtu.be/') : '';
@@ -6574,9 +6583,10 @@ table.t td.n{text-align:center;font-weight:600;}
     continuityBlock+
     (skills.length?('<div class="sec-h"><span class="num">__N__</span> Fizinio pasirengimo profilis</div><div class="radar-wrap">'+radar+'<div style="flex:1;">'+skillBars+'</div></div>'):'')+
     (standRows?('<div class="sec-h"><span class="num">__N__</span> '+(st.peer_note?'Kaip atrodo tarp bendraamžių':'Kaip atrodo statistikoje')+'</div>'+(st.intro_lt?'<p class="small mut">'+E(st.intro_lt)+'</p>':'')+(st.peer_note?'<p class="tiny mut" style="margin-top:-3px;margin-bottom:6px;">👥 '+E(st.peer_note)+'</p>':'')+'<table class="t"><thead><tr><th>Rodiklis</th><th style="text-align:center">'+(st.peer_note?'Percentilis':'Reikšmė')+'</th><th>Vertinimas</th></tr></thead><tbody>'+standRows+'</tbody></table>'):'')+
+    ((kpis && !monthHasExtras)?('<div class="sec-h"><span class="num">__N__</span> '+E(_rCap(c.focus_month_lt||'Mėnesio'))+' apžvalga</div><div class="grid3">'+kpis+'</div>'):'')+
     '<div class="footer"><span>SPOBU · progreso analizė</span><span>'+E(c.kid_name||'')+'</span><span>Konfidencialu</span></div></section>';
 
-  const pageMonth = (kpis||trendBars||growthBlock) ? ('<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">'+E(_rCap(c.focus_month_lt||'Mėnesio'))+' apžvalga</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
+  const pageMonth = monthHasExtras ? ('<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">'+E(_rCap(c.focus_month_lt||'Mėnesio'))+' apžvalga</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
     (kpis?'<div class="grid3" style="margin-bottom:4px;">'+kpis+'</div>':'')+
     (trendBars?('<div class="sec-h"><span class="num">__N__</span> Trijų mėnesių tendencija</div><div class="trendbars">'+trendBars+'</div>'+(mo.trend_note_lt?'<p class="small mut" style="margin-top:8px;">'+E(mo.trend_note_lt)+'</p>':'')):'')+
     growthBlock+
