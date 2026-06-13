@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v142</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v143</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -20198,7 +20198,7 @@ async function openTrainerSettings() {
             🎯 Patvirtintas vaiko iššūkis — <b style="color:var(--grn);">+1 tšk.</b><br>
             🏆 Patvirtintas varžybų rezultatas — <b style="color:var(--grn);">+1 tšk.</b><br>
             ✨ Sukurtas iššūkis — <b style="color:var(--br);">+1 tšk.</b><br>
-            <span style="color:var(--mut);font-size:10px;">Iš viso 99 lygiai. Aktyviai dirbant Sensėjus pasiekiamas maždaug per 6 metus.</span>
+            <span style="color:var(--mut);font-size:10px;">Iš viso 99 lygiai, aukščiausias — Sensėjus (30 000 tšk.). Aktyviai dirbant su pilnu klubu pasiekiamas per kelerius metus — tikras meistro kelias.</span>
           </div>
 
           <button onclick="trSetAcc('trs-stages-body')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
@@ -20302,24 +20302,25 @@ async function removeTrainerAvatar() {
 }
 
 // ════════════════════════════════════════
-// 🥋 TRENERIO LYGIAI — 8 stage'ai / 99 lygių (struktūra kaip vaiko STAGES)
+// 🥋 TRENERIO LYGIAI — 8 stage'ai / 99 lygių (TA PATI skalė kaip vaiko: lubos 30 000)
 // Taškai: patvirtinimas = +1, sukurtas iššūkis = +1
-// Modelis: aktyvus treneris ~730 tšk./metus → Sensėjus (4400 tšk.) ≈ per 6 metus
+// Modelis: vidut. treneris (~150 vaikų, ~3 600 tšk./metus) → Sensėjus (30 000) ≈ per ~8 metus.
+// Slenksčiai sutampa su vaiko STAGES (0/1000/2500/5000/9000/14500/21000/30000) — simetrija + tas pats jausmas.
 // ════════════════════════════════════════
 
 const TRAINER_STAGES = [
-  { name: 'Naujokas',      emoji: '🌱', kanji: '始', meaning: 'KELIO PRADŽIA',          color: '#FFFFFF', bgGradient: 'linear-gradient(135deg, #2C3E50, #4A6172)', beltGradient: 'linear-gradient(90deg,#fff,#e0e0e0)',     minExp: 0,    maxExp: 149 },
-  { name: 'Padėjėjas',     emoji: '🤝', kanji: '助', meaning: 'PAGALBA · PARAMA',        color: '#FF8C00', bgGradient: 'linear-gradient(135deg, #5C2E00, #8B4500)', beltGradient: 'linear-gradient(90deg,#FF8C00,#FF6B00)', minExp: 150,  maxExp: 369 },
-  { name: 'Asistentas',    emoji: '💪', kanji: '力', meaning: 'JĖGA · AUGIMAS',          color: '#4FC3F7', bgGradient: 'linear-gradient(135deg, #1E3A5F, #2E5C8A)', beltGradient: 'linear-gradient(90deg,#4A90E2,#2E5C8A)', minExp: 370,  maxExp: 729 },
-  { name: 'Instruktorius', emoji: '🥋', kanji: '指', meaning: 'KRYPTIS · TECHNIKA',      color: '#66BB6A', bgGradient: 'linear-gradient(135deg, #1E4D1E, #2E7D32)', beltGradient: 'linear-gradient(90deg,#4CAF50,#2E7D32)', minExp: 730,  maxExp: 1319 },
-  { name: 'Senpajus',      emoji: '⚔️', kanji: '先', meaning: 'VYRESNYSIS · PAVYZDYS',   color: '#D4A056', bgGradient: 'linear-gradient(135deg, #4A2C00, #6B3C00)', beltGradient: 'linear-gradient(90deg,#8B4513,#5D2906)', minExp: 1320, maxExp: 2129 },
-  { name: 'Mokytojas',     emoji: '📜', kanji: '師', meaning: 'IŠMINTIS · PERDAVIMAS',   color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',    minExp: 2130, maxExp: 3079 },
-  { name: 'Meistras',      emoji: '🐉', kanji: '匠', meaning: 'MEISTRIŠKUMAS · UGNIS',   color: '#FF4500', bgGradient: 'linear-gradient(135deg, #2D0000, #5D0000)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',    minExp: 3080, maxExp: 4399 },
-  { name: 'Sensėjus',      emoji: '🏔️', kanji: '道', meaning: 'KELIAS · AMŽINA IŠMINTIS', color: '#FFD700', bgGradient: 'linear-gradient(135deg, #1a1a1a, #3a2f00)', beltGradient: 'linear-gradient(90deg,#FFD700,#FFA500)', minExp: 4400, maxExp: Infinity }
+  { name: 'Naujokas',      emoji: '🌱', kanji: '始', meaning: 'KELIO PRADŽIA',          color: '#FFFFFF', bgGradient: 'linear-gradient(135deg, #2C3E50, #4A6172)', beltGradient: 'linear-gradient(90deg,#fff,#e0e0e0)',     minExp: 0,     maxExp: 999 },
+  { name: 'Padėjėjas',     emoji: '🤝', kanji: '助', meaning: 'PAGALBA · PARAMA',        color: '#FF8C00', bgGradient: 'linear-gradient(135deg, #5C2E00, #8B4500)', beltGradient: 'linear-gradient(90deg,#FF8C00,#FF6B00)', minExp: 1000,  maxExp: 2499 },
+  { name: 'Asistentas',    emoji: '💪', kanji: '力', meaning: 'JĖGA · AUGIMAS',          color: '#4FC3F7', bgGradient: 'linear-gradient(135deg, #1E3A5F, #2E5C8A)', beltGradient: 'linear-gradient(90deg,#4A90E2,#2E5C8A)', minExp: 2500,  maxExp: 4999 },
+  { name: 'Instruktorius', emoji: '🥋', kanji: '指', meaning: 'KRYPTIS · TECHNIKA',      color: '#66BB6A', bgGradient: 'linear-gradient(135deg, #1E4D1E, #2E7D32)', beltGradient: 'linear-gradient(90deg,#4CAF50,#2E7D32)', minExp: 5000,  maxExp: 8999 },
+  { name: 'Senpajus',      emoji: '⚔️', kanji: '先', meaning: 'VYRESNYSIS · PAVYZDYS',   color: '#D4A056', bgGradient: 'linear-gradient(135deg, #4A2C00, #6B3C00)', beltGradient: 'linear-gradient(90deg,#8B4513,#5D2906)', minExp: 9000,  maxExp: 14499 },
+  { name: 'Mokytojas',     emoji: '📜', kanji: '師', meaning: 'IŠMINTIS · PERDAVIMAS',   color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',    minExp: 14500, maxExp: 20999 },
+  { name: 'Meistras',      emoji: '🐉', kanji: '匠', meaning: 'MEISTRIŠKUMAS · UGNIS',   color: '#FF4500', bgGradient: 'linear-gradient(135deg, #2D0000, #5D0000)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',    minExp: 21000, maxExp: 29999 },
+  { name: 'Sensėjus',      emoji: '🏔️', kanji: '道', meaning: 'KELIAS · AMŽINA IŠMINTIS', color: '#FFD700', bgGradient: 'linear-gradient(135deg, #1a1a1a, #3a2f00)', beltGradient: 'linear-gradient(90deg,#FFD700,#FFA500)', minExp: 30000, maxExp: Infinity }
 ];
 
-// 99 lygių slenksčiai — vaiko kreivės forma, perskaičiuota į 4400 tšk. skalę
-const TRAINER_LEVEL_THRESHOLDS = LEVEL_THRESHOLDS.map(v => Math.round(v * 4400 / 30000));
+// 99 lygių slenksčiai — TIE PATYS kaip vaiko (be mastelio)
+const TRAINER_LEVEL_THRESHOLDS = LEVEL_THRESHOLDS.slice();
 
 // Pilna getStageInfo kopija trenerio masyvams (LVL 1-99, progresai, stage)
 function getTrainerStageInfo(points) {
