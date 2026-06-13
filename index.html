@@ -190,6 +190,24 @@ body.full-mobile-preview .bn2 { display: flex !important; }
 body.full-mobile-preview .sb { display: flex !important; }
 body.full-mobile-preview { padding: 20px 0 !important; }
 
+/* 🥋 TRENERIO PORTALAS — FIXED LAYOUT (v117)
+   Problema: .ph/.sc turi tik min-height, todėl ekranas auga su turiniu ir
+   apatinė navigacija nuvažiuoja. Čia (TIK #ptr ribose, vaiko/tėvų neliečiam)
+   aukštis fiksuojamas — turinys scrollinasi .sa viduje, .bn2 visada vietoje. */
+#ptr .ph { height: 780px; display: flex; flex-direction: column; }
+#ptr .sc { min-height: 0 !important; height: 100%; flex: 1; }
+#ptr .sa { min-height: 0; }
+@media (max-width: 500px) {
+  #ptr .ph { height: 100vh !important; height: 100dvh !important; min-height: 0 !important; }
+  #ptr .sc { height: 100% !important; }
+}
+body.full-mobile-preview #ptr .ph { height: 780px !important; min-height: 0 !important; }
+body.full-mobile-preview #ptr .sc { height: 100% !important; min-height: 0 !important; }
+
+/* Horizontalios scroll juostos be matomo scrollbar'o (tabai, filtrų chips) */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 /* 💻 DESKTOP LAYOUT — TIK vaiko portalui (body.portal-v) */
 #v-desktop-nav { display: none; }  /* default — mobile slepiama */
 @media (min-width: 1024px) {
@@ -410,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v116</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v122</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1763,49 +1781,51 @@ select.inp option{background:#222;}
         <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:30%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
       </div>
       <div style="position:relative;z-index:1;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
           <div onclick="event.stopPropagation();openTrainerSettings()" id="trh-avatar" style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;flex-shrink:0;cursor:pointer;background-size:cover;background-position:center;"></div>
           <div style="flex:1;min-width:0;">
             <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="trh-name">SVEIKAS, TRENERI! 🥋</div>
             <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;color:rgba(255,255,255,.9);line-height:1;margin-top:3px;" id="trh-level-txt">🌱 NAUJOKAS · LVL 1</div>
           </div>
         </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:3px;align-items:center;">
-          <span style="font-size:9px;color:rgba(255,255,255,.7);font-weight:700;letter-spacing:1px;">TAŠKAI</span>
-          <span style="font-size:10px;font-weight:800;color:white;" id="trh-exp-txt">0 / 15</span>
+        <!-- Žiedas + taškai (buvęs tr-stat hero turinys) -->
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="position:relative;width:84px;height:84px;flex-shrink:0;">
+            <svg width="84" height="84" viewBox="0 0 84 84" style="transform:rotate(-90deg);">
+              <circle cx="42" cy="42" r="34" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="6"/>
+              <circle id="trh-ring" cx="42" cy="42" r="34" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 213.6" style="transition:stroke-dasharray .8s ease;"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+              <div id="trh-ring-kanji" style="font-family:'Noto Serif JP',serif;font-size:26px;line-height:1;color:white;">道</div>
+              <div id="trh-ring-lvl" style="font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:1px;color:white;margin-top:2px;">LVL 1</div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:9px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">TAŠKAI</div>
+            <div id="trh-points" style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:white;line-height:1;letter-spacing:1px;">0</div>
+            <div id="trh-next-txt" style="font-size:9px;color:rgba(255,255,255,.85);font-weight:700;margin-top:4px;line-height:1.4;"></div>
+          </div>
         </div>
-        <div class="ebt" style="height:5px;"><div class="ebf" id="trh-exp-bar"></div></div>
-        <div style="text-align:right;font-size:9px;color:rgba(255,255,255,.8);font-weight:700;margin-top:3px;" id="trh-next-txt"></div>
+        <!-- 3 KPI -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;">
+          <div style="text-align:center;background:rgba(0,0,0,.25);border-radius:10px;padding:7px 4px;">
+            <div id="trh-kpi-approved" style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:white;line-height:1;">0</div>
+            <div style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:.4px;font-weight:700;margin-top:2px;">✅ PATVIRTINIMAI</div>
+          </div>
+          <div style="text-align:center;background:rgba(0,0,0,.25);border-radius:10px;padding:7px 4px;">
+            <div id="trh-kpi-created" style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:white;line-height:1;">0</div>
+            <div style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:.4px;font-weight:700;margin-top:2px;">🎯 IŠŠŪKIAI</div>
+          </div>
+          <div style="text-align:center;background:rgba(0,0,0,.25);border-radius:10px;padding:7px 4px;">
+            <div id="trh-kpi-kids" style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:white;line-height:1;">0</div>
+            <div style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:.4px;font-weight:700;margin-top:2px;">👥 AKTYVŪS VAIKAI</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- 👥 GRUPĖS + AKTYVŪS IŠŠŪKIAI — kompaktiška juosta (vietoj vaiko streak'ų) -->
-    <div style="display:flex;gap:6px;padding:0 16px;margin-top:10px;">
-      <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
-        <div style="font-size:14px;line-height:1;">👥</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF8C00;line-height:1;" id="trh-tile-groups-num">0</div>
-          <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Grupės</div>
-        </div>
-      </div>
-      <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
-        <div style="font-size:14px;line-height:1;">⚡</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#4FC3F7;line-height:1;" id="trh-tile-weekly-num">0</div>
-          <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Savaitiniai</div>
-        </div>
-      </div>
-      <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
-        <div style="font-size:14px;line-height:1;">🎯</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#BA68C8;line-height:1;" id="trh-tile-other-num">0</div>
-          <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Mėn.+Vienk.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 📅 ŠIANDIEN — grupės, kurių treniruotė šiandien (pildo loadTrainerToday) -->
-    <div id="tr-today-section" style="margin:10px 16px 12px;"></div>
+    <!-- 👥 MANO GRUPĖS — eilutės su aktyvių iššūkių skaičiais (pildo loadTrainerHome) -->
+    <div id="trh-groups-strip" style="display:flex;flex-direction:column;gap:6px;padding:0 16px;margin-top:10px;"></div>
 
     <!-- 📊 GERIAUSI MANO VAIKAI — 4 KPI kortelės (kopija vaiko MANO REITINGAI) -->
     <div class="st">📊 GERIAUSI MANO VAIKAI</div>
@@ -1853,31 +1873,6 @@ select.inp option{background:#222;}
     <div class="st">⏳ LAUKIA PATVIRTINIMO</div>
     <div id="trh-pending-list" style="margin:0 16px 8px;">
       <div style="text-align:center;padding:8px;color:var(--mut);font-size:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;">Kraunama...</div>
-    </div>
-    
-    <!-- ŽINUTĖS kortelė -->
-    <div class="cd" style="background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.3);cursor:pointer;" onclick="openMessages()">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-size:14px;font-weight:900;color:#6366f1;">💬 Žinutės</div>
-          <div style="font-size:12px;color:#6366f1;opacity:.8;margin-top:2px;" id="tr-msg-preview">Kraunama...</div>
-        </div>
-        <div style="background:#6366f1;color:white;font-family:'Bebas Neue',sans-serif;font-size:20px;padding:6px 14px;border-radius:99px;letter-spacing:1px;display:none;" id="tr-msg-badge">0</div>
-      </div>
-    </div>
-    
-    <!-- PRANEŠIMAI sekcija (treneriui) -->
-    <div style="margin:0 0 12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="background:var(--br);color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;padding:3px 10px;border-radius:99px;letter-spacing:1px;display:none;" id="tr-announcements-badge">0</div>
-          <button onclick="openAllAnnouncements()" id="tr-announcements-all-btn" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer;display:none;">VISI</button>
-        </div>
-      </div>
-      <div id="tr-announcements-list">
-        <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
-      </div>
     </div>
     
     <!-- Naujos vaikų paskyros laukia patvirtinimo -->
@@ -1961,7 +1956,7 @@ select.inp option{background:#222;}
     </div>
 
     <!-- 👥 Filtras pagal grupę (pildo renderTrchGroupFilter) -->
-    <div id="trch-group-filter" style="display:flex;gap:4px;margin:0 16px 6px;overflow-x:auto;padding-bottom:2px;"></div>
+    <div id="trch-group-filter" class="no-scrollbar" style="display:flex;gap:4px;margin:0 16px 6px;overflow-x:auto;padding-bottom:2px;"></div>
 
     <!-- Tabai (kaip vaiko v-ish) -->
     <div style="display:flex;gap:4px;margin:0 16px 6px;">
@@ -2011,10 +2006,10 @@ select.inp option{background:#222;}
     </div>
 
     <!-- 👥 Filtras pagal grupę (pildo renderTrPatGroupFilter) -->
-    <div id="trp-group-filter" style="display:flex;gap:4px;margin:0 16px 6px;overflow-x:auto;padding-bottom:2px;"></div>
+    <div id="trp-group-filter" class="no-scrollbar" style="display:flex;gap:4px;margin:0 16px 6px;overflow-x:auto;padding-bottom:2px;"></div>
 
     <!-- Tabai -->
-    <div class="tabs" style="padding:0 16px 10px;">
+    <div class="tabs no-scrollbar" style="padding:0 16px 10px;">
       <div class="tab on" onclick="switchTrTab(this,'career')">🏋️ Karjera <span id="tr-career-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'challenges')">🎯 Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'competitions')">🥇 Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
@@ -2141,6 +2136,46 @@ select.inp option{background:#222;}
 </div>
 
 
+<!-- TRENERIS – VISI PATVIRTINIMAI (sub-langas iš „▼ DAUGIAU") -->
+<div class="sc" id="tr-pat-all">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('tr','tr-pat')">←</div><div class="tt" id="trpa-title">PATVIRTINIMAI</div>
+  <div style="width:36px;"></div></div>
+  <div class="sa">
+    <div id="trpa-filter" class="no-scrollbar" style="display:flex;gap:4px;margin:6px 16px;overflow-x:auto;padding-bottom:2px;"></div>
+    <div id="tr-pat-all-list">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- TRENERIS – VISI IŠŠŪKIAI (sub-langas iš „▼ DAUGIAU") -->
+<div class="sc" id="tr-challenges-all">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('tr','tr-challenges')">←</div><div class="tt">VISI IŠŠŪKIAI</div>
+  <div style="width:36px;"></div></div>
+  <div class="sa">
+    <div id="trch-all-filter" class="no-scrollbar" style="display:flex;gap:4px;margin:6px 16px;overflow-x:auto;padding-bottom:2px;"></div>
+    <div id="tr-my-challenges-all-content">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+
 <!-- TRENERIS – PROFILIS (kopija vaiko v-prof) -->
 <div class="sc" id="tr-prof">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
@@ -2249,21 +2284,18 @@ select.inp option{background:#222;}
   <div style="width:36px;"></div></div>
   <div class="sa">
 
-    <!-- 🥋 Trenerio lygio hero (pildo loadTrainerLevel) -->
-    <div id="tr-level-hero" style="margin:0 0 14px;"></div>
-
-    <!-- Sezono filtras -->
-    <div style="display:flex;gap:6px;margin:0 0 12px;">
-      <button class="trainer-season-filter-btn on" data-filter="season" onclick="setTrainerSeasonFilter('season')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🔥 ŠIS SEZONAS</button>
-      <button class="trainer-season-filter-btn" data-filter="all" onclick="setTrainerSeasonFilter('all')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🏆 VISŲ LAIKŲ</button>
+    <!-- Sezono filtras (v120 — didesni, įskaitomi) -->
+    <div style="display:flex;gap:6px;margin:6px 16px 10px;">
+      <button class="trainer-season-filter-btn on" data-filter="season" onclick="setTrainerSeasonFilter('season')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;">🔥 ŠIS SEZONAS</button>
+      <button class="trainer-season-filter-btn" data-filter="all" onclick="setTrainerSeasonFilter('all')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;">🏆 VISŲ LAIKŲ</button>
     </div>
-    
+
     <!-- Tab nav (4 leaderboard'ai) -->
-    <div style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;padding-bottom:4px;">
-      <button class="trainer-stat-tab on" data-tab="overall" onclick="switchTrainerStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
-      <button class="trainer-stat-tab" data-tab="skills" onclick="switchTrainerStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
-      <button class="trainer-stat-tab" data-tab="challenges" onclick="switchTrainerStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
-      <button class="trainer-stat-tab" data-tab="competitions" onclick="switchTrainerStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
+    <div class="no-scrollbar" style="display:flex;gap:6px;margin:0 16px 12px;overflow-x:auto;padding-bottom:4px;">
+      <button class="trainer-stat-tab on" data-tab="overall" onclick="switchTrainerStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
+      <button class="trainer-stat-tab" data-tab="skills" onclick="switchTrainerStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
+      <button class="trainer-stat-tab" data-tab="challenges" onclick="switchTrainerStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
+      <button class="trainer-stat-tab" data-tab="competitions" onclick="switchTrainerStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
     </div>
     
     <!-- Tab content -->
@@ -17465,16 +17497,16 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
       : 'background:var(--bg);';
     
     return `
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;${bgStyle}border-radius:8px;margin-bottom:4px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${isMine ? '#FFD700' : 'var(--mut)'};min-width:32px;">${medal || '#' + rank}</div>
-        <div style="width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;${tInfo?.avatar_url ? `background-image:url('${tInfo.avatar_url}');background-size:cover;background-position:center;` : 'background:rgba(255,255,255,.12);'}">${tInfo?.avatar_url ? '' : (realName?.[0] || '?').toUpperCase()}</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;${bgStyle}border-radius:10px;margin-bottom:5px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:${isMine ? '#FFD700' : 'var(--mut)'};min-width:36px;">${medal || '#' + rank}</div>
+        <div style="width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:white;${tInfo?.avatar_url ? `background-image:url('${tInfo.avatar_url}');background-size:cover;background-position:center;` : 'background:rgba(255,255,255,.12);'}">${tInfo?.avatar_url ? '' : (realName?.[0] || '?').toUpperCase()}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:${isMine ? '800' : '600'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          <div style="font-size:13px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
             ${isMine ? '⭐ ' : ''}${realName}
           </div>
-          <div style="font-size:9px;color:var(--mut);">${e.kyu || 'Mu kyu'}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;">${e.kyu || 'Mu kyu'}</div>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;">${e.score.toLocaleString()}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:white;flex-shrink:0;">${e.score.toLocaleString()}</div>
       </div>
     `;
   }).join('');
@@ -17494,8 +17526,8 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
   ` : '';
   
   return `
-    <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">
-      🏆 VISI DALYVIAI (${entries.length}) · ⭐ Mano vaikai
+    <div style="font-size:12px;color:white;font-weight:800;letter-spacing:.5px;margin-bottom:8px;padding:0 4px;">
+      🏆 Visi dalyviai (${entries.length}) · <span style="color:#FFD700;">⭐ Mano vaikai</span>
     </div>
     <div class="cd" style="padding:8px;">
       ${list}
@@ -18459,14 +18491,14 @@ async function loadPendingSubmissions() {
   document.getElementById('tr-pending-badge').textContent = count + challengesCount;
 
   if (!subs?.length) {
-    document.getElementById('tr-submissions-list').innerHTML =
-      '<div style="text-align:center;padding:40px;color:var(--mut);">🎉 Visi rezultatai patvirtinti!</div>';
+    _trPatRenderTop('tr-submissions-list', 'career', [], '<div style="text-align:center;padding:40px;color:var(--mut);">🎉 Visi rezultatai patvirtinti!</div>');
     return;
   }
 
-  const html = subs.map(s => {
+  const cards = subs.map(s => {
     const kid = kidsMap[s.kid_id];
-    const kidName = kid ? `${kid.first_name} ${kid.last_name}` : 'Nežinomas';
+    // (v119) null-safe vardas — DB gali turėti null first/last_name
+    const kidName = kid ? (`${kid.first_name || 'Vaikas'} ${kid.last_name || ''}`.trim()) : 'Nežinomas';
     const catName = s.exercises?.career_categories?.name || '';
     // DELTA: lower_is_better pratimui pagerėjimas = MAŽESNĖ reikšmė (nebe „+-1.5")
     const lower = !!s.exercises?.lower_is_better;
@@ -18494,9 +18526,8 @@ async function loadPendingSubmissions() {
         <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="openRejectModal('${s.id}')">✗ Atmesti</button>
       </div>
     </div>`;
-  }).join('');
-  document.getElementById('tr-submissions-list').innerHTML = html;
-  if (typeof applyTrPatGroupFilter === 'function') applyTrPatGroupFilter();
+  });
+  _trPatRenderTop('tr-submissions-list', 'career', cards, '<div style="text-align:center;padding:40px;color:var(--mut);">🎉 Visi rezultatai patvirtinti!</div>');
 }
 
 async function approveSubmission(subId) {
@@ -18641,7 +18672,6 @@ async function loadTrainerGroups() {
         <button class="btn btng" onclick="openCreateGroupModal()">+ SUKURTI PIRMĄ GRUPĘ</button>
       </div>
     `;
-    loadTrainerToday();
     return;
   }
   
@@ -18722,9 +18752,8 @@ async function loadTrainerGroups() {
   
   content.innerHTML = html;
 
-  // Atnaujinam „Šiandien" sekciją (naudoja trainerGroupsCache + allTrainerKids)
-  loadTrainerToday();
-  // Jei atidarytas grupės langas — atnaujinam ir jį
+  // (v117) „Šiandien" sekcija pašalinta iš tr-main — loadTrainerToday nebekviečiamas
+  // Jei atidarytas grupės langas — atnaujinam jį
   if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
   // Grupių filtro chips iššūkių ir patvirtinimų ekranuose
   if (typeof renderTrchGroupFilter === 'function') renderTrchGroupFilter();
@@ -18844,16 +18873,24 @@ function _groupFilterChips(containerId, activeId, onclickFn) {
   if (!wrap) return;
   const groups = trainerGroupsCache || [];
   if (!groups.length) { wrap.innerHTML = ''; return; }
+  // (v119) Jei DB yra kelios grupės tuo pačiu vardu — prie chip pridedam narių sk., kad skirtųsi
+  const nameCount = {};
+  groups.forEach(g => { nameCount[g.name] = (nameCount[g.name] || 0) + 1; });
   const chip = (id, label, color) => {
     const on = activeId === id;
     return `<div onclick="${onclickFn}(${id ? `'${id}'` : 'null'})" style="flex-shrink:0;padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.3px;cursor:pointer;border:.5px solid ${on ? (color || 'var(--br)') : 'var(--bdr)'};background:${on ? ((color || '#FF4D00') + '26') : 'var(--card)'};color:${on ? (color || 'var(--br)') : 'var(--mut)'};white-space:nowrap;">${label}</div>`;
   };
   wrap.innerHTML = chip(null, '👥 Visos', null) +
-    groups.map(g => chip(g.id, g.name, g.color || '#FF4D00')).join('');
+    groups.map(g => {
+      const members = (allTrainerKids || []).filter(k => k.group_id === g.id).length;
+      const label = nameCount[g.name] > 1 ? `${g.name} (${members})` : g.name;
+      return chip(g.id, label, g.color || '#FF4D00');
+    }).join('');
 }
 
 function renderTrchGroupFilter() {
   _groupFilterChips('trch-group-filter', trChallengesGroupFilter, 'setTrchGroupFilter');
+  _groupFilterChips('trch-all-filter', trChallengesGroupFilter, 'setTrchGroupFilter');
 }
 
 function setTrchGroupFilter(groupId) {
@@ -18864,6 +18901,7 @@ function setTrchGroupFilter(groupId) {
 
 function renderTrPatGroupFilter() {
   _groupFilterChips('trp-group-filter', trPatGroupFilter, 'setTrPatGroupFilter');
+  _groupFilterChips('trpa-filter', trPatGroupFilter, 'setTrPatGroupFilter');
 }
 
 function setTrPatGroupFilter(groupId) {
@@ -18874,7 +18912,7 @@ function setTrPatGroupFilter(groupId) {
 
 // Slepia patvirtinimų korteles, kurių vaikas ne iš pasirinktos grupės (client-side)
 function applyTrPatGroupFilter() {
-  ['tr-submissions-list', 'tr-challenge-submissions-list', 'tr-competition-submissions-list'].forEach(listId => {
+  ['tr-submissions-list', 'tr-challenge-submissions-list', 'tr-competition-submissions-list', 'tr-pat-all-list'].forEach(listId => {
     const list = document.getElementById(listId);
     if (!list) return;
     list.querySelectorAll('[data-gid]').forEach(card => {
@@ -18887,6 +18925,46 @@ function applyTrPatGroupFilter() {
 function renderTrainerPatHero() {
   const el = document.getElementById('trp-approved-total');
   if (el) el.textContent = (trainerApprovedTotal || 0).toLocaleString();
+}
+
+// ════════════════════════════════════════
+// ⏳ PATVIRTINIMAI: TOP 3 + „▼ DAUGIAU" sub-langas (v119)
+// ════════════════════════════════════════
+
+let _trPatFullHtml = { career: '', challenges: '', competitions: '', duels: '' };
+let _trPatAllTab = 'career';
+const TR_PAT_TITLES = { career: '🏋️ KARJERA', challenges: '🎯 IŠŠŪKIAI', competitions: '🥇 VARŽYBOS', duels: '🥊 DVIKOVOS' };
+
+// Bendras renderis: pagrindiniam tabe TOP 3 + DAUGIAU, pilnas sąrašas — sub-lange
+function _trPatRenderTop(listId, tab, cardsArr, emptyHtml) {
+  _trPatFullHtml[tab] = cardsArr.length ? cardsArr.join('') : emptyHtml;
+  const list = document.getElementById(listId);
+  if (list) {
+    let mainHtml = cardsArr.slice(0, 3).join('');
+    if (cardsArr.length > 3) {
+      mainHtml += `<div style="text-align:center;padding:2px 0 14px;">
+        <button onclick="openTrPatAll('${tab}')" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 24px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▼ DAUGIAU (${cardsArr.length - 3})</button>
+      </div>`;
+    }
+    list.innerHTML = mainHtml || emptyHtml;
+  }
+  // Jei atidarytas „visi" langas su šiuo tabu — atnaujinam ir jį
+  const allList = document.getElementById('tr-pat-all-list');
+  if (allList && _trPatAllTab === tab && document.getElementById('tr-pat-all')?.classList.contains('on')) {
+    allList.innerHTML = _trPatFullHtml[tab];
+  }
+  if (typeof applyTrPatGroupFilter === 'function') applyTrPatGroupFilter();
+}
+
+function openTrPatAll(tab) {
+  _trPatAllTab = tab;
+  const titleEl = document.getElementById('trpa-title');
+  if (titleEl) titleEl.textContent = TR_PAT_TITLES[tab] || 'PATVIRTINIMAI';
+  const allList = document.getElementById('tr-pat-all-list');
+  if (allList) allList.innerHTML = _trPatFullHtml[tab] || '<div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>';
+  if (typeof renderTrPatGroupFilter === 'function') renderTrPatGroupFilter();
+  g('tr', 'tr-pat-all');
+  if (typeof applyTrPatGroupFilter === 'function') applyTrPatGroupFilter();
 }
 
 // ════════════════════════════════════════
@@ -18922,6 +19000,14 @@ function renderTrainerProfile() {
   if (nameEl) nameEl.textContent = `${currentProfile?.first_name || ''} ${currentProfile?.last_name || ''}`.trim().toUpperCase() || '–';
   const sinceEl = document.getElementById('trp-since');
   if (sinceEl) sinceEl.textContent = `🥋 Treniruoja: ${_trainerTenureLT()}`;
+
+  // (v121) VISO profilio ekrano fonas pagal stage — kaip vaiko v-prof (.sc + .sa)
+  const profSc = document.getElementById('tr-prof');
+  if (profSc) {
+    profSc.style.background = st.bgGradient;
+    const profSa = profSc.querySelector('.sa');
+    if (profSa) profSa.style.background = st.bgGradient;
+  }
 }
 
 // Vaikų statistika profilio kortelėse (kviečiama iš loadTrainerData)
@@ -18932,11 +19018,33 @@ async function loadTrainerProfileStats() {
     const kn = document.getElementById('trp-kids-num');
     if (kn) kn.textContent = kids.length;
 
-    // 🥋 Diržų suvestinė (top 5 pagal dažnumą)
+    // 🥋 Diržų DIAGRAMA (v121): VISI diržai, rikiuota pagal kyu seką (Mu kyu → 1 kyu → Dan),
+    // juostos plotis ∝ vaikų sk., spalva — tikra diržo spalva iš getBeltInfo
     const beltCnt = {};
-    kids.forEach(k => { const key = k.kyu || 'Be kyu'; beltCnt[key] = (beltCnt[key] || 0) + 1; });
-    const beltRows = Object.entries(beltCnt).sort((a, b) => b[1] - a[1]).slice(0, 5)
-      .map(([kyu, n]) => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bdr);font-size:12px;"><span>🥋 ${kyu}</span><b>${n}</b></div>`).join('');
+    kids.forEach(k => { const key = k.kyu || 'Mu kyu'; beltCnt[key] = (beltCnt[key] || 0) + 1; });
+    const _kyuIdx = (kyu) => {
+      const t = String(kyu).toLowerCase().trim();
+      const i = (typeof KYU_ORDER !== 'undefined') ? KYU_ORDER.findIndex(x => x.toLowerCase().trim() === t) : -1;
+      return i === -1 ? 999 : i;
+    };
+    const beltEntries = Object.entries(beltCnt).sort((a, b) => _kyuIdx(a[0]) - _kyuIdx(b[0]));
+    const maxBelt = Math.max(1, ...beltEntries.map(e => e[1]));
+    const beltRows = beltEntries.map(([kyu, n]) => {
+      const bi = (typeof getBeltInfo === 'function') ? getBeltInfo(kyu) : null;
+      const grad = bi?.mainGradient || 'linear-gradient(180deg,#666,#444)';
+      // Šviesiems diržams (baltas/geltonas) — tamsus tekstas
+      const isLight = /fff|e0e0e0|ffd700|ffeb|f7e|fce|f4d|ffe0/i.test(grad);
+      const txtCol = isLight ? '#1a1a1a' : 'white';
+      const pct = Math.max(18, Math.round((n / maxBelt) * 100));
+      return `
+        <div style="position:relative;height:26px;background:var(--bg);border-radius:7px;overflow:hidden;margin-bottom:5px;border:.5px solid var(--bdr);">
+          <div style="position:absolute;top:0;left:0;bottom:0;width:${pct}%;background:${grad};"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 9px;">
+            <span style="font-size:10px;font-weight:900;color:${txtCol};text-shadow:0 1px 2px rgba(0,0,0,.25);">🥋 ${kyu}</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:white;text-shadow:0 1px 3px rgba(0,0,0,.7);">${n}</span>
+          </div>
+        </div>`;
+    }).join('');
     const beltsEl = document.getElementById('trp-belts');
     if (beltsEl) beltsEl.innerHTML = beltRows || '<div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Nėra vaikų</div>';
 
@@ -18971,16 +19079,25 @@ async function loadTrainerProfileStats() {
     }).sort((a, b) => b.exp - a.exp);
     const gtEl = document.getElementById('trp-groups-table');
     if (gtEl) {
-      gtEl.innerHTML = rows.length ? rows.map((r, i) => `
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--bdr);">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--mut);min-width:22px;">#${i + 1}</div>
-          <div style="width:10px;height:10px;border-radius:50%;background:${r.g.color || '#FF4D00'};flex-shrink:0;"></div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:800;">${r.g.name}</div>
-            <div style="font-size:10px;color:var(--mut);">👥 ${r.n} · 🏅 ${r.md}</div>
+      // (v121) EXP juostos — proporcingos didžiausiai grupei (max = 100%)
+      const maxExp = Math.max(1, ...rows.map(r => r.exp));
+      gtEl.innerHTML = rows.length ? rows.map((r, i) => {
+        const color = r.g.color || '#FF4D00';
+        const pct = Math.max(4, Math.round((r.exp / maxExp) * 100));
+        return `
+        <div style="padding:7px 0;border-bottom:.5px solid var(--bdr);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--mut);min-width:22px;">#${i + 1}</div>
+            <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+            <div style="flex:1;min-width:0;font-size:12px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.g.name}</div>
+            <div style="font-size:10px;color:var(--mut);flex-shrink:0;">👥 ${r.n} · 🏅 ${r.md}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${color};flex-shrink:0;">${r.exp.toLocaleString()}</div>
           </div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--br);">${r.exp.toLocaleString()}</div>
-        </div>`).join('') : '<div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Nėra grupių</div>';
+          <div style="height:7px;background:var(--bg);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${color},${color}99);border-radius:99px;"></div>
+          </div>
+        </div>`;
+      }).join('') : '<div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Nėra grupių</div>';
     }
   } catch (e) {
     console.error('loadTrainerProfileStats:', e);
@@ -19406,22 +19523,48 @@ async function loadTrainerHome() {
     const kids = allTrainerKids || [];
     const kidIds = kids.map(k => k.id);
 
-    // ── 1) Tiles: grupės + aktyvūs iššūkiai pagal tipą ──
-    const gEl = document.getElementById('trh-tile-groups-num');
-    if (gEl) gEl.textContent = (trainerGroupsCache || []).length;
-
+    // ── 1) Grupių eilutės su aktyvių iššūkių skaičiais pagal tipą (v117) ──
     const nowISO = new Date().toISOString();
     const { data: actCh } = await sb.from('challenges')
-      .select('id, type, expires_at')
+      .select('id, type, group_id, expires_at')
       .eq('trainer_id', currentUser.id)
       .is('parent_challenge_id', null)
       .or(`expires_at.is.null,expires_at.gte.${nowISO}`);
-    const weeklyN = (actCh || []).filter(c => c.type === 'weekly').length;
-    const otherN = (actCh || []).filter(c => c.type === 'monthly' || c.type === 'one_time').length;
-    const wEl = document.getElementById('trh-tile-weekly-num');
-    if (wEl) wEl.textContent = weeklyN;
-    const oEl = document.getElementById('trh-tile-other-num');
-    if (oEl) oEl.textContent = otherN;
+
+    const byGroup = {};
+    (actCh || []).forEach(c => {
+      if (!c.group_id) return;
+      if (!byGroup[c.group_id]) byGroup[c.group_id] = { weekly: 0, monthly: 0, one_time: 0 };
+      if (byGroup[c.group_id][c.type] !== undefined) byGroup[c.group_id][c.type]++;
+    });
+
+    const strip = document.getElementById('trh-groups-strip');
+    if (strip) {
+      const groups = trainerGroupsCache || [];
+      if (!groups.length) {
+        strip.innerHTML = `<div onclick="nv('tr',document.querySelector('#tr-main .bn2 .ni:nth-child(2)'),'tr-groups')" style="background:var(--card);border:.5px dashed var(--bdr);border-radius:10px;padding:10px;text-align:center;font-size:11px;color:var(--mut);cursor:pointer;">👥 Sukurk pirmą grupę → <strong style="color:var(--br);">Grupės</strong></div>`;
+      } else {
+        strip.innerHTML = groups.map(gr => {
+          const c = byGroup[gr.id] || { weekly: 0, monthly: 0, one_time: 0 };
+          const color = gr.color || '#FF4D00';
+          const members = kids.filter(k => k.group_id === gr.id).length;
+          return `
+            <div onclick="openGroupView('${gr.id}')" style="background:var(--card);border:.5px solid var(--bdr);border-left:3px solid ${color};border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+              <div style="width:9px;height:9px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
+                <div style="font-size:9px;color:var(--mut);margin-top:1px;">👥 ${members} narių</div>
+              </div>
+              <div style="display:flex;gap:8px;font-size:10px;font-weight:800;flex-shrink:0;">
+                <span style="color:#4FC3F7;">⚡ ${c.weekly}</span>
+                <span style="color:#BA68C8;">🌙 ${c.monthly}</span>
+                <span style="color:#FFD700;">✨ ${c.one_time}</span>
+              </div>
+              <div style="font-size:12px;color:var(--mut);flex-shrink:0;">›</div>
+            </div>`;
+        }).join('');
+      }
+    }
 
     // ── 2) Geriausi mano vaikai (4 KPI) ──
     if (kidIds.length) {
@@ -19525,7 +19668,7 @@ async function _loadTrainerHomePending(kidIds) {
     const k = (allTrainerKids || []).find(x => x.id === id);
     if (!k) return 'Vaikas';
     const li = (k.last_name || '')[0];
-    return `${k.first_name || ''}${li ? ' ' + li + '.' : ''}`.trim();
+    return (`${k.first_name || ''}${li ? ' ' + li + '.' : ''}`.trim()) || 'Vaikas';
   };
 
   wrap.innerHTML = top.map(it => `
@@ -19573,7 +19716,7 @@ async function _fetchTrainerNotifications(force) {
     const k = (allTrainerKids || []).find(x => x.id === id);
     if (!k) return 'Vaikas';
     const li = (k.last_name || '')[0];
-    return `${k.first_name || ''}${li ? ' ' + li + '.' : ''}`.trim();
+    return (`${k.first_name || ''}${li ? ' ' + li + '.' : ''}`.trim()) || 'Vaikas';
   };
 
   const [rsR, nkR, csR, crR, msR] = await Promise.all([
@@ -20050,7 +20193,7 @@ async function loadTrainerLevel() {
     trainerLevelInfo = getTrainerStageInfo(trainerPoints);
 
     _renderTrainerMainHero();
-    _renderTrainerStatHero();
+    // (v117) _renderTrainerStatHero nebekviečiamas — tr-stat hero perkeltas į pagrindinį
     if (typeof renderTrainerProfile === 'function') renderTrainerProfile();
     if (typeof renderTrainerPatHero === 'function') renderTrainerPatHero();
   } catch (e) {
@@ -20058,7 +20201,7 @@ async function loadTrainerLevel() {
   }
 }
 
-// Pagrindinio ekrano hero (pildymas kaip vaiko loadKidData → v-main-hero)
+// Pagrindinio ekrano hero (v117): stage žiedas + taškai + 3 KPI (buvęs tr-stat hero)
 function _renderTrainerMainHero() {
   const info = trainerLevelInfo;
   const hero = document.getElementById('trh-hero');
@@ -20072,12 +20215,36 @@ function _renderTrainerMainHero() {
   if (nameEl) nameEl.textContent = `SVEIKAS, ${(currentProfile?.first_name || 'TRENERI').toUpperCase()}! 🥋`;
   const lvlEl = document.getElementById('trh-level-txt');
   if (lvlEl) lvlEl.textContent = `${st.emoji} ${st.name.toUpperCase()} · LVL ${info.globalLevel}`;
-  const expEl = document.getElementById('trh-exp-txt');
-  if (expEl) expEl.textContent = info.nextLevelExp ? `${trainerPoints} / ${info.nextLevelExp}` : `${trainerPoints} tšk.`;
-  const bar = document.getElementById('trh-exp-bar');
-  if (bar) bar.style.width = Math.max(2, info.progressPercent).toFixed(0) + '%';
+
+  // Žiedas — progresas iki kito STAGE
+  const ring = document.getElementById('trh-ring');
+  if (ring) {
+    const C = 2 * Math.PI * 34;
+    const dash = (info.stageProgressPercent / 100) * C;
+    ring.setAttribute('stroke', st.color);
+    ring.setAttribute('stroke-dasharray', `${dash.toFixed(1)} ${C.toFixed(1)}`);
+  }
+  const ringKanji = document.getElementById('trh-ring-kanji');
+  if (ringKanji) { ringKanji.textContent = st.kanji; ringKanji.style.color = st.color; }
+  const ringLvl = document.getElementById('trh-ring-lvl');
+  if (ringLvl) ringLvl.textContent = `LVL ${info.globalLevel}`;
+
+  const ptsEl = document.getElementById('trh-points');
+  if (ptsEl) ptsEl.textContent = trainerPoints.toLocaleString();
+  const nextStage = TRAINER_STAGES[TRAINER_STAGES.indexOf(st) + 1] || null;
   const nextEl = document.getElementById('trh-next-txt');
-  if (nextEl) nextEl.textContent = info.nextLevelExp ? `Iki LVL ${info.globalLevel + 1}: +${info.expToNextLevel} tšk.` : '🏔️ SENSĖJUS — AUKŠČIAUSIAS LYGIS';
+  if (nextEl) nextEl.textContent = nextStage
+    ? `Iki „${nextStage.name}": liko ${info.expToNextStage} tšk.`
+    : '🏔️ SENSĖJUS — AUKŠČIAUSIAS LYGIS';
+
+  // KPI
+  const kA = document.getElementById('trh-kpi-approved');
+  if (kA) kA.textContent = trainerApprovedTotal.toLocaleString();
+  const kC = document.getElementById('trh-kpi-created');
+  if (kC) kC.textContent = trainerCreatedTotal.toLocaleString();
+  const kK = document.getElementById('trh-kpi-kids');
+  if (kK) kK.textContent = trainerActiveKidsCount;
+
   const avUrl = currentProfile?.avatar_url ? (currentProfile.avatar_url + '?r=' + Date.now()) : null;
   if (typeof applyAvatarById === 'function') applyAvatarById('trh-avatar', avUrl, currentProfile?.first_name?.[0] || 'T');
 }
@@ -21660,7 +21827,7 @@ async function loadPendingDuels() {
   if (countEl) countEl.textContent = duels?.length || 0;
   
   if (!duels || duels.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">🥊 Nėra dvikovų laukiančių patvirtinimo</div>';
+    _trPatRenderTop('tr-duels-list', 'duels', [], '<div style="text-align:center;padding:40px;color:var(--mut);">🥊 Nėra dvikovų laukiančių patvirtinimo</div>');
     return;
   }
   
@@ -21688,7 +21855,7 @@ async function loadPendingDuels() {
     return p ? `${p.first_name || ''} ${p.last_name || ''}`.trim() : 'Vaikas';
   };
   
-  list.innerHTML = duels.map(d => {
+  const duelCards = duels.map(d => {
     const t = DUEL_TYPES[d.duel_type] || { icon: '🥊', name: d.duel_type, unit: '', moreIsBetter: true };
     const chName = getName(d.challenger_id);
     const opName = getName(d.opponent_id);
@@ -21740,7 +21907,8 @@ async function loadPendingDuels() {
         </div>
       </div>
     `;
-  }).join('');
+  });
+  _trPatRenderTop('tr-duels-list', 'duels', duelCards, '<div style="text-align:center;padding:40px;color:var(--mut);">🥊 Nėra dvikovų laukiančių patvirtinimo</div>');
 }
 
 // Treneris patvirtina dvikovą
@@ -22682,11 +22850,13 @@ async function loadTrainerOwnChallenges() {
   }
   
   if (!challengesToShow.length) {
-    const message = myChallengesActiveTab === 'active' 
+    const message = myChallengesActiveTab === 'active'
       ? 'Nėra aktyvių iššūkių.<br><br>Spausk + NAUJAS IŠŠŪKIS 💪'
       : 'Nėra pasibaigusių iššūkių.';
-    document.getElementById('tr-my-challenges-content').innerHTML =
-      `<div style="text-align:center;padding:40px;color:var(--mut);">${message}</div>`;
+    const emptyHtml = `<div style="text-align:center;padding:40px;color:var(--mut);">${message}</div>`;
+    document.getElementById('tr-my-challenges-content').innerHTML = emptyHtml;
+    const allEmptyEl = document.getElementById('tr-my-challenges-all-content');
+    if (allEmptyEl) allEmptyEl.innerHTML = emptyHtml;
     return;
   }
   
@@ -22710,7 +22880,7 @@ async function loadTrainerOwnChallenges() {
   
   const typeLabels = { training: 'Treniruotė', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
   
-  const html = challengesToShow.map(ch => {
+  const cards = challengesToShow.map(ch => {
     const stats = subsByChallenge[ch.id] || { total: 0, approved: 0, pending: 0 };
     
     // Statusas
@@ -22793,46 +22963,48 @@ async function loadTrainerOwnChallenges() {
     const TYPE_COLORS = { training: '#FF4D00', weekly: '#4FC3F7', monthly: '#BA68C8', one_time: '#FFD700', permanent: '#66BB6A' };
     const tColor = TYPE_COLORS[ch.type] || '#FF4D00';
 
-    return `<div class="cd" style="margin-bottom:12px;background:linear-gradient(135deg,${tColor}12,var(--card));border-color:${tColor}40;border-left:4px solid ${tColor};${cardOpacity}" id="own-ch-${ch.id}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
+    // (v118) Kompaktiška kortelė — viena statistikos eilutė, mažesni šriftai
+    return `<div class="cd" style="margin-bottom:8px;padding:10px 12px;background:linear-gradient(135deg,${tColor}12,var(--card));border-color:${tColor}40;border-left:4px solid ${tColor};${cardOpacity}" id="own-ch-${ch.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${ch.icon || '🎯'} ${ch.title}</div>
-          <div style="font-size:11px;color:var(--mut);">${typeLabels[ch.type] || ch.type} · 🎯 ${ch.target_value || '?'} ${ch.target_unit || ''} · +${ch.exp_reward} EXP</div>
+          <div style="font-size:13px;font-weight:900;line-height:1.2;">${ch.icon || '🎯'} ${ch.title}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:3px;">${typeLabels[ch.type] || ch.type} · 🎯 ${ch.target_value || '?'} ${ch.target_unit || ''} · +${ch.exp_reward} EXP</div>
         </div>
         ${statusBadge}
       </div>
-      
-      <div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:var(--mut);">
-        <div style="margin-bottom:4px;">${audienceInfo}</div>
-        <div>${timeInfo}</div>
+      <div style="background:var(--bg);border-radius:8px;padding:6px 10px;margin-bottom:6px;font-size:10px;color:var(--mut);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${audienceInfo}</span>
+        <span style="flex-shrink:0;">${timeInfo}</span>
       </div>
-      
-      <!-- Statistikos -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px;">
-        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);">${stats.approved}/${ch._eligible_count || '?'}</div>
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">ATLIKO</div>
-        </div>
-        <div style="background:rgba(255,77,0,.05);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${stats.pending}</div>
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAUKIA</div>
-        </div>
-        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);">${(ch._eligible_count || 0) - stats.approved - stats.pending}</div>
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">NEDALYVAVO</div>
-        </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:10px;">
+        <span style="color:var(--mut);">✅ ATLIKO <b style="color:white;font-size:12px;">${stats.approved}/${ch._eligible_count || '?'}</b></span>
+        <span style="color:var(--mut);">⏳ LAUKIA <b style="color:var(--br);font-size:12px;">${stats.pending}</b></span>
+        <button onclick="viewChallengeParticipants('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:5px 10px;border-radius:8px;font-size:10px;cursor:pointer;font-weight:700;flex-shrink:0;">👥 DALYVIAI</button>
       </div>
-      
-      <button onclick="viewChallengeParticipants('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" 
-              style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:8px;">
-        👥 ŽIŪRĖTI DALYVIUS
-      </button>
-      
       ${actionButtons}
     </div>`;
-  }).join('');
-  
-  document.getElementById('tr-my-challenges-content').innerHTML = html;
+  });
+
+  // (v118) TOP 3 pagrindiniame + „▼ DAUGIAU"; pilnas sąrašas sub-lange tr-challenges-all
+  const TOPN = 3;
+  const mainEl = document.getElementById('tr-my-challenges-content');
+  if (mainEl) {
+    let mainHtml = cards.slice(0, TOPN).join('');
+    if (cards.length > TOPN) {
+      mainHtml += `<div style="text-align:center;padding:2px 0 14px;">
+        <button onclick="openTrChallengesAll()" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 24px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▼ DAUGIAU (${cards.length - TOPN})</button>
+      </div>`;
+    }
+    mainEl.innerHTML = mainHtml;
+  }
+  const allEl = document.getElementById('tr-my-challenges-all-content');
+  if (allEl) allEl.innerHTML = cards.join('');
+}
+
+// (v118) Pilno ekrano „visi iššūkiai" sub-langas
+function openTrChallengesAll() {
+  g('tr', 'tr-challenges-all');
+  if (typeof renderTrchGroupFilter === 'function') renderTrchGroupFilter();
 }
 
 async function freezeChallenge(challengeId) {
@@ -23000,8 +23172,7 @@ async function loadPendingChallengeSubmissions() {
   
   if (!myKidIds || myKidIds.length === 0) {
     document.getElementById('tr-challenges-count').textContent = '0';
-    document.getElementById('tr-challenge-submissions-list').innerHTML =
-      '<div style="text-align:center;padding:40px;color:var(--mut);">🎉 Iššūkių pateikimų nėra</div>';
+    _trPatRenderTop('tr-challenge-submissions-list', 'challenges', [], '<div style="text-align:center;padding:40px;color:var(--mut);">🎉 Iššūkių pateikimų nėra</div>');
     return;
   }
   
@@ -23062,16 +23233,16 @@ async function loadPendingChallengeSubmissions() {
   }
   
   if (!subs?.length) {
-    document.getElementById('tr-challenge-submissions-list').innerHTML =
-      '<div style="text-align:center;padding:40px;color:var(--mut);">🎉 Iššūkių pateikimų nėra</div>';
+    _trPatRenderTop('tr-challenge-submissions-list', 'challenges', [], '<div style="text-align:center;padding:40px;color:var(--mut);">🎉 Iššūkių pateikimų nėra</div>');
     return;
   }
   
   const typeLabels = { training: 'Treniruotė', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
   
-  const html = subs.map(s => {
+  const cards = subs.map(s => {
     const kid = kidsMap[s.kid_id];
-    const kidName = kid ? `${kid.first_name} ${kid.last_name}` : 'Nežinomas';
+    // (v119) null-safe vardas
+    const kidName = kid ? (`${kid.first_name || 'Vaikas'} ${kid.last_name || ''}`.trim()) : 'Nežinomas';
     const ch = s.challenges;
     const targetText = ch?.target_value 
       ? `🎯 Tikslas: ${ch.target_value} ${ch.target_unit || ''}` 
@@ -23156,10 +23327,9 @@ async function loadPendingChallengeSubmissions() {
         <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="rejectChallengeSubmission('${s.id}')">✗ Atmesti</button>
       </div>
     </div>`;
-  }).join('');
-  
-  document.getElementById('tr-challenge-submissions-list').innerHTML = html;
-  if (typeof applyTrPatGroupFilter === 'function') applyTrPatGroupFilter();
+  });
+
+  _trPatRenderTop('tr-challenge-submissions-list', 'challenges', cards, '<div style="text-align:center;padding:40px;color:var(--mut);">🎉 Iššūkių pateikimų nėra</div>');
 }
 
 async function approveChallengeSubmission(subId) {
@@ -23237,8 +23407,7 @@ async function loadPendingCompetitionResults() {
   updateTrainerPendingBadge();
   
   if (!results || results.length === 0) {
-    document.getElementById('tr-competition-submissions-list').innerHTML =
-      '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra laukiančių varžybų rezultatų</div>';
+    _trPatRenderTop('tr-competition-submissions-list', 'competitions', [], '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra laukiančių varžybų rezultatų</div>');
     return;
   }
   
@@ -23259,12 +23428,13 @@ async function loadPendingCompetitionResults() {
   const compsMap = {};
   (compsData || []).forEach(c => { compsMap[c.id] = c; });
   
-  const html = results.map(r => {
+  const cards = results.map(r => {
     const kid = kidsMap[r.kid_id];
     const comp = compsMap[r.competition_id];
     if (!kid || !comp) return '';
-    
-    const kidName = `${kid.first_name} ${kid.last_name || ''}`.trim();
+
+    // (v119) null-safe vardas
+    const kidName = `${kid.first_name || 'Vaikas'} ${kid.last_name || ''}`.trim();
     const genderIcon = kid.gender === 'female' ? '👧' : '👦';
     const typeLabel = COMP_TYPE_LABELS[comp.competition_type] || comp.competition_type;
     const levelLabel = comp.level ? COMP_LEVEL_LABELS[comp.level] : '';
@@ -23315,10 +23485,9 @@ async function loadPendingCompetitionResults() {
         <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="rejectCompetitionResult('${r.id}')">✗ Atmesti</button>
       </div>
     </div>`;
-  }).join('');
-  
-  document.getElementById('tr-competition-submissions-list').innerHTML = html;
-  if (typeof applyTrPatGroupFilter === 'function') applyTrPatGroupFilter();
+  });
+
+  _trPatRenderTop('tr-competition-submissions-list', 'competitions', cards.filter(Boolean), '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra laukiančių varžybų rezultatų</div>');
 }
 
 async function approveCompetitionResult(resultId) {
