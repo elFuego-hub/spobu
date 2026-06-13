@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v133</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v135</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19650,6 +19650,24 @@ async function _computeActiveChallengesByGroup() {
   return byGroup;
 }
 
+// „BENDRAS LVL" reitingo entries — TIKSLIAI kaip tr-stat „overall" tabas:
+// sezono režime SUMUOJA sezono taškus (kid_records+iššūkiai+varžybos), visų laikų — total_exp.
+// (EXP plytelė turi sutapti su tuo, ką atidaro paspaudus → openTrainerStatScreen('overall'))
+async function _trainerOverallEntries() {
+  const base = await getTrainerFilteredEntries('total_exp');
+  if (typeof trainerStatSeasonFilter !== 'undefined' && trainerStatSeasonFilter === 'all') return base;
+  const combined = {};
+  (base || []).forEach(e => { combined[e.kidId] = { ...e, score: 0 }; });
+  const s = await getTrainerFilteredEntries('kid_records');
+  const c = await getTrainerFilteredEntries('challenge_submissions');
+  const p = await getTrainerFilteredEntries('competition_results');
+  [...(s || []), ...(c || []), ...(p || [])].forEach(e => {
+    if (!combined[e.kidId]) combined[e.kidId] = { ...e, score: 0 };
+    combined[e.kidId].score += (e.score || 0);
+  });
+  return Object.values(combined);
+}
+
 async function loadTrainerHome() {
   if (!currentUser) return;
   try {
@@ -19704,7 +19722,8 @@ async function loadTrainerHome() {
       const rankRes = {}; // elId -> { rank, kidId }
       for (const [elId, metric] of rankMetrics) {
         try {
-          let entries = await getTrainerFilteredEntries(metric);
+          // EXP plytelė = „BENDRAS LVL" (sutampa su statistika); kitos — atitinkama metrika
+          let entries = (elId === 'trh-best-exp') ? await _trainerOverallEntries() : await getTrainerFilteredEntries(metric);
           entries = (entries || []).slice().sort((a, b) => (b.score || 0) - (a.score || 0));
           for (let i = 0; i < entries.length; i++) {
             if (_myKidIdSetTr.has(entries[i].kidId)) { rankRes[elId] = { rank: i + 1, kidId: entries[i].kidId }; break; }
@@ -23163,8 +23182,9 @@ function openTrChallengesAll() {
 
 async function freezeChallenge(challengeId) {
   if (!confirm('Užšaldyti šį iššūkį? Vaikai nebegalės dalyvauti.')) return;
-  // Užšaldom ir patį iššūkį, ir visas vaikų kopijas (grupės iššūkis)
+  // Užšaldom ir patį iššūkį, ir visas vaikų kopijas (grupės iššūkis). trainer_id — apsauga (gynyba sluoksniais).
   const { error } = await sb.from('challenges').update({ is_active: false })
+    .eq('trainer_id', currentUser.id)
     .or(`id.eq.${challengeId},parent_challenge_id.eq.${challengeId}`);
   if (error) { showToast('❌ ' + error.message, 'error'); return; }
 
@@ -23179,10 +23199,10 @@ async function unfreezeChallenge(challengeId) {
   let error;
   if (childRows && childRows.length) {
     // Grupės iššūkis — aktyvuojam TIK vaikų kopijas (parent lieka paslėptas šablonas)
-    ({ error } = await sb.from('challenges').update({ is_active: true }).eq('parent_challenge_id', challengeId));
+    ({ error } = await sb.from('challenges').update({ is_active: true }).eq('trainer_id', currentUser.id).eq('parent_challenge_id', challengeId));
   } else {
     // Atskiras iššūkis — aktyvuojam jį patį
-    ({ error } = await sb.from('challenges').update({ is_active: true }).eq('id', challengeId));
+    ({ error } = await sb.from('challenges').update({ is_active: true }).eq('trainer_id', currentUser.id).eq('id', challengeId));
   }
   if (error) { showToast('❌ ' + error.message, 'error'); return; }
 
@@ -23194,8 +23214,9 @@ async function unfreezeChallenge(challengeId) {
 async function deleteChallenge(challengeId, title) {
   if (!confirm(`Ar tikrai ištrinti iššūkį "${title}"?\n\nVisi pateikimai (laukiantys ir patvirtinti) bus IŠTRINTI!\n\nVaikams jau priskirti EXP NEBUS atimti.`)) return;
 
-  // Triname ir patį iššūkį, ir visas vaikų kopijas (kad vaikams dingtų)
+  // Triname ir patį iššūkį, ir visas vaikų kopijas (kad vaikams dingtų). trainer_id — apsauga.
   const { data, error } = await sb.from('challenges').delete()
+    .eq('trainer_id', currentUser.id)
     .or(`id.eq.${challengeId},parent_challenge_id.eq.${challengeId}`).select();
   if (error) { showToast('❌ ' + error.message, 'error'); return; }
   if (!data || data.length === 0) {
@@ -23253,8 +23274,13 @@ async function viewChallengeParticipants(challengeId, title) {
     .select('kid_id, status, value, numeric_value, created_at')
     .in('challenge_id', allChallIds);
 
+  // Jei vaikas turi kelis pateikimus — paimam svarbiausią (approved > pending > rejected)
+  const _STATUS_RANK = { approved: 3, pending: 2, rejected: 1 };
   const subsByKid = {};
-  (subs || []).forEach(s => { subsByKid[s.kid_id] = s; });
+  (subs || []).forEach(s => {
+    const cur = subsByKid[s.kid_id];
+    if (!cur || (_STATUS_RANK[s.status] || 0) > (_STATUS_RANK[cur.status] || 0)) subsByKid[s.kid_id] = s;
+  });
   
   if (eligibleKids.length === 0) {
     document.getElementById('cp-list').innerHTML = 
