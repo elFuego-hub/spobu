@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v137</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v138</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19564,6 +19564,32 @@ function _trhTodayGroupCard(gr) {
     </div>`;
 }
 
+// Pilno pločio HORIZONTALI kortelė — kai grupių 1–2 (kad neatrodytų tuščia/vieniša)
+function _trhTodayGroupCardWide(gr) {
+  const c = _trhByGroup[gr.id] || { weekly: 0, monthly: 0, one_time: 0 };
+  const p = _trhPendByGroup[gr.id] || { career: 0, challenges: 0, comps: 0 };
+  const color = gr.color || '#FF4D00';
+  const members = (allTrainerKids || []).filter(k => k.group_id === gr.id).length;
+  const pendTotal = p.career + p.challenges + p.comps;
+  return `
+    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}16,var(--card));border:.5px solid ${color}55;border-left:4px solid ${color};border-radius:12px;padding:11px 13px;margin-bottom:7px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:${color}26;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">👥</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:900;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;">👥 ${members} ${members === 1 ? 'narys' : 'nariai'}${gr.train_time ? ` · 🕐 ${gr.train_time}` : ''}</div>
+        </div>
+        ${pendTotal > 0 ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;border-radius:99px;padding:2px 8px;flex-shrink:0;box-shadow:0 0 7px rgba(255,77,0,.5);">⏳ ${pendTotal}</div>` : '<div style="font-size:11px;color:var(--grn);flex-shrink:0;">✅</div>'}
+        <div style="font-size:13px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:8px;">
+        <div style="flex:1;text-align:center;background:rgba(79,195,247,.12);border-radius:7px;padding:5px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#4FC3F7;">${c.weekly}</span> <span style="font-size:8px;color:var(--mut);">⚡ SAV.</span></div>
+        <div style="flex:1;text-align:center;background:rgba(186,104,200,.12);border-radius:7px;padding:5px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#BA68C8;">${c.monthly}</span> <span style="font-size:8px;color:var(--mut);">🌙 MĖN.</span></div>
+        <div style="flex:1;text-align:center;background:rgba(255,215,0,.12);border-radius:7px;padding:5px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#FFD700;">${c.one_time}</span> <span style="font-size:8px;color:var(--mut);">✨ VNK.</span></div>
+      </div>
+    </div>`;
+}
+
 function _renderTrhTodayStrip() {
   const strip = document.getElementById('trh-groups-strip');
   if (!strip) return;
@@ -19580,10 +19606,14 @@ function _renderTrhTodayStrip() {
     return;
   }
 
-  // Tinklelis: stulpelių skaičius pagal kortelių kiekį (1 → per visą plotį, 2 → per pusę, 3 → trečdaliais)
+  // 1–2 grupės → pilno pločio horizontalios kortelės; 3+ → 3 stulpelių tinklelis (vertikalios kortelės)
   const shown = _trhTodayExpanded ? todayGroups : todayGroups.slice(0, _TRH_TODAY_TOPN);
-  const cols = Math.min(shown.length, 3) || 1;
-  let html = header + `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px;">${shown.map(_trhTodayGroupCard).join('')}</div>`;
+  let html;
+  if (shown.length >= 3) {
+    html = header + `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">${shown.map(_trhTodayGroupCard).join('')}</div>`;
+  } else {
+    html = header + shown.map(_trhTodayGroupCardWide).join('');
+  }
   if (todayGroups.length > _TRH_TODAY_TOPN) {
     html += _trhTodayExpanded
       ? `<div style="text-align:center;padding:8px 0 4px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▲ MAŽIAU</button></div>`
