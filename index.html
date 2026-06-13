@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v138</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v139</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19572,21 +19572,19 @@ function _trhTodayGroupCardWide(gr) {
   const members = (allTrainerKids || []).filter(k => k.group_id === gr.id).length;
   const pendTotal = p.career + p.challenges + p.comps;
   return `
-    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}16,var(--card));border:.5px solid ${color}55;border-left:4px solid ${color};border-radius:12px;padding:11px 13px;margin-bottom:7px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:36px;height:36px;border-radius:10px;background:${color}26;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">👥</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:14px;font-weight:900;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:1px;">👥 ${members} ${members === 1 ? 'narys' : 'nariai'}${gr.train_time ? ` · 🕐 ${gr.train_time}` : ''}</div>
+    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}16,var(--card));border:.5px solid ${color}55;border-left:4px solid ${color};border-radius:11px;padding:9px 11px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+      <div style="width:32px;height:32px;border-radius:9px;background:${color}26;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">👥</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:2px;display:flex;gap:9px;flex-wrap:wrap;">
+          <span>👥 ${members}</span>
+          <span style="color:#4FC3F7;font-weight:700;">⚡ ${c.weekly}</span>
+          <span style="color:#BA68C8;font-weight:700;">🌙 ${c.monthly}</span>
+          <span style="color:#FFD700;font-weight:700;">✨ ${c.one_time}</span>
         </div>
-        ${pendTotal > 0 ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;border-radius:99px;padding:2px 8px;flex-shrink:0;box-shadow:0 0 7px rgba(255,77,0,.5);">⏳ ${pendTotal}</div>` : '<div style="font-size:11px;color:var(--grn);flex-shrink:0;">✅</div>'}
-        <div style="font-size:13px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
-      <div style="display:flex;gap:7px;margin-top:8px;">
-        <div style="flex:1;text-align:center;background:rgba(79,195,247,.12);border-radius:7px;padding:5px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#4FC3F7;">${c.weekly}</span> <span style="font-size:8px;color:var(--mut);">⚡ SAV.</span></div>
-        <div style="flex:1;text-align:center;background:rgba(186,104,200,.12);border-radius:7px;padding:5px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#BA68C8;">${c.monthly}</span> <span style="font-size:8px;color:var(--mut);">🌙 MĖN.</span></div>
-        <div style="flex:1;text-align:center;background:rgba(255,215,0,.12);border-radius:7px;padding:5px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#FFD700;">${c.one_time}</span> <span style="font-size:8px;color:var(--mut);">✨ VNK.</span></div>
-      </div>
+      ${pendTotal > 0 ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;border-radius:99px;padding:2px 8px;flex-shrink:0;box-shadow:0 0 7px rgba(255,77,0,.5);">⏳ ${pendTotal}</div>` : '<div style="font-size:12px;color:var(--grn);flex-shrink:0;">✅</div>'}
+      <div style="font-size:13px;color:var(--mut);flex-shrink:0;">›</div>
     </div>`;
 }
 
