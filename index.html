@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v131</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v132</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19603,6 +19603,53 @@ function toggleTrhToday() {
   _renderTrhTodayStrip();
 }
 
+// Aktyvūs iššūkiai pagal grupę — skaičiuojam TIKSLIAI kaip Iššūkių ekranas (isChallengeCompleted):
+// neįskaitom pasibaigusių (laikas), užšaldytų (is_active=false / parent šablonų) ir visų atliktų.
+// Dedupinam pagal logical iššūkį (parent_challenge_id), kad 1 grupės iššūkis = 1.
+async function _computeActiveChallengesByGroup() {
+  const byGroup = {};
+  if (!currentUser) return byGroup;
+  try {
+    const { data: challenges } = await sb.from('challenges')
+      .select('id, type, group_id, parent_challenge_id, target_audience, target_kid_id, expires_at, is_active')
+      .eq('trainer_id', currentUser.id);
+    if (!challenges || !challenges.length) return byGroup;
+
+    const myKids = allTrainerKids || [];
+    const chIds = challenges.map(c => c.id);
+    const approvedByCh = {};
+    if (chIds.length) {
+      const { data: subs } = await sb.from('challenge_submissions')
+        .select('challenge_id, status').in('challenge_id', chIds).eq('status', 'approved');
+      (subs || []).forEach(s => { approvedByCh[s.challenge_id] = (approvedByCh[s.challenge_id] || 0) + 1; });
+    }
+
+    const eligibleCountFor = (ch) => {
+      const aud = ch.target_audience || 'group';
+      if (aud === 'specific_kid') return myKids.filter(k => k.id === ch.target_kid_id).length;
+      if (aud === 'group') return myKids.filter(k => k.group_id === ch.group_id).length;
+      if (aud === 'boys_in_group') return myKids.filter(k => k.group_id === ch.group_id && k.gender === 'male').length;
+      if (aud === 'girls_in_group') return myKids.filter(k => k.group_id === ch.group_id && k.gender === 'female').length;
+      return myKids.length;
+    };
+
+    const seen = new Set();
+    challenges.forEach(ch => {
+      if (!ch.group_id) return;
+      const elig = eligibleCountFor(ch);
+      const appr = approvedByCh[ch.id] || 0;
+      if (typeof isChallengeCompleted === 'function' && isChallengeCompleted(ch, elig, appr)) return; // pasibaigęs
+      const logicalId = ch.parent_challenge_id || ch.id;
+      const dk = ch.group_id + '|' + logicalId;
+      if (seen.has(dk)) return;
+      seen.add(dk);
+      if (!byGroup[ch.group_id]) byGroup[ch.group_id] = { weekly: 0, monthly: 0, one_time: 0 };
+      if (byGroup[ch.group_id][ch.type] !== undefined) byGroup[ch.group_id][ch.type]++;
+    });
+  } catch (e) { console.error('_computeActiveChallengesByGroup:', e); }
+  return byGroup;
+}
+
 async function loadTrainerHome() {
   if (!currentUser) return;
   try {
@@ -19610,28 +19657,9 @@ async function loadTrainerHome() {
     const kidIds = kids.map(k => k.id);
 
     // ── 1) ŠIANDIENOS TRENIRUOTĖS — tik grupės, kurių treniruotė vyksta šiandien (v124) ──
-    const nowISO = new Date().toISOString();
-    // Skaičiuojam TIK tikrai aktyvius iššūkius (is_active=true, neprasibaigę).
-    // Grupės iššūkis = 1 paslėptas „parent" (is_active=false) + N vaikų kopijų (is_active=true).
-    // Todėl imam aktyvias kopijas ir dedupinam pagal parent_challenge_id → 1 iššūkis = 1.
-    // (Anksčiau buvo skaičiuojami parent šablonai, todėl rodydavo „vaiduoklius".)
-    const { data: actCh } = await sb.from('challenges')
-      .select('id, type, group_id, parent_challenge_id, expires_at')
-      .eq('trainer_id', currentUser.id)
-      .eq('is_active', true)
-      .or(`expires_at.is.null,expires_at.gte.${nowISO}`);
-
-    const byGroup = {};
-    const _seenCh = new Set();
-    (actCh || []).forEach(c => {
-      if (!c.group_id) return;
-      const logicalId = c.parent_challenge_id || c.id; // grupės iššūkis dedupinamas pagal parent
-      const dk = c.group_id + '|' + logicalId;
-      if (_seenCh.has(dk)) return;
-      _seenCh.add(dk);
-      if (!byGroup[c.group_id]) byGroup[c.group_id] = { weekly: 0, monthly: 0, one_time: 0 };
-      if (byGroup[c.group_id][c.type] !== undefined) byGroup[c.group_id][c.type]++;
-    });
+    // Aktyvūs iššūkiai pagal grupę — skaičiuojam TAIP PAT kaip Iššūkių ekranas
+    // (neįskaitom pasibaigusių / užšaldytų / visų jau atliktų iššūkių).
+    const byGroup = await _computeActiveChallengesByGroup();
 
     // Laukiantys patvirtinimo pagal grupę (karjera / iššūkiai / varžybos) — vienu užklausų rinkiniu
     const kidGroupMap = {};
