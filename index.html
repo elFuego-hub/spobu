@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v135</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v136</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1779,26 +1779,19 @@ select.inp option{background:#222;}
         <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:30%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
       </div>
       <div style="position:relative;z-index:1;">
-        <!-- Žiedas + stage vardas + taškai -->
-        <div style="display:flex;align-items:center;gap:14px;">
-          <div style="position:relative;width:72px;height:72px;flex-shrink:0;">
-            <svg width="72" height="72" viewBox="0 0 72 72" style="transform:rotate(-90deg);">
-              <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="5"/>
-              <circle id="trh-ring" cx="36" cy="36" r="30" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 188.5" style="transition:stroke-dasharray .8s ease;"/>
-            </svg>
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-              <div id="trh-ring-kanji" style="font-family:'Noto Serif JP',serif;font-size:24px;line-height:1;color:white;">道</div>
-              <div id="trh-ring-lvl" style="font-family:'Bebas Neue',sans-serif;font-size:9px;letter-spacing:1px;color:white;margin-top:1px;">LVL 1</div>
-            </div>
-          </div>
+        <!-- Pasveikinimas + trenerio vardas + avataras (be kanji ženklo) -->
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div onclick="event.stopPropagation();openTrainerSettings()" id="trh-avatar" style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;flex-shrink:0;cursor:pointer;background-size:cover;background-position:center;"></div>
           <div style="flex:1;min-width:0;">
-            <div id="trh-stage-name" style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:white;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🌱 NAUJOKAS · LVL 1</div>
-            <div style="display:flex;align-items:baseline;gap:5px;margin-top:3px;">
-              <span id="trh-points" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;line-height:1;letter-spacing:1px;">0</span>
-              <span style="font-size:9px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">TAŠKAI</span>
-            </div>
-            <div id="trh-next-txt" style="font-size:9px;color:rgba(255,255,255,.85);font-weight:700;margin-top:3px;line-height:1.3;"></div>
+            <div id="trh-name" style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;line-height:1.05;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">SVEIKI, TRENERI! 🥋</div>
+            <div id="trh-stage-name" style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;color:rgba(255,255,255,.9);line-height:1;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🌱 NAUJOKAS · LVL 1</div>
           </div>
+        </div>
+        <!-- Taškai -->
+        <div style="display:flex;align-items:baseline;gap:5px;margin-top:9px;">
+          <span id="trh-points" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;line-height:1;letter-spacing:1px;">0</span>
+          <span style="font-size:9px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">TAŠKAI</span>
+          <span id="trh-next-txt" style="font-size:9px;color:rgba(255,255,255,.85);font-weight:700;margin-left:auto;line-height:1.3;text-align:right;"></span>
         </div>
         <!-- 3 KPI -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;">
@@ -20370,21 +20363,14 @@ function _renderTrainerMainHero() {
   try { localStorage.setItem('spobu_tr_bg', st.bgGradient); } catch (e) {}
   const kanjiBg = document.getElementById('trh-hero-kanji-bg');
   if (kanjiBg) kanjiBg.textContent = st.kanji;
+  // Pasveikinimas + trenerio vardas
+  const nameEl = document.getElementById('trh-name');
+  if (nameEl) nameEl.textContent = `SVEIKI, ${(currentProfile?.first_name || 'TRENERI').toUpperCase()}! 🥋`;
   const stageNameEl = document.getElementById('trh-stage-name');
   if (stageNameEl) { stageNameEl.textContent = `${st.emoji} ${st.name.toUpperCase()} · LVL ${info.globalLevel}`; stageNameEl.style.color = st.color; }
-
-  // Žiedas — progresas iki kito STAGE (r=30 naujam kompaktiškam žiedui)
-  const ring = document.getElementById('trh-ring');
-  if (ring) {
-    const C = 2 * Math.PI * 30;
-    const dash = (info.stageProgressPercent / 100) * C;
-    ring.setAttribute('stroke', st.color);
-    ring.setAttribute('stroke-dasharray', `${dash.toFixed(1)} ${C.toFixed(1)}`);
-  }
-  const ringKanji = document.getElementById('trh-ring-kanji');
-  if (ringKanji) { ringKanji.textContent = st.kanji; ringKanji.style.color = st.color; }
-  const ringLvl = document.getElementById('trh-ring-lvl');
-  if (ringLvl) ringLvl.textContent = `LVL ${info.globalLevel}`;
+  // Avataras (trenerio nuotrauka arba inicialas)
+  const avUrl = currentProfile?.avatar_url ? (currentProfile.avatar_url + '?r=' + Date.now()) : null;
+  if (typeof applyAvatarById === 'function') applyAvatarById('trh-avatar', avUrl, currentProfile?.first_name?.[0] || 'T');
 
   const ptsEl = document.getElementById('trh-points');
   if (ptsEl) ptsEl.textContent = trainerPoints.toLocaleString();
