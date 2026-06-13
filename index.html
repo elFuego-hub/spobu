@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v122</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v123</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4169,8 +4169,8 @@ async function afterLogin() {
       console.log('✅ [afterLogin] loadClubData baigėsi, rodom portal k');
       op('k');
     } else if (profile.role === 'trainer') {
-      subscribeTrainerNotifications();
       await loadTrainerData();
+      subscribeTrainerNotifications(); // po duomenų — realtime tik papildomas, negali blokuoti portalo
       op('tr');
     } else if (profile.role === 'kid') {
       // Krauname kid duomenis - ieškom per user_id (NE per id, nes kids.id !== auth.users.id)
@@ -23555,31 +23555,52 @@ async function updateTrainerPendingBadge() {
 // ════════════════════════════════════════
 // REALAUS LAIKO (WebSocket)
 // ════════════════════════════════════════
+// Sekam aktyvų trenerio kanalą, kad pakartotinai prisijungus galėtume jį pašalinti
+let _trainerChannel = null;
+
 function subscribeTrainerNotifications() {
   // TODO(60/40): push pranešimai treneriui apie naujus pateikimus (per clever-processor) + realtime „Šiandien" atnaujinimas
-  sb.channel('trainer-'+currentUser.id)
-    .on('postgres_changes',{
-      event:'INSERT', schema:'public', table:'result_submissions'
+  // 🛡️ Apsauga nuo „cannot add postgres_changes callbacks ... after subscribe()":
+  // antrą kartą paleidus afterLogin (token atnaujinimas / re-login be perkrovimo) kanalas
+  // trainer-<id> jau egzistuoja ir yra subscribed. Pašalinam seną PRIEŠ kurdami naują.
+  // Visa funkcija try/catch — realtime klaida NIEKADA neturi sustabdyti portalo užkrovimo.
+  try {
+    const topic = 'trainer-' + currentUser.id;
+    if (_trainerChannel) { try { sb.removeChannel(_trainerChannel); } catch (e) {} _trainerChannel = null; }
+    // Defensyvu: pašalinam ir bet kurį „pakibusį" to paties pavadinimo kanalą (jei ref pamestas)
+    try {
+      (sb.getChannels ? sb.getChannels() : []).forEach(c => {
+        if (c?.topic && c.topic.indexOf(topic) !== -1) { try { sb.removeChannel(c); } catch (e) {} }
+      });
+    } catch (e) {}
+
+    const ch = sb.channel(topic);
+    ch.on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'result_submissions'
     }, payload => {
       showToast('📬 Naujas rezultatas laukia patvirtinimo!', 'success', 4000);
       if (typeof updateTrainerNotifBadge === 'function') updateTrainerNotifBadge(true);
       if (typeof loadTrainerHome === 'function') loadTrainerHome();
       // Atnaujinti sąrašą jei esame patvirtinimų ekrane
-      if (document.getElementById('tr-pat').classList.contains('on')) {
+      if (document.getElementById('tr-pat')?.classList.contains('on')) {
         loadPendingSubmissions();
       }
     })
-    .on('postgres_changes',{
-      event:'INSERT', schema:'public', table:'challenge_submissions'
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'challenge_submissions'
     }, payload => {
       showToast('🎯 Naujas iššūkio pateikimas!', 'success', 4000);
       if (typeof updateTrainerNotifBadge === 'function') updateTrainerNotifBadge(true);
       if (typeof loadTrainerHome === 'function') loadTrainerHome();
-      if (document.getElementById('tr-pat').classList.contains('on')) {
+      if (document.getElementById('tr-pat')?.classList.contains('on')) {
         loadPendingChallengeSubmissions();
       }
     })
     .subscribe();
+    _trainerChannel = ch;
+  } catch (e) {
+    console.error('subscribeTrainerNotifications klaida (ignoruojama):', e);
+  }
 }
 
 // 🛡️ Apsaugos nuo dvigubų kvietimų (channel duplicate + missed events race)
