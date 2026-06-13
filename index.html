@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v129</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v130</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19559,22 +19559,15 @@ function _trhTodayGroupCard(gr) {
   const color = gr.color || '#FF4D00';
   const members = (allTrainerKids || []).filter(k => k.group_id === gr.id).length;
   const pendTotal = p.career + p.challenges + p.comps;  // bendras laukiančių patvirtinimo skaičius
-  // KOMPAKTIŠKA 2 eilučių kortelė: 1) pavadinimas + ⏳bendras patvirtinimų skaičius; 2) laikas/nariai + iššūkiai inline
+  // SIAURA tinklelio kortelė (3 per eilutę) — info STULPELIU vertikaliai (pagal piešinį)
   return `
-    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}14,var(--card));border:.5px solid ${color}44;border-left:3px solid ${color};border-radius:10px;padding:9px 11px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div style="width:9px;height:9px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-        <div style="flex:1;min-width:0;font-size:13px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
-        ${pendTotal > 0 ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;border-radius:99px;padding:2px 8px;flex-shrink:0;box-shadow:0 0 7px rgba(255,77,0,.5);" title="Laukia patvirtinimo">⏳ ${pendTotal}</div>` : '<div style="font-size:10px;color:var(--grn);flex-shrink:0;">✅</div>'}
-        <div style="font-size:13px;color:var(--mut);flex-shrink:0;">›</div>
-      </div>
-      <div style="display:flex;gap:9px;flex-wrap:wrap;font-size:10px;margin-top:4px;padding-left:17px;">
-        ${gr.train_time ? `<span style="color:var(--mut);">🕐 ${gr.train_time}</span>` : ''}
-        <span style="color:var(--mut);">👥 ${members}</span>
-        <span style="color:#4FC3F7;font-weight:700;">⚡${c.weekly}</span>
-        <span style="color:#BA68C8;font-weight:700;">🌙${c.monthly}</span>
-        <span style="color:#FFD700;font-weight:700;">✨${c.one_time}</span>
-      </div>
+    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}16,var(--card));border:.5px solid ${color}55;border-top:3px solid ${color};border-radius:10px;padding:8px 7px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);display:flex;flex-direction:column;gap:3px;">
+      <div style="font-size:12px;font-weight:800;color:white;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
+      <div style="font-size:10px;color:var(--mut);">👥 ${members} ${members === 1 ? 'narys' : 'nariai'}</div>
+      <div style="font-size:10px;color:#4FC3F7;font-weight:700;">⚡ ${c.weekly} sav.</div>
+      <div style="font-size:10px;color:#BA68C8;font-weight:700;">🌙 ${c.monthly} mėn.</div>
+      <div style="font-size:10px;color:#FFD700;font-weight:700;">✨ ${c.one_time} vnk.</div>
+      <div style="font-size:10px;font-weight:800;margin-top:2px;color:${pendTotal ? 'var(--br)' : 'var(--grn)'};">${pendTotal ? `⏳ ${pendTotal} laukia` : '✅ viskas'}</div>
     </div>`;
 }
 
@@ -19594,13 +19587,13 @@ function _renderTrhTodayStrip() {
     return;
   }
 
-  // TOP 3 (arba visi, jei išskleista) + DAUGIAU/MAŽIAU
+  // 3 kortelės eilutėje (tinklelis); rodom 3 (arba visus, jei išskleista) + DAUGIAU
   const shown = _trhTodayExpanded ? todayGroups : todayGroups.slice(0, _TRH_TODAY_TOPN);
-  let html = header + shown.map(_trhTodayGroupCard).join('');
+  let html = header + `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">${shown.map(_trhTodayGroupCard).join('')}</div>`;
   if (todayGroups.length > _TRH_TODAY_TOPN) {
     html += _trhTodayExpanded
-      ? `<div style="text-align:center;padding:2px 0 6px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▲ MAŽIAU</button></div>`
-      : `<div style="text-align:center;padding:2px 0 6px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▼ DAUGIAU (${todayGroups.length - _TRH_TODAY_TOPN})</button></div>`;
+      ? `<div style="text-align:center;padding:8px 0 4px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▲ MAŽIAU</button></div>`
+      : `<div style="text-align:center;padding:8px 0 4px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▼ DAUGIAU (${todayGroups.length - _TRH_TODAY_TOPN})</button></div>`;
   }
   strip.innerHTML = html;
 }
