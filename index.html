@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v136</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v137</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19580,9 +19580,10 @@ function _renderTrhTodayStrip() {
     return;
   }
 
-  // 3 kortelės eilutėje (tinklelis); rodom 3 (arba visus, jei išskleista) + DAUGIAU
+  // Tinklelis: stulpelių skaičius pagal kortelių kiekį (1 → per visą plotį, 2 → per pusę, 3 → trečdaliais)
   const shown = _trhTodayExpanded ? todayGroups : todayGroups.slice(0, _TRH_TODAY_TOPN);
-  let html = header + `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">${shown.map(_trhTodayGroupCard).join('')}</div>`;
+  const cols = Math.min(shown.length, 3) || 1;
+  let html = header + `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px;">${shown.map(_trhTodayGroupCard).join('')}</div>`;
   if (todayGroups.length > _TRH_TODAY_TOPN) {
     html += _trhTodayExpanded
       ? `<div style="text-align:center;padding:8px 0 4px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▲ MAŽIAU</button></div>`
