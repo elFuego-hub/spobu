@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v140</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v141</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -18269,7 +18269,13 @@ async function toggleKidAnonymity(kidId) {
 
 // HELPER: Gauti VISUS šio trenerio vaikų ID
 // Suvienija M:N (kid_trainers) + legacy (kids.assigned_trainer_id) sąrašus
+let _myKidIdsMemo = {}; // ⚡ memo (60s) — kviečiamas daug kartų per užkrovimą
 async function getMyKidIds(onlyPrimary = false) {
+  // ⚡ Memo: per vieną pagrindinio lango užkrovimą getMyKidIds kviečiamas ~8 kartų;
+  // be cache tai ~16 perteklinių DB užklausų. 60s TTL — pakanka užkrovimo grandinei.
+  const _mkKey = `${currentUser?.id}|${onlyPrimary}`;
+  const _mkC = _myKidIdsMemo[_mkKey];
+  if (_mkC && (Date.now() - _mkC.ts) < 60000) return _mkC.ids;
   // 1. M:N kelias
   let mnQuery = sb.from('kid_trainers')
     .select('kid_id')
@@ -18286,11 +18292,14 @@ async function getMyKidIds(onlyPrimary = false) {
   const legacyKidIds = (legacyKids || []).map(k => k.id);
   
   // 3. Suvienyti unikalūs ID
-  return [...new Set([...mnKidIds, ...legacyKidIds])];
+  const _mkIds = [...new Set([...mnKidIds, ...legacyKidIds])];
+  _myKidIdsMemo[_mkKey] = { ts: Date.now(), ids: _mkIds };
+  return _mkIds;
 }
 
 async function loadTrainerData() {
   if (!currentProfile) return;
+  _myKidIdsMemo = {}; // ⚡ šviežias getMyKidIds skaičiavimas šiam užkrovimui
   // 🎨 Pritaikom cache'intą stage foną IŠKART (prieš async užklausas), kad perkraunant
   // hero nemirgėtų oranžine spalva, kol užsikraus tikras lygis.
   try {
@@ -18316,7 +18325,8 @@ async function loadTrainerData() {
   // („Šiandien" sekciją atnaujina loadTrainerGroups → loadTrainerToday)
   loadTrainerLevel();
   loadTrainerHome();
-  loadTrainerProfileStats();
+  // loadTrainerProfileStats() NEbekviečiam čia — profilis nematomas prisijungus;
+  // jis užsikrauna atidarius Profilį (nv → tr-prof). Mažina kritinio kelio apkrovą.
   if (typeof updateTrainerNotifBadge === 'function') updateTrainerNotifBadge();
 }
 
@@ -19725,55 +19735,6 @@ async function loadTrainerHome() {
     _trhTodayExpanded = false;
     _renderTrhTodayStrip();
 
-    // ── 2) GERIAUSI MANO VAIKAI — kelintą vietą užima klubo poole (v124/v125) ──
-    // Vardas: pirma iš mano vaikų sąrašo, jei tuščias (DB null) — iš reitingo entry.name
-    const myName = (id, fallbackName) => {
-      const k = kids.find(x => x.id === id);
-      if (k && k.first_name) return k.first_name;
-      return (fallbackName && fallbackName.trim() && fallbackName !== 'Anonimas') ? fallbackName.trim() : 'Vaikas';
-    };
-    // Varžybos / EXP / Iššūkiai / Karjera — geriausio mano vaiko vieta klube + vardas.
-    // Karjera = bendras karjeros EXP ('kid_records' sumuoja visų kategorijų category_exp),
-    // t.y. kuris mano vaikas turi daugiausiai karjeros EXP (vieta klube).
-    const rankMetrics = [
-      ['trh-best-comp', 'competition_results'],
-      ['trh-best-exp', 'total_exp'],
-      ['trh-best-ish', 'challenge_submissions'],
-      ['trh-best-kar', 'kid_records']
-    ];
-    if (kidIds.length && typeof getTrainerFilteredEntries === 'function') {
-      // Sekvenciškai surenkam geriausią mano vaiką kiekvienai metrikai (be vardo)
-      const rankRes = {}; // elId -> { rank, kidId }
-      for (const [elId, metric] of rankMetrics) {
-        try {
-          // EXP plytelė = „BENDRAS LVL" (sutampa su statistika); kitos — atitinkama metrika
-          let entries = (elId === 'trh-best-exp') ? await _trainerOverallEntries() : await getTrainerFilteredEntries(metric);
-          entries = (entries || []).slice().sort((a, b) => (b.score || 0) - (a.score || 0));
-          for (let i = 0; i < entries.length; i++) {
-            if (_myKidIdSetTr.has(entries[i].kidId)) { rankRes[elId] = { rank: i + 1, kidId: entries[i].kidId }; break; }
-          }
-        } catch (e) { /* vienas reitingas nelaužo kitų */ }
-      }
-      // Tikrus vardus paimam IŠ DB (treneris mato tikrus vardus, anonimas negalioja jo vaikams)
-      const nameMap = {};
-      (kids || []).forEach(k => { if (k.first_name) nameMap[k.id] = k.first_name; });
-      const bestIds = [...new Set(Object.values(rankRes).map(r => r.kidId))].filter(id => !nameMap[id]);
-      if (bestIds.length) {
-        try {
-          const { data: nm } = await sb.from('kids').select('id, first_name, last_name').in('id', bestIds);
-          (nm || []).forEach(k => { nameMap[k.id] = k.first_name || k.last_name || 'Vaikas'; });
-        } catch (e) { /* tylim */ }
-      }
-      ['trh-best-comp', 'trh-best-exp', 'trh-best-ish', 'trh-best-kar'].forEach(elId => {
-        const el = document.getElementById(elId);
-        if (!el) return;
-        const r = rankRes[elId];
-        el.textContent = r ? `#${r.rank} · ${nameMap[r.kidId] || 'Vaikas'}` : '–';
-      });
-    } else {
-      ['trh-best-comp', 'trh-best-exp', 'trh-best-ish', 'trh-best-kar'].forEach(elId => { const el = document.getElementById(elId); if (el) el.textContent = '–'; });
-    }
-
     // ── 3) Artimiausios varžybos — paspaudus rodo dalyvius (kaip klubui) ──
     const clubId = currentProfile?.club_id;
     if (clubId) {
@@ -19809,9 +19770,58 @@ async function loadTrainerHome() {
 
     // ── 4) Laukia patvirtinimo — naujausi 4 ──
     await _loadTrainerHomePending(kidIds);
+
+    // ── 5) GERIAUSI MANO VAIKAI — sunkiausias skaičiavimas, PASKUTINIS ir NEblokuojantis,
+    // kad varžybos/laukiantys/grupės pasirodytų greitai (be šio nereikia laukti) ──
+    _loadTrainerHomeBestKids();
   } catch (e) {
     console.error('loadTrainerHome:', e);
   }
+}
+
+// 📊 GERIAUSI MANO VAIKAI (vieta klube) — atskira sunki funkcija, kviečiama paskutinė
+async function _loadTrainerHomeBestKids() {
+  try {
+    const kids = allTrainerKids || [];
+    const kidIds = kids.map(k => k.id);
+    if (!kidIds.length || typeof getTrainerFilteredEntries !== 'function') {
+      ['trh-best-comp', 'trh-best-exp', 'trh-best-ish', 'trh-best-kar'].forEach(elId => { const el = document.getElementById(elId); if (el) el.textContent = '–'; });
+      return;
+    }
+    // Varžybos / EXP(BENDRAS LVL) / Iššūkiai / Karjera — geriausio mano vaiko vieta klube
+    const rankMetrics = [
+      ['trh-best-comp', 'competition_results'],
+      ['trh-best-exp', 'total_exp'],
+      ['trh-best-ish', 'challenge_submissions'],
+      ['trh-best-kar', 'kid_records']
+    ];
+    const rankRes = {};
+    for (const [elId, metric] of rankMetrics) {
+      try {
+        let entries = (elId === 'trh-best-exp') ? await _trainerOverallEntries() : await getTrainerFilteredEntries(metric);
+        entries = (entries || []).slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+        for (let i = 0; i < entries.length; i++) {
+          if (_myKidIdSetTr.has(entries[i].kidId)) { rankRes[elId] = { rank: i + 1, kidId: entries[i].kidId }; break; }
+        }
+      } catch (e) { /* vienas reitingas nelaužo kitų */ }
+    }
+    // Tikrus vardus — iš turimų vaikų, trūkstamus iš DB
+    const nameMap = {};
+    kids.forEach(k => { if (k.first_name) nameMap[k.id] = k.first_name; });
+    const bestIds = [...new Set(Object.values(rankRes).map(r => r.kidId))].filter(id => !nameMap[id]);
+    if (bestIds.length) {
+      try {
+        const { data: nm } = await sb.from('kids').select('id, first_name, last_name').in('id', bestIds);
+        (nm || []).forEach(k => { nameMap[k.id] = k.first_name || k.last_name || 'Vaikas'; });
+      } catch (e) { /* tylim */ }
+    }
+    ['trh-best-comp', 'trh-best-exp', 'trh-best-ish', 'trh-best-kar'].forEach(elId => {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      const r = rankRes[elId];
+      el.textContent = r ? `#${r.rank} · ${nameMap[r.kidId] || 'Vaikas'}` : '–';
+    });
+  } catch (e) { console.error('_loadTrainerHomeBestKids:', e); }
 }
 
 async function _loadTrainerHomePending(kidIds) {
