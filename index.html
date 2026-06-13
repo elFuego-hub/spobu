@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v130</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v131</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19611,15 +19611,24 @@ async function loadTrainerHome() {
 
     // ── 1) ŠIANDIENOS TRENIRUOTĖS — tik grupės, kurių treniruotė vyksta šiandien (v124) ──
     const nowISO = new Date().toISOString();
+    // Skaičiuojam TIK tikrai aktyvius iššūkius (is_active=true, neprasibaigę).
+    // Grupės iššūkis = 1 paslėptas „parent" (is_active=false) + N vaikų kopijų (is_active=true).
+    // Todėl imam aktyvias kopijas ir dedupinam pagal parent_challenge_id → 1 iššūkis = 1.
+    // (Anksčiau buvo skaičiuojami parent šablonai, todėl rodydavo „vaiduoklius".)
     const { data: actCh } = await sb.from('challenges')
-      .select('id, type, group_id, expires_at')
+      .select('id, type, group_id, parent_challenge_id, expires_at')
       .eq('trainer_id', currentUser.id)
-      .is('parent_challenge_id', null)
+      .eq('is_active', true)
       .or(`expires_at.is.null,expires_at.gte.${nowISO}`);
 
     const byGroup = {};
+    const _seenCh = new Set();
     (actCh || []).forEach(c => {
       if (!c.group_id) return;
+      const logicalId = c.parent_challenge_id || c.id; // grupės iššūkis dedupinamas pagal parent
+      const dk = c.group_id + '|' + logicalId;
+      if (_seenCh.has(dk)) return;
+      _seenCh.add(dk);
       if (!byGroup[c.group_id]) byGroup[c.group_id] = { weekly: 0, monthly: 0, one_time: 0 };
       if (byGroup[c.group_id][c.type] !== undefined) byGroup[c.group_id][c.type]++;
     });
