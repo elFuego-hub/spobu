@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v128</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v129</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19558,34 +19558,22 @@ function _trhTodayGroupCard(gr) {
   const p = _trhPendByGroup[gr.id] || { career: 0, challenges: 0, comps: 0 };
   const color = gr.color || '#FF4D00';
   const members = (allTrainerKids || []).filter(k => k.group_id === gr.id).length;
-  const pendTotal = p.career + p.challenges + p.comps;
-  // Kortelė su info STULPELIU (vertikaliai): pavadinimas → laikas/nariai → aktyvūs iššūkiai → laukia patvirtinimo
-  const chip = (val, color2, label) => `<div style="flex:1;text-align:center;background:${color2}1f;border-radius:7px;padding:4px 2px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${color2};line-height:1;">${val}</div><div style="font-size:7px;color:var(--mut);margin-top:2px;letter-spacing:.2px;">${label}</div></div>`;
+  const pendTotal = p.career + p.challenges + p.comps;  // bendras laukiančių patvirtinimo skaičius
+  // KOMPAKTIŠKA 2 eilučių kortelė: 1) pavadinimas + ⏳bendras patvirtinimų skaičius; 2) laikas/nariai + iššūkiai inline
   return `
-    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}16,var(--card));border:.5px solid ${color}55;border-left:4px solid ${color};border-radius:12px;padding:11px 12px;margin-bottom:7px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-      <!-- Antraštė -->
-      <div style="display:flex;align-items:center;gap:9px;">
-        <div style="width:38px;height:38px;border-radius:10px;background:${color}26;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👥</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:14px;font-weight:900;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${gr.train_time ? `🕐 ${gr.train_time} · ` : ''}👥 ${members} ${members === 1 ? 'narys' : 'nariai'}</div>
-        </div>
-        ${pendTotal > 0 ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;box-shadow:0 0 8px rgba(255,77,0,.5);" title="Laukia patvirtinimo">${pendTotal}</div>` : ''}
-        <div style="font-size:14px;color:var(--mut);flex-shrink:0;">›</div>
+    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}14,var(--card));border:.5px solid ${color}44;border-left:3px solid ${color};border-radius:10px;padding:9px 11px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:9px;height:9px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;font-size:13px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
+        ${pendTotal > 0 ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;border-radius:99px;padding:2px 8px;flex-shrink:0;box-shadow:0 0 7px rgba(255,77,0,.5);" title="Laukia patvirtinimo">⏳ ${pendTotal}</div>` : '<div style="font-size:10px;color:var(--grn);flex-shrink:0;">✅</div>'}
+        <div style="font-size:13px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
-      <!-- Aktyvūs iššūkiai -->
-      <div style="font-size:8px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin:9px 0 4px;">🎯 AKTYVŪS IŠŠŪKIAI</div>
-      <div style="display:flex;gap:6px;">
-        ${chip('⚡ ' + c.weekly, '#4FC3F7', 'SAVAIT.')}
-        ${chip('🌙 ' + c.monthly, '#BA68C8', 'MĖNES.')}
-        ${chip('✨ ' + c.one_time, '#FFD700', 'VIENKART.')}
-      </div>
-      <!-- Laukia patvirtinimo -->
-      <div style="font-size:8px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin:8px 0 4px;">⏳ LAUKIA PATVIRTINIMO</div>
-      <div style="display:flex;gap:6px;">
-        ${chip('🏋️ ' + p.career, p.career ? '#FF8C00' : '#6B7280', 'KARJERA')}
-        ${chip('🎯 ' + p.challenges, p.challenges ? '#FF8C00' : '#6B7280', 'IŠŠŪKIAI')}
-        ${chip('🏆 ' + p.comps, p.comps ? '#FF8C00' : '#6B7280', 'VARŽYBOS')}
+      <div style="display:flex;gap:9px;flex-wrap:wrap;font-size:10px;margin-top:4px;padding-left:17px;">
+        ${gr.train_time ? `<span style="color:var(--mut);">🕐 ${gr.train_time}</span>` : ''}
+        <span style="color:var(--mut);">👥 ${members}</span>
+        <span style="color:#4FC3F7;font-weight:700;">⚡${c.weekly}</span>
+        <span style="color:#BA68C8;font-weight:700;">🌙${c.monthly}</span>
+        <span style="color:#FFD700;font-weight:700;">✨${c.one_time}</span>
       </div>
     </div>`;
 }
@@ -19682,19 +19670,33 @@ async function loadTrainerHome() {
       ['trh-best-kar', 'kid_records']
     ];
     if (kidIds.length && typeof getTrainerFilteredEntries === 'function') {
-      // Sekvenciškai (getTrainerFilteredEntries laikinai keičia globalius filtrus — lygiagrečiai būtų lenktynės)
+      // Sekvenciškai surenkam geriausią mano vaiką kiekvienai metrikai (be vardo)
+      const rankRes = {}; // elId -> { rank, kidId }
       for (const [elId, metric] of rankMetrics) {
         try {
           let entries = await getTrainerFilteredEntries(metric);
           entries = (entries || []).slice().sort((a, b) => (b.score || 0) - (a.score || 0));
-          let res = null;
           for (let i = 0; i < entries.length; i++) {
-            if (_myKidIdSetTr.has(entries[i].kidId)) { res = { rank: i + 1, id: entries[i].kidId, name: entries[i].name }; break; }
+            if (_myKidIdSetTr.has(entries[i].kidId)) { rankRes[elId] = { rank: i + 1, kidId: entries[i].kidId }; break; }
           }
-          const el = document.getElementById(elId);
-          if (el) el.textContent = res ? `#${res.rank} · ${myName(res.id, res.name)}` : '–';
         } catch (e) { /* vienas reitingas nelaužo kitų */ }
       }
+      // Tikrus vardus paimam IŠ DB (treneris mato tikrus vardus, anonimas negalioja jo vaikams)
+      const nameMap = {};
+      (kids || []).forEach(k => { if (k.first_name) nameMap[k.id] = k.first_name; });
+      const bestIds = [...new Set(Object.values(rankRes).map(r => r.kidId))].filter(id => !nameMap[id]);
+      if (bestIds.length) {
+        try {
+          const { data: nm } = await sb.from('kids').select('id, first_name, last_name').in('id', bestIds);
+          (nm || []).forEach(k => { nameMap[k.id] = k.first_name || k.last_name || 'Vaikas'; });
+        } catch (e) { /* tylim */ }
+      }
+      ['trh-best-comp', 'trh-best-exp', 'trh-best-ish', 'trh-best-kar'].forEach(elId => {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const r = rankRes[elId];
+        el.textContent = r ? `#${r.rank} · ${nameMap[r.kidId] || 'Vaikas'}` : '–';
+      });
     } else {
       ['trh-best-comp', 'trh-best-exp', 'trh-best-ish', 'trh-best-kar'].forEach(elId => { const el = document.getElementById(elId); if (el) el.textContent = '–'; });
     }
