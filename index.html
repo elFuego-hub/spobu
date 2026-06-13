@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v132</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v133</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -22935,32 +22935,51 @@ async function loadTrainerOwnChallenges() {
     if (s.status === 'rejected') subsByChallenge[s.challenge_id].rejected++;
   });
   
-  // Apskaičiuoti kiekvienam iššūkiui kiek vaikų gali dalyvauti + isCompleted
-  (challenges || []).forEach(ch => {
-    const audience = ch.target_audience || 'group';
-    let eligible = allMyKids;
-    
-    if (audience === 'specific_kid') {
-      eligible = allMyKids.filter(k => k.id === ch.target_kid_id);
-    } else if (audience === 'group') {
-      eligible = allMyKids.filter(k => k.group_id === ch.group_id);
-    } else if (audience === 'boys_in_group') {
-      eligible = allMyKids.filter(k => k.group_id === ch.group_id && k.gender === 'male');
-    } else if (audience === 'girls_in_group') {
-      eligible = allMyKids.filter(k => k.group_id === ch.group_id && k.gender === 'female');
-    }
-    
-    ch._eligible_count = eligible.length;
-    ch._eligible_kid_ids = eligible.map(k => k.id);
-    
-    // Ar pasibaigęs?
-    const stats = subsByChallenge[ch.id] || { approved: 0 };
-    ch._is_completed = isChallengeCompleted(ch, ch._eligible_count, stats.approved);
+  // 🔗 SUTRAUKIMAS: grupės iššūkis = 1 paslėptas „parent" + N vaikų kopijų (specific_kid su
+  // parent_challenge_id). Treneriui rodom TIK parent/atskirus (parent_challenge_id null),
+  // o kopijų statistiką agreguojam į parent. (Vaikų appse kopijos lieka — jų neliečiam.)
+  const childrenByParent = {};
+  (challenges || []).forEach(c => {
+    if (c.parent_challenge_id) (childrenByParent[c.parent_challenge_id] = childrenByParent[c.parent_challenge_id] || []).push(c);
   });
-  
-  // Atskirti į aktyvius ir pasibaigusius
-  const activeChallenges = (challenges || []).filter(c => !c._is_completed);
-  const completedChallenges = (challenges || []).filter(c => c._is_completed);
+  const displayChallenges = (challenges || []).filter(c => !c.parent_challenge_id);
+
+  displayChallenges.forEach(ch => {
+    const childKids = childrenByParent[ch.id];
+    if (childKids && childKids.length) {
+      // GRUPĖS iššūkis — agreguojam iš vaikų kopijų
+      const eligible = childKids.length;
+      let approved = 0, pending = 0;
+      childKids.forEach(ck => {
+        const st = subsByChallenge[ck.id];
+        if (st && st.approved > 0) approved++;
+        else if (st && st.pending > 0) pending++;
+      });
+      const frozen = childKids.every(ck => ck.is_active === false);
+      const expired = ch.expires_at && new Date(ch.expires_at) < new Date();
+      ch._eligible_count = eligible;
+      ch._stats = { approved, pending, total: approved + pending };
+      ch._frozen = frozen;
+      ch._is_completed = !!(expired || (eligible > 0 && approved >= eligible) || frozen);
+    } else {
+      // Atskiras iššūkis (specific_kid single / all_club / tiesiogiai sukurtas)
+      const audience = ch.target_audience || 'group';
+      let eligible = allMyKids;
+      if (audience === 'specific_kid') eligible = allMyKids.filter(k => k.id === ch.target_kid_id);
+      else if (audience === 'group') eligible = allMyKids.filter(k => k.group_id === ch.group_id);
+      else if (audience === 'boys_in_group') eligible = allMyKids.filter(k => k.group_id === ch.group_id && k.gender === 'male');
+      else if (audience === 'girls_in_group') eligible = allMyKids.filter(k => k.group_id === ch.group_id && k.gender === 'female');
+      const st = subsByChallenge[ch.id] || { approved: 0, pending: 0, total: 0 };
+      ch._eligible_count = eligible.length;
+      ch._stats = st;
+      ch._frozen = ch.is_active === false;
+      ch._is_completed = isChallengeCompleted(ch, ch._eligible_count, st.approved);
+    }
+  });
+
+  // Atskirti į aktyvius ir pasibaigusius (tik rodomi — sutraukti)
+  const activeChallenges = displayChallenges.filter(c => !c._is_completed);
+  const completedChallenges = displayChallenges.filter(c => c._is_completed);
   
   // Atnaujinti skaičiukus
   document.getElementById('tr-active-count').textContent = activeChallenges.length;
@@ -22969,7 +22988,7 @@ async function loadTrainerOwnChallenges() {
 
   // 🎯 HERO + tipo kortelės + grupės filtro chips (v112)
   const heroSub = document.getElementById('trch-hero-sub');
-  if (heroSub) heroSub.textContent = `${completedChallenges.length} pasibaigę · ${(challenges || []).length} iš viso`;
+  if (heroSub) heroSub.textContent = `${completedChallenges.length} pasibaigę · ${displayChallenges.length} iš viso`;
   const _typeCounts = {};
   activeChallenges.forEach(c => { _typeCounts[c.type] = (_typeCounts[c.type] || 0) + 1; });
   ['training', 'weekly', 'monthly', 'one_time', 'permanent'].forEach(t => {
@@ -23016,13 +23035,13 @@ async function loadTrainerOwnChallenges() {
   const typeLabels = { training: 'Treniruotė', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
   
   const cards = challengesToShow.map(ch => {
-    const stats = subsByChallenge[ch.id] || { total: 0, approved: 0, pending: 0 };
-    
+    const stats = ch._stats || subsByChallenge[ch.id] || { total: 0, approved: 0, pending: 0 };
+
     // Statusas
     let statusBadge;
     if (ch._is_completed) {
       // Patikslintas pasibaigimo statusas (prioritetas: užšaldytas > visi atliko > laikas)
-      if (!ch.is_active) {
+      if (ch._frozen) {
         statusBadge = '<span class="bg" style="background:rgba(255,255,255,.1);color:var(--mut);">🚫 Užšaldytas</span>';
       } else if (ch._eligible_count > 0 && stats.approved >= ch._eligible_count) {
         statusBadge = '<span class="bg" style="background:rgba(34,197,94,.15);color:var(--grn);">🎉 Visi atliko</span>';
@@ -23066,7 +23085,7 @@ async function loadTrainerOwnChallenges() {
     if (ch._is_completed) {
       // Pasibaigę
       // Specialūs atvejai - užšaldytą galima atgaivinti (jei laikas dar neišėjo)
-      const isOnlyFrozen = !ch.is_active && (!ch.expires_at || new Date(ch.expires_at) > new Date()) 
+      const isOnlyFrozen = ch._frozen && (!ch.expires_at || new Date(ch.expires_at) > new Date())
         && !(ch._eligible_count > 0 && stats.approved >= ch._eligible_count);
       
       if (isOnlyFrozen) {
@@ -23144,34 +23163,49 @@ function openTrChallengesAll() {
 
 async function freezeChallenge(challengeId) {
   if (!confirm('Užšaldyti šį iššūkį? Vaikai nebegalės dalyvauti.')) return;
-  
-  const { error } = await sb.from('challenges').update({ is_active: false }).eq('id', challengeId);
+  // Užšaldom ir patį iššūkį, ir visas vaikų kopijas (grupės iššūkis)
+  const { error } = await sb.from('challenges').update({ is_active: false })
+    .or(`id.eq.${challengeId},parent_challenge_id.eq.${challengeId}`);
   if (error) { showToast('❌ ' + error.message, 'error'); return; }
-  
+
   showToast('✅ Iššūkis užšaldytas', 'success');
   await loadTrainerOwnChallenges();
+  if (typeof loadTrainerHome === 'function') loadTrainerHome();
 }
 
 async function unfreezeChallenge(challengeId) {
-  const { error } = await sb.from('challenges').update({ is_active: true }).eq('id', challengeId);
+  // Patikrinam ar tai grupės iššūkis (turi vaikų kopijų)
+  const { data: childRows } = await sb.from('challenges').select('id').eq('parent_challenge_id', challengeId).limit(1);
+  let error;
+  if (childRows && childRows.length) {
+    // Grupės iššūkis — aktyvuojam TIK vaikų kopijas (parent lieka paslėptas šablonas)
+    ({ error } = await sb.from('challenges').update({ is_active: true }).eq('parent_challenge_id', challengeId));
+  } else {
+    // Atskiras iššūkis — aktyvuojam jį patį
+    ({ error } = await sb.from('challenges').update({ is_active: true }).eq('id', challengeId));
+  }
   if (error) { showToast('❌ ' + error.message, 'error'); return; }
-  
+
   showToast('✅ Iššūkis aktyvuotas', 'success');
   await loadTrainerOwnChallenges();
+  if (typeof loadTrainerHome === 'function') loadTrainerHome();
 }
 
 async function deleteChallenge(challengeId, title) {
   if (!confirm(`Ar tikrai ištrinti iššūkį "${title}"?\n\nVisi pateikimai (laukiantys ir patvirtinti) bus IŠTRINTI!\n\nVaikams jau priskirti EXP NEBUS atimti.`)) return;
-  
-  const { data, error } = await sb.from('challenges').delete().eq('id', challengeId).select();
+
+  // Triname ir patį iššūkį, ir visas vaikų kopijas (kad vaikams dingtų)
+  const { data, error } = await sb.from('challenges').delete()
+    .or(`id.eq.${challengeId},parent_challenge_id.eq.${challengeId}`).select();
   if (error) { showToast('❌ ' + error.message, 'error'); return; }
   if (!data || data.length === 0) {
     showToast('❌ Negalima ištrinti', 'error');
     return;
   }
-  
+
   showToast('✅ Iššūkis ištrintas', 'success');
   await loadTrainerOwnChallenges();
+  if (typeof loadTrainerHome === 'function') loadTrainerHome();
 }
 
 // Žiūrėti iššūkio dalyvius (kas atliko, kas dar ne)
@@ -23211,11 +23245,14 @@ async function viewChallengeParticipants(challengeId, title) {
     eligibleKids = eligibleKids.filter(k => k.group_id === ch.group_id && k.gender === 'female');
   }
   
-  // 3. Submission'us per vaiką
+  // 3. Submission'us per vaiką — grupės iššūkiui pateikimai yra ant vaikų KOPIJŲ
+  // (specific_kid su parent_challenge_id), todėl renkam ir iš jų.
+  const { data: childRows } = await sb.from('challenges').select('id').eq('parent_challenge_id', challengeId);
+  const allChallIds = [challengeId, ...((childRows || []).map(c => c.id))];
   const { data: subs } = await sb.from('challenge_submissions')
     .select('kid_id, status, value, numeric_value, created_at')
-    .eq('challenge_id', challengeId);
-  
+    .in('challenge_id', allChallIds);
+
   const subsByKid = {};
   (subs || []).forEach(s => { subsByKid[s.kid_id] = s; });
   
