@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v125</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v126</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -14632,37 +14632,56 @@ async function exportCompetitionCSV(competitionId, title) {
   if (comp.location) csv += `"Vieta","${comp.location}"\n`;
   csv += `\n`;
   
-  // Stulpelių antraštės
-  csv += `"Vardas","Pavardė","Lytis","Gimimo data","Kyu","Statusas","Vieta","Pergalės","Pralaimėjimai","Diržas išlaikė","Naujas kyu","EXP","Patvirtinta"\n`;
-  
-  // Eilučių rūšiavimas: pirma 1 vietos, paskui 2, 3, kiti dalyvavę, planning, kiti
-  const sorted = [...results].sort((a, b) => {
-    const order = { participated: 0, planning: 1, didnt_attend: 2, wont_attend: 3 };
-    if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
-    if (a.placement && b.placement) return a.placement - b.placement;
-    if (a.placement) return -1;
-    if (b.placement) return 1;
-    return 0;
-  });
-  
-  sorted.forEach(r => {
-    const k = kidsMap[r.kid_id] || {};
-    const fname = (k.first_name || '').replace(/"/g, '""');
-    const lname = (k.last_name || '').replace(/"/g, '""');
-    const gender = k.gender === 'female' ? 'M' : (k.gender === 'male' ? 'V' : '');
-    const birthDate = k.birth_date || '';
-    const kyu = k.kyu || '';
-    const status = STATUS_LT[r.status] || r.status;
-    const placement = r.placement || '';
-    const wins = r.wins !== null && r.wins !== undefined ? r.wins : '';
-    const losses = r.losses !== null && r.losses !== undefined ? r.losses : '';
-    const beltPassed = r.belt_passed === true ? 'Taip' : (r.belt_passed === false ? 'Ne' : '');
-    const newKyu = r.new_kyu || '';
-    const exp = r.exp_gained || 0;
-    const approval = APPROVAL_LT[r.approval_status] || r.approval_status;
-    
-    csv += `"${fname}","${lname}","${gender}","${birthDate}","${kyu}","${status}","${placement}","${wins}","${losses}","${beltPassed}","${newKyu}","${exp}","${approval}"\n`;
-  });
+  // Ar varžybos jau praėjusios? Artėjančioms eksportuojam TIK planavimą (be rezultatų stulpelių),
+  // kad CSV atitiktų tai, ką rodo modalas (ne keista „Dalyvavo/Vieta" statistika ateities varžyboms).
+  const _csvToday = new Date().toISOString().split('T')[0];
+  const _csvIsPast = comp.event_date < _csvToday;
+
+  if (_csvIsPast) {
+    // PILNI rezultatai
+    csv += `"Vardas","Pavardė","Lytis","Gimimo data","Kyu","Statusas","Vieta","Pergalės","Pralaimėjimai","Diržas išlaikė","Naujas kyu","EXP","Patvirtinta"\n`;
+    const sorted = [...results].sort((a, b) => {
+      const order = { participated: 0, planning: 1, didnt_attend: 2, wont_attend: 3 };
+      if (order[a.status] !== order[b.status]) return (order[a.status] ?? 9) - (order[b.status] ?? 9);
+      if (a.placement && b.placement) return a.placement - b.placement;
+      if (a.placement) return -1;
+      if (b.placement) return 1;
+      return 0;
+    });
+    sorted.forEach(r => {
+      const k = kidsMap[r.kid_id] || {};
+      const fname = (k.first_name || '').replace(/"/g, '""');
+      const lname = (k.last_name || '').replace(/"/g, '""');
+      const gender = k.gender === 'female' ? 'M' : (k.gender === 'male' ? 'V' : '');
+      const birthDate = k.birth_date || '';
+      const kyu = k.kyu || '';
+      const status = STATUS_LT[r.status] || r.status;
+      const placement = r.placement || '';
+      const wins = r.wins !== null && r.wins !== undefined ? r.wins : '';
+      const losses = r.losses !== null && r.losses !== undefined ? r.losses : '';
+      const beltPassed = r.belt_passed === true ? 'Taip' : (r.belt_passed === false ? 'Ne' : '');
+      const newKyu = r.new_kyu || '';
+      const exp = r.exp_gained || 0;
+      const approval = APPROVAL_LT[r.approval_status] || r.approval_status;
+      csv += `"${fname}","${lname}","${gender}","${birthDate}","${kyu}","${status}","${placement}","${wins}","${losses}","${beltPassed}","${newKyu}","${exp}","${approval}"\n`;
+    });
+  } else {
+    // ARTĖJANČIOS — tik kas ketina / nedalyvaus (be rezultatų stulpelių)
+    csv += `"Vardas","Pavardė","Lytis","Gimimo data","Kyu","Statusas"\n`;
+    const planRows = results
+      .filter(r => r.status === 'planning' || r.status === 'wont_attend')
+      .sort((a, b) => { const o = { planning: 0, wont_attend: 1 }; return (o[a.status] ?? 9) - (o[b.status] ?? 9); });
+    planRows.forEach(r => {
+      const k = kidsMap[r.kid_id] || {};
+      const fname = (k.first_name || '').replace(/"/g, '""');
+      const lname = (k.last_name || '').replace(/"/g, '""');
+      const gender = k.gender === 'female' ? 'M' : (k.gender === 'male' ? 'V' : '');
+      const birthDate = k.birth_date || '';
+      const kyu = k.kyu || '';
+      const status = STATUS_LT[r.status] || r.status;
+      csv += `"${fname}","${lname}","${gender}","${birthDate}","${kyu}","${status}"\n`;
+    });
+  }
   
   // Atsisiuntimas
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -19537,21 +19556,20 @@ function _trhTodayGroupCard(gr) {
   const c = _trhByGroup[gr.id] || { weekly: 0, monthly: 0, one_time: 0 };
   const color = gr.color || '#FF4D00';
   const members = (allTrainerKids || []).filter(k => k.group_id === gr.id).length;
+  // Kompaktiška VERTIKALAUS sąrašo eilutė — skaitliukai inline dešinėje
   return `
-    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}1a,var(--card));border:.5px solid ${color}55;border-left:4px solid ${color};border-radius:12px;padding:11px 12px;margin-bottom:7px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-      <div style="display:flex;align-items:center;gap:9px;">
-        <div style="width:38px;height:38px;border-radius:10px;background:${color}26;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👥</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:14px;font-weight:900;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${gr.train_time ? `🕐 ${gr.train_time} · ` : ''}👥 ${members} ${members === 1 ? 'narys' : 'nariai'}</div>
-        </div>
-        <div style="font-size:14px;color:var(--mut);flex-shrink:0;">›</div>
+    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}14,var(--card));border:.5px solid ${color}44;border-left:3px solid ${color};border-radius:10px;padding:9px 11px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+      <div style="width:9px;height:9px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:1px;">${gr.train_time ? `🕐 ${gr.train_time} · ` : ''}👥 ${members}</div>
       </div>
-      <div style="display:flex;gap:6px;margin-top:8px;">
-        <div style="flex:1;text-align:center;background:rgba(79,195,247,.12);border-radius:7px;padding:4px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#4FC3F7;">${c.weekly}</span> <span style="font-size:8px;color:var(--mut);">⚡ sav.</span></div>
-        <div style="flex:1;text-align:center;background:rgba(186,104,200,.12);border-radius:7px;padding:4px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#BA68C8;">${c.monthly}</span> <span style="font-size:8px;color:var(--mut);">🌙 mėn.</span></div>
-        <div style="flex:1;text-align:center;background:rgba(255,215,0,.12);border-radius:7px;padding:4px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FFD700;">${c.one_time}</span> <span style="font-size:8px;color:var(--mut);">✨ vnk.</span></div>
+      <div style="display:flex;gap:7px;font-size:10px;font-weight:800;flex-shrink:0;">
+        <span style="color:#4FC3F7;">⚡${c.weekly}</span>
+        <span style="color:#BA68C8;">🌙${c.monthly}</span>
+        <span style="color:#FFD700;">✨${c.one_time}</span>
       </div>
+      <div style="font-size:13px;color:var(--mut);flex-shrink:0;">›</div>
     </div>`;
 }
 
@@ -19661,13 +19679,14 @@ async function loadTrainerHome() {
             }
           });
         }
-        let catName = 'Karjera';
+        let catIcon = '🏋️';
         if (best) {
-          const { data: cat } = await sb.from('career_categories').select('name').eq('id', best.catId).maybeSingle();
-          if (cat?.name) catName = cat.name;
+          const { data: cat } = await sb.from('career_categories').select('name, icon').eq('id', best.catId).maybeSingle();
+          if (cat?.icon) catIcon = cat.icon;
         }
         const elKar = document.getElementById('trh-best-kar');
-        if (elKar) elKar.textContent = best ? `#${best.rank} · ${catName}` : '–';
+        // Rodom skillo ikoną + vieta + vaiko vardas (ne skill'o pavadinimą)
+        if (elKar) elKar.textContent = best ? `${catIcon} #${best.rank} · ${myName(best.kidId)}` : '–';
       } catch (e) { /* tylim */ }
     } else {
       ['trh-best-comp', 'trh-best-exp', 'trh-best-ish', 'trh-best-kar'].forEach(elId => { const el = document.getElementById(elId); if (el) el.textContent = '–'; });
