@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v143</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v144</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -18985,6 +18985,8 @@ function _trPatRenderTop(listId, tab, cardsArr, emptyHtml) {
     allList.innerHTML = _trPatFullHtml[tab];
   }
   if (typeof applyTrPatGroupFilter === 'function') applyTrPatGroupFilter();
+  // Fix 6: po patvirtinimo/atmetimo loaderis persikrauna → atnaujinam varpelio badge (debounce sujungia 4 loaderius į 1)
+  _refreshTrainerBadgeSoon();
 }
 
 function openTrPatAll(tab) {
@@ -19534,6 +19536,11 @@ function _agoLT(ts) {
 // Atidaro tr-pat su pasirinktu tabu (iš pagrindinio / varpelio)
 function trOpenPatTab(tab) {
   g('tr', 'tr-pat');
+  // ⚡ Patvirtinimų loaderiai atidėti į atidarymą (v142); g() jų nepaleidžia kaip nv() — paleidžiam patys
+  if (typeof loadPendingSubmissions === 'function') loadPendingSubmissions();
+  if (typeof loadPendingChallengeSubmissions === 'function') loadPendingChallengeSubmissions();
+  if (typeof loadPendingCompetitionResults === 'function') loadPendingCompetitionResults();
+  if (typeof loadPendingDuels === 'function') loadPendingDuels();
   const el = document.querySelector(`#tr-pat .tab[onclick*="'${tab}'"]`);
   if (el && typeof switchTrTab === 'function') switchTrTab(el, tab);
 }
@@ -19906,7 +19913,8 @@ async function _fetchTrainerNotifications(force) {
     return (`${k.first_name || ''}${li ? ' ' + li + '.' : ''}`.trim()) || 'Vaikas';
   };
 
-  const [rsR, nkR, csR, crR, msR] = await Promise.all([
+  const clubId = currentProfile?.club_id;
+  const [rsR, nkR, csR, crR, ncR, msR] = await Promise.all([
     sb.from('result_submissions').select('id, kid_id, created_at, exercises(name)')
       .eq('trainer_id', currentUser.id).eq('status', 'pending')
       .order('created_at', { ascending: false }).limit(20),
@@ -19919,19 +19927,64 @@ async function _fetchTrainerNotifications(force) {
     sb.from('competition_results').select('id, kid_id, created_at')
       .eq('target_trainer_id', currentUser.id).eq('approval_status', 'pending').eq('status', 'participated')
       .order('created_at', { ascending: false }).limit(20),
-    sb.from('messages').select('id, sender_id, body, sent_at')
+    // 🏆 Naujos klubo varžybos (informacinis — kaip pas vaiką)
+    clubId ? sb.from('competitions').select('id, title, event_date, created_at')
+      .eq('club_id', clubId).gte('created_at', cutoffISO)
+      .order('created_at', { ascending: false }).limit(20) : Promise.resolve({ data: [] }),
+    // 💬 Žinutės (be savo) — narystė filtruojama žemiau
+    sb.from('messages').select('id, conversation_id, sender_id, body, sent_at')
       .neq('sender_id', currentUser.id).gte('sent_at', cutoffISO)
-      .order('sent_at', { ascending: false }).limit(20)
+      .order('sent_at', { ascending: false }).limit(30)
   ]);
 
+  // 💬 ŽINUTĖS — TIK pokalbiai, kuriuose treneris yra narys (kaip pas vaiką); + vardai + klubo pranešimas
+  const msgItems = [];
+  if (msR.data && msR.data.length) {
+    const convIds = [...new Set(msR.data.map(m => m.conversation_id))];
+    const [membersRes, convsRes] = await Promise.all([
+      sb.from('conversation_members').select('conversation_id').eq('user_id', currentUser.id).in('conversation_id', convIds),
+      sb.from('conversations').select('id, type, title').in('id', convIds)
+    ]);
+    const myConvIds = new Set((membersRes.data || []).map(m => m.conversation_id));
+    const convById = {}; (convsRes.data || []).forEach(c => { convById[c.id] = c; });
+    const senderIds = [...new Set(msR.data.filter(m => myConvIds.has(m.conversation_id)).map(m => m.sender_id))];
+    const senderName = {};
+    if (senderIds.length) {
+      const { data: senders } = await sb.from('profiles').select('id, first_name, last_name').in('id', senderIds);
+      (senders || []).forEach(p => { senderName[p.id] = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Kažkas'; });
+    }
+    msR.data.forEach(m => {
+      if (!myConvIds.has(m.conversation_id)) return;
+      const conv = convById[m.conversation_id];
+      const isAnn = conv?.type === 'announcement';
+      msgItems.push({
+        id: 'ms-' + m.id,
+        icon: isAnn ? '📢' : '💬',
+        title: isAnn ? 'Klubo pranešimas' : `Žinutė nuo ${senderName[m.sender_id] || 'Kažkas'}`,
+        sub: (m.body || '').slice(0, 60),
+        ts: m.sent_at,
+        convId: m.conversation_id
+      });
+    });
+  }
+
+  // 🏆 Varžybų tabas = nauji klubo varžybų pranešimai + laukiantys rezultatai (rūšiuota pagal laiką)
+  const compItems = [
+    ...(ncR.data || []).map(c => ({ id: 'newco-' + c.id, icon: '🏆', title: 'Nauja varžyba', sub: `${c.title || 'Varžyba'}${c.event_date ? ' · ' + new Date(c.event_date).toLocaleDateString('lt-LT') : ''}`, ts: c.created_at })),
+    ...(crR.data || []).map(s => ({ id: 'cr-' + s.id, icon: '⏳', title: `${kidName(s.kid_id)} — varžybų rezultatas`, sub: 'Laukia patvirtinimo', ts: s.created_at }))
+  ].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+
+  // Apsauga nuo dublikatų — kiekvienas id tik kartą
+  const dedupeById = arr => { const seen = new Set(); return arr.filter(n => { if (seen.has(n.id)) return false; seen.add(n.id); return true; }); };
+
   trainerNotifications = {
-    system: [
+    system: dedupeById([
       ...(rsR.data || []).map(s => ({ id: 'rs-' + s.id, icon: '🏋️', title: `${kidName(s.kid_id)} pateikė rezultatą`, sub: (s.exercises?.name || 'Karjeros pratimas'), ts: s.created_at })),
       ...(nkR.data || []).map(k => ({ id: 'kid-' + k.id, icon: '🆕', title: `Nauja paskyra: ${(k.first_name || '')} ${(k.last_name || '')}`.trim(), sub: 'Laukia patvirtinimo pagrindiniame', ts: k.created_at }))
-    ].sort((a, b) => new Date(b.ts) - new Date(a.ts)),
-    challenges: (csR.data || []).map(s => ({ id: 'cs-' + s.id, icon: (s.challenges?.icon || '🎯'), title: `${kidName(s.kid_id)} pateikė iššūkį`, sub: (s.challenges?.title || 'Iššūkis'), ts: s.created_at })),
-    competitions: (crR.data || []).map(s => ({ id: 'cr-' + s.id, icon: '🏆', title: `${kidName(s.kid_id)} — varžybų rezultatas`, sub: 'Laukia patvirtinimo', ts: s.created_at })),
-    messages: (msR.data || []).map(m => ({ id: 'ms-' + m.id, icon: '💬', title: 'Nauja žinutė', sub: (m.body || '').slice(0, 60), ts: m.sent_at }))
+    ].sort((a, b) => new Date(b.ts) - new Date(a.ts))),
+    challenges: dedupeById((csR.data || []).map(s => ({ id: 'cs-' + s.id, icon: (s.challenges?.icon || '🎯'), title: `${kidName(s.kid_id)} pateikė iššūkį`, sub: (s.challenges?.title || 'Iššūkis'), ts: s.created_at }))),
+    competitions: dedupeById(compItems),
+    messages: dedupeById(msgItems)
   };
   _trNotifCacheTs = Date.now();
   return trainerNotifications;
@@ -19957,14 +20010,22 @@ function _updateTrainerNotifCounts() {
   });
   const badge = document.getElementById('trh-notif-badge-count');
   if (badge) {
-    badge.textContent = total > 9 ? '9+' : total;
+    badge.textContent = total > 99 ? '99+' : total;
     badge.style.display = total ? 'flex' : 'none';
   }
   // Badge'ai kitų trenerio ekranų headeriuose
   document.querySelectorAll('.trh-nbadge').forEach(b => {
-    b.textContent = total > 9 ? '9+' : total;
+    b.textContent = total > 99 ? '99+' : total;
     b.style.display = total ? 'flex' : 'none';
   });
+}
+
+// Debounced varpelio badge atnaujinimas — kviečiamas po patvirtinimo/atmetimo (per _trPatRenderTop).
+// Debounce, kad atidarius Patvirtinimus (4 loaderiai iškart) nebūtų 4 force-refetch'ai.
+let _trBadgeDebounce = null;
+function _refreshTrainerBadgeSoon() {
+  if (_trBadgeDebounce) clearTimeout(_trBadgeDebounce);
+  _trBadgeDebounce = setTimeout(() => { if (typeof updateTrainerNotifBadge === 'function') updateTrainerNotifBadge(true); }, 400);
 }
 
 // Badge atnaujinimas be modalo atidarymo (login + realtime)
@@ -20017,8 +20078,15 @@ function trNotifClick(tab, id) {
   _updateTrainerNotifCounts();
   const section = document.getElementById('trh-notif-section');
   if (section) section.style.display = 'none';
-  if (tab === 'messages') { openMessages(); return; }
-  if (id.indexOf('kid-') === 0) { g('tr', 'tr-main'); return; }
+  const item = (trainerNotifications?.[tab] || []).find(it => it.id === id);
+  if (tab === 'messages') {
+    if (typeof openMessages === 'function') openMessages();
+    const convId = item?.convId;
+    if (convId && typeof openConversation === 'function') setTimeout(() => openConversation(convId), 120);
+    return;
+  }
+  if (id.indexOf('kid-') === 0) { g('tr', 'tr-main'); return; }      // nauja paskyra → pagrindinis
+  if (id.indexOf('newco-') === 0) { g('tr', 'tr-main'); return; }    // nauja varžyba → pagrindinis
   if (tab === 'system') { trOpenPatTab('career'); return; }
   if (tab === 'challenges') { trOpenPatTab('challenges'); return; }
   if (tab === 'competitions') { trOpenPatTab('competitions'); return; }
