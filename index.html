@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v124</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v125</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -14359,13 +14359,17 @@ async function viewCompetitionParticipants(competitionId, title) {
   const isPast = comp.event_date < today;
   
   // 2. Visi rezultatai šių varžybų
-  const { data: results } = await sb.from('competition_results')
+  const _compResp = await sb.from('competition_results')
     .select('*')
     .eq('competition_id', competitionId);
-  
+  let results = _compResp.data;
+  // Treneriui rodom TIK jo vaikus (klubo adminui — visus)
+  const _trainerOnly = currentProfile?.role === 'trainer' && typeof _myKidIdSetTr !== 'undefined' && _myKidIdSetTr.size;
+  if (_trainerOnly) results = (results || []).filter(r => _myKidIdSetTr.has(r.kid_id));
+
   if (!results || results.length === 0) {
-    document.getElementById('cpm-list').innerHTML = 
-      `<div style="text-align:center;padding:30px;color:var(--mut);">${isPast ? 'Niekas nepateikė rezultatų' : 'Niekas dar nepasirinko'}</div>`;
+    document.getElementById('cpm-list').innerHTML =
+      `<div style="text-align:center;padding:30px;color:var(--mut);">${_trainerOnly ? 'Nei vienas tavo vaikas dar nepasirinko' : (isPast ? 'Niekas nepateikė rezultatų' : 'Niekas dar nepasirinko')}</div>`;
     return;
   }
   
@@ -14466,7 +14470,7 @@ async function viewCompetitionParticipants(competitionId, title) {
   // Vaiko kortelės helper
   function renderKidCard(result, label, color, bgColor) {
     const kid = kidsMap[result.kid_id];
-    const name = kid ? `${kid.first_name} ${kid.last_name?.[0] || ''}.` : 'Nežinomas';
+    const name = kid ? `${kid.first_name || 'Vaikas'} ${kid.last_name?.[0] || ''}.`.trim() : 'Nežinomas';
     const genderIcon = kid?.gender === 'female' ? '👧' : '👦';
     const kyu = kid?.kyu || 'Mu kyu';
     
@@ -14538,9 +14542,8 @@ async function viewCompetitionParticipants(competitionId, title) {
       }
     }
     if (wontAttend.length > 0) {
-      html += `<div style="text-align:center;font-size:11px;color:var(--mut);margin-top:14px;padding:10px;background:var(--bg);border-radius:8px;font-style:italic;">
-        ${wontAttend.length} dalyvis (-iai) pažymėjo "Nedalyvaus"
-      </div>`;
+      html += '<div style="font-size:11px;color:#EF4444;font-weight:800;letter-spacing:1px;margin:14px 0 6px;">🚫 NEDALYVAUS</div>';
+      html += wontAttend.map(r => renderKidCard(r, 'wont', '#EF4444', 'rgba(239,68,68,.05)')).join('');
     }
     if (planning.length === 0 && wontAttend.length === 0) {
       html += '<div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Dar niekas nepasirinko</div>';
@@ -14562,15 +14565,20 @@ async function exportCompetitionCSV(competitionId, title) {
     return;
   }
   
-  const { data: results } = await sb.from('competition_results')
+  const _csvResp = await sb.from('competition_results')
     .select('*')
     .eq('competition_id', competitionId);
-  
+  let results = _csvResp.data;
+  // Treneriui — CSV taip pat TIK jo vaikai
+  if (currentProfile?.role === 'trainer' && typeof _myKidIdSetTr !== 'undefined' && _myKidIdSetTr.size) {
+    results = (results || []).filter(r => _myKidIdSetTr.has(r.kid_id));
+  }
+
   if (!results || results.length === 0) {
     showToast('❌ Nėra dalyvių', 'error');
     return;
   }
-  
+
   const kidIds = [...new Set(results.map(r => r.kid_id))];
   const { data: kidsData, error: kidsError } = await sb.from('kids')
     .select('id, first_name, last_name, gender, kyu, birth_date')
@@ -19520,6 +19528,65 @@ function openTrainerStatScreen(tab) {
   }
 }
 
+// 📅 Šiandienos treniruočių juosta — TOP 3 + „DAUGIAU" (v125)
+let _trhByGroup = {};
+let _trhTodayExpanded = false;
+const _TRH_TODAY_TOPN = 3;
+
+function _trhTodayGroupCard(gr) {
+  const c = _trhByGroup[gr.id] || { weekly: 0, monthly: 0, one_time: 0 };
+  const color = gr.color || '#FF4D00';
+  const members = (allTrainerKids || []).filter(k => k.group_id === gr.id).length;
+  return `
+    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}1a,var(--card));border:.5px solid ${color}55;border-left:4px solid ${color};border-radius:12px;padding:11px 12px;margin-bottom:7px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:${color}26;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👥</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:900;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${gr.train_time ? `🕐 ${gr.train_time} · ` : ''}👥 ${members} ${members === 1 ? 'narys' : 'nariai'}</div>
+        </div>
+        <div style="font-size:14px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <div style="flex:1;text-align:center;background:rgba(79,195,247,.12);border-radius:7px;padding:4px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#4FC3F7;">${c.weekly}</span> <span style="font-size:8px;color:var(--mut);">⚡ sav.</span></div>
+        <div style="flex:1;text-align:center;background:rgba(186,104,200,.12);border-radius:7px;padding:4px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#BA68C8;">${c.monthly}</span> <span style="font-size:8px;color:var(--mut);">🌙 mėn.</span></div>
+        <div style="flex:1;text-align:center;background:rgba(255,215,0,.12);border-radius:7px;padding:4px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FFD700;">${c.one_time}</span> <span style="font-size:8px;color:var(--mut);">✨ vnk.</span></div>
+      </div>
+    </div>`;
+}
+
+function _renderTrhTodayStrip() {
+  const strip = document.getElementById('trh-groups-strip');
+  if (!strip) return;
+  const today = (typeof _todayDayNo === 'function') ? _todayDayNo() : 0;
+  const dayName = (typeof GROUP_DAY_NOM !== 'undefined' && today) ? GROUP_DAY_NOM[today - 1] : '';
+  const header = `<div class="st" style="padding-left:0;padding-right:0;">📅 ŠIANDIENOS TRENIRUOTĖS${dayName ? ` <span style="font-size:10px;color:var(--mut);font-weight:700;text-transform:none;letter-spacing:.3px;">· ${dayName}</span>` : ''}</div>`;
+  const todayGroups = (trainerGroupsCache || [])
+    .filter(g => (g.training_days || []).includes(today))
+    .sort((a, b) => (a.train_time || '99:99').localeCompare(b.train_time || '99:99'));
+
+  if (!todayGroups.length) {
+    const anySched = (trainerGroupsCache || []).some(g => (g.training_days || []).length);
+    strip.innerHTML = header + `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:16px;text-align:center;font-size:12px;color:var(--mut);line-height:1.5;">🧘 Šiandien treniruočių nėra${anySched ? '' : '<br><span style="font-size:10px;">Nustatyk grupių dienas: Grupės → ✏️</span>'}</div>`;
+    return;
+  }
+
+  // TOP 3 (arba visi, jei išskleista) + DAUGIAU/MAŽIAU
+  const shown = _trhTodayExpanded ? todayGroups : todayGroups.slice(0, _TRH_TODAY_TOPN);
+  let html = header + shown.map(_trhTodayGroupCard).join('');
+  if (todayGroups.length > _TRH_TODAY_TOPN) {
+    html += _trhTodayExpanded
+      ? `<div style="text-align:center;padding:2px 0 6px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▲ MAŽIAU</button></div>`
+      : `<div style="text-align:center;padding:2px 0 6px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▼ DAUGIAU (${todayGroups.length - _TRH_TODAY_TOPN})</button></div>`;
+  }
+  strip.innerHTML = html;
+}
+
+function toggleTrhToday() {
+  _trhTodayExpanded = !_trhTodayExpanded;
+  _renderTrhTodayStrip();
+}
+
 async function loadTrainerHome() {
   if (!currentUser) return;
   try {
@@ -19541,49 +19608,23 @@ async function loadTrainerHome() {
       if (byGroup[c.group_id][c.type] !== undefined) byGroup[c.group_id][c.type]++;
     });
 
-    const strip = document.getElementById('trh-groups-strip');
-    if (strip) {
-      const today = (typeof _todayDayNo === 'function') ? _todayDayNo() : 0;
-      const dayName = (typeof GROUP_DAY_NOM !== 'undefined' && today) ? GROUP_DAY_NOM[today - 1] : '';
-      const header = `<div class="st" style="padding-left:0;padding-right:0;">📅 ŠIANDIENOS TRENIRUOTĖS${dayName ? ` <span style="font-size:10px;color:var(--mut);font-weight:700;text-transform:none;letter-spacing:.3px;">· ${dayName}</span>` : ''}</div>`;
-      const todayGroups = (trainerGroupsCache || [])
-        .filter(g => (g.training_days || []).includes(today))
-        .sort((a, b) => (a.train_time || '99:99').localeCompare(b.train_time || '99:99'));
-      if (!todayGroups.length) {
-        const anySched = (trainerGroupsCache || []).some(g => (g.training_days || []).length);
-        strip.innerHTML = header + `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:16px;text-align:center;font-size:12px;color:var(--mut);line-height:1.5;">🧘 Šiandien treniruočių nėra${anySched ? '' : '<br><span style="font-size:10px;">Nustatyk grupių dienas: Grupės → ✏️</span>'}</div>`;
-      } else {
-        strip.innerHTML = header + todayGroups.map(gr => {
-          const c = byGroup[gr.id] || { weekly: 0, monthly: 0, one_time: 0 };
-          const color = gr.color || '#FF4D00';
-          const members = kids.filter(k => k.group_id === gr.id).length;
-          return `
-            <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}1a,var(--card));border:.5px solid ${color}55;border-left:4px solid ${color};border-radius:12px;padding:11px 12px;margin-bottom:7px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-              <div style="display:flex;align-items:center;gap:9px;">
-                <div style="width:38px;height:38px;border-radius:10px;background:${color}26;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👥</div>
-                <div style="flex:1;min-width:0;">
-                  <div style="font-size:14px;font-weight:900;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
-                  <div style="font-size:10px;color:var(--mut);margin-top:2px;">${gr.train_time ? `🕐 ${gr.train_time} · ` : ''}👥 ${members} ${members === 1 ? 'narys' : 'nariai'}</div>
-                </div>
-                <div style="font-size:14px;color:var(--mut);flex-shrink:0;">›</div>
-              </div>
-              <div style="display:flex;gap:6px;margin-top:8px;">
-                <div style="flex:1;text-align:center;background:rgba(79,195,247,.12);border-radius:7px;padding:4px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#4FC3F7;">${c.weekly}</span> <span style="font-size:8px;color:var(--mut);">⚡ sav.</span></div>
-                <div style="flex:1;text-align:center;background:rgba(186,104,200,.12);border-radius:7px;padding:4px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#BA68C8;">${c.monthly}</span> <span style="font-size:8px;color:var(--mut);">🌙 mėn.</span></div>
-                <div style="flex:1;text-align:center;background:rgba(255,215,0,.12);border-radius:7px;padding:4px 2px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FFD700;">${c.one_time}</span> <span style="font-size:8px;color:var(--mut);">✨ vnk.</span></div>
-              </div>
-            </div>`;
-        }).join('');
-      }
-    }
+    // Šiandienos grupės — saugom moduliniuose kintamuosiuose; rodom TOP 3 + „DAUGIAU"
+    _trhByGroup = byGroup;
+    _trhTodayExpanded = false;
+    _renderTrhTodayStrip();
 
-    // ── 2) GERIAUSI MANO VAIKAI — kelintą vietą užima klubo poole (v124) ──
-    const myName = (id) => { const k = kids.find(x => x.id === id); return k ? (k.first_name || 'Vaikas') : 'Vaikas'; };
+    // ── 2) GERIAUSI MANO VAIKAI — kelintą vietą užima klubo poole (v124/v125) ──
+    // Vardas: pirma iš mano vaikų sąrašo, jei tuščias (DB null) — iš reitingo entry.name
+    const myName = (id, fallbackName) => {
+      const k = kids.find(x => x.id === id);
+      if (k && k.first_name) return k.first_name;
+      return (fallbackName && fallbackName.trim() && fallbackName !== 'Anonimas') ? fallbackName.trim() : 'Vaikas';
+    };
+    // Varžybos / EXP / Iššūkiai — geriausio mano vaiko vieta + vardas
     const rankMetrics = [
       ['trh-best-comp', 'competition_results'],
       ['trh-best-exp', 'total_exp'],
-      ['trh-best-ish', 'challenge_submissions'],
-      ['trh-best-kar', 'kid_records']
+      ['trh-best-ish', 'challenge_submissions']
     ];
     if (kidIds.length && typeof getTrainerFilteredEntries === 'function') {
       // Sekvenciškai (getTrainerFilteredEntries laikinai keičia globalius filtrus — lygiagrečiai būtų lenktynės)
@@ -19593,14 +19634,43 @@ async function loadTrainerHome() {
           entries = (entries || []).slice().sort((a, b) => (b.score || 0) - (a.score || 0));
           let res = null;
           for (let i = 0; i < entries.length; i++) {
-            if (_myKidIdSetTr.has(entries[i].kidId)) { res = { rank: i + 1, id: entries[i].kidId }; break; }
+            if (_myKidIdSetTr.has(entries[i].kidId)) { res = { rank: i + 1, id: entries[i].kidId, name: entries[i].name }; break; }
           }
           const el = document.getElementById(elId);
-          if (el) el.textContent = res ? `#${res.rank} · ${myName(res.id)}` : '–';
+          if (el) el.textContent = res ? `#${res.rank} · ${myName(res.id, res.name)}` : '–';
         } catch (e) { /* vienas reitingas nelaužo kitų */ }
       }
+      // Karjera — KOKIAME SKILL'E mano vaikas geriausiai reitinguotas klube (v125)
+      try {
+        const clubEntries = await getTrainerFilteredEntries('total_exp'); // visi klubo vaikai (su kidId)
+        const clubKidIds = (clubEntries || []).map(e => e.kidId);
+        let best = null; // { rank, catId, kidId }
+        if (clubKidIds.length) {
+          const { data: recs } = await sb.from('kid_records')
+            .select('kid_id, category_id, category_exp')
+            .in('kid_id', clubKidIds);
+          const byCat = {};
+          (recs || []).forEach(r => { (byCat[r.category_id] = byCat[r.category_id] || []).push(r); });
+          Object.entries(byCat).forEach(([catId, arr]) => {
+            arr.sort((a, b) => (b.category_exp || 0) - (a.category_exp || 0));
+            for (let i = 0; i < arr.length; i++) {
+              if (_myKidIdSetTr.has(arr[i].kid_id) && (arr[i].category_exp || 0) > 0) {
+                if (!best || (i + 1) < best.rank) best = { rank: i + 1, catId, kidId: arr[i].kid_id };
+                break;
+              }
+            }
+          });
+        }
+        let catName = 'Karjera';
+        if (best) {
+          const { data: cat } = await sb.from('career_categories').select('name').eq('id', best.catId).maybeSingle();
+          if (cat?.name) catName = cat.name;
+        }
+        const elKar = document.getElementById('trh-best-kar');
+        if (elKar) elKar.textContent = best ? `#${best.rank} · ${catName}` : '–';
+      } catch (e) { /* tylim */ }
     } else {
-      rankMetrics.forEach(([elId]) => { const el = document.getElementById(elId); if (el) el.textContent = '–'; });
+      ['trh-best-comp', 'trh-best-exp', 'trh-best-ish', 'trh-best-kar'].forEach(elId => { const el = document.getElementById(elId); if (el) el.textContent = '–'; });
     }
 
     // ── 3) Artimiausios varžybos — paspaudus rodo dalyvius (kaip klubui) ──
