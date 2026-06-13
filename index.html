@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v141</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v142</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -18309,18 +18309,14 @@ async function loadTrainerData() {
       const ps = document.getElementById('tr-prof'); if (ps) { ps.style.background = cachedBg; const psa = ps.querySelector('.sa'); if (psa) psa.style.background = cachedBg; }
     }
   } catch (e) {}
-  // Lygiagrečiai (anksčiau 7 sekvencinių await → lėtas pradžios langas). allSettled — vienas kritęs nelaužo kitų.
+  // ⚡ Prisijungus kraunam TIK tai, ko reikia pagrindiniam langui: naujų paskyrų kortelė + grupės.
+  // 4 patvirtinimų loaderiai (karjera/iššūkiai/varžybos/dvikovos) pildo Patvirtinimų ekraną,
+  // kuris NEMATOMAS prisijungus — todėl atidėti į tr-pat atidarymą (žr. nv). Bell badge skaičiuojamas
+  // atskirai (updateTrainerNotifBadge), tad pranešimų skaičius vis tiek teisingas.
   await Promise.allSettled([
     loadNewKids(),
-    loadPendingSubmissions(),
-    loadPendingChallengeSubmissions(),
-    loadPendingCompetitionResults(),
-    loadPendingDuels(),
-    loadTrainerMembers(),
     loadTrainerGroups()
   ]);
-  // Vienas autoritetingas badge perskaičiavimas (po to, kai visi skaičiai užpildyti)
-  if (typeof updateTrainerPendingBadge === 'function') updateTrainerPendingBadge();
   // 🥋 Lygiai (hero + tr-stat) ir pagrindinio ekrano sekcijos — fone, nestabdo pradžios lango
   // („Šiandien" sekciją atnaujina loadTrainerGroups → loadTrainerToday)
   loadTrainerLevel();
@@ -24760,6 +24756,13 @@ function nv(p,el,sid){
   if (sid === 'tr-prof') {
     if (typeof renderTrainerProfile === 'function') renderTrainerProfile();
     if (typeof loadTrainerProfileStats === 'function') loadTrainerProfileStats();
+  }
+  // ⚡ Patvirtinimai kraunami TIK atidarius (ne prisijungus) — 4 loaderiai lygiagrečiai
+  if (sid === 'tr-pat') {
+    if (typeof loadPendingSubmissions === 'function') loadPendingSubmissions();
+    if (typeof loadPendingChallengeSubmissions === 'function') loadPendingChallengeSubmissions();
+    if (typeof loadPendingCompetitionResults === 'function') loadPendingCompetitionResults();
+    if (typeof loadPendingDuels === 'function') loadPendingDuels();
   }
   if (sid === 'k-stat' && typeof loadClubOverallStat === 'function') {
     loadClubOverallStat();
