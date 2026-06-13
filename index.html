@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v126</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v128</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19547,29 +19547,46 @@ function openTrainerStatScreen(tab) {
   }
 }
 
-// 📅 Šiandienos treniruočių juosta — TOP 3 + „DAUGIAU" (v125)
-let _trhByGroup = {};
+// 📅 Šiandienos treniruočių juosta — TOP 3 + „DAUGIAU" (v125/v128)
+let _trhByGroup = {};       // aktyvūs iššūkiai pagal grupę {weekly,monthly,one_time}
+let _trhPendByGroup = {};   // laukiantys patvirtinimo pagal grupę {career,challenges,comps}
 let _trhTodayExpanded = false;
 const _TRH_TODAY_TOPN = 3;
 
 function _trhTodayGroupCard(gr) {
   const c = _trhByGroup[gr.id] || { weekly: 0, monthly: 0, one_time: 0 };
+  const p = _trhPendByGroup[gr.id] || { career: 0, challenges: 0, comps: 0 };
   const color = gr.color || '#FF4D00';
   const members = (allTrainerKids || []).filter(k => k.group_id === gr.id).length;
-  // Kompaktiška VERTIKALAUS sąrašo eilutė — skaitliukai inline dešinėje
+  const pendTotal = p.career + p.challenges + p.comps;
+  // Kortelė su info STULPELIU (vertikaliai): pavadinimas → laikas/nariai → aktyvūs iššūkiai → laukia patvirtinimo
+  const chip = (val, color2, label) => `<div style="flex:1;text-align:center;background:${color2}1f;border-radius:7px;padding:4px 2px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${color2};line-height:1;">${val}</div><div style="font-size:7px;color:var(--mut);margin-top:2px;letter-spacing:.2px;">${label}</div></div>`;
   return `
-    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}14,var(--card));border:.5px solid ${color}44;border-left:3px solid ${color};border-radius:10px;padding:9px 11px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-      <div style="width:9px;height:9px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
-        <div style="font-size:10px;color:var(--mut);margin-top:1px;">${gr.train_time ? `🕐 ${gr.train_time} · ` : ''}👥 ${members}</div>
+    <div onclick="openGroupView('${gr.id}')" style="background:linear-gradient(135deg,${color}16,var(--card));border:.5px solid ${color}55;border-left:4px solid ${color};border-radius:12px;padding:11px 12px;margin-bottom:7px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+      <!-- Antraštė -->
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:${color}26;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👥</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:900;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gr.name}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${gr.train_time ? `🕐 ${gr.train_time} · ` : ''}👥 ${members} ${members === 1 ? 'narys' : 'nariai'}</div>
+        </div>
+        ${pendTotal > 0 ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;box-shadow:0 0 8px rgba(255,77,0,.5);" title="Laukia patvirtinimo">${pendTotal}</div>` : ''}
+        <div style="font-size:14px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
-      <div style="display:flex;gap:7px;font-size:10px;font-weight:800;flex-shrink:0;">
-        <span style="color:#4FC3F7;">⚡${c.weekly}</span>
-        <span style="color:#BA68C8;">🌙${c.monthly}</span>
-        <span style="color:#FFD700;">✨${c.one_time}</span>
+      <!-- Aktyvūs iššūkiai -->
+      <div style="font-size:8px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin:9px 0 4px;">🎯 AKTYVŪS IŠŠŪKIAI</div>
+      <div style="display:flex;gap:6px;">
+        ${chip('⚡ ' + c.weekly, '#4FC3F7', 'SAVAIT.')}
+        ${chip('🌙 ' + c.monthly, '#BA68C8', 'MĖNES.')}
+        ${chip('✨ ' + c.one_time, '#FFD700', 'VIENKART.')}
       </div>
-      <div style="font-size:13px;color:var(--mut);flex-shrink:0;">›</div>
+      <!-- Laukia patvirtinimo -->
+      <div style="font-size:8px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin:8px 0 4px;">⏳ LAUKIA PATVIRTINIMO</div>
+      <div style="display:flex;gap:6px;">
+        ${chip('🏋️ ' + p.career, p.career ? '#FF8C00' : '#6B7280', 'KARJERA')}
+        ${chip('🎯 ' + p.challenges, p.challenges ? '#FF8C00' : '#6B7280', 'IŠŠŪKIAI')}
+        ${chip('🏆 ' + p.comps, p.comps ? '#FF8C00' : '#6B7280', 'VARŽYBOS')}
+      </div>
     </div>`;
 }
 
@@ -19626,8 +19643,25 @@ async function loadTrainerHome() {
       if (byGroup[c.group_id][c.type] !== undefined) byGroup[c.group_id][c.type]++;
     });
 
+    // Laukiantys patvirtinimo pagal grupę (karjera / iššūkiai / varžybos) — vienu užklausų rinkiniu
+    const kidGroupMap = {};
+    kids.forEach(k => { kidGroupMap[k.id] = k.group_id; });
+    const pendByGroup = {};
+    const _addPend = (gid, key) => { if (!gid) return; (pendByGroup[gid] = pendByGroup[gid] || { career: 0, challenges: 0, comps: 0 })[key]++; };
+    if (kidIds.length) {
+      const [rsP, csP, crP] = await Promise.all([
+        sb.from('result_submissions').select('kid_id').eq('trainer_id', currentUser.id).eq('status', 'pending').limit(1000),
+        sb.from('challenge_submissions').select('kid_id').in('kid_id', kidIds).eq('status', 'pending').limit(1000),
+        sb.from('competition_results').select('kid_id').eq('target_trainer_id', currentUser.id).eq('approval_status', 'pending').eq('status', 'participated').limit(1000)
+      ]);
+      (rsP.data || []).forEach(r => _addPend(kidGroupMap[r.kid_id], 'career'));
+      (csP.data || []).forEach(r => _addPend(kidGroupMap[r.kid_id], 'challenges'));
+      (crP.data || []).forEach(r => _addPend(kidGroupMap[r.kid_id], 'comps'));
+    }
+
     // Šiandienos grupės — saugom moduliniuose kintamuosiuose; rodom TOP 3 + „DAUGIAU"
     _trhByGroup = byGroup;
+    _trhPendByGroup = pendByGroup;
     _trhTodayExpanded = false;
     _renderTrhTodayStrip();
 
@@ -19638,11 +19672,14 @@ async function loadTrainerHome() {
       if (k && k.first_name) return k.first_name;
       return (fallbackName && fallbackName.trim() && fallbackName !== 'Anonimas') ? fallbackName.trim() : 'Vaikas';
     };
-    // Varžybos / EXP / Iššūkiai — geriausio mano vaiko vieta + vardas
+    // Varžybos / EXP / Iššūkiai / Karjera — geriausio mano vaiko vieta klube + vardas.
+    // Karjera = bendras karjeros EXP ('kid_records' sumuoja visų kategorijų category_exp),
+    // t.y. kuris mano vaikas turi daugiausiai karjeros EXP (vieta klube).
     const rankMetrics = [
       ['trh-best-comp', 'competition_results'],
       ['trh-best-exp', 'total_exp'],
-      ['trh-best-ish', 'challenge_submissions']
+      ['trh-best-ish', 'challenge_submissions'],
+      ['trh-best-kar', 'kid_records']
     ];
     if (kidIds.length && typeof getTrainerFilteredEntries === 'function') {
       // Sekvenciškai (getTrainerFilteredEntries laikinai keičia globalius filtrus — lygiagrečiai būtų lenktynės)
@@ -19658,36 +19695,6 @@ async function loadTrainerHome() {
           if (el) el.textContent = res ? `#${res.rank} · ${myName(res.id, res.name)}` : '–';
         } catch (e) { /* vienas reitingas nelaužo kitų */ }
       }
-      // Karjera — KOKIAME SKILL'E mano vaikas geriausiai reitinguotas klube (v125)
-      try {
-        const clubEntries = await getTrainerFilteredEntries('total_exp'); // visi klubo vaikai (su kidId)
-        const clubKidIds = (clubEntries || []).map(e => e.kidId);
-        let best = null; // { rank, catId, kidId }
-        if (clubKidIds.length) {
-          const { data: recs } = await sb.from('kid_records')
-            .select('kid_id, category_id, category_exp')
-            .in('kid_id', clubKidIds);
-          const byCat = {};
-          (recs || []).forEach(r => { (byCat[r.category_id] = byCat[r.category_id] || []).push(r); });
-          Object.entries(byCat).forEach(([catId, arr]) => {
-            arr.sort((a, b) => (b.category_exp || 0) - (a.category_exp || 0));
-            for (let i = 0; i < arr.length; i++) {
-              if (_myKidIdSetTr.has(arr[i].kid_id) && (arr[i].category_exp || 0) > 0) {
-                if (!best || (i + 1) < best.rank) best = { rank: i + 1, catId, kidId: arr[i].kid_id };
-                break;
-              }
-            }
-          });
-        }
-        let catIcon = '🏋️';
-        if (best) {
-          const { data: cat } = await sb.from('career_categories').select('name, icon').eq('id', best.catId).maybeSingle();
-          if (cat?.icon) catIcon = cat.icon;
-        }
-        const elKar = document.getElementById('trh-best-kar');
-        // Rodom skillo ikoną + vieta + vaiko vardas (ne skill'o pavadinimą)
-        if (elKar) elKar.textContent = best ? `${catIcon} #${best.rank} · ${myName(best.kidId)}` : '–';
-      } catch (e) { /* tylim */ }
     } else {
       ['trh-best-comp', 'trh-best-exp', 'trh-best-ish', 'trh-best-kar'].forEach(elId => { const el = document.getElementById(elId); if (el) el.textContent = '–'; });
     }
