@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v152</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v153</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4309,6 +4309,9 @@ async function openParentSettings() {
               <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="parent-push-status">Pranešimai apie vaiko progresą</div>
             </div>
           </div>
+        </div>
+        <div style="padding:8px 16px 0;">
+          <button onclick="parentTestPush(this)" style="width:100%;background:rgba(99,102,241,.12);border:.5px solid rgba(99,102,241,.4);color:#8B5CF6;border-radius:14px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">🔔 Išbandyti push (siųsti sau)</button>
         </div>
         <div style="padding:8px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
@@ -20392,6 +20395,11 @@ async function openTrainerSettings() {
           </div>
         </div>
 
+        <!-- 🔔 TEST PUSH (diagnostika) -->
+        <div style="padding:8px 16px 0;">
+          <button onclick="parentTestPush(this)" style="width:100%;background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);color:#FF8C00;border-radius:14px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">🔔 Išbandyti push (siųsti sau)</button>
+        </div>
+
         <!-- 🔍 VAIZDO DYDIS -->
         <div style="padding:8px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
@@ -25902,6 +25910,8 @@ async function registerServiceWorker() {
   try {
     const reg = await navigator.serviceWorker.register('sw.js');
     console.log('🔔 Service Worker užregistruotas');
+    // Priverstinai patikrinti naujesnę SW versiją (kad telefone neliktų senas SW be push handlerio)
+    try { await reg.update(); } catch (_) {}
     return reg;
   } catch (e) {
     console.error('SW registracijos klaida:', e);
