@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v150</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v151</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -7357,7 +7357,7 @@ async function parentStartTrainerChat(trainerId, trainerName) {
     if (!convId) {
       const clubId = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : (currentProfile?.club_id || null);
       const { data: conv, error: convErr } = await sb.from('conversations')
-        .insert({ type: 'direct', club_id: clubId, created_by: currentUser.id })
+        .insert({ type: 'direct', club_id: clubId, kid_id: parentActiveKid?.id || null, created_by: currentUser.id })
         .select().single();
       if (convErr) throw convErr;
       convId = conv.id;
@@ -26326,8 +26326,11 @@ async function loadConversationsList() {
       );
       const otherProfile = otherMembers.length > 0 ? profilesMap[otherMembers[0].user_id] : null;
       if (otherProfile) {
-        title = `${otherProfile.first_name || ''} ${otherProfile.last_name || ''}`.trim() || 'Vartotojas';
-        if (otherProfile.role === 'trainer') title += ' (treneris)';
+        const nm = `${otherProfile.first_name || ''} ${otherProfile.last_name || ''}`.trim();
+        const ctxKid = (conv.kid_id && kidsMap[conv.kid_id]) ? kidsMap[conv.kid_id] : null;
+        if (otherProfile.role === 'trainer') title = (nm || 'Treneris') + ' (treneris)';
+        else if (otherProfile.role === 'parent') title = nm ? nm + ' (tėvai)' : (ctxKid ? `${ctxKid.first_name || 'Vaikas'} tėvai` : 'Tėvai');
+        else title = nm || 'Vartotojas';
       } else {
         title = 'Vartotojas';
       }
@@ -26497,10 +26500,11 @@ async function loadConversationHeader(convId) {
   
   const titleEl = document.getElementById('msg-conv-title');
   const subtitleEl = document.getElementById('msg-conv-subtitle');
-  
+
   let title = '';
   let subtitle = '';
-  
+  let parentNeedsKidName = false;
+
   if (conv.type === 'direct') {
     const { data: members } = await sb.from('conversation_members')
       .select('user_id, role')
@@ -26514,9 +26518,10 @@ async function loadConversationHeader(convId) {
         .single();
       
       if (prof) {
-        title = `${prof.first_name || ''} ${prof.last_name || ''}`.trim() || 'Vartotojas';
-        if (prof.role === 'trainer') subtitle = 'Treneris';
-        else if (prof.role === 'parent') subtitle = 'Tėvai';
+        const nm = `${prof.first_name || ''} ${prof.last_name || ''}`.trim();
+        title = nm || 'Vartotojas';
+        if (prof.role === 'trainer') { title = nm || 'Treneris'; subtitle = 'Treneris'; }
+        else if (prof.role === 'parent') { title = nm || 'Tėvai'; subtitle = 'Tėvai'; if (!nm) parentNeedsKidName = true; }
         else if (prof.role === 'club_admin') subtitle = 'Klubo administracija';
       }
     }
@@ -26536,7 +26541,12 @@ async function loadConversationHeader(convId) {
       .single();
     if (kid) {
       const kidName = `${kid.first_name} ${kid.last_name?.[0] || ''}.`;
-      subtitle = subtitle ? `${subtitle} · Apie: ${kidName}` : `Apie: ${kidName}`;
+      if (parentNeedsKidName && kid.first_name) {
+        // Tėvas be vardo → antraštė „{Vaikas} tėvai" (subtitle lieka „Tėvai")
+        title = `${kid.first_name} tėvai`;
+      } else {
+        subtitle = subtitle ? `${subtitle} · Apie: ${kidName}` : `Apie: ${kidName}`;
+      }
     }
   }
   
