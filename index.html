@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v160</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v161</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -20414,25 +20414,11 @@ async function openTrainerSettings() {
           </div>
         </div>
 
-        <!-- 🔔 PRANEŠIMŲ JUNGIKLIS -->
-        <div style="padding:8px 16px 0;">
-          <div onclick="toggleAppPush()" id="kid-push-toggle" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-            <div style="font-size:28px;" id="kid-push-icon">🔔</div>
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:800;color:white;">Pranešimai</div>
-              <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="kid-push-status">Pranešimai apie pateikimus</div>
-            </div>
-            <div id="kid-push-switch" style="width:42px;height:24px;border-radius:99px;background:rgba(255,255,255,.15);position:relative;transition:background .2s;flex-shrink:0;">
-              <div id="kid-push-knob" style="width:18px;height:18px;border-radius:50%;background:white;position:absolute;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.3);"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 🔔 KOKIUS PUSH GAUTI (atskyrimas) -->
-        <div style="padding:8px 16px 0;">
+        <!-- 🔔 PRANEŠIMAI Į TELEFONĄ (3 tipai = ir įjungimas, ir filtras) -->
+        <div style="padding:12px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
-            <div style="font-size:13px;font-weight:800;color:white;">Kokius pranešimus gauti</div>
-            <div style="font-size:10px;color:var(--mut);margin:2px 0 8px;">Pasirink, apie ką ateina push į telefoną</div>
+            <div style="font-size:13px;font-weight:800;color:white;">🔔 Pranešimai į telefoną</div>
+            <div style="font-size:10px;color:var(--mut);margin:2px 0 8px;">Įjunk, apie ką nori gauti pranešimus į telefoną — net kai programėlė uždaryta</div>
             <div onclick="toggleTrainerPushPref('messages')" style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;border-top:.5px solid var(--bdr);">
               <div style="font-size:18px;">💬</div>
               <div style="flex:1;font-size:12px;font-weight:700;color:white;">Tėvų žinutės</div>
@@ -20453,7 +20439,7 @@ async function openTrainerSettings() {
 
         <!-- 🔔 TEST PUSH (diagnostika) -->
         <div style="padding:8px 16px 0;">
-          <button onclick="parentTestPush(this)" style="width:100%;background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);color:#FF8C00;border-radius:14px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">🔔 Išbandyti push (siųsti sau)</button>
+          <button onclick="parentTestPush(this)" style="width:100%;background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);color:#FF8C00;border-radius:14px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">🔔 Išbandyti pranešimą (siųsti sau)</button>
         </div>
 
         <!-- ⚖️ SĄŽININGO VERTINIMO INSTRUKCIJA -->
@@ -20584,34 +20570,44 @@ async function openTrainerSettings() {
   modal.style.display = 'flex';
 }
 
-// 🔔 Push tipų pasirinkimai (treneris): messages/announcements/submissions → profiles.push_prefs
+// 🔔 Push tipų jungikliai (treneris): messages/announcements/submissions → profiles.push_prefs
+// 3 jungikliai = ir ĮJUNGIMAS (pirmas „ON" užregistruoja pranešimus telefone), ir FILTRAS (kurie ateina).
 let _trPushPrefs = { messages: true, announcements: true, submissions: true };
-function _applyTrPushPrefSwitch(key) {
-  const on = _trPushPrefs[key] !== false;
+function _applyTrPushPrefSwitch(key, on) {
   const sw = document.getElementById('trpp-sw-' + key);
   const knob = document.getElementById('trpp-knob-' + key);
   if (sw) sw.style.background = on ? '#66BB6A' : 'rgba(255,255,255,.15)';
   if (knob) knob.style.left = on ? '19px' : '3px';
 }
 async function loadTrainerPushPrefs() {
+  let p = null;
   try {
-    let p = currentProfile?.push_prefs;
+    p = currentProfile?.push_prefs;
     if (!p) {
       const { data } = await sb.from('profiles').select('push_prefs').eq('id', currentUser.id).maybeSingle();
       p = data?.push_prefs || null;
-      if (currentProfile) currentProfile.push_prefs = p;
+      if (currentProfile && p) currentProfile.push_prefs = p;
     }
-    _trPushPrefs = { messages: true, announcements: true, submissions: true, ...(p || {}) };
-  } catch (e) { _trPushPrefs = { messages: true, announcements: true, submissions: true }; }
-  ['messages', 'announcements', 'submissions'].forEach(_applyTrPushPrefSwitch);
+  } catch (e) { /* stulpelio gali nebūti kol nepaleistas SQL — graceful */ }
+  const saved = { messages: true, announcements: true, submissions: true, ...(p || {}) };
+  // Rodom pagal realybę: jei pranešimai telefone NEĮJUNGTI — visi OFF (vartotojas turi įjungti rankiniu paspaudimu)
+  const subscribed = localStorage.getItem('spobu_push_on') === '1';
+  _trPushPrefs = subscribed ? saved : { messages: false, announcements: false, submissions: false };
+  ['messages', 'announcements', 'submissions'].forEach(k => _applyTrPushPrefSwitch(k, _trPushPrefs[k] !== false));
 }
 async function toggleTrainerPushPref(key) {
-  _trPushPrefs[key] = _trPushPrefs[key] === false ? true : false;
-  _applyTrPushPrefSwitch(key);
+  const turningOn = _trPushPrefs[key] === false;
+  // Įjungiant tipą, kai pranešimai telefone dar neįjungti → paprašom leidimo ir užregistruojam
+  if (turningOn && localStorage.getItem('spobu_push_on') !== '1') {
+    const ok = (typeof enablePushNotifications === 'function') ? await enablePushNotifications() : false;
+    if (!ok) { _applyTrPushPrefSwitch(key, false); return; } // leidimas atmestas — paliekam OFF
+  }
+  _trPushPrefs[key] = turningOn;
+  _applyTrPushPrefSwitch(key, turningOn);
   if (currentProfile) currentProfile.push_prefs = { ..._trPushPrefs };
   try {
     const { error } = await sb.from('profiles').update({ push_prefs: _trPushPrefs }).eq('id', currentUser.id);
-    if (error) { if (typeof showToast === 'function') showToast('⚠️ Neišsaugota: ' + (error.message || ''), 'error', 6000); }
+    if (error) { if (typeof showToast === 'function') showToast('⚠️ Neišsaugota serveryje (ar paleidai SQL „push_prefs"?): ' + (error.message || ''), 'error', 8000); }
   } catch (e) { console.warn('toggleTrainerPushPref', e); }
 }
 
