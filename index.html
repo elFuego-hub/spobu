@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v158</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v159</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -20431,6 +20431,20 @@ async function openTrainerSettings() {
         <!-- 🔔 TEST PUSH (diagnostika) -->
         <div style="padding:8px 16px 0;">
           <button onclick="parentTestPush(this)" style="width:100%;background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);color:#FF8C00;border-radius:14px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">🔔 Išbandyti push (siųsti sau)</button>
+        </div>
+
+        <!-- ⚖️ SĄŽININGO VERTINIMO INSTRUKCIJA -->
+        <div style="padding:8px 16px 0;">
+          <div style="background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.3);border-radius:14px;padding:14px;">
+            <div style="font-size:13px;font-weight:800;color:#FF8C00;margin-bottom:8px;">⚖️ Sąžiningas vertinimas — svarbu!</div>
+            <div style="font-size:11px;color:var(--mut);line-height:1.6;">
+              Tavo patvirtinimai formuoja vaikų <b style="color:white;">statistiką ir reitingus</b>. Tai labai atsakingas darbas:<br><br>
+              • Tikrink rezultatus <b style="color:white;">atidžiai</b> — tvirtink tik tai, kas realiai pasiekta.<br>
+              • Visiems vaikams taikyk <b style="color:white;">vienodus standartus</b> — kiekvienas turi turėti lygias galimybes.<br>
+              • Jei vienam tvirtini „pro pirštus", o kitą vertini griežtai — statistika tampa <b style="color:white;">neteisinga ir nesąžininga</b> kitų vaikų atžvilgiu.<br>
+              • Tikslūs duomenys = teisingi reitingai = motyvuoti vaikai. 🥋
+            </div>
+          </div>
         </div>
 
         <!-- 🔍 VAIZDO DYDIS -->
