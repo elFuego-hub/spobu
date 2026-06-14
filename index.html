@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v156</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v157</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -26694,6 +26694,27 @@ function renderMessage(msg, sendersMap) {
   `;
 }
 
+// 🔔 Push KITIEMS pokalbio nariams apie naują žinutę — kad UŽRAKINTAME telefone matytųsi KAS rašo + tekstas.
+// Siunčiama iš kliento (siuntėjas žino savo vardą) per clever-processor — kaip pateikimų push.
+async function notifyConversationMembers(convId, title, body) {
+  try {
+    if (!convId || !sb?.functions) return;
+    const { data: mems } = await sb.from('conversation_members').select('user_id').eq('conversation_id', convId).neq('user_id', currentUser.id);
+    (mems || []).forEach(m => {
+      if (m.user_id) sb.functions.invoke('clever-processor', { body: { user_id: m.user_id, title, body, url: '/' } }).catch(() => {});
+    });
+  } catch (e) { console.warn('notifyConversationMembers', e); }
+}
+
+// Siuntėjo rodomas vardas push'ui (tėvui be vardo → „{Vaikas} tėvai")
+function _msgSenderDisplay() {
+  let s = (currentProfile?.first_name || '').trim();
+  if (/^t[ėe]vas\s*\/\s*glob[ėe]jas$/i.test(s)) s = '';
+  if (!s && currentProfile?.role === 'parent' && parentActiveKid?.first_name) s = `${parentActiveKid.first_name} tėvai`;
+  if (!s && currentProfile?.last_name) s = currentProfile.last_name;
+  return s || 'Nauja žinutė';
+}
+
 // SIŲSTI ŽINUTĘ
 async function sendMessage() {
   const input = document.getElementById('msg-input');
@@ -26724,7 +26745,9 @@ async function sendMessage() {
   
   input.value = '';
   input.style.height = 'auto';
-  // Real-time subscription perkraus žinutes (push siunčia serverio DB trigeris)
+  // 🔔 Push kitiems nariams su SIUNTĖJO vardu + tekstu (kad užrakintame telefone matytųsi kas rašo)
+  notifyConversationMembers(currentConversationId, '💬 ' + _msgSenderDisplay(), body.slice(0, 140));
+  // Real-time subscription perkraus žinutes
 }
 
 // REAL-TIME SUBSCRIPTION (žinutės pokalbyje)
@@ -27272,6 +27295,8 @@ async function submitComposeMessage() {
     });
 
     if (msgErr) throw msgErr;
+    // 🔔 Push nariams su siuntėjo vardu + tekstu (užrakintam telefonui)
+    try { notifyConversationMembers(conv.id, '💬 ' + _msgSenderDisplay(), (body || '').slice(0, 140)); } catch (_) {}
 
     // 1. Iškart uždarom VISUS modal'us
     closeComposeModal();
