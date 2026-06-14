@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v146</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v147</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -18499,15 +18499,16 @@ async function loadPendingSubmissions() {
     return;
   }
 
-  // Atskirai gauname vaikų vardus (su profiles fallback — kids.first_name dažnai tuščias)
+  // Atskirai gauname vaikų vardus (2 žingsnių per profiles — kids.first_name dažnai tuščias)
   const kidIds = [...new Set((subs || []).map(s => s.kid_id))];
   let kidsMap = {};
   if (kidIds.length > 0) {
     const { data: kidsData } = await sb.from('kids')
-      .select('id, first_name, last_name, group_id, profiles(first_name, last_name)')
+      .select('id, first_name, last_name, group_id')
       .in('id', kidIds);
     (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
   }
+  const kidNameMap = await _fetchKidNameMap(kidIds);
 
   const count = subs?.length || 0;
   // tr-pending-count/-summary kortelė pakeista trh-pending-list sekcija (v109) — guard'ai jei dar kur liko
@@ -18528,8 +18529,8 @@ async function loadPendingSubmissions() {
 
   const cards = subs.map(s => {
     const kid = kidsMap[s.kid_id];
-    // (v145) vardas su profiles fallback — kids.first_name dažnai tuščias
-    const kidName = kid ? _kidDisplayName(kid) : 'Nežinomas';
+    // (v146) vardas 2 žingsnių per profiles — kids.first_name dažnai tuščias
+    const kidName = kidNameMap[s.kid_id] || (kid ? 'Vaikas' : 'Nežinomas');
     const catName = s.exercises?.career_categories?.name || '';
     // DELTA: lower_is_better pratimui pagerėjimas = MAŽESNĖ reikšmė (nebe „+-1.5")
     const lower = !!s.exercises?.lower_is_better;
@@ -19808,14 +19809,11 @@ async function _loadTrainerHomeBestKids() {
         }
       } catch (e) { /* vienas reitingas nelaužo kitų */ }
     }
-    // Tikrus vardus — iš DB su profiles fallback (kids.first_name dažnai tuščias → buvo „Vaikas")
-    const nameMap = {};
+    // Tikrus vardus — 2 žingsnių (kids.user_id → profiles); kids.first_name dažnai tuščias
+    let nameMap = {};
     const bestIds = [...new Set(Object.values(rankRes).map(r => r.kidId))].filter(Boolean);
     if (bestIds.length) {
-      try {
-        const { data: nm } = await sb.from('kids').select('id, first_name, last_name, profiles(first_name, last_name)').in('id', bestIds);
-        (nm || []).forEach(k => { nameMap[k.id] = _kidDisplayName(k); });
-      } catch (e) { /* tylim */ }
+      try { nameMap = await _fetchKidNameMap(bestIds); } catch (e) { /* tylim */ }
     }
     ['trh-best-comp', 'trh-best-exp', 'trh-best-ish', 'trh-best-kar'].forEach(elId => {
       const el = document.getElementById(elId);
@@ -19826,8 +19824,30 @@ async function _loadTrainerHomeBestKids() {
   } catch (e) { console.error('_loadTrainerHomeBestKids:', e); }
 }
 
-// Vaiko rodomas vardas: kids.first_name, fallback į susietą profiles (kids.user_id), tada „Vaikas".
-// Test/realiose paskyrose kids.first_name dažnai tuščias — tikras vardas profiles lentelėje (kaip vaiko loadLeaderboard).
+// Vaiko vardų žemėlapis pagal kid_id. SVARBU: kids→profiles NĖRA tiesioginio FK (abu rodo į auth.users),
+// todėl embed `profiles(...)` NEVEIKIA. Reikia 2 žingsnių (kaip openCreateChallenge eligibleKids ~22696):
+// kids.user_id → profiles.id. Vardas: kids.first_name (jei yra) → profiles.first_name → „Vaikas".
+async function _fetchKidNameMap(kidIds) {
+  const map = {};
+  const ids = [...new Set((kidIds || []).filter(Boolean))];
+  if (!ids.length) return map;
+  const { data: krows } = await sb.from('kids').select('id, first_name, last_name, user_id').in('id', ids);
+  const userIds = [...new Set((krows || []).map(k => k.user_id).filter(Boolean))];
+  const profMap = {};
+  if (userIds.length) {
+    const { data: profs } = await sb.from('profiles').select('id, first_name, last_name').in('id', userIds);
+    (profs || []).forEach(p => { profMap[p.id] = p; });
+  }
+  (krows || []).forEach(k => {
+    const p = k.user_id ? profMap[k.user_id] : null;
+    const fn = k.first_name || p?.first_name || '';
+    const ln = k.last_name || p?.last_name || '';
+    const li = (ln || '')[0];
+    map[k.id] = (`${fn}${li ? ' ' + li + '.' : ''}`.trim()) || 'Vaikas';
+  });
+  return map;
+}
+// Sinchroninis fallback iš jau turimo kid objekto (kai map'o nėra)
 function _kidDisplayName(k) {
   if (!k) return 'Vaikas';
   const fn = k.first_name || k.profiles?.first_name || '';
@@ -19868,13 +19888,9 @@ async function _loadTrainerHomePending(kidIds) {
   }
 
   // Vaiko vardai — batch iš DB (cache allTrainerKids gali neturėti pending/ne-approved vaikų → buvo „Vaikas")
-  let homeKidNameMap = {};
   const homeKidIds = [...new Set(top.map(it => it.kid))].filter(Boolean);
-  if (homeKidIds.length) {
-    const { data: hkn } = await sb.from('kids').select('id, first_name, last_name, profiles(first_name, last_name)').in('id', homeKidIds);
-    (hkn || []).forEach(k => { homeKidNameMap[k.id] = k; });
-  }
-  const kidName = (id) => _kidDisplayName(homeKidNameMap[id] || (allTrainerKids || []).find(x => x.id === id));
+  const homeKidNameMap = await _fetchKidNameMap(homeKidIds);
+  const kidName = (id) => homeKidNameMap[id] || _kidDisplayName((allTrainerKids || []).find(x => x.id === id));
 
   // Stilius kaip pas vaiką (v-pending-list): kompaktiškos vertikalios kortelės tinklelyje — 1/2/3 stulpeliai pagal kiekį
   const gridCols = top.length === 1 ? '1fr' : top.length === 2 ? '1fr 1fr' : '1fr 1fr 1fr';
@@ -19926,7 +19942,7 @@ async function _fetchTrainerNotifications(force) {
   const cutoffISO = cutoff.toISOString();
 
   let kidNameMap = {};
-  const kidName = (id) => _kidDisplayName(kidNameMap[id] || (allTrainerKids || []).find(x => x.id === id));
+  const kidName = (id) => kidNameMap[id] || _kidDisplayName((allTrainerKids || []).find(x => x.id === id));
 
   const clubId = currentProfile?.club_id;
   const [rsR, nkR, csR, crR, ncR, msR] = await Promise.all([
@@ -19952,17 +19968,14 @@ async function _fetchTrainerNotifications(force) {
       .order('sent_at', { ascending: false }).limit(30)
   ]);
 
-  // 🧒 Vaiko vardai — batch iš DB pagal realius kid_id (allTrainerKids cache gali neturėti pending/ne-approved vaikų → buvo „Vaikas")
+  // 🧒 Vaiko vardai — 2 žingsnių (kids.user_id → profiles); kids.first_name dažnai tuščias. + nkR naujos paskyros
   const submissionKidIds = [
     ...((rsR.data || []).map(s => s.kid_id)),
     ...((csR.data || []).map(s => s.kid_id)),
-    ...((crR.data || []).map(s => s.kid_id))
+    ...((crR.data || []).map(s => s.kid_id)),
+    ...((nkR.data || []).map(s => s.id))
   ].filter(Boolean);
-  const uniqKidIds = [...new Set(submissionKidIds)];
-  if (uniqKidIds.length) {
-    const { data: kn } = await sb.from('kids').select('id, first_name, last_name, profiles(first_name, last_name)').in('id', uniqKidIds);
-    (kn || []).forEach(k => { kidNameMap[k.id] = k; });
-  }
+  kidNameMap = await _fetchKidNameMap(submissionKidIds);
 
   // 💬 ŽINUTĖS — TIK pokalbiai, kuriuose treneris yra narys (kaip pas vaiką); + vardai + klubo pranešimas
   const msgItems = [];
@@ -20007,7 +20020,7 @@ async function _fetchTrainerNotifications(force) {
   trainerNotifications = {
     system: dedupeById([
       ...(rsR.data || []).map(s => ({ id: 'rs-' + s.id, icon: '🏋️', title: `${kidName(s.kid_id)} pateikė rezultatą`, sub: (s.exercises?.name || 'Karjeros pratimas'), ts: s.created_at })),
-      ...(nkR.data || []).map(k => ({ id: 'kid-' + k.id, icon: '🆕', title: `Nauja paskyra: ${_kidDisplayName(k)}`, sub: 'Laukia patvirtinimo pagrindiniame', ts: k.created_at }))
+      ...(nkR.data || []).map(k => ({ id: 'kid-' + k.id, icon: '🆕', title: `Nauja paskyra: ${kidNameMap[k.id] || 'Vaikas'}`, sub: 'Laukia patvirtinimo pagrindiniame', ts: k.created_at }))
     ].sort((a, b) => new Date(b.ts) - new Date(a.ts))),
     challenges: dedupeById((csR.data || []).map(s => ({ id: 'cs-' + s.id, icon: (s.challenges?.icon || '🎯'), title: `${kidName(s.kid_id)} pateikė iššūkį`, sub: (s.challenges?.title || 'Iššūkis'), ts: s.created_at }))),
     competitions: dedupeById(compItems),
@@ -23507,15 +23520,16 @@ async function loadPendingChallengeSubmissions() {
     return;
   }
   
-  // Vaikų vardai su profiles fallback (kids.first_name dažnai tuščias — tikras vardas profiles)
+  // Vaikų vardai 2 žingsnių per profiles (kids.first_name dažnai tuščias)
   const kidIds = [...new Set((subs || []).map(s => s.kid_id))];
   let kidsMap = {};
   if (kidIds.length > 0) {
     const { data: kidsData } = await sb.from('kids')
-      .select('id, first_name, last_name, group_id, profiles(first_name, last_name)')
+      .select('id, first_name, last_name, group_id')
       .in('id', kidIds);
     (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
   }
+  const kidNameMap = await _fetchKidNameMap(kidIds);
 
   // 📊 Užkraunam challenge_progress visiems partial iššūkiams
   const progressMap = {};
@@ -23558,8 +23572,8 @@ async function loadPendingChallengeSubmissions() {
   
   const cards = subs.map(s => {
     const kid = kidsMap[s.kid_id];
-    // (v145) vardas su profiles fallback
-    const kidName = kid ? _kidDisplayName(kid) : 'Nežinomas';
+    // (v146) vardas 2 žingsnių per profiles
+    const kidName = kidNameMap[s.kid_id] || (kid ? 'Vaikas' : 'Nežinomas');
     const ch = s.challenges;
     const targetText = ch?.target_value 
       ? `🎯 Tikslas: ${ch.target_value} ${ch.target_unit || ''}` 
@@ -23733,8 +23747,9 @@ async function loadPendingCompetitionResults() {
   const compIds = [...new Set(results.map(r => r.competition_id))];
   
   const { data: kidsData } = await sb.from('kids')
-    .select('id, first_name, last_name, gender, kyu, group_id, profiles(first_name, last_name)')
+    .select('id, first_name, last_name, gender, kyu, group_id')
     .in('id', kidIds);
+  const kidNameMap = await _fetchKidNameMap(kidIds);
   
   const { data: compsData } = await sb.from('competitions')
     .select('id, title, competition_type, level, event_date, location')
@@ -23750,8 +23765,8 @@ async function loadPendingCompetitionResults() {
     const comp = compsMap[r.competition_id];
     if (!kid || !comp) return '';
 
-    // (v145) vardas su profiles fallback
-    const kidName = _kidDisplayName(kid);
+    // (v146) vardas 2 žingsnių per profiles
+    const kidName = kidNameMap[r.kid_id] || 'Vaikas';
     const genderIcon = kid.gender === 'female' ? '👧' : '👦';
     const typeLabel = COMP_TYPE_LABELS[comp.competition_type] || comp.competition_type;
     const levelLabel = comp.level ? COMP_LEVEL_LABELS[comp.level] : '';
