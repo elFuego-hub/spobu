@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v148</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v149</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5265,12 +5265,30 @@ async function loadParentKidPending(k) {
       sb.from('competition_results').select('created_at, competitions(title)').eq('kid_id', k.id).eq('status', 'participated').eq('approval_status', 'pending').order('created_at', { ascending: false }).limit(5)
     ]);
     const _pd = (r) => (r.status === 'fulfilled' ? (r.value?.data || []) : []);
-    _pd(chsR).forEach(s => items.push({ icon: '🎯', title: s.challenges?.title || 'Iššūkis', date: s.created_at }));
-    _pd(rsR).forEach(s => items.push({ icon: '📈', title: s.exercises?.name || 'Rezultatas', date: s.created_at }));
-    _pd(crR).forEach(s => items.push({ icon: '🏆', title: s.competitions?.title || 'Varžybos / egzaminas', date: s.created_at }));
+    _pd(chsR).forEach(s => items.push({ kind: 'challenges', icon: '🎯', title: s.challenges?.title || 'Iššūkis', date: s.created_at }));
+    _pd(rsR).forEach(s => items.push({ kind: 'career', icon: '📈', title: s.exercises?.name || 'Rezultatas', date: s.created_at }));
+    _pd(crR).forEach(s => items.push({ kind: 'competitions', icon: '🏆', title: s.competitions?.title || 'Varžybos / egzaminas', date: s.created_at }));
     if (items.length === 0) { el.innerHTML = '<div style="text-align:center;padding:8px;color:var(--mut);font-size:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;">Nėra laukiančių pateikimų</div>'; return; }
     items.sort((a, b) => new Date(b.date) - new Date(a.date));
-    el.innerHTML = items.slice(0, 5).map(it => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;"><div style="font-size:18px;">${it.icon}</div><div style="flex:1;"><div style="font-size:11px;font-weight:800;">${it.title}</div><div style="font-size:9px;color:var(--mut);margin-top:2px;">Pateikta ${tkTimeAgo(it.date)} · laukia trenerio</div></div></div>`).join('');
+    // Stilius kaip pas vaiką/trenerį: kompaktiškos vertikalios kortelės tinklelyje — 1/2/3 stulpeliai pagal kiekį
+    const top = items.slice(0, 3);
+    const gridCols = top.length === 1 ? '1fr' : top.length === 2 ? '1fr 1fr' : '1fr 1fr 1fr';
+    const kindStyle = {
+      career:       { bd: 'rgba(255,77,0,.3)',   bg: 'rgba(255,77,0,.2)',   fg: '#FF8C00', badge: 'Karj' },
+      challenges:   { bd: 'rgba(79,195,247,.3)', bg: 'rgba(79,195,247,.2)', fg: '#4FC3F7', badge: 'Iššūk' },
+      competitions: { bd: 'rgba(255,215,0,.3)',  bg: 'rgba(255,215,0,.2)',  fg: '#FFD700', badge: 'Varž' }
+    };
+    el.innerHTML = `<div style="display:grid;grid-template-columns:${gridCols};gap:4px;">` + top.map(it => {
+      const t = kindStyle[it.kind] || kindStyle.career;
+      return `<div style="background:var(--card);border-radius:8px;padding:6px 4px;border:.5px solid ${t.bd};text-align:center;min-width:0;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:2px;">
+          <span style="font-size:12px;line-height:1;">${it.icon}</span>
+          <span style="font-size:7px;background:${t.bg};color:${t.fg};padding:1px 5px;border-radius:99px;font-weight:800;">${t.badge}</span>
+        </div>
+        <div style="font-size:9px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.title}</div>
+        <div style="font-size:7px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">laukia · ${tkTimeAgo(it.date)}</div>
+      </div>`;
+    }).join('') + `</div>`;
   } catch (e) { el.innerHTML = '<div style="text-align:center;padding:8px;color:var(--mut);font-size:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;">Nėra laukiančių pateikimų</div>'; }
 }
 
