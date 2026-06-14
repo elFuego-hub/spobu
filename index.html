@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v144</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v145</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19851,30 +19851,45 @@ async function _loadTrainerHomePending(kidIds) {
   (csR.data || []).forEach(s => items.push({ ts: s.created_at, kid: s.kid_id, icon: s.challenges?.icon || '🎯', label: s.challenges?.title || 'Iššūkis', tab: 'challenges' }));
   (crR.data || []).forEach(s => items.push({ ts: s.created_at, kid: s.kid_id, icon: '🏆', label: 'Varžybų rezultatas', tab: 'competitions' }));
   items.sort((a, b) => new Date(b.ts) - new Date(a.ts));
-  const top = items.slice(0, 4);
+  const top = items.slice(0, 3); // kaip pas vaiką — TOP 3, švarus 1/2/3 stulpelių tinklelis
 
   if (!top.length) {
     wrap.innerHTML = '<div style="text-align:center;padding:8px;color:var(--mut);font-size:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;">🎉 Nėra laukiančių pateikimų</div>';
     return;
   }
 
+  // Vaiko vardai — batch iš DB (cache allTrainerKids gali neturėti pending/ne-approved vaikų → buvo „Vaikas")
+  let homeKidNameMap = {};
+  const homeKidIds = [...new Set(top.map(it => it.kid))].filter(Boolean);
+  if (homeKidIds.length) {
+    const { data: hkn } = await sb.from('kids').select('id, first_name, last_name').in('id', homeKidIds);
+    (hkn || []).forEach(k => { homeKidNameMap[k.id] = k; });
+  }
   const kidName = (id) => {
-    const k = (allTrainerKids || []).find(x => x.id === id);
+    const k = homeKidNameMap[id] || (allTrainerKids || []).find(x => x.id === id);
     if (!k) return 'Vaikas';
     const li = (k.last_name || '')[0];
     return (`${k.first_name || ''}${li ? ' ' + li + '.' : ''}`.trim()) || 'Vaikas';
   };
 
-  wrap.innerHTML = top.map(it => `
-    <div onclick="trOpenPatTab('${it.tab}')" style="background:var(--card);border:.5px solid rgba(255,77,0,.25);border-radius:10px;padding:8px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
-      <div style="font-size:14px;flex-shrink:0;">${it.icon}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:11px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kidName(it.kid)} · ${it.label}</div>
-        <div style="font-size:9px;color:var(--mut);margin-top:1px;">${_agoLT(it.ts)}</div>
+  // Stilius kaip pas vaiką (v-pending-list): kompaktiškos vertikalios kortelės tinklelyje — 1/2/3 stulpeliai pagal kiekį
+  const gridCols = top.length === 1 ? '1fr' : top.length === 2 ? '1fr 1fr' : '1fr 1fr 1fr';
+  const tabStyle = {
+    career:       { bd: 'rgba(255,77,0,.3)',   tap: 'rgba(255,77,0,.2)',   bg: 'rgba(255,77,0,.2)',   fg: '#FF8C00', badge: 'Karj' },
+    challenges:   { bd: 'rgba(79,195,247,.3)', tap: 'rgba(79,195,247,.2)', bg: 'rgba(79,195,247,.2)', fg: '#4FC3F7', badge: 'Iššūk' },
+    competitions: { bd: 'rgba(255,215,0,.3)',  tap: 'rgba(255,215,0,.2)',  bg: 'rgba(255,215,0,.2)',  fg: '#FFD700', badge: 'Varž' }
+  };
+  wrap.innerHTML = `<div style="display:grid;grid-template-columns:${gridCols};gap:4px;">` + top.map(it => {
+    const t = tabStyle[it.tab] || tabStyle.career;
+    return `<div onclick="trOpenPatTab('${it.tab}')" style="background:var(--card);border-radius:8px;padding:6px 4px;border:.5px solid ${t.bd};cursor:pointer;-webkit-tap-highlight-color:${t.tap};text-align:center;min-width:0;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:2px;">
+        <span style="font-size:12px;line-height:1;">${it.icon}</span>
+        <span style="font-size:7px;background:${t.bg};color:${t.fg};padding:1px 5px;border-radius:99px;font-weight:800;">${t.badge}</span>
       </div>
-      <div style="font-size:12px;color:var(--br);flex-shrink:0;">›</div>
-    </div>
-  `).join('');
+      <div style="font-size:9px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kidName(it.kid)}</div>
+      <div style="font-size:7px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.label} · ${_agoLT(it.ts)}</div>
+    </div>`;
+  }).join('') + `</div>`;
 }
 
 // ════════════════════════════════════════
@@ -19906,8 +19921,9 @@ async function _fetchTrainerNotifications(force) {
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
   const cutoffISO = cutoff.toISOString();
 
+  let kidNameMap = {};
   const kidName = (id) => {
-    const k = (allTrainerKids || []).find(x => x.id === id);
+    const k = kidNameMap[id] || (allTrainerKids || []).find(x => x.id === id);
     if (!k) return 'Vaikas';
     const li = (k.last_name || '')[0];
     return (`${k.first_name || ''}${li ? ' ' + li + '.' : ''}`.trim()) || 'Vaikas';
@@ -19936,6 +19952,18 @@ async function _fetchTrainerNotifications(force) {
       .neq('sender_id', currentUser.id).gte('sent_at', cutoffISO)
       .order('sent_at', { ascending: false }).limit(30)
   ]);
+
+  // 🧒 Vaiko vardai — batch iš DB pagal realius kid_id (allTrainerKids cache gali neturėti pending/ne-approved vaikų → buvo „Vaikas")
+  const submissionKidIds = [
+    ...((rsR.data || []).map(s => s.kid_id)),
+    ...((csR.data || []).map(s => s.kid_id)),
+    ...((crR.data || []).map(s => s.kid_id))
+  ].filter(Boolean);
+  const uniqKidIds = [...new Set(submissionKidIds)];
+  if (uniqKidIds.length) {
+    const { data: kn } = await sb.from('kids').select('id, first_name, last_name').in('id', uniqKidIds);
+    (kn || []).forEach(k => { kidNameMap[k.id] = k; });
+  }
 
   // 💬 ŽINUTĖS — TIK pokalbiai, kuriuose treneris yra narys (kaip pas vaiką); + vardai + klubo pranešimas
   const msgItems = [];
@@ -20060,7 +20088,7 @@ function renderTrainerNotifTab(tab) {
   const sk = TR_NOTIF_SK[tab];
   list.innerHTML = items.map(it => {
     const fresh = !_isSeen(sk, it.id);
-    return `<div onclick="trNotifClick('${tab}','${it.id}')" style="background:${fresh ? 'rgba(255,77,0,.07)' : 'var(--card)'};border:.5px solid ${fresh ? 'rgba(255,77,0,.3)' : 'var(--bdr)'};border-radius:12px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+    return `<div onclick="trNotifClick('${tab}','${it.id}','${it.convId || ''}')" style="background:${fresh ? 'rgba(255,77,0,.07)' : 'var(--card)'};border:.5px solid ${fresh ? 'rgba(255,77,0,.3)' : 'var(--bdr)'};border-radius:12px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;">
       <div style="font-size:16px;flex-shrink:0;">${it.icon}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:800;color:white;">${it.title}${fresh ? ' <span style="display:inline-block;width:7px;height:7px;background:var(--br);border-radius:50%;margin-left:4px;"></span>' : ''}</div>
@@ -20073,16 +20101,16 @@ function renderTrainerNotifTab(tab) {
 }
 
 // Paspaudus pranešimą — pažymim skaitytu ir nukeliam į atitinkamą vietą
-function trNotifClick(tab, id) {
+function trNotifClick(tab, id, convId) {
   _addSeen(TR_NOTIF_SK[tab], id);
   _updateTrainerNotifCounts();
   const section = document.getElementById('trh-notif-section');
   if (section) section.style.display = 'none';
-  const item = (trainerNotifications?.[tab] || []).find(it => it.id === id);
   if (tab === 'messages') {
     if (typeof openMessages === 'function') openMessages();
-    const convId = item?.convId;
-    if (convId && typeof openConversation === 'function') setTimeout(() => openConversation(convId), 120);
+    // convId iš onclick (atsparu cache persikrovimui — kaip pas tėvus); fallback į lookup tik jei tuščias
+    const cid = convId || (trainerNotifications?.messages || []).find(it => it.id === id)?.convId;
+    if (cid && typeof openConversation === 'function') openConversation(cid);
     return;
   }
   if (id.indexOf('kid-') === 0) { g('tr', 'tr-main'); return; }      // nauja paskyra → pagrindinis
