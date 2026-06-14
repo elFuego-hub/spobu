@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v157</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v158</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3961,9 +3961,22 @@ async function init() {
   // Mūsų sw.js NIEKO nekešuoja, tad caches saugu trinti.
   try { if (window.caches && caches.keys) caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(() => {}); } catch (_) {}
 
-  // 🔔 Service Worker registracija (push notifications)
-  registerServiceWorker();
-  
+  // 🧹 VIENKARTINIS seno Service Worker pašalinimas (v158): senas SW rodė „naujas pranešimas iš Spobu"
+  // ir neatsinaujindavo. Pašalinam VISUS → registruojam naują (v4, skaito tikrą antraštę).
+  // Po šito reikia VIENĄ kartą iš naujo įjungti push (⚙️ → 🔔 Išbandyti push), nes prenumerata persikuria.
+  try {
+    if ('serviceWorker' in navigator && !localStorage.getItem('spobu_sw_reset_v158')) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        Promise.all((regs || []).map(r => r.unregister().catch(() => {}))).then(() => {
+          localStorage.setItem('spobu_sw_reset_v158', '1');
+          registerServiceWorker();
+        });
+      }).catch(() => registerServiceWorker());
+    } else {
+      registerServiceWorker();
+    }
+  } catch (_) { registerServiceWorker(); }
+
   // 🔍 Pritaikyti išsaugotą vaizdo dydį
   if (typeof applyAppZoom === 'function') applyAppZoom();
   
