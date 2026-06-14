@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v159</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v160</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -20428,6 +20428,29 @@ async function openTrainerSettings() {
           </div>
         </div>
 
+        <!-- 🔔 KOKIUS PUSH GAUTI (atskyrimas) -->
+        <div style="padding:8px 16px 0;">
+          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
+            <div style="font-size:13px;font-weight:800;color:white;">Kokius pranešimus gauti</div>
+            <div style="font-size:10px;color:var(--mut);margin:2px 0 8px;">Pasirink, apie ką ateina push į telefoną</div>
+            <div onclick="toggleTrainerPushPref('messages')" style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;border-top:.5px solid var(--bdr);">
+              <div style="font-size:18px;">💬</div>
+              <div style="flex:1;font-size:12px;font-weight:700;color:white;">Tėvų žinutės</div>
+              <div id="trpp-sw-messages" style="width:38px;height:22px;border-radius:99px;background:#66BB6A;position:relative;transition:background .2s;flex-shrink:0;"><div id="trpp-knob-messages" style="width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:3px;left:19px;transition:left .2s;"></div></div>
+            </div>
+            <div onclick="toggleTrainerPushPref('announcements')" style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;border-top:.5px solid var(--bdr);">
+              <div style="font-size:18px;">📢</div>
+              <div style="flex:1;font-size:12px;font-weight:700;color:white;">Klubo pranešimai</div>
+              <div id="trpp-sw-announcements" style="width:38px;height:22px;border-radius:99px;background:#66BB6A;position:relative;transition:background .2s;flex-shrink:0;"><div id="trpp-knob-announcements" style="width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:3px;left:19px;transition:left .2s;"></div></div>
+            </div>
+            <div onclick="toggleTrainerPushPref('submissions')" style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;border-top:.5px solid var(--bdr);">
+              <div style="font-size:18px;">✅</div>
+              <div style="flex:1;font-size:12px;font-weight:700;color:white;">Vaikų patvirtinimai</div>
+              <div id="trpp-sw-submissions" style="width:38px;height:22px;border-radius:99px;background:#66BB6A;position:relative;transition:background .2s;flex-shrink:0;"><div id="trpp-knob-submissions" style="width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:3px;left:19px;transition:left .2s;"></div></div>
+            </div>
+          </div>
+        </div>
+
         <!-- 🔔 TEST PUSH (diagnostika) -->
         <div style="padding:8px 16px 0;">
           <button onclick="parentTestPush(this)" style="width:100%;background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);color:#FF8C00;border-radius:14px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">🔔 Išbandyti push (siųsti sau)</button>
@@ -20555,9 +20578,41 @@ async function openTrainerSettings() {
   // Jungiklių būsenos (perpanaudojam vaiko update funkcijas — tie patys ID)
   updateSoundToggleUI();
   updatePushToggleUI();
+  loadTrainerPushPrefs();
   if (typeof updateZoomButtonsUI === 'function') updateZoomButtonsUI();
 
   modal.style.display = 'flex';
+}
+
+// 🔔 Push tipų pasirinkimai (treneris): messages/announcements/submissions → profiles.push_prefs
+let _trPushPrefs = { messages: true, announcements: true, submissions: true };
+function _applyTrPushPrefSwitch(key) {
+  const on = _trPushPrefs[key] !== false;
+  const sw = document.getElementById('trpp-sw-' + key);
+  const knob = document.getElementById('trpp-knob-' + key);
+  if (sw) sw.style.background = on ? '#66BB6A' : 'rgba(255,255,255,.15)';
+  if (knob) knob.style.left = on ? '19px' : '3px';
+}
+async function loadTrainerPushPrefs() {
+  try {
+    let p = currentProfile?.push_prefs;
+    if (!p) {
+      const { data } = await sb.from('profiles').select('push_prefs').eq('id', currentUser.id).maybeSingle();
+      p = data?.push_prefs || null;
+      if (currentProfile) currentProfile.push_prefs = p;
+    }
+    _trPushPrefs = { messages: true, announcements: true, submissions: true, ...(p || {}) };
+  } catch (e) { _trPushPrefs = { messages: true, announcements: true, submissions: true }; }
+  ['messages', 'announcements', 'submissions'].forEach(_applyTrPushPrefSwitch);
+}
+async function toggleTrainerPushPref(key) {
+  _trPushPrefs[key] = _trPushPrefs[key] === false ? true : false;
+  _applyTrPushPrefSwitch(key);
+  if (currentProfile) currentProfile.push_prefs = { ..._trPushPrefs };
+  try {
+    const { error } = await sb.from('profiles').update({ push_prefs: _trPushPrefs }).eq('id', currentUser.id);
+    if (error) { if (typeof showToast === 'function') showToast('⚠️ Neišsaugota: ' + (error.message || ''), 'error', 6000); }
+  } catch (e) { console.warn('toggleTrainerPushPref', e); }
 }
 
 // Treneris pasirenka failą → suspaudžia → Storage → profiles.avatar_url
@@ -26078,7 +26133,7 @@ async function notifyTrainersNewSubmission(title, action) {
     const body = `${kidName} ${action}`;
     const trainers = await getMyTrainers();
     (trainers || []).forEach(t => {
-      if (t.id) sb.functions.invoke('clever-processor', { body: { user_id: t.id, title, body, url: '/' } }).catch(() => {});
+      if (t.id) sb.functions.invoke('clever-processor', { body: { user_id: t.id, title, body, url: '/', type: 'submissions' } }).catch(() => {});
     });
   } catch (e) { console.warn('notifyTrainersNewSubmission', e); }
 }
@@ -26723,12 +26778,12 @@ function renderMessage(msg, sendersMap) {
 
 // 🔔 Push KITIEMS pokalbio nariams apie naują žinutę — kad UŽRAKINTAME telefone matytųsi KAS rašo + tekstas.
 // Siunčiama iš kliento (siuntėjas žino savo vardą) per clever-processor — kaip pateikimų push.
-async function notifyConversationMembers(convId, title, body) {
+async function notifyConversationMembers(convId, title, body, type) {
   try {
     if (!convId || !sb?.functions) return;
     const { data: mems } = await sb.from('conversation_members').select('user_id').eq('conversation_id', convId).neq('user_id', currentUser.id);
     (mems || []).forEach(m => {
-      if (m.user_id) sb.functions.invoke('clever-processor', { body: { user_id: m.user_id, title, body, url: '/' } }).catch(() => {});
+      if (m.user_id) sb.functions.invoke('clever-processor', { body: { user_id: m.user_id, title, body, url: '/', type: type || 'messages' } }).catch(() => {});
     });
   } catch (e) { console.warn('notifyConversationMembers', e); }
 }
@@ -26773,7 +26828,7 @@ async function sendMessage() {
   input.value = '';
   input.style.height = 'auto';
   // 🔔 Push kitiems nariams su SIUNTĖJO vardu + tekstu (kad užrakintame telefone matytųsi kas rašo)
-  notifyConversationMembers(currentConversationId, '💬 ' + _msgSenderDisplay(), body.slice(0, 140));
+  notifyConversationMembers(currentConversationId, '💬 ' + _msgSenderDisplay(), body.slice(0, 140), 'messages');
   // Real-time subscription perkraus žinutes
 }
 
@@ -27322,8 +27377,11 @@ async function submitComposeMessage() {
     });
 
     if (msgErr) throw msgErr;
-    // 🔔 Push nariams su siuntėjo vardu + tekstu (užrakintam telefonui)
-    try { notifyConversationMembers(conv.id, '💬 ' + _msgSenderDisplay(), (body || '').slice(0, 140)); } catch (_) {}
+    // 🔔 Push nariams su siuntėjo vardu + tekstu (užrakintam telefonui); tipas: announcement → klubo pranešimai
+    try {
+      const _pType = (dbType === 'announcement' || composeContext.type === 'broadcast') ? 'announcements' : 'messages';
+      notifyConversationMembers(conv.id, '💬 ' + _msgSenderDisplay(), (body || '').slice(0, 140), _pType);
+    } catch (_) {}
 
     // 1. Iškart uždarom VISUS modal'us
     closeComposeModal();
