@@ -1,6 +1,8 @@
 // ═══════════════════════════════════════════════
-// 🔔 SPOBU SERVICE WORKER - push notifications (v3)
-// Failas turi būti šaknyje šalia index.html
+// 🔔 SPOBU SERVICE WORKER - push notifications (v4)
+// Failas turi būti šaknyje šalia index.html (pavadinimas TIKSLIAI: sw.js)
+// v4: tvirtesnis payload skaitymas (flat {title,body,url} IR {notification:{...}}),
+//     kad telefone matytųsi tikras tekstas, o ne naršyklės „naujas pranešimas iš…"
 // ═══════════════════════════════════════════════
 
 const APP_URL = 'https://elfuego-hub.github.io/spobu/';
@@ -8,9 +10,7 @@ const APP_URL = 'https://elfuego-hub.github.io/spobu/';
 // Paverčia bet kokį URL į teisingą app'o URL
 function resolveUrl(u) {
   if (!u || u === '/' || u === '') return APP_URL;
-  // Jei pilnas URL su http - palikti
-  if (u.indexOf('http') === 0) return u;
-  // Reliatyvus - prikabinti prie APP_URL
+  if (typeof u === 'string' && u.indexOf('http') === 0) return u;
   return APP_URL;
 }
 
@@ -31,14 +31,25 @@ self.addEventListener('push', (event) => {
 
     try {
       if (event.data) {
-        const data = event.data.json();
-        title = data.title || 'SPOBU';
-        body = data.body || '';
-        url = resolveUrl(data.url);
+        let data = null;
+        try { data = event.data.json(); } catch (_) { data = null; }
+        if (data && typeof data === 'object') {
+          // Palaikom kelis formatus: {title,body,url} ARBA {notification:{title,body}} ARBA {data:{...}}
+          const n = data.notification || data.data || data;
+          title = n.title || data.title || 'SPOBU';
+          body  = n.body  || data.body  || data.message || '';
+          url   = resolveUrl(n.url || data.url || (data.data && data.data.url));
+        } else {
+          // Ne-JSON payload — paimam tekstą kaip body
+          try { body = event.data.text() || ''; } catch (_) {}
+        }
       }
     } catch (e) {
       try { body = event.data ? event.data.text() : ''; } catch (e2) {}
     }
+
+    // Jei kažkodėl tuščia — bent prasmingas tekstas (NE naršyklės default)
+    if (!body) body = 'Atidaryk SPOBU programėlę';
 
     await self.registration.showNotification(title, {
       body: body,
