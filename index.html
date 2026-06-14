@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v153</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v154</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3957,6 +3957,10 @@ async function init() {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   console.log('✅ Supabase klientas sukurtas');
   
+  // 🧹 Išvalom SENĄ kešą (jei senas SW buvo įsikešavęs index.html — kad nematytume pasenusios versijos)
+  // Mūsų sw.js NIEKO nekešuoja, tad caches saugu trinti.
+  try { if (window.caches && caches.keys) caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(() => {}); } catch (_) {}
+
   // 🔔 Service Worker registracija (push notifications)
   registerServiceWorker();
   
