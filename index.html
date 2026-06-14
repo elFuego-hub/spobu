@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v154</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v155</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -7380,9 +7380,21 @@ async function parentComposeToTrainer() {
   }
 }
 
+// Pokalbio pavadinimas treneriui — tėvo vardas ĮRAŠOMAS tiesiai (tėvas savo vardą visada perskaito;
+// treneriui nereikia skaityti tėvo profilio → veikia net jei RLS blokuoja ar tėvas be vardo)
+function _parentChatTitle() {
+  const myName = (currentProfile?.first_name || '').trim();
+  const isPlaceholder = /^t[ėe]vas\s*\/\s*glob[ėe]jas$/i.test(myName);
+  const kidName = (parentActiveKid?.first_name || '').trim();
+  if (myName && !isPlaceholder) return kidName ? `${myName} (${kidName} tėvai)` : `${myName} (tėvai)`;
+  return kidName ? `${kidName} tėvai` : 'Tėvai';
+}
+
 // Rasti esamą arba sukurti direct pokalbį tėvas↔treneris, tada atidaryti
 async function parentStartTrainerChat(trainerId, trainerName) {
   try {
+    const convTitle = _parentChatTitle();
+    const kidId = parentActiveKid?.id || null;
     // 1. Ieškom esamo direct pokalbio (2 žingsnių, be embed)
     let convId = null;
     const { data: myMems } = await sb.from('conversation_members').select('conversation_id').eq('user_id', currentUser.id);
@@ -7396,11 +7408,14 @@ async function parentStartTrainerChat(trainerId, trainerName) {
         if (directConvs && directConvs.length) convId = directConvs[0].id;
       }
     }
-    // 2. Nėra — kuriam naują
-    if (!convId) {
+    if (convId) {
+      // ESAMAS pokalbis — atnaujinam pavadinimą+kid_id (kad senas test-pokalbis irgi rodytų vardą)
+      try { await sb.from('conversations').update({ title: convTitle, kid_id: kidId }).eq('id', convId); } catch (_) {}
+    } else {
+      // 2. Nėra — kuriam naują su pavadinimu
       const clubId = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : (currentProfile?.club_id || null);
       const { data: conv, error: convErr } = await sb.from('conversations')
-        .insert({ type: 'direct', club_id: clubId, kid_id: parentActiveKid?.id || null, created_by: currentUser.id })
+        .insert({ type: 'direct', title: convTitle, club_id: clubId, kid_id: kidId, created_by: currentUser.id })
         .select().single();
       if (convErr) throw convErr;
       convId = conv.id;
@@ -20153,7 +20168,7 @@ async function _fetchTrainerNotifications(force) {
       msgItems.push({
         id: 'ms-' + m.id,
         icon: isAnn ? '📢' : '💬',
-        title: isAnn ? 'Klubo pranešimas' : `Žinutė nuo ${senderName[m.sender_id] || 'Kažkas'}`,
+        title: isAnn ? 'Klubo pranešimas' : (conv?.title || `Žinutė nuo ${senderName[m.sender_id] || 'Kažkas'}`),
         sub: (m.body || '').slice(0, 60),
         ts: m.sent_at,
         convId: m.conversation_id
@@ -26375,7 +26390,9 @@ async function loadConversationsList() {
         am.conversation_id === conv.id && am.user_id !== currentUser.id
       );
       const otherProfile = otherMembers.length > 0 ? profilesMap[otherMembers[0].user_id] : null;
-      if (otherProfile) {
+      if (conv.title) {
+        title = conv.title; // įrašytas vardas — pirmenybė (nereikia skaityti kito profilio)
+      } else if (otherProfile) {
         const nm = `${otherProfile.first_name || ''} ${otherProfile.last_name || ''}`.trim();
         const ctxKid = (conv.kid_id && kidsMap[conv.kid_id]) ? kidsMap[conv.kid_id] : null;
         if (otherProfile.role === 'trainer') title = (nm || 'Treneris') + ' (treneris)';
@@ -26556,22 +26573,23 @@ async function loadConversationHeader(convId) {
   let parentNeedsKidName = false;
 
   if (conv.type === 'direct') {
+    if (conv.title) title = conv.title; // įrašytas vardas (pvz. „Jonas (Petras tėvai)") — pirmenybė
     const { data: members } = await sb.from('conversation_members')
       .select('user_id, role')
       .eq('conversation_id', convId)
       .neq('user_id', currentUser.id);
-    
+
     if (members && members[0]) {
       const { data: prof } = await sb.from('profiles')
         .select('first_name, last_name, role')
         .eq('id', members[0].user_id)
         .single();
-      
+
       if (prof) {
         const nm = `${prof.first_name || ''} ${prof.last_name || ''}`.trim();
-        title = nm || 'Vartotojas';
-        if (prof.role === 'trainer') { title = nm || 'Treneris'; subtitle = 'Treneris'; }
-        else if (prof.role === 'parent') { title = nm || 'Tėvai'; subtitle = 'Tėvai'; if (!nm) parentNeedsKidName = true; }
+        if (!title) title = nm || 'Vartotojas';
+        if (prof.role === 'trainer') { if (!title) title = nm || 'Treneris'; subtitle = 'Treneris'; }
+        else if (prof.role === 'parent') { if (!title) { title = nm || 'Tėvai'; if (!nm) parentNeedsKidName = true; } subtitle = 'Tėvai'; }
         else if (prof.role === 'club_admin') subtitle = 'Klubo administracija';
       }
     }
