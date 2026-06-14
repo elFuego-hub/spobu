@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v151</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v152</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4337,6 +4337,20 @@ async function openParentSettings() {
           </div>
         </div>
         <div style="padding:8px 16px 0;">
+          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+              <div style="font-size:28px;">🥋</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:800;color:white;">Vaiko treneris</div>
+                <div style="font-size:11px;color:var(--mut);margin-top:2px;">Spausk, kad parašytum žinutę</div>
+              </div>
+            </div>
+            <div id="parent-settings-trainers-list">
+              <div style="font-size:11px;color:var(--mut);">Kraunama...</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:8px 16px 0;">
           <div onclick="openParentHelpModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
             <div style="font-size:28px;">❓</div>
             <div style="flex:1;">
@@ -4385,7 +4399,31 @@ async function openParentSettings() {
   if (typeof updateSoundToggleUI === 'function') updateSoundToggleUI();
   if (typeof updatePushToggleUI === 'function') updatePushToggleUI();
   if (typeof updateZoomButtonsUI === 'function') updateZoomButtonsUI();
+  loadParentSettingsTrainers();
   modal.style.display = 'flex';
+}
+
+// Tėvo nustatymuose — aktyvaus vaiko trenerių sąrašas (vardai + „rašyti")
+async function loadParentSettingsTrainers() {
+  const el = document.getElementById('parent-settings-trainers-list');
+  if (!el) return;
+  try {
+    const trainers = await getParentActiveKidTrainers();
+    if (!trainers.length) {
+      el.innerHTML = '<div style="font-size:11px;color:var(--mut);">Dar nepriskirtas treneris.</div>';
+      return;
+    }
+    el.innerHTML = trainers.map(t => {
+      const safe = (t.name || 'Treneris').replace(/'/g, "\\'");
+      return `<div onclick="document.getElementById('parent-settings-modal').remove(); parentStartTrainerChat('${t.id}','${safe}')" style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.04);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:6px;cursor:pointer;">
+        <div style="font-size:18px;">🥋</div>
+        <div style="flex:1;font-size:13px;font-weight:800;color:white;">${t.name}</div>
+        <div style="font-size:11px;color:var(--br);font-weight:800;">✏️ Rašyti</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--br);">Nepavyko užkrauti trenerių.</div>';
+  }
 }
 
 // 🐞 Problemos pranešimo forma → įrašo į `feedback` lentelę (mato admin)
@@ -7288,43 +7326,38 @@ async function markAllParentRead() {
   } catch (e) { console.warn('markAllParentRead', e); }
 }
 
-// 🥋 Gauti aktyvaus vaiko trenerius {id, name} — tėvo „rašyti trenerui" funkcijai (kaip vaiko getMyTrainers)
+// 🥋 Gauti aktyvaus vaiko trenerius {id, name} — tėvo „rašyti trenerui" + nustatymų sąrašui.
+// 2 žingsnių (be embed): surenkam trainer_id (assigned_trainer_id + kid_trainers), tada profiles vardai.
 async function getParentActiveKidTrainers() {
-  const trainers = [];
-  const seen = new Set();
   const kid = parentActiveKid || (parentKids.length ? parentKids[0] : null);
-  if (!kid) return trainers;
-  // Pagrindinis treneris (legacy assigned_trainer_id)
-  if (kid.assigned_trainer_id) {
-    const { data } = await sb.from('profiles').select('id, first_name, last_name').eq('id', kid.assigned_trainer_id).maybeSingle();
-    if (data && !seen.has(data.id)) {
-      seen.add(data.id);
-      trainers.push({ id: data.id, name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Treneris' });
-    }
-  }
-  // Papildomi treneriai (kid_trainers M:N)
-  const { data: kt } = await sb.from('kid_trainers')
-    .select('trainer_id, profiles!kid_trainers_trainer_id_fkey(id, first_name, last_name)')
-    .eq('kid_id', kid.id);
-  (kt || []).forEach(t => {
-    const p = t.profiles;
-    if (p && !seen.has(p.id)) {
-      seen.add(p.id);
-      trainers.push({ id: p.id, name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Treneris' });
-    }
-  });
-  return trainers;
+  if (!kid) return [];
+  const ids = new Set();
+  if (kid.assigned_trainer_id) ids.add(kid.assigned_trainer_id);
+  try {
+    const { data: kt } = await sb.from('kid_trainers').select('trainer_id').eq('kid_id', kid.id);
+    (kt || []).forEach(t => { if (t.trainer_id) ids.add(t.trainer_id); });
+  } catch (e) { /* tylim */ }
+  if (!ids.size) return [];
+  const { data: profs } = await sb.from('profiles').select('id, first_name, last_name').in('id', [...ids]);
+  return (profs || []).map(p => ({
+    id: p.id,
+    name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Treneris'
+  }));
 }
 
 // ✏️ Tėvas rašo trenerui (iš varpelio): 1 treneris → tiesiai; keli → pasirinkimas varpelyje
 async function parentComposeToTrainer() {
+  const el = document.getElementById('parent-bell-list');
+  if (el) el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>';
   try {
     const trainers = await getParentActiveKidTrainers();
-    if (!trainers.length) { if (typeof showToast === 'function') showToast('Vaikui dar nepriskirtas treneris', 'error'); return; }
-    if (trainers.length === 1) { parentStartTrainerChat(trainers[0].id, trainers[0].name); return; }
-    const el = document.getElementById('parent-bell-list');
+    if (!trainers.length) {
+      if (el) el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Vaikui dar nepriskirtas treneris.</div>';
+      return;
+    }
+    // VISADA rodom pasirinkimą (net jei 1 treneris) — tėvas mato vardą ir pasirenka, kam rašyti
     if (el) {
-      el.innerHTML = `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin:4px 0 10px;">PASIRINK TRENERĮ:</div>` +
+      el.innerHTML = `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin:4px 0 10px;">KAM RAŠYTI? PASIRINK TRENERĮ:</div>` +
         trainers.map(t => {
           const safe = (t.name || 'Treneris').replace(/'/g, "\\'");
           return `<div onclick="parentStartTrainerChat('${t.id}','${safe}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
@@ -7334,7 +7367,10 @@ async function parentComposeToTrainer() {
           </div>`;
         }).join('');
     }
-  } catch (e) { console.error('parentComposeToTrainer:', e); if (typeof showToast === 'function') showToast('Klaida', 'error'); }
+  } catch (e) {
+    console.error('parentComposeToTrainer:', e);
+    if (el) el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--br);font-size:12px;">Klaida kraunant trenerius.</div>';
+  }
 }
 
 // Rasti esamą arba sukurti direct pokalbį tėvas↔treneris, tada atidaryti
