@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v167</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v168</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19057,7 +19057,7 @@ async function openGroupView(groupId, silent) {
       </div>
       ${renderKidIcons(k)}
       ${pend[k.id] ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;box-shadow:0 0 8px rgba(255,77,0,.5);" title="Laukia patvirtinimo">${pend[k.id]}</div>` : ''}
-      ${!k.has_phone ? `<button onclick="event.stopPropagation();openAssignExp('${k.id}')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;" title="Skirti EXP (vaikas be telefono)">➕ EXP</button>` : ''}
+      <button onclick="event.stopPropagation();openAssignExp('${k.id}')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;" title="Skirti EXP">➕ EXP</button>
       <div style="font-size:14px;color:var(--mut);flex-shrink:0;pointer-events:none;">›</div>
     </div>
   `).join('');
@@ -19140,38 +19140,60 @@ function _assignExpStep1() {
     <button onclick="_assignExpCompetitionList()" style="${btn}"><span style="font-size:26px;">🏆</span><div><div style="font-size:14px;font-weight:800;">Varžybos</div><div style="font-size:11px;color:var(--mut);">Įrašyti varžybų rezultatą</div></div></button>`;
 }
 
-// 🎯 IŠŠŪKIS — pasirinkti tinkamą trenerio iššūkį → pažymėti atliktą (DB trigeris prideda EXP)
+// 🎯 IŠŠŪKIS — TIK šiam vaikui taikomi (audience match kaip vaiko loadGoals), neatlikti; partial → tarpinis
 async function _assignExpChallengeList() {
   const b = document.getElementById('assign-exp-body'); if (!b) return;
   const kid = _assignExpKid;
   b.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Kraunama...</div>';
+  const nowISO = new Date().toISOString();
   const { data: chs } = await sb.from('challenges')
-    .select('id, title, icon, exp_reward, target_kid_id, group_id, target_audience')
-    .eq('trainer_id', currentUser.id).eq('is_active', true)
-    .order('created_at', { ascending: false }).limit(100);
-  const applicable = (chs || []).filter(c =>
-    c.target_kid_id === kid.id ||
-    (c.group_id && c.group_id === kid.group_id) ||
-    (c.target_audience === 'all_club' || c.target_audience === 'all')
-  );
-  let done = new Set();
-  if (applicable.length) {
-    const { data: subs } = await sb.from('challenge_submissions').select('challenge_id').eq('kid_id', kid.id).eq('status', 'approved').in('challenge_id', applicable.map(c => c.id));
-    (subs || []).forEach(s => done.add(s.challenge_id));
+    .select('id, title, icon, type, target_value, target_unit, exp_reward, allow_partial, target_audience, target_kid_id, group_id, expires_at')
+    .eq('club_id', currentProfile?.club_id).eq('is_active', true)
+    .or(`expires_at.is.null,expires_at.gt.${nowISO}`)
+    .order('created_at', { ascending: false }).limit(200);
+  // Tik ŠIAM vaikui taikomi — ta pati logika kaip vaiko loadGoals
+  const elig = (chs || []).filter(c => {
+    const a = c.target_audience || 'group';
+    if (a === 'all_club') return true;
+    if (a === 'specific_kid') return c.target_kid_id === kid.id;
+    if (!kid.group_id || c.group_id !== kid.group_id) return false;
+    if (a === 'group') return true;
+    if (a === 'boys_in_group') return kid.gender === 'male';
+    if (a === 'girls_in_group') return kid.gender === 'female';
+    return false;
+  });
+  const ids = elig.map(c => c.id);
+  let doneSub = new Set(), doneProg = new Set(), progMap = {};
+  if (ids.length) {
+    const [s, p] = await Promise.all([
+      sb.from('challenge_submissions').select('challenge_id, status').eq('kid_id', kid.id).in('challenge_id', ids),
+      sb.from('challenge_progress').select('challenge_id, total_progress, is_completed').eq('kid_id', kid.id).in('challenge_id', ids)
+    ]);
+    (s.data || []).forEach(x => { if (x.status === 'approved') doneSub.add(x.challenge_id); });
+    (p.data || []).forEach(x => { progMap[x.challenge_id] = x; if (x.is_completed) doneProg.add(x.challenge_id); });
   }
-  const list = applicable.filter(c => !done.has(c.id));
+  const list = elig.filter(c => c.allow_partial ? !doneProg.has(c.id) : !doneSub.has(c.id));
   if (!list.length) {
-    b.innerHTML = `${_assignExpBack()}<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Nėra tinkamų neatliktų iššūkių.<br>Sukurk iššūkį (🎯 grupei/vaikui), tada čia jį pažymėsi atliktą.</div>`;
+    b.innerHTML = `${_assignExpBack()}<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Šiam vaikui nėra neatliktų iššūkių.<br>Sukurk iššūkį (🎯 vaikui ar grupei) ir grįžk čia.</div>`;
     return;
   }
-  b.innerHTML = _assignExpBack() + `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-bottom:10px;">PASIRINK IŠŠŪKĮ:</div>` + list.map(c => `
-    <div onclick="_assignExpDoChallenge('${c.id}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+  b.innerHTML = _assignExpBack() + `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-bottom:10px;">PASIRINK IŠŠŪKĮ:</div>` + list.map(c => {
+    const prog = progMap[c.id];
+    const tname = (c.title || 'Iššūkis').replace(/'/g, "\\'");
+    const tunit = (c.target_unit || '').replace(/'/g, "\\'");
+    const partLabel = c.allow_partial ? ` · ${(prog?.total_progress || 0)}/${c.target_value || '?'} ${c.target_unit || ''}` : '';
+    const onclick = c.allow_partial
+      ? `_assignExpChallengePartial('${c.id}','${tname}', ${c.target_value || 0}, '${tunit}', ${prog?.total_progress || 0})`
+      : `_assignExpDoChallenge('${c.id}')`;
+    return `<div onclick="${onclick}" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
       <span style="font-size:20px;">${c.icon || '🎯'}</span>
-      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${c.title || 'Iššūkis'}</div><div style="font-size:10px;color:var(--mut);">+${c.exp_reward || 0} EXP</div></div>
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${c.title || 'Iššūkis'}${c.allow_partial ? ' <span style="font-size:8px;color:#BA68C8;font-weight:800;">⏳ TARPINIS</span>' : ''}</div><div style="font-size:10px;color:var(--mut);">+${c.exp_reward || 0} EXP${partLabel}</div></div>
       <div style="color:var(--br);font-size:14px;">›</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
+// Pilnas (non-partial) — pažymi atliktą → DB trigeris prideda exp_reward
 async function _assignExpDoChallenge(challengeId) {
   if (!confirm('Pažymėti šį iššūkį kaip atliktą? Vaikas gaus EXP.')) return;
   try {
@@ -19182,6 +19204,32 @@ async function _assignExpDoChallenge(challengeId) {
     const { error: aerr } = await sb.from('challenge_submissions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', ins.id).eq('status', 'pending');
     if (aerr) throw aerr;
     showToast('✅ Iššūkis pažymėtas — EXP priskirta!', 'success');
+    const em = document.getElementById('assign-exp-modal'); if (em) em.remove();
+    if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
+  } catch (e) { showToast('Nepavyko: ' + (e.message || ''), 'error', 6000); }
+}
+
+// Tarpinis (partial / mėnesinis) — įrašyti kiekį, prisideda prie progreso (EXP kai pasiekia tikslą)
+function _assignExpChallengePartial(challengeId, title, target, unit, cur) {
+  const b = document.getElementById('assign-exp-body'); if (!b) return;
+  b.innerHTML = _assignExpBack() + `
+    <div style="font-size:14px;font-weight:800;color:white;margin-bottom:4px;">🎯 ${title}</div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:14px;">Tarpinis pateikimas. Dabar: <b style="color:white;">${cur}/${target} ${unit}</b>. Kiek pridėti?</div>
+    <input class="inp" id="aecp-amt" type="number" min="1" placeholder="pvz. 10 ${unit}" style="width:100%;margin:4px 0 16px;font-family:inherit;">
+    <button onclick="_assignExpDoChallengePartial('${challengeId}')" style="width:100%;padding:13px;background:linear-gradient(135deg,#BA68C8,#8E44AD);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">➕ Pridėti progresą</button>`;
+}
+
+async function _assignExpDoChallengePartial(challengeId) {
+  const amt = parseInt(document.getElementById('aecp-amt')?.value);
+  if (!amt || amt <= 0) { showToast('Įrašyk kiekį', 'error'); return; }
+  try {
+    const { data: ins, error } = await sb.from('challenge_submissions')
+      .insert({ challenge_id: challengeId, kid_id: _assignExpKid.id, trainer_id: currentUser.id, value: String(amt), numeric_value: amt, status: 'pending' })
+      .select('id').single();
+    if (error) throw error;
+    const { error: aerr } = await sb.from('challenge_submissions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', ins.id).eq('status', 'pending');
+    if (aerr) throw aerr;
+    showToast('✅ Progresas pridėtas! (EXP — kai pasieks tikslą)', 'success', 4000);
     const em = document.getElementById('assign-exp-modal'); if (em) em.remove();
     if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
   } catch (e) { showToast('Nepavyko: ' + (e.message || ''), 'error', 6000); }
@@ -19204,15 +19252,26 @@ async function _assignExpCompetitionList() {
     </div>`).join('');
 }
 
+let _aecPlace = null;
+function _assignExpSetPlace(v) {
+  _aecPlace = v;
+  [1, 2, 3, 0].forEach(x => {
+    const el = document.getElementById('aecp-' + x);
+    if (el) { const on = x === v; el.style.background = on ? 'rgba(255,77,0,.2)' : 'var(--card)'; el.style.borderColor = on ? 'var(--br)' : 'var(--bdr)'; el.style.color = on ? '#FF8C00' : 'white'; }
+  });
+}
 function _assignExpCompForm(compId, title) {
   const b = document.getElementById('assign-exp-body'); if (!b) return;
+  _aecPlace = null;
+  const pbtn = (val, label) => `<button type="button" id="aecp-${val}" onclick="_assignExpSetPlace(${val})" style="flex:1;padding:12px 4px;border-radius:10px;border:.5px solid var(--bdr);background:var(--card);color:white;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">${label}</button>`;
   b.innerHTML = _assignExpBack() + `
     <div style="font-size:14px;font-weight:800;color:white;margin-bottom:4px;">🏆 ${title}</div>
-    <div style="font-size:11px;color:var(--mut);margin-bottom:14px;">Įrašyk rezultatą — EXP priskirs automatiškai.</div>
-    <label style="font-size:11px;color:var(--mut);font-weight:700;">Vieta (jei prizinė, nebūtina)</label>
-    <input class="inp" id="aec-place" type="number" min="1" placeholder="pvz. 1 / 2 / 3 arba palik tuščią" style="width:100%;margin:4px 0 12px;font-family:inherit;">
-    <label style="font-size:11px;color:var(--mut);font-weight:700;">Pergalės / Pralaimėjimai (nebūtina)</label>
-    <div style="display:flex;gap:8px;margin:4px 0 16px;">
+    <div style="font-size:11px;color:var(--mut);margin-bottom:12px;">Pasirink vietą — EXP priskirs automatiškai (ne ranka).</div>
+    <div style="font-size:11px;color:var(--mut);font-weight:700;margin-bottom:6px;">Vieta / medalis:</div>
+    <div style="display:flex;gap:6px;margin-bottom:7px;">${pbtn(1, '🥇 1 vieta')}${pbtn(2, '🥈 2 vieta')}${pbtn(3, '🥉 3 vieta')}</div>
+    <div style="display:flex;gap:6px;margin-bottom:16px;">${pbtn(0, '🏅 Dalyvavo (be medalio)')}</div>
+    <div style="font-size:11px;color:var(--mut);font-weight:700;margin-bottom:6px;">Pergalės / Pralaimėjimai (nebūtina):</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
       <input class="inp" id="aec-wins" type="number" min="0" placeholder="Laimėta (W)" style="flex:1;font-family:inherit;">
       <input class="inp" id="aec-losses" type="number" min="0" placeholder="Pralaimėta (L)" style="flex:1;font-family:inherit;">
     </div>
@@ -19220,16 +19279,15 @@ function _assignExpCompForm(compId, title) {
 }
 
 async function _assignExpDoCompetition(compId) {
+  if (_aecPlace === null) { showToast('Pasirink vietą / medalį', 'error'); return; }
   try {
-    const place = parseInt(document.getElementById('aec-place')?.value);
     const wins = parseInt(document.getElementById('aec-wins')?.value);
     const losses = parseInt(document.getElementById('aec-losses')?.value);
-    // Jei jau yra įrašas šiam vaikui+varžyboms — atnaujinam, kitaip kuriam
     const { data: existing } = await sb.from('competition_results').select('id').eq('competition_id', compId).eq('kid_id', _assignExpKid.id).maybeSingle();
     const payload = {
       competition_id: compId, kid_id: _assignExpKid.id, status: 'participated', approval_status: 'pending',
       submitted_by: currentUser.id, submitted_role: 'trainer', target_trainer_id: currentUser.id,
-      placement: isNaN(place) ? null : place
+      placement: _aecPlace > 0 ? _aecPlace : null
     };
     if (!isNaN(wins)) payload.wins = wins;
     if (!isNaN(losses)) payload.losses = losses;
