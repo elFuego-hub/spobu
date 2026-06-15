@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v168</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v169</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19305,9 +19305,212 @@ async function _assignExpDoCompetition(compId) {
   } catch (e) { showToast('Nepavyko: ' + (e.message || ''), 'error', 6000); }
 }
 
-// 🏋️ KARJERA — ruošiama (EXP pagal pakopas, jautru — daroma atskirai kitame žingsnyje)
-function _assignExpCareer() {
-  showToast('🏋️ Karjeros EXP skyrimą ruošiu atskirai (kad pakopų EXP būtų tikslus). Kol kas — iššūkis arba varžybos.', 'info', 6000);
+// 🏋️ KARJERA — treneris skiria karjeros EXP pagal pakopas (ta pati skalė kaip vaiko).
+// Atskira būsena nuo vaiko (currentExercise/currentExerciseList), kad nesusimaišytų.
+// EXP prideda DB RPC approve_submission (kaip ir tvirtinant vaiko pateikimą) → tiksliai, sąžiningai.
+let _aecCareer = { ageGroup: null, cat: null, list: [], ex: null };
+
+// Amžiaus grupė ARBITRARIAM vaikui (ne currentKid) — atkartoja getKidAgeGroup logiką
+async function _aecResolveAgeGroup(kid) {
+  if (!kid?.gender) return null;
+  let age;
+  if (kid.birth_date) age = calculateAge(kid.birth_date);
+  else if (kid.birth_year) age = new Date().getFullYear() - kid.birth_year;
+  else return null;
+  const { data: groups } = await sb.from('exercise_age_groups').select('*').eq('gender', kid.gender);
+  if (!groups) return null;
+  return groups.find(g => age >= g.age_min && age <= g.age_max) || null;
+}
+
+// 1. Kategorijų sąrašas (po amžiaus grupės patikros — be jos pakopų EXP neapskaičiuojama)
+async function _assignExpCareer() {
+  const b = document.getElementById('assign-exp-body'); if (!b) return;
+  const kid = _assignExpKid;
+  b.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Kraunama...</div>';
+  const ag = await _aecResolveAgeGroup(kid);
+  if (!ag) {
+    b.innerHTML = `${_assignExpBack()}<div style="text-align:center;padding:24px;color:var(--br);font-size:12px;line-height:1.5;">Vaiko duomenys neužpildyti (lytis arba gimimo data).<br>Be jų pakopų EXP neapskaičiuojama tiksliai — užpildyk ⚙️ vaiko duomenis ir grįžk.</div>`;
+    return;
+  }
+  _aecCareer = { ageGroup: ag, cat: null, list: [], ex: null };
+  const cats = await getCareerCategories();
+  if (!cats.length) {
+    b.innerHTML = `${_assignExpBack()}<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Karjeros kategorijų nėra.</div>`;
+    return;
+  }
+  const sorted = cats.slice().sort((a, c) => (a.sort_order || 0) - (c.sort_order || 0));
+  b.innerHTML = _assignExpBack() +
+    `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-bottom:4px;">PASIRINK KATEGORIJĄ:</div>` +
+    `<div style="font-size:10px;color:var(--mut);margin-bottom:10px;">Amžiaus grupė: <b style="color:white;">${ag.name}</b></div>` +
+    sorted.map(c =>
+      `<div onclick="_aecCategory('${c.id}','${(c.name || '').replace(/'/g, "\\'")}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <span style="font-size:20px;">${(typeof CATEGORY_ICONS !== 'undefined' && CATEGORY_ICONS[c.name]) || c.icon || '🏋️'}</span>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${c.name || 'Kategorija'}</div></div>
+        <div style="color:var(--br);font-size:14px;">›</div>
+      </div>`).join('');
+}
+
+function _aecCatBack() {
+  return `<button onclick="_assignExpCareer()" style="background:none;border:none;color:var(--mut);font-size:12px;cursor:pointer;margin-bottom:10px;font-family:inherit;">‹ Kategorijos</button>`;
+}
+
+// 2. Kategorijos pratimai — su pakopomis (targets) pagal amžiaus grupę + vaiko PR
+async function _aecCategory(catId, catName) {
+  const b = document.getElementById('assign-exp-body'); if (!b) return;
+  const kid = _assignExpKid;
+  const ag = _aecCareer.ageGroup;
+  if (!ag) { _assignExpCareer(); return; }
+  _aecCareer.cat = { id: catId, name: catName };
+  b.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Kraunama...</div>';
+  const { data: exercises } = await sb.from('exercises')
+    .select('*').eq('category_id', catId).eq('is_active', true).order('sort_order');
+  if (!exercises || !exercises.length) {
+    b.innerHTML = _aecCatBack() + `<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Šioje kategorijoje pratimų nėra.</div>`;
+    return;
+  }
+  const exIds = exercises.map(e => e.id);
+  const [tRes, rRes] = await Promise.all([
+    sb.from('exercise_targets').select('*').in('exercise_id', exIds).eq('age_group_id', ag.id),
+    sb.from('kid_records').select('exercise_id, current_pr').eq('kid_id', kid.id).in('exercise_id', exIds)
+  ]);
+  const targets = tRes.data || [], records = rRes.data || [];
+  _aecCareer.list = exercises.map(ex => {
+    const exT = targets.filter(t => t.exercise_id === ex.id);
+    const target = exT.find(t => t.club_id === currentProfile?.club_id) || exT.find(t => t.club_id === null) || null;
+    const rec = records.find(r => r.exercise_id === ex.id);
+    return { ...ex, target, has_pr: !!rec, current_pr: rec?.current_pr || 0, ageGroup: ag };
+  });
+  const withTarget = _aecCareer.list.filter(ex => ex.target);
+  if (!withTarget.length) {
+    b.innerHTML = _aecCatBack() + `<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Šiai amžiaus grupei (${ag.name}) pakopų nėra — EXP neapskaičiuojama.</div>`;
+    return;
+  }
+  b.innerHTML = _aecCatBack() +
+    `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-bottom:10px;">${(catName || '').toUpperCase()} — PASIRINK PRATIMĄ:</div>` +
+    withTarget.map(ex => {
+      const cur = ex.has_pr ? ex.current_pr : null;
+      const pct = ex.has_pr ? careerExpPct(ex, ex.current_pr) : 0;
+      return `<div onclick="_aecPickExercise('${ex.id}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <span style="font-size:18px;">${(typeof CAREER_ICONS !== 'undefined' && CAREER_ICONS[ex.name]) || '🥋'}</span>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${ex.name}</div><div style="font-size:10px;color:var(--mut);">Dabar: ${cur !== null ? cur + ' ' + (ex.unit || '') : '–'} · ${pct} EXP</div></div>
+        <div style="color:var(--br);font-size:14px;">›</div>
+      </div>`;
+    }).join('');
+}
+
+function _aecExBack() {
+  const c = _aecCareer.cat;
+  return `<button onclick="_aecCategory('${c?.id}','${(c?.name || '').replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--mut);font-size:12px;cursor:pointer;margin-bottom:10px;font-family:inherit;">‹ Pratimai</button>`;
+}
+
+// 3. Pratimo forma — reikšmės įvedimas (ordinalams mygtukai, kitiems skaičius) + gyvas EXP
+function _aecPickExercise(exId) {
+  const b = document.getElementById('assign-exp-body'); if (!b) return;
+  const ex = (_aecCareer.list || []).find(e => e.id === exId);
+  if (!ex || !ex.target) { showToast('Pratimas nerastas', 'error'); return; }
+  _aecCareer.ex = ex;
+  const t = ex.target;
+  const lower = ex.lower_is_better;
+  const arrow = lower ? '↓ mažiau geriau' : '↑ daugiau geriau';
+  const isOrdinal = (ex.unit || '').indexOf('lygis') === 0;
+  const cur = ex.has_pr ? ex.current_pr : 0;
+
+  let inputHtml;
+  if (isOrdinal) {
+    const names = ['Juosmuo', 'Krūtinė', 'Galva', 'Virš galvos'];
+    inputHtml = `<div style="font-size:10px;color:var(--mut);margin-bottom:8px;">DABARTINIS: <b style="color:#FFD700;">${cur ? cur + ' · ' + (names[cur - 1] || '') : 'dar nebandyta'}</b> · pasirink pasiektą lygį:</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:14px;">` +
+      names.map((n, i) => `<div id="aec-lvl-${i + 1}" onclick="_aecSelectLevel(${i + 1})" style="padding:10px 6px;border-radius:11px;border:1px solid var(--bdr);background:rgba(255,255,255,.03);text-align:center;cursor:pointer;font-size:12px;font-weight:800;${(i + 1) <= cur ? 'opacity:.4;' : ''}">${['🥉', '🥈', '🥇', '🏆'][i]} ${i + 1} · ${n}</div>`).join('') +
+      `</div><input type="hidden" id="aec-val">`;
+  } else {
+    inputHtml = `<input class="inp" id="aec-val" inputmode="decimal" oninput="_aecRecalc()" placeholder="${lower ? 'pvz. 4,5' : 'naujas rezultatas'}" style="width:100%;margin:4px 0 14px;font-family:inherit;">`;
+  }
+
+  b.innerHTML = _aecExBack() + `
+    <div style="font-size:15px;font-weight:800;color:white;margin-bottom:4px;">${(typeof CAREER_ICONS !== 'undefined' && CAREER_ICONS[ex.name]) || '🥋'} ${ex.name}</div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:10px;line-height:1.5;"><b style="color:white;">${ex.ageGroup.name}</b> · ${arrow}<br>🥉 ${t.bronze} · 🥈 ${t.silver} · 🥇 ${t.gold} · 🏆 ${t.completed} ${ex.unit || ''}</div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:6px;">Dabartinis PR: <b style="color:white;">${ex.has_pr ? ex.current_pr + ' ' + (ex.unit || '') : '–'}</b></div>
+    ${inputHtml}
+    <div id="aec-exp" style="text-align:center;font-size:14px;font-weight:800;color:var(--mut);margin-bottom:14px;">+0 EXP</div>
+    <button id="aec-submit" onclick="_aecSubmit()" style="width:100%;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Skirti EXP</button>`;
+}
+
+// Ordinalo lygio pasirinkimas (pvz. mawashi aukštis 1–4)
+function _aecSelectLevel(n) {
+  const ex = _aecCareer.ex; if (!ex) return;
+  const cur = ex.current_pr || 0;
+  if (n <= cur) { showToast('Šis lygis jau pasiektas 💪', 'error'); return; }
+  const v = document.getElementById('aec-val'); if (v) v.value = n;
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('aec-lvl-' + i);
+    if (!el) continue;
+    el.style.borderColor = (i === n) ? 'var(--br)' : 'var(--bdr)';
+    el.style.background = (i === n) ? 'rgba(255,77,0,.15)' : 'rgba(255,255,255,.03)';
+  }
+  _aecRecalc();
+}
+
+// Gyvas EXP peržiūra (ta pati tier-inkarinė skalė kaip vaiko)
+function _aecRecalc() {
+  const ex = _aecCareer.ex; if (!ex || !ex.target) return;
+  const expEl = document.getElementById('aec-exp'); if (!expEl) return;
+  const raw = (document.getElementById('aec-val')?.value || '').trim().replace(',', '.');
+  const newVal = parseFloat(raw);
+  const oldPr = ex.current_pr || 0;
+  const lower = ex.lower_is_better;
+  if (raw === '' || isNaN(newVal) || (!lower && newVal <= 0) || (lower && newVal < 0)) {
+    expEl.textContent = '+0 EXP'; expEl.style.color = 'var(--mut)'; return;
+  }
+  const isPR = lower ? (!ex.has_pr || newVal < oldPr) : (newVal > oldPr);
+  if (!isPR) { expEl.textContent = '+0 EXP (ne PR)'; expEl.style.color = 'var(--mut)'; return; }
+  const newExp = careerExpPct(ex, newVal);
+  const oldExp = ex.has_pr ? careerExpPct(ex, oldPr) : 0;
+  const delta = Math.max(0, newExp - oldExp);
+  const t = ex.target;
+  const rch = x => lower ? newVal <= parseFloat(x) : newVal >= parseFloat(x);
+  let medal = '';
+  if (rch(t.completed)) medal = ' 🏆'; else if (rch(t.gold)) medal = ' 🥇'; else if (rch(t.silver)) medal = ' 🥈'; else if (rch(t.bronze)) medal = ' 🥉';
+  expEl.textContent = `+${delta} EXP${medal}`;
+  expEl.style.color = delta > 0 ? 'var(--grn)' : 'var(--mut)';
+}
+
+// Pateikimas: insert result_submissions (pending) → approve_submission RPC (prideda EXP, atnaujina PR)
+async function _aecSubmit() {
+  const ex = _aecCareer.ex; if (!ex || !ex.target) return;
+  const kid = _assignExpKid;
+  const raw = (document.getElementById('aec-val')?.value || '').trim().replace(',', '.');
+  const newVal = parseFloat(raw);
+  const oldPr = ex.current_pr || 0;
+  const lower = ex.lower_is_better;
+  if (raw === '' || isNaN(newVal)) { showToast('❌ Įvesk rezultatą', 'error'); return; }
+  if (!lower && newVal <= 0) { showToast('❌ Rezultatas turi būti didesnis už 0', 'error'); return; }
+  if (lower && newVal < 0) { showToast('❌ Rezultatas negali būti neigiamas', 'error'); return; }
+  const isPR = lower ? (!ex.has_pr || newVal < oldPr) : (newVal > oldPr);
+  if (!isPR) { showToast(lower ? '❌ Turi būti mažesnis už dabartinį PR' : '❌ Turi būti didesnis už dabartinį PR', 'error', 4000); return; }
+
+  // expGain — karjeros pratimo EXP, GARANTUOTAI 0–100 ribose (ta pati apsauga kaip vaiko)
+  let expGain = Math.max(0, careerExpPct(ex, newVal) - (ex.has_pr ? careerExpPct(ex, oldPr) : 0));
+  expGain = Math.min(100, Math.max(0, expGain));
+  if (!isFinite(expGain) || isNaN(expGain)) expGain = 0;
+
+  const btn = document.getElementById('aec-submit');
+  if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.disabled = true; btn.textContent = 'SKIRIAMA...'; btn.style.opacity = '.6'; }
+  try {
+    const { data: ins, error } = await sb.from('result_submissions').insert({
+      kid_id: kid.id, exercise_id: ex.id, category_id: ex.category_id, trainer_id: currentUser.id,
+      old_pr: oldPr, new_value: newVal, value: newVal, exp_gain: expGain,
+      comment: 'Trenerio įrašyta', status: 'pending'
+    }).select('id').single();
+    if (error) throw error;
+    const { error: aerr } = await sb.rpc('approve_submission', { submission_id: ins.id, trainer: currentUser.id });
+    if (aerr) throw aerr;
+    showToast(`✅ Karjeros rezultatas įrašytas — +${expGain} EXP priskirta!`, 'success', 3500);
+    const em = document.getElementById('assign-exp-modal'); if (em) em.remove();
+    if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.dataset.busy = ''; btn.textContent = '✅ Skirti EXP'; btn.style.opacity = '1'; }
+    showToast('Nepavyko: ' + (e.message || ''), 'error', 6000);
+  }
 }
 
 // ════════════════════════════════════════
