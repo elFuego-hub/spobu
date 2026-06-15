@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v174</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v175</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -8358,7 +8358,8 @@ async function showKidDetail(kidId) {
   
   const age = kid.birth_date ? calculateAge(kid.birth_date) : (new Date().getFullYear() - kid.birth_year);
   const hasAccount = !!kid.user_id;
-  
+  const kidEmail = await _fetchKidEmail(kid);
+
   const html = `
     <div class="sect">
       <!-- Vaiko info -->
@@ -8398,6 +8399,7 @@ async function showKidDetail(kidId) {
             🔒 Vaikas dar neturi savo prisijungimo.<br>
             Treneris pildo rezultatus, tu stebėsi per savo paskyrą.
           </div>
+          ${kidEmail ? `<div style="font-size:12px;margin-bottom:10px;">📧 El. paštas: <strong>${kidEmail}</strong> <span style="color:var(--mut);">(laukia paskyros)</span></div>` : ''}
           <button class="btn btng" style="width:100%;" onclick="showAddKidAccess('${kidId}')">
             ➕ PRIDĖTI VAIKO PRIEIGĄ
           </button>
@@ -8406,6 +8408,7 @@ async function showKidDetail(kidId) {
             📱 Vaikas turi savo paskyrą<br>
             ✓ Gali prisijungti pats ir teikti rezultatus
           </div>
+          ${kidEmail ? `<div style="font-size:12px;margin-top:8px;">📧 El. paštas: <strong style="color:var(--text);">${kidEmail}</strong></div>` : ''}
         `}
       </div>
       
@@ -21377,6 +21380,18 @@ function _renderTrainerStatHero() {
 
 let currentKidDetails = null;
 
+// Vaiko el. paštas: jei turi paskyrą → profiles.email (per kids.user_id), kitaip kids.pending_email
+async function _fetchKidEmail(kid) {
+  if (!kid) return null;
+  if (kid.user_id) {
+    try {
+      const { data: p } = await sb.from('profiles').select('email').eq('id', kid.user_id).maybeSingle();
+      if (p?.email) return p.email;
+    } catch (_) {}
+  }
+  return kid.pending_email || null;
+}
+
 async function openKidDetailsModal(kidId) {
   console.log('🔵 [openKidDetailsModal] STARTAS, kidId:', kidId);
   
@@ -21427,7 +21442,8 @@ async function openKidDetailsModal(kidId) {
   }
   
   const hasAccount = !!fullKid.user_id;
-  
+  const kidEmail = await _fetchKidEmail(fullKid);
+
   document.getElementById('kd-info').innerHTML = `
     <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;">
       <div style="color:var(--mut);">Vardas:</div>
@@ -21448,6 +21464,8 @@ async function openKidDetailsModal(kidId) {
       <div>${fullKid.is_anonymous ? '🔒 Slėpiamas' : '👁️ Matomas viešai'}</div>
       <div style="color:var(--mut);">Paskyra:</div>
       <div>${hasAccount ? '✅ Turi savo prisijungimą' : '⚪ Tik tėvų stebėjimas'}</div>
+      <div style="color:var(--mut);">El. paštas:</div>
+      <div>${kidEmail ? `<strong>${kidEmail}</strong>${!hasAccount ? ' <span style="color:var(--mut);font-size:11px;">(laukia paskyros)</span>' : ''}` : '–'}</div>
     </div>
   `;
   
