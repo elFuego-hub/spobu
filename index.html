@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v166</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v167</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19057,6 +19057,7 @@ async function openGroupView(groupId, silent) {
       </div>
       ${renderKidIcons(k)}
       ${pend[k.id] ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;box-shadow:0 0 8px rgba(255,77,0,.5);" title="Laukia patvirtinimo">${pend[k.id]}</div>` : ''}
+      ${!k.has_phone ? `<button onclick="event.stopPropagation();openAssignExp('${k.id}')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;" title="Skirti EXP (vaikas be telefono)">➕ EXP</button>` : ''}
       <div style="font-size:14px;color:var(--mut);flex-shrink:0;pointer-events:none;">›</div>
     </div>
   `).join('');
@@ -19095,6 +19096,160 @@ function refreshGroupViewIfOpen() {
   if (currentGroupViewId && document.getElementById('tr-group-view')?.classList.contains('on')) {
     openGroupView(currentGroupViewId, true);
   }
+}
+
+// ════════════════════════════════════════
+// ➕ SKIRTI EXP be-telefono vaikui (treneris pateikia + iškart patvirtina → EXP per esamus DB trigerius)
+// ════════════════════════════════════════
+let _assignExpKid = null;
+
+function _assignExpBack() {
+  return `<button onclick="_assignExpStep1()" style="background:none;border:none;color:var(--mut);font-size:12px;cursor:pointer;margin-bottom:10px;font-family:inherit;">‹ Atgal</button>`;
+}
+
+function openAssignExp(kidId) {
+  const kid = (allTrainerKids || []).find(k => k.id === kidId);
+  if (!kid) { showToast('Vaikas nerastas', 'error'); return; }
+  _assignExpKid = kid;
+  const old = document.getElementById('assign-exp-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'assign-exp-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+      <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">➕ SKIRTI EXP</div>
+        <button onclick="document.getElementById('assign-exp-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+      </div>
+      <div id="assign-exp-body" style="padding:16px;"></div>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+  _assignExpStep1();
+}
+
+function _assignExpStep1() {
+  const b = document.getElementById('assign-exp-body'); if (!b) return;
+  const kid = _assignExpKid;
+  const name = `${kid.first_name || 'Vaikas'} ${kid.last_name || ''}`.trim();
+  const btn = 'width:100%;text-align:left;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;color:white;font-family:inherit;display:flex;align-items:center;gap:14px;';
+  b.innerHTML = `
+    <div style="font-size:12px;color:var(--mut);margin-bottom:14px;">Vaikui <b style="color:white;">${name}</b> (be telefono) — pasirink, už ką skirti EXP:</div>
+    <button onclick="_assignExpCareer()" style="${btn}"><span style="font-size:26px;">🏋️</span><div><div style="font-size:14px;font-weight:800;">Karjera</div><div style="font-size:11px;color:var(--mut);">Pratimo rezultatas (EXP pagal pakopas)</div></div></button>
+    <button onclick="_assignExpChallengeList()" style="${btn}"><span style="font-size:26px;">🎯</span><div><div style="font-size:14px;font-weight:800;">Iššūkis</div><div style="font-size:11px;color:var(--mut);">Pažymėti iššūkį atliktą</div></div></button>
+    <button onclick="_assignExpCompetitionList()" style="${btn}"><span style="font-size:26px;">🏆</span><div><div style="font-size:14px;font-weight:800;">Varžybos</div><div style="font-size:11px;color:var(--mut);">Įrašyti varžybų rezultatą</div></div></button>`;
+}
+
+// 🎯 IŠŠŪKIS — pasirinkti tinkamą trenerio iššūkį → pažymėti atliktą (DB trigeris prideda EXP)
+async function _assignExpChallengeList() {
+  const b = document.getElementById('assign-exp-body'); if (!b) return;
+  const kid = _assignExpKid;
+  b.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Kraunama...</div>';
+  const { data: chs } = await sb.from('challenges')
+    .select('id, title, icon, exp_reward, target_kid_id, group_id, target_audience')
+    .eq('trainer_id', currentUser.id).eq('is_active', true)
+    .order('created_at', { ascending: false }).limit(100);
+  const applicable = (chs || []).filter(c =>
+    c.target_kid_id === kid.id ||
+    (c.group_id && c.group_id === kid.group_id) ||
+    (c.target_audience === 'all_club' || c.target_audience === 'all')
+  );
+  let done = new Set();
+  if (applicable.length) {
+    const { data: subs } = await sb.from('challenge_submissions').select('challenge_id').eq('kid_id', kid.id).eq('status', 'approved').in('challenge_id', applicable.map(c => c.id));
+    (subs || []).forEach(s => done.add(s.challenge_id));
+  }
+  const list = applicable.filter(c => !done.has(c.id));
+  if (!list.length) {
+    b.innerHTML = `${_assignExpBack()}<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Nėra tinkamų neatliktų iššūkių.<br>Sukurk iššūkį (🎯 grupei/vaikui), tada čia jį pažymėsi atliktą.</div>`;
+    return;
+  }
+  b.innerHTML = _assignExpBack() + `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-bottom:10px;">PASIRINK IŠŠŪKĮ:</div>` + list.map(c => `
+    <div onclick="_assignExpDoChallenge('${c.id}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <span style="font-size:20px;">${c.icon || '🎯'}</span>
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${c.title || 'Iššūkis'}</div><div style="font-size:10px;color:var(--mut);">+${c.exp_reward || 0} EXP</div></div>
+      <div style="color:var(--br);font-size:14px;">›</div>
+    </div>`).join('');
+}
+
+async function _assignExpDoChallenge(challengeId) {
+  if (!confirm('Pažymėti šį iššūkį kaip atliktą? Vaikas gaus EXP.')) return;
+  try {
+    const { data: ins, error } = await sb.from('challenge_submissions')
+      .insert({ challenge_id: challengeId, kid_id: _assignExpKid.id, trainer_id: currentUser.id, value: 'Trenerio pažymėta', status: 'pending' })
+      .select('id').single();
+    if (error) throw error;
+    const { error: aerr } = await sb.from('challenge_submissions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', ins.id).eq('status', 'pending');
+    if (aerr) throw aerr;
+    showToast('✅ Iššūkis pažymėtas — EXP priskirta!', 'success');
+    const em = document.getElementById('assign-exp-modal'); if (em) em.remove();
+    if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
+  } catch (e) { showToast('Nepavyko: ' + (e.message || ''), 'error', 6000); }
+}
+
+// 🏆 VARŽYBOS — pasirinkti varžybas → įrašyti rezultatą (DB trigeris prideda EXP + medalį)
+async function _assignExpCompetitionList() {
+  const b = document.getElementById('assign-exp-body'); if (!b) return;
+  b.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Kraunama...</div>';
+  const { data: comps } = await sb.from('competitions').select('id, title, event_date').eq('club_id', currentProfile?.club_id).order('event_date', { ascending: false }).limit(50);
+  if (!comps || !comps.length) {
+    b.innerHTML = `${_assignExpBack()}<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Klube nėra varžybų.<br>Pirma sukurk varžybas.</div>`;
+    return;
+  }
+  b.innerHTML = _assignExpBack() + `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-bottom:10px;">PASIRINK VARŽYBAS:</div>` + comps.map(c => `
+    <div onclick="_assignExpCompForm('${c.id}','${(c.title || '').replace(/'/g, "\\'")}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <span style="font-size:20px;">🏆</span>
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${c.title || 'Varžybos'}</div><div style="font-size:10px;color:var(--mut);">${c.event_date ? new Date(c.event_date).toLocaleDateString('lt-LT') : ''}</div></div>
+      <div style="color:var(--br);font-size:14px;">›</div>
+    </div>`).join('');
+}
+
+function _assignExpCompForm(compId, title) {
+  const b = document.getElementById('assign-exp-body'); if (!b) return;
+  b.innerHTML = _assignExpBack() + `
+    <div style="font-size:14px;font-weight:800;color:white;margin-bottom:4px;">🏆 ${title}</div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:14px;">Įrašyk rezultatą — EXP priskirs automatiškai.</div>
+    <label style="font-size:11px;color:var(--mut);font-weight:700;">Vieta (jei prizinė, nebūtina)</label>
+    <input class="inp" id="aec-place" type="number" min="1" placeholder="pvz. 1 / 2 / 3 arba palik tuščią" style="width:100%;margin:4px 0 12px;font-family:inherit;">
+    <label style="font-size:11px;color:var(--mut);font-weight:700;">Pergalės / Pralaimėjimai (nebūtina)</label>
+    <div style="display:flex;gap:8px;margin:4px 0 16px;">
+      <input class="inp" id="aec-wins" type="number" min="0" placeholder="Laimėta (W)" style="flex:1;font-family:inherit;">
+      <input class="inp" id="aec-losses" type="number" min="0" placeholder="Pralaimėta (L)" style="flex:1;font-family:inherit;">
+    </div>
+    <button onclick="_assignExpDoCompetition('${compId}')" style="width:100%;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Skirti EXP</button>`;
+}
+
+async function _assignExpDoCompetition(compId) {
+  try {
+    const place = parseInt(document.getElementById('aec-place')?.value);
+    const wins = parseInt(document.getElementById('aec-wins')?.value);
+    const losses = parseInt(document.getElementById('aec-losses')?.value);
+    // Jei jau yra įrašas šiam vaikui+varžyboms — atnaujinam, kitaip kuriam
+    const { data: existing } = await sb.from('competition_results').select('id').eq('competition_id', compId).eq('kid_id', _assignExpKid.id).maybeSingle();
+    const payload = {
+      competition_id: compId, kid_id: _assignExpKid.id, status: 'participated', approval_status: 'pending',
+      submitted_by: currentUser.id, submitted_role: 'trainer', target_trainer_id: currentUser.id,
+      placement: isNaN(place) ? null : place
+    };
+    if (!isNaN(wins)) payload.wins = wins;
+    if (!isNaN(losses)) payload.losses = losses;
+    let resId;
+    if (existing) {
+      const { error } = await sb.from('competition_results').update(payload).eq('id', existing.id); if (error) throw error; resId = existing.id;
+    } else {
+      const { data: ins, error } = await sb.from('competition_results').insert(payload).select('id').single(); if (error) throw error; resId = ins.id;
+    }
+    const { error: aerr } = await sb.from('competition_results').update({ approval_status: 'approved', approved_by: currentUser.id, approved_at: new Date().toISOString() }).eq('id', resId).eq('approval_status', 'pending');
+    if (aerr) throw aerr;
+    showToast('✅ Varžybų rezultatas įrašytas — EXP priskirta!', 'success');
+    const em = document.getElementById('assign-exp-modal'); if (em) em.remove();
+    if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
+  } catch (e) { showToast('Nepavyko: ' + (e.message || ''), 'error', 6000); }
+}
+
+// 🏋️ KARJERA — ruošiama (EXP pagal pakopas, jautru — daroma atskirai kitame žingsnyje)
+function _assignExpCareer() {
+  showToast('🏋️ Karjeros EXP skyrimą ruošiu atskirai (kad pakopų EXP būtų tikslus). Kol kas — iššūkis arba varžybos.', 'info', 6000);
 }
 
 // ════════════════════════════════════════
