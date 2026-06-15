@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v164</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v165</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -20410,10 +20410,10 @@ async function openTrainerSettings() {
   if (!modal) {
     // Taškų lentelės ir trenerio kelio turinys
     const stagesRows = TRAINER_STAGES.map(s => `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--bdr);">
+      <div data-stage="${s.name}" style="display:flex;align-items:center;gap:10px;padding:8px;border-bottom:.5px solid var(--bdr);">
         <div style="font-family:'Noto Serif JP',serif;font-size:22px;color:${s.color};width:30px;text-align:center;">${s.kanji}</div>
         <div style="flex:1;">
-          <div style="font-size:12px;font-weight:800;color:${s.color};">${s.emoji} ${s.name}</div>
+          <div style="font-size:12px;font-weight:800;color:${s.color};">${s.emoji} ${s.name} <span class="trs-here" style="display:none;font-size:8px;color:#FF8C00;font-weight:800;letter-spacing:.5px;">· ESI ČIA</span></div>
           <div style="font-size:9px;color:var(--mut);">${s.meaning}</div>
         </div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--mut);">${s.minExp}+ tšk.</div>
@@ -20517,15 +20517,6 @@ async function openTrainerSettings() {
               • Jei vienam tvirtini „pro pirštus", o kitą vertini griežtai — statistika tampa <b style="color:white;">neteisinga ir nesąžininga</b> kitų vaikų atžvilgiu.<br>
               • Tikslūs duomenys = teisingi reitingai = motyvuoti vaikai. 🥋
             </div>
-          </div>
-        </div>
-
-        <!-- 🥋 TRENERIO LYGIAI (paaiškinimas) -->
-        <div style="padding:8px 16px 0;">
-          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
-            <div style="font-size:13px;font-weight:800;color:white;">🥋 Trenerio lygiai</div>
-            <div style="font-size:10px;color:var(--mut);margin:2px 0 10px;">99 lygiai · 8 pakopos. Taškai: <b style="color:white;">+1</b> už kiekvieną patvirtinimą, <b style="color:white;">+1</b> už sukurtą iššūkį.</div>
-            <div id="tr-stages-list"></div>
           </div>
         </div>
 
@@ -20647,29 +20638,22 @@ async function openTrainerSettings() {
   updateSoundToggleUI();
   updatePushToggleUI();
   loadTrainerPushPrefs();
-  loadTrainerStagesInfo();
+  _highlightTrainerStageRow();
   if (typeof updateZoomButtonsUI === 'function') updateZoomButtonsUI();
 
   modal.style.display = 'flex';
 }
 
-// 🥋 Trenerio lygių (pakopų) sąrašas nustatymuose — paaiškinimas + dabartinė pakopa pažymėta
-function loadTrainerStagesInfo() {
-  const el = document.getElementById('tr-stages-list');
-  if (!el || typeof TRAINER_STAGES === 'undefined') return;
-  const curStage = trainerLevelInfo?.stage;
-  el.innerHTML = TRAINER_STAGES.map(s => {
-    const isCur = s.name === curStage;
-    const range = (s.maxExp === Infinity) ? `${s.minExp.toLocaleString('lt-LT')}+ tšk.` : `${s.minExp.toLocaleString('lt-LT')}–${s.maxExp.toLocaleString('lt-LT')} tšk.`;
-    const lvlStart = (typeof getTrainerStageInfo === 'function') ? getTrainerStageInfo(s.minExp).globalLevel : 1;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;margin-bottom:4px;background:${isCur ? 'rgba(255,77,0,.15)' : 'rgba(255,255,255,.03)'};border:.5px solid ${isCur ? 'rgba(255,77,0,.45)' : 'var(--bdr)'};">
-      <span style="font-size:16px;flex-shrink:0;">${s.emoji}</span>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:11px;font-weight:800;color:${isCur ? '#FF8C00' : 'white'};">${s.name}${isCur ? ' · ESI ČIA' : ''}</div>
-        <div style="font-size:8px;color:var(--mut);margin-top:1px;">nuo LVL ${lvlStart} · ${range}</div>
-      </div>
-    </div>`;
-  }).join('');
+// 🥋 Pažymi DABARTINĘ pakopą esamame sutraukiamame „Trenerio kelias" sąraše (ESI ČIA)
+function _highlightTrainerStageRow() {
+  const cur = trainerLevelInfo?.stage;
+  document.querySelectorAll('#trs-stages-body [data-stage]').forEach(row => {
+    const isCur = row.getAttribute('data-stage') === cur;
+    row.style.background = isCur ? 'rgba(255,77,0,.15)' : 'transparent';
+    row.style.borderRadius = '8px';
+    const tag = row.querySelector('.trs-here');
+    if (tag) tag.style.display = isCur ? 'inline' : 'none';
+  });
 }
 
 // 🔔 Push tipų jungikliai (treneris): messages/announcements/submissions → profiles.push_prefs
