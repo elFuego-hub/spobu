@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v175</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v176</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1110,6 +1110,10 @@ select.inp option{background:#222;}
     <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;line-height:1;">SPO<span style="color:var(--br);text-shadow:0 0 10px rgba(255,77,0,.6);">BU</span><span style="color:var(--br);text-shadow:0 0 10px rgba(255,77,0,.6);">.</span></div>
       <div style="display:flex;gap:5px;align-items:center;">
+        <!-- LANKOMUMO MYGTUKAS -->
+        <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidAttendance()" id="v-att-btn" title="Lankomumas">
+          📋
+        </div>
         <!-- VARPELIO MYGTUKAS -->
         <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleNotifications()" id="v-notif-btn">
           🔔
@@ -5906,7 +5910,10 @@ async function loadParentKidFeed() {
     const moreBlock = rest.length ? `<button onclick="openParentFeedModal()" style="width:100%;padding:11px;margin-top:2px;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;border-radius:10px;cursor:pointer;font-family:inherit;">Rodyti visus (${items.length}) →</button>` : '';
 
     const mcBtn = '<button onclick="openMonthCard()" style="width:100%;padding:12px;margin:0 0 12px;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;border:none;border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📲 Mėnesio kortelė · dalintis</button>';
-    list.innerHTML = heroReport + mcBtn + visible + moreBlock;
+    // 📋 Lankomumo kortelė (savaitės/mėnesio rezultatas + tvarkaraštis)
+    let attCard = '';
+    try { const aSt = await _attStatsForKid(k); if (aSt) attCard = `<div style="margin:0 0 12px;padding:14px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;"><div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;">📋 LANKOMUMAS</div>${_attPanelHtml(aSt)}</div>`; } catch (_) {}
+    list.innerHTML = heroReport + attCard + mcBtn + visible + moreBlock;
   } catch (e) { console.warn('parent feed', e); list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant feed</div>'; }
 }
 
@@ -19068,6 +19075,8 @@ async function openGroupView(groupId, silent) {
       </div>
     </div>
 
+    <button onclick="openAttendance('${gObj.id}')" style="${gvBtn}width:calc(100% - 32px);margin:0 16px 8px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;display:block;">📋 ŽYMĖTI LANKOMUMĄ</button>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 16px 10px;">
       <button onclick="openCreateChallenge({groupId:'${gObj.id}'})" style="${gvBtn}background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);">🎯 IŠŠŪKIS GRUPEI</button>
       <button onclick="composeMessageToGroup('${gObj.id}', '${(gObj.name || '').replace(/'/g, "\\'")}')" style="${gvBtn}background:rgba(99,102,241,.12);color:#8b8df5;border:.5px solid rgba(99,102,241,.35);">💬 PRANEŠIMAI</button>
@@ -19087,6 +19096,197 @@ function refreshGroupViewIfOpen() {
   if (currentGroupViewId && document.getElementById('tr-group-view')?.classList.contains('on')) {
     openGroupView(currentGroupViewId, true);
   }
+}
+
+// ════════════════════════════════════════
+// 📋 LANKOMUMAS — treneris žymi; EXP už pilną sav.(15)/mėn.(100); rodoma vaikui+tėvui
+// (DB: server-lankomumas.sql — attendance + attendance_bonuses; EXP per kid_exp_adjustments)
+// ════════════════════════════════════════
+// — periodų helperiai —
+function _attYmd(d){ const x=new Date(d); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; }
+function _attDayNo(d){ const js=new Date(d).getDay(); return js===0?7:js; }
+function _attWeekStart(d){ const x=new Date(d); x.setHours(0,0,0,0); const day=x.getDay()||7; x.setDate(x.getDate()-(day-1)); return x; }
+function _attWeekEnd(d){ const s=_attWeekStart(d); const e=new Date(s); e.setDate(e.getDate()+6); return e; }
+function _attWeekKey(d){ const ws=_attWeekStart(d); const jan4=_attWeekStart(new Date(ws.getFullYear(),0,4)); const wk=Math.round((ws-jan4)/(7*86400000))+1; return `${ws.getFullYear()}-W${String(Math.max(1,wk)).padStart(2,'0')}`; }
+function _attMonthKey(d){ const x=new Date(d); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}`; }
+function _attDatesInRange(trainingDays, start, end){ const days=(trainingDays||[]).filter(d=>d>=1&&d<=7); const out=[]; const cur=new Date(start); cur.setHours(0,0,0,0); const e=new Date(end); e.setHours(0,0,0,0); while(cur<=e){ if(days.includes(_attDayNo(cur))) out.push(_attYmd(cur)); cur.setDate(cur.getDate()+1);} return out; }
+function _attWeekDates(trainingDays, d){ return _attDatesInRange(trainingDays, _attWeekStart(d), _attWeekEnd(d)); }
+function _attMonthDates(trainingDays, d){ const x=new Date(d); return _attDatesInRange(trainingDays, new Date(x.getFullYear(),x.getMonth(),1), new Date(x.getFullYear(),x.getMonth()+1,0)); }
+
+// — Trenerio žymėjimo langas —
+let _attState = null; // { groupId, date, group, kids, present:Set }
+
+async function openAttendance(groupId){
+  const g=(trainerGroupsCache||[]).find(x=>x.id===groupId);
+  if(!g){ showToast('Grupė nerasta','error'); return; }
+  const kids=(allTrainerKids||[]).filter(k=>k.group_id===groupId);
+  if(!kids.length){ showToast('Grupėje nėra vaikų','error'); return; }
+  _attState={ groupId, date:_attYmd(new Date()), group:g, kids, present:new Set(kids.map(k=>k.id)) };
+  const old=document.getElementById('att-modal'); if(old) old.remove();
+  const m=document.createElement('div');
+  m.id='att-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
+  m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">📋 LANKOMUMAS</div>
+      <button onclick="document.getElementById('att-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+    </div>
+    <div style="padding:16px;">
+      <div style="font-size:12px;color:var(--mut);margin-bottom:10px;"><b style="color:white;">${g.name}</b> · pažymėk atėjusius vaikus</div>
+      <label style="font-size:11px;color:var(--mut);font-weight:700;">Treniruotės data</label>
+      <input type="date" id="att-date" value="${_attState.date}" onchange="_attReload()" class="inp" style="width:100%;margin:4px 0 12px;font-family:inherit;">
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button onclick="_attSetAll(true)" style="flex:1;padding:9px;border-radius:10px;border:.5px solid rgba(34,197,94,.4);background:rgba(34,197,94,.12);color:var(--grn);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">✓ Visi atėjo</button>
+        <button onclick="_attSetAll(false)" style="flex:1;padding:9px;border-radius:10px;border:.5px solid var(--bdr);background:var(--card);color:var(--mut);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">Nieko</button>
+      </div>
+      <div id="att-list"></div>
+      <button id="att-confirm" onclick="_attConfirm()" style="width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Patvirtinti</button>
+      <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Pilna savaitė → +15 EXP · pilnas mėnuo → +100 EXP.<br>Neįvykusios treniruotės nežymimos — jos neskaičiuojamos.</div>
+    </div></div>`;
+  m.onclick=(e)=>{ if(e.target===m) m.remove(); };
+  document.body.appendChild(m);
+  await _attReload();
+}
+
+async function _attReload(){
+  if(!_attState) return;
+  const dateEl=document.getElementById('att-date');
+  if(dateEl) _attState.date=dateEl.value||_attYmd(new Date());
+  const { data: existing } = await sb.from('attendance').select('kid_id, present').eq('group_id',_attState.groupId).eq('session_date',_attState.date);
+  if(existing && existing.length){ _attState.present=new Set(existing.filter(r=>r.present).map(r=>r.kid_id)); }
+  _attRenderList();
+}
+
+function _attRenderList(){
+  const el=document.getElementById('att-list'); if(!el||!_attState) return;
+  el.innerHTML=_attState.kids.map(k=>{
+    const on=_attState.present.has(k.id);
+    return `<div onclick="_attToggle('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:6px;border-radius:10px;cursor:pointer;background:${on?'rgba(34,197,94,.1)':'var(--card)'};border:.5px solid ${on?'rgba(34,197,94,.4)':'var(--bdr)'};">
+      <div style="width:30px;height:30px;border-radius:50%;${k.avatar_url?`background-image:url('${k.avatar_url}');background-size:cover;background-position:center;`:`background:${_attState.group.color||'#FF4D00'};`}display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:800;flex-shrink:0;">${k.avatar_url?'':(k.first_name?.[0]||'?')}</div>
+      <div style="flex:1;min-width:0;font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
+      <div style="font-size:18px;flex-shrink:0;">${on?'✅':'⬜'}</div>
+    </div>`;
+  }).join('');
+  const btn=document.getElementById('att-confirm');
+  if(btn && !btn.dataset.busy) btn.textContent=`✅ Patvirtinti (${_attState.present.size}/${_attState.kids.length})`;
+}
+
+function _attToggle(kidId){ if(!_attState) return; if(_attState.present.has(kidId)) _attState.present.delete(kidId); else _attState.present.add(kidId); _attRenderList(); }
+function _attSetAll(v){ if(!_attState) return; _attState.present=v?new Set(_attState.kids.map(k=>k.id)):new Set(); _attRenderList(); }
+
+async function _attConfirm(){
+  if(!_attState) return;
+  const btn=document.getElementById('att-confirm');
+  if(btn){ if(btn.dataset.busy) return; btn.dataset.busy='1'; btn.disabled=true; btn.textContent='SAUGOMA...'; btn.style.opacity='.6'; }
+  try{
+    const nowISO=new Date().toISOString();
+    const rows=_attState.kids.map(k=>({ group_id:_attState.groupId, kid_id:k.id, session_date:_attState.date, present:_attState.present.has(k.id), marked_by:currentUser.id, updated_at:nowISO }));
+    const { error }=await sb.from('attendance').upsert(rows,{ onConflict:'group_id,kid_id,session_date' });
+    if(error) throw error;
+    showToast('✅ Lankomumas išsaugotas','success');
+    await _attAwardBonuses(_attState.group, _attState.date);
+    const em=document.getElementById('att-modal'); if(em) em.remove();
+    if(typeof refreshGroupViewIfOpen==='function') refreshGroupViewIfOpen();
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.dataset.busy=''; btn.style.opacity='1'; }
+    _attRenderList();
+    showToast('❌ Nepavyko: '+(e.message||''),'error',6000);
+  }
+}
+
+// — EXP bonusai: vardiklis=įvykusios (held); pilna = atėjo į visas įvykusias —
+async function _attAwardBonuses(group, dateStr){
+  const td=group.training_days||[];
+  if(!td.length) return;
+  const d=new Date(dateStr+'T12:00:00');
+  const weekDates=_attWeekDates(td, d);
+  if(weekDates.length && dateStr===weekDates[weekDates.length-1]){
+    await _attFinalizePeriod(group,'week',_attWeekKey(d),_attWeekStart(d),_attWeekEnd(d),15,'🗓️ Pilnas savaitės lankomumas');
+  }
+  const monDates=_attMonthDates(td, d);
+  if(monDates.length && dateStr===monDates[monDates.length-1]){
+    const ms=new Date(d.getFullYear(),d.getMonth(),1), me=new Date(d.getFullYear(),d.getMonth()+1,0);
+    await _attFinalizePeriod(group,'month',_attMonthKey(d),ms,me,100,'🗓️ Pilnas mėnesio lankomumas');
+  }
+}
+
+async function _attFinalizePeriod(group, periodType, periodKey, start, end, exp, reason){
+  const kidIds=(allTrainerKids||[]).filter(k=>k.group_id===group.id).map(k=>k.id);
+  if(!kidIds.length) return;
+  const { data: rows }=await sb.from('attendance').select('kid_id, session_date, present').eq('group_id',group.id).gte('session_date',_attYmd(start)).lte('session_date',_attYmd(end));
+  if(!rows||!rows.length) return;
+  const held=new Set(rows.map(r=>r.session_date)).size;
+  if(!held) return;
+  const presentByKid={};
+  rows.forEach(r=>{ if(r.present) presentByKid[r.kid_id]=(presentByKid[r.kid_id]||0)+1; });
+  for(const kidId of kidIds){
+    if((presentByKid[kidId]||0)===held) await _attAwardBonus(kidId, periodType, periodKey, exp, reason);
+  }
+}
+
+async function _attAwardBonus(kidId, periodType, periodKey, exp, reason){
+  // idempotentiška: bonuso įrašas su unique(kid,period_type,period_key); konfliktas → jau skirta
+  const { error }=await sb.from('attendance_bonuses').insert({ kid_id:kidId, period_type:periodType, period_key:periodKey, exp });
+  if(error) return; // dublis (23505) ar RLS → EXP nepridedam
+  try{
+    await sb.from('kid_exp_adjustments').insert({ kid_id:kidId, trainer_id:currentUser.id, exp_change:exp, reason });
+    const { data: kr }=await sb.from('kids').select('total_exp').eq('id',kidId).maybeSingle();
+    const newExp=Math.max(0,(kr?.total_exp||0)+exp);
+    const upd={ total_exp:newExp };
+    if(typeof getStageInfo==='function') upd.current_level=getStageInfo(newExp).globalLevel;
+    await sb.from('kids').update(upd).eq('id',kidId);
+  }catch(_){}
+}
+
+// — Bendras: vaiko lankomumo statistika rodymui (vaikui ir tėvui) —
+async function _attStatsForKid(kid){
+  if(!kid?.group_id) return null;
+  const { data: g }=await sb.from('groups').select('id, name, train_time, training_days, color').eq('id',kid.group_id).maybeSingle();
+  if(!g) return null;
+  const now=new Date();
+  const wkDates=_attWeekDates(g.training_days, now);
+  const moDates=_attMonthDates(g.training_days, now);
+  const ws=_attYmd(_attWeekStart(now)), we=_attYmd(_attWeekEnd(now));
+  const ms=_attYmd(new Date(now.getFullYear(),now.getMonth(),1)), me=_attYmd(new Date(now.getFullYear(),now.getMonth()+1,0));
+  const { data: rows }=await sb.from('attendance').select('session_date, present').eq('kid_id',kid.id).gte('session_date',ms).lte('session_date',me);
+  let wPres=0, mPres=0;
+  (rows||[]).forEach(r=>{ if(r.present){ mPres++; if(r.session_date>=ws && r.session_date<=we) wPres++; } });
+  return { group:g, schedule:_groupScheduleLabel(g), weekPresent:wPres, weekScheduled:wkDates.length, monthPresent:mPres, monthScheduled:moDates.length };
+}
+
+function _attPanelHtml(stats){
+  if(!stats) return '<div style="color:var(--mut);font-size:12px;text-align:center;padding:10px;">Grupė nepriskirta arba tvarkaraščio nėra.</div>';
+  const wPct=stats.weekScheduled?Math.min(100,Math.round(stats.weekPresent/stats.weekScheduled*100)):0;
+  const mPct=stats.monthScheduled?Math.min(100,Math.round(stats.monthPresent/stats.monthScheduled*100)):0;
+  const wFull=stats.weekScheduled>0 && stats.weekPresent>=stats.weekScheduled;
+  const mFull=stats.monthScheduled>0 && stats.monthPresent>=stats.monthScheduled;
+  const bar=(pct,col)=>`<div style="height:8px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${col};border-radius:99px;transition:width .6s ease;"></div></div>`;
+  return `<div style="font-size:13px;font-weight:800;color:white;margin-bottom:2px;">${stats.group.name||'Grupė'}</div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:12px;">📅 ${stats.schedule||'Tvarkaraštis nenustatytas'}</div>
+    <div style="margin-bottom:11px;"><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px;"><span style="color:var(--mut);">Ši savaitė</span><span style="color:var(--grn);">${stats.weekPresent}/${stats.weekScheduled}${wFull?' ✅ +15':''}</span></div>${bar(wPct,'#22C55E')}</div>
+    <div><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px;"><span style="color:var(--mut);">Šis mėnuo</span><span style="color:#FF8C00;">${stats.monthPresent}/${stats.monthScheduled}${mFull?' 🏆 +100':''}</span></div>${bar(mPct,'#FF8C00')}</div>`;
+}
+
+// Vaiko „Mano lankomumas" langas (mygtukas v-main antraštėje prie 🔔/⚙️)
+async function openKidAttendance(){
+  const kid=currentKid;
+  if(!kid){ showToast('Vaiko duomenys nerasti','error'); return; }
+  const old=document.getElementById('kid-att-modal'); if(old) old.remove();
+  const m=document.createElement('div');
+  m.id='kid-att-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
+  m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">📋 MANO LANKOMUMAS</div>
+      <button onclick="document.getElementById('kid-att-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+    </div>
+    <div style="padding:16px;" id="kid-att-body"><div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
+  </div>`;
+  m.onclick=(e)=>{ if(e.target===m) m.remove(); };
+  document.body.appendChild(m);
+  const body=document.getElementById('kid-att-body');
+  const st=await _attStatsForKid(kid);
+  if(body) body.innerHTML=_attPanelHtml(st)+`<div style="font-size:10px;color:var(--mut);text-align:center;margin-top:14px;line-height:1.5;">Pilna savaitė → +15 EXP · pilnas mėnuo → +100 EXP.<br>Lankomumą žymi treneris po treniruotės.</div>`;
 }
 
 // ════════════════════════════════════════
