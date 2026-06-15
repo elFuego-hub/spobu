@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v162</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v163</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4326,9 +4326,6 @@ async function openParentSettings() {
               <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="parent-push-status">Pranešimai apie vaiko progresą</div>
             </div>
           </div>
-        </div>
-        <div style="padding:8px 16px 0;">
-          <button onclick="parentTestPush(this)" style="width:100%;background:rgba(99,102,241,.12);border:.5px solid rgba(99,102,241,.4);color:#8B5CF6;border-radius:14px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">🔔 Išbandyti push (siųsti sau)</button>
         </div>
         <div style="padding:8px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
@@ -20330,7 +20327,7 @@ function markAllTrainerNotifRead() {
 
 // Trenerio stažas iš profiles.created_at („X m. Y mėn.")
 function _trainerTenureLT() {
-  const ts = currentProfile?.created_at;
+  const ts = currentProfile?.karate_since || currentProfile?.created_at;
   if (!ts) return '–';
   const months = Math.max(0, Math.floor((Date.now() - new Date(ts).getTime()) / (30.44 * 86400000)));
   const y = Math.floor(months / 12), m = months % 12;
@@ -20341,6 +20338,64 @@ function _trainerTenureLT() {
 function trSetAcc(id) {
   const el = document.getElementById(id);
   if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// ✏️ Trenerio savo informacijos redagavimas: vardas, nuo kada lanko karatę, diržas (kyu)
+function openTrainerEditInfo() {
+  const old = document.getElementById('tr-edit-info-modal'); if (old) old.remove();
+  const p = currentProfile || {};
+  const ks = p.karate_since ? String(p.karate_since).slice(0, 10) : '';
+  const esc = (s) => (s || '').replace(/"/g, '&quot;');
+  const m = document.createElement('div');
+  m.id = 'tr-edit-info-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
+  m.innerHTML = `
+    <div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:20px;max-height:90vh;overflow-y:auto;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:14px;">✏️ MANO INFORMACIJA</div>
+      <label style="font-size:11px;color:var(--mut);font-weight:700;">Vardas</label>
+      <input class="inp" id="tei-fname" value="${esc(p.first_name)}" style="width:100%;margin:4px 0 12px;font-family:inherit;">
+      <label style="font-size:11px;color:var(--mut);font-weight:700;">Pavardė</label>
+      <input class="inp" id="tei-lname" value="${esc(p.last_name)}" style="width:100%;margin:4px 0 12px;font-family:inherit;">
+      <label style="font-size:11px;color:var(--mut);font-weight:700;">Nuo kada lankau karatę</label>
+      <input class="inp" id="tei-since" type="date" value="${ks}" style="width:100%;margin:4px 0 12px;font-family:inherit;">
+      <label style="font-size:11px;color:var(--mut);font-weight:700;">Mano diržas</label>
+      <select class="inp" id="tei-kyu" style="width:100%;margin:4px 0 16px;font-family:inherit;">
+        <option value="">– pasirink –</option>
+        ${(typeof KYU_ORDER !== 'undefined' ? KYU_ORDER : []).map(k => `<option value="${k}"${(p.kyu === k) ? ' selected' : ''}>${k}</option>`).join('')}
+      </select>
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('tr-edit-info-modal').remove()" style="flex:1;padding:12px;background:var(--card);border:.5px solid var(--bdr);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">Atšaukti</button>
+        <button onclick="saveTrainerInfo(this)" style="flex:1;padding:12px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">Išsaugoti</button>
+      </div>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+}
+
+async function saveTrainerInfo(btn) {
+  const fn = (document.getElementById('tei-fname')?.value || '').trim();
+  const ln = (document.getElementById('tei-lname')?.value || '').trim();
+  const since = document.getElementById('tei-since')?.value || null;
+  const kyu = document.getElementById('tei-kyu')?.value || null;
+  if (!fn) { showToast('Įrašyk vardą', 'error'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Saugoma...'; }
+  try {
+    const { error } = await sb.from('profiles').update({ first_name: fn, last_name: ln, karate_since: since, kyu: kyu }).eq('id', currentUser.id);
+    if (error) throw error;
+    if (currentProfile) { currentProfile.first_name = fn; currentProfile.last_name = ln; currentProfile.karate_since = since; currentProfile.kyu = kyu; }
+    showToast('✅ Išsaugota', 'success');
+    const em = document.getElementById('tr-edit-info-modal'); if (em) em.remove();
+    // Atnaujinti nustatymų rodinį
+    const userEl = document.getElementById('trainer-settings-user'); if (userEl) userEl.textContent = `${fn} ${ln}`.trim();
+    const tenEl = document.getElementById('trainer-settings-tenure'); if (tenEl) tenEl.textContent = '🥋 ' + _trainerTenureLT();
+    const kyuEl = document.getElementById('trainer-settings-kyu'); if (kyuEl) kyuEl.textContent = kyu || '–';
+    // Atnaujinti pagrindinio lango hero (vardas pasveikinime)
+    if (typeof _renderTrainerMainHero === 'function') { try { _renderTrainerMainHero(); } catch (_) {} }
+  } catch (e) {
+    showToast('⚠️ Nepavyko išsaugoti (ar paleistas SQL „karate_since/kyu"?): ' + (e.message || ''), 'error', 8000);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Išsaugoti'; }
+  }
 }
 
 async function openTrainerSettings() {
@@ -20369,17 +20424,24 @@ async function openTrainerSettings() {
 
         <!-- Trenerio info -->
         <div style="padding:14px 20px;border-bottom:.5px solid var(--bdr);background:rgba(255,77,0,.05);">
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:800;margin-bottom:6px;">PRISIJUNGTAS KAIP</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:800;">PRISIJUNGTAS KAIP</div>
+            <button onclick="openTrainerEditInfo()" style="background:rgba(255,77,0,.15);border:.5px solid rgba(255,77,0,.4);color:#FF8C00;border-radius:99px;padding:5px 11px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ Redaguoti</button>
+          </div>
           <div style="font-size:14px;font-weight:800;color:white;" id="trainer-settings-user">–</div>
           <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="trainer-settings-email">–</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;">
             <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:8px;">
               <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:800;">KLUBAS</div>
               <div style="font-size:11px;font-weight:700;color:white;margin-top:2px;" id="trainer-settings-club">–</div>
             </div>
             <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:8px;">
-              <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:800;">TRENIRUOJA</div>
+              <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:800;">LANKO KARATĘ</div>
               <div style="font-size:11px;font-weight:700;color:white;margin-top:2px;" id="trainer-settings-tenure">–</div>
+            </div>
+            <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:8px;">
+              <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;font-weight:800;">DIRŽAS</div>
+              <div style="font-size:11px;font-weight:700;color:white;margin-top:2px;" id="trainer-settings-kyu">–</div>
             </div>
           </div>
         </div>
@@ -20435,11 +20497,6 @@ async function openTrainerSettings() {
               <div id="trpp-sw-submissions" style="width:38px;height:22px;border-radius:99px;background:#66BB6A;position:relative;transition:background .2s;flex-shrink:0;"><div id="trpp-knob-submissions" style="width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:3px;left:19px;transition:left .2s;"></div></div>
             </div>
           </div>
-        </div>
-
-        <!-- 🔔 TEST PUSH (diagnostika) -->
-        <div style="padding:8px 16px 0;">
-          <button onclick="parentTestPush(this)" style="width:100%;background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);color:#FF8C00;border-radius:14px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">🔔 Išbandyti pranešimą (siųsti sau)</button>
         </div>
 
         <!-- ⚖️ SĄŽININGO VERTINIMO INSTRUKCIJA -->
@@ -20552,8 +20609,17 @@ async function openTrainerSettings() {
   if (emailEl) emailEl.textContent = currentUser?.email || '';
   const clubEl = document.getElementById('trainer-settings-club');
   if (clubEl) clubEl.textContent = currentProfile?.clubs?.name || '–';
+  // karate_since + kyu (gali nebūti currentProfile, jei login select jų netraukė)
+  if (currentProfile && (currentProfile.karate_since === undefined || currentProfile.kyu === undefined)) {
+    try {
+      const { data: pinfo } = await sb.from('profiles').select('karate_since, kyu').eq('id', currentUser.id).maybeSingle();
+      if (pinfo) { currentProfile.karate_since = pinfo.karate_since; currentProfile.kyu = pinfo.kyu; }
+    } catch (e) { /* stulpelių gali nebūti kol nepaleistas SQL */ }
+  }
   const tenEl = document.getElementById('trainer-settings-tenure');
   if (tenEl) tenEl.textContent = '🥋 ' + _trainerTenureLT();
+  const kyuElx = document.getElementById('trainer-settings-kyu');
+  if (kyuElx) kyuElx.textContent = currentProfile?.kyu || '–';
 
   // Avataro preview
   const avUrl = currentProfile?.avatar_url ? (currentProfile.avatar_url + '?r=' + Date.now()) : null;
