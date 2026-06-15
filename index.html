@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v170</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v171</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3715,39 +3715,20 @@ select.inp option{background:#222;}
         </div>
       </div>
       
-      <!-- EXP valdymas -->
-      <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:12px;">
-        <div style="font-size:11px;color:var(--br);font-weight:800;letter-spacing:1px;margin-bottom:10px;">⚡ EXP UŽ ELGESĮ</div>
-        
-        <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">
-          Pridėk EXP už pasiekimus, dalyvavimą, gerą elgesį – arba atimk už drausmės pažeidimus.
+      <!-- PASTABA TĖVAMS (vietoj EXP už elgesį — EXP rankomis neskiriamas, kad statistika liktų sąžininga) -->
+      <div style="background:rgba(59,130,246,.06);border:.5px solid rgba(59,130,246,.3);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:#3B82F6;font-weight:800;letter-spacing:1px;margin-bottom:8px;">✏️ PASTABA TĖVAMS</div>
+        <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:10px;">
+          Parašyk pastabą apie elgesį, aktyvumą ar pasiekimą — ji nukeliaus tėvams kaip žinutė ir pranešimas. <b style="color:rgba(255,255,255,.7);">EXP rankomis neskiriamas</b> — taškai uždirbami tik už realius pasiekimus (karjera / iššūkiai / varžybos), kad visi vaikai turėtų vienodus šansus.
         </div>
-        
-        <!-- Greiti mygtukai -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
-          <button onclick="quickAdjustExp(10, 'Aktyvus dalyvavimas')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">+10 Aktyvumas</button>
-          <button onclick="quickAdjustExp(25, 'Geras elgesys')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">+25 Geras elgesys</button>
-          <button onclick="quickAdjustExp(50, 'Pasiekimas treniruotėje')" style="background:rgba(34,197,94,.2);color:var(--grn);border:.5px solid rgba(34,197,94,.4);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">+50 Pasiekimas</button>
-          <button onclick="quickAdjustExp(-10, 'Drausmės pažeidimas')" style="background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">-10 Drausmė</button>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+          <button onclick="kdNoteTemplate('Puikiai elgėsi treniruotėje. 👏')" style="background:rgba(34,197,94,.12);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:6px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">👏 Geras elgesys</button>
+          <button onclick="kdNoteTemplate('Labai aktyviai dirbo treniruotėje. 🔥')" style="background:rgba(34,197,94,.12);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:6px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">🔥 Aktyvumas</button>
+          <button onclick="kdNoteTemplate('Šauniai pasirodė — geras pasiekimas! ⭐')" style="background:rgba(255,210,74,.12);color:#FFD24A;border:.5px solid rgba(255,210,74,.3);padding:6px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">⭐ Pasiekimas</button>
+          <button onclick="kdNoteTemplate('Buvo drausmės pastaba — verta kartu pakalbėti. ⚠️')" style="background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:6px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">⚠️ Drausmė</button>
         </div>
-        
-        <!-- Custom -->
-        <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:10px;">
-          <div style="font-size:11px;color:var(--mut);font-weight:800;margin-bottom:8px;">CUSTOM:</div>
-          <div style="display:grid;grid-template-columns:1fr 2fr;gap:6px;margin-bottom:8px;">
-            <input type="number" class="inp" id="kd-custom-exp" placeholder="±EXP" style="margin:0;font-size:13px;" min="-1000" max="1000">
-            <input type="text" class="inp" id="kd-custom-reason" placeholder="Priežastis (privaloma)" style="margin:0;font-size:13px;" maxlength="100">
-          </div>
-          <button onclick="customAdjustExp()" style="width:100%;background:var(--br);color:white;border:none;padding:8px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">PRIDĖTI/ATIMTI</button>
-        </div>
-      </div>
-      
-      <!-- EXP istorija -->
-      <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;">
-        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">📜 EXP ISTORIJA</div>
-        <div id="kd-exp-history" style="font-size:12px;line-height:1.6;max-height:200px;overflow-y:auto;">
-          <div style="text-align:center;color:var(--mut);">Kraunama...</div>
-        </div>
+        <textarea class="inp" id="kd-note-text" rows="3" placeholder="Parašyk žinutę tėvams..." style="width:100%;resize:vertical;font-family:inherit;font-size:13px;margin:0 0 10px;"></textarea>
+        <button id="kd-note-send" onclick="sendBehaviorNoteToParents()" style="width:100%;background:#3B82F6;color:white;border:none;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:700;font-family:inherit;">✉️ Siųsti tėvams</button>
       </div>
       
     </div>
@@ -21465,10 +21446,7 @@ async function openKidDetailsModal(kidId) {
   
   // Tėvai
   await loadKidParents(kidId);
-  
-  // EXP istorija
-  await loadKidExpHistory(kidId);
-  
+
   // Treneriai (M:N)
   await loadKidTrainers(kidId);
   
@@ -22108,121 +22086,63 @@ async function loadKidParents(kidId) {
   document.getElementById('kd-parents').innerHTML = html;
 }
 
-async function loadKidExpHistory(kidId) {
-  const { data: history } = await sb.from('kid_exp_adjustments')
-    .select('*')
-    .eq('kid_id', kidId)
-    .order('created_at', { ascending: false })
-    .limit(10);
-  
-  const el = document.getElementById('kd-exp-history');
-  
-  if (!history || history.length === 0) {
-    el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:12px;font-size:11px;">Dar nėra korekcijų istorijoje</div>';
-    return;
-  }
-  
-  el.innerHTML = history.map(h => {
-    const isPositive = h.exp_change > 0;
-    const date = new Date(h.created_at);
-    const dateStr = `${date.getDate()}-${date.getMonth()+1} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-    
-    return `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid var(--bdr);gap:10px;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;line-height:1.4;">${h.reason}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${dateStr}</div>
-        </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${isPositive ? 'var(--grn)' : '#EF4444'};flex-shrink:0;">
-          ${isPositive ? '+' : ''}${h.exp_change}
-        </div>
-      </div>
-    `;
-  }).join('');
+// ✏️ PASTABA TĖVAMS — vietoj „EXP už elgesį". Treneris parašo tekstą → jis nukeliauja
+// vaiko tėvams kaip žinutė (+ push per serverio trigerį push_new_message). EXP rankomis
+// NEBESKIRIAMAS — taškai tik už realius pasiekimus (karjera/iššūkiai/varžybos), sąžininga.
+function kdNoteTemplate(text) {
+  const ta = document.getElementById('kd-note-text');
+  if (!ta) return;
+  ta.value = ta.value.trim() ? (ta.value.trim() + ' ' + text) : text;
+  ta.focus();
 }
 
-async function quickAdjustExp(amount, reason) {
-  if (!currentKidDetails) return;
-  
-  const action = amount > 0 ? `Pridėti +${amount} EXP` : `Atimti ${amount} EXP`;
-  if (!confirm(`${action}?\n\nPriežastis: ${reason}\nVaikas: ${currentKidDetails.first_name} ${currentKidDetails.last_name}`)) return;
-  
-  await applyExpAdjustment(currentKidDetails.id, amount, reason);
-}
-
-async function customAdjustExp() {
-  if (!currentKidDetails) return;
-  
-  const expInput = document.getElementById('kd-custom-exp');
-  const reasonInput = document.getElementById('kd-custom-reason');
-  
-  const amount = parseInt(expInput.value);
-  const reason = reasonInput.value.trim();
-  
-  if (!amount || isNaN(amount)) {
-    showToast('❌ Įvesk EXP skaičių (gali būti neigiamas)', 'error');
-    return;
-  }
-  
-  if (Math.abs(amount) > 1000) {
-    showToast('❌ EXP korekcija turi būti tarp -1000 ir +1000', 'error');
-    return;
-  }
-  
-  if (!reason || reason.length < 3) {
-    showToast('❌ Privalom įvesti priežastį (min. 3 simboliai)', 'error');
-    return;
-  }
-  
-  await applyExpAdjustment(currentKidDetails.id, amount, reason);
-  
-  // Reset inputs
-  expInput.value = '';
-  reasonInput.value = '';
-}
-
-async function applyExpAdjustment(kidId, amount, reason) {
+async function sendBehaviorNoteToParents() {
+  const kid = currentKidDetails;
+  if (!kid) return;
+  const ta = document.getElementById('kd-note-text');
+  const text = (ta?.value || '').trim();
+  if (text.length < 3) { showToast('❌ Parašyk pastabą (min. 3 simboliai)', 'error'); return; }
+  const btn = document.getElementById('kd-note-send');
+  const reset = () => { if (btn) { btn.disabled = false; btn.dataset.busy = ''; btn.textContent = '✉️ Siųsti tėvams'; btn.style.opacity = '1'; } };
+  if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.disabled = true; btn.textContent = 'SIUNČIAMA...'; btn.style.opacity = '.6'; }
   try {
-    // 1. Pridedam į kid_exp_adjustments lentelę
-    const { error: adjErr } = await sb.from('kid_exp_adjustments').insert({
-      kid_id: kidId,
-      trainer_id: currentUser.id,
-      exp_change: amount,
-      reason: reason
-    });
-    
-    if (adjErr) throw adjErr;
-    
-    // 2. Atnaujinam vaiko total_exp ir current_level
-    const newExp = Math.max(0, (currentKidDetails.total_exp || 0) + amount);
-    const newLevel = Math.min(36, 1 + Math.floor(newExp / 200));
-    
-    const { error: kidErr } = await sb.from('kids')
-      .update({ 
-        total_exp: newExp,
-        current_level: newLevel
-      })
-      .eq('id', kidId);
-    
-    if (kidErr) throw kidErr;
-    
-    // Lokaliai atnaujinam (kad UI iškart parodytų)
-    currentKidDetails.total_exp = newExp;
-    currentKidDetails.current_level = newLevel;
-    document.getElementById('kd-exp').textContent = newExp.toLocaleString();
-    document.getElementById('kd-level').textContent = newLevel;
-    
-    showToast(amount > 0 ? `✓ Pridėta +${amount} EXP` : `✓ Atimta ${amount} EXP`);
-    
-    // Atnaujinam istoriją
-    await loadKidExpHistory(kidId);
-    
-    // Atnaujinam grupių sąrašą (kad EXP atsinaujintų)
-    await loadTrainerGroups();
-    
-  } catch (error) {
-    console.error('applyExpAdjustment error:', error);
-    showToast('❌ Klaida: ' + error.message, 'error');
+    // 1. Vaiko tėvai (su paskyra)
+    const { data: links } = await sb.from('kid_parent_links').select('parent_id').eq('kid_id', kid.id);
+    const parentIds = [...new Set((links || []).map(l => l.parent_id).filter(p => p && p !== currentUser.id))];
+    if (!parentIds.length) { showToast('❌ Šis vaikas neturi prisijungusių tėvų — pastabos išsiųsti negalima', 'error', 5000); reset(); return; }
+    // 2. Rasti esamą trenerio↔tėvų direct pokalbį šiam vaikui (2 žingsnių, be embed — kaip parentStartTrainerChat)
+    let convId = null;
+    const { data: myMems } = await sb.from('conversation_members').select('conversation_id').eq('user_id', currentUser.id);
+    const myConvIds = (myMems || []).map(m => m.conversation_id);
+    if (myConvIds.length) {
+      const { data: pMems } = await sb.from('conversation_members').select('conversation_id').in('user_id', parentIds).in('conversation_id', myConvIds);
+      const shared = [...new Set((pMems || []).map(m => m.conversation_id))];
+      if (shared.length) {
+        const { data: dc } = await sb.from('conversations').select('id').eq('type', 'direct').eq('kid_id', kid.id).in('id', shared).limit(1);
+        if (dc && dc.length) convId = dc[0].id;
+      }
+    }
+    // 3. Nėra — sukuriam direct pokalbį su visais tėvais (trigeris prideda kūrėją=trenerį)
+    if (!convId) {
+      const title = `${kid.first_name || 'Vaikas'} ${kid.last_name || ''}`.trim() + ' — tėvai';
+      const { data: conv, error: cErr } = await sb.from('conversations')
+        .insert({ type: 'direct', title, kid_id: kid.id, club_id: currentProfile?.club_id, created_by: currentUser.id })
+        .select().single();
+      if (cErr) throw cErr;
+      convId = conv.id;
+      const { error: mErr } = await sb.from('conversation_members').insert(parentIds.map(pid => ({ conversation_id: convId, user_id: pid, role: 'parent' })));
+      if (mErr) throw mErr;
+    }
+    // 4. Žinutė → serverio trigeris push_new_message išsiunčia push tėvams (su trenerio vardu)
+    const { error: msgErr } = await sb.from('messages').insert({ conversation_id: convId, sender_id: currentUser.id, body: '📋 Trenerio pastaba: ' + text, message_type: 'text' });
+    if (msgErr) throw msgErr;
+    showToast('✅ Pastaba išsiųsta tėvams!', 'success', 3000);
+    if (typeof playSound === 'function') playSound('send');
+    if (ta) ta.value = '';
+    reset();
+  } catch (e) {
+    reset();
+    showToast('❌ Nepavyko: ' + (e.message || e || ''), 'error', 6000);
   }
 }
 
@@ -27712,9 +27632,9 @@ async function composeMessageToGroup(groupId, groupName) {
     type: 'group',
     groupId: groupId,
     kidId: null,
-    audience: 'parents',  // default - tėvams
+    audience: 'all',  // default - tėvams IR vaikams (kad ir vaikai gautų pranešimą; treneris gali susiaurinti picker'iu)
     title: groupName || 'Grupės pokalbis',
-    recipientLabel: groupName ? `Grupė: ${groupName}` : 'Grupės tėvai'
+    recipientLabel: groupName ? `Grupė: ${groupName} (tėvai + vaikai)` : 'Grupės tėvai + vaikai'
   });
 }
 
