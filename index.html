@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v172</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v174</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3715,20 +3715,22 @@ select.inp option{background:#222;}
         </div>
       </div>
       
-      <!-- PASTABA TĖVAMS (vietoj EXP už elgesį — EXP rankomis neskiriamas, kad statistika liktų sąžininga) -->
-      <div style="background:rgba(59,130,246,.06);border:.5px solid rgba(59,130,246,.3);border-radius:12px;padding:14px;margin-bottom:12px;">
-        <div style="font-size:11px;color:#3B82F6;font-weight:800;letter-spacing:1px;margin-bottom:8px;">✏️ PASTABA TĖVAMS</div>
+      <!-- EXP UŽ ELGESĮ — FIKSUOTOS sumos (be „belekiek"); trackinama kaip EXP gavimas (kid_exp_adjustments),
+           matosi vaiko ir tėvų sraute su priežastimi. Vaikui EXP realiai prisideda prie total_exp. -->
+      <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--br);font-weight:800;letter-spacing:1px;margin-bottom:8px;">⚡ EXP UŽ ELGESĮ</div>
         <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:10px;">
-          Parašyk pastabą apie elgesį, aktyvumą ar pasiekimą — ji nukeliaus tėvams kaip žinutė ir pranešimas. <b style="color:rgba(255,255,255,.7);">EXP rankomis neskiriamas</b> — taškai uždirbami tik už realius pasiekimus (karjera / iššūkiai / varžybos), kad visi vaikai turėtų vienodus šansus.
+          Fiksuoti taškai už elgesį / aktyvumą / pasiekimą treniruotėje. Trackinama kaip <b style="color:rgba(255,255,255,.75);">EXP gavimas</b> — matosi vaiko ir tėvų sraute su priežastimi. Sumos fiksuotos, kad būtų sąžininga.
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-          <button onclick="kdNoteTemplate('Puikiai elgėsi treniruotėje. 👏')" style="background:rgba(34,197,94,.12);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:6px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">👏 Geras elgesys</button>
-          <button onclick="kdNoteTemplate('Labai aktyviai dirbo treniruotėje. 🔥')" style="background:rgba(34,197,94,.12);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:6px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">🔥 Aktyvumas</button>
-          <button onclick="kdNoteTemplate('Šauniai pasirodė — geras pasiekimas! ⭐')" style="background:rgba(255,210,74,.12);color:#FFD24A;border:.5px solid rgba(255,210,74,.3);padding:6px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">⭐ Pasiekimas</button>
-          <button onclick="kdNoteTemplate('Buvo drausmės pastaba — verta kartu pakalbėti. ⚠️')" style="background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:6px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">⚠️ Drausmė</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+          <button class="kdbe-btn" data-amt="25" onclick="kdSelectBehavior(25,'Geras elgesys','Geras elgesys treniruotėje 👏')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">👏 +25 Geras elgesys</button>
+          <button class="kdbe-btn" data-amt="10" onclick="kdSelectBehavior(10,'Aktyvus dalyvavimas','Labai aktyviai dirbo treniruotėje 🔥')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">🔥 +10 Aktyvumas</button>
+          <button class="kdbe-btn" data-amt="50" onclick="kdSelectBehavior(50,'Pasiekimas treniruotėje','Šaunus pasiekimas treniruotėje ⭐')" style="background:rgba(34,197,94,.2);color:var(--grn);border:.5px solid rgba(34,197,94,.4);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">⭐ +50 Pasiekimas</button>
+          <button class="kdbe-btn" data-amt="-10" onclick="kdSelectBehavior(-10,'Drausmės pažeidimas','Drausmės pastaba — verta pakalbėti ⚠️')" style="background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">⚠️ -10 Drausmė</button>
         </div>
-        <textarea class="inp" id="kd-note-text" rows="3" placeholder="Parašyk žinutę tėvams..." style="width:100%;resize:vertical;font-family:inherit;font-size:13px;margin:0 0 10px;"></textarea>
-        <button id="kd-note-send" onclick="sendBehaviorNoteToParents()" style="width:100%;background:#3B82F6;color:white;border:none;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:700;font-family:inherit;">✉️ Siųsti tėvams</button>
+        <textarea class="inp" id="kd-be-reason" rows="2" placeholder="Priežastis (matys vaikas ir tėvai)..." style="width:100%;resize:vertical;font-family:inherit;font-size:13px;margin:0 0 8px;"></textarea>
+        <div id="kd-be-selected" style="font-size:11px;color:var(--mut);text-align:center;margin-bottom:8px;">↑ Pasirink taškus</div>
+        <button id="kd-be-send" onclick="awardBehaviorExp()" style="width:100%;background:var(--br);color:white;border:none;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:700;font-family:inherit;">⚡ Skirti EXP</button>
       </div>
       
     </div>
@@ -5806,14 +5808,15 @@ async function loadParentKidFeed() {
 
     // ⚡ NAŠUMAS: 5 nepriklausomos užklausos LYGIAGREČIAI (vietoj 5 serijinių round-trip'ų)
     const _settle = (r) => (r.status === 'fulfilled' ? (r.value?.data || []) : []);
-    const [chsR, cpR, compsR, krR, slR] = await Promise.allSettled([
+    const [chsR, cpR, compsR, krR, slR, adjR] = await Promise.allSettled([
       sb.from('challenge_submissions').select('challenge_id, reviewed_at, exp_gain, challenges(title, type, exp_reward)').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(50),
       sb.from('challenge_progress').select('challenge_id, completed_at, exp_awarded').eq('kid_id', k.id).eq('is_completed', true).gte('completed_at', cut),
       sb.from('competition_results').select('approved_at, exp_gained, placement, competitions(title)').eq('kid_id', k.id).eq('approval_status', 'approved').gte('approved_at', cut).order('approved_at', { ascending: false }).limit(50),
       sb.from('kid_records').select('exercise_id, current_pr, category_exp, updated_at').eq('kid_id', k.id).not('exercise_id', 'is', null).gt('current_pr', 0).gte('updated_at', cut),
-      sb.from('streak_bonus_log').select('created_at, exp_awarded, streak_type, streak_count').eq('kid_id', k.id).gte('created_at', cut).order('created_at', { ascending: false }).limit(50)
+      sb.from('streak_bonus_log').select('created_at, exp_awarded, streak_type, streak_count').eq('kid_id', k.id).gte('created_at', cut).order('created_at', { ascending: false }).limit(50),
+      sb.from('kid_exp_adjustments').select('created_at, exp_change, reason').eq('kid_id', k.id).gte('created_at', cut).order('created_at', { ascending: false }).limit(50)
     ]);
-    const chs = _settle(chsR), cpRows = _settle(cpR), comps = _settle(compsR), slRows = _settle(slR);
+    const chs = _settle(chsR), cpRows = _settle(cpR), comps = _settle(compsR), slRows = _settle(slR), adjRows = _settle(adjR);
     const krRows = _settle(krR).filter(r => r.exercise_id && (r.current_pr || 0) > 0);
 
     const seenChIds = new Set();
@@ -5833,6 +5836,8 @@ async function loadParentKidFeed() {
     });
     // Serijos bonusai
     slRows.forEach(s => { const tn = s.streak_type === 'training' ? 'treniruočių' : s.streak_type === 'weekly' ? 'savaičių' : 'mėnesių'; items.push({ kind: 'streak', color: '#FB923C', icon: '🔥', title: `${s.streak_count} ${tn} iš eilės`, label: 'Serijos bonusas', exp: s.exp_awarded, date: s.created_at }); });
+    // Trenerio EXP už elgesį (kid_exp_adjustments) — su priežastimi
+    adjRows.forEach(a => { const pos = (a.exp_change || 0) >= 0; items.push({ kind: 'behavior', color: pos ? '#22C55E' : '#EF4444', icon: pos ? '⭐' : '⚠️', title: a.reason || 'Trenerio įvertinimas', label: 'Trenerio įvertinimas', exp: a.exp_change || 0, date: a.created_at }); });
 
     // ⚡ Antro lygio užklausos (vardai) — priklauso nuo cp/kr, bet tarpusavyje nepriklausomos → lygiagrečiai
     const freshIds = cpRows.map(p => p.challenge_id).filter(id => id && !seenChIds.has(id));
@@ -5892,7 +5897,7 @@ async function loadParentKidFeed() {
         <div style="font-size:12px;font-weight:800;color:white;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${it.title}</div>
         <div style="font-size:9px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">${it.label} · ${tkTimeAgo(it.date)}</div>
       </div>
-      ${it.exp ? `<div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--grn);line-height:1;">+${it.exp}</div><div style="font-size:7px;color:var(--mut);letter-spacing:.5px;">EXP</div></div>` : ''}
+      ${it.exp ? `<div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${it.exp < 0 ? '#EF4444' : 'var(--grn)'};line-height:1;">${it.exp > 0 ? '+' : ''}${it.exp}</div><div style="font-size:7px;color:var(--mut);letter-spacing:.5px;">EXP</div></div>` : ''}
     </div>`;
 
     _parentFeedAllHtml = items.map(renderPost).join('');
@@ -17318,10 +17323,11 @@ async function loadKidProgress() {
   const levelProgress = Math.min(100, Math.max(0, (cur / next) * 100));
 
   // Paskutiniai pasiekimai (paskutiniai 10 įvykių)
-  const [chRes, coRes, prRes] = await Promise.all([
+  const [chRes, coRes, prRes, adjRes] = await Promise.all([
     sb.from('challenge_submissions').select('id, exp_gain, reviewed_at, challenges(title, type)').eq('kid_id', kid.id).eq('status', 'approved').order('reviewed_at', { ascending: false }).limit(5),
     sb.from('competition_results').select('id, exp_gained, approved_at, placement, competitions(title, competition_type)').eq('kid_id', kid.id).eq('approval_status', 'approved').order('approved_at', { ascending: false }).limit(5),
-    sb.from('result_submissions').select('id, exp_gain, reviewed_at, new_value, exercises(name)').eq('kid_id', kid.id).eq('status', 'approved').order('reviewed_at', { ascending: false }).limit(5)
+    sb.from('result_submissions').select('id, exp_gain, reviewed_at, new_value, exercises(name)').eq('kid_id', kid.id).eq('status', 'approved').order('reviewed_at', { ascending: false }).limit(5),
+    sb.from('kid_exp_adjustments').select('id, exp_change, reason, created_at').eq('kid_id', kid.id).order('created_at', { ascending: false }).limit(5)
   ]);
 
   const events = [];
@@ -17331,6 +17337,7 @@ async function loadKidProgress() {
     events.push({ ts: s.approved_at, icon: s.placement === 1 ? '🥇' : s.placement === 2 ? '🥈' : s.placement === 3 ? '🥉' : '🏆', title: s.competitions?.title || 'Varžybos', sub: placement, exp: s.exp_gained });
   });
   (prRes.data || []).forEach(s => events.push({ ts: s.reviewed_at, icon: '💪', title: s.exercises?.name || 'Pratimas', sub: `Naujas PR: ${s.new_value}`, exp: s.exp_gain }));
+  (adjRes.data || []).forEach(a => { const pos = (a.exp_change || 0) >= 0; events.push({ ts: a.created_at, icon: pos ? '⭐' : '⚠️', title: a.reason || 'Trenerio įvertinimas', sub: 'Trenerio įvertinimas', exp: a.exp_change }); });
   events.sort((a, b) => new Date(b.ts) - new Date(a.ts));
   const recent = events.slice(0, 8);
 
@@ -17385,7 +17392,7 @@ async function loadKidProgress() {
               <div style="font-size:12px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.title}</div>
               <div style="font-size:10px;color:var(--mut);margin-top:1px;">${e.sub} · ${time}</div>
             </div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#22C55E;flex-shrink:0;">+${e.exp || 0}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${(e.exp || 0) < 0 ? '#EF4444' : '#22C55E'};flex-shrink:0;">${(e.exp || 0) > 0 ? '+' : ''}${e.exp || 0}</div>
           </div>`;
       }).join('')}
     </div>
@@ -21455,9 +21462,11 @@ async function openKidDetailsModal(kidId) {
   await loadKidEmergency(fullKid);
   await loadKidMedia(fullKid);
   
-  // Reset pastabos tėvams lauką
-  const noteEl = document.getElementById('kd-note-text');
-  if (noteEl) noteEl.value = '';
+  // Reset EXP-už-elgesį pasirinkimą
+  _kdBehaviorAmount = null;
+  const beReason = document.getElementById('kd-be-reason'); if (beReason) beReason.value = '';
+  const beSel = document.getElementById('kd-be-selected'); if (beSel) beSel.textContent = '↑ Pasirink taškus';
+  document.querySelectorAll('.kdbe-btn').forEach(b => { b.style.outline = 'none'; });
 
   // Rodyti veiksmų mygtukus tik treneriui/klubui
   const actionsEl = document.getElementById('kd-actions');
@@ -22086,60 +22095,62 @@ async function loadKidParents(kidId) {
   document.getElementById('kd-parents').innerHTML = html;
 }
 
-// ✏️ PASTABA TĖVAMS — vietoj „EXP už elgesį". Treneris parašo tekstą → jis nukeliauja
-// vaiko tėvams kaip žinutė (+ push per serverio trigerį push_new_message). EXP rankomis
-// NEBESKIRIAMAS — taškai tik už realius pasiekimus (karjera/iššūkiai/varžybos), sąžininga.
-function kdNoteTemplate(text) {
-  const ta = document.getElementById('kd-note-text');
-  if (!ta) return;
-  ta.value = ta.value.trim() ? (ta.value.trim() + ' ' + text) : text;
-  ta.focus();
+// ⚡ EXP UŽ ELGESĮ — FIKSUOTOS sumos (be savavališko „belekiek"). Trackinama kaip EXP gavimas
+// (kid_exp_adjustments), vaikui realiai prisideda prie total_exp; matosi vaiko ir tėvų sraute (feed).
+let _kdBehaviorAmount = null;
+
+function kdSelectBehavior(amount, shortReason, defaultText) {
+  _kdBehaviorAmount = amount;
+  // Priežasties tekstą prefill'inam (treneris gali pakeisti) — jis keliauja į vaiko/tėvų feed'ą
+  const ta = document.getElementById('kd-be-reason');
+  if (ta) ta.value = defaultText || shortReason || '';
+  // Highlight pasirinktą mygtuką
+  document.querySelectorAll('.kdbe-btn').forEach(b => {
+    const on = b.dataset.amt === String(amount);
+    b.style.outline = on ? '2px solid var(--br)' : 'none';
+    b.style.outlineOffset = on ? '1px' : '0';
+  });
+  const sel = document.getElementById('kd-be-selected');
+  if (sel) sel.innerHTML = `Skiriama: <b style="color:${amount > 0 ? 'var(--grn)' : '#EF4444'};">${amount > 0 ? '+' : ''}${amount} EXP</b>`;
 }
 
-async function sendBehaviorNoteToParents() {
+async function awardBehaviorExp() {
   const kid = currentKidDetails;
   if (!kid) return;
-  const ta = document.getElementById('kd-note-text');
-  const text = (ta?.value || '').trim();
-  if (text.length < 3) { showToast('❌ Parašyk pastabą (min. 3 simboliai)', 'error'); return; }
-  const btn = document.getElementById('kd-note-send');
-  const reset = () => { if (btn) { btn.disabled = false; btn.dataset.busy = ''; btn.textContent = '✉️ Siųsti tėvams'; btn.style.opacity = '1'; } };
-  if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.disabled = true; btn.textContent = 'SIUNČIAMA...'; btn.style.opacity = '.6'; }
+  if (_kdBehaviorAmount === null) { showToast('❌ Pasirink taškus (mygtuką)', 'error'); return; }
+  const ta = document.getElementById('kd-be-reason');
+  const reason = (ta?.value || '').trim();
+  if (reason.length < 3) { showToast('❌ Parašyk priežastį (min. 3 simboliai)', 'error'); return; }
+  const amount = _kdBehaviorAmount;
+  const btn = document.getElementById('kd-be-send');
+  const reset = () => { if (btn) { btn.disabled = false; btn.dataset.busy = ''; btn.textContent = '⚡ Skirti EXP'; btn.style.opacity = '1'; } };
+  if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.disabled = true; btn.textContent = 'SKIRIAMA...'; btn.style.opacity = '.6'; }
   try {
-    // 1. Vaiko tėvai (su paskyra)
-    const { data: links } = await sb.from('kid_parent_links').select('parent_id').eq('kid_id', kid.id);
-    const parentIds = [...new Set((links || []).map(l => l.parent_id).filter(p => p && p !== currentUser.id))];
-    if (!parentIds.length) { showToast('❌ Šis vaikas neturi prisijungusių tėvų — pastabos išsiųsti negalima', 'error', 5000); reset(); return; }
-    // 2. Rasti esamą trenerio↔tėvų direct pokalbį šiam vaikui (2 žingsnių, be embed — kaip parentStartTrainerChat)
-    let convId = null;
-    const { data: myMems } = await sb.from('conversation_members').select('conversation_id').eq('user_id', currentUser.id);
-    const myConvIds = (myMems || []).map(m => m.conversation_id);
-    if (myConvIds.length) {
-      const { data: pMems } = await sb.from('conversation_members').select('conversation_id').in('user_id', parentIds).in('conversation_id', myConvIds);
-      const shared = [...new Set((pMems || []).map(m => m.conversation_id))];
-      if (shared.length) {
-        const { data: dc } = await sb.from('conversations').select('id').eq('type', 'direct').eq('kid_id', kid.id).in('id', shared).limit(1);
-        if (dc && dc.length) convId = dc[0].id;
-      }
-    }
-    // 3. Nėra — sukuriam direct pokalbį su visais tėvais (trigeris prideda kūrėją=trenerį)
-    if (!convId) {
-      const title = `${kid.first_name || 'Vaikas'} ${kid.last_name || ''}`.trim() + ' — tėvai';
-      const { data: conv, error: cErr } = await sb.from('conversations')
-        .insert({ type: 'direct', title, kid_id: kid.id, club_id: currentProfile?.club_id, created_by: currentUser.id })
-        .select().single();
-      if (cErr) throw cErr;
-      convId = conv.id;
-      const { error: mErr } = await sb.from('conversation_members').insert(parentIds.map(pid => ({ conversation_id: convId, user_id: pid, role: 'parent' })));
-      if (mErr) throw mErr;
-    }
-    // 4. Žinutė → serverio trigeris push_new_message išsiunčia push tėvams (su trenerio vardu)
-    const { error: msgErr } = await sb.from('messages').insert({ conversation_id: convId, sender_id: currentUser.id, body: '📋 Trenerio pastaba: ' + text, message_type: 'text' });
-    if (msgErr) throw msgErr;
-    showToast('✅ Pastaba išsiųsta tėvams!', 'success', 3000);
+    // 1. Įrašom į kid_exp_adjustments (EXP gavimo istorija — vaiko ir tėvų feed'ai skaito iš čia)
+    const { error: adjErr } = await sb.from('kid_exp_adjustments').insert({
+      kid_id: kid.id, trainer_id: currentUser.id, exp_change: amount, reason: reason
+    });
+    if (adjErr) throw adjErr;
+    // 2. Vaikui realiai prisideda EXP (lygis išvedamas iš total_exp per getStageInfo — 99 sistema)
+    const newExp = Math.max(0, (kid.total_exp || 0) + amount);
+    const newLevel = (typeof getStageInfo === 'function') ? getStageInfo(newExp).globalLevel : (kid.current_level || 1);
+    const { error: kidErr } = await sb.from('kids').update({ total_exp: newExp, current_level: newLevel }).eq('id', kid.id);
+    if (kidErr) throw kidErr;
+    // Lokaliai atnaujinam modalo UI
+    kid.total_exp = newExp; kid.current_level = newLevel;
+    const expEl = document.getElementById('kd-exp'); if (expEl) expEl.textContent = newExp.toLocaleString('lt-LT');
+    const lvlEl = document.getElementById('kd-level'); if (lvlEl) lvlEl.textContent = newLevel;
+    showToast(amount > 0 ? `✅ Skirta +${amount} EXP! (matys vaikas ir tėvai)` : `✅ Įrašyta ${amount} EXP`, 'success', 3500);
     if (typeof playSound === 'function') playSound('send');
+    // Reset pasirinkimą
+    _kdBehaviorAmount = null;
     if (ta) ta.value = '';
+    document.querySelectorAll('.kdbe-btn').forEach(b => { b.style.outline = 'none'; });
+    const sel = document.getElementById('kd-be-selected'); if (sel) sel.textContent = '↑ Pasirink taškus';
     reset();
+    // Atnaujinam grupių sąrašą (EXP) + atidarytą grupės vaizdą
+    if (typeof loadTrainerGroups === 'function') loadTrainerGroups();
+    if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
   } catch (e) {
     reset();
     showToast('❌ Nepavyko: ' + (e.message || e || ''), 'error', 6000);
@@ -24793,8 +24804,25 @@ function subscribeKidNotifications() {
       // detectNewMedals (paleidžiamas iš loadKidData). Kitaip dubliuotųsi.
       await loadKidData();
     })
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'kid_exp_adjustments',
+      filter: `kid_id=eq.${kidId}`
+    }, async payload => {
+      // ⚡ Trenerio EXP už elgesį — vaikui parodom kaip EXP gavimą
+      const adj = payload.new;
+      if (!adj) return;
+      if (_isSeen('adj', adj.id)) return;
+      _addSeen('adj', adj.id);
+      const amt = adj.exp_change || 0;
+      if (amt >= 0) {
+        showToast(`⭐ TRENERIO ĮVERTINIMAS\n\n${adj.reason || ''}\n+${amt} EXP`, 'success', null, { confetti: 15, sound: 'exp' });
+      } else {
+        showToast(`⚠️ TRENERIO PASTABA\n\n${adj.reason || ''}\n${amt} EXP`, 'error', null, { sound: 'send' });
+      }
+      await loadKidData();
+    })
     .subscribe();
-  
+
   // 📡 ATSKIRAS KANALAS: žinutės/pranešimai
   sb.channel('kid-msgs-'+currentUser.id)
     .on('postgres_changes', {
