@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v163</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v164</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1792,6 +1792,13 @@ select.inp option{background:#222;}
           <span id="trh-points" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;line-height:1;letter-spacing:1px;">0</span>
           <span style="font-size:9px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">TAŠKAI</span>
           <span id="trh-next-txt" style="font-size:9px;color:rgba(255,255,255,.85);font-weight:700;margin-left:auto;line-height:1.3;text-align:right;"></span>
+        </div>
+        <!-- Lygio progreso baras (iki kito LVL — kaip vaiko) -->
+        <div style="display:flex;align-items:center;gap:7px;margin-top:7px;">
+          <div style="flex:1;height:6px;background:rgba(0,0,0,.3);border-radius:99px;overflow:hidden;">
+            <div id="trh-lvl-bar" style="height:100%;width:0%;background:rgba(255,255,255,.9);border-radius:99px;transition:width .5s;"></div>
+          </div>
+          <span id="trh-lvl-frac" style="font-size:8px;color:rgba(255,255,255,.85);font-weight:700;white-space:nowrap;">0/0</span>
         </div>
         <!-- 3 KPI -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;">
@@ -20513,6 +20520,15 @@ async function openTrainerSettings() {
           </div>
         </div>
 
+        <!-- 🥋 TRENERIO LYGIAI (paaiškinimas) -->
+        <div style="padding:8px 16px 0;">
+          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
+            <div style="font-size:13px;font-weight:800;color:white;">🥋 Trenerio lygiai</div>
+            <div style="font-size:10px;color:var(--mut);margin:2px 0 10px;">99 lygiai · 8 pakopos. Taškai: <b style="color:white;">+1</b> už kiekvieną patvirtinimą, <b style="color:white;">+1</b> už sukurtą iššūkį.</div>
+            <div id="tr-stages-list"></div>
+          </div>
+        </div>
+
         <!-- 🔍 VAIZDO DYDIS -->
         <div style="padding:8px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
@@ -20631,9 +20647,29 @@ async function openTrainerSettings() {
   updateSoundToggleUI();
   updatePushToggleUI();
   loadTrainerPushPrefs();
+  loadTrainerStagesInfo();
   if (typeof updateZoomButtonsUI === 'function') updateZoomButtonsUI();
 
   modal.style.display = 'flex';
+}
+
+// 🥋 Trenerio lygių (pakopų) sąrašas nustatymuose — paaiškinimas + dabartinė pakopa pažymėta
+function loadTrainerStagesInfo() {
+  const el = document.getElementById('tr-stages-list');
+  if (!el || typeof TRAINER_STAGES === 'undefined') return;
+  const curStage = trainerLevelInfo?.stage;
+  el.innerHTML = TRAINER_STAGES.map(s => {
+    const isCur = s.name === curStage;
+    const range = (s.maxExp === Infinity) ? `${s.minExp.toLocaleString('lt-LT')}+ tšk.` : `${s.minExp.toLocaleString('lt-LT')}–${s.maxExp.toLocaleString('lt-LT')} tšk.`;
+    const lvlStart = (typeof getTrainerStageInfo === 'function') ? getTrainerStageInfo(s.minExp).globalLevel : 1;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;margin-bottom:4px;background:${isCur ? 'rgba(255,77,0,.15)' : 'rgba(255,255,255,.03)'};border:.5px solid ${isCur ? 'rgba(255,77,0,.45)' : 'var(--bdr)'};">
+      <span style="font-size:16px;flex-shrink:0;">${s.emoji}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;font-weight:800;color:${isCur ? '#FF8C00' : 'white'};">${s.name}${isCur ? ' · ESI ČIA' : ''}</div>
+        <div style="font-size:8px;color:var(--mut);margin-top:1px;">nuo LVL ${lvlStart} · ${range}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // 🔔 Push tipų jungikliai (treneris): messages/announcements/submissions → profiles.push_prefs
@@ -20831,18 +20867,28 @@ function _renderTrainerMainHero() {
   const nameEl = document.getElementById('trh-name');
   if (nameEl) nameEl.textContent = `SVEIKI, ${(currentProfile?.first_name || 'TRENERI').toUpperCase()}! 🥋`;
   const stageNameEl = document.getElementById('trh-stage-name');
-  if (stageNameEl) { stageNameEl.textContent = `${st.emoji} ${st.name.toUpperCase()} · LVL ${info.globalLevel}`; stageNameEl.style.color = st.color; }
+  if (stageNameEl) { stageNameEl.textContent = `${st.emoji} ${st.name.toUpperCase()} · LVL ${info.globalLevel} / 99`; stageNameEl.style.color = st.color; }
   // Avataras (trenerio nuotrauka arba inicialas)
   const avUrl = currentProfile?.avatar_url ? (currentProfile.avatar_url + '?r=' + Date.now()) : null;
   if (typeof applyAvatarById === 'function') applyAvatarById('trh-avatar', avUrl, currentProfile?.first_name?.[0] || 'T');
 
   const ptsEl = document.getElementById('trh-points');
   if (ptsEl) ptsEl.textContent = trainerPoints.toLocaleString();
-  const nextStage = TRAINER_STAGES[TRAINER_STAGES.indexOf(st) + 1] || null;
+  // Progresas iki KITO LYGIO (ne stage — kaip pas vaiką)
   const nextEl = document.getElementById('trh-next-txt');
-  if (nextEl) nextEl.textContent = nextStage
-    ? `Iki „${nextStage.name}": liko ${info.expToNextStage} tšk.`
-    : '🏔️ SENSĖJUS — AUKŠČIAUSIAS LYGIS';
+  if (nextEl) nextEl.textContent = info.nextLevelExp
+    ? `DAR ${info.expToNextLevel} tšk. iki LVL ${info.globalLevel + 1}`
+    : '🏔️ AUKŠČIAUSIAS LYGIS';
+  const barEl = document.getElementById('trh-lvl-bar');
+  if (barEl) barEl.style.width = (info.progressPercent || 0) + '%';
+  const fracEl = document.getElementById('trh-lvl-frac');
+  if (fracEl) {
+    if (info.nextLevelExp) {
+      const cur = Math.max(0, trainerPoints - info.currentLevelExp);
+      const span = Math.max(1, info.nextLevelExp - info.currentLevelExp);
+      fracEl.textContent = `${cur} / ${span}`;
+    } else fracEl.textContent = 'MAX';
+  }
 
   // KPI
   const kA = document.getElementById('trh-kpi-approved');
