@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v181</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v182</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -24124,28 +24124,31 @@ async function loadTrainerOwnChallenges() {
   // Atskirti į aktyvius ir pasibaigusius (tik rodomi — sutraukti)
   const activeChallenges = displayChallenges.filter(c => !c._is_completed);
   const completedChallenges = displayChallenges.filter(c => c._is_completed);
-  
-  // Atnaujinti skaičiukus
-  document.getElementById('tr-active-count').textContent = activeChallenges.length;
-  document.getElementById('tr-completed-count').textContent = completedChallenges.length;
-  document.getElementById('tr-my-challenges-count').textContent = activeChallenges.length;
 
-  // 🎯 HERO + tipo kortelės + grupės filtro chips (v112)
+  // 👥 Grupės filtras — skaičiukai, tipų kortelės IR sąrašas atspindi PASIRINKTĄ grupę (ne total)
+  const _gf = (typeof trChallengesGroupFilter !== 'undefined' && trChallengesGroupFilter) ? trChallengesGroupFilter : null;
+  const _inGf = (c) => !_gf || c.group_id === _gf;
+  const activeScoped = activeChallenges.filter(_inGf);
+  const completedScoped = completedChallenges.filter(_inGf);
+
+  // Atnaujinti skaičiukus (pagal pasirinktą grupę)
+  document.getElementById('tr-active-count').textContent = activeScoped.length;
+  document.getElementById('tr-completed-count').textContent = completedScoped.length;
+  document.getElementById('tr-my-challenges-count').textContent = activeScoped.length;
+
+  // 🎯 HERO + tipo kortelės + grupės filtro chips (v112) — irgi pagal pasirinktą grupę
   const heroSub = document.getElementById('trch-hero-sub');
-  if (heroSub) heroSub.textContent = `${completedChallenges.length} pasibaigę · ${displayChallenges.length} iš viso`;
+  if (heroSub) heroSub.textContent = `${completedScoped.length} pasibaigę · ${activeScoped.length + completedScoped.length} iš viso`;
   const _typeCounts = {};
-  activeChallenges.forEach(c => { _typeCounts[c.type] = (_typeCounts[c.type] || 0) + 1; });
+  activeScoped.forEach(c => { _typeCounts[c.type] = (_typeCounts[c.type] || 0) + 1; });
   ['training', 'weekly', 'monthly', 'one_time', 'permanent'].forEach(t => {
     const el = document.getElementById('trch-type-' + t);
     if (el) el.textContent = _typeCounts[t] || 0;
   });
   if (typeof renderTrchGroupFilter === 'function') renderTrchGroupFilter();
 
-  // Pasirinkti rodymui (+ grupės filtras)
-  let challengesToShow = myChallengesActiveTab === 'active' ? activeChallenges : completedChallenges;
-  if (typeof trChallengesGroupFilter !== 'undefined' && trChallengesGroupFilter) {
-    challengesToShow = challengesToShow.filter(c => c.group_id === trChallengesGroupFilter);
-  }
+  // Pasirinkti rodymui (grupės filtras jau pritaikytas)
+  let challengesToShow = myChallengesActiveTab === 'active' ? activeScoped : completedScoped;
   
   if (!challengesToShow.length) {
     const message = myChallengesActiveTab === 'active'
