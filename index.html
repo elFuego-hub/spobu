@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v185</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v186</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3970,6 +3970,12 @@ async function init() {
       registerServiceWorker();
     }
   } catch (_) { registerServiceWorker(); }
+
+  // 🔄 Automatinis versijos tikrinimas — kad naujausia versija užsikrautų be rankinio kešo valymo
+  setTimeout(() => { if (typeof checkForNewVersion === 'function') checkForNewVersion(); }, 4000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && typeof checkForNewVersion === 'function') checkForNewVersion();
+  });
 
   // 🔍 Pritaikyti išsaugotą vaizdo dydį
   if (typeof applyAppZoom === 'function') applyAppZoom();
@@ -26893,6 +26899,39 @@ function pushSupported() {
 }
 
 // Registruoja Service Worker (kviečiama app'o starte)
+// 🔄 Versijos tikrinimas: jei serveryje naujesnė versija — pasiūlyti atnaujinti (apeina kešą)
+let _updateBannerShown = false;
+async function checkForNewVersion() {
+  try {
+    const curEl = document.getElementById('app-version');
+    const cur = curEl ? (curEl.textContent || '').replace(/\D/g, '') : '';
+    if (!cur) return;
+    const res = await fetch('index.html?cb=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const txt = await res.text();
+    const m = txt.match(/id="app-version"[^>]*>\s*v?(\d+)/i);
+    const latest = m ? m[1] : '';
+    if (latest && parseInt(latest, 10) > parseInt(cur, 10)) _showUpdateBanner(latest);
+  } catch (_) {}
+}
+
+function _showUpdateBanner(latest) {
+  if (_updateBannerShown || document.getElementById('spobu-update-banner')) return;
+  _updateBannerShown = true;
+  const b = document.createElement('div');
+  b.id = 'spobu-update-banner';
+  b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:200000;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;padding:calc(11px + env(safe-area-inset-bottom,0px)) 16px 11px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -2px 14px rgba(0,0,0,.45);font-family:inherit;';
+  b.innerHTML = `<div style="font-size:13px;font-weight:800;">🔄 Yra nauja versija (v${latest})</div>
+    <button onclick="_applyUpdate('${latest}')" style="background:#fff;color:#FF4D00;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;">Atnaujinti</button>`;
+  document.body.appendChild(b);
+}
+
+async function _applyUpdate(latest) {
+  try { if (window.caches && caches.keys) { const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } } catch (_) {}
+  const base = location.href.split('?')[0].split('#')[0];
+  location.replace(base + '?v=' + latest);
+}
+
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
   try {
