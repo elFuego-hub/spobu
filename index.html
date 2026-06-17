@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v188</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v189</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19746,6 +19746,7 @@ async function _aecSubmit() {
 
 let trChallengesGroupFilter = null;  // null = visos grupės
 let _trOwnChallenges = [];           // cache su _stats/_eligible_count — dalinimosi kortelei
+let _chShareFile = null;             // iš anksto sugeneruotas iššūkio kortelės paveikslėlis (share per user-gesture)
 let trPatGroupFilter = null;
 
 function _groupFilterChips(containerId, activeId, onclickFn) {
@@ -19874,9 +19875,20 @@ async function openChallengeShareCard(challengeId) {
     const cardEl = document.getElementById('ch-share-card');
     if (!cardEl) { console.warn('[ch-share] ch-share-card elemento nėra (langas uždarytas?)'); return; }
     cardEl.innerHTML = _challengeShareCardHtml(d);
-    const goBtn = document.getElementById('ch-share-go');
-    if (goBtn) { goBtn.disabled = false; goBtn.style.opacity = '1'; }
     console.log('[ch-share] kortelė atvaizduota ✓');
+    // 3. IŠ ANKSTO sugeneruojam paveikslėlį — kad „Dalintis" iškart kviestų navigator.share per gyvą user-gesture
+    _chShareFile = null;
+    const goBtn = document.getElementById('ch-share-go');
+    if (goBtn) goBtn.textContent = '⏳ Ruošiama…';
+    try {
+      if (typeof html2canvas === 'function') {
+        try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
+        const canvas = await html2canvas(cardEl, { backgroundColor: '#0b0b0f', scale: 2, useCORS: true, logging: false });
+        await new Promise(res => canvas.toBlob(b => { _chShareFile = b ? new File([b], 'spobu-issukis.png', { type: 'image/png' }) : null; res(); }, 'image/png'));
+        console.log('[ch-share] paveikslėlis paruoštas iš anksto:', !!_chShareFile);
+      }
+    } catch (e) { console.warn('[ch-share] iš anksto generuojant klaida:', e); }
+    if (goBtn) { goBtn.disabled = false; goBtn.style.opacity = '1'; goBtn.textContent = '📲 Dalintis'; }
   } catch (e) {
     console.error('[ch-share] kortelės paruošimo klaida:', e);
     const cardEl = document.getElementById('ch-share-card');
@@ -19885,31 +19897,43 @@ async function openChallengeShareCard(challengeId) {
   }
 }
 
+function _downloadChShareFile() {
+  if (!_chShareFile) return;
+  const url = URL.createObjectURL(_chShareFile);
+  const a = document.createElement('a'); a.href = url; a.download = 'spobu-issukis.png'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('Paveikslėlis išsaugotas 💾', 'success', 3000);
+}
+
 async function shareChallengeCardImg() {
+  console.log('[ch-share] DALINTIS, failas paruoštas:', !!_chShareFile);
+  // Paveikslėlis sugeneruotas IŠ ANKSTO → navigator.share kviečiamas IŠKART (per gyvą user-gesture)
+  if (_chShareFile && navigator.canShare && navigator.canShare({ files: [_chShareFile] })) {
+    try {
+      await navigator.share({ files: [_chShareFile], title: 'SPOBU', text: 'Mūsų grupės iššūkio rezultatas! 🥋🔥' });
+    } catch (e) {
+      console.warn('[ch-share] navigator.share klaida:', e && e.name, e);
+      if (e && e.name === 'AbortError') return; // vartotojas pats atšaukė
+      _downloadChShareFile(); // kitos klaidos → atsisiunčiam
+    }
+    return;
+  }
+  // Native share negalimas (kompiuteryje) → atsisiunčiam paruoštą failą
+  if (_chShareFile) { _downloadChShareFile(); return; }
+  // Failo nėra (html2canvas nepavyko paruošti) → bandom gyvai (tik atsisiuntimas)
   const card = document.getElementById('ch-share-card');
-  if (!card) { console.warn('[ch-share] DALINTIS: nėra ch-share-card'); return; }
-  if (typeof html2canvas !== 'function') { console.warn('[ch-share] html2canvas nėra'); showToast('Pasidaryk ekrano nuotrauką ir dalinkis 📸', '', 4000); return; }
-  console.log('[ch-share] DALINTIS start, kortelės dydis:', card.offsetWidth, 'x', card.offsetHeight);
+  if (!card || typeof html2canvas !== 'function') { showToast('Pasidaryk ekrano nuotrauką 📸', '', 4000); return; }
   showToast('Ruošiama…', '', 1500);
   try {
-    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
     const canvas = await html2canvas(card, { backgroundColor: '#0b0b0f', scale: 2, useCORS: true, logging: false });
-    console.log('[ch-share] canvas baigtas:', canvas.width, 'x', canvas.height);
-    canvas.toBlob(async (blob) => {
-      if (!blob) { console.warn('[ch-share] blob NULL'); showToast('Nepavyko sukurti paveikslėlio', 'error'); return; }
-      const file = new File([blob], 'spobu-issukis.png', { type: 'image/png' });
-      const canShareFiles = !!(navigator.canShare && navigator.canShare({ files: [file] }));
-      console.log('[ch-share] blob OK, canShareFiles:', canShareFiles);
-      if (canShareFiles) {
-        try { await navigator.share({ files: [file], title: 'SPOBU', text: 'Mūsų grupės iššūkio rezultatas! 🥋🔥' }); } catch (e) {}
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'spobu-issukis.png'; a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        showToast('Paveikslėlis išsaugotas 💾', 'success', 3000);
-      }
+    canvas.toBlob(b => {
+      if (!b) { showToast('Nepavyko sukurti paveikslėlio', 'error'); return; }
+      const url = URL.createObjectURL(b);
+      const a = document.createElement('a'); a.href = url; a.download = 'spobu-issukis.png'; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('Paveikslėlis išsaugotas 💾', 'success', 3000);
     }, 'image/png');
-  } catch (e) { console.error('[ch-share] html2canvas/dalinimosi klaida:', e); showToast('Klaida: ' + (e.message || e || ''), 'error', 5000); }
+  } catch (e) { console.error('[ch-share] gyvo gen klaida:', e); showToast('Klaida: ' + (e.message || e || ''), 'error', 5000); }
 }
 
 function renderTrPatGroupFilter() {
