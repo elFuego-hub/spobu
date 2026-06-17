@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v212</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v213</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -29476,7 +29476,8 @@ async function loadAllNotifications(force) {
         title: 'PR patvirtintas',
         body: `${s.exercises?.name || 'Pratimas'}: ${s.new_value} · +${s.exp_gain || 0} EXP`,
         time: s.reviewed_at,
-        link: 'v-kar'
+        link: 'v-kar',
+        share: { ex: s.exercises?.name || 'Pratimas', val: String(s.new_value ?? ''), exp: s.exp_gain || 0 }
       });
     }
   });
@@ -29700,8 +29701,128 @@ function renderNotifTab(tab) {
         </div>
         <div style="font-size:9px;color:var(--mut);white-space:nowrap;flex-shrink:0;">${timeAgo(n.time)}</div>
       </div>
+      ${n.share ? `<div style="margin-top:8px;text-align:right;"><button onclick="event.stopPropagation();openKidShareCardFromNotif('${n.id}')" style="background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;padding:6px 13px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">📲 Pasidalinti</button></div>` : ''}
     </div>`;
   }).join('');
+}
+
+// ════════════════════════════════════════
+// 📲 PASIEKIMO DALINIMOSI KORTELĖ (Strava tipo) — atliktas pratimas iš varpelio
+// SPOBU logo + vaiko nuotrauka (fonas) + rezultatas. Kopijuoti / Išsaugoti / Dalintis.
+// ════════════════════════════════════════
+let _kidShareData = null;
+let _kidSharePhoto = null;
+
+function openKidShareCardFromNotif(notifId) {
+  let found = null;
+  ['system', 'challenges', 'competitions', 'messages'].forEach(t => {
+    (allNotifications[t] || []).forEach(n => { if (n.id === notifId && n.share) found = n.share; });
+  });
+  if (found) openKidShareCard(found.ex, found.val, found.exp);
+}
+
+function _kidShareCardInner(d, photo) {
+  const bg = photo ? `background-image:url('${photo}');background-size:cover;background-position:center;` : 'background:#15171c;';
+  const name = `${(currentKid?.first_name || '')} ${(currentKid?.last_name || '')}`.trim();
+  return `<div style="position:absolute;inset:0;${bg}"></div>
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,.55);"></div>
+    <div style="position:absolute;inset:0;padding:20px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:#fff;line-height:1;">SPO<span style="color:#FF4D00;">BU.</span></div>
+        <div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#fff;background:#FF4D00;padding:4px 10px;border-radius:99px;">PASIEKIMAS</div>
+      </div>
+      <div>
+        <div style="font-size:44px;line-height:1;margin-bottom:8px;">💪</div>
+        <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:.5px;text-shadow:0 1px 4px rgba(0,0,0,.6);">${d.ex}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;color:#fff;line-height:1;margin:2px 0;text-shadow:0 2px 8px rgba(0,0,0,.7);">${d.val}</div>
+        <div style="display:inline-block;font-size:14px;font-weight:800;color:#1a0a00;background:#FFD700;padding:4px 12px;border-radius:99px;">+${d.exp} EXP</div>
+        <div style="font-size:12px;color:#fff;margin-top:12px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.6);">${name ? name + ' · ' : ''}OSU! 🥋</div>
+      </div>
+    </div>`;
+}
+
+function openKidShareCard(ex, val, exp) {
+  _kidShareData = { ex: ex, val: val, exp: exp };
+  _kidSharePhoto = null;
+  let m = document.getElementById('kidshare-modal');
+  if (m) m.remove();
+  m = document.createElement('div');
+  m.id = 'kidshare-modal';
+  m.style.cssText = 'position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,.9);display:flex;align-items:flex-end;justify-content:center;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:440px;background:var(--bg);border-radius:24px 24px 0 0;max-height:94vh;overflow-y:auto;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+      <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">📲 PASIDALINK PASIEKIMU</div>
+        <button onclick="document.getElementById('kidshare-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+      </div>
+      <div style="padding:16px;">
+        <div id="kidshare-card" style="position:relative;width:100%;aspect-ratio:4/5;border-radius:16px;overflow:hidden;background:#0f1115;">${_kidShareCardInner(_kidShareData, null)}</div>
+        <input type="file" id="kidshare-photo-input" accept="image/*" style="display:none;" onchange="_kidSharePhotoPicked(event)">
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button onclick="document.getElementById('kidshare-photo-input').click()" style="flex:1;padding:11px;border-radius:12px;border:.5px solid var(--bdr);background:var(--card);color:white;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">📷 Nuotrauka</button>
+          <button onclick="_kidShareAction('copy')" style="flex:1;padding:11px;border-radius:12px;border:none;background:rgba(255,255,255,.1);color:white;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">📋 Kopijuoti</button>
+          <button onclick="_kidShareAction('save')" style="flex:1;padding:11px;border-radius:12px;border:none;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">💾 Išsaugoti</button>
+        </div>
+        <button onclick="_kidShareAction('share')" id="kidshare-share-btn" style="width:100%;margin-top:8px;padding:11px;border-radius:12px;border:none;background:#1DA1F2;color:white;font-weight:800;font-size:12px;cursor:pointer;display:none;font-family:inherit;">📲 Dalintis</button>
+        <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.5;">Pridėk savo nuotrauką, tada kopijuok arba išsaugok — ir dėk į Instagram / TikTok! 🔥</div>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  if (navigator.share) { const b = document.getElementById('kidshare-share-btn'); if (b) b.style.display = 'block'; }
+}
+
+function _kidSharePhotoPicked(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    _kidSharePhoto = r.result;
+    const card = document.getElementById('kidshare-card');
+    if (card) card.innerHTML = _kidShareCardInner(_kidShareData, _kidSharePhoto);
+  };
+  r.readAsDataURL(f);
+}
+
+function _kidDLBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1000);
+}
+
+async function _kidShareAction(kind) {
+  const card = document.getElementById('kidshare-card');
+  if (!card || typeof html2canvas !== 'function') { showToast('❌ Nepavyko paruošti kortelės', 'error'); return; }
+  showToast('⏳ Ruošiama...', 'info', 1500);
+  try {
+    const canvas = await html2canvas(card, { useCORS: true, scale: 3, backgroundColor: null, logging: false });
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    if (!blob) throw new Error('Nepavyko sukurti paveikslo');
+    const fileName = 'spobu-pasiekimas.png';
+    if (kind === 'copy') {
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        showToast('📋 Nukopijuota! Įklijuok į Instagram ar žinutę', 'success', 3500);
+      } else {
+        _kidDLBlob(blob, fileName);
+        showToast('💾 Išsaugota (kopijavimas nepalaikomas šiame įrenginyje)', 'success', 3500);
+      }
+    } else if (kind === 'save') {
+      _kidDLBlob(blob, fileName);
+      showToast('💾 Išsaugota į atsisiuntimus / galeriją', 'success', 3500);
+    } else if (kind === 'share') {
+      const file = new File([blob], fileName, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Mano pasiekimas — SPOBU' });
+      } else {
+        _kidDLBlob(blob, fileName);
+        showToast('💾 Išsaugota (dalinimasis nepalaikomas)', 'success', 3500);
+      }
+    }
+  } catch (e) {
+    console.error('kidShare:', e);
+    showToast('❌ Nepavyko: ' + (e.message || 'klaida'), 'error', 4000);
+  }
 }
 
 function markNotifRead(notifId) {
