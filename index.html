@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v197</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v198</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -24865,73 +24865,45 @@ async function loadPendingChallengeSubmissions() {
     // Standartinis "meetsTarget" - vienkartinis pasiektas?
     const meetsTarget = !isPartial && ch?.target_value && submissionValue >= ch.target_value;
     
-    let resultBlock = '';
-    
-    if (isPartial) {
-      // 📊 PARTIAL - rodyti progress baras
-      const pct = Math.min(100, (projectedProgress / ch.target_value) * 100);
-      const color = willComplete ? '#22C55E' : '#FF8C00';
-      const statusText = willComplete ? '✅ Patvirtinus - PILNAI ATLIKTA' : '📊 Tarpinis rezultatas';
-      
-      resultBlock = `
-        <div style="background:${willComplete ? 'rgba(34,197,94,.1)' : 'rgba(79,195,247,.08)'};border:.5px solid ${willComplete ? 'var(--grn)' : 'rgba(79,195,247,.3)'};border-radius:10px;padding:12px;margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="font-size:10px;color:var(--mut);letter-spacing:1px;">PATEIKIA</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${color};letter-spacing:1px;">+${submissionValue} ${ch?.target_unit || ''}</div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;">
-            <span style="color:var(--mut);">Buvo: <b style="color:white;">${currentProgress}</b></span>
-            <span style="color:var(--mut);">→ Bus: <b style="color:${color};">${projectedProgress} / ${ch.target_value}</b></span>
-          </div>
-          <div style="height:8px;background:var(--bdr);border-radius:99px;overflow:hidden;margin-bottom:8px;">
-            <div style="height:100%;background:linear-gradient(90deg,${color},${willComplete ? '#16A34A' : '#FFB300'});width:${pct.toFixed(1)}%;transition:width .4s;box-shadow:0 0 8px ${color}66;"></div>
-          </div>
-          <div style="text-align:center;font-size:11px;font-weight:800;color:${color};">${statusText}</div>
-        </div>
-      `;
-    } else {
-      // STANDARTINIS - vienkartinis rezultatas
-      resultBlock = `
-        <div style="background:${meetsTarget ? 'rgba(34,197,94,.1)' : 'var(--bg)'};border:.5px solid ${meetsTarget ? 'var(--grn)' : 'var(--bdr)'};border-radius:10px;padding:12px;margin-bottom:10px;text-align:center;">
-          <div style="font-size:10px;color:var(--mut);letter-spacing:1px;">PATEIKTAS REZULTATAS</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:${meetsTarget ? 'var(--grn)' : 'var(--text)'};margin:4px 0;">${s.value || '?'} ${ch?.target_unit || ''}</div>
-          ${meetsTarget ? '<div style="font-size:10px;color:var(--grn);font-weight:700;">✓ TIKSLAS PASIEKTAS</div>' : '<div style="font-size:10px;color:var(--mut);">Tikslas nepasiektas</div>'}
-        </div>
-      `;
-    }
-    
-    // EXP rodymas - partial atveju rodyti TIK kai pilnai atliks
-    const expBlock = isPartial 
-      ? `<div style="background:var(--bg);border-radius:10px;padding:8px 10px;margin-bottom:10px;text-align:center;">
-          <div style="font-size:10px;color:var(--mut);">EXP ATLYGIS</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${willComplete ? 'var(--grn)' : 'var(--mut)'};">
-            ${willComplete ? `+${ch?.exp_reward||0} EXP (Pilnai atliks!)` : `0 EXP (tarpinis)`}
-          </div>
-        </div>`
-      : `<div style="background:var(--bg);border-radius:10px;padding:8px 10px;margin-bottom:10px;text-align:center;">
-          <div style="font-size:10px;color:var(--mut);">EXP ATLYGIS PATVIRTINUS</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);">+${ch?.exp_reward||0} EXP</div>
-        </div>`;
-    
     const tColor = TYPE_COLORS[ch?.type] || '#FF8C00';
-    return `<div class="cd" style="margin-bottom:10px;padding:11px 12px;background:linear-gradient(135deg,${tColor}12,var(--card));border:.5px solid ${tColor}40;border-left:4px solid ${tColor};" id="csub-${s.id}" data-gid="${kid?.group_id || ''}">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <div class="av" style="width:36px;height:36px;font-size:14px;background:${tColor};">${(kidName||'?')[0]}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:900;">${kidName}</div>
-          <div style="font-size:11px;color:var(--mut);">${ch?.icon||'🎯'} ${ch?.title||'Iššūkis'}${isPartial ? ' <span style="background:rgba(79,195,247,.2);color:#4FC3F7;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:800;">📊 PARTIAL</span>' : ''}</div>
+    const pColor = willComplete ? '#22C55E' : '#FF8C00';
+    // Kompaktiška rezultato + EXP eilutė (viena vietoj 2 didelių blokų)
+    let infoRow;
+    if (isPartial) {
+      const pct = Math.min(100, ch?.target_value ? (projectedProgress / ch.target_value) * 100 : 0);
+      infoRow = `<div style="background:rgba(255,255,255,.04);border-radius:9px;padding:8px 10px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+          <div style="font-size:11px;min-width:0;"><span style="color:var(--mut);">Pateikia</span> <b style="color:${pColor};">+${submissionValue} ${ch?.target_unit || ''}</b> <span style="color:var(--mut);">→ ${projectedProgress}/${ch?.target_value || '?'}</span></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;line-height:1;color:${willComplete ? 'var(--grn)' : 'var(--mut)'};flex-shrink:0;">${willComplete ? '+' + (ch?.exp_reward || 0) : '0'} EXP</div>
         </div>
-        <div style="background:${tColor}22;color:${tColor};font-size:9px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-radius:99px;flex-shrink:0;white-space:nowrap;">${typeLabels[ch?.type]||ch?.type||''}</div>
+        <div style="height:6px;background:var(--bdr);border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pct.toFixed(0)}%;background:${pColor};border-radius:99px;"></div></div>
+        <div style="font-size:9px;font-weight:800;color:${willComplete ? 'var(--grn)' : 'var(--mut)'};margin-top:4px;">${willComplete ? '✅ Patvirtinus — pilnai atlikta' : '📊 Tarpinis rezultatas'}</div>
+      </div>`;
+    } else {
+      infoRow = `<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:9px;padding:8px 11px;margin-bottom:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:8.5px;color:var(--mut);letter-spacing:.5px;text-transform:uppercase;">Pateikė${ch?.target_value ? ` · tikslas ${ch.target_value}` : ''}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:21px;line-height:1.05;color:${meetsTarget ? 'var(--grn)' : 'white'};">${s.value || '?'} <span style="font-size:11px;color:var(--mut);">${ch?.target_unit || ''}</span>${meetsTarget ? ' <span style="font-size:11px;color:var(--grn);">✓</span>' : ''}</div>
+        </div>
+        <div style="text-align:center;background:${tColor}1a;border-radius:9px;padding:5px 12px;flex-shrink:0;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:${tColor};">+${ch?.exp_reward || 0}</div>
+          <div style="font-size:8px;color:var(--mut);letter-spacing:.5px;">EXP</div>
+        </div>
+      </div>`;
+    }
+    return `<div class="cd" style="margin-bottom:9px;padding:10px 11px;background:linear-gradient(135deg,${tColor}10,var(--card));border:.5px solid ${tColor}40;border-left:3px solid ${tColor};" id="csub-${s.id}" data-gid="${kid?.group_id || ''}">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">
+        <div class="av" style="width:30px;height:30px;font-size:12px;background:${tColor};flex-shrink:0;">${(kidName || '?')[0]}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${kidName}</div>
+          <div style="font-size:10px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ch?.icon || '🎯'} ${ch?.title || 'Iššūkis'}${isPartial ? ' · 📊' : ''}</div>
+        </div>
+        <div style="background:${tColor}22;color:${tColor};font-size:8.5px;font-weight:800;letter-spacing:.4px;padding:3px 8px;border-radius:99px;flex-shrink:0;white-space:nowrap;">${typeLabels[ch?.type] || ch?.type || ''}</div>
       </div>
-      
-      ${targetText ? `<div style="font-size:11px;color:var(--mut);margin-bottom:8px;">${targetText}</div>` : ''}
-      
-      ${resultBlock}
-      ${expBlock}
-      
-      <div style="display:flex;gap:8px;">
-        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveChallengeSubmission('${s.id}')">✓ Patvirtinti</button>
-        <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="rejectChallengeSubmission('${s.id}')">✗ Atmesti</button>
+      ${infoRow}
+      <div style="display:flex;gap:7px;">
+        <button class="bsm" style="flex:1;background:var(--grn);color:white;padding:8px;" onclick="approveChallengeSubmission('${s.id}')">✓ Patvirtinti</button>
+        <button class="bsm" style="flex:none;width:46px;background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;" onclick="rejectChallengeSubmission('${s.id}')">✗</button>
       </div>
     </div>`;
   });
