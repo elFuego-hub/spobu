@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v209</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v210</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2369,6 +2369,7 @@ select.inp option{background:#222;}
   <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;line-height:1;">SPO<span style="color:var(--br);text-shadow:0 0 10px rgba(255,77,0,.6);">BU</span><span style="color:var(--br);text-shadow:0 0 10px rgba(255,77,0,.6);">.</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openParentInfo('main')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą">💡</div>
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
@@ -2587,6 +2588,7 @@ select.inp option{background:#222;}
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PASIEKIMAI</div>
     <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openParentInfo('feed')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą">💡</div>
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
@@ -2618,6 +2620,7 @@ select.inp option{background:#222;}
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PARDUOTUVĖ</div>
     <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openParentInfo('shop')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą">💡</div>
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
@@ -2773,6 +2776,7 @@ select.inp option{background:#222;}
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openParentInfo('prof')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą">💡</div>
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
@@ -20693,7 +20697,7 @@ function openTrInfo(which) {
          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.9;">
            <b style="color:#fff;">🗓️ Savaitei (mažesni):</b> 150 atsispaudimų · 100 pritūpimų · nubėk 5 km · ateik į visas treniruotes<br>
            <b style="color:#fff;">📅 Mėnesiui (dideli):</b> nubėk 10 km · 500 atsispaudimų · planka 90 s · ištobulink naują kata · nepraleisk nė vienos treniruotės<br>
-           <b style="color:#fff;">🎯 Vienkartiniai:</b> pirmas špagatas · išlaikyk kyu egzaminą · 50 mawashi-geri be sustojimo · dalyvauk varžybose
+           <b style="color:#fff;">🎯 Vienkartiniai (1 para):</b> 50 atsispaudimų be sustojimo · planka 2 min · 50 mawashi-geri be sustojimo · naujas sprinto rekordas
          </div>`;
       break;
     case 'pat':
@@ -20713,6 +20717,56 @@ function openTrInfo(which) {
         row('🕸️', 'Vaikų karjeros profilis', 'Radaras pagal lytį ir amžių — kur grupė stipri, kur reikia padirbėti.') +
         row('🥋', 'Vaikų diržai', 'Diržų pasiskirstymas grupėse.') +
         row('🏆', 'Grupių reitingas', 'Filtruok pagal skillą, varžybas ar iššūkius (vidurkis vienam vaikui).');
+      break;
+    default:
+      title = '💡 INFO'; html = intro('Paaiškinimas.');
+  }
+  openInfoSubmodal(title, html);
+}
+
+// 💡 Tėvų langų gidas — kiekvienas langas (be Karjeros, kur jau yra) turi lemputę
+function openParentInfo(which) {
+  const row = (ic, t, d) => `<div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
+      <div style="font-size:18px;flex:none;line-height:1.3;">${ic}</div>
+      <div style="font-size:12.5px;line-height:1.5;"><b style="color:#fff;">${t}</b><br><span style="color:var(--mut);">${d}</span></div>
+    </div>`;
+  const intro = (txt) => `<div style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:14px;">${txt}</div>`;
+  let title = '', html = '';
+  switch (which) {
+    case 'main':
+      title = '💡 PAGRINDINIS';
+      html = intro('Jūsų vaiko progreso apžvalga.') +
+        row('🥋', 'Lygis ir etapas', 'Vaiko EXP, lygis (1–99) ir etapas — auga už pratimus, iššūkius ir varžybas.') +
+        row('🔥', 'Serijos (streak)', 'Kasdienio aktyvumo ruožai.') +
+        row('🏆', 'Reitingai', 'Vaiko vieta tarp bendraamžių klube.') +
+        row('🎯', 'Savaitės iššūkis', 'Aktualus trenerio paskelbtas iššūkis.') +
+        row('📅', 'Artimiausias įvykis', 'Kitos varžybos ar renginys.') +
+        row('🔄', 'Keisti vaiką', 'Jei turite kelis vaikus — burbulas viršuje dešinėje.');
+      break;
+    case 'feed':
+      title = '💡 PASIEKIMAI';
+      html = intro('Vaiko pasiekimų juosta — viskas, kas naujo, vienoje vietoje.') +
+        row('📈', 'Rekordai', 'Nauji karjeros pratimų rezultatai (PR).') +
+        row('💪', 'Iššūkiai', 'Vaiko įveikti iššūkiai.') +
+        row('🏅', 'Medaliai', 'Varžybų rezultatai.') +
+        row('👏', 'Pagyrimai', 'Trenerio skirtas EXP už elgesį/pastangas.') +
+        row('📋', 'Lankomumas', 'Treniruočių lankymas ir savaitės/mėnesio premijos.') +
+        row('📲', 'Dalintis', 'Mėnesio pasiekimų kortelę galite pasidalinti.');
+      break;
+    case 'shop':
+      title = '💡 PARDUOTUVĖ';
+      html = intro('Papildomos paslaugos jūsų vaikui.') +
+        row('💎', 'Premium', 'Gilesnė statistika ir reguliarios ataskaitos apie vaiką.') +
+        row('📊', 'AI ataskaitos', 'Diagnostika, veiksmų planas ir vasaros programa — apie vaiko fizinį vystymąsi.') +
+        row('🔜', 'Netrukus', 'Dalis funkcijų dar ruošiama.');
+      break;
+    case 'prof':
+      title = '💡 PROFILIS';
+      html = intro('Jūsų paskyra ir vaikai.') +
+        row('👤', 'Jūsų duomenys', 'Tėvo paskyros informacija.') +
+        row('👨‍👩‍👧', 'Vaikai', 'Susieti vaikai — perjunkite burbulu viršuje.') +
+        row('⚙️', 'Nustatymai', 'Pranešimai, vaiko duomenys, kalba.') +
+        row('🔔', 'Pranešimai', 'Gausite žinią, kai vaikas pasieks ką nors naujo.');
       break;
     default:
       title = '💡 INFO'; html = intro('Paaiškinimas.');
