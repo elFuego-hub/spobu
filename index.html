@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v208</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v209</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -20676,6 +20676,7 @@ function openTrInfo(which) {
       html = intro('Čia kuri ir valdai savo grupes.') +
         row('➕', 'Sukurti grupę', 'Pavadinimas, spalva ir tvarkaraštis (dienos + laikas).') +
         row('👤', 'Priskirti vaikus', 'Pridėk mokinius į grupę.') +
+        row('👆', 'Paspausk ant vaiko', 'Atsidaro vaiko kortelė: duomenys, el. paštas, tėvai, sveikata, laukiantys patvirtinimai. Gali skirti EXP, asmeninį iššūkį ar EXP už elgesį.') +
         row('📋', 'Lankomumas', 'Žymėk, kas atėjo. Pilna savaitė → +15 EXP, pilnas mėnuo → +100.') +
         row('🎯', 'Grupės iššūkis', 'Vienu paspaudimu skelbk iššūkį visai grupei.') +
         row('💬', 'Pranešimai', 'Rašyk žinutę visai grupei.');
@@ -20683,18 +20684,16 @@ function openTrInfo(which) {
     case 'challenges':
       title = '💡 IŠŠŪKIAI';
       html = intro('Iššūkiai motyvuoja vaikus tarp treniruočių. Sukuri → vaikas atlieka ir pateikia → tu patvirtini → vaikas gauna EXP.') +
-        row('🗓️', 'Savaitės / mėnesio', 'Trumpi tikslai su terminu.') +
-        row('♾️', 'Nuolatinis', 'Galioja visą laiką (pvz. kasdienė mankšta).') +
+        row('🗓️', 'Savaitės / mėnesio', 'Terminuoti tikslai. Mėnesiui — didesnis, ilgesnis uždavinys; savaitei — mažesnis.') +
+        row('♾️', 'Nuolatinis', 'Galioja visą laiką.') +
         row('🎯', 'Grupei arba vaikui', 'Skelbk visai grupei arba konkrečiam mokiniui.') +
-        `<div style="font-size:11px;font-weight:800;color:#FF8C00;letter-spacing:.5px;margin:14px 0 8px;">💡 PAVYZDŽIAI, KĄ GALI SIŪLYTI</div>
-         <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.85;">
-           <b style="color:#fff;">💪 Jėga:</b> 100 atsispaudimų per savaitę · planka 60 s · 50 pritūpimų 7 d. iš eilės<br>
-           <b style="color:#fff;">🏃 Ištvermė:</b> nubėk 2 km · 10 min šokdynė be sustojimo<br>
-           <b style="color:#fff;">🤸 Lankstumas:</b> tempkis 10 min kasdien 30 d. · priartėk prie špagato<br>
-           <b style="color:#fff;">🥋 Technika:</b> 100 mae-geri kasdien · ištobulink kata · 50 mawashi-geri į koją<br>
-           <b style="color:#fff;">🧘 Drausmė:</b> nepraleisk nė vienos treniruotės mėnesį · rytinė mankšta 5 d.<br>
-           <b style="color:#fff;">🍎 Sveikata:</b> savaitė be saldumynų · 8 stiklinės vandens per dieną<br>
-           <b style="color:#fff;">⚔️ Varžybinis:</b> dalyvauk klubo turnyre · iškovok 5 ippon
+        row('📲', 'Pasidalink', 'Pasibaigusio iššūkio rezultatų kortelę gali pasidalinti socialiniuose tinkluose.') +
+        `<div style="font-size:11px;font-weight:800;color:#FF8C00;letter-spacing:.5px;margin:14px 0 4px;">💡 PAVYZDŽIAI — TIK TAI, KĄ GALI PATIKRINTI</div>
+         <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:8px;">Matuojama treniruotėje, per Strava ar pateiktą rezultatą. Tikslo dydis — pagal trukmę.</div>
+         <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.9;">
+           <b style="color:#fff;">🗓️ Savaitei (mažesni):</b> 150 atsispaudimų · 100 pritūpimų · nubėk 5 km · ateik į visas treniruotes<br>
+           <b style="color:#fff;">📅 Mėnesiui (dideli):</b> nubėk 10 km · 500 atsispaudimų · planka 90 s · ištobulink naują kata · nepraleisk nė vienos treniruotės<br>
+           <b style="color:#fff;">🎯 Vienkartiniai:</b> pirmas špagatas · išlaikyk kyu egzaminą · 50 mawashi-geri be sustojimo · dalyvauk varžybose
          </div>`;
       break;
     case 'pat':
@@ -20704,7 +20703,8 @@ function openTrInfo(which) {
         row('💪', 'Iššūkiai', 'Atlikti iššūkiai.') +
         row('🏅', 'Varžybos', 'Varžybų rezultatai ir medaliai.') +
         row('⚔️', 'Dvikovos', 'Dvikovų rezultatai.') +
-        row('📝', 'Anketos', 'Naujų vaikų registracijos (rodoma tik „Visos").');
+        row('📝', 'Anketos', 'Naujų vaikų registracijos (rodoma tik „Visos").') +
+        `<div style="margin-top:10px;background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.45);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6;color:#fff;">⚠️ <b>Tvirtink atsakingai!</b> Patvirtink tik tai, ką vaikas tikrai atliko. Nuo to priklauso visa statistika, lygiai ir reitingai — klaidingas patvirtinimas iškreipia duomenis visiems.</div>`;
       break;
     case 'prof':
       title = '💡 PROFILIS';
