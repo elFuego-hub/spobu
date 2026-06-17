@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v179</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v180</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -18922,34 +18922,32 @@ async function loadTrainerGroups() {
     // Suskaičiuojam total EXP grupėje
     const totalExp = kidsInGroup.reduce((sum, k) => sum + (k.total_exp || 0), 0);
     
+    const gInitial = ((g.name || '?').trim().charAt(0) || '?').toUpperCase();
     html += `
-      <div style="background:var(--card);border:.5px solid ${groupColor};border-left:4px solid ${groupColor};border-radius:14px;margin-bottom:10px;overflow:hidden;">
-        <!-- Grupės antraštė (clickable) -->
-        <div onclick="openGroupView('${g.id}')" style="padding:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-              <div style="width:10px;height:10px;border-radius:50%;background:${groupColor};flex-shrink:0;"></div>
-              <div style="font-weight:900;font-size:15px;">${g.name}</div>
+      <div style="background:var(--card);border:.5px solid ${groupColor}55;border-radius:16px;margin-bottom:10px;overflow:hidden;position:relative;">
+        <!-- Antraštė (clickable → grupės langas) -->
+        <div onclick="openGroupView('${g.id}')" style="padding:14px 14px 12px;cursor:pointer;position:relative;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+          <div style="position:absolute;top:-34px;right:-34px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,${groupColor}26,transparent 70%);pointer-events:none;"></div>
+          <div style="display:flex;align-items:center;gap:11px;position:relative;">
+            <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,${groupColor},${groupColor}aa);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:#fff;flex-shrink:0;box-shadow:0 2px 10px ${groupColor}55;">${gInitial}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:900;font-size:15.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${g.name}</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:3px;">👥 <strong style="color:var(--text);">${kidsInGroup.length}</strong> ${kidsInGroup.length === 1 ? 'narys' : 'nariai'}${totalExp > 0 ? ` · ⚡ ${totalExp.toLocaleString()} EXP` : ''}</div>
             </div>
-            ${g.description ? `<div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:2px;">${g.description}</div>` : ''}
-            <div style="font-size:11px;color:var(--mut);margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;">
-              <span>👥 <strong>${kidsInGroup.length}</strong> ${kidsInGroup.length === 1 ? 'narys' : 'nariai'}</span>
-              ${pendByGroup[g.id] ? `<span style="color:var(--br);font-weight:800;">⏳ ${pendByGroup[g.id]} laukia patvirtinimo</span>` : ''}
-              ${schedLabel ? `<span style="color:${groupColor};">📅 ${schedLabel}</span>` : ''}
-              ${totalExp > 0 ? `<span>⚡ ${totalExp.toLocaleString()} EXP</span>` : ''}
-            </div>
+            <div style="font-size:18px;color:var(--mut);flex-shrink:0;">›</div>
           </div>
-          
-          <!-- Mygtukai -->
-          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;" onclick="event.stopPropagation();">
-            <button onclick="composeMessageToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="background:rgba(99,102,241,.15);color:#6366f1;border:.5px solid rgba(99,102,241,.3);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Pranešimai grupei">💬</button>
-            <button onclick="openAssignKidsToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Priskirti vaikus">+👤</button>
-            <button onclick="openEditGroupModal('${g.id}')" style="background:rgba(255,255,255,.06);color:var(--mut);border:.5px solid var(--bdr);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Redaguoti grupę">✏️</button>
-            <button onclick="deleteGroup('${g.id}')" style="background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;" title="Ištrinti grupę">🗑️</button>
-          </div>
-          
-          <!-- Strelytė į grupės langą -->
-          <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+          ${g.description ? `<div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:9px;position:relative;">${g.description}</div>` : ''}
+          ${(schedLabel || pendByGroup[g.id]) ? `<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;position:relative;">
+            ${schedLabel ? `<span style="display:inline-flex;align-items:center;gap:5px;background:${groupColor}1a;border:.5px solid ${groupColor}55;border-radius:99px;padding:4px 11px;font-size:10.5px;color:${groupColor};font-weight:800;">📅 ${schedLabel}</span>` : ''}
+            ${pendByGroup[g.id] ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);border-radius:99px;padding:4px 11px;font-size:10.5px;color:var(--br);font-weight:800;">⏳ ${pendByGroup[g.id]} laukia patvirtinimo</span>` : ''}
+          </div>` : ''}
+        </div>
+        <!-- Veiksmai — tvarkinga apatinė juosta -->
+        <div style="display:flex;border-top:.5px solid var(--bdr);" onclick="event.stopPropagation();">
+          <button onclick="composeMessageToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="flex:1;background:none;border:none;border-right:.5px solid var(--bdr);padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:#8b8df5;-webkit-tap-highlight-color:rgba(139,141,245,.2);" title="Pranešimai grupei">💬</button>
+          <button onclick="openAssignKidsToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="flex:1;background:none;border:none;border-right:.5px solid var(--bdr);padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:var(--grn);-webkit-tap-highlight-color:rgba(34,197,94,.2);" title="Priskirti vaikus">＋👤</button>
+          <button onclick="openEditGroupModal('${g.id}')" style="flex:1;background:none;border:none;border-right:.5px solid var(--bdr);padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:var(--mut);-webkit-tap-highlight-color:rgba(255,255,255,.1);" title="Redaguoti grupę">✏️</button>
+          <button onclick="deleteGroup('${g.id}')" style="flex:1;background:none;border:none;padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:#EF4444;-webkit-tap-highlight-color:rgba(239,68,68,.2);" title="Ištrinti grupę">🗑️</button>
         </div>
       </div>
     `;
