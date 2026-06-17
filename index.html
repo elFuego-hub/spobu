@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v198</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v199</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2239,6 +2239,17 @@ select.inp option{background:#222;}
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);line-height:1;" id="trp-ish-num">0</div>
         <div style="font-size:8px;color:var(--mut);margin-top:2px;font-weight:700;text-transform:uppercase;">Įveikti išš.</div>
       </div>
+    </div>
+
+    <!-- 🕸️ Visų vaikų karjeros radaras (lytis × amžius) -->
+    <div style="margin:0 12px 6px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
+      <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">🕸️ VAIKŲ KARJEROS PROFILIS</div>
+      <div id="trp-career-toggle" style="display:flex;gap:6px;margin-bottom:10px;">
+        <button onclick="_trCareerRadarSetGender('visi')" data-g="visi" style="flex:1;padding:7px 0;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:#FF4D00;color:#1a0a00;">Visi</button>
+        <button onclick="_trCareerRadarSetGender('berniukai')" data-g="berniukai" style="flex:1;padding:7px 0;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.07);color:var(--mut);">Berniukai</button>
+        <button onclick="_trCareerRadarSetGender('merginos')" data-g="merginos" style="flex:1;padding:7px 0;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.07);color:var(--mut);">Merginos</button>
+      </div>
+      <div id="trp-career-radar"><div style="color:var(--mut);font-size:11px;text-align:center;padding:14px;">Kraunama...</div></div>
     </div>
 
     <!-- 🥋 Vaikų diržai -->
@@ -20238,10 +20249,140 @@ async function loadTrainerProfileStats() {
         </div>`;
       }).join('') : '<div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Nėra grupių</div>';
     }
+
+    // 🕸️ Visų vaikų karjeros radaras (lytis × amžius) — pildo #trp-career-radar
+    loadTrainerCareerRadar();
   } catch (e) {
     console.error('loadTrainerProfileStats:', e);
   }
 }
+
+// ════════════════════════════════════════
+// 🕸️ VISŲ VAIKŲ KARJEROS RADARAS (treneris) — lytis × amžius
+// Vidutinis category_exp (0–600, ribota per vaiką) kiekvienai sričiai.
+// Kohortos: Visi/Berniukai/Merginos × Iki 14 (mėlyna) / 14+ (oranžinė).
+// Vidurkis IMA IR vaikus su 0 (kad matytųsi spragos). Rodo vaikų sk. (n).
+// Duomenys: career_categories (kešas) + kid_records visiems allTrainerKids
+// (RLS: server-treneris-kid-records-read.sql — treneris jau skaito savo vaikų rekordus).
+// ════════════════════════════════════════
+let _trCareerRadarData = null;
+let _trCareerCatsCache = null;
+let _trCareerGender = 'visi';
+
+async function loadTrainerCareerRadar() {
+  const wrap = document.getElementById('trp-career-radar');
+  if (!wrap) return;
+  try {
+    const kids = allTrainerKids || [];
+    if (!kids.length) { wrap.innerHTML = '<div style="color:var(--mut);font-size:11px;text-align:center;padding:14px;">Nėra vaikų</div>'; return; }
+
+    // 1) Kategorijos (kešas vienai sesijai)
+    if (!_trCareerCatsCache) {
+      const { data: cats } = await sb.from('career_categories').select('id, name, icon, sort_order').order('sort_order').limit(7);
+      _trCareerCatsCache = cats || [];
+    }
+    const cats = _trCareerCatsCache;
+    if (!cats.length) { wrap.innerHTML = '<div style="color:var(--mut);font-size:11px;text-align:center;padding:14px;">Nėra kategorijų</div>'; return; }
+
+    // 2) Visų vaikų kid_records → suma per (vaikas, kategorija)
+    const kidIds = kids.map(k => k.id);
+    const perKid = {};
+    const CH = 300;
+    for (let i = 0; i < kidIds.length; i += CH) {
+      const slice = kidIds.slice(i, i + CH);
+      const { data: recs } = await sb.from('kid_records').select('kid_id, category_id, category_exp').in('kid_id', slice);
+      (recs || []).forEach(r => {
+        if (!r.category_id) return;
+        (perKid[r.kid_id] = perKid[r.kid_id] || {});
+        perKid[r.kid_id][r.category_id] = (perKid[r.kid_id][r.category_id] || 0) + (r.category_exp || 0);
+      });
+    }
+
+    // 3) Kohortos pagal lytį × amžių (<14 = a, 14+ = b)
+    const buckets = { visi: { a: [], b: [] }, berniukai: { a: [], b: [] }, merginos: { a: [], b: [] } };
+    kids.forEach(k => {
+      let age = null;
+      if (k.birth_date && typeof calculateAge === 'function') age = calculateAge(k.birth_date);
+      else if (k.birth_year) age = new Date().getFullYear() - k.birth_year;
+      const band = (age != null && age >= 14) ? 'b' : 'a';
+      buckets.visi[band].push(k.id);
+      if (k.gender === 'male') buckets.berniukai[band].push(k.id);
+      else if (k.gender === 'female') buckets.merginos[band].push(k.id);
+    });
+
+    // 4) Vidurkis per sritį (cap 600 per vaiką, įskaitant 0)
+    const avgArr = (ids) => {
+      const n = ids.length;
+      const arr = cats.map(cat => {
+        if (!n) return 0;
+        let sum = 0;
+        ids.forEach(id => { sum += Math.min(600, (perKid[id] && perKid[id][cat.id]) || 0); });
+        return Math.round(sum / n);
+      });
+      return { arr, n };
+    };
+    const data = {};
+    ['visi', 'berniukai', 'merginos'].forEach(g => {
+      const A = avgArr(buckets[g].a), B = avgArr(buckets[g].b);
+      data[g] = { a: A.arr, na: A.n, b: B.arr, nb: B.n };
+    });
+    _trCareerRadarData = { cats, data };
+    _renderTrCareerRadar(_trCareerGender || 'visi');
+  } catch (e) {
+    console.error('loadTrainerCareerRadar:', e);
+    wrap.innerHTML = '<div style="color:var(--mut);font-size:11px;text-align:center;padding:14px;">Nepavyko užkrauti</div>';
+  }
+}
+
+function _renderTrCareerRadar(g) {
+  const D = _trCareerRadarData;
+  const wrap = document.getElementById('trp-career-radar');
+  if (!D || !wrap) return;
+  _trCareerGender = g;
+  const cats = D.cats, d = D.data[g] || { a: [], na: 0, b: [], nb: 0 };
+  const BLUE = '#4FC3F7', ORANGE = '#FF4D00', MAX = 600, n = cats.length, cx = 110, cy = 100, R = 74;
+  const ang = (i) => (-90 + i * 360 / n) * Math.PI / 180;
+  const pt = (i, r) => [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))];
+  // Mygtukų aktyvumas
+  document.querySelectorAll('#trp-career-toggle button').forEach(b => {
+    const on = b.getAttribute('data-g') === g;
+    b.style.background = on ? ORANGE : 'rgba(255,255,255,.07)';
+    b.style.color = on ? '#1a0a00' : 'var(--mut)';
+  });
+  if (d.na === 0 && d.nb === 0) {
+    wrap.innerHTML = '<div style="color:var(--mut);font-size:11px;text-align:center;padding:14px;">Nėra šios grupės vaikų</div>';
+    return;
+  }
+  let s = '';
+  [0.25, 0.5, 0.75, 1].forEach(k => {
+    const p = cats.map((c, i) => pt(i, R * k).map(z => z.toFixed(1)).join(',')).join(' ');
+    s += `<polygon points="${p}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1"/>`;
+  });
+  cats.forEach((c, i) => { const q = pt(i, R); s += `<line x1="${cx}" y1="${cy}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}" stroke="rgba(255,255,255,.1)" stroke-width="1"/>`; });
+  const poly = (arr, fill, stroke) => {
+    const p = arr.map((v, i) => pt(i, R * Math.min(1, v / MAX)).map(z => z.toFixed(1)).join(',')).join(' ');
+    s += `<polygon points="${p}" fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/>`;
+  };
+  if (d.na > 0) poly(d.a, 'rgba(79,195,247,.14)', BLUE);
+  if (d.nb > 0) poly(d.b, 'rgba(255,77,0,.16)', ORANGE);
+  cats.forEach((c, i) => {
+    if (d.na > 0) { const qa = pt(i, R * Math.min(1, d.a[i] / MAX)); s += `<circle cx="${qa[0].toFixed(1)}" cy="${qa[1].toFixed(1)}" r="3" fill="${BLUE}" stroke="#0f1115" stroke-width="1.3"/>`; }
+    if (d.nb > 0) { const qb = pt(i, R * Math.min(1, d.b[i] / MAX)); s += `<circle cx="${qb[0].toFixed(1)}" cy="${qb[1].toFixed(1)}" r="3" fill="${ORANGE}" stroke="#0f1115" stroke-width="1.3"/>`; }
+  });
+  cats.forEach((c, i) => {
+    const q = pt(i, R + 15);
+    const ic = c.icon || (typeof CATEGORY_ICONS !== 'undefined' && CATEGORY_ICONS[c.name]) || '💪';
+    s += `<text x="${q[0].toFixed(1)}" y="${(q[1] + 5).toFixed(1)}" text-anchor="middle" font-size="15">${ic}</text>`;
+  });
+  const svg = `<svg viewBox="0 0 220 205" width="100%" style="max-width:250px;display:block;margin:0 auto;">${s}</svg>`;
+  const legend = `<div style="display:flex;justify-content:center;gap:14px;margin-top:2px;">
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#aeb6c0;"><span style="width:10px;height:10px;border-radius:2px;background:${BLUE};"></span>Iki 14 m. · ${d.na}</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#aeb6c0;"><span style="width:10px;height:10px;border-radius:2px;background:${ORANGE};"></span>14+ m. · ${d.nb}</div>
+    </div>`;
+  wrap.innerHTML = svg + legend;
+}
+
+function _trCareerRadarSetGender(g) { _renderTrCareerRadar(g); }
 
 function openCreateGroupModal() {
   editingGroupId = null;
