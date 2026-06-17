@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v193</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v194</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3976,6 +3976,9 @@ async function init() {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && typeof checkForNewVersion === 'function') checkForNewVersion();
   });
+
+  // 🖱️ PC: horizontalus slinkimas tabams/filtrams (overflow eilutės su .no-scrollbar)
+  setTimeout(() => { try { document.querySelectorAll('.no-scrollbar').forEach(_enableDragScroll); } catch (_) {} }, 800);
 
   // 🔍 Pritaikyti išsaugotą vaizdo dydį
   if (typeof applyAppZoom === 'function') applyAppZoom();
@@ -19961,15 +19964,45 @@ function setTrPatGroupFilter(groupId) {
   applyTrPatGroupFilter();
 }
 
-// Slepia patvirtinimų korteles, kurių vaikas ne iš pasirinktos grupės (client-side)
+// Slepia patvirtinimų korteles, kurių vaikas ne iš pasirinktos grupės (client-side) + perskaičiuoja skaičius
 function applyTrPatGroupFilter() {
-  ['tr-submissions-list', 'tr-challenge-submissions-list', 'tr-competition-submissions-list', 'tr-pat-all-list'].forEach(listId => {
+  ['tr-submissions-list', 'tr-challenge-submissions-list', 'tr-competition-submissions-list', 'tr-duels-list', 'tr-pat-all-list'].forEach(listId => {
     const list = document.getElementById(listId);
     if (!list) return;
     list.querySelectorAll('[data-gid]').forEach(card => {
       card.style.display = (!trPatGroupFilter || card.dataset.gid === trPatGroupFilter) ? '' : 'none';
     });
   });
+  _recountTrPat();
+}
+
+// Tabų skaičiai + hero badge pagal pasirinktą grupę (Visos = visų suma). Skaičiuojam iš _trPatFullHtml data-gid.
+function _recountTrPat() {
+  const f = trPatGroupFilter;
+  const cnt = (html) => {
+    if (!html) return 0;
+    const m = html.match(/data-gid="([^"]*)"/g) || [];
+    return f ? m.filter(x => x === `data-gid="${f}"`).length : m.length;
+  };
+  const c = cnt(_trPatFullHtml.career), ch = cnt(_trPatFullHtml.challenges), co = cnt(_trPatFullHtml.competitions), du = cnt(_trPatFullHtml.duels);
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('tr-career-count', c); set('tr-challenges-count', ch); set('tr-competitions-count', co); set('tr-duels-count', du);
+  set('tr-pending-badge', c + ch + co + du);
+}
+
+// 🖱️ PC: horizontalus slinkimas (drag + wheel) overflow eilutėms (tabai/filtrai). Mobilus slenka liečiant.
+function _enableDragScroll(el) {
+  if (!el || el._ds) return;
+  el._ds = true;
+  let down = false, sx = 0, ss = 0, moved = false;
+  el.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') return; down = true; moved = false; sx = e.clientX; ss = el.scrollLeft; });
+  el.addEventListener('pointermove', e => { if (!down) return; const dx = e.clientX - sx; if (Math.abs(dx) > 5) moved = true; el.scrollLeft = ss - dx; });
+  const end = () => { down = false; };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('mouseleave', end);
+  el.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+  el.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) { el.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
 }
 
 // tr-pat hero: iš viso patvirtinta (iš loadTrainerLevel globalų)
@@ -23296,7 +23329,7 @@ async function loadPendingDuels() {
   // Surinkti vaikų vardus
   const kidIds = [...new Set(duels.flatMap(d => [d.challenger_id, d.opponent_id]))];
   const { data: kids } = await sb.from('kids')
-    .select('id, user_id, is_anonymous')
+    .select('id, user_id, is_anonymous, group_id')
     .in('id', kidIds);
   
   const userIds = (kids || []).map(k => k.user_id);
@@ -23335,7 +23368,7 @@ async function loadPendingDuels() {
     const isDraw = chVal === opVal;
     
     return `
-      <div class="cd" style="margin:0 12px 10px;padding:12px;">
+      <div class="cd" style="margin:0 12px 10px;padding:12px;" data-gid="${kidMap[d.challenger_id]?.group_id || ''}">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
           <div style="font-size:28px;">${t.icon}</div>
           <div style="flex:1;">
