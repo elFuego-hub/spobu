@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v204</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v205</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2272,13 +2272,8 @@ select.inp option{background:#222;}
     <!-- 🏆 Grupių reitingas — filtras: bendras/karjera/varžybos/iššūkiai -->
     <div style="margin:0 12px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
       <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">🏆 GRUPIŲ REITINGAS</div>
-      <div id="trp-groups-toggle" style="display:flex;gap:4px;margin-bottom:10px;">
-        <button onclick="_trGroupsSetMetric('exp')" data-m="exp" style="flex:1;padding:6px 2px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:#FF4D00;color:#1a0a00;">Bendras</button>
-        <button onclick="_trGroupsSetMetric('career')" data-m="career" style="flex:1;padding:6px 2px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.07);color:var(--mut);">Karjera</button>
-        <button onclick="_trGroupsSetMetric('medals')" data-m="medals" style="flex:1;padding:6px 2px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.07);color:var(--mut);">Varžybos</button>
-        <button onclick="_trGroupsSetMetric('challenges')" data-m="challenges" style="flex:1;padding:6px 2px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.07);color:var(--mut);">Iššūkiai</button>
-      </div>
-      <div style="font-size:9px;color:var(--mut);text-align:center;margin-bottom:8px;">📊 vidutinis EXP vienam vaikui</div>
+      <div id="trp-groups-toggle" class="no-scrollbar" style="display:flex;gap:5px;margin-bottom:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;"></div>
+      <div style="font-size:9px;color:var(--mut);text-align:center;margin-bottom:8px;">📊 vidutinis EXP vienam vaikui · ⟷ slinkti</div>
       <div id="trp-groups-table"><div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Kraunama...</div></div>
     </div>
 
@@ -20216,27 +20211,36 @@ async function loadTrainerProfileStats() {
     const beltsEl = document.getElementById('trp-belts');
     if (beltsEl) beltsEl.innerHTML = beltRows || '<div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Nėra vaikų</div>';
 
-    // 🥇 Medaliai (KPI skaičius) + EXP šaltiniai grupių filtrui (karjera/varžybos/iššūkiai — VISI kaip EXP)
+    // 🥇 Medaliai (KPI) + EXP šaltiniai grupių filtrui: KIEKVIENAS skillas atskirai + varžybos + iššūkiai
     let medalsByKid = [], ishCount = 0;
-    let careerByKid = {}, compExpByKid = {}, challExpByKid = {};
+    let compExpByKid = {}, challExpByKid = {}, catExpByKid = {}; // catExpByKid[catId][kidId]
+    let careerCats = _trCareerCatsCache || [];
     if (kidIds.length) {
-      const [mdR, isR, krR] = await Promise.all([
+      const [mdR, isR, krR, ccR] = await Promise.all([
         sb.from('competition_results').select('kid_id, placement, exp_gained')
           .in('kid_id', kidIds).eq('approval_status', 'approved').limit(5000),
         sb.from('challenge_submissions').select('kid_id, exp_gain')
           .in('kid_id', kidIds).eq('status', 'approved').limit(10000),
         sb.from('kid_records').select('kid_id, category_id, category_exp')
-          .in('kid_id', kidIds).limit(20000)
+          .in('kid_id', kidIds).limit(20000),
+        careerCats.length ? Promise.resolve({ data: careerCats })
+          : sb.from('career_categories').select('id, name, icon, sort_order').order('sort_order').limit(7)
       ]);
       const compRows = mdR.data || [];
       medalsByKid = compRows.filter(r => [1, 2, 3].includes(r.placement)); // KPI 🥇🥈🥉 (skaičius)
-      compRows.forEach(r => { compExpByKid[r.kid_id] = (compExpByKid[r.kid_id] || 0) + (r.exp_gained || 0); }); // varžybų EXP
+      compRows.forEach(r => { compExpByKid[r.kid_id] = (compExpByKid[r.kid_id] || 0) + (r.exp_gained || 0); });
       const challRows = isR.data || [];
       ishCount = challRows.length;
-      challRows.forEach(r => { challExpByKid[r.kid_id] = (challExpByKid[r.kid_id] || 0) + (r.exp_gain || 0); }); // iššūkių EXP
+      challRows.forEach(r => { challExpByKid[r.kid_id] = (challExpByKid[r.kid_id] || 0) + (r.exp_gain || 0); });
       const kidRecs = krR.data || [];
-      kidRecs.forEach(r => { careerByKid[r.kid_id] = (careerByKid[r.kid_id] || 0) + (r.category_exp || 0); }); // VISI skillai
-      _trKidRecordsCache = kidRecs; // radaras perpanaudos (be antros kid_records užklausos)
+      kidRecs.forEach(r => {
+        if (!r.category_id) return;
+        (catExpByKid[r.category_id] = catExpByKid[r.category_id] || {});
+        catExpByKid[r.category_id][r.kid_id] = (catExpByKid[r.category_id][r.kid_id] || 0) + (r.category_exp || 0);
+      });
+      _trKidRecordsCache = kidRecs; // radaras perpanaudos
+      careerCats = ccR.data || careerCats;
+      _trCareerCatsCache = careerCats; // radaras perpanaudos (be antros career_categories užklausos)
     }
     const m1 = medalsByKid.filter(m => m.placement === 1).length;
     const m2 = medalsByKid.filter(m => m.placement === 2).length;
@@ -20246,19 +20250,27 @@ async function loadTrainerProfileStats() {
     const iEl = document.getElementById('trp-ish-num');
     if (iEl) iEl.textContent = ishCount;
 
-    // 🏆 Grupės — visi rodikliai kaip EXP suma grupėje (filtras padalins iš vaikų sk. = vidurkis)
+    // 🏆 Grupės — EXP suma grupėje (filtras dalins iš vaikų sk. = vidurkis). Skillai ATSKIRAI.
     const kidGroup = {};
     kids.forEach(k => { kidGroup[k.id] = k.group_id; });
-    const careerByGroup = {}, compByGroup = {}, challByGroup = {};
-    Object.keys(careerByKid).forEach(kid => { const gid = kidGroup[kid]; if (gid) careerByGroup[gid] = (careerByGroup[gid] || 0) + careerByKid[kid]; });
+    const compByGroup = {}, challByGroup = {}, catByGroup = {};
     Object.keys(compExpByKid).forEach(kid => { const gid = kidGroup[kid]; if (gid) compByGroup[gid] = (compByGroup[gid] || 0) + compExpByKid[kid]; });
     Object.keys(challExpByKid).forEach(kid => { const gid = kidGroup[kid]; if (gid) challByGroup[gid] = (challByGroup[gid] || 0) + challExpByKid[kid]; });
+    careerCats.forEach(c => {
+      catByGroup[c.id] = {};
+      const byKid = catExpByKid[c.id] || {};
+      Object.keys(byKid).forEach(kid => { const gid = kidGroup[kid]; if (gid) catByGroup[c.id][gid] = (catByGroup[c.id][gid] || 0) + byKid[kid]; });
+    });
     const rows = (trainerGroupsCache || []).map(g => {
       const gk = kids.filter(k => k.group_id === g.id);
-      return { g, n: gk.length, exp: gk.reduce((s, k) => s + (k.total_exp || 0), 0), career: careerByGroup[g.id] || 0, comp: compByGroup[g.id] || 0, chall: challByGroup[g.id] || 0 };
+      const catsObj = {};
+      careerCats.forEach(c => { catsObj[c.id] = (catByGroup[c.id] && catByGroup[c.id][g.id]) || 0; });
+      return { g, n: gk.length, exp: gk.reduce((s, k) => s + (k.total_exp || 0), 0), comp: compByGroup[g.id] || 0, chall: challByGroup[g.id] || 0, cats: catsObj };
     });
+    _trGroupsBuildMetrics(careerCats);
     _trGroupsData = rows;
-    _renderTrGroups(_trGroupsMetric || 'exp');
+    if (!_trGroupsMetrics[_trGroupsMetric]) _trGroupsMetric = 'exp';
+    _renderTrGroups(_trGroupsMetric);
 
     // 🕸️ Visų vaikų karjeros radaras (lytis × amžius) — pildo #trp-career-radar
     loadTrainerCareerRadar();
@@ -20281,13 +20293,10 @@ let _trCareerGender = 'visi';
 let _trKidRecordsCache = null;
 let _trGroupsData = [];
 let _trGroupsMetric = 'exp';
-// Visos 4 metrikos = vidutinis EXP vienam vaikui (iš to šaltinio). val=vidurkis, fmt=sveikas EXP.
-const TR_GROUP_METRICS = {
-  exp:        { label: 'Bendras',  icon: '⚡', val: r => r.n ? (r.exp || 0) / r.n : 0,    fmt: v => Math.round(v).toLocaleString() },
-  career:     { label: 'Karjera',  icon: '🎯', val: r => r.n ? (r.career || 0) / r.n : 0, fmt: v => Math.round(v).toLocaleString() },
-  medals:     { label: 'Varžybos', icon: '🏅', val: r => r.n ? (r.comp || 0) / r.n : 0,   fmt: v => Math.round(v).toLocaleString() },
-  challenges: { label: 'Iššūkiai', icon: '💪', val: r => r.n ? (r.chall || 0) / r.n : 0,  fmt: v => Math.round(v).toLocaleString() }
-};
+// Grupių metrikos DINAMIŠKOS (vidutinis EXP/vaikui): Bendras + KIEKVIENAS skillas atskirai + Varžybos + Iššūkiai.
+// Sukuriamos runtime iš career_categories (žr. _trGroupsBuildMetrics).
+let _trGroupsMetrics = {};
+let _trGroupsMetricOrder = [];
 
 async function loadTrainerCareerRadar() {
   const wrap = document.getElementById('trp-career-radar');
@@ -20441,12 +20450,40 @@ function _trToggleSection(bodyId, chevId) {
   if (c) c.textContent = open ? '▾' : '▸';
 }
 
+// Sukuria dinamiškas grupių metrikas iš career_categories: Bendras + skillai + Varžybos + Iššūkiai
+function _trGroupsBuildMetrics(cats) {
+  const m = {}, order = [];
+  m.exp = { label: 'Bendras', icon: '⚡', val: r => r.n ? (r.exp || 0) / r.n : 0 };
+  order.push('exp');
+  (cats || []).forEach(c => {
+    const key = 'cat_' + c.id;
+    const icon = c.icon || (typeof CATEGORY_ICONS !== 'undefined' && CATEGORY_ICONS[c.name]) || '🎯';
+    m[key] = { label: c.name, icon, val: r => r.n ? ((r.cats && r.cats[c.id]) || 0) / r.n : 0 };
+    order.push(key);
+  });
+  m.comp = { label: 'Varžybos', icon: '🏅', val: r => r.n ? (r.comp || 0) / r.n : 0 };
+  m.chall = { label: 'Iššūkiai', icon: '💪', val: r => r.n ? (r.chall || 0) / r.n : 0 };
+  order.push('comp', 'chall');
+  _trGroupsMetrics = m;
+  _trGroupsMetricOrder = order;
+}
+
+// Filtro mygtukai (slenkami horizontaliai) — pildomi dinamiškai pagal metrikas
+function _renderTrGroupsToggle() {
+  const el = document.getElementById('trp-groups-toggle');
+  if (!el) return;
+  el.innerHTML = _trGroupsMetricOrder.map(k => {
+    const M = _trGroupsMetrics[k]; const on = k === _trGroupsMetric;
+    return `<button onclick="_trGroupsSetMetric('${k}')" data-m="${k}" style="flex:0 0 auto;padding:6px 10px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;background:${on ? '#FF4D00' : 'rgba(255,255,255,.07)'};color:${on ? '#1a0a00' : 'var(--mut)'};">${M.icon} ${M.label}</button>`;
+  }).join('');
+}
+
 // Grupių reitingo eilutė — pagal pasirinktą metriką (mKey)
 function _trGroupsRowHtml(r, i, mKey, maxVal) {
   const color = r.g.color || '#FF4D00';
-  const M = TR_GROUP_METRICS[mKey] || TR_GROUP_METRICS.exp;
+  const M = _trGroupsMetrics[mKey] || _trGroupsMetrics.exp;
   const val = M.val(r);
-  const disp = M.fmt ? M.fmt(val) : val.toLocaleString();
+  const disp = Math.round(val).toLocaleString();
   const pct = Math.max(4, Math.round((val / (maxVal || 1)) * 100));
   return `
     <div style="padding:7px 0;border-bottom:.5px solid var(--bdr);">
@@ -20465,18 +20502,15 @@ function _trGroupsRowHtml(r, i, mKey, maxVal) {
 
 // Grupių reitingas tr-prof: TOP 5 pagal metriką + „DAUGIAU" → openTrGroupsModal
 function _renderTrGroups(mKey) {
-  mKey = TR_GROUP_METRICS[mKey] ? mKey : 'exp';
+  mKey = _trGroupsMetrics[mKey] ? mKey : 'exp';
   _trGroupsMetric = mKey;
-  document.querySelectorAll('#trp-groups-toggle button').forEach(b => {
-    const on = b.getAttribute('data-m') === mKey;
-    b.style.background = on ? '#FF4D00' : 'rgba(255,255,255,.07)';
-    b.style.color = on ? '#1a0a00' : 'var(--mut)';
-  });
+  _renderTrGroupsToggle();
   const gtEl = document.getElementById('trp-groups-table');
   if (!gtEl) return;
-  const rows = (_trGroupsData || []).slice().sort((a, b) => TR_GROUP_METRICS[mKey].val(b) - TR_GROUP_METRICS[mKey].val(a));
+  const M = _trGroupsMetrics[mKey];
+  const rows = (_trGroupsData || []).slice().sort((a, b) => M.val(b) - M.val(a));
   if (!rows.length) { gtEl.innerHTML = '<div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Nėra grupių</div>'; return; }
-  const maxVal = Math.max(1, ...rows.map(r => TR_GROUP_METRICS[mKey].val(r)));
+  const maxVal = Math.max(1, ...rows.map(r => M.val(r)));
   const more = rows.length > 5
     ? `<button onclick="openTrGroupsModal()" style="width:100%;margin-top:8px;padding:9px;background:rgba(255,255,255,.05);border:.5px solid var(--bdr);border-radius:10px;color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;">DAUGIAU (${rows.length}) ↓</button>`
     : '';
@@ -20486,8 +20520,8 @@ function _trGroupsSetMetric(mKey) { _renderTrGroups(mKey); }
 
 // Visų grupių reitingas — papildomas langas (seka pasirinktą metriką)
 function openTrGroupsModal() {
-  const mKey = _trGroupsMetric || 'exp';
-  const M = TR_GROUP_METRICS[mKey] || TR_GROUP_METRICS.exp;
+  const mKey = _trGroupsMetrics[_trGroupsMetric] ? _trGroupsMetric : 'exp';
+  const M = _trGroupsMetrics[mKey];
   const rows = (_trGroupsData || []).slice().sort((a, b) => M.val(b) - M.val(a));
   const maxVal = Math.max(1, ...rows.map(r => M.val(r)));
   const listHtml = rows.length
