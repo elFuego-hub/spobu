@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v211</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v212</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1110,6 +1110,7 @@ select.inp option{background:#222;}
     <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;line-height:1;">SPO<span style="color:var(--br);text-shadow:0 0 10px rgba(255,77,0,.6);">BU</span><span style="color:var(--br);text-shadow:0 0 10px rgba(255,77,0,.6);">.</span></div>
       <div style="display:flex;gap:5px;align-items:center;">
+        <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidInfo('main')" title="Apie šį langą">💡</div>
         <!-- LANKOMUMO MYGTUKAS -->
         <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidAttendance()" id="v-att-btn" title="Lankomumas">
           📋
@@ -1383,6 +1384,7 @@ select.inp option{background:#222;}
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI</div>
     <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openKidInfo('ish')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div>
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
@@ -1491,6 +1493,7 @@ select.inp option{background:#222;}
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">VARŽYBOS</div>
     <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openKidInfo('comp')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div>
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-comp-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
@@ -1576,7 +1579,7 @@ select.inp option{background:#222;}
 
 <div class="sc" id="v-stat">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div style="padding:6px 16px 4px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">STATISTIKA</div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">STATISTIKA</div><div onclick="openKidInfo('stat')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div></div>
   <div class="sa">
     
     <!-- Sezono filtras - kompaktiškas -->
@@ -1629,6 +1632,7 @@ select.inp option{background:#222;}
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openKidInfo('prof')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div>
       <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
         <div id="v-prof-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
@@ -20767,6 +20771,64 @@ function openParentInfo(which) {
         row('👨‍👩‍👧', 'Vaikai', 'Susieti vaikai — perjunkite burbulu viršuje.') +
         row('⚙️', 'Nustatymai', 'Pranešimai, vaiko duomenys, kalba.') +
         row('🔔', 'Pranešimai', 'Gausite žinią, kai vaikas pasieks ką nors naujo.');
+      break;
+    default:
+      title = '💡 INFO'; html = intro('Paaiškinimas.');
+  }
+  openInfoSubmodal(title, html);
+}
+
+// 💡 Vaiko langų gidas — platesni, vaikams suprantami paaiškinimai + Osu dvasia
+function openKidInfo(which) {
+  const row = (ic, t, d) => `<div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
+      <div style="font-size:18px;flex:none;line-height:1.3;">${ic}</div>
+      <div style="font-size:12.5px;line-height:1.55;"><b style="color:#fff;">${t}</b><br><span style="color:var(--mut);">${d}</span></div>
+    </div>`;
+  const intro = (txt) => `<div style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:14px;">${txt}</div>`;
+  const osu = `<div style="margin-top:12px;background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.35);border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.65;color:#e8d9c5;">🥋 <b style="color:#FF4D00;">OSU!</b> Kyokushin įkūrėjas Mas Oyama vienas treniravosi kalnuose po 12 valandų KASDIEN — be žiūrovų, be medalių. Lygiai ir tikslai yra <b style="color:#fff;">ilgas kelias su savimi</b>, ne lenktynės su kitais. Jei dabar lėtai ar sunku — tai normalu, ten pradėjo KIEKVIENAS čempionas. Nenuleisk rankų, stenkis sąžiningai — ir augsi. 💪</div>`;
+  let title = '', html = '';
+  switch (which) {
+    case 'main':
+      title = '💡 PAGRINDINIS';
+      html = intro('Tavo namų ekranas — viskas apie tave vienoje vietoje.') +
+        row('🥋', 'Tavo lygis ir kanji', 'Skaičius viduryje — tavo lygis (1–99). Žiedas aplink pildosi link kito lygio. Kanji ženklas — tavo etapas (Naujokas → … → Sensėjus).') +
+        row('⚡', 'EXP taškai', 'Gauni juos už pratimus, iššūkius, varžybas ir treniruočių lankymą. Daugiau EXP → aukštesnis lygis.') +
+        row('🔥', 'Serija (streak)', 'Kiek dienų iš eilės buvai aktyvus. Stenkis jos nenutraukti!') +
+        row('🏆', 'Reitingai', 'Tavo vieta tarp BENDRAAMŽIŲ — lyginiesi su panašiais į tave, ne su vyresniais.') +
+        row('📋', 'Lankomumas', 'Mygtukas viršuje — matyk, kaip lankai treniruotes. Už pilną savaitę ir mėnesį gauni papildomą EXP.') +
+        osu;
+      break;
+    case 'ish':
+      title = '💡 IŠŠŪKIAI';
+      html = intro('Treneris skiria iššūkius — užduotis, kurias atlikęs gauni EXP.') +
+        row('🎯', 'Kaip veikia', 'Matai iššūkį → atlieki → pažymi rezultatą → treneris patvirtina → gauni EXP.') +
+        row('🗓️', 'Trukmė', 'Vieni trunka savaitę, kiti mėnesį, kai kurie nuolatiniai. Ilgesni — didesni tikslai.') +
+        row('🏠', 'Kam tai', 'Padeda treniruotis ir tarp pamokų, namuose. Tu pats augini savo kovotoją.') +
+        row('✋', 'Sąžiningai', 'Pažymėk tik tai, ką tikrai padarei — treneris peržiūri kiekvieną pateikimą.') +
+        osu;
+      break;
+    case 'comp':
+      title = '💡 VARŽYBOS';
+      html = intro('Čia matai būsimas varžybas ir savo rezultatus.') +
+        row('📅', 'Būsimos varžybos', 'Pažymėk, ar ketini dalyvauti, kad treneris žinotų.') +
+        row('🥇', 'Rezultatai ir medaliai', 'Po varžybų treneris įveda tavo vietą — gauni EXP ir medalį.') +
+        row('💪', 'Drąsa', 'Net jei nelaimėjai — išėjimas į tatamį jau yra pergalė prieš baimę.');
+      break;
+    case 'stat':
+      title = '💡 STATISTIKA';
+      html = intro('Čia matai savo kelią skaičiais ir grafikais.') +
+        row('📈', 'Lygis laike', 'Kaip augo tavo EXP ir lygis.') +
+        row('🏅', 'Rekordai', 'Tavo geriausi pratimų rezultatai.') +
+        row('🔥', 'Sezonas / visų laikų', 'Perjunk, ar nori matyti šį sezoną, ar visą kelią.') +
+        row('🏆', 'Palyginimas', 'Kaip atrodai tarp bendraamžių — su panašiais į tave.') +
+        osu;
+      break;
+    case 'prof':
+      title = '💡 PROFILIS';
+      html = intro('Tavo kortelė — kas tu esi SPOBU.') +
+        row('🥋', 'Diržas ir kanji', 'Tavo dabartinis kyu (diržas) ir etapas.') +
+        row('🏆', 'Pasiekimai', 'Medaliai, įveikti iššūkiai ir rekordai vienoje vietoje.') +
+        row('⚙️', 'Nustatymai', 'Avataras, pranešimai, kalba — pro nustatymų mygtuką.');
       break;
     default:
       title = '💡 INFO'; html = intro('Paaiškinimas.');
