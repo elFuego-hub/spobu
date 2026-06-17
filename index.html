@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v194</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v196</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2012,6 +2012,7 @@ select.inp option{background:#222;}
       <div class="tab" onclick="switchTrTab(this,'challenges')">🎯 Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'competitions')">🥇 Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'duels')">🥊 Dvikovos <span id="tr-duels-count" style="opacity:.6;">0</span></div>
+      <div class="tab" onclick="switchTrTab(this,'forms')">📝 Anketos <span id="tr-forms-count" style="opacity:.6;">0</span></div>
     </div>
     <!-- Karjeros pateikimai -->
     <div id="tr-submissions-list">
@@ -2027,6 +2028,10 @@ select.inp option{background:#222;}
     </div>
     <!-- Dvikovos (paslėptos pradžioje) -->
     <div id="tr-duels-list" style="display:none;">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <!-- Anketos / naujos registracijos (paslėptos pradžioje) -->
+    <div id="tr-forms-list" style="display:none;">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
   </div>
@@ -18603,6 +18608,43 @@ async function loadNewKids() {
   }).join('');
 }
 
+// 📝 ANKETOS — naujų vaikų registracijos Patvirtinimų tabe (tie patys pending vaikai kaip pagrindinio kortelė)
+async function loadPendingKidForms() {
+  const { data: ktLinks } = await sb.from('kid_trainers').select('kid_id').eq('trainer_id', currentUser.id).eq('role', 'primary');
+  const mnKidIds = (ktLinks || []).map(l => l.kid_id);
+  const { data: legacyKids } = await sb.from('kids').select('id').eq('assigned_trainer_id', currentUser.id);
+  const allKidIds = [...new Set([...mnKidIds, ...((legacyKids || []).map(k => k.id))])];
+  let kids = [];
+  if (allKidIds.length) {
+    const { data } = await sb.from('kids')
+      .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id, group_id')
+      .in('id', allKidIds).eq('approval_status', 'pending').order('created_at', { ascending: false });
+    kids = data || [];
+  }
+  const cards = kids.map(k => {
+    const name = `${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim();
+    const age = k.birth_date ? calculateAge(k.birth_date) : (k.birth_year ? (new Date().getFullYear() - k.birth_year) : '?');
+    const genderIcon = k.gender === 'male' ? '👦' : k.gender === 'female' ? '👧' : '👤';
+    const hasAccount = !!k.user_id;
+    const when = k.created_at ? new Date(k.created_at).toLocaleDateString('lt-LT') : '';
+    return `<div class="cd" style="margin-bottom:12px;" id="form-${k.id}" data-gid="${k.group_id || ''}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div class="av" style="width:36px;height:36px;font-size:16px;background:var(--grn);">${genderIcon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:900;">${name}</div>
+          <div style="font-size:11px;color:var(--mut);margin-top:2px;">${age}m. · ${k.weight_range || '–'}kg · ${k.kyu || 'Be kyu'}${when ? ' · ' + when : ''}</div>
+          <div style="font-size:10px;color:${hasAccount ? 'var(--grn)' : 'var(--mut)'};margin-top:2px;">${hasAccount ? '🔐 Vaikas turi paskyrą' : '👨‍👩 Tik tėvų valdoma'}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveKid('${k.id}')">✓ Patvirtinti</button>
+        <button class="bsm" style="flex:1;background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);" onclick="rejectKid('${k.id}')">✗ Atmesti</button>
+      </div>
+    </div>`;
+  });
+  _trPatRenderTop('tr-forms-list', 'forms', cards, '<div style="text-align:center;padding:40px;color:var(--mut);">📝 Nėra naujų anketų</div>');
+}
+
 async function approveKid(kidId) {
   if (!confirm('Patvirtinti vaiko paskyrą? Tėvai ir vaikas bus aktyvuoti.')) return;
   
@@ -18637,6 +18679,7 @@ async function approveKid(kidId) {
     
     showToast('✓ Vaikas ir tėvai patvirtinti!');
     await loadNewKids();
+    if (typeof loadPendingKidForms === 'function') loadPendingKidForms();
     await loadTrainerMembers();
   } catch (error) {
     console.error('approveKid error:', error);
@@ -18674,6 +18717,7 @@ async function rejectKid(kidId) {
     
     showToast('Vaikas atmestas');
     await loadNewKids();
+    if (typeof loadPendingKidForms === 'function') loadPendingKidForms();
   } catch (error) {
     console.error('rejectKid error:', error);
     showToast('❌ Klaida: ' + error.message);
@@ -19966,7 +20010,7 @@ function setTrPatGroupFilter(groupId) {
 
 // Slepia patvirtinimų korteles, kurių vaikas ne iš pasirinktos grupės (client-side) + perskaičiuoja skaičius
 function applyTrPatGroupFilter() {
-  ['tr-submissions-list', 'tr-challenge-submissions-list', 'tr-competition-submissions-list', 'tr-duels-list', 'tr-pat-all-list'].forEach(listId => {
+  ['tr-submissions-list', 'tr-challenge-submissions-list', 'tr-competition-submissions-list', 'tr-duels-list', 'tr-forms-list', 'tr-pat-all-list'].forEach(listId => {
     const list = document.getElementById(listId);
     if (!list) return;
     list.querySelectorAll('[data-gid]').forEach(card => {
@@ -19984,10 +20028,10 @@ function _recountTrPat() {
     const m = html.match(/data-gid="([^"]*)"/g) || [];
     return f ? m.filter(x => x === `data-gid="${f}"`).length : m.length;
   };
-  const c = cnt(_trPatFullHtml.career), ch = cnt(_trPatFullHtml.challenges), co = cnt(_trPatFullHtml.competitions), du = cnt(_trPatFullHtml.duels);
+  const c = cnt(_trPatFullHtml.career), ch = cnt(_trPatFullHtml.challenges), co = cnt(_trPatFullHtml.competitions), du = cnt(_trPatFullHtml.duels), fo = cnt(_trPatFullHtml.forms);
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  set('tr-career-count', c); set('tr-challenges-count', ch); set('tr-competitions-count', co); set('tr-duels-count', du);
-  set('tr-pending-badge', c + ch + co + du);
+  set('tr-career-count', c); set('tr-challenges-count', ch); set('tr-competitions-count', co); set('tr-duels-count', du); set('tr-forms-count', fo);
+  set('tr-pending-badge', c + ch + co + du + fo);
 }
 
 // 🖱️ PC: horizontalus slinkimas (drag + wheel) overflow eilutėms (tabai/filtrai). Mobilus slenka liečiant.
@@ -20015,9 +20059,9 @@ function renderTrainerPatHero() {
 // ⏳ PATVIRTINIMAI: TOP 3 + „▼ DAUGIAU" sub-langas (v119)
 // ════════════════════════════════════════
 
-let _trPatFullHtml = { career: '', challenges: '', competitions: '', duels: '' };
+let _trPatFullHtml = { career: '', challenges: '', competitions: '', duels: '', forms: '' };
 let _trPatAllTab = 'career';
-const TR_PAT_TITLES = { career: '🏋️ KARJERA', challenges: '🎯 IŠŠŪKIAI', competitions: '🥇 VARŽYBOS', duels: '🥊 DVIKOVOS' };
+const TR_PAT_TITLES = { career: '🏋️ KARJERA', challenges: '🎯 IŠŠŪKIAI', competitions: '🥇 VARŽYBOS', duels: '🥊 DVIKOVOS', forms: '📝 ANKETOS' };
 
 // Bendras renderis: pagrindiniam tabe TOP 3 + DAUGIAU, pilnas sąrašas — sub-lange
 function _trPatRenderTop(listId, tab, cardsArr, emptyHtml) {
@@ -20623,6 +20667,7 @@ function trOpenPatTab(tab) {
   if (typeof loadPendingChallengeSubmissions === 'function') loadPendingChallengeSubmissions();
   if (typeof loadPendingCompetitionResults === 'function') loadPendingCompetitionResults();
   if (typeof loadPendingDuels === 'function') loadPendingDuels();
+  if (typeof loadPendingKidForms === 'function') loadPendingKidForms();
   const el = document.querySelector(`#tr-pat .tab[onclick*="'${tab}'"]`);
   if (el && typeof switchTrTab === 'function') switchTrTab(el, tab);
 }
@@ -23272,10 +23317,11 @@ function switchTrTab(el, type) {
   const challengesList = document.getElementById('tr-challenge-submissions-list');
   const competitionsList = document.getElementById('tr-competition-submissions-list');
   const duelsList = document.getElementById('tr-duels-list');
-  
+  const formsList = document.getElementById('tr-forms-list');
+
   // Paslėpti visus
-  [careerList, challengesList, competitionsList, duelsList].forEach(l => { if (l) l.style.display = 'none'; });
-  
+  [careerList, challengesList, competitionsList, duelsList, formsList].forEach(l => { if (l) l.style.display = 'none'; });
+
   if (type === 'career') {
     if (careerList) careerList.style.display = 'block';
   } else if (type === 'challenges') {
@@ -23287,6 +23333,9 @@ function switchTrTab(el, type) {
   } else if (type === 'duels') {
     if (duelsList) duelsList.style.display = 'block';
     loadPendingDuels();
+  } else if (type === 'forms') {
+    if (formsList) formsList.style.display = 'block';
+    loadPendingKidForms();
   }
 }
 
