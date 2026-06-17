@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v180</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v181</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -18947,7 +18947,7 @@ async function loadTrainerGroups() {
           <button onclick="composeMessageToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="flex:1;background:none;border:none;border-right:.5px solid var(--bdr);padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:#8b8df5;-webkit-tap-highlight-color:rgba(139,141,245,.2);" title="Pranešimai grupei">💬</button>
           <button onclick="openAssignKidsToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="flex:1;background:none;border:none;border-right:.5px solid var(--bdr);padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:var(--grn);-webkit-tap-highlight-color:rgba(34,197,94,.2);" title="Priskirti vaikus">＋👤</button>
           <button onclick="openEditGroupModal('${g.id}')" style="flex:1;background:none;border:none;border-right:.5px solid var(--bdr);padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:var(--mut);-webkit-tap-highlight-color:rgba(255,255,255,.1);" title="Redaguoti grupę">✏️</button>
-          <button onclick="deleteGroup('${g.id}')" style="flex:1;background:none;border:none;padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:#EF4444;-webkit-tap-highlight-color:rgba(239,68,68,.2);" title="Ištrinti grupę">🗑️</button>
+          <button onclick="confirmDeleteGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="flex:1;background:none;border:none;padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:#EF4444;-webkit-tap-highlight-color:rgba(239,68,68,.2);" title="Ištrinti grupę">🗑️</button>
         </div>
       </div>
     `;
@@ -20120,9 +20120,38 @@ async function submitCreateGroup() {
   }
 }
 
+// Patvirtinimo langas su rizikos aprašymu prieš trinant grupę
+function confirmDeleteGroup(groupId, groupName) {
+  const kidCount = (allTrainerKids || []).filter(k => k.group_id === groupId).length;
+  const old = document.getElementById('del-group-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'del-group-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:center;justify-content:center;padding:20px;';
+  const row = (icon, txt) => `<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:9px;"><div style="font-size:15px;flex-shrink:0;line-height:1.35;">${icon}</div><div style="font-size:12px;color:var(--text);line-height:1.45;">${txt}</div></div>`;
+  m.innerHTML = `<div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid rgba(239,68,68,.4);border-radius:18px;overflow:hidden;animation:slideUp .25s ease-out;">
+    <div style="background:rgba(239,68,68,.1);padding:16px 18px;border-bottom:.5px solid rgba(239,68,68,.25);display:flex;align-items:center;gap:11px;">
+      <div style="font-size:24px;">🗑️</div>
+      <div style="min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1px;color:#EF4444;line-height:1;">IŠTRINTI GRUPĘ?</div><div style="font-size:12px;color:var(--mut);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${groupName}${kidCount ? ` · ${kidCount} ${kidCount === 1 ? 'vaikas' : 'vaikai'}` : ''}</div></div>
+    </div>
+    <div style="padding:16px 18px;">
+      <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:11px;">KAS NUTIKS:</div>
+      ${row('👤', 'Vaikai <b>NEBUS ištrinti</b> — tik atkabinti iš grupės (atsidurs „Be grupės"). Jų EXP, pasiekimai ir istorija lieka.')}
+      ${row('📅', 'Grupės tvarkaraštis (treniruočių dienos ir laikas) bus prarastas.')}
+      ${row('📋', 'Šios grupės lankomumo nebebus galima žymėti; vaikų savaitės/mėnesio lankomumas nustos skaičiuotis, kol jie nebus priskirti kitai grupei.')}
+      ${row('💬', 'Grupei skirti pranešimai ir iššūkiai nebepasieks atkabintų vaikų.')}
+      ${row('⚠️', 'Veiksmas <b>negrįžtamas</b>.')}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px;">
+        <button onclick="document.getElementById('del-group-modal').remove()" style="padding:13px;border-radius:12px;border:.5px solid var(--bdr);background:var(--card);color:var(--text);font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;">Atšaukti</button>
+        <button onclick="deleteGroup('${groupId}')" style="padding:13px;border-radius:12px;border:none;background:#EF4444;color:#fff;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;">Ištrinti grupę</button>
+      </div>
+    </div>
+  </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+}
+
 async function deleteGroup(groupId) {
-  if (!confirm('Ar tikrai ištrinti šią grupę?\n\nVaikai bus atkabinti iš grupės (NE ištrinti).')) return;
-  
+  const dm = document.getElementById('del-group-modal'); if (dm) dm.remove();
   try {
     // Pirma atkabinam vaikus
     await sb.from('kids').update({ group_id: null }).eq('group_id', groupId);
