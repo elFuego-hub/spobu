@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v192</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v193</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1910,8 +1910,8 @@ select.inp option{background:#222;}
   </div>
   <div class="sa">
 
-    <!-- 🎯 IŠŠŪKIŲ HERO (žalias gradient — kopija v-ish-hero) -->
-    <div style="margin:6px 12px 8px;padding:12px;background:linear-gradient(135deg,rgba(102,187,106,.12),rgba(102,187,106,.04));border:1px solid rgba(102,187,106,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
+    <!-- 🎯 IŠŠŪKIŲ HERO (stage fonas — sutampa su main/profiliu, keičiasi pagal lygį) -->
+    <div id="trch-stagehero" style="margin:6px 12px 8px;padding:12px;background:linear-gradient(135deg,#1a1c22,#121419);border:1px solid rgba(255,255,255,.12);border-radius:14px;text-align:center;position:relative;overflow:hidden;transition:background .4s ease;">
       <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
         <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.25);border-radius:50%;top:18%;left:14%;animation:floatDot 4s ease-in-out infinite;"></div>
         <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.2);border-radius:50%;top:62%;left:24%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
@@ -1990,8 +1990,8 @@ select.inp option{background:#222;}
   </div>
   <div class="sa">
 
-    <!-- ⏳ PATVIRTINIMŲ HERO (oranžinis gradient — kaip vaiko hero kortelės) -->
-    <div style="margin:6px 12px 8px;padding:12px;background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,77,0,.04));border:1px solid rgba(255,77,0,.25);border-radius:14px;text-align:center;position:relative;overflow:hidden;">
+    <!-- ⏳ PATVIRTINIMŲ HERO (stage fonas — sutampa su main/profiliu, keičiasi pagal lygį) -->
+    <div id="trpat-stagehero" style="margin:6px 12px 8px;padding:12px;background:linear-gradient(135deg,#1a1c22,#121419);border:1px solid rgba(255,255,255,.12);border-radius:14px;text-align:center;position:relative;overflow:hidden;transition:background .4s ease;">
       <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
         <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.25);border-radius:50%;top:18%;left:14%;animation:floatDot 4s ease-in-out infinite;"></div>
         <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.2);border-radius:50%;top:62%;left:24%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
@@ -18500,6 +18500,7 @@ async function loadTrainerData() {
     if (cachedBg) {
       const h = document.getElementById('trh-hero'); if (h) h.style.background = cachedBg;
       const ps = document.getElementById('tr-prof'); if (ps) { ps.style.background = cachedBg; const psa = ps.querySelector('.sa'); if (psa) psa.style.background = cachedBg; }
+      ['trch-stagehero', 'trpat-stagehero'].forEach(id => { const el = document.getElementById(id); if (el) el.style.background = cachedBg; });
     }
   } catch (e) {}
   // ⚡ Prisijungus kraunam TIK tai, ko reikia pagrindiniam langui: naujų paskyrų kortelė + grupės.
@@ -21709,6 +21710,11 @@ function _renderTrainerMainHero() {
   hero.style.background = st.bgGradient;
   // 💾 Įsimenam stage foną — kitą kartą perkraunant pritaikysim iškart (be oranžinio mirgėjimo)
   try { localStorage.setItem('spobu_tr_bg', st.bgGradient); } catch (e) {}
+  // 🎨 Iššūkių + Patvirtinimų hero — toks pat stage fonas (sutampa su main/profiliu, keičiasi pagal lygį)
+  ['trch-stagehero', 'trpat-stagehero'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.background = st.bgGradient; el.style.borderColor = (st.color || '#FFFFFF') + '55'; }
+  });
   const kanjiBg = document.getElementById('trh-hero-kanji-bg');
   if (kanjiBg) kanjiBg.textContent = st.kanji;
   // Pasveikinimas + trenerio vardas
