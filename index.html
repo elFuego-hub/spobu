@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v183</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v184</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19815,55 +19815,64 @@ function _challengeShareCardHtml(d) {
 async function openChallengeShareCard(challengeId) {
   const ch = (_trOwnChallenges || []).find(c => c.id === challengeId);
   if (!ch) { showToast('Iššūkis nerastas', 'error'); return; }
-  showToast('Ruošiama kortelė…', '', 1500);
-  // Tinkami vaikai pagal audience
-  const aud = ch.target_audience || 'group';
-  let eligible = (allTrainerKids || []);
-  if (aud === 'specific_kid') eligible = eligible.filter(k => k.id === ch.target_kid_id);
-  else if (aud === 'group') eligible = eligible.filter(k => k.group_id === ch.group_id);
-  else if (aud === 'boys_in_group') eligible = eligible.filter(k => k.group_id === ch.group_id && k.gender === 'male');
-  else if (aud === 'girls_in_group') eligible = eligible.filter(k => k.group_id === ch.group_id && k.gender === 'female');
-  const eligibleIds = eligible.map(k => k.id);
-  // Kas įveikė (approved submissions + completed progress)
-  const completer = new Set();
-  if (eligibleIds.length) {
-    const [s, p] = await Promise.all([
-      sb.from('challenge_submissions').select('kid_id, status').eq('challenge_id', challengeId).in('kid_id', eligibleIds),
-      sb.from('challenge_progress').select('kid_id, is_completed').eq('challenge_id', challengeId).in('kid_id', eligibleIds)
-    ]);
-    (s.data || []).forEach(x => { if (x.status === 'approved') completer.add(x.kid_id); });
-    (p.data || []).forEach(x => { if (x.is_completed) completer.add(x.kid_id); });
-  }
-  const ids = [...completer];
-  // Vardai — TIK ne-anoniminių (is_anonymous paslepia vardą visur)
-  let names = [];
-  if (ids.length) {
-    const { data: kr } = await sb.from('kids').select('id, first_name, is_anonymous').in('id', ids);
-    names = (kr || []).filter(k => !k.is_anonymous && (k.first_name || '').trim()).map(k => k.first_name.trim());
-  }
-  const now = new Date();
-  const LT = ['SAUSIO', 'VASARIO', 'KOVO', 'BALANDŽIO', 'GEGUŽĖS', 'BIRŽELIO', 'LIEPOS', 'RUGPJŪČIO', 'RUGSĖJO', 'SPALIO', 'LAPKRIČIO', 'GRUODŽIO'];
-  const TYPE_LT = { training: 'Treniruotės', weekly: 'Savaitės', monthly: 'Mėnesio', one_time: 'Vienkartinis', permanent: 'Nuolatinis' };
-  const grp = (trainerGroupsCache || []).find(x => x.id === ch.group_id);
-  const d = {
-    title: ch.title || 'Iššūkis', icon: ch.icon || '🎯', typeLabel: TYPE_LT[ch.type] || 'Iššūkio',
-    groupName: aud === 'all_club' ? 'Visas klubas' : (grp?.name || ''),
-    completed: ids.length, eligible: eligibleIds.length, exp: (ch.exp_reward || 0) * ids.length,
-    names, monthLabel: LT[now.getMonth()], year: now.getFullYear()
-  };
+  // 1. IŠKART parodom langą su „Kraunama" (kad neliktų pakibęs ant „Ruošiama")
   const old = document.getElementById('ch-share-modal'); if (old) old.remove();
   const m = document.createElement('div');
   m.id = 'ch-share-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:100002;align-items:center;justify-content:center;padding:18px;overflow-y:auto;';
   m.innerHTML = `<div style="width:100%;max-width:360px;margin:auto;">
-    <div id="ch-share-card">${_challengeShareCardHtml(d)}</div>
+    <div id="ch-share-card"><div style="border-radius:24px;background:linear-gradient(165deg,#15151c,#0b0b0f 55%);border:1px solid #26262f;padding:48px 20px;text-align:center;color:#cfcfd6;font-size:13px;">Kraunama…</div></div>
     <div style="display:flex;gap:10px;margin-top:14px;">
-      <button onclick="shareChallengeCardImg()" style="flex:1;border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;">📲 Dalintis</button>
+      <button id="ch-share-go" disabled onclick="shareChallengeCardImg()" style="flex:1;border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;opacity:.5;">📲 Dalintis</button>
       <button onclick="document.getElementById('ch-share-modal').remove()" style="flex:none;border-radius:13px;padding:14px 18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);">Uždaryti</button>
     </div>
   </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
+  // 2. Užkraunam duomenis (su apsauga — jei lūžta, parodom klaidą, ne pakibimą)
+  try {
+    const aud = ch.target_audience || 'group';
+    let eligible = (allTrainerKids || []);
+    if (aud === 'specific_kid') eligible = eligible.filter(k => k.id === ch.target_kid_id);
+    else if (aud === 'group') eligible = eligible.filter(k => k.group_id === ch.group_id);
+    else if (aud === 'boys_in_group') eligible = eligible.filter(k => k.group_id === ch.group_id && k.gender === 'male');
+    else if (aud === 'girls_in_group') eligible = eligible.filter(k => k.group_id === ch.group_id && k.gender === 'female');
+    const eligibleIds = eligible.map(k => k.id);
+    const completer = new Set();
+    if (eligibleIds.length) {
+      const [s, p] = await Promise.all([
+        sb.from('challenge_submissions').select('kid_id, status').eq('challenge_id', challengeId).in('kid_id', eligibleIds),
+        sb.from('challenge_progress').select('kid_id, is_completed').eq('challenge_id', challengeId).in('kid_id', eligibleIds)
+      ]);
+      (s.data || []).forEach(x => { if (x.status === 'approved') completer.add(x.kid_id); });
+      (p.data || []).forEach(x => { if (x.is_completed) completer.add(x.kid_id); });
+    }
+    const ids = [...completer];
+    let names = [];
+    if (ids.length) {
+      const { data: kr } = await sb.from('kids').select('id, first_name, is_anonymous').in('id', ids);
+      names = (kr || []).filter(k => !k.is_anonymous && (k.first_name || '').trim()).map(k => k.first_name.trim());
+    }
+    const now = new Date();
+    const LT = ['SAUSIO', 'VASARIO', 'KOVO', 'BALANDŽIO', 'GEGUŽĖS', 'BIRŽELIO', 'LIEPOS', 'RUGPJŪČIO', 'RUGSĖJO', 'SPALIO', 'LAPKRIČIO', 'GRUODŽIO'];
+    const TYPE_LT = { training: 'Treniruotės', weekly: 'Savaitės', monthly: 'Mėnesio', one_time: 'Vienkartinis', permanent: 'Nuolatinis' };
+    const grp = (trainerGroupsCache || []).find(x => x.id === ch.group_id);
+    const d = {
+      title: ch.title || 'Iššūkis', icon: ch.icon || '🎯', typeLabel: TYPE_LT[ch.type] || 'Iššūkio',
+      groupName: aud === 'all_club' ? 'Visas klubas' : (grp?.name || ''),
+      completed: ids.length, eligible: eligibleIds.length, exp: (ch.exp_reward || 0) * ids.length,
+      names, monthLabel: LT[now.getMonth()], year: now.getFullYear()
+    };
+    const cardEl = document.getElementById('ch-share-card');
+    if (!cardEl) return; // langas uždarytas kol kraunа
+    cardEl.innerHTML = _challengeShareCardHtml(d);
+    const goBtn = document.getElementById('ch-share-go');
+    if (goBtn) { goBtn.disabled = false; goBtn.style.opacity = '1'; }
+  } catch (e) {
+    const cardEl = document.getElementById('ch-share-card');
+    if (cardEl) cardEl.innerHTML = `<div style="border-radius:24px;background:#15151c;border:1px solid #26262f;padding:30px 20px;text-align:center;color:#EF4444;font-size:12px;line-height:1.5;">Nepavyko paruošti kortelės.<br>${(e.message || '')}</div>`;
+    showToast('Nepavyko paruošti kortelės: ' + (e.message || ''), 'error', 5000);
+  }
 }
 
 async function shareChallengeCardImg() {
@@ -19872,6 +19881,7 @@ async function shareChallengeCardImg() {
   if (typeof html2canvas !== 'function') { showToast('Pasidaryk ekrano nuotrauką ir dalinkis 📸', '', 4000); return; }
   showToast('Ruošiama…', '', 1500);
   try {
+    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
     const canvas = await html2canvas(card, { backgroundColor: '#0b0b0f', scale: 2, useCORS: true, logging: false });
     canvas.toBlob(async (blob) => {
       if (!blob) { showToast('Nepavyko sukurti paveikslėlio', 'error'); return; }
