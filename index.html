@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v196</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v197</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -20017,6 +20017,15 @@ function applyTrPatGroupFilter() {
       card.style.display = (!trPatGroupFilter || card.dataset.gid === trPatGroupFilter) ? '' : 'none';
     });
   });
+  // 📝 Anketos (registracijos) — rodom TIK „Visos" (grupuoti registracijų nelogiška)
+  const formsTab = document.querySelector('#tr-pat .tab[onclick*="forms"]');
+  if (formsTab) {
+    formsTab.style.display = trPatGroupFilter ? 'none' : '';
+    if (trPatGroupFilter && formsTab.classList.contains('on')) {
+      const careerTab = document.querySelector('#tr-pat .tab[onclick*="career"]');
+      if (careerTab) switchTrTab(careerTab, 'career');
+    }
+  }
   _recountTrPat();
 }
 
@@ -20028,7 +20037,7 @@ function _recountTrPat() {
     const m = html.match(/data-gid="([^"]*)"/g) || [];
     return f ? m.filter(x => x === `data-gid="${f}"`).length : m.length;
   };
-  const c = cnt(_trPatFullHtml.career), ch = cnt(_trPatFullHtml.challenges), co = cnt(_trPatFullHtml.competitions), du = cnt(_trPatFullHtml.duels), fo = cnt(_trPatFullHtml.forms);
+  const c = cnt(_trPatFullHtml.career), ch = cnt(_trPatFullHtml.challenges), co = cnt(_trPatFullHtml.competitions), du = cnt(_trPatFullHtml.duels), fo = f ? 0 : cnt(_trPatFullHtml.forms);
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set('tr-career-count', c); set('tr-challenges-count', ch); set('tr-competitions-count', co); set('tr-duels-count', du); set('tr-forms-count', fo);
   set('tr-pending-badge', c + ch + co + du + fo);
@@ -24834,7 +24843,8 @@ async function loadPendingChallengeSubmissions() {
   }
   
   const typeLabels = { training: 'Treniruotė', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
-  
+  const TYPE_COLORS = { training: '#FF4D00', weekly: '#4FC3F7', monthly: '#BA68C8', one_time: '#FFD700', permanent: '#66BB6A' };
+
   const cards = subs.map(s => {
     const kid = kidsMap[s.kid_id];
     // (v146) vardas 2 žingsnių per profiles
@@ -24903,14 +24913,15 @@ async function loadPendingChallengeSubmissions() {
           <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);">+${ch?.exp_reward||0} EXP</div>
         </div>`;
     
-    return `<div class="cd" style="margin-bottom:12px;" id="csub-${s.id}" data-gid="${kid?.group_id || ''}">
+    const tColor = TYPE_COLORS[ch?.type] || '#FF8C00';
+    return `<div class="cd" style="margin-bottom:10px;padding:11px 12px;background:linear-gradient(135deg,${tColor}12,var(--card));border:.5px solid ${tColor}40;border-left:4px solid ${tColor};" id="csub-${s.id}" data-gid="${kid?.group_id || ''}">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <div class="av" style="width:36px;height:36px;font-size:14px;background:var(--br);">${(kidName||'?')[0]}</div>
-        <div style="flex:1;">
+        <div class="av" style="width:36px;height:36px;font-size:14px;background:${tColor};">${(kidName||'?')[0]}</div>
+        <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:900;">${kidName}</div>
           <div style="font-size:11px;color:var(--mut);">${ch?.icon||'🎯'} ${ch?.title||'Iššūkis'}${isPartial ? ' <span style="background:rgba(79,195,247,.2);color:#4FC3F7;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:800;">📊 PARTIAL</span>' : ''}</div>
         </div>
-        <div class="bg or">${typeLabels[ch?.type]||ch?.type||''}</div>
+        <div style="background:${tColor}22;color:${tColor};font-size:9px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-radius:99px;flex-shrink:0;white-space:nowrap;">${typeLabels[ch?.type]||ch?.type||''}</div>
       </div>
       
       ${targetText ? `<div style="font-size:11px;color:var(--mut);margin-bottom:8px;">${targetText}</div>` : ''}
