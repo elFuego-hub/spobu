@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v191</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v192</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19804,10 +19804,14 @@ function _challengeShareCardHtml(d) {
         <div style="font-size:12px;color:#cfcfd6;">vaikų įveikė iššūkį</div>
         <div style="height:8px;background:#26262f;border-radius:99px;margin:12px 0 0;overflow:hidden;"><div style="height:100%;width:${pct}%;background:#FF6A00;border-radius:99px;"></div></div>
       </div>
-      <div style="padding:14px 20px 8px;">
+      <div style="display:grid;grid-template-columns:${(d.total && d.total > 0) ? '1fr 1fr' : '1fr'};gap:9px;padding:14px 20px 8px;">
+        ${(d.total && d.total > 0) ? `<div style="background:#191921;border-radius:12px;padding:11px;text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#5DCAA5;line-height:1;">💪 ${Number(d.total).toLocaleString('lt-LT')}</div>
+          <div style="font-size:10px;color:#9a9aa5;margin-top:2px;">${d.unit || ''} iš viso</div>
+        </div>` : ''}
         <div style="background:#191921;border-radius:12px;padding:11px;text-align:center;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#FFD24A;line-height:1;">⚡ +${d.exp.toLocaleString('lt-LT')}</div>
-          <div style="font-size:10px;color:#9a9aa5;margin-top:2px;">EXP grupei iš šio iššūkio</div>
+          <div style="font-size:10px;color:#9a9aa5;margin-top:2px;">EXP grupei</div>
         </div>
       </div>
       ${namesTxt ? `<div style="margin:0 20px 8px;background:#23200f;border:.5px solid #4a4017;border-radius:12px;padding:9px 12px;font-size:11px;color:#cfcfd6;line-height:1.5;">🏆 Įveikė: <span style="color:#ffffff;">${namesTxt}</span></div>` : ''}
@@ -19843,24 +19847,29 @@ async function openChallengeShareCard(challengeId) {
   // 2. Užkraunam duomenis (su apsauga — jei lūžta, parodom klaidą, ne pakibimą)
   try {
     const aud = ch.target_audience || 'group';
-    // Skaičiai iš render'io — jis TEISINGAI agreguoja grupės parent+child kopijas (allTrainerKids čia būna tuščias)
-    const eligible = ch._eligible_count || 0;
-    const completed = (ch._stats && ch._stats.approved) || 0;
-    // Vardai: pateikimai/progresas ant PATIES iššūkio IR ant jo vaikų kopijų (parent_challenge_id)
-    let names = [];
+    const eligible = ch._eligible_count || 0; // render'io reikšmė (agreguoja parent+child)
+    const unit = ch.target_unit || '';
+    let names = [], completed = 0, totalDone = 0;
+    // Pateikimai/progresas ant PATIES iššūkio IR ant jo vaikų kopijų (parent_challenge_id)
     try {
       const { data: childRows } = await sb.from('challenges').select('id').eq('parent_challenge_id', challengeId);
       const chIds = [challengeId, ...((childRows || []).map(c => c.id))];
       const [s, p] = await Promise.all([
-        sb.from('challenge_submissions').select('kid_id, status').in('challenge_id', chIds).eq('status', 'approved'),
-        sb.from('challenge_progress').select('kid_id, is_completed').in('challenge_id', chIds).eq('is_completed', true)
+        sb.from('challenge_submissions').select('kid_id, status, numeric_value').in('challenge_id', chIds).eq('status', 'approved'),
+        sb.from('challenge_progress').select('kid_id, is_completed, total_progress').in('challenge_id', chIds)
       ]);
-      const kidIds = [...new Set([...(s.data || []).map(x => x.kid_id), ...(p.data || []).map(x => x.kid_id)])];
+      const approvedSubs = s.data || [], progRows = p.data || [];
+      const kidIds = [...new Set([...approvedSubs.map(x => x.kid_id), ...progRows.filter(x => x.is_completed).map(x => x.kid_id)])];
+      completed = kidIds.length;
       if (kidIds.length) {
         const { data: kr } = await sb.from('kids').select('id, first_name, is_anonymous').in('id', kidIds);
         names = (kr || []).filter(k => !k.is_anonymous && (k.first_name || '').trim()).map(k => k.first_name.trim());
       }
-    } catch (e) { console.warn('[ch-share] vardų rinkimas:', e); }
+      // Bendras grupės kiekis: kaupiamų progreso suma → pateikimų skaitinė suma → tikslas × įveikę
+      const progSum = progRows.reduce((sum, x) => sum + (Number(x.total_progress) || 0), 0);
+      const subSum = approvedSubs.reduce((sum, x) => sum + (Number(x.numeric_value) || 0), 0);
+      totalDone = progSum > 0 ? progSum : (subSum > 0 ? subSum : (Number(ch.target_value) || 0) * completed);
+    } catch (e) { console.warn('[ch-share] duomenų rinkimas:', e); }
     const now = new Date();
     const LT = ['SAUSIO', 'VASARIO', 'KOVO', 'BALANDŽIO', 'GEGUŽĖS', 'BIRŽELIO', 'LIEPOS', 'RUGPJŪČIO', 'RUGSĖJO', 'SPALIO', 'LAPKRIČIO', 'GRUODŽIO'];
     const TYPE_LT = { training: 'Treniruotės', weekly: 'Savaitės', monthly: 'Mėnesio', one_time: 'Vienkartinis', permanent: 'Nuolatinis' };
@@ -19869,6 +19878,7 @@ async function openChallengeShareCard(challengeId) {
       title: ch.title || 'Iššūkis', icon: ch.icon || '🎯', typeLabel: TYPE_LT[ch.type] || 'Iššūkio',
       groupName: aud === 'all_club' ? 'Visas klubas' : (grp?.name || ''),
       completed: completed, eligible: eligible, exp: (ch.exp_reward || 0) * completed,
+      total: totalDone, unit,
       names, monthLabel: LT[now.getMonth()], year: now.getFullYear()
     };
     console.log('[ch-share] duomenys paruošti:', d);
