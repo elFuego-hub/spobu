@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v186</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v187</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19874,9 +19874,10 @@ async function openChallengeShareCard(challengeId) {
     const goBtn = document.getElementById('ch-share-go');
     if (goBtn) { goBtn.disabled = false; goBtn.style.opacity = '1'; }
   } catch (e) {
+    console.error('[ch-share] kortelės paruošimo klaida:', e);
     const cardEl = document.getElementById('ch-share-card');
-    if (cardEl) cardEl.innerHTML = `<div style="border-radius:24px;background:#15151c;border:1px solid #26262f;padding:30px 20px;text-align:center;color:#EF4444;font-size:12px;line-height:1.5;">Nepavyko paruošti kortelės.<br>${(e.message || '')}</div>`;
-    showToast('Nepavyko paruošti kortelės: ' + (e.message || ''), 'error', 5000);
+    if (cardEl) cardEl.innerHTML = `<div style="border-radius:24px;background:#15151c;border:1px solid #26262f;padding:30px 20px;text-align:center;color:#EF4444;font-size:12px;line-height:1.5;">Nepavyko paruošti kortelės.<br>${(e.message || e || '')}</div>`;
+    showToast('Nepavyko paruošti kortelės: ' + (e.message || e || ''), 'error', 5000);
   }
 }
 
@@ -19900,7 +19901,7 @@ async function shareChallengeCardImg() {
         showToast('Paveikslėlis išsaugotas 💾', 'success', 3000);
       }
     }, 'image/png');
-  } catch (e) { showToast('Klaida: ' + (e.message || ''), 'error', 4000); }
+  } catch (e) { console.error('[ch-share] html2canvas/dalinimosi klaida:', e); showToast('Klaida: ' + (e.message || e || ''), 'error', 5000); }
 }
 
 function renderTrPatGroupFilter() {
