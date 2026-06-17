@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v178</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v179</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19180,7 +19180,13 @@ function _attRenderList(){
     </div>`;
   }).join('');
   const btn=document.getElementById('att-confirm');
-  if(btn && !btn.dataset.busy) btn.textContent=`✅ Patvirtinti (${_attState.present.size}/${_attState.kids.length})`;
+  if(btn && !btn.dataset.busy){
+    const ok=_attIsScheduledDay(_attState.group,_attState.date);
+    btn.disabled=!ok;
+    btn.style.opacity=ok?'1':'.45';
+    btn.style.cursor=ok?'pointer':'not-allowed';
+    btn.textContent=ok?`✅ Patvirtinti (${_attState.present.size}/${_attState.kids.length})`:'⚠️ Ne treniruočių diena';
+  }
 }
 
 function _attToggle(kidId){ if(!_attState) return; if(_attState.present.has(kidId)) _attState.present.delete(kidId); else _attState.present.add(kidId); _attRenderList(); }
@@ -19188,9 +19194,10 @@ function _attSetAll(v){ if(!_attState) return; _attState.present=v?new Set(_attS
 
 async function _attConfirm(){
   if(!_attState) return;
-  // Grafiko apsauga: jei diena ne tvarkaraštyje — pop-up, ar tikrai žymėti
+  // Grafiko apsauga (KIETAS blokavimas): ne tvarkaraščio dieną žymėti NELEIDŽIAMA
   if(!_attIsScheduledDay(_attState.group, _attState.date)){
-    if(!confirm(`⚠️ ${_attDayNameLT(_attState.date)} nėra šios grupės treniruočių diena.\n\nTvarkaraštis: ${_attSchedLT(_attState.group)}.\n\nRekomenduojama žymėti pagal grafiką. Vis tiek žymėti šią dieną?`)) return;
+    showToast(`❌ Žymėti galima tik pagal grafiką. ${_attDayNameLT(_attState.date)} nėra treniruočių diena.\nTvarkaraštis: ${_attSchedLT(_attState.group)}.`, 'error', 5500);
+    return;
   }
   const btn=document.getElementById('att-confirm');
   if(btn){ if(btn.dataset.busy) return; btn.dataset.busy='1'; btn.disabled=true; btn.textContent='SAUGOMA...'; btn.style.opacity='.6'; }
