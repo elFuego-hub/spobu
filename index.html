@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v189</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v190</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19829,9 +19829,12 @@ async function openChallengeShareCard(challengeId) {
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:100002;align-items:center;justify-content:center;padding:18px;overflow-y:auto;';
   m.innerHTML = `<div style="width:100%;max-width:360px;margin:auto;">
     <div id="ch-share-card"><div style="border-radius:24px;background:#0e0e14;border:1px solid #26262f;padding:48px 20px;text-align:center;color:#cfcfd6;font-size:13px;">Kraunama…</div></div>
-    <div style="display:flex;gap:10px;margin-top:14px;">
-      <button id="ch-share-go" disabled onclick="shareChallengeCardImg()" style="flex:1;border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;opacity:.5;">📲 Dalintis</button>
-      <button onclick="document.getElementById('ch-share-modal').remove()" style="flex:none;border-radius:13px;padding:14px 18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);">Uždaryti</button>
+    <div style="margin-top:14px;">
+      <div style="display:flex;gap:10px;">
+        <button id="ch-share-go" disabled onclick="shareChallengeCardImg()" style="flex:1;border:none;border-radius:13px;padding:13px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;opacity:.5;">📲 Dalintis</button>
+        <button id="ch-dl-go" disabled onclick="_downloadChShareFile()" style="flex:1;border-radius:13px;padding:13px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:rgba(255,255,255,.1);color:#fff;border:.5px solid var(--bdr);opacity:.5;">⬇️ Išsaugoti</button>
+      </div>
+      <button onclick="document.getElementById('ch-share-modal').remove()" style="width:100%;margin-top:8px;border-radius:13px;padding:10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;background:transparent;color:#9a9aa5;border:.5px solid var(--bdr);">Uždaryti</button>
     </div>
   </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
@@ -19889,6 +19892,8 @@ async function openChallengeShareCard(challengeId) {
       }
     } catch (e) { console.warn('[ch-share] iš anksto generuojant klaida:', e); }
     if (goBtn) { goBtn.disabled = false; goBtn.style.opacity = '1'; goBtn.textContent = '📲 Dalintis'; }
+    const dlBtn = document.getElementById('ch-dl-go');
+    if (dlBtn) { dlBtn.disabled = false; dlBtn.style.opacity = '1'; }
   } catch (e) {
     console.error('[ch-share] kortelės paruošimo klaida:', e);
     const cardEl = document.getElementById('ch-share-card');
@@ -19898,11 +19903,12 @@ async function openChallengeShareCard(challengeId) {
 }
 
 function _downloadChShareFile() {
-  if (!_chShareFile) return;
+  console.log('[ch-share] išsaugoti, failas paruoštas:', !!_chShareFile);
+  if (!_chShareFile) { showToast('Paveikslėlis dar ruošiamas — palauk sekundę', '', 2500); return; }
   const url = URL.createObjectURL(_chShareFile);
   const a = document.createElement('a'); a.href = url; a.download = 'spobu-issukis.png'; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  showToast('Paveikslėlis išsaugotas 💾', 'success', 3000);
+  showToast('Paveikslėlis išsaugotas 💾 — įkelk į Instagram/Facebook', 'success', 4000);
 }
 
 async function shareChallengeCardImg() {
