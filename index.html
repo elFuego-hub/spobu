@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v202</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v203</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2278,6 +2278,7 @@ select.inp option{background:#222;}
         <button onclick="_trGroupsSetMetric('medals')" data-m="medals" style="flex:1;padding:6px 2px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.07);color:var(--mut);">Varžybos</button>
         <button onclick="_trGroupsSetMetric('challenges')" data-m="challenges" style="flex:1;padding:6px 2px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.07);color:var(--mut);">Iššūkiai</button>
       </div>
+      <div style="font-size:9px;color:var(--mut);text-align:center;margin-bottom:8px;">📊 vidurkis vienam vaikui</div>
       <div id="trp-groups-table"><div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Kraunama...</div></div>
     </div>
 
@@ -20277,11 +20278,13 @@ let _trCareerGender = 'visi';
 let _trKidRecordsCache = null;
 let _trGroupsData = [];
 let _trGroupsMetric = 'exp';
+// Metrikos = VIDURKIS vienam vaikui (teisinga lyginti skirtingo dydžio grupes).
+// val = vidurkis (rikiavimui/juostai), fmt = atvaizdavimas (EXP sveiki, medaliai/iššūkiai 1 po kablelio).
 const TR_GROUP_METRICS = {
-  exp:        { label: 'Bendras',  icon: '⚡', val: r => r.exp || 0 },
-  career:     { label: 'Karjera',  icon: '🎯', val: r => r.career || 0 },
-  medals:     { label: 'Varžybos', icon: '🏅', val: r => r.md || 0 },
-  challenges: { label: 'Iššūkiai', icon: '💪', val: r => r.challenges || 0 }
+  exp:        { label: 'Bendras',  icon: '⚡', val: r => r.n ? (r.exp || 0) / r.n : 0,        fmt: v => Math.round(v).toLocaleString() },
+  career:     { label: 'Karjera',  icon: '🎯', val: r => r.n ? (r.career || 0) / r.n : 0,     fmt: v => Math.round(v).toLocaleString() },
+  medals:     { label: 'Varžybos', icon: '🏅', val: r => r.n ? (r.md || 0) / r.n : 0,         fmt: v => (Math.round(v * 10) / 10).toLocaleString() },
+  challenges: { label: 'Iššūkiai', icon: '💪', val: r => r.n ? (r.challenges || 0) / r.n : 0, fmt: v => (Math.round(v * 10) / 10).toLocaleString() }
 };
 
 async function loadTrainerCareerRadar() {
@@ -20441,6 +20444,7 @@ function _trGroupsRowHtml(r, i, mKey, maxVal) {
   const color = r.g.color || '#FF4D00';
   const M = TR_GROUP_METRICS[mKey] || TR_GROUP_METRICS.exp;
   const val = M.val(r);
+  const disp = M.fmt ? M.fmt(val) : val.toLocaleString();
   const pct = Math.max(4, Math.round((val / (maxVal || 1)) * 100));
   return `
     <div style="padding:7px 0;border-bottom:.5px solid var(--bdr);">
@@ -20449,7 +20453,7 @@ function _trGroupsRowHtml(r, i, mKey, maxVal) {
         <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;font-size:12px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.g.name}</div>
         <div style="font-size:10px;color:var(--mut);flex-shrink:0;">👥 ${r.n}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${color};flex-shrink:0;min-width:48px;text-align:right;">${M.icon} ${val.toLocaleString()}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${color};flex-shrink:0;min-width:48px;text-align:right;">${M.icon} ${disp}</div>
       </div>
       <div style="height:7px;background:var(--bg);border-radius:99px;overflow:hidden;">
         <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${color},${color}99);border-radius:99px;"></div>
