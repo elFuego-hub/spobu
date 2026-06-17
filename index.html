@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v201</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v202</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2269,9 +2269,15 @@ select.inp option{background:#222;}
       </div>
     </div>
 
-    <!-- 🏆 Grupės pagal EXP -->
+    <!-- 🏆 Grupių reitingas — filtras: bendras/karjera/varžybos/iššūkiai -->
     <div style="margin:0 12px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
-      <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:6px;">🏆 GRUPĖS PAGAL EXP</div>
+      <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;">🏆 GRUPIŲ REITINGAS</div>
+      <div id="trp-groups-toggle" style="display:flex;gap:4px;margin-bottom:10px;">
+        <button onclick="_trGroupsSetMetric('exp')" data-m="exp" style="flex:1;padding:6px 2px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:#FF4D00;color:#1a0a00;">Bendras</button>
+        <button onclick="_trGroupsSetMetric('career')" data-m="career" style="flex:1;padding:6px 2px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.07);color:var(--mut);">Karjera</button>
+        <button onclick="_trGroupsSetMetric('medals')" data-m="medals" style="flex:1;padding:6px 2px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.07);color:var(--mut);">Varžybos</button>
+        <button onclick="_trGroupsSetMetric('challenges')" data-m="challenges" style="flex:1;padding:6px 2px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.07);color:var(--mut);">Iššūkiai</button>
+      </div>
       <div id="trp-groups-table"><div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Kraunama...</div></div>
     </div>
 
@@ -20209,17 +20215,24 @@ async function loadTrainerProfileStats() {
     const beltsEl = document.getElementById('trp-belts');
     if (beltsEl) beltsEl.innerHTML = beltRows || '<div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Nėra vaikų</div>';
 
-    // 🥇 Medaliai + 🎯 įveikti iššūkiai
-    let medalsByKid = [], ishCount = 0;
+    // 🥇 Medaliai + 🎯 įveikti iššūkiai + 🎯 karjera (grupių filtrui)
+    let medalsByKid = [], ishCount = 0, challByKid = {}, careerByKid = {};
     if (kidIds.length) {
-      const [mdR, isR] = await Promise.all([
+      const [mdR, isR, krR] = await Promise.all([
         sb.from('competition_results').select('kid_id, placement')
-          .in('kid_id', kidIds).eq('approval_status', 'approved').in('placement', [1, 2, 3]).limit(2000),
-        sb.from('challenge_submissions').select('id', { count: 'exact', head: true })
-          .in('kid_id', kidIds).eq('status', 'approved')
+          .in('kid_id', kidIds).eq('approval_status', 'approved').in('placement', [1, 2, 3]).limit(5000),
+        sb.from('challenge_submissions').select('kid_id')
+          .in('kid_id', kidIds).eq('status', 'approved').limit(10000),
+        sb.from('kid_records').select('kid_id, category_id, category_exp')
+          .in('kid_id', kidIds).limit(20000)
       ]);
       medalsByKid = mdR.data || [];
-      ishCount = isR.count || 0;
+      const challRows = isR.data || [];
+      ishCount = challRows.length;
+      challRows.forEach(r => { challByKid[r.kid_id] = (challByKid[r.kid_id] || 0) + 1; });
+      const kidRecs = krR.data || [];
+      kidRecs.forEach(r => { careerByKid[r.kid_id] = (careerByKid[r.kid_id] || 0) + (r.category_exp || 0); });
+      _trKidRecordsCache = kidRecs; // radaras perpanaudos (be antros kid_records užklausos)
     }
     const m1 = medalsByKid.filter(m => m.placement === 1).length;
     const m2 = medalsByKid.filter(m => m.placement === 2).length;
@@ -20229,46 +20242,19 @@ async function loadTrainerProfileStats() {
     const iEl = document.getElementById('trp-ish-num');
     if (iEl) iEl.textContent = ishCount;
 
-    // 🏆 Grupės pagal EXP (su medalių sk.)
+    // 🏆 Grupės — agregatai pagal metriką (bendras/karjera/varžybos/iššūkiai)
     const kidGroup = {};
     kids.forEach(k => { kidGroup[k.id] = k.group_id; });
-    const medalsByGroup = {};
+    const medalsByGroup = {}, challByGroup = {}, careerByGroup = {};
     medalsByKid.forEach(m => { const gid = kidGroup[m.kid_id]; if (gid) medalsByGroup[gid] = (medalsByGroup[gid] || 0) + 1; });
+    Object.keys(challByKid).forEach(kid => { const gid = kidGroup[kid]; if (gid) challByGroup[gid] = (challByGroup[gid] || 0) + challByKid[kid]; });
+    Object.keys(careerByKid).forEach(kid => { const gid = kidGroup[kid]; if (gid) careerByGroup[gid] = (careerByGroup[gid] || 0) + careerByKid[kid]; });
     const rows = (trainerGroupsCache || []).map(g => {
       const gk = kids.filter(k => k.group_id === g.id);
-      return { g, n: gk.length, exp: gk.reduce((s, k) => s + (k.total_exp || 0), 0), md: medalsByGroup[g.id] || 0 };
-    }).sort((a, b) => b.exp - a.exp);
-    const gtEl = document.getElementById('trp-groups-table');
-    if (gtEl) {
-      // (v121) EXP juostos — proporcingos didžiausiai grupei (max = 100%)
-      const maxExp = Math.max(1, ...rows.map(r => r.exp));
-      const rowHtml = (r, i) => {
-        const color = r.g.color || '#FF4D00';
-        const pct = Math.max(4, Math.round((r.exp / maxExp) * 100));
-        return `
-        <div style="padding:7px 0;border-bottom:.5px solid var(--bdr);">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--mut);min-width:22px;">#${i + 1}</div>
-            <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-            <div style="flex:1;min-width:0;font-size:12px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.g.name}</div>
-            <div style="font-size:10px;color:var(--mut);flex-shrink:0;">👥 ${r.n} · 🏅 ${r.md}</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${color};flex-shrink:0;">${r.exp.toLocaleString()}</div>
-          </div>
-          <div style="height:7px;background:var(--bg);border-radius:99px;overflow:hidden;">
-            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${color},${color}99);border-radius:99px;"></div>
-          </div>
-        </div>`;
-      };
-      _trGroupsAllHtml = rows.map(rowHtml).join('');
-      if (!rows.length) {
-        gtEl.innerHTML = '<div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Nėra grupių</div>';
-      } else {
-        const moreBtn = rows.length > 5
-          ? `<button onclick="openTrGroupsModal()" style="width:100%;margin-top:8px;padding:9px;background:rgba(255,255,255,.05);border:.5px solid var(--bdr);border-radius:10px;color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;">DAUGIAU (${rows.length}) ↓</button>`
-          : '';
-        gtEl.innerHTML = rows.slice(0, 5).map(rowHtml).join('') + moreBtn;
-      }
-    }
+      return { g, n: gk.length, exp: gk.reduce((s, k) => s + (k.total_exp || 0), 0), md: medalsByGroup[g.id] || 0, career: careerByGroup[g.id] || 0, challenges: challByGroup[g.id] || 0 };
+    });
+    _trGroupsData = rows;
+    _renderTrGroups(_trGroupsMetric || 'exp');
 
     // 🕸️ Visų vaikų karjeros radaras (lytis × amžius) — pildo #trp-career-radar
     loadTrainerCareerRadar();
@@ -20288,7 +20274,15 @@ async function loadTrainerProfileStats() {
 let _trCareerRadarData = null;
 let _trCareerCatsCache = null;
 let _trCareerGender = 'visi';
-let _trGroupsAllHtml = '';
+let _trKidRecordsCache = null;
+let _trGroupsData = [];
+let _trGroupsMetric = 'exp';
+const TR_GROUP_METRICS = {
+  exp:        { label: 'Bendras',  icon: '⚡', val: r => r.exp || 0 },
+  career:     { label: 'Karjera',  icon: '🎯', val: r => r.career || 0 },
+  medals:     { label: 'Varžybos', icon: '🏅', val: r => r.md || 0 },
+  challenges: { label: 'Iššūkiai', icon: '💪', val: r => r.challenges || 0 }
+};
 
 async function loadTrainerCareerRadar() {
   const wrap = document.getElementById('trp-career-radar');
@@ -20305,19 +20299,25 @@ async function loadTrainerCareerRadar() {
     const cats = _trCareerCatsCache;
     if (!cats.length) { wrap.innerHTML = '<div style="color:var(--mut);font-size:11px;text-align:center;padding:14px;">Nėra kategorijų</div>'; return; }
 
-    // 2) Visų vaikų kid_records → suma per (vaikas, kategorija)
+    // 2) Visų vaikų kid_records → suma per (vaikas, kategorija).
+    //    Perpanaudojam _trKidRecordsCache (užkrautą loadTrainerProfileStats) — be antros užklausos.
     const kidIds = kids.map(k => k.id);
     const perKid = {};
-    const CH = 300;
-    for (let i = 0; i < kidIds.length; i += CH) {
-      const slice = kidIds.slice(i, i + CH);
-      const { data: recs } = await sb.from('kid_records').select('kid_id, category_id, category_exp').in('kid_id', slice);
-      (recs || []).forEach(r => {
-        if (!r.category_id) return;
-        (perKid[r.kid_id] = perKid[r.kid_id] || {});
-        perKid[r.kid_id][r.category_id] = (perKid[r.kid_id][r.category_id] || 0) + (r.category_exp || 0);
-      });
+    let recsAll = _trKidRecordsCache;
+    if (!recsAll) {
+      recsAll = [];
+      const CH = 300;
+      for (let i = 0; i < kidIds.length; i += CH) {
+        const slice = kidIds.slice(i, i + CH);
+        const { data: recs } = await sb.from('kid_records').select('kid_id, category_id, category_exp').in('kid_id', slice);
+        if (recs) recsAll.push(...recs);
+      }
     }
+    recsAll.forEach(r => {
+      if (!r.category_id) return;
+      (perKid[r.kid_id] = perKid[r.kid_id] || {});
+      perKid[r.kid_id][r.category_id] = (perKid[r.kid_id][r.category_id] || 0) + (r.category_exp || 0);
+    });
 
     // 3) Kohortos pagal lytį × amžių (<14 = a, 14+ = b)
     const buckets = { visi: { a: [], b: [] }, berniukai: { a: [], b: [] }, merginos: { a: [], b: [] } };
@@ -20436,8 +20436,57 @@ function _trToggleSection(bodyId, chevId) {
   if (c) c.textContent = open ? '▾' : '▸';
 }
 
-// Visų grupių reitingas — papildomas langas (kai >5 grupių)
+// Grupių reitingo eilutė — pagal pasirinktą metriką (mKey)
+function _trGroupsRowHtml(r, i, mKey, maxVal) {
+  const color = r.g.color || '#FF4D00';
+  const M = TR_GROUP_METRICS[mKey] || TR_GROUP_METRICS.exp;
+  const val = M.val(r);
+  const pct = Math.max(4, Math.round((val / (maxVal || 1)) * 100));
+  return `
+    <div style="padding:7px 0;border-bottom:.5px solid var(--bdr);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--mut);min-width:22px;">#${i + 1}</div>
+        <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;font-size:12px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.g.name}</div>
+        <div style="font-size:10px;color:var(--mut);flex-shrink:0;">👥 ${r.n}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${color};flex-shrink:0;min-width:48px;text-align:right;">${M.icon} ${val.toLocaleString()}</div>
+      </div>
+      <div style="height:7px;background:var(--bg);border-radius:99px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${color},${color}99);border-radius:99px;"></div>
+      </div>
+    </div>`;
+}
+
+// Grupių reitingas tr-prof: TOP 5 pagal metriką + „DAUGIAU" → openTrGroupsModal
+function _renderTrGroups(mKey) {
+  mKey = TR_GROUP_METRICS[mKey] ? mKey : 'exp';
+  _trGroupsMetric = mKey;
+  document.querySelectorAll('#trp-groups-toggle button').forEach(b => {
+    const on = b.getAttribute('data-m') === mKey;
+    b.style.background = on ? '#FF4D00' : 'rgba(255,255,255,.07)';
+    b.style.color = on ? '#1a0a00' : 'var(--mut)';
+  });
+  const gtEl = document.getElementById('trp-groups-table');
+  if (!gtEl) return;
+  const rows = (_trGroupsData || []).slice().sort((a, b) => TR_GROUP_METRICS[mKey].val(b) - TR_GROUP_METRICS[mKey].val(a));
+  if (!rows.length) { gtEl.innerHTML = '<div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Nėra grupių</div>'; return; }
+  const maxVal = Math.max(1, ...rows.map(r => TR_GROUP_METRICS[mKey].val(r)));
+  const more = rows.length > 5
+    ? `<button onclick="openTrGroupsModal()" style="width:100%;margin-top:8px;padding:9px;background:rgba(255,255,255,.05);border:.5px solid var(--bdr);border-radius:10px;color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;">DAUGIAU (${rows.length}) ↓</button>`
+    : '';
+  gtEl.innerHTML = rows.slice(0, 5).map((r, i) => _trGroupsRowHtml(r, i, mKey, maxVal)).join('') + more;
+}
+function _trGroupsSetMetric(mKey) { _renderTrGroups(mKey); }
+
+// Visų grupių reitingas — papildomas langas (seka pasirinktą metriką)
 function openTrGroupsModal() {
+  const mKey = _trGroupsMetric || 'exp';
+  const M = TR_GROUP_METRICS[mKey] || TR_GROUP_METRICS.exp;
+  const rows = (_trGroupsData || []).slice().sort((a, b) => M.val(b) - M.val(a));
+  const maxVal = Math.max(1, ...rows.map(r => M.val(r)));
+  const listHtml = rows.length
+    ? rows.map((r, i) => _trGroupsRowHtml(r, i, mKey, maxVal)).join('')
+    : '<div style="color:var(--mut);font-size:11px;text-align:center;padding:20px;">Nėra grupių</div>';
   let m = document.getElementById('tr-groups-modal');
   if (m) m.remove();
   m = document.createElement('div');
@@ -20446,10 +20495,10 @@ function openTrGroupsModal() {
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   m.innerHTML = `<div style="background:var(--bg);width:100%;max-width:600px;max-height:85vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:.5px solid var(--bdr);">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🏆 VISOS GRUPĖS PAGAL EXP</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🏆 VISOS GRUPĖS · ${M.label.toUpperCase()}</div>
         <button onclick="document.getElementById('tr-groups-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
       </div>
-      <div style="flex:1;overflow-y:auto;padding:8px 16px 20px;">${_trGroupsAllHtml || '<div style="color:var(--mut);font-size:11px;text-align:center;padding:20px;">Nėra grupių</div>'}</div>
+      <div style="flex:1;overflow-y:auto;padding:8px 16px 20px;">${listHtml}</div>
     </div>`;
   document.body.appendChild(m);
 }
