@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v177</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v178</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -19115,6 +19115,9 @@ function _attMonthKey(d){ const x=new Date(d); return `${x.getFullYear()}-${Stri
 function _attDatesInRange(trainingDays, start, end){ const days=(trainingDays||[]).filter(d=>d>=1&&d<=7); const out=[]; const cur=new Date(start); cur.setHours(0,0,0,0); const e=new Date(end); e.setHours(0,0,0,0); while(cur<=e){ if(days.includes(_attDayNo(cur))) out.push(_attYmd(cur)); cur.setDate(cur.getDate()+1);} return out; }
 function _attWeekDates(trainingDays, d){ return _attDatesInRange(trainingDays, _attWeekStart(d), _attWeekEnd(d)); }
 function _attMonthDates(trainingDays, d){ const x=new Date(d); return _attDatesInRange(trainingDays, new Date(x.getFullYear(),x.getMonth(),1), new Date(x.getFullYear(),x.getMonth()+1,0)); }
+function _attIsScheduledDay(group, dateStr){ const td=group?.training_days||[]; return td.includes(_attDayNo(new Date(dateStr+'T12:00:00'))); }
+function _attDayNameLT(dateStr){ return GROUP_DAY_NOM[_attDayNo(new Date(dateStr+'T12:00:00'))-1] || ''; }
+function _attSchedLT(group){ return (group?.training_days||[]).filter(d=>d>=1&&d<=7).map(d=>GROUP_DAY_NOM[d-1]).join(', ') || 'nenustatyta'; }
 
 // — Trenerio žymėjimo langas —
 let _attState = null; // { groupId, date, group, kids, present:Set }
@@ -19138,6 +19141,7 @@ async function openAttendance(groupId){
       <div style="font-size:12px;color:var(--mut);margin-bottom:10px;"><b style="color:white;">${g.name}</b> · pažymėk atėjusius vaikus</div>
       <label style="font-size:11px;color:var(--mut);font-weight:700;">Treniruotės data</label>
       <input type="date" id="att-date" value="${_attState.date}" onchange="_attReload()" class="inp" style="width:100%;margin:4px 0 12px;font-family:inherit;">
+      <div id="att-warn"></div>
       <div style="display:flex;gap:8px;margin-bottom:12px;">
         <button onclick="_attSetAll(true)" style="flex:1;padding:9px;border-radius:10px;border:.5px solid rgba(34,197,94,.4);background:rgba(34,197,94,.12);color:var(--grn);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">✓ Visi atėjo</button>
         <button onclick="_attSetAll(false)" style="flex:1;padding:9px;border-radius:10px;border:.5px solid var(--bdr);background:var(--card);color:var(--mut);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">Nieko</button>
@@ -19157,6 +19161,11 @@ async function _attReload(){
   if(dateEl) _attState.date=dateEl.value||_attYmd(new Date());
   const { data: existing } = await sb.from('attendance').select('kid_id, present').eq('group_id',_attState.groupId).eq('session_date',_attState.date);
   if(existing && existing.length){ _attState.present=new Set(existing.filter(r=>r.present).map(r=>r.kid_id)); }
+  const warn=document.getElementById('att-warn');
+  if(warn){
+    if(_attIsScheduledDay(_attState.group,_attState.date)) warn.innerHTML='';
+    else warn.innerHTML=`<div style="background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.4);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:#EF4444;line-height:1.45;">⚠️ <b>${_attDayNameLT(_attState.date)}</b> nėra šios grupės treniruočių diena.<br>Tvarkaraštis: <b>${_attSchedLT(_attState.group)}</b>. Žymėk pagal grafiką.</div>`;
+  }
   _attRenderList();
 }
 
@@ -19179,6 +19188,10 @@ function _attSetAll(v){ if(!_attState) return; _attState.present=v?new Set(_attS
 
 async function _attConfirm(){
   if(!_attState) return;
+  // Grafiko apsauga: jei diena ne tvarkaraštyje — pop-up, ar tikrai žymėti
+  if(!_attIsScheduledDay(_attState.group, _attState.date)){
+    if(!confirm(`⚠️ ${_attDayNameLT(_attState.date)} nėra šios grupės treniruočių diena.\n\nTvarkaraštis: ${_attSchedLT(_attState.group)}.\n\nRekomenduojama žymėti pagal grafiką. Vis tiek žymėti šią dieną?`)) return;
+  }
   const btn=document.getElementById('att-confirm');
   if(btn){ if(btn.dataset.busy) return; btn.dataset.busy='1'; btn.disabled=true; btn.textContent='SAUGOMA...'; btn.style.opacity='.6'; }
   try{
