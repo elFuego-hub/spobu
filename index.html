@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v213</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v214</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -20785,7 +20785,6 @@ function openKidInfo(which) {
       <div style="font-size:12.5px;line-height:1.55;"><b style="color:#fff;">${t}</b><br><span style="color:var(--mut);">${d}</span></div>
     </div>`;
   const intro = (txt) => `<div style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:14px;">${txt}</div>`;
-  const osu = `<div style="margin-top:12px;background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.35);border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.65;color:#e8d9c5;">🥋 <b style="color:#FF4D00;">OSU!</b> Kyokushin įkūrėjas Mas Oyama vienas treniravosi kalnuose po 12 valandų KASDIEN — be žiūrovų, be medalių. Lygiai ir tikslai yra <b style="color:#fff;">ilgas kelias su savimi</b>, ne lenktynės su kitais. Jei dabar lėtai ar sunku — tai normalu, ten pradėjo KIEKVIENAS čempionas. Nenuleisk rankų, stenkis sąžiningai — ir augsi. 💪</div>`;
   let title = '', html = '';
   switch (which) {
     case 'main':
@@ -20795,8 +20794,7 @@ function openKidInfo(which) {
         row('⚡', 'EXP taškai', 'Gauni juos už pratimus, iššūkius, varžybas ir treniruočių lankymą. Daugiau EXP → aukštesnis lygis.') +
         row('🔥', 'Serija (streak)', 'Kiek dienų iš eilės buvai aktyvus. Stenkis jos nenutraukti!') +
         row('🏆', 'Reitingai', 'Tavo vieta tarp BENDRAAMŽIŲ — lyginiesi su panašiais į tave, ne su vyresniais.') +
-        row('📋', 'Lankomumas', 'Mygtukas viršuje — matyk, kaip lankai treniruotes. Už pilną savaitę ir mėnesį gauni papildomą EXP.') +
-        osu;
+        row('📋', 'Lankomumas', 'Mygtukas viršuje — matyk, kaip lankai treniruotes. Už pilną savaitę ir mėnesį gauni papildomą EXP.');
       break;
     case 'ish':
       title = '💡 IŠŠŪKIAI';
@@ -20804,8 +20802,7 @@ function openKidInfo(which) {
         row('🎯', 'Kaip veikia', 'Matai iššūkį → atlieki → pažymi rezultatą → treneris patvirtina → gauni EXP.') +
         row('🗓️', 'Trukmė', 'Vieni trunka savaitę, kiti mėnesį, kai kurie nuolatiniai. Ilgesni — didesni tikslai.') +
         row('🏠', 'Kam tai', 'Padeda treniruotis ir tarp pamokų, namuose. Tu pats augini savo kovotoją.') +
-        row('✋', 'Sąžiningai', 'Pažymėk tik tai, ką tikrai padarei — treneris peržiūri kiekvieną pateikimą.') +
-        osu;
+        row('✋', 'Sąžiningai', 'Pažymėk tik tai, ką tikrai padarei — treneris peržiūri kiekvieną pateikimą.');
       break;
     case 'comp':
       title = '💡 VARŽYBOS';
@@ -20820,15 +20817,26 @@ function openKidInfo(which) {
         row('📈', 'Lygis laike', 'Kaip augo tavo EXP ir lygis.') +
         row('🏅', 'Rekordai', 'Tavo geriausi pratimų rezultatai.') +
         row('🔥', 'Sezonas / visų laikų', 'Perjunk, ar nori matyti šį sezoną, ar visą kelią.') +
-        row('🏆', 'Palyginimas', 'Kaip atrodai tarp bendraamžių — su panašiais į tave.') +
-        osu;
+        row('🏆', 'Palyginimas', 'Kaip atrodai tarp bendraamžių — su panašiais į tave.');
       break;
     case 'prof':
       title = '💡 PROFILIS';
       html = intro('Tavo kortelė — kas tu esi SPOBU.') +
         row('🥋', 'Diržas ir kanji', 'Tavo dabartinis kyu (diržas) ir etapas.') +
-        row('🏆', 'Pasiekimai', 'Medaliai, įveikti iššūkiai ir rekordai vienoje vietoje.') +
-        row('⚙️', 'Nustatymai', 'Avataras, pranešimai, kalba — pro nustatymų mygtuką.');
+        row('🏆', 'Pasiekimai', 'Medaliai, įveikti iššūkiai, rekordai ir dvikovų pergalės vienoje vietoje.') +
+        row('⚙️', 'Nustatymai', 'Avataras, pranešimai, kalba — pro nustatymų mygtuką.') +
+        `<div style="margin-top:12px;background:rgba(236,64,122,.1);border:.5px solid rgba(236,64,122,.4);border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.6;color:#f3c6d8;">
+           <div style="font-size:13px;color:#EC407A;font-weight:800;margin-bottom:6px;">🥊 DVIKOVOS — 1 prieš 1</div>
+           Iškviesk komandos draugą į draugišką dvikovą! Kaip:
+           <div style="margin-top:6px;color:#fff;line-height:1.75;">
+             <b>1.</b> Rask komandos draugą ir paspausk „Iškviesti į dvikovą".<br>
+             <b>2.</b> Pasirink tipą: 💪 atsispaudimai · 🦵 pritūpimai · 🤸 presas · ⏱️ lenta · 🏃 bėgimas.<br>
+             <b>3.</b> Draugas priima iššūkį.<br>
+             <b>4.</b> Abu atliekate ir įvedate savo rezultatą.<br>
+             <b>5.</b> Treneris patvirtina — ir paaiškėja nugalėtojas! 🏆
+           </div>
+           <div style="margin-top:7px;">Aktyvias dvikovas matai <b style="color:#fff;">Iššūkių</b> lange. Pergalė <b style="color:#fff;">+50</b> · lygiosios <b style="color:#fff;">+35</b> · pralaimėjimas <b style="color:#fff;">+25</b> EXP — tad net pralaimėjus verta kovoti!</div>
+         </div>`;
       break;
     default:
       title = '💡 INFO'; html = intro('Paaiškinimas.');
