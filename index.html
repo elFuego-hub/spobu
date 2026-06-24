@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v228</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v231</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15115,7 +15115,6 @@ const CLUB_FLAG_DEFS = [
   { sec:'FUNKCIJOS' },
   { k:'attendance_enabled', t:'📋 Lankomumas', d:'Treneris žymi, vaikas/tėvas mato, EXP už pilną savaitę/mėnesį.', info:'Lankomumas — treneris po treniruotės pažymi, kas dalyvavo. Vaikas ir tėvas mato lankomumą, o už pilną savaitę (+15 EXP) ir pilną mėnesį (+100 EXP) vaikas gauna premiją.<br><br>Išjungus: treneriai nebegalės žymėti lankomumo, vaikai/tėvai jo nebematys ir negaus EXP premijų.' },
   { k:'duels_enabled', t:'⚔️ Dvikovos', d:'Vaikai kviečia vienas kitą į dvikovas.', info:'Dvikovos — vaikas iškviečia draugą į 1-prieš-1 pratimų varžytuves (atsispaudimai, pritūpimai ir pan.), o treneris patvirtina rezultatą.<br><br>Išjungus: vaikai nebegalės kurti ar priimti dvikovų.' },
-  { k:'challenges_enabled', t:'🎯 Iššūkiai', d:'Treneriai skiria iššūkius grupėms ir vaikams.', info:'Iššūkiai — užduotys vaikams (pvz. „nubėk 5 km", „100 atsispaudimų"), už kurias gaunamas EXP.<br><br>Išjungus: dings visa iššūkių sistema — treneriai nebeskirs iššūkių, o vaikai jų nebematys (įskaitant tipus žemiau).' },
   { k:'group_challenges_enabled', t:'🏆 Grupių iššūkis', d:'Klubo komandinis grupių iššūkis.', info:'Grupių iššūkis — klubinis komandinis iššūkis, kur būreliai (grupės) varžosi tarpusavyje; jų vaikų rezultatai sumuojami (vidurkis vienam vaikui).<br><br>Išjungus: nebegalėsi kurti grupių iššūkių.' },
   { k:'competitions_enabled', t:'🥇 Varžybos', d:'Varžybų kūrimas ir rezultatai.', info:'Varžybos — kumite/kata renginiai su registracija ir rezultatais (vietos, medaliai).<br><br>Išjungus: nebebus galima kurti varžybų, o vaikai jų nebematys.' },
   { k:'belt_grading_enabled', t:'🥋 Diржų laikymas', d:'Diржo testų registravimas.', info:'Diржų laikymas — egzaminai naujam kyu/diржui gauti.<br><br>Išjungus: nebebus galima registruoti diржų laikymo ir jų rezultatų.' },
@@ -15125,10 +15124,7 @@ const CLUB_FLAG_DEFS = [
   { k:'challenge_weekly_enabled', t:'⚡ Savaitiniai', d:'Kartojasi kas savaitę.', info:'Savaitinis iššūkis — atsinaujina kas savaitę (pvz. „šią savaitę 100 atsispaudimų"). Tinka nuolatiniam aktyvumui palaikyti.<br><br>Išjungus: savaitinių iššūkių nebebus galima kurti.' },
   { k:'challenge_monthly_enabled', t:'🎯 Mėnesiniai', d:'Ilgesnis tikslas mėnesiui.', info:'Mėnesinis iššūkis — didesnis tikslas visam mėnesiui (pvz. „per mėnesį nubėk 50 km").<br><br>Išjungus: mėnesinių iššūkių nebebus galima kurti.' },
   { k:'challenge_once_enabled', t:'✨ Vienkartiniai', d:'Atliekami vieną kartą.', info:'Vienkartinis iššūkis — atliekamas vieną kartą ir užbaigiamas (pvz. „nubėk 5 km", „išmok naują kata").<br><br>Išjungus: tokio tipo iššūkių nebebus galima kurti.' },
-  { k:'challenge_permanent_enabled', t:'♾️ Be termino', d:'Nuolatinis, be galutinio termino.', info:'Nuolatinis (be termino) iššūkis — neturi pabaigos datos, vaikas gali jį pildyti bet kada.<br><br>Išjungus: nuolatinių iššūkių nebebus galima kurti.' },
-  { sec:'VERSLAS' },
-  { k:'ai_reports_enabled', t:'🤖 AI ataskaitos', d:'Tėvai gali pirkti AI ataskaitas.', info:'AI ataskaitos — tėvai už mokestį užsisako dirbtinio intelekto parengtą ataskaitą apie savo vaiko progresą.<br><br>Išjungus: tėvai nebematys ir nebegalės pirkti AI ataskaitų.' },
-  { k:'store_enabled', t:'🛍️ Parduotuvė', d:'Parduotuvė vaikams ir tėvams.', info:'Parduotuvė — vieta, kur vaikai/tėvai gali įsigyti prekių ar kreditų.<br><br>Išjungus: parduotuvė dings vaikams ir tėvams.' }
+  { k:'challenge_permanent_enabled', t:'♾️ Be termino', d:'Nuolatinis, be galutinio termino.', info:'Nuolatinis (be termino) iššūkis — neturi pabaigos datos, vaikas gali jį pildyti bet kada.<br><br>Išjungus: nuolatinių iššūkių nebebus galima kurti.' }
 ];
 
 // ⚙️ Nustatymai gyvena Profilio ekrane — mygtukas tik nuveda ten
@@ -15138,44 +15134,56 @@ function openClubSettings(){
   loadClubSettings();
 }
 
-// Kompaktiškas „grouped settings" atvaizdavimas (kaip iOS — grupės su plonais skirtukais)
+// Suskleidžiamos „grouped settings" sekcijos (accordion) — numatytai suskleista
+let _clubSecOpen = {};
+const CLUB_SEC_KEY = { 'FUNKCIJOS':'func', 'IŠŠŪKIŲ TIPAI':'types' };
+function toggleClubSettingsSection(key){
+  _clubSecOpen[key] = !_clubSecOpen[key];
+  const r = document.getElementById('cs-rows-' + key);
+  const c = document.getElementById('cs-chev-' + key);
+  if (r) r.style.display = _clubSecOpen[key] ? 'block' : 'none';
+  if (c) c.style.transform = 'rotate(' + (_clubSecOpen[key] ? '90' : '0') + 'deg)';
+}
+
 function _renderClubSettingsHtml(s){
   const isOn = k => s[k] !== false;
   const toggle = (k) => {
     const on = isOn(k);
-    return `<div onclick="toggleClubFlag('${k}', ${!on})" style="flex-shrink:0;width:42px;height:24px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;"><div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s;"></div></div>`;
+    return `<div onclick="event.stopPropagation();toggleClubFlag('${k}', ${!on})" style="flex-shrink:0;width:42px;height:24px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;"><div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s;"></div></div>`;
   };
-  let html = '', rows = [], sec = '';
+  let html = '', rows = [], sec = '', secOn = 0, secTotal = 0;
   const flush = () => {
     if (!sec) return;
-    html += `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.5px;margin:14px 4px 7px;">${sec}</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">${rows.join('')}</div>`;
-    rows = [];
+    const key = CLUB_SEC_KEY[sec];
+    if (key) {
+      const open = !!_clubSecOpen[key];
+      html += `<div onclick="toggleClubSettingsSection('${key}')" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:14px 2px 7px;padding:2px;">
+        <span id="cs-chev-${key}" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;transform:rotate(${open?'90':'0'}deg);">▶</span>
+        <span style="flex:1;font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.5px;">${sec}</span>
+        <span style="font-size:10px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 8px;">${secOn}/${secTotal}</span>
+      </div>
+      <div id="cs-rows-${key}" style="display:${open?'block':'none'};background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">${rows.join('')}</div>`;
+    } else {
+      html += `<div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.5px;margin:14px 4px 7px;">${sec}</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">${rows.join('')}</div>`;
+    }
+    rows = []; secOn = 0; secTotal = 0;
   };
   CLUB_FLAG_DEFS.forEach(f => {
     if (f.sec){ flush(); sec = f.sec; return; }
+    secTotal++; if (isOn(f.k)) secOn++;
     const spi = f.t.indexOf(' ');
     const head = spi > 0 ? f.t.slice(0, spi) : '';
     const isEmoji = head && /[^\x00-\x7F]/.test(head);
     const emoji = isEmoji ? head : '⚙️';
     const label = isEmoji ? f.t.slice(spi + 1) : f.t;
-    rows.push(`<div style="display:flex;align-items:center;gap:9px;padding:9px 12px;${rows.length?'border-top:.5px solid var(--bdr);':''}">
-      <div style="font-size:15px;width:22px;text-align:center;flex-shrink:0;">${emoji}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12.5px;font-weight:700;color:white;line-height:1.2;">${label}</div>
-        <div style="font-size:9px;color:var(--mut);line-height:1.3;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.d}</div>
-      </div>
-      <div onclick="showClubFlagInfo('${f.k}')" title="Kas tai?" style="flex-shrink:0;width:21px;height:21px;border-radius:50%;border:.5px solid var(--bdr);color:var(--mut);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;cursor:pointer;font-family:Georgia,serif;font-style:italic;">i</div>
+    rows.push(`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;${rows.length?'border-top:.5px solid var(--bdr);':''}">
+      <div style="font-size:15px;width:20px;text-align:center;flex-shrink:0;">${emoji}</div>
+      <div style="flex:1;min-width:0;font-size:13px;font-weight:700;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${label}</div>
+      <div onclick="showClubFlagInfo('${f.k}')" title="Plačiau" style="flex-shrink:0;width:20px;height:20px;border-radius:50%;border:.5px solid var(--bdr);color:var(--mut);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;cursor:pointer;font-family:Georgia,serif;font-style:italic;">i</div>
       ${toggle(f.k)}</div>`);
   });
   flush();
-  const pct = (s.revenue_share_pct != null) ? s.revenue_share_pct : 0;
-  html += `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.5px;margin:14px 4px 7px;">KLUBO DALIS</div>
-    <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:9px 12px;display:flex;align-items:center;gap:10px;">
-      <div style="font-size:15px;width:22px;text-align:center;flex-shrink:0;">💶</div>
-      <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:700;color:white;">Apyvartos dalis</div><div style="font-size:9px;color:var(--mut);">% nuo bruto (Analitika → Apyvarta)</div></div>
-      <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;"><input id="club-rev-pct" type="number" min="0" max="100" value="${pct}" onchange="saveClubRevPct(this.value)" style="width:50px;padding:5px;text-align:center;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;color:white;font-size:13px;"><span style="font-size:13px;color:var(--mut);">%</span></div>
-    </div>
-    <div style="font-size:9px;color:var(--mut);text-align:center;margin:12px 8px 4px;line-height:1.5;">Išjungus funkciją ji dingsta visiems klubo vaikams, treneriams ir tėvams.</div>`;
+  html += `<div style="font-size:9px;color:var(--mut);text-align:center;margin:14px 8px 4px;line-height:1.5;">Bakstelėk skiltį, kad išskleistum. Prie funkcijos bakstelėk <span style="font-style:italic;font-family:Georgia,serif;">i</span> — sužinosi ką reiškia ją išjungti.</div>`;
   return html;
 }
 
