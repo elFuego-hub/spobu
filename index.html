@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v224</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v225</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3489,10 +3489,15 @@ select.inp option{background:#222;}
         <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px;" id="k-prof-club">–</div>
       </div>
     </div>
-    <div class="st">PASKYROS NUSTATYMAI</div>
-    <div class="cd" style="padding:12px;">
+    <div class="st">⚙️ KLUBO NUSTATYMAI</div>
+    <div style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
+    <div style="padding:0 16px;" id="k-prof-settings">
+      <div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Kraunama...</div>
+    </div>
+    <div style="padding:16px;">
       <button class="btn btnd" style="margin:0;width:100%;" onclick="doLogout()">🚪 Atsijungti</button>
     </div>
+    <div style="height:10px;"></div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -15123,50 +15128,60 @@ const CLUB_FLAG_DEFS = [
   { k:'store_enabled', t:'🛍️ Parduotuvė', d:'Parduotuvė vaikams ir tėvams.' }
 ];
 
-// ⚙️ Klubo nustatymų modalas
-async function openClubSettings(){
+// ⚙️ Nustatymai gyvena Profilio ekrane — mygtukas tik nuveda ten
+function openClubSettings(){
   if (!currentClub?.id){ showToast('Klubo info trūksta','error'); return; }
-  const old = document.getElementById('club-settings-modal'); if(old) old.remove();
-  const m = document.createElement('div'); m.id='club-settings-modal';
-  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
-  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">⚙️ KLUBO NUSTATYMAI</div>
-      <button onclick="document.getElementById('club-settings-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+  nv('k', null, 'k-prof');
+  loadClubSettings();
+}
+
+// Kompaktiškas „grouped settings" atvaizdavimas (kaip iOS — grupės su plonais skirtukais)
+function _renderClubSettingsHtml(s){
+  const isOn = k => s[k] !== false;
+  const toggle = (k) => {
+    const on = isOn(k);
+    return `<div onclick="toggleClubFlag('${k}', ${!on})" style="flex-shrink:0;width:42px;height:24px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;"><div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s;"></div></div>`;
+  };
+  let html = '', rows = [], sec = '';
+  const flush = () => {
+    if (!sec) return;
+    html += `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.5px;margin:14px 4px 7px;">${sec}</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">${rows.join('')}</div>`;
+    rows = [];
+  };
+  CLUB_FLAG_DEFS.forEach(f => {
+    if (f.sec){ flush(); sec = f.sec; return; }
+    const spi = f.t.indexOf(' ');
+    const head = spi > 0 ? f.t.slice(0, spi) : '';
+    const isEmoji = head && /[^\x00-\x7F]/.test(head);
+    const emoji = isEmoji ? head : '⚙️';
+    const label = isEmoji ? f.t.slice(spi + 1) : f.t;
+    rows.push(`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;${rows.length?'border-top:.5px solid var(--bdr);':''}">
+      <div style="font-size:15px;width:22px;text-align:center;flex-shrink:0;">${emoji}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12.5px;font-weight:700;color:white;line-height:1.2;">${label}</div>
+        <div style="font-size:9px;color:var(--mut);line-height:1.3;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.d}</div>
+      </div>${toggle(f.k)}</div>`);
+  });
+  flush();
+  const pct = (s.revenue_share_pct != null) ? s.revenue_share_pct : 0;
+  html += `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.5px;margin:14px 4px 7px;">KLUBO DALIS</div>
+    <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:9px 12px;display:flex;align-items:center;gap:10px;">
+      <div style="font-size:15px;width:22px;text-align:center;flex-shrink:0;">💶</div>
+      <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:700;color:white;">Apyvartos dalis</div><div style="font-size:9px;color:var(--mut);">% nuo bruto (Analitika → Apyvarta)</div></div>
+      <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;"><input id="club-rev-pct" type="number" min="0" max="100" value="${pct}" onchange="saveClubRevPct(this.value)" style="width:50px;padding:5px;text-align:center;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;color:white;font-size:13px;"><span style="font-size:13px;color:var(--mut);">%</span></div>
     </div>
-    <div id="club-settings-body" style="padding:16px 20px;"><div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div></div>
-  </div>`;
-  document.body.appendChild(m);
-  await loadClubSettings();
+    <div style="font-size:9px;color:var(--mut);text-align:center;margin:12px 8px 4px;line-height:1.5;">Išjungus funkciją ji dingsta visiems klubo vaikams, treneriams ir tėvams.</div>`;
+  return html;
 }
 
 async function loadClubSettings(){
-  const body = document.getElementById('club-settings-body'); if(!body || !currentClub?.id) return;
+  if (!currentClub?.id) return;
   const { data } = await sb.from('club_settings').select('*').eq('club_id', currentClub.id).maybeSingle();
   const s = data || {};
   clubFlags = { ...clubFlags, ...s }; // sinchronizuojam adminui jo paties klubo vėliavas
-  const isOn = k => s[k] !== false;
-  const rowHtml = (f) => {
-    if (f.sec) return `<div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;margin:14px 0 8px;">${f.sec}</div>`;
-    const on = isOn(f.k);
-    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;margin-bottom:8px;">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:800;color:white;">${f.t}</div>
-        <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${f.d}</div>
-      </div>
-      <div onclick="toggleClubFlag('${f.k}', ${!on})" style="flex-shrink:0;width:46px;height:26px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;">
-        <div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;"></div>
-      </div>
-    </div>`;
-  };
-  const pct = (s.revenue_share_pct!=null) ? s.revenue_share_pct : 0;
-  body.innerHTML = CLUB_FLAG_DEFS.map(rowHtml).join('') + `
-    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;margin:14px 0 8px;">KLUBO DALIS</div>
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;">
-      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Apyvartos dalis klubui</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">% nuo bruto (Analitika → Apyvarta).</div></div>
-      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;"><input id="club-rev-pct" type="number" min="0" max="100" value="${pct}" onchange="saveClubRevPct(this.value)" style="width:64px;padding:6px;text-align:center;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;color:white;font-size:14px;"><span style="font-size:14px;color:var(--mut);">%</span></div>
-    </div>
-    <div style="font-size:10px;color:var(--mut);text-align:center;margin:14px 0 4px;line-height:1.5;">Išjungus funkciją ji dingsta visiems klubo vaikams, treneriams ir tėvams. Įjungus — grįžta.</div>`;
+  const html = _renderClubSettingsHtml(s);
+  const prof = document.getElementById('k-prof-settings'); if (prof) prof.innerHTML = html;
+  const modalBody = document.getElementById('club-settings-body'); if (modalBody) modalBody.innerHTML = html;
 }
 
 async function toggleClubFlag(flag, val){
@@ -28141,6 +28156,9 @@ function nv(p,el,sid){
   }
   if (sid === 'k-stat' && typeof loadClubOverallStat === 'function') {
     loadClubOverallStat();
+  }
+  if (sid === 'k-prof' && typeof loadClubSettings === 'function') {
+    loadClubSettings();
   }
   // 👶 TĖVAI: naujų ekranų loaderiai (vaiko peržiūra)
   if (sid === 't-main' && typeof loadParentKidMain === 'function') loadParentKidMain();
