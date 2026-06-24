@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v223</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v224</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15204,6 +15204,18 @@ function applyClubFlagGates(){
     _gateEl('v-att-btn', flagOn('attendance_enabled'));
     _gateEl('v-ish-cell-duels', flagOn('duels_enabled'));
     _gateEl('v-ish-duels', flagOn('duels_enabled'));
+    // VAIKO portalas — iššūkiai + varžybos (slepiam NAV mygtukus, ne ekrano .sc, kad nesusikirstų su .sc.on)
+    _gateSel('.bn2 .ni[onclick*="v-ish"]', flagOn('challenges_enabled'));
+    _gateSel('#v-desktop-nav .vdn-item[data-sid="v-ish"]', flagOn('challenges_enabled'));
+    _gateSel('.bn2 .ni[onclick*="v-comp"]', flagOn('competitions_enabled'));
+    _gateSel('#v-desktop-nav .vdn-item[data-sid="v-comp"]', flagOn('competitions_enabled'));
+    // TĖVO portalas — parduotuvė (t-shop nav) + AI ataskaitų pirkimas (shop-act-report)
+    _gateSel('.bn2 .ni[onclick*="t-shop"]', flagOn('store_enabled'));
+    _gateEl('shop-act-report', flagOn('ai_reports_enabled'));
+    // TRENERIO portalas — naujų iššūkių kūrimas (statinis mygtukas + bet kokie openCreateChallenge mygtukai)
+    _gateEl('tr-new-challenge-btn', flagOn('trainers_can_create_challenges'));
+    _gateSel('button[onclick*="openCreateChallenge("]', flagOn('trainers_can_create_challenges'));
+    // trainers_can_create_competitions — trenerio varžybų kūrimo mygtuko NĖRA (varžybos tik klubo) → nieko neslepiam
   } catch(e){ /* tylim */ }
 }
 
