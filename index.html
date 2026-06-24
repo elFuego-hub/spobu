@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v214</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v215</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4575,6 +4575,110 @@ function openParentHelpModal() {
         </a>
         <div onclick="openParentReportModal()" style="cursor:pointer;margin-bottom:16px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
           <div style="background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">🐞</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Radai klaidą? Keliaus tiesiai administratoriui</div></div>
+            <div style="font-size:18px;color:var(--br);">›</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:4px 2px 8px;">❓ DAŽNIAUSI KLAUSIMAI</div>
+        ${faqHtml}
+      </div>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+}
+
+// ❓ PAGALBA IR ATSILIEPIMAI — bendra treneriui ir vaikui (role-aware). Atspindi tėvų versiją.
+function openHelpReportModal() {
+  const old = document.getElementById('help-report-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'help-report-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:center;justify-content:center;padding:20px;';
+  m.innerHTML = `
+    <div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:20px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:6px;">🐞 PRANEŠTI PROBLEMĄ</div>
+      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Aprašyk ką darei ir kas nutiko. Pranešimas keliaus tiesiai administratoriui.</div>
+      <textarea id="help-report-text" class="inp" rows="5" maxlength="1000" placeholder="Pvz. Bandžiau..., bet išmetė klaidą..." style="width:100%;resize:vertical;margin-bottom:14px;font-family:inherit;"></textarea>
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('help-report-modal').remove()" style="flex:1;padding:12px;background:var(--card);border:.5px solid var(--bdr);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">Atšaukti</button>
+        <button onclick="submitHelpReport(this)" style="flex:1;padding:12px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">Siųsti</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+async function submitHelpReport(btn) {
+  const txt = (document.getElementById('help-report-text')?.value || '').trim();
+  if (!txt) { showToast('⚠️ Aprašyk problemą'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Siunčiama...'; }
+  try {
+    const appV = document.getElementById('app-version')?.textContent || '';
+    const fullName = `${currentProfile?.first_name || ''} ${currentProfile?.last_name || ''}`.trim();
+    const { data: ins, error } = await sb.from('feedback').insert({
+      user_id: currentUser?.id || null,
+      role: currentProfile?.role || null,
+      name: fullName || null,
+      kid_name: currentKid ? `${currentKid.first_name || ''} ${currentKid.last_name || ''}`.trim() : null,
+      message: txt,
+      app_version: appV,
+      type: 'bug'
+    }).select('id');
+    if (error) throw error;
+    if (!ins || !ins.length) throw new Error('Pranešimas neįrašytas — parašyk pagalba@spobu.lt');
+    showToast('✓ Ačiū! Pranešimas išsiųstas administratoriui');
+    const rm = document.getElementById('help-report-modal'); if (rm) rm.remove();
+    const hm = document.getElementById('help-modal'); if (hm) hm.remove();
+  } catch (e) {
+    console.warn('submitHelpReport', e);
+    showToast('❌ ' + (e?.message || e?.hint || 'Nepavyko išsiųsti'), 'error', 7000);
+    if (btn) { btn.disabled = false; btn.textContent = 'Siųsti'; }
+  }
+}
+
+function openHelpModal(who) {
+  const SUPPORT_EMAIL = 'pagalba@spobu.lt';
+  const contactHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – klausimas')}`;
+  const FAQ = {
+    trainer: [
+      ['Kaip pridėti grupę ir vaikus?', '„Grupės" lange spausk „+ GRUPĖ", nustatyk tvarkaraštį ir spalvą. Tada „+👤 PRISKIRTI" pridėk vaikus.'],
+      ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai karjeros rekordus, iššūkius, varžybas ir dvikovas. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
+      ['Kaip skirti iššūkį?', 'Grupės lange „🎯 IŠŠŪKIS GRUPEI" arba paspaudęs vaiką — asmeninį iššūkį. Siūlyk tik tai, ką gali patikrinti.'],
+      ['Kaip žymiu lankomumą?', 'Grupės lange „📋 ŽYMĖTI LANKOMUMĄ". Pilna savaitė → +15 EXP vaikui, pilnas mėnuo → +100.'],
+      ['Kur matau pratimų normatyvus?', 'Antraštėje spausk 💪 — matysi rėžius (🥉🥈🥇🏆) pagal lytį ir amžių.'],
+      ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsą reikia įsidėti į pradžios ekraną.']
+    ],
+    kid: [
+      ['Kaip gaunu EXP ir keliu lygį?', 'Atlik karjeros pratimus, įveik trenerio iššūkius, dalyvauk varžybose ir lankyk treniruotes. Treneris patvirtina — ir EXP auga!'],
+      ['Kaip pateikiu rezultatą?', '„Karjera" lange pasirink sritį ir pratimą, įrašyk naują rekordą. Treneris jį patvirtins.'],
+      ['Kas yra dvikova?', '1 prieš 1 iššūkis draugui (atsispaudimai, bėgimas...). Iškviesk draugą, abu atlikit, treneris patvirtina — nugalėtojas gauna daugiau EXP!'],
+      ['Kodėl mano lygis žemas?', 'Tai normalu — lygiai auga su amžiumi ir treniruotėmis. Svarbiausia stengtis ir nenuleisti rankų. OSU! 🥋'],
+      ['Kaip pasidalinti pasiekimu?', 'Varpelyje prie „PR patvirtintas" spausk 📲 — sukursi kortelę su nuotrauka, kurią gali dėti į Instagram/TikTok.'],
+      ['Negaunu pranešimų?', 'Paprašyk tėvų ar trenerio padėti įjungti pranešimus nustatymuose.']
+    ]
+  };
+  const faq = FAQ[who] || FAQ.kid;
+  const title = who === 'trainer' ? '❓ PAGALBA TRENERIUI' : '❓ PAGALBA';
+  const old = document.getElementById('help-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'help-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;padding:0;';
+  const faqHtml = faq.map(qa => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:8px;"><div style="font-size:12px;font-weight:800;color:white;margin-bottom:4px;">${qa[0]}</div><div style="font-size:11px;color:var(--mut);line-height:1.5;">${qa[1]}</div></div>`).join('');
+  m.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+      <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">${title}</div>
+        <button onclick="document.getElementById('help-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+      </div>
+      <div style="padding:16px 18px 28px;">
+        <a href="${contactHref}" style="text-decoration:none;display:block;margin-bottom:8px;">
+          <div style="background:rgba(99,102,241,.12);border:.5px solid rgba(99,102,241,.4);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">📧</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Parašyk klausimą el. paštu</div></div>
+            <div style="font-size:18px;color:#8B5CF6;">›</div>
+          </div>
+        </a>
+        <div onclick="openHelpReportModal()" style="cursor:pointer;margin-bottom:16px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+          <div style="background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">🐞</div>
             <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Radai klaidą? Keliaus tiesiai administratoriui</div></div>
             <div style="font-size:18px;color:var(--br);">›</div>
@@ -22149,6 +22253,18 @@ async function openTrainerSettings() {
           </div>
         </div>
 
+        <!-- ❓ PAGALBA IR ATSILIEPIMAI -->
+        <div style="padding:8px 16px 0;">
+          <div onclick="openHelpModal('trainer')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;">❓</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Pagalba ir atsiliepimai</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Susisiekti, pranešti problemą, DUK</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
+        </div>
+
         <!-- ATSIJUNGTI -->
         <div style="padding:6px 16px 20px;">
           <button onclick="if(confirm('Ar tikrai atsijungti?')){document.getElementById('trainer-settings-modal').remove();doLogout();}" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(255,77,0,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
@@ -30056,6 +30172,18 @@ async function openKidSettings() {
           </div>
         </div>
         
+        <!-- ❓ PAGALBA IR ATSILIEPIMAI -->
+        <div style="padding:8px 16px 0;">
+          <div onclick="openHelpModal('kid')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;">❓</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Pagalba ir atsiliepimai</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Susisiekti, pranešti problemą, DUK</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
+        </div>
+
         <!-- ATSIJUNGTI -->
         <div style="padding:6px 16px 20px;">
           <button onclick="if(confirm('Ar tikrai atsijungti?')){document.getElementById('kid-settings-modal').remove();doLogout();}" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(255,77,0,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
