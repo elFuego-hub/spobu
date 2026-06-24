@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v231</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v232</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3341,6 +3341,7 @@ select.inp option{background:#222;}
       <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('main')" title="Apie šį langą">💡</div>
       <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" id="kh-notif-btn">🔔<div id="kh-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
       <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubSettings()" title="Nustatymai">⚙️</div>
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="if(confirm('Atsijungti iš klubo paskyros?'))doLogout()" title="Atsijungti">🚪</div>
       <div style="width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--blu);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--blu);" id="k-avatar">K</div>
     </div>
   </div>
@@ -3482,22 +3483,24 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">PROFILIS</div></div>
   <div class="sa">
-    <div class="hero" style="background:linear-gradient(135deg,var(--blu),#2563EB);">
-      <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;margin:0 auto 10px;" id="k-prof-avatar">K</div>
-      <div style="text-align:center;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="k-prof-name">Klubo administratorius</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px;" id="k-prof-club">–</div>
+    <!-- Klubo logo (stačiakampis, įkeliamas) + pavadinimas -->
+    <div style="display:flex;align-items:center;gap:14px;padding:8px 16px 16px;">
+      <div id="k-logo-box" onclick="document.getElementById('k-logo-input').click()" title="Įkelti logo" style="width:76px;height:76px;border-radius:14px;background:var(--card);border:1px solid var(--blu);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background-size:cover;background-position:center;flex-shrink:0;">
+        <span id="k-prof-avatar" style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--blu);">K</span>
       </div>
+      <div style="min-width:0;flex:1;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="k-prof-club">–</div>
+        <div style="font-size:12px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="k-prof-name">Klubo administratorius</div>
+        <div onclick="document.getElementById('k-logo-input').click()" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--blu);margin-top:6px;cursor:pointer;font-weight:700;">📷 Įkelti logo</div>
+      </div>
+      <input type="file" id="k-logo-input" accept="image/*" style="display:none;" onchange="uploadClubLogo(this)">
     </div>
     <div class="st">⚙️ KLUBO NUSTATYMAI</div>
     <div style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
     <div style="padding:0 16px;" id="k-prof-settings">
       <div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Kraunama...</div>
     </div>
-    <div style="padding:16px;">
-      <button class="btn btnd" style="margin:0;width:100%;" onclick="doLogout()">🚪 Atsijungti</button>
-    </div>
-    <div style="height:10px;"></div>
+    <div style="height:16px;"></div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -23514,6 +23517,43 @@ async function toggleTrainerPushPref(key) {
 }
 
 // Treneris pasirenka failą → suspaudžia → Storage → profiles.avatar_url
+// 🏢 Klubo logo (stačiakampis; saugomas clubs.logo_url) — server-klubas-logo.sql
+function _applyClubLogo(url){
+  const box = document.getElementById('k-logo-box');
+  const letter = document.getElementById('k-prof-avatar');
+  if (url) {
+    if (box) box.style.backgroundImage = `url("${url}")`;
+    if (letter) letter.style.display = 'none';
+  } else {
+    if (box) box.style.backgroundImage = '';
+    if (letter) letter.style.display = '';
+  }
+}
+async function uploadClubLogo(inputEl) {
+  try {
+    const file = inputEl?.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showToast('❌ Pasirink nuotrauką', 'error'); return; }
+    if (!currentClub?.id) { showToast('❌ Klubo info trūksta', 'error'); return; }
+    showToast('📷 Įkeliama...', 'info');
+    const blob = await _compressImage(file);
+    const path = `club-${currentClub.id}.jpg`;
+    const { error: upErr } = await sb.storage.from(KID_AVATAR_BUCKET)
+      .upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '3600' });
+    if (upErr) { console.error('[club-logo] upload:', upErr); showToast('❌ Įkelti nepavyko: ' + upErr.message, 'error', 5000); return; }
+    const { data: pub } = sb.storage.from(KID_AVATAR_BUCKET).getPublicUrl(path);
+    const url = pub.publicUrl;
+    const { error: dbErr } = await sb.from('clubs').update({ logo_url: url }).eq('id', currentClub.id);
+    if (dbErr) { console.error('[club-logo] db:', dbErr); showToast('❌ Išsaugoti nepavyko: ' + dbErr.message + ' — paleisk server-klubas-logo.sql', 'error', 6000); return; }
+    if (currentClub) currentClub.logo_url = url;
+    _applyClubLogo(url + '?r=' + Date.now());
+    showToast('✅ Logo atnaujintas!', 'success');
+  } catch (e) {
+    console.error('[club-logo] klaida:', e);
+    showToast('❌ Klaida: ' + (e.message || ''), 'error', 5000);
+  }
+}
+
 async function uploadTrainerAvatar(inputEl) {
   try {
     const file = inputEl?.files?.[0];
@@ -24942,6 +24982,7 @@ async function loadClubData() {
   document.getElementById('k-prof-avatar').textContent = club.name[0]?.toUpperCase() || 'K';
   document.getElementById('k-prof-name').textContent = currentProfile.first_name || 'Klubo administratorius';
   document.getElementById('k-prof-club').textContent = club.name;
+  if (typeof _applyClubLogo === 'function') _applyClubLogo(club.logo_url ? club.logo_url + '?r=' + Date.now() : null);
 
   // Statistikos
   const [trainersRes, kidsRes] = await Promise.all([
