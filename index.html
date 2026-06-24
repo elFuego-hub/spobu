@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v215</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v216</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1367,7 +1367,16 @@ select.inp option{background:#222;}
     <div id="v-categories-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 8px 12px;">
       <div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Kraunama...</div>
     </div>
-    
+
+    <!-- 🗄️ 6–13 m. KARJEROS ARCHYVAS (rodoma tik perėjus į 14+) -->
+    <div id="v-kar-archive-wrap" style="display:none;margin:0 12px 14px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
+      <div onclick="_trToggleSection('v-kar-archive-body','v-kar-archive-chev')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:.5px;">🗄️ 6–13 m. KARJERA (užšaldyta)</div>
+        <span id="v-kar-archive-chev" style="color:var(--mut);font-size:11px;">▸</span>
+      </div>
+      <div id="v-kar-archive-body" style="display:none;margin-top:10px;"></div>
+    </div>
+
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -9331,9 +9340,76 @@ async function doLogout() {
 // ════════════════════════════════════════
 // DUOMENŲ ĮKĖLIMAS – VAIKAS
 // ════════════════════════════════════════
+// 🎂 Karjeros amžiaus perėjimas 6–13 → 14+ (serverio RPC age_up_career_if_due; idempotentiška)
+async function _checkKidAgeUp() {
+  try {
+    const { data, error } = await sb.rpc('age_up_career_if_due');
+    if (error) { console.warn('age_up_career_if_due:', error.message); return; }
+    if (data && data.celebrate) {
+      _showAgeUpCelebration();
+      sb.rpc('mark_age_up_celebrated').catch(() => {});
+    }
+  } catch (_) {}
+}
+
+// 🎉 Šventinis ekranas perėjus į 14+
+function _showAgeUpCelebration() {
+  const old = document.getElementById('ageup-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'ageup-modal';
+  m.style.cssText = 'position:fixed;inset:0;z-index:100003;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:24px;';
+  m.innerHTML = `
+    <div style="width:100%;max-width:380px;background:linear-gradient(160deg,#1a1c22,#0f1115);border:1px solid rgba(255,77,0,.4);border-radius:22px;padding:26px 22px;text-align:center;animation:slideUp .35s ease-out;box-shadow:0 0 40px rgba(255,77,0,.25);">
+      <div style="font-size:60px;line-height:1;margin-bottom:8px;">🎉</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1.5px;color:#fff;line-height:1.05;">PERĖJAI Į <span style="color:#FF4D00;">14+</span> GRUPĘ!</div>
+      <div style="font-size:13px;color:#cbd2da;line-height:1.6;margin:12px 0 6px;">Sveikinam, <b style="color:#fff;">${(currentKid?.first_name || 'kovotojau')}</b>! Tu užaugai 🥋</div>
+      <div style="font-size:12.5px;color:#aeb6c0;line-height:1.6;margin-bottom:16px;">Tavo rekordai <b style="color:#fff;">išsaugoti</b> ir užšaldyti „6–13 m. karjeros" istorijoje. Dabar laukia <b style="color:#FFD700;">nauji, sunkesni tikslai</b> — tavo lygis nedingo, tik atsivėrė daugiau erdvės augti!</div>
+      <div style="background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.3);border-radius:10px;padding:9px;font-size:12px;color:#e8d9c5;margin-bottom:18px;">🥋 <b style="color:#FF4D00;">OSU!</b> Tikras kelias tik prasideda.</div>
+      <button onclick="document.getElementById('ageup-modal').remove()" style="width:100%;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-size:14px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;">PIRMYN! 💪</button>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+}
+
+// 🗄️ 6–13 m. karjeros archyvas (užšaldyti rekordai) — rodoma tik perėjus į 14+
+async function loadCareerArchive() {
+  const wrap = document.getElementById('v-kar-archive-wrap');
+  const body = document.getElementById('v-kar-archive-body');
+  if (!wrap || !body || !currentKid?.id) return;
+  try {
+    const [metaR, recsR] = await Promise.all([
+      sb.from('career_archive_meta').select('*').eq('kid_id', currentKid.id).eq('age_band', '6-13').maybeSingle(),
+      sb.from('career_archive').select('exercise_name, unit, current_pr, medal').eq('kid_id', currentKid.id).eq('age_band', '6-13')
+    ]);
+    const meta = metaR.data;
+    const recs = recsR.data || [];
+    if (!meta && !recs.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    const me = { completed: '🏆', gold: '🥇', silver: '🥈', bronze: '🥉' };
+    let html = '';
+    if (meta) {
+      html += `<div style="display:flex;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;text-align:center;background:var(--bg);border-radius:10px;padding:8px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#4FC3F7;">${(meta.total_career_exp || 0).toLocaleString()}</div><div style="font-size:8px;color:var(--mut);font-weight:700;">KARJEROS EXP</div></div>
+        <div style="flex:1;text-align:center;background:var(--bg);border-radius:10px;padding:8px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#FFD700;">LVL ${meta.level || 1}</div><div style="font-size:8px;color:var(--mut);font-weight:700;">LYGIS</div></div>
+        <div style="flex:1;text-align:center;background:var(--bg);border-radius:10px;padding:8px;"><div style="font-size:12px;">🏆${meta.medals_master || 0} 🥇${meta.medals_gold || 0}</div><div style="font-size:11px;">🥈${meta.medals_silver || 0} 🥉${meta.medals_bronze || 0}</div></div>
+      </div>`;
+    }
+    html += `<div style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-bottom:6px;">UŽŠALDYTI REKORDAI</div>`;
+    html += recs.length ? recs.map(r => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:.5px solid var(--bdr);">
+        <div style="font-size:14px;flex:none;width:18px;text-align:center;">${me[r.medal] || '•'}</div>
+        <div style="flex:1;min-width:0;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.exercise_name || 'Pratimas'}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#4FC3F7;flex:none;">${r.current_pr != null ? r.current_pr : '–'}${r.unit ? ' ' + r.unit : ''}</div>
+      </div>`).join('') : '<div style="font-size:11px;color:var(--mut);text-align:center;padding:8px;">Nėra įrašų</div>';
+    body.innerHTML = html;
+  } catch (e) { console.warn('loadCareerArchive:', e); wrap.style.display = 'none'; }
+}
+
 async function loadKidData() {
   if (!currentProfile) return;
-  
+
+  // 🎂 Karjeros amžiaus perėjimas (6–13 → 14+) — PRIEŠ kraunant duomenis (idempotentiška)
+  await _checkKidAgeUp();
+
   // Išvalom statistikos cache (kad rodytų fresh duomenis - po streak bonusų)
   if (typeof statCacheClear === 'function') statCacheClear();
 
@@ -10828,6 +10904,7 @@ async function loadCategories() {
   }).join('');
 
   document.getElementById('v-categories-list').innerHTML = html;
+  loadCareerArchive(); // 🗄️ 6–13 m. archyvas (jei perėjo į 14+)
   
   // 🎨 Update HERO fonas pagal stage (kaip pagrindiniame + profilyje)
   const totalExp = currentKid?.total_exp || 0;
