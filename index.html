@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v216</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v217</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1368,15 +1368,6 @@ select.inp option{background:#222;}
       <div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Kraunama...</div>
     </div>
 
-    <!-- 🗄️ 6–13 m. KARJEROS ARCHYVAS (rodoma tik perėjus į 14+) -->
-    <div id="v-kar-archive-wrap" style="display:none;margin:0 12px 14px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
-      <div onclick="_trToggleSection('v-kar-archive-body','v-kar-archive-chev')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:.5px;">🗄️ 6–13 m. KARJERA (užšaldyta)</div>
-        <span id="v-kar-archive-chev" style="color:var(--mut);font-size:11px;">▸</span>
-      </div>
-      <div id="v-kar-archive-body" style="display:none;margin-top:10px;"></div>
-    </div>
-
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -1697,6 +1688,17 @@ select.inp option{background:#222;}
       <!-- Užpildoma JS - dinaminis diržas pagal kyu -->
     </div>
     
+    <!-- 🗄️ IKI 14 M. — SKILL ŽENKLIUKAI (prisegta; rodoma tik perėjus į 14+) -->
+    <div id="v-prof-archive-wrap" style="display:none;margin:0 12px 6px;background:var(--card);border:.5px solid rgba(79,195,247,.35);border-radius:14px;padding:11px;position:relative;">
+      <div style="position:absolute;top:0;right:10px;background:#4FC3F7;color:#06222e;font-size:8px;font-weight:900;letter-spacing:.5px;padding:2px 7px;border-radius:0 0 7px 7px;">📌 PRISEGTA</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:11px;color:#4FC3F7;font-weight:800;letter-spacing:.5px;">🗄️ IKI 14 M. — SKILL ŽENKLIUKAI</div>
+        <div id="v-prof-archive-sum" style="font-size:8px;color:var(--mut);"></div>
+      </div>
+      <div id="v-prof-archive-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;"></div>
+      <div style="font-size:8px;color:var(--mut);text-align:center;margin-top:7px;">Užšaldyta perėjus į 14+ grupę 🥋</div>
+    </div>
+
     <!-- 🏆 TROFĖJAI + 🏅 BADGES + 🎯 IŠŠŪKIAI - 3 mygtukai -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:0 12px 6px;">
       <div class="tap-react" onclick="openTrophiesModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
@@ -9346,8 +9348,12 @@ async function _checkKidAgeUp() {
     const { data, error } = await sb.rpc('age_up_career_if_due');
     if (error) { console.warn('age_up_career_if_due:', error.message); return; }
     if (data && data.celebrate) {
+      const key = 'spobu_ageup_seen_' + (currentUser?.id || '');
+      const aged = String(data.aged_at || '1');
+      if (localStorage.getItem(key) === aged) return; // jau rodyta šiam perėjimui
+      localStorage.setItem(key, aged);
       _showAgeUpCelebration();
-      sb.rpc('mark_age_up_celebrated').catch(() => {});
+      try { await sb.rpc('mark_age_up_celebrated'); } catch (_) {}
     }
   } catch (_) {}
 }
@@ -9371,37 +9377,51 @@ function _showAgeUpCelebration() {
   document.body.appendChild(m);
 }
 
-// 🗄️ 6–13 m. karjeros archyvas (užšaldyti rekordai) — rodoma tik perėjus į 14+
-async function loadCareerArchive() {
-  const wrap = document.getElementById('v-kar-archive-wrap');
-  const body = document.getElementById('v-kar-archive-body');
-  if (!wrap || !body || !currentKid?.id) return;
+// 🗄️ IKI 14 M. — skill ženkliukai (Profilyje). Užšaldyti 6–13 eros kategorijų lygiai.
+async function loadCareerArchiveBadges() {
+  const wrap = document.getElementById('v-prof-archive-wrap');
+  const grid = document.getElementById('v-prof-archive-grid');
+  const sumEl = document.getElementById('v-prof-archive-sum');
+  if (!wrap || !grid || !currentKid?.id) return;
   try {
     const [metaR, recsR] = await Promise.all([
       sb.from('career_archive_meta').select('*').eq('kid_id', currentKid.id).eq('age_band', '6-13').maybeSingle(),
-      sb.from('career_archive').select('exercise_name, unit, current_pr, medal').eq('kid_id', currentKid.id).eq('age_band', '6-13')
+      sb.from('career_archive').select('exercise_id, category_exp').eq('kid_id', currentKid.id).eq('age_band', '6-13')
     ]);
     const meta = metaR.data;
     const recs = recsR.data || [];
     if (!meta && !recs.length) { wrap.style.display = 'none'; return; }
-    wrap.style.display = 'block';
-    const me = { completed: '🏆', gold: '🥇', silver: '🥈', bronze: '🥉' };
-    let html = '';
-    if (meta) {
-      html += `<div style="display:flex;gap:8px;margin-bottom:10px;">
-        <div style="flex:1;text-align:center;background:var(--bg);border-radius:10px;padding:8px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#4FC3F7;">${(meta.total_career_exp || 0).toLocaleString()}</div><div style="font-size:8px;color:var(--mut);font-weight:700;">KARJEROS EXP</div></div>
-        <div style="flex:1;text-align:center;background:var(--bg);border-radius:10px;padding:8px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#FFD700;">LVL ${meta.level || 1}</div><div style="font-size:8px;color:var(--mut);font-weight:700;">LYGIS</div></div>
-        <div style="flex:1;text-align:center;background:var(--bg);border-radius:10px;padding:8px;"><div style="font-size:12px;">🏆${meta.medals_master || 0} 🥇${meta.medals_gold || 0}</div><div style="font-size:11px;">🥈${meta.medals_silver || 0} 🥉${meta.medals_bronze || 0}</div></div>
-      </div>`;
+    // kategorijos (kešas)
+    if (!_trCareerCatsCache) {
+      const { data: cats } = await sb.from('career_categories').select('id, name, icon, sort_order').order('sort_order').limit(7);
+      _trCareerCatsCache = cats || [];
     }
-    html += `<div style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-bottom:6px;">UŽŠALDYTI REKORDAI</div>`;
-    html += recs.length ? recs.map(r => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:.5px solid var(--bdr);">
-        <div style="font-size:14px;flex:none;width:18px;text-align:center;">${me[r.medal] || '•'}</div>
-        <div style="flex:1;min-width:0;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.exercise_name || 'Pratimas'}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#4FC3F7;flex:none;">${r.current_pr != null ? r.current_pr : '–'}${r.unit ? ' ' + r.unit : ''}</div>
-      </div>`).join('') : '<div style="font-size:11px;color:var(--mut);text-align:center;padding:8px;">Nėra įrašų</div>';
-    body.innerHTML = html;
-  } catch (e) { console.warn('loadCareerArchive:', e); wrap.style.display = 'none'; }
+    const cats = _trCareerCatsCache;
+    // exercise → category (archyvas nesaugo category_id; jungiam per exercises)
+    const exIds = [...new Set(recs.map(r => r.exercise_id).filter(Boolean))];
+    const ex2cat = {};
+    if (exIds.length) {
+      const { data: exs } = await sb.from('exercises').select('id, category_id').in('id', exIds);
+      (exs || []).forEach(e => { ex2cat[e.id] = e.category_id; });
+    }
+    const byCat = {};
+    recs.forEach(r => { const c = ex2cat[r.exercise_id]; if (c) byCat[c] = (byCat[c] || 0) + (r.category_exp || 0); });
+    wrap.style.display = 'block';
+    grid.innerHTML = (cats || []).map(c => {
+      const exp = Math.min(600, byCat[c.id] || 0);
+      const tier = (typeof getTierFromExp === 'function') ? getTierFromExp(exp) : 'pradinis';
+      const tn = (typeof TIER_NAMES !== 'undefined' && TIER_NAMES[tier]) || 'Pradinis';
+      const med = (typeof TIER_EMOJI !== 'undefined' && TIER_EMOJI[tier]) || '';
+      const icon = c.icon || (typeof CATEGORY_ICONS !== 'undefined' && CATEGORY_ICONS[c.name]) || '💪';
+      return `<div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:7px 3px;text-align:center;position:relative;">
+        ${med ? `<div style="position:absolute;top:3px;right:4px;font-size:11px;">${med}</div>` : ''}
+        <div style="font-size:22px;line-height:1;">${icon}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:.5px;color:#fff;margin-top:2px;line-height:1.1;">${(c.name || '').toUpperCase()}</div>
+        <div style="font-size:7px;color:var(--mut);font-weight:800;margin-top:1px;">${tn.toUpperCase()} · ${exp}</div>
+      </div>`;
+    }).join('');
+    if (sumEl) sumEl.textContent = meta ? `LVL ${meta.level || 1} · 🏆${meta.medals_master || 0} 🥇${meta.medals_gold || 0} 🥈${meta.medals_silver || 0} 🥉${meta.medals_bronze || 0}` : '';
+  } catch (e) { console.warn('loadCareerArchiveBadges:', e); wrap.style.display = 'none'; }
 }
 
 async function loadKidData() {
@@ -9431,6 +9451,7 @@ async function loadKidData() {
   setText('v-name', `${greeting}, ${firstName}! 🥋`);
   applyAvatarById('v-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
   setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
+  loadCareerArchiveBadges(); // 🗄️ iki 14 m. skill ženkliukai (jei perėjo į 14+)
   // 💻 DESKTOP side nav user info
   applyAvatarById('vdn-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
   setText('vdn-name', firstName);
@@ -10904,7 +10925,6 @@ async function loadCategories() {
   }).join('');
 
   document.getElementById('v-categories-list').innerHTML = html;
-  loadCareerArchive(); // 🗄️ 6–13 m. archyvas (jei perėjo į 14+)
   
   // 🎨 Update HERO fonas pagal stage (kaip pagrindiniame + profilyje)
   const totalExp = currentKid?.total_exp || 0;
