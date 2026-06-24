@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v217</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v223</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1688,15 +1688,17 @@ select.inp option{background:#222;}
       <!-- Užpildoma JS - dinaminis diržas pagal kyu -->
     </div>
     
-    <!-- 🗄️ IKI 14 M. — SKILL ŽENKLIUKAI (prisegta; rodoma tik perėjus į 14+) -->
-    <div id="v-prof-archive-wrap" style="display:none;margin:0 12px 6px;background:var(--card);border:.5px solid rgba(79,195,247,.35);border-radius:14px;padding:11px;position:relative;">
-      <div style="position:absolute;top:0;right:10px;background:#4FC3F7;color:#06222e;font-size:8px;font-weight:900;letter-spacing:.5px;padding:2px 7px;border-radius:0 0 7px 7px;">📌 PRISEGTA</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <div style="font-size:11px;color:#4FC3F7;font-weight:800;letter-spacing:.5px;">🗄️ IKI 14 M. — SKILL ŽENKLIUKAI</div>
-        <div id="v-prof-archive-sum" style="font-size:8px;color:var(--mut);"></div>
+    <!-- 🗄️ IKI 14 M. — SKILL BADGES mygtukas (atidaro langą; rodoma tik perėjus į 14+) -->
+    <div id="v-prof-archive-btn" onclick="openArchiveBadgesModal()" style="display:none;margin:0 12px 6px;background:var(--card);border:.5px solid rgba(79,195,247,.35);border-radius:12px;padding:10px 12px;cursor:pointer;-webkit-tap-highlight-color:rgba(79,195,247,.2);position:relative;">
+      <div style="position:absolute;top:0;right:10px;background:#4FC3F7;color:#06222e;font-size:8px;font-weight:900;letter-spacing:.5px;padding:2px 7px;border-radius:0 0 7px 7px;">📌 13 METŲ</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:24px;">🗄️</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:800;color:white;">SKILL BADGES · iki 14 m.</div>
+          <div id="v-prof-archive-sum" style="font-size:9px;color:var(--mut);margin-top:2px;">—</div>
+        </div>
+        <div style="font-size:16px;color:#4FC3F7;">›</div>
       </div>
-      <div id="v-prof-archive-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;"></div>
-      <div style="font-size:8px;color:var(--mut);text-align:center;margin-top:7px;">Užšaldyta perėjus į 14+ grupę 🥋</div>
     </div>
 
     <!-- 🏆 TROFĖJAI + 🏅 BADGES + 🎯 IŠŠŪKIAI - 3 mygtukai -->
@@ -3330,12 +3332,35 @@ select.inp option{background:#222;}
 <!-- KLUBAS: PAGRINDINIS -->
 <div class="sc on" id="k-main">
   <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px;">
-    <div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 12px;">
+    <div style="min-width:0;">
       <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">KLUBO ADMINISTRATORIUS</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;" id="k-club-name">KLUBAS 🏢</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="k-club-name">KLUBAS 🏢</div>
     </div>
-    <div style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--blu);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--blu);" id="k-avatar">K</div>
+    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('main')" title="Apie šį langą">💡</div>
+      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" id="kh-notif-btn">🔔<div id="kh-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubSettings()" title="Nustatymai">⚙️</div>
+      <div style="width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--blu);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--blu);" id="k-avatar">K</div>
+    </div>
+  </div>
+
+  <!-- 🔔 KLUBO PRANEŠIMŲ MODALAS — kopija trenerio varpelio (perkeliamas į body) -->
+  <div style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.85);align-items:flex-end;justify-content:center;" id="kh-notif-section">
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+      <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
+        <button onclick="toggleClubNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
+      </div>
+      <div style="padding:12px 16px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+        <button class="notif-tab" data-tab="system" onclick="switchClubNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🤖</span><span>Sistema <span id="kh-notif-count-system" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="trainers" onclick="switchClubNotifTab('trainers')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🥋</span><span>Treneriai <span id="kh-notif-count-trainers" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="events" onclick="switchClubNotifTab('events')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🥇</span><span>Renginiai <span id="kh-notif-count-events" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="messages" onclick="switchClubNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>💬</span><span>Žinutės <span id="kh-notif-count-messages" style="opacity:.7;"></span></span></button>
+      </div>
+      <div id="kh-notif-list" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
+      <div style="padding:10px 16px;border-top:.5px solid var(--bdr);"><button onclick="markAllClubNotifRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;">✓ Žymėti visus skaitytus</button></div>
+    </div>
   </div>
   <div class="sa">
     <!-- Klubo info kortelė -->
@@ -3382,8 +3407,8 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni on" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
 
@@ -3401,32 +3426,55 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
 
 <!-- KLUBAS: PROFILIS -->
-<!-- KLUBO VARŽYBOS -->
-<div class="sc" id="k-comp">
+<!-- KLUBO RENGINIAI: varžybos · diржų laikymas · stovyklos · grupių iššūkis -->
+<div class="sc" id="k-events">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('k','k-main')">←</div><div class="tt">VARŽYBOS</div>
-  <div style="background:var(--grn);color:white;font-size:16px;font-weight:800;padding:3px 10px;border-radius:99px;font-family:'Bebas Neue',sans-serif;" id="k-comp-count">0</div></div>
-  <div class="tabs">
-    <div class="tab on" onclick="switchKcTab(this,'upcoming')">🔜 Artėjančios <span id="k-comp-upcoming-count" style="opacity:.6;">0</span></div>
-    <div class="tab" onclick="switchKcTab(this,'past')">📦 Pasibaigusios <span id="k-comp-past-count" style="opacity:.6;">0</span></div>
+  <div class="tb"><div class="bb" onclick="g('k','k-main')">←</div><div class="tt">RENGINIAI</div></div>
+  <!-- Sub-tabai -->
+  <div style="display:flex;gap:6px;padding:8px 12px 4px;overflow-x:auto;">
+    <button class="k-ev-tab on" data-tab="comp" onclick="switchClubEventsTab('comp')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥇 Varžybos</button>
+    <button class="k-ev-tab" data-tab="belt" onclick="switchClubEventsTab('belt')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥋 Diржų laikymas</button>
+    <button class="k-ev-tab" data-tab="camps" onclick="switchClubEventsTab('camps')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">⛺ Stovyklos</button>
+    <button class="k-ev-tab" data-tab="gc" onclick="switchClubEventsTab('gc')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🏆 Grupių iššūkis</button>
   </div>
   <div class="sa">
-    <button onclick="openCreateCompetition()" id="k-new-comp-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJOS VARŽYBOS</button>
-    <div id="k-comp-content">
-      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    <!-- VARŽYBOS (kumite/kata) -->
+    <div id="k-ev-comp" class="k-ev-pane">
+      <div class="tabs" style="margin-bottom:10px;">
+        <div class="tab on" onclick="switchKcTab(this,'upcoming')">🔜 Artėjančios <span id="k-comp-upcoming-count" style="opacity:.6;">0</span></div>
+        <div class="tab" onclick="switchKcTab(this,'past')">📦 Pasibaigusios <span id="k-comp-past-count" style="opacity:.6;">0</span></div>
+      </div>
+      <button onclick="openCreateCompetition()" id="k-new-comp-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJOS VARŽYBOS</button>
+      <div id="k-comp-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
+    </div>
+    <!-- DIRŽŲ LAIKYMAS (belt_test) -->
+    <div id="k-ev-belt" class="k-ev-pane" style="display:none;">
+      <button onclick="openCreateCompetition('belt_test')" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJAS DIRŽŲ LAIKYMAS</button>
+      <div id="k-belt-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
+    </div>
+    <!-- STOVYKLOS (Blokas 4) -->
+    <div id="k-ev-camps" class="k-ev-pane" style="display:none;">
+      <button onclick="openCreateCamp()" id="k-new-camp-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJA STOVYKLA</button>
+      <div id="k-camps-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
+    </div>
+    <!-- GRUPIŲ IŠŠŪKIS (Blokas 5) -->
+    <div id="k-ev-gc" class="k-ev-pane" style="display:none;">
+      <button onclick="openCreateClubChallenge()" id="k-new-gc-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJAS GRUPIŲ IŠŠŪKIS</button>
+      <div id="k-gc-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
     </div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
 
@@ -3449,8 +3497,8 @@ select.inp option{background:#222;}
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div><div class="ni on" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div><div class="ni on" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
 
@@ -3472,6 +3520,7 @@ select.inp option{background:#222;}
       <button class="club-stat-tab" data-tab="skills" onclick="switchClubStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
       <button class="club-stat-tab" data-tab="challenges" onclick="switchClubStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
       <button class="club-stat-tab" data-tab="competitions" onclick="switchClubStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
+      <button class="club-stat-tab" data-tab="revenue" onclick="switchClubStatTab('revenue')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">💶 APYVARTA</button>
     </div>
     
     <!-- Tab content -->
@@ -3487,13 +3536,16 @@ select.inp option{background:#222;}
     <div id="club-stat-tab-competitions" class="club-stat-tab-content" style="display:none;">
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
-    
+    <div id="club-stat-tab-revenue" class="club-stat-tab-content" style="display:none;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-comp')"><span class="ic">🥇</span><span class="lb">Varžybos</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Stats</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -4221,6 +4273,8 @@ async function afterLogin() {
 
   console.log('🎯 [afterLogin] 4. Kraunam duomenis pagal rolę:', profile.role);
 
+  await loadClubFlags(); // 🚩 klubo feature-flags (visom rolėm; trūkstant — viskas įjungta)
+
   // Pagal rolę krauname tinkamą duomenis
   try {
     if (profile.role === 'admin') {
@@ -4235,6 +4289,7 @@ async function afterLogin() {
       await loadTrainerData();
       subscribeTrainerNotifications(); // po duomenų — realtime tik papildomas, negali blokuoti portalo
       op('tr');
+      _checkClubChallengeResultsTrainer(); // 🏆 grupių iššūkio pabaigos pop-up (vieną kartą)
     } else if (profile.role === 'kid') {
       // Krauname kid duomenis - ieškom per user_id (NE per id, nes kids.id !== auth.users.id)
       const { data: kidData } = await sb.from('kids')
@@ -4264,6 +4319,7 @@ async function afterLogin() {
         setTimeout(() => showParentMissedEvents(), 1500);
       }
     }
+    applyClubFlagGates(); // 🚪 paslėpti išjungtas funkcijas (visi portalai)
     console.log('🎉 [afterLogin] BAIGTA SĖKMINGAI');
   } catch (e) {
     console.error('❌ [afterLogin] EXCEPTION rolės kraunant:', e);
@@ -9377,51 +9433,67 @@ function _showAgeUpCelebration() {
   document.body.appendChild(m);
 }
 
-// 🗄️ IKI 14 M. — skill ženkliukai (Profilyje). Užšaldyti 6–13 eros kategorijų lygiai.
-async function loadCareerArchiveBadges() {
-  const wrap = document.getElementById('v-prof-archive-wrap');
-  const grid = document.getElementById('v-prof-archive-grid');
+// 🗄️ IKI 14 M. — archyvo mygtuko inicijavimas Profilyje (rodyti tik jei perėjo į 14+)
+async function _initArchiveButton() {
+  const btn = document.getElementById('v-prof-archive-btn');
   const sumEl = document.getElementById('v-prof-archive-sum');
-  if (!wrap || !grid || !currentKid?.id) return;
+  if (!btn || !currentKid?.id) return;
   try {
-    const [metaR, recsR] = await Promise.all([
-      sb.from('career_archive_meta').select('*').eq('kid_id', currentKid.id).eq('age_band', '6-13').maybeSingle(),
-      sb.from('career_archive').select('exercise_id, category_exp').eq('kid_id', currentKid.id).eq('age_band', '6-13')
-    ]);
-    const meta = metaR.data;
-    const recs = recsR.data || [];
-    if (!meta && !recs.length) { wrap.style.display = 'none'; return; }
-    // kategorijos (kešas)
-    if (!_trCareerCatsCache) {
-      const { data: cats } = await sb.from('career_categories').select('id, name, icon, sort_order').order('sort_order').limit(7);
-      _trCareerCatsCache = cats || [];
-    }
-    const cats = _trCareerCatsCache;
-    // exercise → category (archyvas nesaugo category_id; jungiam per exercises)
-    const exIds = [...new Set(recs.map(r => r.exercise_id).filter(Boolean))];
-    const ex2cat = {};
-    if (exIds.length) {
-      const { data: exs } = await sb.from('exercises').select('id, category_id').in('id', exIds);
-      (exs || []).forEach(e => { ex2cat[e.id] = e.category_id; });
-    }
-    const byCat = {};
-    recs.forEach(r => { const c = ex2cat[r.exercise_id]; if (c) byCat[c] = (byCat[c] || 0) + (r.category_exp || 0); });
-    wrap.style.display = 'block';
-    grid.innerHTML = (cats || []).map(c => {
-      const exp = Math.min(600, byCat[c.id] || 0);
-      const tier = (typeof getTierFromExp === 'function') ? getTierFromExp(exp) : 'pradinis';
-      const tn = (typeof TIER_NAMES !== 'undefined' && TIER_NAMES[tier]) || 'Pradinis';
-      const med = (typeof TIER_EMOJI !== 'undefined' && TIER_EMOJI[tier]) || '';
-      const icon = c.icon || (typeof CATEGORY_ICONS !== 'undefined' && CATEGORY_ICONS[c.name]) || '💪';
-      return `<div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:10px;padding:7px 3px;text-align:center;position:relative;">
-        ${med ? `<div style="position:absolute;top:3px;right:4px;font-size:11px;">${med}</div>` : ''}
-        <div style="font-size:22px;line-height:1;">${icon}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:.5px;color:#fff;margin-top:2px;line-height:1.1;">${(c.name || '').toUpperCase()}</div>
-        <div style="font-size:7px;color:var(--mut);font-weight:800;margin-top:1px;">${tn.toUpperCase()} · ${exp}</div>
-      </div>`;
-    }).join('');
-    if (sumEl) sumEl.textContent = meta ? `LVL ${meta.level || 1} · 🏆${meta.medals_master || 0} 🥇${meta.medals_gold || 0} 🥈${meta.medals_silver || 0} 🥉${meta.medals_bronze || 0}` : '';
-  } catch (e) { console.warn('loadCareerArchiveBadges:', e); wrap.style.display = 'none'; }
+    const { data: meta } = await sb.from('career_archive_meta').select('*').eq('kid_id', currentKid.id).eq('age_band', '6-13').maybeSingle();
+    if (!meta) { btn.style.display = 'none'; return; }
+    btn.style.display = 'block';
+    if (sumEl) sumEl.textContent = `LVL ${meta.level || 1} · 🏆${meta.medals_master || 0} 🥇${meta.medals_gold || 0} 🥈${meta.medals_silver || 0} 🥉${meta.medals_bronze || 0}`;
+  } catch (e) { btn.style.display = 'none'; }
+}
+
+// 🗄️ IKI 14 M. — atidaro skill badges langą (toks pat kaip openBadgesModal, tik 6–13 archyvas)
+async function openArchiveBadgesModal() {
+  if (!currentKid?.id) return;
+  const existing = document.getElementById('prof-archive-badges-modal'); if (existing) existing.remove();
+  let cats = _trCareerCatsCache;
+  const [metaR, recsR, catsR] = await Promise.all([
+    sb.from('career_archive_meta').select('*').eq('kid_id', currentKid.id).eq('age_band', '6-13').maybeSingle(),
+    sb.from('career_archive').select('exercise_id, category_exp').eq('kid_id', currentKid.id).eq('age_band', '6-13'),
+    (cats && cats.length) ? Promise.resolve({ data: cats }) : sb.from('career_categories').select('id, name, icon, sort_order').order('sort_order').limit(7)
+  ]);
+  cats = catsR.data || cats || [];
+  _trCareerCatsCache = cats;
+  const meta = metaR.data; const recs = recsR.data || [];
+  const exIds = [...new Set(recs.map(r => r.exercise_id).filter(Boolean))];
+  const ex2cat = {};
+  if (exIds.length) { const { data: exs } = await sb.from('exercises').select('id, category_id').in('id', exIds); (exs || []).forEach(e => { ex2cat[e.id] = e.category_id; }); }
+  const byCat = {};
+  recs.forEach(r => { const c = ex2cat[r.exercise_id]; if (c) byCat[c] = (byCat[c] || 0) + (r.category_exp || 0); });
+  const tierOf = (exp) => exp >= 600 ? ['MASTER', '#FF4D00', '🏆'] : exp >= 500 ? ['GOLD', '#FFD700', '🥇'] : exp >= 300 ? ['SILVER', '#C0C0C0', '🥈'] : exp >= 100 ? ['BRONZE', '#CD7F32', '🥉'] : ['PRADINIS', 'rgba(255,255,255,.3)', ''];
+  const cards = (cats || []).map(c => {
+    const exp = Math.min(600, byCat[c.id] || 0);
+    const t = tierOf(exp); const earned = t[0] !== 'PRADINIS';
+    const icon = (typeof CATEGORY_ICONS !== 'undefined' && CATEGORY_ICONS[c.name]) || c.icon || '💪';
+    return `<div style="background:${earned ? `linear-gradient(135deg, ${t[1]}22, ${t[1]}08)` : 'var(--card)'};border:1px solid ${earned ? t[1] + '44' : 'var(--bdr)'};border-radius:12px;padding:10px 6px;text-align:center;">
+      <div style="font-size:28px;line-height:1;">${icon}</div>
+      <div style="font-size:9px;font-weight:800;color:white;margin-top:5px;line-height:1.1;">${c.name}</div>
+      <div style="font-size:8px;font-weight:800;color:${t[1]};margin-top:4px;letter-spacing:.5px;">${t[2]} ${t[0]}</div>
+      <div style="font-size:8px;color:var(--mut);margin-top:2px;">${exp} EXP</div>
+    </div>`;
+  }).join('');
+  const modal = document.createElement('div');
+  modal.id = 'prof-archive-badges-modal';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:flex-end;justify-content:center;';
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+      <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🗄️ SKILL BADGES · IKI 14 M.</div>
+          <div style="font-size:9px;color:#4FC3F7;font-weight:800;letter-spacing:.5px;margin-top:1px;">📌 13 metų užšaldyta era${meta ? ` · LVL ${meta.level || 1}` : ''}</div>
+        </div>
+        <button onclick="document.getElementById('prof-archive-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:14px 16px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">${cards || '<div style="grid-column:span 3;text-align:center;padding:20px;color:var(--mut);font-size:11px;">Nėra archyvo</div>'}</div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
 }
 
 async function loadKidData() {
@@ -9451,7 +9523,8 @@ async function loadKidData() {
   setText('v-name', `${greeting}, ${firstName}! 🥋`);
   applyAvatarById('v-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
   setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
-  loadCareerArchiveBadges(); // 🗄️ iki 14 m. skill ženkliukai (jei perėjo į 14+)
+  _initArchiveButton(); // 🗄️ iki 14 m. skill ženkliukų mygtukas (jei perėjo į 14+)
+  _checkClubChallengeResultsKid(); // 🏆 grupių iššūkio pabaigos pop-up (vieną kartą)
   // 💻 DESKTOP side nav user info
   applyAvatarById('vdn-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
   setText('vdn-name', firstName);
@@ -14516,22 +14589,24 @@ const COMP_LEVEL_LABELS = {
   european: '🌍 Europos'
 };
 
-function openCreateCompetition() {
+function openCreateCompetition(preType) {
+  const pt = (preType === 'belt_test') ? 'belt_test' : 'kumite';
   document.getElementById('kc-title').value = '';
-  document.getElementById('kc-type').value = 'kumite';
+  document.getElementById('kc-type').value = pt;
   document.getElementById('kc-level').value = 'local';
   document.getElementById('kc-date').value = '';
   document.getElementById('kc-location').value = '';
   document.getElementById('kc-url').value = '';
   document.getElementById('kc-info').value = '';
-  
+
   // Reset chips
   document.querySelectorAll('#kcmo .chs .ch').forEach(c => c.classList.remove('on'));
-  document.querySelector('#kcmo [data-type="kumite"]').classList.add('on');
+  const _typeChip = document.querySelector(`#kcmo [data-type="${pt}"]`);
+  if (_typeChip) _typeChip.classList.add('on');
   document.querySelector('#kcmo [data-level="local"]').classList.add('on');
-  
-  // Levelis matomas tik kumite/kata
-  document.getElementById('kc-level-section').style.display = 'block';
+
+  // Levelis matomas tik kumite/kata (belt_test — be lygio)
+  document.getElementById('kc-level-section').style.display = (pt === 'belt_test') ? 'none' : 'block';
   
   // Datos apribojimas pašalintas - galima kurti ir praeities varžybas (istoriniam įrašui)
   document.getElementById('kc-date').removeAttribute('min');
@@ -14663,15 +14738,16 @@ async function loadClubCompetitions() {
     return;
   }
   
-  // Atskirti į artėjančias / pasibaigusias pagal datą
+  // Atskirti į artėjančias / pasibaigusias pagal datą (be belt_test — diржai atskirame sub-tabe)
   const today = new Date().toISOString().split('T')[0];
-  const upcoming = (competitions || []).filter(c => c.event_date >= today);
-  const past = (competitions || []).filter(c => c.event_date < today);
-  
-  // Atnaujinti skaičiukus
-  document.getElementById('k-comp-upcoming-count').textContent = upcoming.length;
-  document.getElementById('k-comp-past-count').textContent = past.length;
-  document.getElementById('k-comp-count').textContent = upcoming.length;
+  const _compsOnly = (competitions || []).filter(c => c.competition_type !== 'belt_test');
+  const upcoming = _compsOnly.filter(c => c.event_date >= today);
+  const past = _compsOnly.filter(c => c.event_date < today);
+
+  // Atnaujinti skaičiukus (saugiai — kai kurių elementų gali nebūti)
+  const _uc = document.getElementById('k-comp-upcoming-count'); if (_uc) _uc.textContent = upcoming.length;
+  const _pc = document.getElementById('k-comp-past-count'); if (_pc) _pc.textContent = past.length;
+  const _cc = document.getElementById('k-comp-count'); if (_cc) _cc.textContent = upcoming.length;
   
   const compsToShow = kcActiveTab === 'upcoming' ? upcoming : past;
   
@@ -14758,6 +14834,849 @@ async function loadClubCompetitions() {
   }).join('');
   
   document.getElementById('k-comp-content').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// KLUBO RENGINIAI — sub-tabai + DIRŽŲ LAIKYMAS + VARPELIS (Blokas 1)
+// ════════════════════════════════════════
+
+function switchClubEventsTab(tab){
+  document.querySelectorAll('#k-events .k-ev-tab').forEach(b=>{
+    const on = b.dataset.tab === tab;
+    b.classList.toggle('on', on);
+    b.style.background = on ? 'rgba(255,77,0,.15)' : 'transparent';
+    b.style.color = on ? 'var(--br)' : 'var(--mut)';
+    b.style.borderColor = on ? 'rgba(255,77,0,.4)' : 'var(--bdr)';
+  });
+  ['comp','belt','camps','gc'].forEach(t=>{
+    const pane = document.getElementById('k-ev-'+t);
+    if (pane) pane.style.display = (t===tab) ? '' : 'none';
+  });
+  if (tab==='comp' && typeof loadClubCompetitions==='function') loadClubCompetitions();
+  if (tab==='belt' && typeof loadClubBeltTests==='function') loadClubBeltTests();
+  if (tab==='camps' && typeof loadClubCamps==='function') loadClubCamps();
+  if (tab==='gc' && typeof loadClubGroupChallenges==='function') loadClubGroupChallenges();
+}
+
+// 🥋 Diржų laikymas (belt_test varžybos) — atskiras sąrašas
+async function loadClubBeltTests(){
+  const clubId = currentClub?.id;
+  const el = document.getElementById('k-belt-content');
+  if (!el) return;
+  if (!clubId){ el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Klubo info trūksta</div>'; return; }
+  const { data: comps, error } = await sb.from('competitions')
+    .select('*').eq('club_id', clubId).eq('competition_type','belt_test')
+    .order('event_date', { ascending: false });
+  if (error){ el.innerHTML = `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`; return; }
+  if (!comps || !comps.length){ el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Dar nesukūrei diржų laikymo.<br><br>Spausk + NAUJAS DIRŽŲ LAIKYMAS 🥋</div>'; return; }
+  let byComp = {};
+  const ids = comps.map(c=>c.id);
+  if (ids.length){
+    const { data: results } = await sb.from('competition_results').select('competition_id, approval_status').in('competition_id', ids);
+    (results||[]).forEach(r=>{ if(!byComp[r.competition_id]) byComp[r.competition_id]={total:0,approved:0,pending:0}; byComp[r.competition_id].total++; if(r.approval_status==='approved')byComp[r.competition_id].approved++; if(r.approval_status==='pending')byComp[r.competition_id].pending++; });
+  }
+  const today = new Date().toISOString().split('T')[0];
+  el.innerHTML = comps.map(c=>{
+    const s = byComp[c.id] || {total:0,approved:0,pending:0};
+    const isPast = c.event_date < today;
+    const when = isPast ? `📅 Prieš ${Math.ceil((new Date()-new Date(c.event_date))/86400000)} d.` : (c.event_date===today?'🔥 Šiandien!':`⏱️ Liko ${Math.ceil((new Date(c.event_date)-new Date())/86400000)} d.`);
+    return `<div class="cd" style="margin-bottom:12px;${isPast?'opacity:.85;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:900;margin-bottom:4px;">${c.title}</div><div style="font-size:11px;color:var(--mut);">🥋 Diржo testas</div></div>
+        <div class="bg ${isPast?'':'gn'}" style="${isPast?'background:rgba(255,255,255,.1);color:var(--mut);':''}">${when}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:var(--mut);">
+        <div style="margin-bottom:4px;">📅 ${formatDateLT(c.event_date)}</div>
+        <div>📍 ${c.location || '–'}</div>
+        ${c.additional_info?`<div style="margin-top:6px;color:var(--text);">${c.additional_info}</div>`:''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px;">
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;">${s.total}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAIKĖ</div></div>
+        <div style="background:rgba(34,197,94,.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">${s.approved}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">IŠLAIKĖ</div></div>
+        <div style="background:rgba(255,77,0,.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${s.pending}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAUKIA</div></div>
+      </div>
+      <button onclick="viewCompetitionParticipants('${c.id}', '${(c.title||'').replace(/'/g,"\\'")}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">👥 ŽIŪRĖTI DALYVIUS</button>
+      <button onclick="deleteCompetition('${c.id}', '${(c.title||'').replace(/'/g,"\\'")}')" style="width:100%;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+    </div>`;
+  }).join('');
+}
+
+// 🔔 Klubo varpelis
+function toggleClubNotifications(){
+  const s = document.getElementById('kh-notif-section');
+  if(!s) return;
+  if (s.parentElement !== document.body) document.body.appendChild(s);
+  if (s.style.display==='none' || s.style.display===''){ s.style.display='flex'; if(typeof loadClubNotifications==='function') loadClubNotifications(); }
+  else { s.style.display='none'; }
+}
+let clubNotifTab = 'system';
+function switchClubNotifTab(tab){
+  clubNotifTab = tab;
+  document.querySelectorAll('#kh-notif-section .notif-tab').forEach(b=>{
+    const on = b.dataset.tab === tab;
+    b.style.background = on ? 'rgba(255,77,0,.15)' : 'transparent';
+    b.style.color = on ? '#FF8C00' : 'var(--mut)';
+    b.style.borderColor = on ? 'rgba(255,77,0,.4)' : 'var(--bdr)';
+  });
+  if (typeof loadClubNotifications==='function') loadClubNotifications();
+}
+function markAllClubNotifRead(){
+  if (clubNotifications){
+    Object.keys(CLUB_NOTIF_SK).forEach(tab=>{ (clubNotifications[tab]||[]).forEach(it=>_addSeen(CLUB_NOTIF_SK[tab], it.id)); });
+  }
+  _updateClubNotifCounts();
+  renderClubNotifTab(clubNotifTab);
+  showToast('✓ Pažymėta','success');
+}
+
+// ════════════════════════════════════════
+// KLUBO VARPELIO PRANEŠIMAI (Blokas 8) — realūs įvykiai + dedup (_isSeen/_addSeen)
+// ════════════════════════════════════════
+const CLUB_NOTIF_SK = { system:'cns', trainers:'cnt', events:'cne', messages:'cnm' };
+let clubNotifications = null;
+let _clubNotifCacheTs = 0;
+
+async function _fetchClubNotifications(force){
+  if (!force && clubNotifications && (Date.now() - _clubNotifCacheTs) < 8000) return clubNotifications;
+  const empty = { system:[], trainers:[], events:[], messages:[] };
+  if (!currentClub?.id){ clubNotifications = empty; return clubNotifications; }
+  const clubId = currentClub.id;
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-30);
+  const cutoffISO = cutoff.toISOString();
+
+  const [trsRes, kids, compsRes, campsRes] = await Promise.all([
+    sb.from('trainers').select('id, profiles!inner(first_name,last_name,status,activated_at)').eq('invited_by_club_id', clubId),
+    _getClubKids(),
+    sb.from('competitions').select('id, title').eq('club_id', clubId),
+    sb.from('club_events').select('id, title').eq('club_id', clubId)
+  ]);
+  const trainers = trsRes.data || [];
+  const trName = t => `${t.profiles?.first_name||''} ${t.profiles?.last_name||''}`.trim() || 'Treneris';
+  const kidName = id => { const k = (kids||[]).find(x=>x.id===id); return k ? `${k.first_name||'Vaikas'} ${k.last_name||''}`.trim() : 'Vaikas'; };
+  const kidIds = (kids||[]).map(k=>k.id);
+  const compTitle = {}; (compsRes.data||[]).forEach(c=>compTitle[c.id]=c.title); const compIds = Object.keys(compTitle);
+  const campTitle = {}; (campsRes.data||[]).forEach(c=>campTitle[c.id]=c.title); const campIds = Object.keys(campTitle);
+
+  const [actR, rsvpR, gcR, repR, crR, msR] = await Promise.all([
+    sb.rpc('club_trainer_activity', { club_uuid: clubId }).then(r=>r.data||[]).catch(()=>[]),
+    campIds.length ? sb.from('club_event_rsvp').select('id, kid_id, event_id, created_at').in('event_id', campIds).gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(20) : Promise.resolve({data:[]}),
+    sb.from('club_challenges').select('id, title, created_at').eq('club_id', clubId).eq('is_active', false).gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(10),
+    kidIds.length ? sb.from('reports').select('id, kid_id, type, created_at').in('kid_id', kidIds).neq('status','error').gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(20) : Promise.resolve({data:[]}),
+    compIds.length ? sb.from('competition_results').select('id, kid_id, competition_id, created_at').in('competition_id', compIds).eq('approval_status','pending').order('created_at',{ascending:false}).limit(20) : Promise.resolve({data:[]}),
+    sb.from('messages').select('id, conversation_id, sender_id, body, sent_at').neq('sender_id', currentUser.id).gte('sent_at', cutoffISO).order('sent_at',{ascending:false}).limit(30)
+  ]);
+
+  // TRENERIAI: nauji (priėmė kvietimą) + neaktyvūs 🔴 (≥7 d.)
+  const actMap = {}; (actR||[]).forEach(a=>{ actMap[a.trainer_id]=a; });
+  const trainerItems = [];
+  trainers.forEach(t=>{
+    if (t.profiles?.status==='active' && t.profiles?.activated_at && t.profiles.activated_at >= cutoffISO){
+      trainerItems.push({ id:'tract-'+t.id, icon:'✅', title:`${trName(t)} prisijungė`, sub:'Priėmė kvietimą', ts:t.profiles.activated_at });
+    }
+    const a = actMap[t.id];
+    if (a && a.last_active){
+      const days = Math.floor((Date.now()-new Date(a.last_active).getTime())/86400000);
+      if (days>=7) trainerItems.push({ id:'trin-'+t.id, icon:'🔴', title:`${trName(t)} neaktyvus`, sub:`Paskutinis veiksmas prieš ${days} d.`, ts:a.last_active });
+    }
+  });
+  trainerItems.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+
+  // RENGINIAI: laukiantys rezultatai + nauji RSVP + pasibaigę grupių iššūkiai
+  const eventItems = [
+    ...((crR.data||[]).map(r=>({ id:'cr-'+r.id, icon:'⏳', title:`${kidName(r.kid_id)} — rezultatas`, sub:`${compTitle[r.competition_id]||'Varžybos'} · laukia trenerio`, ts:r.created_at }))),
+    ...((rsvpR.data||[]).map(r=>({ id:'rsvp-'+r.id, icon:'⛺', title:`${kidName(r.kid_id)} registravosi`, sub:`${campTitle[r.event_id]||'Stovykla'}`, ts:r.created_at }))),
+    ...((gcR.data||[]).map(c=>({ id:'gcend-'+c.id, icon:'🏆', title:'Grupių iššūkis baigėsi', sub:c.title||'Iššūkis', ts:c.created_at })))
+  ].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+
+  // SISTEMA / APYVARTA: naujos nupirktos ataskaitos
+  const typeLbl = t => t==='plan'?'Veiksmų planas':(t==='summer'?'Vasaros programa':'Diagnostika');
+  const systemItems = (repR.data||[]).map(r=>({ id:'rep-'+r.id, icon:'💶', title:'Nupirkta ataskaita', sub:`${typeLbl(r.type)} · ${kidName(r.kid_id)}`, ts:r.created_at })).sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+
+  // ŽINUTĖS (narystė per conversation_members; be savo)
+  const msgItems = [];
+  if (msR.data && msR.data.length){
+    const convIds = [...new Set(msR.data.map(m=>m.conversation_id))];
+    const [mem, convs] = await Promise.all([
+      sb.from('conversation_members').select('conversation_id').eq('user_id', currentUser.id).in('conversation_id', convIds),
+      sb.from('conversations').select('id, type, title').in('id', convIds)
+    ]);
+    const myConv = new Set((mem.data||[]).map(m=>m.conversation_id));
+    const convById = {}; (convs.data||[]).forEach(c=>convById[c.id]=c);
+    const senderIds = [...new Set(msR.data.filter(m=>myConv.has(m.conversation_id)).map(m=>m.sender_id))];
+    const sName = {};
+    if (senderIds.length){ const { data: ss } = await sb.from('profiles').select('id, first_name, last_name').in('id', senderIds); (ss||[]).forEach(p=>{ sName[p.id]=`${p.first_name||''} ${p.last_name||''}`.trim()||'Kažkas'; }); }
+    msR.data.forEach(m=>{
+      if (!myConv.has(m.conversation_id)) return;
+      const conv = convById[m.conversation_id]; const isAnn = conv?.type==='announcement';
+      msgItems.push({ id:'ms-'+m.id, icon:isAnn?'📢':'💬', title:isAnn?'Skelbimas':(conv?.title||`Žinutė nuo ${sName[m.sender_id]||'Kažkas'}`), sub:(m.body||'').slice(0,60), ts:m.sent_at, convId:m.conversation_id });
+    });
+  }
+
+  const dedupe = arr => { const s=new Set(); return arr.filter(n=>{ if(s.has(n.id))return false; s.add(n.id); return true; }); };
+  clubNotifications = { system:dedupe(systemItems), trainers:dedupe(trainerItems), events:dedupe(eventItems), messages:dedupe(msgItems) };
+  _clubNotifCacheTs = Date.now();
+  return clubNotifications;
+}
+
+function _clubUnseen(tab){ return (clubNotifications?.[tab]||[]).filter(it=>!_isSeen(CLUB_NOTIF_SK[tab], it.id)); }
+
+function _updateClubNotifCounts(){
+  let total = 0;
+  Object.keys(CLUB_NOTIF_SK).forEach(tab=>{
+    const n = _clubUnseen(tab).length; total += n;
+    const el = document.getElementById('kh-notif-count-'+tab);
+    if (el) el.textContent = n ? `(${n})` : '';
+  });
+  const badge = document.getElementById('kh-notif-badge-count');
+  if (badge){ badge.textContent = total>99?'99+':total; badge.style.display = total?'flex':'none'; }
+}
+
+async function loadClubNotifications(){
+  await _fetchClubNotifications(false);
+  _updateClubNotifCounts();
+  renderClubNotifTab(clubNotifTab);
+}
+
+async function updateClubNotifBadge(force){
+  try { await _fetchClubNotifications(force); _updateClubNotifCounts(); } catch(e){}
+}
+
+function renderClubNotifTab(tab){
+  const list = document.getElementById('kh-notif-list'); if(!list) return;
+  const items = clubNotifications?.[tab] || [];
+  if (!items.length){ list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Pranešimų nėra 🧘</div>'; return; }
+  const sk = CLUB_NOTIF_SK[tab];
+  list.innerHTML = items.map(it=>{
+    const fresh = !_isSeen(sk, it.id);
+    return `<div onclick="clubNotifClick('${tab}','${it.id}','${it.convId||''}')" style="background:${fresh?'rgba(255,77,0,.07)':'var(--card)'};border:.5px solid ${fresh?'rgba(255,77,0,.3)':'var(--bdr)'};border-radius:12px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <div style="font-size:16px;flex-shrink:0;">${it.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:800;color:white;">${it.title}${fresh?' <span style="display:inline-block;width:7px;height:7px;background:var(--br);border-radius:50%;margin-left:4px;"></span>':''}</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.sub||''}</div>
+        <div style="font-size:9px;color:var(--mut);margin-top:1px;">${_agoLT(it.ts)}</div>
+      </div>
+      <div style="font-size:12px;color:var(--mut);flex-shrink:0;">›</div>
+    </div>`;
+  }).join('');
+}
+
+function clubNotifClick(tab, id, convId){
+  _addSeen(CLUB_NOTIF_SK[tab], id);
+  _updateClubNotifCounts();
+  if (tab==='messages'){
+    const s = document.getElementById('kh-notif-section'); if(s) s.style.display='none';
+    if (typeof openMessages==='function') openMessages();
+    const cid = convId || (clubNotifications?.messages||[]).find(it=>it.id===id)?.convId;
+    if (cid && typeof openConversation==='function') openConversation(cid);
+    return;
+  }
+  renderClubNotifTab(tab);
+}
+
+// 💡 Info modalas (apie langą)
+function openClubInfo(screen){
+  const T = {
+    main: ['🏢 KLUBO PAGRINDINIS', 'Čia matai klubo apžvalgą: trenerių ir vaikų skaičių, žinutes ir greitus veiksmus. Viršuje — 💡 info, 🔔 pranešimai, ⚙️ nustatymai.'],
+    events: ['📅 RENGINIAI', 'Kurk ir valdyk varžybas, diржų laikymą, stovyklas ir bendrus grupių iššūkius — viskas vienoje vietoje.'],
+    trainers: ['🥋 TRENERIAI', 'Matai visus klubo trenerius, jų aktyvumą (🟢🟡🔴), gali redaguoti, perkelti vaikus ar pašalinti trenerį.'],
+    stat: ['📊 ANALITIKA', 'Gili klubo statistika: diржai, medaliai, amžiai, lankomumas, apyvarta ir reitingai.']
+  };
+  const t = T[screen] || T.main;
+  const old = document.getElementById('club-info-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'club-info-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">${t[0]}</div>
+      <button onclick="document.getElementById('club-info-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:18px 20px;font-size:13px;color:var(--text);line-height:1.6;">${t[1]}</div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+// ════════════════════════════════════════
+// KLUBO NUSTATYMAI / FEATURE-FLAGS (Blokas 7) — server-klubas-settings.sql
+// ════════════════════════════════════════
+let clubFlags = {};
+async function loadClubFlags(){
+  try { const { data } = await sb.rpc('get_club_flags'); clubFlags = data || {}; }
+  catch(e){ clubFlags = {}; }
+}
+function flagOn(name){ return clubFlags[name] !== false; } // trūksta/true => įjungta (saugus default)
+
+const CLUB_FLAG_DEFS = [
+  { sec:'FUNKCIJOS' },
+  { k:'attendance_enabled', t:'📋 Lankomumas', d:'Treneris žymi, vaikas/tėvas mato, EXP už pilną savaitę/mėnesį.' },
+  { k:'duels_enabled', t:'⚔️ Dvikovos', d:'Vaikai kviečia vienas kitą į dvikovas.' },
+  { k:'challenges_enabled', t:'🎯 Iššūkiai', d:'Treneriai skiria iššūkius grupėms ir vaikams.' },
+  { k:'group_challenges_enabled', t:'🏆 Grupių iššūkis', d:'Klubo komandinis grupių iššūkis.' },
+  { k:'competitions_enabled', t:'🥇 Varžybos', d:'Varžybų kūrimas ir rezultatai.' },
+  { k:'belt_grading_enabled', t:'🥋 Diржų laikymas', d:'Diржo testų registravimas.' },
+  { k:'camps_enabled', t:'⛺ Stovyklos', d:'Stovyklos ir renginiai su dalyvavimu.' },
+  { sec:'TRENERIŲ TEISĖS' },
+  { k:'trainers_can_create_challenges', t:'Treneris kuria iššūkius', d:'Jei išjungta — iššūkius kuria tik klubas.' },
+  { k:'trainers_can_create_competitions', t:'Treneris kuria varžybas', d:'Jei išjungta — varžybas kuria tik klubas.' },
+  { sec:'VERSLAS' },
+  { k:'ai_reports_enabled', t:'🤖 AI ataskaitos', d:'Tėvai gali pirkti AI ataskaitas.' },
+  { k:'store_enabled', t:'🛍️ Parduotuvė', d:'Parduotuvė vaikams ir tėvams.' }
+];
+
+// ⚙️ Klubo nustatymų modalas
+async function openClubSettings(){
+  if (!currentClub?.id){ showToast('Klubo info trūksta','error'); return; }
+  const old = document.getElementById('club-settings-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='club-settings-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">⚙️ KLUBO NUSTATYMAI</div>
+      <button onclick="document.getElementById('club-settings-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+    </div>
+    <div id="club-settings-body" style="padding:16px 20px;"><div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div></div>
+  </div>`;
+  document.body.appendChild(m);
+  await loadClubSettings();
+}
+
+async function loadClubSettings(){
+  const body = document.getElementById('club-settings-body'); if(!body || !currentClub?.id) return;
+  const { data } = await sb.from('club_settings').select('*').eq('club_id', currentClub.id).maybeSingle();
+  const s = data || {};
+  clubFlags = { ...clubFlags, ...s }; // sinchronizuojam adminui jo paties klubo vėliavas
+  const isOn = k => s[k] !== false;
+  const rowHtml = (f) => {
+    if (f.sec) return `<div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;margin:14px 0 8px;">${f.sec}</div>`;
+    const on = isOn(f.k);
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;margin-bottom:8px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:800;color:white;">${f.t}</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${f.d}</div>
+      </div>
+      <div onclick="toggleClubFlag('${f.k}', ${!on})" style="flex-shrink:0;width:46px;height:26px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;">
+        <div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;"></div>
+      </div>
+    </div>`;
+  };
+  const pct = (s.revenue_share_pct!=null) ? s.revenue_share_pct : 0;
+  body.innerHTML = CLUB_FLAG_DEFS.map(rowHtml).join('') + `
+    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;margin:14px 0 8px;">KLUBO DALIS</div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;">
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Apyvartos dalis klubui</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">% nuo bruto (Analitika → Apyvarta).</div></div>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;"><input id="club-rev-pct" type="number" min="0" max="100" value="${pct}" onchange="saveClubRevPct(this.value)" style="width:64px;padding:6px;text-align:center;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;color:white;font-size:14px;"><span style="font-size:14px;color:var(--mut);">%</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--mut);text-align:center;margin:14px 0 4px;line-height:1.5;">Išjungus funkciją ji dingsta visiems klubo vaikams, treneriams ir tėvams. Įjungus — grįžta.</div>`;
+}
+
+async function toggleClubFlag(flag, val){
+  const { error } = await sb.from('club_settings').upsert({ club_id: currentClub.id, [flag]: val, updated_at: new Date().toISOString() }, { onConflict:'club_id' });
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  clubFlags[flag] = val;
+  showToast(val?'✅ Įjungta':'⏸️ Išjungta','success');
+  loadClubSettings();
+  applyClubFlagGates();
+}
+
+async function saveClubRevPct(v){
+  const pct = Math.max(0, Math.min(100, parseFloat(v)||0));
+  const { error } = await sb.from('club_settings').upsert({ club_id: currentClub.id, revenue_share_pct: pct, updated_at: new Date().toISOString() }, { onConflict:'club_id' });
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  clubFlags.revenue_share_pct = pct;
+  showToast('✅ Išsaugota','success');
+}
+
+// 🚪 PASLĖPIMAS — kai vėliava išjungta, funkcija dingsta. Tik display:none, jokios logikos.
+// Saugu: visi su egzistavimo apsaugomis; default-matomi elementai (force show/hide OK).
+function _gateEl(id, show){ const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; }
+function _gateSel(sel, show){ document.querySelectorAll(sel).forEach(el=>{ el.style.display = show ? '' : 'none'; }); }
+function applyClubFlagGates(){
+  try {
+    // KLUBO portalas — k-events sub-tabai + kūrimo mygtukai (admino paties klubas)
+    _gateSel('#k-events .k-ev-tab[data-tab="camps"]', flagOn('camps_enabled'));
+    _gateEl('k-new-camp-btn', flagOn('camps_enabled'));
+    _gateSel('#k-events .k-ev-tab[data-tab="gc"]', flagOn('group_challenges_enabled'));
+    _gateEl('k-new-gc-btn', flagOn('group_challenges_enabled'));
+    _gateSel('#k-events .k-ev-tab[data-tab="comp"]', flagOn('competitions_enabled'));
+    _gateEl('k-new-comp-btn', flagOn('competitions_enabled'));
+    _gateSel('#k-events .k-ev-tab[data-tab="belt"]', flagOn('belt_grading_enabled'));
+    // VAIKO portalas — lankomumas + dvikovos
+    _gateEl('v-att-btn', flagOn('attendance_enabled'));
+    _gateEl('v-ish-cell-duels', flagOn('duels_enabled'));
+    _gateEl('v-ish-duels', flagOn('duels_enabled'));
+  } catch(e){ /* tylim */ }
+}
+
+// ════════════════════════════════════════
+// STOVYKLOS (Blokas 4) — club_events + club_event_rsvp (server-klubas-renginiai.sql)
+// ════════════════════════════════════════
+let _clubKidsCache = null;
+async function _getClubKids(force){
+  if (_clubKidsCache && !force) return _clubKidsCache;
+  if (!currentClub?.id) return [];
+  const [trRes, grpRes] = await Promise.all([
+    sb.from('trainers').select('id').eq('invited_by_club_id', currentClub.id),
+    sb.from('groups').select('id').eq('club_id', currentClub.id)
+  ]);
+  const trIds = (trRes.data||[]).map(t=>t.id);
+  const grpIds = (grpRes.data||[]).map(g=>g.id);
+  const kidIds = new Set();
+  if (trIds.length){
+    const [a, b] = await Promise.all([
+      sb.from('kids').select('id').in('assigned_trainer_id', trIds),
+      sb.from('kid_trainers').select('kid_id').in('trainer_id', trIds)
+    ]);
+    (a.data||[]).forEach(k=>kidIds.add(k.id));
+    (b.data||[]).forEach(l=>kidIds.add(l.kid_id));
+  }
+  if (grpIds.length){
+    const { data } = await sb.from('kids').select('id').in('group_id', grpIds);
+    (data||[]).forEach(k=>kidIds.add(k.id));
+  }
+  const ids = [...kidIds];
+  if (!ids.length){ _clubKidsCache = []; return []; }
+  const { data: kids } = await sb.from('kids').select('id, first_name, last_name, group_id').in('id', ids).order('first_name');
+  _clubKidsCache = kids || [];
+  return _clubKidsCache;
+}
+
+async function loadClubCamps(){
+  const el = document.getElementById('k-camps-content');
+  if (!el) return;
+  if (!currentClub?.id){ el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Klubo info trūksta</div>'; return; }
+  const { data: camps, error } = await sb.from('club_events')
+    .select('*').eq('club_id', currentClub.id).order('starts_on', { ascending: false });
+  if (error){ el.innerHTML = `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`; return; }
+  if (!camps || !camps.length){ el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Dar nėra stovyklų.<br><br>Spausk + NAUJA STOVYKLA ⛺</div>'; return; }
+  const ids = camps.map(c=>c.id);
+  const byEv = {};
+  if (ids.length){
+    const { data: rs } = await sb.from('club_event_rsvp').select('event_id, status, attended').in('event_id', ids);
+    (rs||[]).forEach(r=>{ if(!byEv[r.event_id]) byEv[r.event_id]={going:0,attended:0}; if(r.status!=='not_going') byEv[r.event_id].going++; if(r.attended) byEv[r.event_id].attended++; });
+  }
+  const today = new Date().toISOString().split('T')[0];
+  el.innerHTML = camps.map(c=>{
+    const s = byEv[c.id] || {going:0, attended:0};
+    const endRef = c.ends_on || c.starts_on;
+    const isPast = endRef < today;
+    const dateRange = (c.ends_on && c.ends_on !== c.starts_on) ? `${formatDateLT(c.starts_on)} – ${formatDateLT(c.ends_on)}` : formatDateLT(c.starts_on);
+    const when = isPast ? '📦 Pasibaigusi' : (c.starts_on===today ? '🔥 Šiandien!' : (c.starts_on<today ? '🏃 Vyksta' : `⏱️ Liko ${Math.ceil((new Date(c.starts_on)-new Date())/86400000)} d.`));
+    const safe = (c.title||'').replace(/'/g,"\\'");
+    return `<div class="cd" style="margin-bottom:12px;${isPast?'opacity:.85;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:900;margin-bottom:4px;">⛺ ${c.title}</div><div style="font-size:11px;color:var(--mut);">📅 ${dateRange}</div></div>
+        <div class="bg ${isPast?'':'gn'}" style="${isPast?'background:rgba(255,255,255,.1);color:var(--mut);':''}">${when}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:var(--mut);">
+        <div>📍 ${c.location || '–'}</div>
+        ${c.price_info?`<div style="margin-top:4px;">💶 ${c.price_info}</div>`:''}
+        ${c.exp_reward>0?`<div style="margin-top:4px;color:var(--br);">⭐ ${c.exp_reward} EXP už dalyvavimą</div>`:''}
+        ${c.description?`<div style="margin-top:6px;color:var(--text);">${c.description}</div>`:''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:8px;">
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;">${s.going}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">DALYVAUS</div></div>
+        <div style="background:rgba(34,197,94,.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">${s.attended}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">DALYVAVO</div></div>
+      </div>
+      <button onclick="viewCampParticipants('${c.id}','${safe}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">👥 DALYVIAI</button>
+      <div style="display:flex;gap:6px;">
+        <button onclick="openCreateCamp('${c.id}')" style="flex:1;background:rgba(255,255,255,.05);color:var(--text);border:.5px solid var(--bdr);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">✏️ Redaguoti</button>
+        <button onclick="deleteCamp('${c.id}','${safe}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openCreateCamp(editId){
+  let c = { title:'', starts_on:'', ends_on:'', location:'', description:'', price_info:'', exp_reward:0 };
+  if (editId){
+    const { data } = await sb.from('club_events').select('*').eq('id', editId).single();
+    if (data) c = data;
+  }
+  const old = document.getElementById('club-camp-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='club-camp-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">⛺ ${editId?'REDAGUOTI STOVYKLĄ':'NAUJA STOVYKLA'}</div>
+      <button onclick="document.getElementById('club-camp-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px 20px;">
+      <label class="lbl">PAVADINIMAS *</label>
+      <input class="inp" id="camp-title" value="${(c.title||'').replace(/"/g,'&quot;')}" placeholder="pvz. Vasaros stovykla 2026" style="margin-bottom:12px;">
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;"><label class="lbl">DATA NUO *</label><input class="inp" id="camp-start" type="date" value="${c.starts_on||''}" style="margin-bottom:12px;"></div>
+        <div style="flex:1;"><label class="lbl">DATA IKI</label><input class="inp" id="camp-end" type="date" value="${c.ends_on||''}" style="margin-bottom:12px;"></div>
+      </div>
+      <label class="lbl">VIETA</label>
+      <input class="inp" id="camp-loc" value="${(c.location||'').replace(/"/g,'&quot;')}" placeholder="pvz. Palanga" style="margin-bottom:12px;">
+      <label class="lbl">KAINA (informacinė)</label>
+      <input class="inp" id="camp-price" value="${(c.price_info||'').replace(/"/g,'&quot;')}" placeholder="pvz. 150 € / 5 dienos" style="margin-bottom:12px;">
+      <label class="lbl">EXP UŽ DALYVAVIMĄ</label>
+      <input class="inp" id="camp-exp" type="number" min="0" value="${c.exp_reward||0}" style="margin-bottom:12px;">
+      <label class="lbl">APRAŠYMAS</label>
+      <textarea class="inp" id="camp-desc" rows="3" placeholder="Programa, ką pasiimti, kt." style="margin-bottom:16px;resize:vertical;">${c.description||''}</textarea>
+      <button class="btn btng" style="width:100%;margin:0;" onclick="submitNewCamp('${editId||''}')">💾 ${editId?'IŠSAUGOTI':'SUKURTI STOVYKLĄ'}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function submitNewCamp(editId){
+  const title = document.getElementById('camp-title').value.trim();
+  const starts_on = document.getElementById('camp-start').value;
+  if (!title){ showToast('❌ Įvesk pavadinimą','error'); return; }
+  if (!starts_on){ showToast('❌ Įvesk pradžios datą','error'); return; }
+  const payload = {
+    title,
+    starts_on,
+    ends_on: document.getElementById('camp-end').value || null,
+    location: document.getElementById('camp-loc').value.trim() || null,
+    price_info: document.getElementById('camp-price').value.trim() || null,
+    exp_reward: parseInt(document.getElementById('camp-exp').value, 10) || 0,
+    description: document.getElementById('camp-desc').value.trim() || null
+  };
+  let res;
+  if (editId){
+    res = await sb.from('club_events').update(payload).eq('id', editId);
+  } else {
+    payload.club_id = currentClub.id; payload.created_by = currentUser.id;
+    res = await sb.from('club_events').insert(payload);
+  }
+  if (res.error){ showToast('❌ '+res.error.message,'error'); return; }
+  showToast('✅ Išsaugota','success');
+  document.getElementById('club-camp-modal')?.remove();
+  loadClubCamps();
+}
+
+async function deleteCamp(id, title){
+  if (!confirm(`Ištrinti stovyklą "${title}"?\n\nVisi dalyvių įrašai bus ištrinti.`)) return;
+  const { error } = await sb.from('club_events').delete().eq('id', id);
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  showToast('✅ Ištrinta','success');
+  loadClubCamps();
+}
+
+// 👥 Dalyviai + dalyvavimo žymėjimas (EXP per set_camp_attended RPC — idempotentiškai)
+async function viewCampParticipants(eventId, title){
+  const old = document.getElementById('club-camp-part-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='club-camp-part-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">👥 ${title}</div>
+      <button onclick="document.getElementById('club-camp-part-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:12px 20px 0;"><button onclick="addCampParticipant('${eventId}')" style="width:100%;background:rgba(34,197,94,.12);color:var(--grn);border:.5px dashed rgba(34,197,94,.4);padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">➕ Pridėti dalyvį</button></div>
+    <div id="camp-part-list" style="padding:12px 20px 20px;"><div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div></div>
+  </div>`;
+  document.body.appendChild(m);
+  await _renderCampParticipants(eventId);
+}
+
+async function _renderCampParticipants(eventId){
+  const el = document.getElementById('camp-part-list'); if(!el) return;
+  const { data: rsvps } = await sb.from('club_event_rsvp').select('kid_id, status, attended').eq('event_id', eventId);
+  if (!rsvps || !rsvps.length){ el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:20px;">Dar nėra registruotų dalyvių.<br>Spausk „➕ Pridėti dalyvį".</div>'; return; }
+  const kidIds = rsvps.map(r=>r.kid_id);
+  const { data: kids } = await sb.from('kids').select('id, first_name, last_name').in('id', kidIds);
+  const nameMap = {}; (kids||[]).forEach(k=>{ nameMap[k.id] = `${k.first_name||'Vaikas'} ${k.last_name||''}`.trim(); });
+  el.innerHTML = rsvps.map(r=>{
+    const name = nameMap[r.kid_id] || 'Vaikas';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:8px;">
+      <div style="flex:1;min-width:0;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</div>
+      <button onclick="toggleCampAttended('${eventId}','${r.kid_id}',${r.attended?'false':'true'})" style="flex-shrink:0;background:${r.attended?'rgba(34,197,94,.15)':'rgba(255,255,255,.05)'};color:${r.attended?'var(--grn)':'var(--mut)'};border:.5px solid ${r.attended?'rgba(34,197,94,.4)':'var(--bdr)'};padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;">${r.attended?'✓ Dalyvavo':'Pažymėti'}</button>
+    </div>`;
+  }).join('');
+}
+
+async function toggleCampAttended(eventId, kidId, attended){
+  const { error } = await sb.rpc('set_camp_attended', { p_event: eventId, p_kid: kidId, p_attended: attended });
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  showToast(attended?'✅ Pažymėta · EXP skirtas':'Pažymėjimas nuimtas','success');
+  await _renderCampParticipants(eventId);
+  loadClubCamps();
+}
+
+async function addCampParticipant(eventId){
+  const kids = await _getClubKids();
+  const { data: existing } = await sb.from('club_event_rsvp').select('kid_id').eq('event_id', eventId);
+  const have = new Set((existing||[]).map(r=>r.kid_id));
+  const avail = kids.filter(k=>!have.has(k.id));
+  const old = document.getElementById('club-camp-pick-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='club-camp-pick-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100003;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">➕ PRIDĖTI DALYVĮ</div>
+      <button onclick="document.getElementById('club-camp-pick-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:12px 20px;">
+      ${avail.length ? avail.map(k=>`<div onclick="rsvpCampKid('${eventId}','${k.id}')" style="padding:10px 12px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>`).join('') : '<div style="text-align:center;color:var(--mut);padding:20px;">Visi klubo vaikai jau pridėti (arba klube nėra vaikų).</div>'}
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function rsvpCampKid(eventId, kidId){
+  const { error } = await sb.from('club_event_rsvp').upsert({ event_id: eventId, kid_id: kidId, status:'going', marked_by: currentUser.id }, { onConflict:'event_id,kid_id' });
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  showToast('✅ Pridėta','success');
+  document.getElementById('club-camp-pick-modal')?.remove();
+  await _renderCampParticipants(eventId);
+  loadClubCamps();
+}
+
+// ════════════════════════════════════════
+// GRUPIŲ IŠŠŪKIS (Blokas 5) — club_challenges + entries (server-klubas-grupiu-issukis.sql)
+// ════════════════════════════════════════
+function _gcMetricLabel(c){
+  if (c.metric==='attendance') return '📋 Lankomumas (auto)';
+  if (c.metric==='km') return '🏃 Kilometrai';
+  return `💪 ${c.exercise_label||'Pakartojimai'}`;
+}
+
+async function loadClubGroupChallenges(){
+  const el = document.getElementById('k-gc-content');
+  if (!el) return;
+  if (!currentClub?.id){ el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Klubo info trūksta</div>'; return; }
+  const { data: chs, error } = await sb.from('club_challenges').select('*').eq('club_id', currentClub.id).order('created_at', { ascending: false });
+  if (error){ el.innerHTML = `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`; return; }
+  if (!chs || !chs.length){ el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Dar nėra grupių iššūkių.<br><br>Spausk + NAUJAS GRUPIŲ IŠŠŪKIS 🏆</div>'; return; }
+  const today = new Date().toISOString().split('T')[0];
+  el.innerHTML = chs.map(c=>{
+    const safe = (c.title||'').replace(/'/g,"\\'");
+    const dateRange = (c.starts_on||c.ends_on) ? `${c.starts_on?formatDateLT(c.starts_on):'…'} – ${c.ends_on?formatDateLT(c.ends_on):'…'}` : 'Be datų';
+    const timeEnded = c.ends_on && c.ends_on < today;
+    const status = !c.is_active ? '🏁 Užbaigtas' : (timeEnded ? '⏰ Laikas baigėsi' : '🟢 Vyksta');
+    const statusColor = !c.is_active ? 'background:rgba(255,255,255,.1);color:var(--mut);' : (timeEnded ? 'background:rgba(234,179,8,.15);color:#EAB308;' : '');
+    const canEntry = c.is_active && (c.metric==='reps' || c.metric==='km');
+    return `<div class="cd" style="margin-bottom:12px;${!c.is_active?'opacity:.85;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:900;margin-bottom:4px;">🏆 ${c.title}</div><div style="font-size:11px;color:var(--mut);">${_gcMetricLabel(c)} · 📅 ${dateRange}</div></div>
+        <div class="bg" style="flex-shrink:0;${statusColor}">${status}</div>
+      </div>
+      ${c.winner_exp>0?`<div style="font-size:11px;color:var(--br);margin-bottom:8px;">⭐ Laimėtojų grupei: ${c.winner_exp} EXP ${(!c.is_active&&c.exp_awarded)?'· ✅ skirta':''}</div>`:''}
+      <button onclick="viewChallengeStandings('${c.id}','${safe}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">📊 GRUPIŲ REZULTATAI</button>
+      ${canEntry?`<button onclick="viewChallengeEntries('${c.id}','${safe}')" style="width:100%;background:rgba(99,102,241,.1);color:#818CF8;border:.5px solid rgba(99,102,241,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">✏️ SUVESTI REZULTATUS</button>`:''}
+      <div style="display:flex;gap:6px;">
+        ${c.is_active?`<button onclick="finalizeClubChallengeUI('${c.id}','${safe}')" style="flex:1;background:rgba(34,197,94,.12);color:var(--grn);border:.5px solid rgba(34,197,94,.35);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🏁 Užbaigti + EXP</button>`:''}
+        <button onclick="deleteClubChallenge('${c.id}','${safe}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openCreateClubChallenge(){
+  const old = document.getElementById('club-gc-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='club-gc-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">🏆 NAUJAS GRUPIŲ IŠŠŪKIS</div>
+      <button onclick="document.getElementById('club-gc-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px 20px;">
+      <label class="lbl">PAVADINIMAS *</label>
+      <input class="inp" id="gc-title" placeholder="pvz. Birželio atsispaudimų maratonas" style="margin-bottom:12px;">
+      <label class="lbl">METRIKA *</label>
+      <select class="inp" id="gc-metric" onchange="document.getElementById('gc-reps-fields').style.display=this.value==='attendance'?'none':'block';" style="margin-bottom:12px;">
+        <option value="reps">💪 Pakartojimai (pratimas)</option>
+        <option value="km">🏃 Kilometrai</option>
+        <option value="attendance">📋 Lankomumas (auto iš treniruočių)</option>
+      </select>
+      <div id="gc-reps-fields">
+        <label class="lbl">PRATIMAS / MATAVIMAS</label>
+        <input class="inp" id="gc-exlabel" placeholder="pvz. Atsispaudimai" style="margin-bottom:12px;">
+        <label class="lbl">VIENETAS</label>
+        <input class="inp" id="gc-unit" placeholder="pvz. kartų / km" style="margin-bottom:12px;">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;"><label class="lbl">DATA NUO</label><input class="inp" id="gc-start" type="date" style="margin-bottom:12px;"></div>
+        <div style="flex:1;"><label class="lbl">DATA IKI</label><input class="inp" id="gc-end" type="date" style="margin-bottom:12px;"></div>
+      </div>
+      <label class="lbl">EXP LAIMĖTOJŲ GRUPEI</label>
+      <input class="inp" id="gc-exp" type="number" min="0" value="0" style="margin-bottom:8px;">
+      <div style="font-size:11px;color:var(--mut);margin-bottom:16px;line-height:1.5;">Reitingas — pagal VIDURKĮ vienam vaikui (mažos grupės nenukenčia). Lankomumas skaičiuojamas automatiškai iš pažymėtų treniruočių.</div>
+      <button class="btn btng" style="width:100%;margin:0;" onclick="submitNewClubChallenge()">🏆 SUKURTI IŠŠŪKĮ</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function submitNewClubChallenge(){
+  const title = document.getElementById('gc-title').value.trim();
+  const metric = document.getElementById('gc-metric').value;
+  if (!title){ showToast('❌ Įvesk pavadinimą','error'); return; }
+  const payload = {
+    club_id: currentClub.id,
+    title,
+    metric,
+    exercise_label: metric==='attendance' ? null : (document.getElementById('gc-exlabel').value.trim() || null),
+    unit: metric==='attendance' ? null : (document.getElementById('gc-unit').value.trim() || null),
+    starts_on: document.getElementById('gc-start').value || null,
+    ends_on: document.getElementById('gc-end').value || null,
+    winner_exp: parseInt(document.getElementById('gc-exp').value, 10) || 0,
+    created_by: currentUser.id
+  };
+  const { error } = await sb.from('club_challenges').insert(payload);
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  showToast('✅ Iššūkis sukurtas','success');
+  document.getElementById('club-gc-modal')?.remove();
+  loadClubGroupChallenges();
+}
+
+// 📊 Grupių reitingas (live) — vidurkis vienam vaikui
+async function viewChallengeStandings(id, title){
+  const old = document.getElementById('club-gc-stand-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='club-gc-stand-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">📊 ${title}</div>
+      <button onclick="document.getElementById('club-gc-stand-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div id="gc-stand-list" style="padding:16px 20px;"><div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div></div>
+  </div>`;
+  document.body.appendChild(m);
+  const { data: st, error } = await sb.rpc('club_challenge_standings', { challenge_uuid: id });
+  const list = document.getElementById('gc-stand-list'); if(!list) return;
+  if (error){ list.innerHTML = `<div style="text-align:center;color:#EF4444;padding:20px;">Klaida: ${error.message}</div>`; return; }
+  if (!st || !st.length){ list.innerHTML = '<div style="text-align:center;color:var(--mut);padding:20px;">Dar nėra rezultatų. Suvesk rezultatus arba pažymėk lankomumą.</div>'; return; }
+  st.sort((a,b)=>a.rnk-b.rnk);
+  list.innerHTML = `<div style="font-size:11px;color:var(--mut);margin-bottom:12px;text-align:center;">Reitingas pagal vidurkį vienam vaikui</div>` + st.map(r=>{
+    const medal = r.rnk===1?'🥇':(r.rnk===2?'🥈':(r.rnk===3?'🥉':`${r.rnk}.`));
+    const isTop = r.rnk===1;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:${isTop?'rgba(255,215,0,.08)':'rgba(255,255,255,.03)'};border:.5px solid ${isTop?'rgba(255,215,0,.3)':'var(--bdr)'};border-radius:12px;margin-bottom:8px;">
+      <div style="font-size:20px;width:28px;text-align:center;font-weight:900;">${medal}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:800;">${r.g_name||'Grupė'}</div>
+        <div style="font-size:10px;color:var(--mut);">${r.n_kids} vaik. · viso ${(+r.total_val||0)}</div>
+      </div>
+      <div style="text-align:right;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);">${(+r.avg_kid||0)}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">VID./VAIKUI</div></div>
+    </div>`;
+  }).join('');
+}
+
+// ✏️ Suvesti rezultatus (reps/km) — klubas suveda vaikų reikšmes
+async function viewChallengeEntries(id, title){
+  const old = document.getElementById('club-gc-entry-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='club-gc-entry-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">✏️ ${title}</div>
+      <button onclick="document.getElementById('club-gc-entry-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div id="gc-entry-list" style="padding:16px 20px;"><div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div></div>
+    <div style="padding:0 20px 20px;"><button class="btn btng" style="width:100%;margin:0;" onclick="saveChallengeEntries('${id}')">💾 IŠSAUGOTI REZULTATUS</button></div>
+  </div>`;
+  document.body.appendChild(m);
+  const kids = await _getClubKids();
+  const { data: entries } = await sb.from('club_challenge_entries').select('kid_id, value').eq('challenge_id', id);
+  const valMap = {}; (entries||[]).forEach(e=>{ valMap[e.kid_id] = e.value; });
+  const list = document.getElementById('gc-entry-list'); if(!list) return;
+  if (!kids.length){ list.innerHTML = '<div style="text-align:center;color:var(--mut);padding:20px;">Klube nėra vaikų.</div>'; return; }
+  list.innerHTML = kids.map(k=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+    <div style="flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
+    <input class="inp gc-entry-inp" data-kid="${k.id}" data-grp="${k.group_id||''}" type="number" min="0" step="any" value="${valMap[k.id]!=null?valMap[k.id]:''}" placeholder="0" style="width:90px;margin:0;padding:6px;text-align:center;">
+  </div>`).join('');
+}
+
+async function saveChallengeEntries(id){
+  const inputs = Array.from(document.querySelectorAll('.gc-entry-inp'));
+  const rows = [];
+  inputs.forEach(inp=>{
+    const v = inp.value.trim();
+    if (v==='') return;
+    rows.push({ challenge_id: id, kid_id: inp.dataset.kid, group_id: inp.dataset.grp || null, value: parseFloat(v)||0, status:'approved' });
+  });
+  if (!rows.length){ showToast('Nieko nesuvesta','success'); return; }
+  const { error } = await sb.from('club_challenge_entries').upsert(rows, { onConflict:'challenge_id,kid_id' });
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  showToast('✅ Rezultatai išsaugoti','success');
+  document.getElementById('club-gc-entry-modal')?.remove();
+}
+
+async function finalizeClubChallengeUI(id, title){
+  if (!confirm(`Užbaigti iššūkį "${title}"?\n\nLaimėjusios grupės nariai gaus EXP (jei nustatyta). Vaikai ir treneriai pamatys rezultatą.`)) return;
+  const { error } = await sb.rpc('finalize_club_challenge', { challenge_uuid: id });
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  showToast('🏁 Iššūkis užbaigtas','success');
+  loadClubGroupChallenges();
+}
+
+async function deleteClubChallenge(id, title){
+  if (!confirm(`Ištrinti iššūkį "${title}"?\n\nVisi rezultatai bus ištrinti.`)) return;
+  const { error } = await sb.from('club_challenges').delete().eq('id', id);
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  showToast('✅ Ištrinta','success');
+  loadClubGroupChallenges();
+}
+
+// 🏆 Pabaigos pop-up (vaikui IR treneriui) — „būrelis užėmė X vietą iš Y", vieną kartą
+function _showClubChallengeResultPopup(title, rank, totalGroups, groupName, isWinner, exp){
+  const old = document.getElementById('clubch-result-modal'); if(old) old.remove();
+  const medal = rank===1?'🥇':(rank===2?'🥈':(rank===3?'🥉':'🏅'));
+  const m = document.createElement('div'); m.id='clubch-result-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100010;align-items:center;justify-content:center;padding:24px;';
+  m.innerHTML = `<div style="width:100%;max-width:360px;background:linear-gradient(160deg,#1a1208,#0d0d0d);border:1px solid rgba(255,140,0,.3);border-radius:24px;padding:28px 24px;text-align:center;animation:slideUp .4s ease-out;">
+    <div style="font-size:56px;line-height:1;margin-bottom:8px;">${medal}</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:${isWinner?'#FFD700':'#fff'};">${isWinner?'PERGALĖ! 🎉':'IŠŠŪKIS BAIGTAS'}</div>
+    <div style="font-size:13px;color:var(--mut);margin:6px 0 16px;">${title}</div>
+    <div style="background:rgba(255,255,255,.05);border-radius:14px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:12px;color:var(--mut);margin-bottom:4px;">${groupName||'Tavo būrelis'}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--br);">${rank} vieta <span style="font-size:18px;color:var(--mut);">iš ${totalGroups}</span></div>
+      ${(isWinner && exp)?`<div style="font-size:13px;color:var(--grn);font-weight:800;margin-top:8px;">+${exp} EXP visam būreliui!</div>`:''}
+    </div>
+    <button onclick="document.getElementById('clubch-result-modal').remove()" class="btn btng" style="width:100%;margin:0;">PUIKU!</button>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+// Vaiko pusė: tikrina užbaigtus grupių iššūkius, kur jo grupė dalyvavo (vieną kartą per iššūkį)
+async function _checkClubChallengeResultsKid(){
+  try {
+    if (!currentKid?.id) return;
+    let gid = currentKid.group_id;
+    if (gid === undefined){ const { data } = await sb.from('kids').select('group_id').eq('id', currentKid.id).maybeSingle(); gid = data?.group_id; }
+    if (!gid) return;
+    const { data: chs } = await sb.from('club_challenges').select('id, title, winner_exp').eq('is_active', false).order('created_at', { ascending: false }).limit(8);
+    for (const c of (chs||[])){
+      const key = 'spobu_clubch_seen_'+(currentUser?.id||'')+'_'+c.id;
+      if (localStorage.getItem(key)) continue;
+      const { data: st } = await sb.rpc('club_challenge_standings', { challenge_uuid: c.id });
+      localStorage.setItem(key, '1');
+      if (!st || !st.length) continue;
+      const mine = st.find(r=>r.g_id===gid);
+      if (!mine) continue;
+      _showClubChallengeResultPopup(c.title, mine.rnk, st.length, mine.g_name, mine.rnk===1, c.winner_exp);
+      break;
+    }
+  } catch(e){ /* tylim */ }
+}
+
+// Trenerio pusė: tikrina užbaigtus iššūkius, kur dalyvavo jo grupė(s)
+async function _checkClubChallengeResultsTrainer(){
+  try {
+    if (!currentUser?.id) return;
+    const { data: grps } = await sb.from('groups').select('id, name').eq('trainer_id', currentUser.id);
+    if (!grps || !grps.length) return;
+    const gidSet = new Set(grps.map(g=>g.id));
+    const { data: chs } = await sb.from('club_challenges').select('id, title').eq('is_active', false).order('created_at', { ascending: false }).limit(8);
+    for (const c of (chs||[])){
+      const key = 'spobu_clubch_seen_tr_'+(currentUser.id)+'_'+c.id;
+      if (localStorage.getItem(key)) continue;
+      const { data: st } = await sb.rpc('club_challenge_standings', { challenge_uuid: c.id });
+      localStorage.setItem(key, '1');
+      if (!st || !st.length) continue;
+      const mine = st.filter(r=>gidSet.has(r.g_id));
+      if (!mine.length) continue;
+      mine.sort((a,b)=>a.rnk-b.rnk);
+      const best = mine[0];
+      _showClubChallengeResultPopup(c.title, best.rnk, st.length, best.g_name, best.rnk===1, null);
+      break;
+    }
+  } catch(e){ /* tylim */ }
 }
 
 async function deleteCompetition(id, title) {
@@ -18208,7 +19127,81 @@ function switchClubStatTab(tabName) {
     else if (tabName === 'skills') loadClubSkillsStat();
     else if (tabName === 'challenges') loadClubChallengesStat();
     else if (tabName === 'competitions') loadClubCompetitionsStat();
+    else if (tabName === 'revenue') loadClubRevenue();
   }, 150);
+}
+
+// ════════════════════════════════════════
+// APYVARTA (Blokas 6) — k-stat „💶 Apyvarta" (server-klubas-apyvarta.sql)
+// ════════════════════════════════════════
+let clubRevenuePeriod = 'month';
+let _clubRevenueCSV = null;
+function setClubRevenuePeriod(p){ clubRevenuePeriod = p; loadClubRevenue(); }
+
+async function loadClubRevenue(){
+  const el = document.getElementById('club-stat-tab-revenue');
+  if (!el || !currentClub?.id) return;
+  const now = new Date();
+  const ymd = d => d.toISOString().split('T')[0];
+  let from = null, to = null;
+  if (clubRevenuePeriod==='month'){ from = ymd(new Date(now.getFullYear(), now.getMonth(), 1)); to = ymd(now); }
+  else if (clubRevenuePeriod==='q'){ const d=new Date(now); d.setMonth(d.getMonth()-2); from = ymd(new Date(d.getFullYear(), d.getMonth(), 1)); to = ymd(now); }
+  else if (clubRevenuePeriod==='year'){ from = ymd(new Date(now.getFullYear(),0,1)); to = ymd(now); }
+  // revenue_share_pct iš club_settings (Blokas 7 — gali dar nebūti)
+  let pct = 0;
+  try { const { data: s } = await sb.from('club_settings').select('revenue_share_pct').eq('club_id', currentClub.id).maybeSingle(); pct = s?.revenue_share_pct || 0; } catch(e){}
+  const [revRes, grpRes] = await Promise.all([
+    sb.rpc('club_revenue', { club_uuid: currentClub.id, from_date: from, to_date: to }),
+    sb.rpc('club_revenue_by_group', { club_uuid: currentClub.id, from_date: from, to_date: to })
+  ]);
+  if (revRes.error){ el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:20px;">Klaida: ${revRes.error.message}</div>`; return; }
+  const rows = revRes.data || [];
+  const byG = (grpRes.data || []).slice().sort((a,b)=>(+b.gross||0)-(+a.gross||0));
+  const gross = rows.reduce((s,r)=>s+(+r.gross||0),0);
+  const cnt = rows.reduce((s,r)=>s+(+r.cnt||0),0);
+  const share = gross * (pct/100);
+  _clubRevenueCSV = { rows, byG, gross, share, pct };
+  const typeLabel = t => t==='report'?'📄 Diagnostika':(t==='plan'?'🏋️ Veiksmų planas':(t==='summer'?'☀️ Vasaros programa':t));
+  const chip = (id,lbl)=>`<button onclick="setClubRevenuePeriod('${id}')" style="flex:1;${chipStyle(clubRevenuePeriod===id)}">${lbl}</button>`;
+  el.innerHTML = `
+    <div style="display:flex;gap:6px;margin-bottom:12px;">${chip('month','Šis mėn.')}${chip('q','3 mėn.')}${chip('year','Metai')}${chip('all','Visi')}</div>
+    <div style="background:rgba(234,179,8,.08);border:.5px solid rgba(234,179,8,.25);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:10px;color:#EAB308;line-height:1.4;">⚠️ Apytikslė apyvarta — skaičiuota iš sugeneruotų AI ataskaitų (mokėjimų ledgerio nėra).</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:14px;text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--grn);">${gross.toFixed(2)}€</div>
+        <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">BRUTO</div>
+      </div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:14px;text-align:center;">
+        ${pct>0?`<div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--br);">${share.toFixed(2)}€</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">KLUBO DALIS (${pct}%)</div>`:`<div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--mut);margin-top:6px;">—</div><div style="font-size:8px;color:var(--mut);letter-spacing:.5px;margin-top:4px;">NUSTATYK % NUSTATYMUOSE</div>`}
+      </div>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--mut);margin-bottom:14px;">${cnt} ataskaitos per laikotarpį</div>
+    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;margin-bottom:8px;">PAGAL TIPĄ</div>
+    ${rows.length ? rows.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:6px;">
+      <div style="font-size:13px;">${typeLabel(r.rtype)}</div>
+      <div style="text-align:right;"><div style="font-size:13px;font-weight:800;color:var(--grn);">${(+r.gross||0).toFixed(2)}€</div><div style="font-size:9px;color:var(--mut);">${r.cnt} vnt.</div></div>
+    </div>`).join('') : '<div style="text-align:center;color:var(--mut);padding:16px;font-size:12px;">Nėra ataskaitų per šį laikotarpį.</div>'}
+    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;margin:16px 0 8px;">PAGAL GRUPĘ</div>
+    ${byG.length ? byG.map(g=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:6px;">
+      <div style="font-size:13px;">${g.g_name||'Grupė'}</div>
+      <div style="text-align:right;"><div style="font-size:13px;font-weight:800;color:var(--grn);">${(+g.gross||0).toFixed(2)}€</div><div style="font-size:9px;color:var(--mut);">${g.cnt} vnt.</div></div>
+    </div>`).join('') : '<div style="text-align:center;color:var(--mut);padding:16px;font-size:12px;">Nėra duomenų pagal grupę.</div>'}
+    <button onclick="exportClubRevenueCSV()" style="width:100%;margin-top:14px;background:rgba(255,255,255,.05);color:var(--text);border:.5px solid var(--bdr);padding:10px;border-radius:10px;font-size:12px;cursor:pointer;font-weight:700;">⬇️ Eksportuoti CSV</button>
+  `;
+}
+
+function exportClubRevenueCSV(){
+  if (!_clubRevenueCSV){ showToast('Nėra duomenų','error'); return; }
+  const { rows, byG, gross, share, pct } = _clubRevenueCSV;
+  let csv = 'Tipas,Kiekis,Bruto(EUR)\n';
+  rows.forEach(r=>{ csv += `${r.rtype},${r.cnt},${(+r.gross||0).toFixed(2)}\n`; });
+  csv += `\nGrupe,Kiekis,Bruto(EUR)\n`;
+  byG.forEach(g=>{ csv += `${(g.g_name||'').replace(/[,\n]/g,' ')},${g.cnt},${(+g.gross||0).toFixed(2)}\n`; });
+  csv += `\nBRUTO,,${gross.toFixed(2)}\nKLUBO DALIS (${pct}%),,${share.toFixed(2)}\n`;
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='klubo-apyvarta.csv'; a.click();
+  URL.revokeObjectURL(url);
 }
 
 async function getClubFilteredEntries(scoreSource) {
@@ -23903,6 +24896,7 @@ async function loadClubData() {
   document.getElementById('k-kids-count').textContent = kidsRes.count || 0;
 
   await loadClubTrainers();
+  updateClubNotifBadge(true); // 🔔 varpelio badge (Blokas 8)
 }
 
 async function loadClubTrainers() {
@@ -23928,21 +24922,31 @@ async function loadClubTrainers() {
     return;
   }
 
+  // Trenerių aktyvumas (RPC; jei SQL dar nepaleistas — be lempučių, graži degradacija)
+  let actMap = {};
+  try {
+    const { data: act } = await sb.rpc('club_trainer_activity', { club_uuid: currentClub.id });
+    (act || []).forEach(a => { actMap[a.trainer_id] = a; });
+  } catch (e) { /* funkcija dar nesukurta */ }
+
   const html = trainers.map(t => {
     const p = t.profiles;
     const name = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Bevardis';
     const isActive = p.status === 'active';
     const trainerProfileId = t.id; // trainers.id = profile_id (FK)
-    return `<div class="cd" style="margin-bottom:12px;padding:14px;cursor:${isActive ? 'pointer' : 'default'};" 
-                  ${isActive ? `onclick="openTrainerKidsModal('${trainerProfileId}', '${name.replace(/'/g, "\\'")}')"` : ''}>
+    const safeName = name.replace(/'/g, "\\'");
+    const safeCode = (t.trainer_code || '').replace(/'/g, "\\'");
+    const lightHtml = isActive ? _trainerActivityHtml(actMap[trainerProfileId]) : '';
+    return `<div class="cd" style="margin-bottom:12px;padding:14px;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div class="av" style="background:var(--grn);">${name[0]?.toUpperCase() || 'T'}</div>
-        <div style="flex:1;">
+        <div style="flex:1;min-width:0;cursor:${isActive ? 'pointer' : 'default'};" ${isActive ? `onclick="openTrainerKidsModal('${trainerProfileId}', '${safeName}')"` : ''}>
           <div style="font-size:14px;font-weight:900;">${name}</div>
-          <div style="font-size:11px;color:var(--mut);">Kodas: ${t.trainer_code}</div>
+          <div style="font-size:11px;color:var(--mut);">Kodas: ${t.trainer_code || '–'}</div>
+          ${lightHtml ? `<div style="margin-top:3px;">${lightHtml}</div>` : ''}
         </div>
-        <div class="bg ${isActive ? 'gn' : 'or'}">${isActive ? 'Aktyvus' : 'Laukia'}</div>
-        ${isActive ? '<div style="font-size:18px;color:var(--mut);">→</div>' : ''}
+        <div class="bg ${isActive ? 'gn' : 'or'}" style="flex-shrink:0;">${isActive ? 'Aktyvus' : 'Laukia'}</div>
+        <div onclick="event.stopPropagation();openTrainerManage('${trainerProfileId}','${safeName}','${safeCode}')" title="Valdyti trenerį" style="flex-shrink:0;cursor:pointer;width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:14px;">⚙️</div>
       </div>
     </div>`;
   }).join('');
@@ -24023,11 +25027,14 @@ async function openTrainerKidsModal(trainerProfileId, trainerName) {
           </div>
           <div style="font-size:10px;color:${roleColor};letter-spacing:1px;margin-top:2px;">${roleLabel} · ${age} m. · ${(k.total_exp || 0)} EXP · ${k.current_level || 1} lvl</div>
         </div>
-        <div style="font-size:16px;color:var(--mut);">→</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <div onclick="event.stopPropagation();openClubKidManage('${k.id}')" title="Klubo valdymas (grupė/treneris/kyu)" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(99,102,241,.12);border:.5px solid rgba(99,102,241,.3);display:flex;align-items:center;justify-content:center;font-size:13px;">🏛️</div>
+          <div style="font-size:16px;color:var(--mut);">→</div>
+        </div>
       </div>
     `;
   }).join('');
-  
+
   document.getElementById('trk-kids-list').innerHTML = html;
 }
 
@@ -24039,6 +25046,169 @@ function closeTrainerKidsModal() {
 async function openKidFromTrainerModal(kidId) {
   closeTrainerKidsModal();
   await openKidDetailsModal(kidId);
+}
+
+// ════════════════════════════════════════
+// KLUBO TRENERIŲ VALDYMAS (Blokas 2): aktyvumas, redagavimas, šalinimas, vaiko override
+// ════════════════════════════════════════
+
+// 🟢🟡🔴 Aktyvumo lemputė: 🟢 ≤2d · 🟡 3–6d · 🔴 ≥7d (pagal realius veiksmus)
+function _trainerActivityHtml(act){
+  if (!act || !act.last_active){
+    return `<span title="Nėra duomenų apie aktyvumą" style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--mut);"><span style="width:9px;height:9px;border-radius:50%;background:#555;display:inline-block;"></span>—</span>`;
+  }
+  const days = Math.floor((Date.now() - new Date(act.last_active).getTime())/86400000);
+  let color = '#22C55E', label = 'aktyvus';
+  if (days >= 7){ color = '#EF4444'; label = 'neaktyvus'; }
+  else if (days >= 3){ color = '#EAB308'; label = 'mažai aktyvus'; }
+  const ago = days <= 0 ? 'šiandien' : (days === 1 ? 'vakar' : `prieš ${days} d.`);
+  return `<span title="${label} · ${act.actions_30d||0} veiksmų per 30 d." style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--mut);"><span style="width:9px;height:9px;border-radius:50%;background:${color};box-shadow:0 0 6px ${color};display:inline-block;"></span>${ago}</span>`;
+}
+
+// ⚙️ Trenerio valdymo modalas
+function openTrainerManage(tid, name, code){
+  const old = document.getElementById('club-trmanage-modal'); if(old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'club-trmanage-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">🥋 ${name}</div>
+      <button onclick="document.getElementById('club-trmanage-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px 20px;">
+      <label class="lbl">TRENERIO KODAS</label>
+      <input class="inp" id="trm-code" value="${(code||'').replace(/"/g,'&quot;')}" style="margin-bottom:12px;">
+      <button class="btn btng" style="width:100%;margin:0 0 16px;" onclick="saveTrainerEdit('${tid}')">💾 IŠSAUGOTI</button>
+      <div style="height:.5px;background:var(--bdr);margin:4px 0 16px;"></div>
+      <button class="btn" style="width:100%;margin:0 0 8px;background:rgba(234,179,8,.15);color:#EAB308;border:.5px solid rgba(234,179,8,.4);" onclick="suspendTrainer('${tid}','${name.replace(/'/g,"\\'")}')">⏸️ SUSTABDYTI TRENERĮ</button>
+      <button class="btn" style="width:100%;margin:0;background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.35);" onclick="openTrainerRemove('${tid}','${name.replace(/'/g,"\\'")}')">🗑️ PAŠALINTI TRENERĮ</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:10px;line-height:1.5;">⏸️ Sustabdytas treneris nebegali prisijungti, bet vaikai lieka jam priskirti. 🗑️ Šalinant — privalai perskirti visus jo vaikus kitam treneriui.</div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function saveTrainerEdit(tid){
+  const code = document.getElementById('trm-code').value.trim();
+  const { error } = await sb.from('trainers').update({ trainer_code: code }).eq('id', tid);
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  showToast('✅ Išsaugota','success');
+  document.getElementById('club-trmanage-modal')?.remove();
+  loadClubTrainers();
+}
+
+async function suspendTrainer(tid, name){
+  if (!confirm(`Sustabdyti trenerį "${name}"?\n\nJis nebegalės prisijungti. Vaikai liks priskirti — gali juos perskirti vėliau.`)) return;
+  const { error } = await sb.from('profiles').update({ status:'suspended' }).eq('id', tid);
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  showToast('✅ Treneris sustabdytas','success');
+  document.getElementById('club-trmanage-modal')?.remove();
+  loadClubTrainers(); loadClubData();
+}
+
+// 🗑️ Šalinimas su PRIVALOMU vaikų perskirstymu
+async function openTrainerRemove(tid, name){
+  const [ktRes, lgRes, otherRes] = await Promise.all([
+    sb.from('kid_trainers').select('kid_id').eq('trainer_id', tid),
+    sb.from('kids').select('id').eq('assigned_trainer_id', tid),
+    sb.from('trainers').select('id, profiles!inner(first_name,last_name,status)').eq('invited_by_club_id', currentClub.id)
+  ]);
+  const kidIds = [...new Set([...(ktRes.data||[]).map(l=>l.kid_id), ...(lgRes.data||[]).map(k=>k.id)])];
+  const otherTrainers = (otherRes.data||[]).filter(t => t.id !== tid && t.profiles?.status === 'active');
+  let kids = [];
+  if (kidIds.length){
+    const { data } = await sb.from('kids').select('id, first_name, last_name').in('id', kidIds).order('first_name');
+    kids = data || [];
+  }
+  const old = document.getElementById('club-trmanage-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id = 'club-trmanage-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+  if (kids.length && !otherTrainers.length){
+    m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;padding:24px 20px;">
+      <div style="font-size:15px;font-weight:800;margin-bottom:10px;">⚠️ Negalima pašalinti</div>
+      <div style="font-size:13px;color:var(--mut);line-height:1.5;margin-bottom:16px;">Šis treneris turi ${kids.length} vaiką(-ų), bet klube nėra kito AKTYVAUS trenerio, kuriam juos perskirti. Pirma pakviesk arba aktyvuok kitą trenerį.</div>
+      <button class="btn btnd" style="width:100%;margin:0;" onclick="document.getElementById('club-trmanage-modal').remove()">Uždaryti</button></div>`;
+    document.body.appendChild(m); return;
+  }
+  const optsHtml = otherTrainers.map(t => `<option value="${t.id}">${((t.profiles.first_name||'')+' '+(t.profiles.last_name||'')).trim()}</option>`).join('');
+  const kidsHtml = kids.map(k => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+    <div style="flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
+    <select class="inp trm-reassign" data-kid="${k.id}" style="flex:1;margin:0;padding:6px;">${optsHtml}</select>
+  </div>`).join('');
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🗑️ PAŠALINTI: ${name}</div>
+      <button onclick="document.getElementById('club-trmanage-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px 20px;">
+      ${kids.length ? `<div style="font-size:12px;color:var(--mut);margin-bottom:12px;">Perskirk visus ${kids.length} vaiką(-ų) kitam treneriui:</div>${kidsHtml}` : '<div style="font-size:13px;color:var(--mut);margin-bottom:16px;">Šis treneris neturi priskirtų vaikų — galima šalinti iškart.</div>'}
+      <button class="btn" style="width:100%;margin:12px 0 0;background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.4);" onclick="confirmTrainerRemove('${tid}')">PATVIRTINTI PAŠALINIMĄ</button>
+    </div></div>`;
+  document.body.appendChild(m);
+}
+
+async function confirmTrainerRemove(tid){
+  const sels = Array.from(document.querySelectorAll('.trm-reassign'));
+  for (const s of sels){ if (!s.value){ showToast('❌ Priskirk visiems vaikams trenerį','error'); return; } }
+  for (const s of sels){
+    const kid = s.dataset.kid, newT = s.value;
+    await sb.from('kids').update({ assigned_trainer_id: newT }).eq('id', kid);
+    await sb.from('kid_trainers').delete().eq('kid_id', kid).eq('trainer_id', tid);
+    try { await sb.from('kid_trainers').upsert({ kid_id: kid, trainer_id: newT, role: 'primary' }, { onConflict: 'kid_id,trainer_id' }); } catch(e){}
+  }
+  await sb.from('kid_trainers').delete().eq('trainer_id', tid);
+  await sb.from('trainers').delete().eq('id', tid);
+  await sb.from('profiles').update({ status: 'suspended' }).eq('id', tid);
+  showToast('✅ Treneris pašalintas, vaikai perskirti','success');
+  document.getElementById('club-trmanage-modal')?.remove();
+  loadClubTrainers(); loadClubData();
+}
+
+// 🏛️ Vaiko admin-override: grupė / treneris / kyu (EXP — per vaiko kortelę „EXP už elgesį")
+async function openClubKidManage(kidId){
+  const [kidRes, grpRes, trRes] = await Promise.all([
+    sb.from('kids').select('id, first_name, last_name, group_id, kyu, assigned_trainer_id').eq('id', kidId).single(),
+    sb.from('groups').select('id, name').eq('club_id', currentClub.id).order('name'),
+    sb.from('trainers').select('id, profiles!inner(first_name,last_name,status)').eq('invited_by_club_id', currentClub.id)
+  ]);
+  const kid = kidRes.data;
+  if (!kid){ showToast('❌ Vaikas nerastas','error'); return; }
+  const actTrainers = (trRes.data||[]).filter(t => t.profiles?.status === 'active');
+  const grpOpts = `<option value="">— Be grupės —</option>` + (grpRes.data||[]).map(g => `<option value="${g.id}" ${g.id===kid.group_id?'selected':''}>${g.name}</option>`).join('');
+  const trOpts = `<option value="">— Nepriskirta —</option>` + actTrainers.map(t => `<option value="${t.id}" ${t.id===kid.assigned_trainer_id?'selected':''}>${((t.profiles.first_name||'')+' '+(t.profiles.last_name||'')).trim()}</option>`).join('');
+  const old = document.getElementById('club-kidmanage-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id = 'club-kidmanage-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🏛️ ${kid.first_name||'Vaikas'} ${kid.last_name||''}</div>
+      <button onclick="document.getElementById('club-kidmanage-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px 20px;">
+      <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.5;">Klubo administravimas nestandartiniams atvejams. EXP koreguok per vaiko kortelę („EXP už elgesį").</div>
+      <label class="lbl">PRISKIRTAS TRENERIS</label>
+      <select class="inp" id="ckm-trainer" style="margin-bottom:12px;">${trOpts}</select>
+      <label class="lbl">GRUPĖ</label>
+      <select class="inp" id="ckm-group" style="margin-bottom:12px;">${grpOpts}</select>
+      <label class="lbl">KYU (DIRŽAS)</label>
+      <input class="inp" id="ckm-kyu" value="${(kid.kyu||'').replace(/"/g,'&quot;')}" placeholder="pvz. 8 kyu" style="margin-bottom:16px;">
+      <button class="btn btng" style="width:100%;margin:0;" onclick="saveClubKidManage('${kidId}')">💾 IŠSAUGOTI</button>
+    </div></div>`;
+  document.body.appendChild(m);
+}
+
+async function saveClubKidManage(kidId){
+  const trainer = document.getElementById('ckm-trainer').value || null;
+  const group = document.getElementById('ckm-group').value || null;
+  const kyu = document.getElementById('ckm-kyu').value.trim() || null;
+  const { error } = await sb.from('kids').update({ assigned_trainer_id: trainer, group_id: group, kyu }).eq('id', kidId);
+  if (error){ showToast('❌ '+error.message,'error'); return; }
+  if (trainer){
+    try { await sb.from('kid_trainers').upsert({ kid_id: kidId, trainer_id: trainer, role:'primary' }, { onConflict:'kid_id,trainer_id' }); } catch(e){}
+  }
+  showToast('✅ Atnaujinta','success');
+  document.getElementById('club-kidmanage-modal')?.remove();
 }
 
 // ════════════════════════════════════════
@@ -26931,8 +28101,9 @@ function nv(p,el,sid){
   if (sid === 'tr-challenges' && typeof loadTrainerOwnChallenges === 'function') {
     loadTrainerOwnChallenges();
   }
-  if (sid === 'k-comp' && typeof loadClubCompetitions === 'function') {
+  if (sid === 'k-events' && typeof loadClubCompetitions === 'function') {
     loadClubCompetitions();
+    if (typeof loadClubBeltTests === 'function') loadClubBeltTests();
   }
   if (sid === 'v-comp' && typeof loadKidCompetitions === 'function') {
     loadKidCompetitions();
