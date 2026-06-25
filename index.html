@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v233</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v236</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -11899,7 +11899,10 @@ async function openDuelChallenge(friendJson) {
   try {
     friend = typeof friendJson === 'string' ? JSON.parse(friendJson) : friendJson;
   } catch(e) { return; }
-  
+
+  // 🚩 Klubas išjungė dvikovas — neatidarom
+  if (typeof flagOn === 'function' && !flagOn('duels_enabled')) { showToast('⚔️ Dvikovos klube išjungtos', 'error', 4000); return; }
+
   // 🥊 SAVAITĖS LIMITAS - 1 iškvietimas per savaitę (atmestos neskaičiuojamos)
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data: myWeekDuels } = await sb.from('duels')
@@ -12010,7 +12013,10 @@ function selectDuelType(typeKey) {
 // Išsiųsti dvikovos iškvietimą
 async function sendDuelChallenge() {
   if (!currentKid?.id) return;
-  
+
+  // 🚩 Klubas išjungė dvikovas (apsauga, jei apeita forma)
+  if (typeof flagOn === 'function' && !flagOn('duels_enabled')) { showToast('⚔️ Dvikovos klube išjungtos', 'error', 4000); return; }
+
   const data = window._duelChallengeData;
   if (!data) return;
   
@@ -14620,7 +14626,20 @@ function openCreateCompetition(preType) {
   
   // Datos apribojimas pašalintas - galima kurti ir praeities varžybas (istoriniam įrašui)
   document.getElementById('kc-date').removeAttribute('min');
-  
+
+  // 🚩 Ribojimas: kumite/kata pagal competitions_enabled, belt_test pagal belt_grading_enabled
+  try {
+    const _ctf = { kumite:'competitions_enabled', kata:'competitions_enabled', belt_test:'belt_grading_enabled' };
+    Object.keys(_ctf).forEach(t => {
+      const chip = document.querySelector(`#kcmo [data-type="${t}"]`);
+      if (chip) chip.style.display = (typeof flagOn === 'function' && !flagOn(_ctf[t])) ? 'none' : '';
+    });
+    const visible = Array.from(document.querySelectorAll('#kcmo .chs .ch[data-type]')).filter(c => c.style.display !== 'none');
+    if (!visible.length) { showToast('⚠️ Klubas išjungė varžybas ir diржų laikymą', 'error', 4000); return; }
+    const curChip = document.querySelector(`#kcmo [data-type="${document.getElementById('kc-type').value}"]`);
+    if (!curChip || curChip.style.display === 'none') { selectCompType(visible[0], visible[0].getAttribute('data-type')); }
+  } catch(e){}
+
   document.getElementById('kcmo').classList.add('open');
 }
 
@@ -14656,7 +14675,13 @@ async function submitNewCompetition() {
   if (!title) { showToast('❌ Įvesk pavadinimą', 'error'); return; }
   if (!date) { showToast('❌ Pasirink datą', 'error'); return; }
   if (!location) { showToast('❌ Įvesk vietą', 'error'); return; }
-  
+
+  // 🚩 Tipas turi būti klubo leistas (apsauga, jei kažkaip apeita forma)
+  const _compFlag = (type === 'belt_test') ? 'belt_grading_enabled' : 'competitions_enabled';
+  if (typeof flagOn === 'function' && !flagOn(_compFlag)) {
+    showToast(type === 'belt_test' ? '❌ Diржų laikymas klube išjungtas' : '❌ Varžybos klube išjungtos', 'error', 4000); return;
+  }
+
   // Patikrinti klubo ID (admin)
   const clubId = currentClub?.id;
   if (!clubId) {
@@ -15388,6 +15413,7 @@ async function submitNewCamp(editId){
   const starts_on = document.getElementById('camp-start').value;
   if (!title){ showToast('❌ Įvesk pavadinimą','error'); return; }
   if (!starts_on){ showToast('❌ Įvesk pradžios datą','error'); return; }
+  if (typeof flagOn === 'function' && !flagOn('camps_enabled')) { showToast('⛺ Stovyklos klube išjungtos', 'error', 4000); return; }
   const payload = {
     title,
     starts_on,
@@ -15569,6 +15595,7 @@ async function submitNewClubChallenge(){
   const title = document.getElementById('gc-title').value.trim();
   const metric = document.getElementById('gc-metric').value;
   if (!title){ showToast('❌ Įvesk pavadinimą','error'); return; }
+  if (typeof flagOn === 'function' && !flagOn('group_challenges_enabled')) { showToast('🏆 Grupių iššūkis klube išjungtas', 'error', 4000); return; }
   const payload = {
     club_id: currentClub.id,
     title,
@@ -25741,20 +25768,18 @@ async function openCreateChallenge(prefill) {
 
   validateChallengeExp();
 
-  // 🚩 Klubo iššūkių tipų ribojimas — paslepiam išjungtus tipus; jei pasirinktas dingo, parenkam pirmą matomą
+  // 🚩 Klubo iššūkių tipų ribojimas — paslepiam išjungtus tipus; jei VISI išjungti — neleidžiam kurti
   try {
     const _typeFlag = { training:'challenge_training_enabled', weekly:'challenge_weekly_enabled', monthly:'challenge_monthly_enabled', one_time:'challenge_once_enabled', permanent:'challenge_permanent_enabled' };
     Object.keys(_typeFlag).forEach(tp => {
       const chip = document.querySelector(`#ccmo [data-type="${tp}"]`);
       if (chip) chip.style.display = (typeof flagOn === 'function' && !flagOn(_typeFlag[tp])) ? 'none' : '';
     });
-    const curType = document.getElementById('cc-type').value;
-    const curChip = document.querySelector(`#ccmo [data-type="${curType}"]`);
-    if (curChip && curChip.style.display === 'none') {
-      const firstVisible = Array.from(document.querySelectorAll('#ccmo .chs .ch[data-type]')).find(c => c.style.display !== 'none');
-      if (firstVisible && typeof selectChallengeType === 'function') {
-        selectChallengeType(firstVisible, firstVisible.getAttribute('data-type'));
-      }
+    const visible = Array.from(document.querySelectorAll('#ccmo .chs .ch[data-type]')).filter(c => c.style.display !== 'none');
+    if (!visible.length) { showToast('⚠️ Klubas išjungė visus iššūkių tipus — sukurti negalima', 'error', 4000); return; }
+    const curChip = document.querySelector(`#ccmo [data-type="${document.getElementById('cc-type').value}"]`);
+    if ((!curChip || curChip.style.display === 'none') && typeof selectChallengeType === 'function') {
+      selectChallengeType(visible[0], visible[0].getAttribute('data-type'));
     }
   } catch(e){}
 
@@ -25936,7 +25961,13 @@ async function submitNewChallenge() {
   if (!title) { showToast('❌ Įvesk pavadinimą', 'error'); return; }
   if (!targetValue || targetValue <= 0) { showToast('❌ Įvesk tikslą (skaičių)', 'error'); return; }
   if (!exp || exp < 1) { showToast('❌ Įvesk EXP atlygį', 'error'); return; }
-  
+
+  // 🚩 Iššūkio tipas turi būti klubo leistas (apsauga, jei kažkaip apeita forma)
+  const _chTypeFlag = { training:'challenge_training_enabled', weekly:'challenge_weekly_enabled', monthly:'challenge_monthly_enabled', one_time:'challenge_once_enabled', permanent:'challenge_permanent_enabled' };
+  if (_chTypeFlag[type] && typeof flagOn === 'function' && !flagOn(_chTypeFlag[type])) {
+    showToast('❌ Šis iššūkio tipas klube išjungtas', 'error', 4000); return;
+  }
+
   // Gavėjų validacija
   let groupId = null;
   let targetKidId = null;
