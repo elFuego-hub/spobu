@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v237</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v238</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3495,6 +3495,12 @@ select.inp option{background:#222;}
       </div>
       <input type="file" id="k-logo-input" accept="image/*" style="display:none;" onchange="uploadClubLogo(this)">
     </div>
+    <div onclick="toggleClubKidsSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+      <span id="k-vaikai-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">👶 VAIKAI</span>
+      <span id="k-vaikai-count" style="font-size:11px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 9px;">–</span>
+    </div>
+    <div id="k-vaikai-content" style="display:none;padding:0 16px 8px;"></div>
     <div class="st">⚙️ KLUBO NUSTATYMAI</div>
     <div style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
     <div style="padding:0 16px;" id="k-prof-settings">
@@ -15232,6 +15238,113 @@ async function loadClubSettings(){
   const html = _renderClubSettingsHtml(s);
   const prof = document.getElementById('k-prof-settings'); if (prof) prof.innerHTML = html;
   const modalBody = document.getElementById('club-settings-body'); if (modalBody) modalBody.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// 👶 KLUBO VAIKŲ APŽVALGA (profilio sekcija) — agreguota statistika
+// ════════════════════════════════════════
+const CLUB_BELT_TIERS = [
+  { name:'Baltas',       color:'#E8E8E8', kyus:['mu kyu','be kyu',''] },
+  { name:'Oranžinis',    color:'#FF8C00', kyus:['10 kyu','9 kyu'] },
+  { name:'Mėlynas',      color:'#4FC3F7', kyus:['8 kyu','7 kyu'] },
+  { name:'Geltonas',     color:'#FFD700', kyus:['6 kyu','5 kyu'] },
+  { name:'Žalias',       color:'#66BB6A', kyus:['4 kyu','3 kyu'] },
+  { name:'Rudas',        color:'#8B4513', kyus:['2 kyu','1 kyu'] },
+  { name:'Juodas (dan)', color:'#9CA3AF', kyus:['1 dan','2 dan','3 dan','4 dan','5 dan'] }
+];
+
+function toggleClubKidsSection(){
+  const c = document.getElementById('k-vaikai-content');
+  const chev = document.getElementById('k-vaikai-chev');
+  if (!c) return;
+  const isHidden = c.style.display === 'none' || c.style.display === '';
+  c.style.display = isHidden ? 'block' : 'none';
+  if (chev) chev.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+  if (isHidden) loadClubKidsOverview();
+}
+
+async function loadClubKidsOverview(){
+  const el = document.getElementById('k-vaikai-content');
+  if (!el || !currentClub?.id) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Kraunama...</div>';
+  try {
+    const clubKids = await _getClubKids();
+    const ids = (clubKids || []).map(k => k.id);
+    if (!ids.length) { el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Klube dar nėra vaikų.</div>'; return; }
+    const { data: kids } = await sb.from('kids').select('id, gender, birth_date, birth_year, kyu, created_at').in('id', ids);
+    const rows = kids || [];
+    const total = rows.length;
+    let boys = 0, girls = 0;
+    rows.forEach(k => { if (k.gender === 'female') girls++; else boys++; });
+    const ageOf = k => k.birth_date ? calculateAge(k.birth_date) : (k.birth_year ? (new Date().getFullYear() - k.birth_year) : null);
+    const ageB = { a:0, b:0, c:0, d:0 }; let ageSum = 0, ageN = 0;
+    rows.forEach(k => { const a = ageOf(k); if (a == null || isNaN(a)) return; ageN++; ageSum += a; if (a <= 8) ageB.a++; else if (a <= 11) ageB.b++; else if (a <= 13) ageB.c++; else ageB.d++; });
+    const avgAge = ageN ? (ageSum / ageN).toFixed(1) : '–';
+    const cut30 = new Date(Date.now() - 30 * 86400000).toISOString();
+    const new30 = rows.filter(k => k.created_at && k.created_at >= cut30).length;
+    const tierCount = CLUB_BELT_TIERS.map(() => 0);
+    rows.forEach(k => {
+      const kv = (k.kyu || '').toString().trim().toLowerCase();
+      let idx = CLUB_BELT_TIERS.findIndex(t => t.kyus.includes(kv));
+      if (idx < 0) idx = 0;
+      tierCount[idx]++;
+    });
+    let g = 0, s = 0, b = 0;
+    try {
+      const { data: cr } = await sb.from('competition_results').select('placement').in('kid_id', ids).eq('approval_status', 'approved');
+      (cr || []).forEach(r => { if (r.placement === 1) g++; else if (r.placement === 2) s++; else if (r.placement === 3) b++; });
+    } catch(e){}
+    const activeSet = new Set();
+    try {
+      const [a1, a2] = await Promise.all([
+        sb.from('kid_records').select('kid_id').in('kid_id', ids).gte('created_at', cut30),
+        sb.from('challenge_submissions').select('kid_id').in('kid_id', ids).gte('created_at', cut30)
+      ]);
+      (a1.data || []).forEach(r => activeSet.add(r.kid_id));
+      (a2.data || []).forEach(r => activeSet.add(r.kid_id));
+    } catch(e){}
+    const active = activeSet.size;
+    el.innerHTML = _renderClubKidsHtml({ total, active, new30, avgAge, boys, girls, ageB, tierCount, g, s, b });
+    const cb = document.getElementById('k-vaikai-count'); if (cb) cb.textContent = total;
+  } catch(e){
+    console.error('[club-kids]', e);
+    el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:18px;font-size:12px;">Klaida: ${e.message || ''}</div>`;
+  }
+}
+
+function _renderClubKidsHtml(d){
+  const pct = (n, max) => max > 0 ? Math.round(n / max * 100) : 0;
+  const kpi = (lbl, val, color) => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 12px;"><div style="font-size:11px;color:var(--mut);">${lbl}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${color||'white'};line-height:1;">${val}</div></div>`;
+  const ageMax = Math.max(d.ageB.a, d.ageB.b, d.ageB.c, d.ageB.d, 1);
+  const ageRow = (lbl, n) => `<div style="display:flex;align-items:center;gap:8px;"><div style="width:42px;font-size:11px;color:var(--mut);">${lbl}</div><div style="flex:1;height:16px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${pct(n, ageMax)}%;height:100%;background:var(--br);border-radius:5px;"></div></div><div style="width:22px;font-size:11px;color:white;text-align:right;">${n}</div></div>`;
+  const beltMax = Math.max(...d.tierCount, 1);
+  const beltRows = CLUB_BELT_TIERS.map((t, i) => `<div style="display:flex;align-items:center;gap:8px;"><div style="width:64px;font-size:10px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</div><div style="flex:1;height:14px;background:var(--bg);border-radius:4px;overflow:hidden;"><div style="width:${pct(d.tierCount[i], beltMax)}%;height:100%;background:${t.color};"></div></div><div style="width:20px;font-size:10px;color:white;text-align:right;">${d.tierCount[i]}</div></div>`).join('');
+  const gTot = (d.boys + d.girls) || 1;
+  const bPct = Math.round(d.boys / gTot * 100), gPct = 100 - bPct;
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      ${kpi('Iš viso', d.total)}
+      ${kpi('Aktyvūs (30d)', d.active, 'var(--grn)')}
+      ${kpi('Nauji (30d)', '+' + d.new30, 'var(--br)')}
+      ${kpi('Vid. amžius', d.avgAge)}
+    </div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">LYTIS</div>
+    <div style="display:flex;height:26px;border-radius:8px;overflow:hidden;margin-bottom:14px;background:var(--bg);">
+      ${d.boys ? `<div style="width:${bPct}%;background:#3B82F6;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;">👦 ${bPct}%</div>` : ''}
+      ${d.girls ? `<div style="width:${gPct}%;background:#EC4899;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;">👧 ${gPct}%</div>` : ''}
+    </div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">PAGAL AMŽIŲ</div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
+      ${ageRow('6–8', d.ageB.a)}${ageRow('9–11', d.ageB.b)}${ageRow('12–13', d.ageB.c)}${ageRow('14+', d.ageB.d)}
+    </div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">DIRŽAI</div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">${beltRows}</div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">MEDALIAI (varžybos)</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:9px;text-align:center;"><div style="font-size:17px;">🥇</div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FFD700;">${d.g}</div></div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:9px;text-align:center;"><div style="font-size:17px;">🥈</div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#C0C0C0;">${d.s}</div></div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:9px;text-align:center;"><div style="font-size:17px;">🥉</div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#CD7F32;">${d.b}</div></div>
+    </div>`;
 }
 
 // ⓘ Info popup — paaiškina ką reiškia funkciją išjungti
