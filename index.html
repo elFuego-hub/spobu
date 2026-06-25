@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v239</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v240</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3507,6 +3507,12 @@ select.inp option{background:#222;}
       <span id="k-treneriai-count" style="font-size:11px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 9px;">–</span>
     </div>
     <div id="k-treneriai-content" style="display:none;padding:0 16px 8px;"></div>
+    <div onclick="toggleClubChallengesSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+      <span id="k-issukiai-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🎯 IŠŠŪKIAI</span>
+      <span id="k-issukiai-count" style="font-size:11px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 9px;">–</span>
+    </div>
+    <div id="k-issukiai-content" style="display:none;padding:0 16px 8px;"></div>
     <div class="st">⚙️ KLUBO NUSTATYMAI</div>
     <div style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
     <div style="padding:0 16px;" id="k-prof-settings">
@@ -15244,6 +15250,100 @@ async function loadClubSettings(){
   const html = _renderClubSettingsHtml(s);
   const prof = document.getElementById('k-prof-settings'); if (prof) prof.innerHTML = html;
   const modalBody = document.getElementById('club-settings-body'); if (modalBody) modalBody.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// 🎯 KLUBO IŠŠŪKIŲ APŽVALGA (profilio sekcija) — visų trenerių bendra veikla
+// ════════════════════════════════════════
+function toggleClubChallengesSection(){
+  const c = document.getElementById('k-issukiai-content');
+  const chev = document.getElementById('k-issukiai-chev');
+  if (!c) return;
+  const isHidden = c.style.display === 'none' || c.style.display === '';
+  c.style.display = isHidden ? 'block' : 'none';
+  if (chev) chev.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+  if (isHidden) loadClubChallengesOverview();
+}
+
+async function loadClubChallengesOverview(){
+  const el = document.getElementById('k-issukiai-content');
+  if (!el || !currentClub?.id) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Kraunama...</div>';
+  try {
+    const cut30 = new Date(Date.now() - 30 * 86400000).toISOString();
+    const now = new Date().toISOString();
+    const { data: trainers } = await sb.from('trainers').select('id, profiles!inner(first_name,last_name)').eq('invited_by_club_id', currentClub.id);
+    const trName = {}; (trainers || []).forEach(t => { trName[t.id] = `${t.profiles.first_name||''} ${t.profiles.last_name||''}`.trim() || 'Treneris'; });
+    const clubTrainerIds = (trainers || []).map(t => t.id);
+    const { data: chs } = await sb.from('challenges').select('id, type, trainer_id, is_active, expires_at, created_at, parent_challenge_id').eq('club_id', currentClub.id);
+    const all = chs || [];
+    const parents = all.filter(c => !c.parent_challenge_id);
+    const isActive = c => c.is_active !== false && (!c.expires_at || c.expires_at >= now);
+    const activeParents = parents.filter(isActive);
+    const activeCount = activeParents.length;
+    const created30 = parents.filter(c => c.created_at && c.created_at >= cut30).length;
+    const typeOrder = [['training','🏋️ Treniruot.'],['weekly','⚡ Savaitiniai'],['monthly','🎯 Mėnesiniai'],['one_time','✨ Vienkart.'],['permanent','♾️ Nuolat.']];
+    const typeCount = {}; activeParents.forEach(c => { typeCount[c.type] = (typeCount[c.type]||0)+1; });
+    const byType = typeOrder.map(([k,lbl]) => ({ lbl, n: typeCount[k]||0 })).filter(x => x.n > 0);
+    const trCreated = {}; parents.forEach(c => { if (c.created_at >= cut30 && c.trainer_id) trCreated[c.trainer_id] = (trCreated[c.trainer_id]||0)+1; });
+    const topTrainers = Object.entries(trCreated).map(([id,n]) => ({ name: trName[id]||'Treneris', n })).sort((a,b)=>b.n-a.n).slice(0,5);
+    let approved30 = 0, rejected30 = 0, pendingAll = 0, exp30 = 0;
+    const pendingByTrainer = {};
+    if (clubTrainerIds.length){
+      const { data: subs } = await sb.from('challenge_submissions').select('status, exp_gain, trainer_id, created_at, reviewed_at').in('trainer_id', clubTrainerIds);
+      (subs || []).forEach(s => {
+        const ts = s.reviewed_at || s.created_at;
+        if (s.status === 'approved') { if (ts && ts >= cut30) { approved30++; exp30 += (s.exp_gain||0); } }
+        else if (s.status === 'rejected') { if (ts && ts >= cut30) rejected30++; }
+        else if (s.status === 'pending') { pendingAll++; if (s.trainer_id) pendingByTrainer[s.trainer_id] = (pendingByTrainer[s.trainer_id]||0)+1; }
+      });
+    }
+    window._clubPendingByTrainer = Object.entries(pendingByTrainer).map(([id,n]) => ({ name: trName[id]||'Treneris', n })).sort((a,b)=>b.n-a.n);
+    el.innerHTML = _renderClubChallengesHtml({ activeCount, pendingAll, created30, approved30, rejected30, exp30, byType, topTrainers });
+    const cb = document.getElementById('k-issukiai-count'); if (cb) cb.textContent = activeCount;
+  } catch(e){ console.error('[club-ch-ov]', e); el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:18px;font-size:12px;">Klaida: ${e.message||''}</div>`; }
+}
+
+function _renderClubChallengesHtml(d){
+  const kpi = (lbl, val, color, onclick) => `<div ${onclick?`onclick="${onclick}" style="cursor:pointer;`:'style="'}background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 12px;"><div style="font-size:11px;color:var(--mut);">${lbl}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${color||'white'};line-height:1;">${val}</div></div>`;
+  const tMax = Math.max(...d.byType.map(x=>x.n), 1);
+  const typeRows = d.byType.length ? d.byType.map(x => `<div style="display:flex;align-items:center;gap:8px;"><div style="width:74px;font-size:11px;color:var(--mut);">${x.lbl}</div><div style="flex:1;height:16px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${Math.round(x.n/tMax*100)}%;height:100%;background:#7F77DD;border-radius:5px;"></div></div><div style="width:18px;font-size:11px;color:white;text-align:right;">${x.n}</div></div>`).join('') : '<div style="font-size:11px;color:var(--mut);padding:4px 2px;">Nėra aktyvių iššūkių</div>';
+  const wMax = Math.max(...d.topTrainers.map(t=>t.n), 1);
+  const wRows = d.topTrainers.length ? d.topTrainers.map(t => `<div style="display:flex;align-items:center;gap:8px;"><div style="width:70px;font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</div><div style="flex:1;height:16px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${Math.round(t.n/wMax*100)}%;height:100%;background:#1D9E75;border-radius:5px;"></div></div><div style="width:18px;font-size:11px;color:white;text-align:right;">${t.n}</div></div>`).join('') : '<div style="font-size:11px;color:var(--mut);padding:4px 2px;">Per 30 d. naujų nėra</div>';
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      ${kpi('Aktyvūs dabar', d.activeCount, 'var(--grn)')}
+      ${kpi('Laukia patvirtinimo', d.pendingAll, d.pendingAll ? '#FF8C00' : 'white', d.pendingAll ? 'openClubPendingByTrainer()' : '')}
+      ${kpi('Sukurta (30d)', d.created30)}
+      ${kpi('Įvykdyta (30d)', d.approved30)}
+    </div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">PAGAL TIPĄ (aktyvūs)</div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">${typeRows}</div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">PATEIKIMAI</div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <div style="flex:1;background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#22C55E;line-height:1;">${d.approved30}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">✅ Patvirtinta 30d</div></div>
+      <div style="flex:1;background:rgba(255,140,0,.12);border:.5px solid rgba(255,140,0,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF8C00;line-height:1;">${d.pendingAll}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">⏳ Laukia</div></div>
+      <div style="flex:1;background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EF4444;line-height:1;">${d.rejected30}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">❌ Atmesta 30d</div></div>
+    </div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">AKTYVIAUSI TRENERIAI (sukurta 30d)</div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">${wRows}</div>
+    <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:11px;color:var(--mut);">⚡ EXP išdalinta (30d)</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF8C00;">${(d.exp30||0).toLocaleString()}</div>
+    </div>`;
+}
+
+function openClubPendingByTrainer(){
+  const list = window._clubPendingByTrainer || [];
+  const old = document.getElementById('club-pending-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'club-pending-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+  const rows = list.length ? list.map(t => `<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:13px;color:#fff;">${t.name}</div><div style="font-size:12px;color:#FF8C00;font-weight:700;">${t.n} laukia</div></div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--grn);font-size:13px;">✓ Nėra laukiančių pateikimų</div>';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">⏳ LAUKIA PATVIRTINIMO</div><button onclick="document.getElementById('club-pending-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div>${rows}</div>
+    <div style="padding:10px 16px 16px;font-size:10px;color:var(--mut);text-align:center;line-height:1.5;">Pateikimus tvirtina pats treneris. Klubas mato, kam priminti.</div></div>`;
+  document.body.appendChild(m);
 }
 
 // ════════════════════════════════════════
