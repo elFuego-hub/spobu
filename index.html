@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v238</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v239</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3501,6 +3501,12 @@ select.inp option{background:#222;}
       <span id="k-vaikai-count" style="font-size:11px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 9px;">–</span>
     </div>
     <div id="k-vaikai-content" style="display:none;padding:0 16px 8px;"></div>
+    <div onclick="toggleClubTrainersSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+      <span id="k-treneriai-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">👨‍🏫 TRENERIAI</span>
+      <span id="k-treneriai-count" style="font-size:11px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 9px;">–</span>
+    </div>
+    <div id="k-treneriai-content" style="display:none;padding:0 16px 8px;"></div>
     <div class="st">⚙️ KLUBO NUSTATYMAI</div>
     <div style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
     <div style="padding:0 16px;" id="k-prof-settings">
@@ -15238,6 +15244,123 @@ async function loadClubSettings(){
   const html = _renderClubSettingsHtml(s);
   const prof = document.getElementById('k-prof-settings'); if (prof) prof.innerHTML = html;
   const modalBody = document.getElementById('club-settings-body'); if (modalBody) modalBody.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// 👨‍🏫 KLUBO TRENERIŲ APŽVALGA (profilio sekcija) — sveikata + apkrova
+// ════════════════════════════════════════
+function toggleClubTrainersSection(){
+  const c = document.getElementById('k-treneriai-content');
+  const chev = document.getElementById('k-treneriai-chev');
+  if (!c) return;
+  const isHidden = c.style.display === 'none' || c.style.display === '';
+  c.style.display = isHidden ? 'block' : 'none';
+  if (chev) chev.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+  if (isHidden) loadClubTrainersOverview();
+}
+
+async function loadClubTrainersOverview(){
+  const el = document.getElementById('k-treneriai-content');
+  if (!el || !currentClub?.id) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Kraunama...</div>';
+  try {
+    const { data: trainers } = await sb.from('trainers').select('id, trainer_code, profiles!inner(first_name,last_name,status)').eq('invited_by_club_id', currentClub.id);
+    const trs = trainers || [];
+    let actMap = {};
+    try { const { data: act } = await sb.rpc('club_trainer_activity', { club_uuid: currentClub.id }); (act||[]).forEach(a => { actMap[a.trainer_id] = a; }); } catch(e){}
+    const clubKids = await _getClubKids();
+    const kidGroup = {}; (clubKids||[]).forEach(k => { if (k.group_id) kidGroup[k.id] = k.group_id; });
+    const ids = (clubKids || []).map(k => k.id);
+    const { data: groups } = await sb.from('groups').select('id, trainer_id').eq('club_id', currentClub.id);
+    const groupTrainer = {}; (groups||[]).forEach(g => { if (g.trainer_id) groupTrainer[g.id] = g.trainer_id; });
+    const grpTotal = (groups||[]).length;
+    const grpNoTrainer = (groups||[]).filter(g => !g.trainer_id).length;
+    const kidDirect = {};
+    if (ids.length){
+      const [kkRes, ktRes] = await Promise.all([
+        sb.from('kids').select('id, assigned_trainer_id').in('id', ids),
+        sb.from('kid_trainers').select('kid_id, trainer_id').in('kid_id', ids)
+      ]);
+      (kkRes.data||[]).forEach(k => { if (k.assigned_trainer_id) kidDirect[k.id] = k.assigned_trainer_id; });
+      (ktRes.data||[]).forEach(l => { if (!kidDirect[l.kid_id]) kidDirect[l.kid_id] = l.trainer_id; });
+    }
+    const kidsPerTrainer = {}; let orphans = 0;
+    ids.forEach(kid => {
+      let t = kidDirect[kid];
+      if (!t) { const grp = kidGroup[kid]; if (grp && groupTrainer[grp]) t = groupTrainer[grp]; }
+      if (t) kidsPerTrainer[t] = (kidsPerTrainer[t]||0)+1; else orphans++;
+    });
+    const totalTr = trs.length;
+    const pending = trs.filter(t => t.profiles?.status !== 'active').length;
+    const activeTr = trs.filter(t => t.profiles?.status === 'active');
+    let green=0, yellow=0, red=0; const needsAttention = [];
+    activeTr.forEach(t => {
+      const a = actMap[t.id];
+      const days = (a && a.last_active) ? Math.floor((Date.now() - new Date(a.last_active).getTime())/86400000) : 999;
+      if (days >= 7) red++; else if (days >= 3) yellow++; else green++;
+      if (days >= 3) { const nm = `${t.profiles.first_name||''} ${t.profiles.last_name||''}`.trim()||'Treneris'; needsAttention.push({ id: t.id, name: nm, code: t.trainer_code||'', days, color: days>=7?'#EF4444':'#EAB308' }); }
+    });
+    needsAttention.sort((x,y) => y.days - x.days);
+    const assignedKids = ids.length - orphans;
+    const avgPerTrainer = activeTr.length ? Math.round(assignedKids / activeTr.length) : 0;
+    const workload = activeTr.map(t => ({ id: t.id, name: `${t.profiles.first_name||''} ${t.profiles.last_name||''}`.trim()||'Treneris', n: kidsPerTrainer[t.id]||0 })).sort((a,b)=>b.n-a.n).slice(0,5);
+    el.innerHTML = _renderClubTrainersHtml({ totalTr, pending, green, yellow, red, avgPerTrainer, needsAttention, workload, orphans, grpTotal, grpNoTrainer });
+    const cb = document.getElementById('k-treneriai-count'); if (cb) cb.textContent = totalTr;
+  } catch(e){ console.error('[club-trainers-ov]', e); el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:18px;font-size:12px;">Klaida: ${e.message||''}</div>`; }
+}
+
+function _renderClubTrainersHtml(d){
+  const kpi = (lbl, val, color) => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 12px;"><div style="font-size:11px;color:var(--mut);">${lbl}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${color||'white'};line-height:1;">${val}</div></div>`;
+  const needAtt = d.red + d.yellow;
+  const wlMax = Math.max(...d.workload.map(w=>w.n), 1);
+  const wlRows = d.workload.length ? d.workload.map(w => `<div style="display:flex;align-items:center;gap:8px;"><div style="width:70px;font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${w.name}</div><div style="flex:1;height:16px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${Math.round(w.n/wlMax*100)}%;height:100%;background:#3B82F6;border-radius:5px;"></div></div><div style="width:22px;font-size:11px;color:white;text-align:right;">${w.n}</div></div>`).join('') : '<div style="font-size:11px;color:var(--mut);padding:4px 2px;">Nėra duomenų</div>';
+  const naRows = d.needsAttention.length ? d.needsAttention.map(t => `<div onclick="openTrainerManage('${t.id}','${t.name.replace(/'/g,"\\'")}','${(t.code||'').replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border-top:.5px solid var(--bdr);cursor:pointer;"><span style="width:9px;height:9px;border-radius:50%;background:${t.color};flex-shrink:0;${t.color==='#EF4444'?'box-shadow:0 0 6px #EF4444;':''}"></span><div style="flex:1;min-width:0;font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</div><div style="font-size:10px;color:var(--mut);">prieš ${t.days} d.</div><div style="font-size:14px;color:var(--mut);">›</div></div>`).join('') : '<div style="padding:10px 12px;font-size:11px;color:var(--grn);">✓ Visi treneriai aktyvūs</div>';
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      ${kpi('Iš viso', d.totalTr)}
+      ${kpi('Reikia dėmesio', needAtt, needAtt ? '#EF4444' : 'var(--grn)')}
+      ${kpi('Vid. vaikų/tren.', d.avgPerTrainer)}
+      ${kpi('Laukia kvietimo', d.pending, d.pending ? '#FF8C00' : 'white')}
+    </div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">AKTYVUMAS</div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <div style="flex:1;background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#22C55E;line-height:1;">${d.green}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">🟢 Aktyvūs</div></div>
+      <div style="flex:1;background:rgba(234,179,8,.12);border:.5px solid rgba(234,179,8,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#EAB308;line-height:1;">${d.yellow}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">🟡 Mažai</div></div>
+      <div style="flex:1;background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#EF4444;line-height:1;">${d.red}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">🔴 Neaktyvūs</div></div>
+    </div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">⚠️ REIKIA DĖMESIO</div>
+    <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${naRows}</div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">APKROVA (vaikų treneriui)</div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">${wlRows}</div>
+    <div style="display:flex;gap:8px;">
+      <div onclick="openClubOrphanKids()" style="flex:1;background:${d.orphans?'rgba(239,68,68,.1)':'var(--card)'};border:.5px solid ${d.orphans?'rgba(239,68,68,.3)':'var(--bdr)'};border-radius:12px;padding:10px;text-align:center;cursor:pointer;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${d.orphans?'#EF4444':'white'};line-height:1;">${d.orphans}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">⚠️ Vaikai be trenerio ›</div></div>
+      <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:white;line-height:1;">${d.grpTotal}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">Grupės${d.grpNoTrainer?' · '+d.grpNoTrainer+' be tren.':''}</div></div>
+    </div>
+    <button onclick="g('k','k-trainers')" style="width:100%;margin-top:12px;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:9px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;">Valdyti trenerius →</button>`;
+}
+
+async function openClubOrphanKids(){
+  if (!currentClub?.id) return;
+  const clubKids = await _getClubKids();
+  const ids = (clubKids||[]).map(k=>k.id);
+  if (!ids.length){ showToast('Klube nėra vaikų'); return; }
+  const kidGroup = {}; clubKids.forEach(k => { if (k.group_id) kidGroup[k.id] = k.group_id; });
+  const [kkRes, ktRes, grpRes] = await Promise.all([
+    sb.from('kids').select('id, first_name, last_name, assigned_trainer_id').in('id', ids),
+    sb.from('kid_trainers').select('kid_id').in('kid_id', ids),
+    sb.from('groups').select('id, trainer_id').eq('club_id', currentClub.id)
+  ]);
+  const hasKt = new Set((ktRes.data||[]).map(l=>l.kid_id));
+  const groupTrainer = {}; (grpRes.data||[]).forEach(g => { if (g.trainer_id) groupTrainer[g.id] = g.trainer_id; });
+  const orphans = (kkRes.data||[]).filter(k => !k.assigned_trainer_id && !hasKt.has(k.id) && !(kidGroup[k.id] && groupTrainer[kidGroup[k.id]]));
+  const old = document.getElementById('club-orphan-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='club-orphan-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+  const list = orphans.length ? orphans.map(k=>`<div onclick="document.getElementById('club-orphan-modal').remove();openClubKidManage('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-top:.5px solid var(--bdr);cursor:pointer;"><div style="flex:1;font-size:13px;color:#fff;">${k.first_name||'Vaikas'} ${k.last_name||''}</div><div style="font-size:11px;color:var(--blu);">Priskirti ›</div></div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--grn);font-size:13px;">✓ Visi vaikai turi trenerį</div>';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">⚠️ BE TRENERIO (${orphans.length})</div><button onclick="document.getElementById('club-orphan-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div>${list}</div></div>`;
+  document.body.appendChild(m);
 }
 
 // ════════════════════════════════════════
