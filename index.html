@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v245</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v246</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3527,6 +3527,12 @@ select.inp option{background:#222;}
       <span id="k-varzybos-count" style="font-size:11px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 9px;">–</span>
     </div>
     <div id="k-varzybos-content" style="display:none;padding:0 16px 8px;"></div>
+    <div onclick="toggleClubBusinessSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+      <span id="k-verslas-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">💼 VERSLAS</span>
+      <span id="k-verslas-count" style="font-size:11px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 9px;">–</span>
+    </div>
+    <div id="k-verslas-content" style="display:none;padding:0 16px 8px;"></div>
     <div class="st">⚙️ KLUBO NUSTATYMAI</div>
     <div style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
     <div style="padding:0 16px;" id="k-prof-settings">
@@ -15290,6 +15296,96 @@ async function loadClubSettings(){
   const html = _renderClubSettingsHtml(s);
   const prof = document.getElementById('k-prof-settings'); if (prof) prof.innerHTML = html;
   const modalBody = document.getElementById('club-settings-body'); if (modalBody) modalBody.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// 💼 KLUBO VERSLAS (profilio sekcija) — bonusas klubui + per-trenerį matomumas
+// ════════════════════════════════════════
+function toggleClubBusinessSection(){
+  const c = document.getElementById('k-verslas-content');
+  const chev = document.getElementById('k-verslas-chev');
+  if (!c) return;
+  const isHidden = c.style.display === 'none' || c.style.display === '';
+  c.style.display = isHidden ? 'block' : 'none';
+  if (chev) chev.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+  if (isHidden) loadClubBusinessOverview();
+}
+
+async function loadClubBusinessOverview(){
+  const el = document.getElementById('k-verslas-content');
+  if (!el || !currentClub?.id) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Kraunama...</div>';
+  try {
+    const { data: purch } = await sb.from('purchases').select('kid_id, item_type, amount_eur').eq('club_id', currentClub.id);
+    const rows = purch || [];
+    const apyvarta = rows.reduce((s,r) => s + (parseFloat(r.amount_eur)||0), 0);
+    const subsCount = rows.filter(r => r.item_type === 'subscription').length;
+    const reportsCount = rows.filter(r => ['report','homeplan','summer'].includes(r.item_type)).length;
+    const clubKids = await _getClubKids();
+    const kidsCount = (clubKids||[]).length;
+    const basePct = (currentClub.bonus_pct != null) ? currentClub.bonus_pct : 10;
+    const extraPct = (currentClub.bonus_extra_pct != null) ? currentClub.bonus_extra_pct : 5;
+    const target = (currentClub.basket_target_eur != null) ? currentClub.basket_target_eur : 40;
+    const avgBasket = kidsCount ? apyvarta / kidsCount : 0;
+    const baseBonus = apyvarta * basePct / 100;
+    const reached = kidsCount > 0 && avgBasket >= target;
+    const extraBonus = reached ? apyvarta * extraPct / 100 : 0;
+    const totalBonus = baseBonus + extraBonus;
+    const needEur = reached ? 0 : Math.max(0, (target * kidsCount) - apyvarta);
+    // Per-trenerį (50/50 jei vaikui 2 treneriai)
+    const kidIds = [...new Set(rows.map(r => r.kid_id).filter(Boolean))];
+    const kidTrainers = {};
+    if (kidIds.length){
+      const [ktRes, kkRes] = await Promise.all([
+        sb.from('kid_trainers').select('kid_id, trainer_id').in('kid_id', kidIds),
+        sb.from('kids').select('id, assigned_trainer_id').in('id', kidIds)
+      ]);
+      (ktRes.data||[]).forEach(l => { if (l.trainer_id){ (kidTrainers[l.kid_id] = kidTrainers[l.kid_id] || []).push(l.trainer_id); } });
+      (kkRes.data||[]).forEach(k => { if (!kidTrainers[k.id] && k.assigned_trainer_id) kidTrainers[k.id] = [k.assigned_trainer_id]; });
+    }
+    const { data: trs } = await sb.from('trainers').select('id, profiles!inner(first_name,last_name)').eq('invited_by_club_id', currentClub.id);
+    const trName = {}; (trs||[]).forEach(t => { trName[t.id] = `${t.profiles.first_name||''} ${t.profiles.last_name||''}`.trim() || 'Treneris'; });
+    const perTrainer = {};
+    rows.forEach(r => {
+      const ts = kidTrainers[r.kid_id] || [];
+      if (!ts.length) return;
+      const share = 1 / ts.length;
+      const isSub = r.item_type === 'subscription';
+      const isRep = ['report','homeplan','summer'].includes(r.item_type);
+      ts.forEach(tid => {
+        if (!perTrainer[tid]) perTrainer[tid] = { subs:0, reports:0 };
+        if (isSub) perTrainer[tid].subs += share;
+        if (isRep) perTrainer[tid].reports += share;
+      });
+    });
+    const trainerTable = Object.entries(perTrainer).map(([tid,v]) => ({ name: trName[tid]||'Treneris', subs: v.subs, reports: v.reports })).sort((a,b) => b.subs - a.subs || b.reports - a.reports);
+    el.innerHTML = _renderClubBusinessHtml({ apyvarta, subsCount, reportsCount, avgBasket, baseBonus, extraBonus, totalBonus, reached, needEur, basePct, extraPct, target, trainerTable });
+    const cb = document.getElementById('k-verslas-count'); if (cb) cb.textContent = subsCount;
+  } catch(e){ console.error('[club-biz]', e); el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:18px;font-size:12px;">Klaida: ${e.message||''}</div>`; }
+}
+
+function _renderClubBusinessHtml(d){
+  const eur = n => Math.round(n).toLocaleString();
+  const fmt = n => (n % 1 === 0) ? String(n) : n.toFixed(1);
+  const pctToTarget = d.target > 0 ? Math.min(100, Math.round(d.avgBasket / d.target * 100)) : 0;
+  const bonusCard = d.reached
+    ? `<div style="background:rgba(34,197,94,.1);border:.5px solid rgba(34,197,94,.35);border-radius:14px;padding:14px;margin-bottom:14px;text-align:center;"><div style="font-size:10px;color:var(--mut);letter-spacing:1px;">KLUBO BONUSAS</div><div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--grn);line-height:1;margin:4px 0;">${eur(d.totalBonus)}€</div><div style="font-size:10px;color:var(--mut);">bazinis ${eur(d.baseBonus)}€ + papildomas ${eur(d.extraBonus)}€ ✓ (krepšelis ${eur(d.avgBasket)}€ ≥ ${eur(d.target)}€)</div></div>`
+    : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:14px;"><div style="text-align:center;"><div style="font-size:10px;color:var(--mut);letter-spacing:1px;">KLUBO BONUSAS</div><div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:#fff;line-height:1;margin:4px 0;">${eur(d.baseBonus)}€</div><div style="font-size:10px;color:var(--mut);">bazinis ${d.basePct}% nuo apyvartos</div></div><div style="margin-top:12px;"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut);margin-bottom:4px;"><span>Vid. krepšelis ${eur(d.avgBasket)}€</span><span>Tikslas ${eur(d.target)}€</span></div><div style="height:8px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${pctToTarget}%;height:100%;background:var(--br);border-radius:5px;"></div></div><div style="font-size:10px;color:var(--br);text-align:center;margin-top:6px;">Liko ${eur(d.needEur)}€ apyvartos iki +${d.extraPct}% bonuso</div></div></div>`;
+  const kpi = (icon,val,lbl) => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px 8px;text-align:center;"><div style="font-size:15px;">${icon}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;line-height:1;margin-top:2px;">${val}</div><div style="font-size:9px;color:var(--mut);margin-top:2px;">${lbl}</div></div>`;
+  const trRows = d.trainerTable.length ? d.trainerTable.map(t => `<div style="display:flex;align-items:center;padding:9px 12px;font-size:12px;color:#fff;border-top:.5px solid var(--bdr);"><div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</div><div style="width:46px;text-align:center;">${fmt(t.subs)}</div><div style="width:46px;text-align:center;">${fmt(t.reports)}</div></div>`).join('') : '<div style="padding:12px;text-align:center;color:var(--mut);font-size:11px;">Dar nėra pardavimų</div>';
+  return `
+    ${bonusCard}
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+      ${kpi('💎', d.subsCount, 'Prenumeratos')}
+      ${kpi('📋', d.reportsCount, 'Ataskaitos')}
+      ${kpi('🛒', eur(d.avgBasket)+'€', 'Vid. krepšelis')}
+    </div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">PAGAL TRENERĮ (kiek vaikų užsisakė)</div>
+    <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
+      <div style="display:flex;padding:7px 12px;font-size:9px;color:var(--mut);letter-spacing:.5px;"><div style="flex:1;">Treneris</div><div style="width:46px;text-align:center;">💎</div><div style="width:46px;text-align:center;">📋</div></div>
+      ${trRows}
+    </div>
+    <div style="font-size:9px;color:var(--mut);text-align:center;margin:10px 8px 2px;line-height:1.5;">Bonusas mokamas klubui. Per trenerį — kiek jo vaikų užsisakė (2 treneriai vaikui = po ½).</div>`;
 }
 
 // ════════════════════════════════════════
