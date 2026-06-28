@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v240</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v242</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3513,6 +3513,12 @@ select.inp option{background:#222;}
       <span id="k-issukiai-count" style="font-size:11px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 9px;">–</span>
     </div>
     <div id="k-issukiai-content" style="display:none;padding:0 16px 8px;"></div>
+    <div onclick="toggleClubCompetitionsSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+      <span id="k-varzybos-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🥇 VARŽYBOS</span>
+      <span id="k-varzybos-count" style="font-size:11px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 9px;">–</span>
+    </div>
+    <div id="k-varzybos-content" style="display:none;padding:0 16px 8px;"></div>
     <div class="st">⚙️ KLUBO NUSTATYMAI</div>
     <div style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
     <div style="padding:0 16px;" id="k-prof-settings">
@@ -15250,6 +15256,77 @@ async function loadClubSettings(){
   const html = _renderClubSettingsHtml(s);
   const prof = document.getElementById('k-prof-settings'); if (prof) prof.innerHTML = html;
   const modalBody = document.getElementById('club-settings-body'); if (modalBody) modalBody.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// 🥇 KLUBO VARŽYBŲ APŽVALGA (profilio sekcija)
+// ════════════════════════════════════════
+function toggleClubCompetitionsSection(){
+  const c = document.getElementById('k-varzybos-content');
+  const chev = document.getElementById('k-varzybos-chev');
+  if (!c) return;
+  const isHidden = c.style.display === 'none' || c.style.display === '';
+  c.style.display = isHidden ? 'block' : 'none';
+  if (chev) chev.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+  if (isHidden) loadClubCompetitionsOverview();
+}
+
+async function loadClubCompetitionsOverview(){
+  const el = document.getElementById('k-varzybos-content');
+  if (!el || !currentClub?.id) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Kraunama...</div>';
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const { data: comps } = await sb.from('competitions').select('id, competition_type, event_date, title, location').eq('club_id', currentClub.id);
+    const all = comps || [];
+    const compIds = all.map(c => c.id);
+    const perComp = {}; compIds.forEach(id => perComp[id] = { participants:0, g:0, s:0, b:0, passed:0 });
+    if (compIds.length){
+      const { data: res } = await sb.from('competition_results').select('competition_id, placement, approval_status, belt_passed').in('competition_id', compIds);
+      (res||[]).forEach(r => {
+        const p = perComp[r.competition_id]; if (!p) return;
+        p.participants++;
+        if (r.belt_passed) p.passed++;
+        if (r.approval_status === 'approved' && r.placement >= 1 && r.placement <= 3){ if (r.placement===1) p.g++; else if (r.placement===2) p.s++; else p.b++; }
+      });
+    }
+    const upcoming = all.filter(c => c.event_date && c.event_date >= today).sort((a,b) => a.event_date < b.event_date ? -1 : 1);
+    const past = all.filter(c => c.event_date && c.event_date < today).sort((a,b) => a.event_date > b.event_date ? -1 : 1).slice(0, 6);
+    const totalUpcomingReg = upcoming.reduce((sum,c) => sum + (perComp[c.id]?.participants||0), 0);
+    el.innerHTML = _renderClubCompetitionsHtml({ upcoming, past, perComp, totalUpcomingReg });
+    const cb = document.getElementById('k-varzybos-count'); if (cb) cb.textContent = upcoming.length;
+  } catch(e){ console.error('[club-comp-ov]', e); el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:18px;font-size:12px;">Klaida: ${e.message||''}</div>`; }
+}
+
+function _renderClubCompetitionsHtml(d){
+  const ICON = { kumite:'🥊', kata:'🎭', belt_test:'🥋' };
+  const TLABEL = { kumite:'Kumite', kata:'Kata', belt_test:'Diржų laikymas' };
+  const upRows = d.upcoming.length ? d.upcoming.map(c => {
+    const days = Math.ceil((new Date(c.event_date) - new Date()) / 86400000);
+    const when = days <= 0 ? 'Šiandien' : (days === 1 ? 'Rytoj' : 'po ' + days + ' d.');
+    const reg = d.perComp[c.id]?.participants || 0;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:.5px solid var(--bdr);">
+      <div style="font-size:18px;flex-shrink:0;">${ICON[c.competition_type]||'🥇'}</div>
+      <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.title||'Varžybos'}</div><div style="font-size:10px;color:var(--mut);margin-top:1px;">${TLABEL[c.competition_type]||''} · ${when}</div></div>
+      <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${reg}</div><div style="font-size:9px;color:var(--mut);">dalyvaus</div></div>
+    </div>`;
+  }).join('') : '<div style="padding:14px;text-align:center;color:var(--mut);font-size:12px;">Nėra suplanuotų varžybų</div>';
+  const pastRows = d.past.length ? d.past.map(c => {
+    const p = d.perComp[c.id] || { participants:0, g:0, s:0, b:0, passed:0 };
+    const right = c.competition_type === 'belt_test'
+      ? `<div style="font-size:11px;color:var(--grn);white-space:nowrap;">✓ ${p.passed} išlaikė</div>`
+      : `<div style="font-size:12px;white-space:nowrap;">🥇${p.g} 🥈${p.s} 🥉${p.b}</div>`;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:.5px solid var(--bdr);">
+      <div style="font-size:18px;flex-shrink:0;">${ICON[c.competition_type]||'🥇'}</div>
+      <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.title||'Varžybos'}</div><div style="font-size:10px;color:var(--mut);margin-top:1px;">${TLABEL[c.competition_type]||''} · ${formatDateLT(c.event_date)} · 👤 ${p.participants}</div></div>
+      <div style="text-align:right;flex-shrink:0;">${right}</div>
+    </div>`;
+  }).join('') : '<div style="padding:14px;text-align:center;color:var(--mut);font-size:12px;">Dar nebuvo varžybų</div>';
+  return `
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">🔜 ATEINANČIOS · iš viso dalyvaus ${d.totalUpcomingReg}</div>
+    <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${upRows}</div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">📦 PASKUTINĖS VARŽYBOS</div>
+    <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${pastRows}</div>`;
 }
 
 // ════════════════════════════════════════
