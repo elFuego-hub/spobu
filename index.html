@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v244</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v245</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -658,7 +658,15 @@ select.inp option{background:#222;}
     
     <label class="lbl">KOMISINIS % <span style="color:var(--mut);">(default 10%)</span></label>
     <input class="inp" type="number" id="cclub-commission" placeholder="10" value="10" min="0" max="100" step="0.1">
-    
+
+    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;margin:14px 0 6px;">TRENERIŲ BONUSO MODELIS (klubui)</div>
+    <label class="lbl">BONUSAS % <span style="color:var(--mut);">(nuo apyvartos, default 10%)</span></label>
+    <input class="inp" type="number" id="cclub-bonus" placeholder="10" value="10" min="0" max="100" step="0.1">
+    <label class="lbl">PAPILDOMAS BONUSAS % <span style="color:var(--mut);">(jei pasiekta krepšelio riba, default 5%)</span></label>
+    <input class="inp" type="number" id="cclub-bonus-extra" placeholder="5" value="5" min="0" max="100" step="0.1">
+    <label class="lbl">VID. KREPŠELIO RIBA € <span style="color:var(--mut);">(papildomam bonusui, default 40€)</span></label>
+    <input class="inp" type="number" id="cclub-basket" placeholder="40" value="40" min="0" step="1">
+
     <button class="btn btng" id="cclub-submit" style="margin:8px 0 0;width:100%;" onclick="submitNewClub()">SUKURTI KLUBĄ</button>
     <button class="btn btnd" style="margin:8px 0 0;width:100%;" onclick="closeCreateClub()">Atšaukti</button>
   </div>
@@ -6599,6 +6607,20 @@ function loadKidTierGate(){
   if (!currentKid || !currentKid.id) return;
   gateScreen('v-stat', getKidTierLocal(currentKid.id) === 'free', _PG_KID);
 }
+// 🧾 Pirkimo įrašymas į žurnalą (apskaitai + klubo bonusui) — server-klubas-purchases.sql
+// items: [{ item_type:'subscription'|'report'|'homeplan'|'summer'|'bundle', amount_eur, plan }]
+async function _logKidPurchases(kid, items){
+  try {
+    if (!kid?.id || !items || !items.length) return;
+    let trainerId = kid.assigned_trainer_id || null, clubId = null;
+    if (kid.group_id){ const { data: g } = await sb.from('groups').select('club_id').eq('id', kid.group_id).maybeSingle(); if (g?.club_id) clubId = g.club_id; }
+    if (!trainerId){ const { data: kt } = await sb.from('kid_trainers').select('trainer_id').eq('kid_id', kid.id).limit(1).maybeSingle(); if (kt?.trainer_id) trainerId = kt.trainer_id; }
+    if (!clubId && trainerId){ const { data: t } = await sb.from('trainers').select('invited_by_club_id').eq('id', trainerId).maybeSingle(); if (t?.invited_by_club_id) clubId = t.invited_by_club_id; }
+    const rows = items.map(it => ({ kid_id: kid.id, parent_id: currentUser?.id || null, trainer_id: trainerId, club_id: clubId, item_type: it.item_type, plan: it.plan || null, amount_eur: it.amount_eur }));
+    await sb.from('purchases').insert(rows);
+  } catch(e){ console.warn('logPurchases', e); }
+}
+
 async function setKidTier(tier){
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
@@ -6609,6 +6631,18 @@ async function setKidTier(tier){
     const nowIso = new Date().toISOString();  // countdown'as skaičiuojamas NUO pirkimo (ataskaita +1 mėn, namų +2 mėn)
     try { await sb.from('kid_entitlements').upsert({ kid_id: k.id, report_credits: 3, homeplan_credits: 3, summer_credits: 1, report_last_used: nowIso, homeplan_last_used: nowIso }, { onConflict: 'kid_id' }); }
     catch(e){ console.warn('grant credits', e); showToast('⚠️ Kreditų nepavyko pridėti — paleisk server-kreditai.sql', 'error', 5000); }
+  }
+  // 💾 Prenumeratos pakopa į DB + pirkimų žurnalas (server-klubas-purchases.sql)
+  try { await sb.from('kids').update({ subscription_tier: tier }).eq('id', k.id); } catch(e){}
+  if (tier === 'premium' || tier === 'premium_plus'){
+    const _items = [{ item_type:'subscription', amount_eur:41.94, plan:'annual' }];
+    if (tier === 'premium_plus'){
+      // bundle ataskaitos — skaičiuojamos kaip „pirkta", bet €0 (įskaičiuota į prenumeratos kainą; nedubliuojam apyvartos)
+      for (let i=0;i<3;i++) _items.push({ item_type:'report', amount_eur:0 });
+      for (let i=0;i<3;i++) _items.push({ item_type:'homeplan', amount_eur:0 });
+      _items.push({ item_type:'summer', amount_eur:0 });
+    }
+    await _logKidPurchases(k, _items);
   }
   showToast(tier === 'free' ? 'Pakeista į Nemokamą planą' : (tier === 'premium' ? '✅ Premium aktyvuotas (testas)' : '👑 Premium+! Pridėta 3 ataskaitos + 1 namų planas + vasaros programa.'), 'success', 4500);
   await loadParentShopCredits();
@@ -25322,7 +25356,10 @@ async function openCreateClub() {
   document.getElementById('cclub-phone').value = '';
   document.getElementById('cclub-iban').value = '';
   document.getElementById('cclub-commission').value = '10';
-  
+  document.getElementById('cclub-bonus').value = '10';
+  document.getElementById('cclub-bonus-extra').value = '5';
+  document.getElementById('cclub-basket').value = '40';
+
   document.getElementById('cclubmo').classList.add('open');
 }
 
@@ -25339,6 +25376,9 @@ async function submitNewClub() {
   const phone = document.getElementById('cclub-phone').value.trim();
   const iban = document.getElementById('cclub-iban').value.trim();
   const commission = parseFloat(document.getElementById('cclub-commission').value) || 10;
+  const bonusPct = parseFloat(document.getElementById('cclub-bonus').value) || 0;
+  const bonusExtraPct = parseFloat(document.getElementById('cclub-bonus-extra').value) || 0;
+  const basketTarget = parseFloat(document.getElementById('cclub-basket').value) || 0;
 
   if (!name) { showToast('❌ Įvesk klubo pavadinimą', 'error'); return; }
   if (!city) { showToast('❌ Įvesk miestą', 'error'); return; }
@@ -25367,6 +25407,9 @@ async function submitNewClub() {
       contact_phone: phone || null,
       iban: iban || null,
       commission_pct: commission,
+      bonus_pct: bonusPct,
+      bonus_extra_pct: bonusExtraPct,
+      basket_target_eur: basketTarget,
       invite_code: inviteCode,
       is_active: true,
       created_by_admin_id: currentUser.id
