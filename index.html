@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v251</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v252</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15407,22 +15407,30 @@ async function loadClubAttendance(){
     const { data: att } = await sb.from('attendance').select('group_id, kid_id, present, session_date').in('group_id', gIds).gte('session_date', cut);
     const rows = att||[];
     if (!rows.length){ el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Per 60 d. lankomumas nežymėtas.</div>'; return; }
-    let pres=0; const byG={}, byKid={};
+    let pres=0; const byG={}, byKidRows={};
     rows.forEach(r => {
       if (r.present) pres++;
       (byG[r.group_id] = byG[r.group_id] || {p:0,t:0}).t++; if(r.present) byG[r.group_id].p++;
-      (byKid[r.kid_id] = byKid[r.kid_id] || {p:0,t:0}).t++; if(r.present) byKid[r.kid_id].p++;
+      (byKidRows[r.kid_id] = byKidRows[r.kid_id] || []).push(r);
     });
     const overall = Math.round(pres/rows.length*100);
     const groupRows = Object.entries(byG).map(([gid,v]) => ({ name: gName[gid]||'Grupė', pct: Math.round(v.p/v.t*100) })).sort((a,b)=>b.pct-a.pct);
     const clubKids = await _getClubKids(); const kName={}; (clubKids||[]).forEach(k=>{ kName[k.id]=`${k.first_name||'Vaikas'} ${k.last_name||''}`.trim(); });
-    const lowest = Object.entries(byKid).map(([kid,v])=>({ name:kName[kid]||'Vaikas', pct:Math.round(v.p/v.t*100), miss:v.t-v.p, t:v.t })).filter(x=>x.t>=3).sort((a,b)=>a.pct-b.pct);
-    const concern = lowest.filter(x=>x.pct<90).slice(0,10);
+    // ⭐ SVARBIAUSIA: iš eilės praleistos treniruotės (3–4 → 🟡, 5+ → 🔴)
+    const streaks = Object.entries(byKidRows).map(([kid, rs]) => {
+      rs.sort((a,b) => a.session_date < b.session_date ? 1 : (a.session_date > b.session_date ? -1 : 0)); // naujausia pirma
+      let streak = 0, lastPresent = null;
+      for (const r of rs){ if (!r.present) streak++; else { lastPresent = r.session_date; break; } }
+      return { name: kName[kid]||'Vaikas', streak, lastPresent };
+    }).filter(x => x.streak >= 3).sort((a,b) => b.streak - a.streak);
+    const redN = streaks.filter(x=>x.streak>=5).length;
+    const yelN = streaks.length - redN;
+    const alertRows = streaks.length
+      ? streaks.map(x => { const red = x.streak>=5, col = red?'#EF4444':'#EAB308';
+          return `<div style="display:flex;align-items:center;gap:9px;padding:9px 12px;border-top:.5px solid var(--bdr);"><span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;${red?'box-shadow:0 0 6px #EF4444;':''}"></span><div style="flex:1;min-width:0;font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.name}</div><div style="flex-shrink:0;text-align:right;"><div style="font-size:12px;font-weight:700;color:${col};">${x.streak} iš eilės</div><div style="font-size:9px;color:var(--mut);">${x.lastPresent?'paskutinį '+formatDateLT(x.lastPresent):'nė karto'}</div></div></div>`; }).join('')
+      : '<div style="text-align:center;color:var(--grn);padding:14px;font-size:12px;">🎉 Visi lanko reguliariai</div>';
     const grpBars = groupRows.map(g=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;"><div style="flex:1;min-width:0;font-size:11px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div><div style="width:80px;height:8px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${g.pct}%;height:100%;background:${g.pct>=70?'#22C55E':g.pct>=50?'#EAB308':'#EF4444'};border-radius:5px;"></div></div><div style="width:32px;text-align:right;font-size:11px;color:#fff;">${g.pct}%</div></div>`).join('');
-    const riskyHtml = concern.length
-      ? `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:12px 2px 6px;">⚠️ MAŽIAUSIAI LANKO — verta susisiekti</div>` + concern.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 2px;font-size:12px;color:#fff;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name}</span><span style="flex-shrink:0;color:${r.pct<50?'#EF4444':r.pct<75?'#EAB308':'var(--mut)'};">${r.pct}% · praleido ${r.miss}</span></div>`).join('')
-      : '<div style="text-align:center;color:var(--grn);padding:10px;font-size:12px;">🎉 Visi lanko gerai (≥90%)</div>';
-    el.innerHTML = `<div style="text-align:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:12px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:${overall>=70?'var(--grn)':overall>=50?'#EAB308':'#EF4444'};line-height:1;">${overall}%</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">vidutinis lankomumas (60 d.)</div></div><div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:0 2px 6px;">PAGAL GRUPĘ</div>${grpBars}${riskyHtml}`;
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">🚨 NELANKANTYS — VERTA SUSISIEKTI</span>${streaks.length?`<span style="font-size:11px;font-weight:700;">🔴 ${redN} 🟡 ${yelN}</span>`:''}</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${alertRows}</div><div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:12px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${overall>=70?'var(--grn)':overall>=50?'#EAB308':'#EF4444'};line-height:1;">${overall}%</div><div style="font-size:10px;color:var(--mut);">vidutinis lankomumas (60 d.)</div></div><div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:0 2px 6px;">PAGAL GRUPĘ</div>${grpBars}`;
   } catch(e){ console.error('[club-att]',e); el.innerHTML = _secErr(e.message); }
 }
 
