@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v247</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v248</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3558,11 +3558,11 @@ select.inp option{background:#222;}
     </div>
     <div id="k-augimas-content" style="display:none;padding:0 16px 8px;"></div>
 
-    <div onclick="_toggleSec('k-tevai-content','k-tevai-chev',loadClubParents)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-tevai-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">👪 TĖVŲ ĮSITRAUKIMAS</span>
+    <div onclick="_toggleSec('k-premium-content','k-premium-chev',loadClubPremium)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+      <span id="k-premium-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">💎 PREMIUM</span>
     </div>
-    <div id="k-tevai-content" style="display:none;padding:0 16px 8px;"></div>
+    <div id="k-premium-content" style="display:none;padding:0 16px 8px;"></div>
 
     <div class="st">⚙️ KLUBO NUSTATYMAI</div>
     <div style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
@@ -15344,13 +15344,29 @@ const _SEC_LOAD = '<div style="text-align:center;color:var(--mut);padding:18px;f
 const _SEC_EMPTY = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Nėra duomenų.</div>';
 const _secErr = m => `<div style="text-align:center;color:#EF4444;padding:18px;font-size:12px;">Klaida: ${m||''}</div>`;
 
-// 🎯 Skill žemėlapis (karjera — kategorijos)
-async function loadClubSkill(){
+// 🎯 Skill žemėlapis (karjera — kategorijos; filtras pagal lytį/amžių)
+let _skillFilter = 'all';
+async function loadClubSkill(filter){
+  if (filter) _skillFilter = filter;
   const el = document.getElementById('k-skill-content'); if(!el||!currentClub?.id) return;
   el.innerHTML = _SEC_LOAD;
   try {
-    const clubKids = await _getClubKids(); const ids = (clubKids||[]).map(k=>k.id);
-    if (!ids.length){ el.innerHTML = _SEC_EMPTY; return; }
+    const clubKids = await _getClubKids(); const allIds = (clubKids||[]).map(k=>k.id);
+    if (!allIds.length){ el.innerHTML = _SEC_EMPTY; return; }
+    const { data: kmeta } = await sb.from('kids').select('id, gender, birth_date, birth_year').in('id', allIds);
+    const ageOf = k => k.birth_date ? calculateAge(k.birth_date) : (k.birth_year ? (new Date().getFullYear()-k.birth_year) : null);
+    const f = _skillFilter;
+    let filtered = (kmeta||[]);
+    if (f==='male') filtered = filtered.filter(k=>k.gender!=='female');
+    else if (f==='female') filtered = filtered.filter(k=>k.gender==='female');
+    else if (f==='a') filtered = filtered.filter(k=>{const a=ageOf(k);return a!=null&&a<=8;});
+    else if (f==='b') filtered = filtered.filter(k=>{const a=ageOf(k);return a!=null&&a>=9&&a<=11;});
+    else if (f==='c') filtered = filtered.filter(k=>{const a=ageOf(k);return a!=null&&a>=12&&a<=13;});
+    else if (f==='d') filtered = filtered.filter(k=>{const a=ageOf(k);return a!=null&&a>=14;});
+    const ids = filtered.map(k=>k.id);
+    const chip = (v,l)=>`<button onclick="loadClubSkill('${v}')" style="flex-shrink:0;background:${_skillFilter===v?'rgba(255,77,0,.15)':'transparent'};color:${_skillFilter===v?'var(--br)':'var(--mut)'};border:.5px solid ${_skillFilter===v?'rgba(255,77,0,.4)':'var(--bdr)'};padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;">${l}</button>`;
+    const chips = `<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px;">${chip('all','Visi')}${chip('male','👦')}${chip('female','👧')}${chip('a','6–8')}${chip('b','9–11')}${chip('c','12–13')}${chip('d','14+')}</div>`;
+    if (!ids.length){ el.innerHTML = chips + _SEC_EMPTY; return; }
     const [catsRes, recsRes] = await Promise.all([
       sb.from('career_categories').select('id, name, icon, sort_order').order('sort_order'),
       sb.from('kid_records').select('category_id, category_exp').in('kid_id', ids)
@@ -15362,7 +15378,7 @@ async function loadClubSkill(){
     const ranked = [...rows].filter(r=>r.avg>0).sort((a,b)=>b.avg-a.avg);
     const top = ranked[0], low = ranked.length>1 ? ranked[ranked.length-1] : null;
     const bars = rows.map(r => `<div style="display:flex;align-items:center;gap:8px;padding:6px 2px;"><div style="font-size:15px;width:22px;text-align:center;flex-shrink:0;">${r.icon}</div><div style="flex:1;min-width:0;"><div style="display:flex;justify-content:space-between;font-size:11px;color:#fff;margin-bottom:3px;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name}</span><span style="color:var(--mut);flex-shrink:0;">${r.avg}</span></div><div style="height:8px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${r.pct}%;height:100%;background:#7F77DD;border-radius:5px;"></div></div></div></div>`).join('');
-    el.innerHTML = bars + `<div style="font-size:9px;color:var(--mut);text-align:center;margin:8px 4px 2px;line-height:1.5;">Vid. kategorijos EXP vienam vaikui (max 600).${top?` Stipriausia: ${top.icon} ${top.name}.`:''}${low?` Silpniausia: ${low.icon} ${low.name}.`:''}</div>`;
+    el.innerHTML = chips + bars + `<div style="font-size:9px;color:var(--mut);text-align:center;margin:8px 4px 2px;line-height:1.5;">Vid. kategorijos EXP vienam vaikui (max 600).${top?` Stipriausia: ${top.icon} ${top.name}.`:''}${low?` Silpniausia: ${low.icon} ${low.name}.`:''}</div>`;
   } catch(e){ console.error('[club-skill]',e); el.innerHTML = _secErr(e.message); }
 }
 
@@ -15445,27 +15461,27 @@ async function loadClubGrowth(){
   } catch(e){ console.error('[club-growth]',e); el.innerHTML = _secErr(e.message); }
 }
 
-// 👪 Tėvų įsitraukimas
-async function loadClubParents(){
-  const el = document.getElementById('k-tevai-content'); if(!el||!currentClub?.id) return;
+// 💎 Premium konversija (kas turi premium / kas ne → galimi pakalbinti)
+async function loadClubPremium(){
+  const el = document.getElementById('k-premium-content'); if(!el||!currentClub?.id) return;
   el.innerHTML = _SEC_LOAD;
   try {
     const clubKids = await _getClubKids(); const ids = (clubKids||[]).map(k=>k.id);
     if (!ids.length){ el.innerHTML = _SEC_EMPTY; return; }
-    const total = ids.length;
-    const [lpR, kR] = await Promise.all([
-      sb.from('kid_parent_links').select('kid_id, parent_id').in('kid_id', ids),
-      sb.from('kids').select('id, user_id').in('id', ids)
-    ]);
-    const links = lpR.data||[];
-    const kidsWithParent = new Set(links.map(l=>l.kid_id)).size;
-    const parents = new Set(links.map(l=>l.parent_id)).size;
-    const kidsWithLogin = (kR.data||[]).filter(k=>k.user_id).length;
-    const parentPct = total ? Math.round(kidsWithParent/total*100) : 0;
-    const loginPct = total ? Math.round(kidsWithLogin/total*100) : 0;
+    const { data: kids } = await sb.from('kids').select('id, first_name, last_name, subscription_tier').in('id', ids);
+    const rows = kids||[];
+    const isPrem = t => t === 'premium' || t === 'premium_plus';
+    const premium = rows.filter(k=>isPrem(k.subscription_tier));
+    const free = rows.filter(k=>!isPrem(k.subscription_tier));
+    const total = rows.length;
+    const convPct = total ? Math.round(premium.length/total*100) : 0;
+    const upsell = free.slice(0,8).map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</div><div style="font-size:10px;color:var(--mut);">be premium</div></div>`).join('');
     const kpi=(v,l,c)=>`<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${c||'#fff'};line-height:1;">${v}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">${l}</div></div>`;
-    el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${kpi(parentPct+'%','Vaikų su tėvų paskyra','var(--grn)')}${kpi(parents,'Tėvų iš viso')}${kpi(kidsWithLogin,'Vaikų su savo login')}${kpi(loginPct+'%','% su savo login')}</div><div style="font-size:9px;color:var(--mut);text-align:center;margin:10px 4px 2px;line-height:1.5;">Tėvų paskyra = galimybė pirkti ataskaitas/prenumeratą. Kuo daugiau — didesnis pardavimų potencialas.</div>`;
-  } catch(e){ console.error('[club-parents]',e); el.innerHTML = _secErr(e.message); }
+    const upsellBlock = free.length
+      ? `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:0 2px 6px;">💬 GALIMI PAKALBINTI (be premium)</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${upsell}${free.length>8?`<div style="padding:8px 12px;font-size:10px;color:var(--mut);text-align:center;border-top:.5px solid var(--bdr);">+${free.length-8} daugiau</div>`:''}</div>`
+      : '<div style="text-align:center;color:var(--grn);padding:12px;font-size:12px;">🎉 Visi turi premium!</div>';
+    el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">${kpi(premium.length,'Premium','var(--grn)')}${kpi(free.length,'Be premium')}${kpi(convPct+'%','Konversija','#FFD700')}</div>${upsellBlock}<div style="font-size:9px;color:var(--mut);text-align:center;margin:10px 4px 2px;line-height:1.5;">Premium = realiai užsisakę (po v246). Senesni „localStorage" pirkimai dar nesumigruoti — kol kas rodys mažiau.</div>`;
+  } catch(e){ console.error('[club-premium]',e); el.innerHTML = _secErr(e.message); }
 }
 
 // ════════════════════════════════════════
