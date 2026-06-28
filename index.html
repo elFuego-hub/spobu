@@ -440,7 +440,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v255</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v256</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3405,6 +3405,15 @@ select.inp option{background:#222;}
       </div>
     </div>
     
+    <!-- 📊 GERIAUSI VAIKAI peržiūra (mirror kitų portalų) -->
+    <div class="st">📊 GERIAUSI VAIKAI</div>
+    <div id="k-main-preview" style="padding:0 16px;">
+      <div style="text-align:center;color:var(--mut);padding:14px;font-size:12px;">Kraunama...</div>
+    </div>
+    <div style="padding:8px 16px 14px;">
+      <button onclick="g('k','k-stat')" style="width:100%;padding:9px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:10px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA →</button>
+    </div>
+
     <!-- ŽINUTĖS kortelė -->
     <div class="cd" style="background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.3);cursor:pointer;margin:0 16px 12px;" onclick="openMessages()">
       <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -25848,7 +25857,32 @@ async function loadClubData() {
   document.getElementById('k-kids-count').textContent = kidsRes.count || 0;
 
   await loadClubTrainers();
+  if (typeof loadClubMainPreview === 'function') loadClubMainPreview();
   updateClubNotifBadge(true); // 🔔 varpelio badge (Blokas 8)
+}
+
+// 📊 Pagrindinio peržiūra: Top 3 + lyderiai pagal sritį (mirror kitų portalų „GERIAUSI VAIKAI")
+async function loadClubMainPreview(){
+  const el = document.getElementById('k-main-preview'); if(!el||!currentClub?.id) return;
+  try {
+    const [ov, sk, ch, co] = await Promise.all([
+      getClubFilteredEntries('total_exp'),
+      getClubFilteredEntries('kid_records'),
+      getClubFilteredEntries('challenge_submissions'),
+      getClubFilteredEntries('competition_results')
+    ]);
+    const top = arr => (arr||[]).slice().sort((a,b)=>(b.score||0)-(a.score||0));
+    const top3 = top(ov).slice(0,3);
+    const skTop = top(sk)[0], chTop = top(ch)[0], coTop = top(co)[0];
+    const ids = [...new Set([...top3.map(e=>e.kidId), skTop&&skTop.kidId, chTop&&chTop.kidId, coTop&&coTop.kidId].filter(Boolean))];
+    const nameMap = {};
+    if (ids.length){ const { data } = await sb.from('kids').select('id, first_name, last_name').in('id', ids); (data||[]).forEach(k=>{ nameMap[k.id]=`${k.first_name||'Vaikas'} ${k.last_name||''}`.trim(); }); }
+    const nm = id => nameMap[id] || '—';
+    const medal = ['🥇','🥈','🥉'];
+    const top3html = top3.length ? top3.map((e,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;${i?'border-top:.5px solid var(--bdr);':''}"><div style="font-size:16px;width:22px;text-align:center;">${medal[i]}</div><div style="flex:1;min-width:0;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nm(e.kidId)}</div><div style="font-size:12px;color:var(--br);font-weight:700;">${Math.round(e.score||0).toLocaleString()}</div></div>`).join('') : '<div style="padding:14px;text-align:center;color:var(--mut);font-size:12px;">Nėra duomenų</div>';
+    const leadRow = (icon,lbl,e)=> e ? `<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:14px;">${icon}</div><div style="flex:1;font-size:11px;color:var(--mut);">${lbl}</div><div style="font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%;">${nm(e.kidId)}</div></div>` : '';
+    el.innerHTML = `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">${top3html}${leadRow('🏆','Skill lyderis',skTop)}${leadRow('🥇','Varžybų lyderis',coTop)}${leadRow('🎯','Iššūkių lyderis',chTop)}</div>`;
+  } catch(e){ console.error('[club-main-preview]',e); el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:12px;font-size:12px;">Statistika nepasiekiama</div>'; }
 }
 
 async function loadClubTrainers() {
@@ -29100,6 +29134,9 @@ function nv(p,el,sid){
     if (typeof loadPendingChallengeSubmissions === 'function') loadPendingChallengeSubmissions();
     if (typeof loadPendingCompetitionResults === 'function') loadPendingCompetitionResults();
     if (typeof loadPendingDuels === 'function') loadPendingDuels();
+  }
+  if (sid === 'k-main' && typeof loadClubMainPreview === 'function') {
+    loadClubMainPreview();
   }
   if (sid === 'k-stat' && typeof loadClubOverallStat === 'function') {
     loadClubOverallStat();
