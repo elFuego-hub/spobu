@@ -440,7 +440,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v254</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v255</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3505,7 +3505,7 @@ select.inp option{background:#222;}
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
       <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai">🔔<div id="kp-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="var a=document.getElementById('k-settings-anchor');if(a)a.scrollIntoView({behavior:'smooth',block:'start'})" title="Nustatymai">⚙️</div>
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai">⚙️</div>
     </div>
   </div>
   <div class="sa">
@@ -15274,6 +15274,24 @@ function openClubSettings(){
   if (!currentClub?.id){ showToast('Klubo info trūksta','error'); return; }
   nv('k', null, 'k-prof');
   loadClubSettings();
+}
+
+// ⚙️ Klubo nustatymų meniu (paskyros lygmens) — kol kas tik Atsijungti; vėliau daugiau punktų
+function openClubAccountMenu(){
+  const old = document.getElementById('club-acct-menu'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'club-acct-menu';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100003;align-items:flex-end;justify-content:center;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">⚙️ NUSTATYMAI</div>
+      <button onclick="document.getElementById('club-acct-menu').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:12px 16px 16px;display:flex;flex-direction:column;gap:8px;">
+      <button onclick="document.getElementById('club-acct-menu').remove();if(confirm('Atsijungti iš klubo paskyros?'))doLogout()" style="width:100%;display:flex;align-items:center;gap:12px;background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);color:#EF4444;padding:14px 16px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;"><span style="font-size:17px;">🚪</span> Atsijungti</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
 }
 
 // Suskleidžiamos „grouped settings" sekcijos (accordion) — numatytai suskleista
