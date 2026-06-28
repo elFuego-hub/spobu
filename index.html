@@ -440,7 +440,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v256</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v257</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3411,7 +3411,7 @@ select.inp option{background:#222;}
       <div style="text-align:center;color:var(--mut);padding:14px;font-size:12px;">Kraunama...</div>
     </div>
     <div style="padding:8px 16px 14px;">
-      <button onclick="g('k','k-stat')" style="width:100%;padding:9px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:10px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA →</button>
+      <button onclick="g('k','k-fullstat')" style="width:100%;padding:9px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:10px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA →</button>
     </div>
 
     <!-- ŽINUTĖS kortelė -->
@@ -3530,56 +3530,7 @@ select.inp option{background:#222;}
       </div>
       <input type="file" id="k-logo-input" accept="image/*" style="display:none;" onchange="uploadClubLogo(this)">
     </div>
-    <div onclick="toggleClubKidsSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-vaikai-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">👶 VAIKAI</span>    </div>
-    <div id="k-vaikai-content" style="display:none;padding:0 16px 8px;"></div>
-    <div onclick="toggleClubTrainersSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-treneriai-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">👨‍🏫 TRENERIAI</span>    </div>
-    <div id="k-treneriai-content" style="display:none;padding:0 16px 8px;"></div>
-    <div onclick="toggleClubChallengesSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-issukiai-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🎯 IŠŠŪKIAI</span>    </div>
-    <div id="k-issukiai-content" style="display:none;padding:0 16px 8px;"></div>
-    <div onclick="toggleClubCompetitionsSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-varzybos-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🥇 VARŽYBOS</span>    </div>
-    <div id="k-varzybos-content" style="display:none;padding:0 16px 8px;"></div>
-    <div onclick="toggleClubBusinessSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-verslas-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">💼 VERSLAS</span>    </div>
-    <div id="k-verslas-content" style="display:none;padding:0 16px 8px;"></div>
-
-    <div onclick="_toggleSec('k-skill-content','k-skill-chev',loadClubSkill)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-skill-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🎯 SKILL ŽEMĖLAPIS</span>
-    </div>
-    <div id="k-skill-content" style="display:none;padding:0 16px 8px;"></div>
-
-    <div onclick="_toggleSec('k-lank-content','k-lank-chev',loadClubAttendance)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-lank-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">📋 LANKOMUMAS</span>
-    </div>
-    <div id="k-lank-content" style="display:none;padding:0 16px 8px;"></div>
-
-    <div onclick="_toggleSec('k-pulsas-content','k-pulsas-chev',loadClubPulse)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-pulsas-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🔥 KLUBO PULSAS</span>
-    </div>
-    <div id="k-pulsas-content" style="display:none;padding:0 16px 8px;"></div>
-
-    <div onclick="_toggleSec('k-augimas-content','k-augimas-chev',loadClubGrowth)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-augimas-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🌱 AUGIMAS</span>
-    </div>
-    <div id="k-augimas-content" style="display:none;padding:0 16px 8px;"></div>
-
-    <div onclick="_toggleSec('k-premium-content','k-premium-chev',loadClubPremium)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
-      <span id="k-premium-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
-      <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">💎 PREMIUM</span>
-    </div>
-    <div id="k-premium-content" style="display:none;padding:0 16px 8px;"></div>
+    <!-- 📊 Apžvalgų sekcijos perkeltos į Analitiką (k-stat) -->
 
     <div class="st" id="k-settings-anchor">⚙️ KLUBO NUSTATYMAI</div>
     <div style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
@@ -3597,9 +3548,9 @@ select.inp option{background:#222;}
 </div>
 
 <!-- KLUBAS: STATISTIKA -->
-<div class="sc" id="k-stat">
+<div class="sc" id="k-fullstat">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">STATISTIKA</div></div>
+  <div class="tb"><div class="bb" onclick="g('k','k-main')">←</div><div class="tt">VISA STATISTIKA</div></div>
   <div class="sa">
     
     <!-- Sezono filtras -->
@@ -3614,7 +3565,6 @@ select.inp option{background:#222;}
       <button class="club-stat-tab" data-tab="skills" onclick="switchClubStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
       <button class="club-stat-tab" data-tab="challenges" onclick="switchClubStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
       <button class="club-stat-tab" data-tab="competitions" onclick="switchClubStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
-      <button class="club-stat-tab" data-tab="revenue" onclick="switchClubStatTab('revenue')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">💶 APYVARTA</button>
     </div>
     
     <!-- Tab content -->
@@ -3630,10 +3580,92 @@ select.inp option{background:#222;}
     <div id="club-stat-tab-competitions" class="club-stat-tab-content" style="display:none;">
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
-    <div id="club-stat-tab-revenue" class="club-stat-tab-content" style="display:none;">
-      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
-    </div>
 
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- KLUBAS: ANALITIKA (sub-tabai: Žmonės / Veikla / Verslas) -->
+<div class="sc" id="k-stat">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">ANALITIKA</div></div>
+  <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
+    <button class="k-anal-tab on" data-tab="people" onclick="switchClubAnalyticsTab('people')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">👥 Žmonės</button>
+    <button class="k-anal-tab" data-tab="activity" onclick="switchClubAnalyticsTab('activity')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🔥 Veikla</button>
+    <button class="k-anal-tab" data-tab="business" onclick="switchClubAnalyticsTab('business')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">💼 Verslas</button>
+  </div>
+  <div class="sa">
+    <!-- 👥 ŽMONĖS -->
+    <div id="k-anal-people" class="k-anal-pane">
+      <div onclick="toggleClubKidsSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-vaikai-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">👶 VAIKAI</span>
+      </div>
+      <div id="k-vaikai-content" style="display:none;padding:0 16px 8px;"></div>
+      <div onclick="toggleClubTrainersSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-treneriai-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">👨‍🏫 TRENERIAI</span>
+      </div>
+      <div id="k-treneriai-content" style="display:none;padding:0 16px 8px;"></div>
+    </div>
+    <!-- 🔥 VEIKLA -->
+    <div id="k-anal-activity" class="k-anal-pane" style="display:none;">
+      <div onclick="_toggleSec('k-lank-content','k-lank-chev',loadClubAttendance)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-lank-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">📋 LANKOMUMAS</span>
+      </div>
+      <div id="k-lank-content" style="display:none;padding:0 16px 8px;"></div>
+      <div onclick="_toggleSec('k-pulsas-content','k-pulsas-chev',loadClubPulse)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-pulsas-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🔥 KLUBO PULSAS</span>
+      </div>
+      <div id="k-pulsas-content" style="display:none;padding:0 16px 8px;"></div>
+      <div onclick="_toggleSec('k-skill-content','k-skill-chev',loadClubSkill)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-skill-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🗺️ SKILL ŽEMĖLAPIS</span>
+      </div>
+      <div id="k-skill-content" style="display:none;padding:0 16px 8px;"></div>
+      <div onclick="toggleClubChallengesSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-issukiai-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🎯 IŠŠŪKIAI</span>
+      </div>
+      <div id="k-issukiai-content" style="display:none;padding:0 16px 8px;"></div>
+      <div onclick="toggleClubCompetitionsSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-varzybos-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🥇 VARŽYBOS</span>
+      </div>
+      <div id="k-varzybos-content" style="display:none;padding:0 16px 8px;"></div>
+    </div>
+    <!-- 💼 VERSLAS -->
+    <div id="k-anal-business" class="k-anal-pane" style="display:none;">
+      <div onclick="toggleClubBusinessSection()" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-verslas-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">💼 VERSLAS</span>
+      </div>
+      <div id="k-verslas-content" style="display:none;padding:0 16px 8px;"></div>
+      <div onclick="_toggleSec('k-premium-content','k-premium-chev',loadClubPremium)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-premium-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">💎 PREMIUM</span>
+      </div>
+      <div id="k-premium-content" style="display:none;padding:0 16px 8px;"></div>
+      <div onclick="_toggleSec('k-augimas-content','k-augimas-chev',loadClubGrowth)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-augimas-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">🌱 AUGIMAS</span>
+      </div>
+      <div id="k-augimas-content" style="display:none;padding:0 16px 8px;"></div>
+      <div onclick="_toggleSec('club-stat-tab-revenue','k-rev-chev',loadClubRevenue)" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:6px 16px 6px;padding:2px;">
+        <span id="k-rev-chev" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;">▶</span>
+        <span style="flex:1;font-size:13px;font-weight:800;color:white;letter-spacing:.5px;">💶 APYVARTA</span>
+      </div>
+      <div id="club-stat-tab-revenue" style="display:none;padding:0 16px 8px;"><div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Spausk, kad pamatytum...</div></div>
+    </div>
+    <div style="height:16px;"></div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -20014,6 +20046,20 @@ function setClubStatPage(page) {
   switchClubStatTab(clubStatActiveTab);
 }
 
+// 📊 Analitikos sub-tabai (Žmonės / Veikla / Verslas)
+function switchClubAnalyticsTab(tab){
+  ['people','activity','business'].forEach(t=>{
+    const pane = document.getElementById('k-anal-'+t);
+    if (pane) pane.style.display = (t===tab) ? 'block' : 'none';
+  });
+  document.querySelectorAll('#k-stat .k-anal-tab').forEach(b=>{
+    const on = b.dataset.tab===tab;
+    b.style.background = on ? 'rgba(255,77,0,.15)' : 'transparent';
+    b.style.color = on ? 'var(--br)' : 'var(--mut)';
+    b.style.borderColor = on ? 'rgba(255,77,0,.4)' : 'var(--bdr)';
+  });
+}
+
 function switchClubStatTab(tabName) {
   clubStatActiveTab = tabName;
   document.querySelectorAll('.club-stat-tab').forEach(btn => {
@@ -29138,7 +29184,7 @@ function nv(p,el,sid){
   if (sid === 'k-main' && typeof loadClubMainPreview === 'function') {
     loadClubMainPreview();
   }
-  if (sid === 'k-stat' && typeof loadClubOverallStat === 'function') {
+  if (sid === 'k-fullstat' && typeof loadClubOverallStat === 'function') {
     loadClubOverallStat();
   }
   if (sid === 'k-prof' && typeof loadClubSettings === 'function') {
