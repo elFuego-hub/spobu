@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v248</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v249</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15344,6 +15344,18 @@ const _SEC_LOAD = '<div style="text-align:center;color:var(--mut);padding:18px;f
 const _SEC_EMPTY = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Nėra duomenų.</div>';
 const _secErr = m => `<div style="text-align:center;color:#EF4444;padding:18px;font-size:12px;">Klaida: ${m||''}</div>`;
 
+// Aktyvūs vaikai = bet kokia veikla per laikotarpį (pratimai/iššūkiai/lankymas). kid_records turi updated_at (NE created_at).
+async function _clubActiveKidIds(ids, cutISO, cutDate){
+  const [a,b,c] = await Promise.all([
+    sb.from('kid_records').select('kid_id').in('kid_id',ids).gte('updated_at',cutISO),
+    sb.from('challenge_submissions').select('kid_id').in('kid_id',ids).gte('created_at',cutISO),
+    sb.from('attendance').select('kid_id').in('kid_id',ids).eq('present',true).gte('session_date',cutDate)
+  ]);
+  const s = new Set();
+  [a,b,c].forEach(r => (r.data||[]).forEach(x => s.add(x.kid_id)));
+  return s;
+}
+
 // 🎯 Skill žemėlapis (karjera — kategorijos; filtras pagal lytį/amžių)
 let _skillFilter = 'all';
 async function loadClubSkill(filter){
@@ -15404,9 +15416,12 @@ async function loadClubAttendance(){
     const overall = Math.round(pres/rows.length*100);
     const groupRows = Object.entries(byG).map(([gid,v]) => ({ name: gName[gid]||'Grupė', pct: Math.round(v.p/v.t*100) })).sort((a,b)=>b.pct-a.pct);
     const clubKids = await _getClubKids(); const kName={}; (clubKids||[]).forEach(k=>{ kName[k.id]=`${k.first_name||'Vaikas'} ${k.last_name||''}`.trim(); });
-    const risky = Object.entries(byKid).map(([kid,v])=>({ name:kName[kid]||'Vaikas', pct:Math.round(v.p/v.t*100), t:v.t })).filter(x=>x.t>=4 && x.pct<50).sort((a,b)=>a.pct-b.pct).slice(0,5);
+    const lowest = Object.entries(byKid).map(([kid,v])=>({ name:kName[kid]||'Vaikas', pct:Math.round(v.p/v.t*100), miss:v.t-v.p, t:v.t })).filter(x=>x.t>=3).sort((a,b)=>a.pct-b.pct);
+    const concern = lowest.filter(x=>x.pct<90).slice(0,10);
     const grpBars = groupRows.map(g=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;"><div style="flex:1;min-width:0;font-size:11px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div><div style="width:80px;height:8px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${g.pct}%;height:100%;background:${g.pct>=70?'#22C55E':g.pct>=50?'#EAB308':'#EF4444'};border-radius:5px;"></div></div><div style="width:32px;text-align:right;font-size:11px;color:#fff;">${g.pct}%</div></div>`).join('');
-    const riskyHtml = risky.length ? `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:12px 2px 6px;">⚠️ RIZIKINGI (mažai lanko)</div>` + risky.map(r=>`<div style="display:flex;justify-content:space-between;padding:6px 2px;font-size:12px;color:#fff;"><span>${r.name}</span><span style="color:#EF4444;">${r.pct}% (${r.t} tr.)</span></div>`).join('') : '';
+    const riskyHtml = concern.length
+      ? `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:12px 2px 6px;">⚠️ MAŽIAUSIAI LANKO — verta susisiekti</div>` + concern.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 2px;font-size:12px;color:#fff;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name}</span><span style="flex-shrink:0;color:${r.pct<50?'#EF4444':r.pct<75?'#EAB308':'var(--mut)'};">${r.pct}% · praleido ${r.miss}</span></div>`).join('')
+      : '<div style="text-align:center;color:var(--grn);padding:10px;font-size:12px;">🎉 Visi lanko gerai (≥90%)</div>';
     el.innerHTML = `<div style="text-align:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:12px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:${overall>=70?'var(--grn)':overall>=50?'#EAB308':'#EF4444'};line-height:1;">${overall}%</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">vidutinis lankomumas (60 d.)</div></div><div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:0 2px 6px;">PAGAL GRUPĘ</div>${grpBars}${riskyHtml}`;
   } catch(e){ console.error('[club-att]',e); el.innerHTML = _secErr(e.message); }
 }
@@ -15419,13 +15434,14 @@ async function loadClubPulse(){
     const clubKids = await _getClubKids(); const ids = (clubKids||[]).map(k=>k.id);
     if (!ids.length){ el.innerHTML = _SEC_EMPTY; return; }
     const cut = new Date(Date.now()-30*86400000).toISOString();
-    const [exR, chR, coR, actR] = await Promise.all([
-      sb.from('kid_records').select('id',{count:'exact',head:true}).in('kid_id',ids).gte('created_at',cut),
+    const cutDate = cut.split('T')[0];
+    const [exR, chR, coR, activeSet] = await Promise.all([
+      sb.from('kid_records').select('id',{count:'exact',head:true}).in('kid_id',ids).gte('updated_at',cut),
       sb.from('challenge_submissions').select('id',{count:'exact',head:true}).in('kid_id',ids).eq('status','approved').gte('reviewed_at',cut),
       sb.from('competition_results').select('id',{count:'exact',head:true}).in('kid_id',ids).eq('approval_status','approved').gte('approved_at',cut),
-      sb.from('kid_records').select('kid_id').in('kid_id',ids).gte('created_at',cut)
+      _clubActiveKidIds(ids, cut, cutDate)
     ]);
-    const activeKids = new Set((actR.data||[]).map(r=>r.kid_id)).size;
+    const activeKids = activeSet.size;
     const kpi = (icon,val,lbl)=>`<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 8px;text-align:center;"><div style="font-size:15px;">${icon}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;line-height:1;margin-top:2px;">${val}</div><div style="font-size:9px;color:var(--mut);margin-top:2px;">${lbl}</div></div>`;
     el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${kpi('🏋️',exR.count||0,'Pratimų įrašyta')}${kpi('🎯',chR.count||0,'Iššūkių įveikta')}${kpi('🥇',coR.count||0,'Medalių laimėta')}${kpi('🔥',activeKids,'Aktyvūs vaikai')}</div><div style="font-size:9px;color:var(--mut);text-align:center;margin:10px 4px 2px;">Veikla per paskutines 30 d.</div>`;
   } catch(e){ console.error('[club-pulse]',e); el.innerHTML = _secErr(e.message); }
@@ -15439,13 +15455,14 @@ async function loadClubGrowth(){
     const clubKids = await _getClubKids(); const ids = (clubKids||[]).map(k=>k.id);
     if (!ids.length){ el.innerHTML = _SEC_EMPTY; return; }
     const cut30 = new Date(Date.now()-30*86400000).toISOString();
-    const [kRes, actR] = await Promise.all([
+    const cut30Date = cut30.split('T')[0];
+    const [kRes, activeSet] = await Promise.all([
       sb.from('kids').select('id, created_at').in('id', ids),
-      sb.from('kid_records').select('kid_id').in('kid_id', ids).gte('created_at', cut30)
+      _clubActiveKidIds(ids, cut30, cut30Date)
     ]);
     const kids = kRes.data||[];
     const total = kids.length;
-    const active = new Set((actR.data||[]).map(r=>r.kid_id)).size;
+    const active = activeSet.size;
     const activePct = total ? Math.round(active/total*100) : 0;
     const now = new Date();
     const MON = ['Sau','Vas','Kov','Bal','Geg','Bir','Lie','Rgp','Rgs','Spa','Lap','Grd'];
