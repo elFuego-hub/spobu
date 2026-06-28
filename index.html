@@ -428,7 +428,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v243</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v244</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15298,18 +15298,26 @@ async function loadClubCompetitionsOverview(){
       const { data: lr } = await sb.from('competition_results').select('kid_id, placement, belt_passed, new_kyu, approval_status').eq('competition_id', lastComp.id);
       const results = lr || [];
       const kidIds = [...new Set(results.map(r => r.kid_id).filter(Boolean))];
-      const nameMap = {};
-      if (kidIds.length){ const { data: kids } = await sb.from('kids').select('id, first_name, last_name').in('id', kidIds); (kids||[]).forEach(k => { nameMap[k.id] = `${k.first_name||''} ${k.last_name||''}`.trim() || 'Vaikas'; }); }
-      let g=0, s=0, b=0, passed=0; const podium = []; const passers = [];
+      const kidGroup = {};
+      if (kidIds.length){ const { data: kids } = await sb.from('kids').select('id, group_id').in('id', kidIds); (kids||[]).forEach(k => { kidGroup[k.id] = k.group_id; }); }
+      const { data: grps } = await sb.from('groups').select('id, name').eq('club_id', currentClub.id);
+      const grpName = {}; (grps||[]).forEach(gr => { grpName[gr.id] = gr.name; });
+      let g=0, s=0, b=0, passed=0, medaled=0; const byGroup = {}; const byKyu = {};
       results.forEach(r => {
-        if (r.belt_passed) { passed++; passers.push({ name: nameMap[r.kid_id]||'Vaikas', kyu: r.new_kyu }); }
+        if (r.belt_passed){ passed++; const kk = r.new_kyu || 'naujas diржas'; byKyu[kk] = (byKyu[kk]||0)+1; }
         if (r.approval_status === 'approved' && r.placement >= 1 && r.placement <= 3){
+          medaled++;
           if (r.placement===1) g++; else if (r.placement===2) s++; else b++;
-          podium.push({ name: nameMap[r.kid_id]||'Vaikas', placement: r.placement });
+          const gid = kidGroup[r.kid_id] || 'none';
+          if (!byGroup[gid]) byGroup[gid] = { g:0, s:0, b:0 };
+          if (r.placement===1) byGroup[gid].g++; else if (r.placement===2) byGroup[gid].s++; else byGroup[gid].b++;
         }
       });
-      podium.sort((x,y) => x.placement - y.placement);
-      lastDetail = { comp: lastComp, participants: results.length, g, s, b, passed, podium, passers };
+      const groupTable = Object.entries(byGroup).map(([gid,m]) => ({ name: grpName[gid] || 'Be grupės', g:m.g, s:m.s, b:m.b, total: m.g+m.s+m.b })).sort((a,b) => b.g - a.g || b.total - a.total).slice(0,4);
+      const kyuTable = Object.entries(byKyu).map(([k,n]) => ({ kyu:k, n })).sort((a,b) => b.n - a.n).slice(0,6);
+      const denom = results.length || 1;
+      const successPct = Math.round((lastComp.competition_type === 'belt_test' ? passed : medaled) / denom * 100);
+      lastDetail = { comp: lastComp, participants: results.length, g, s, b, passed, medaled, successPct, groupTable, kyuTable };
     }
     el.innerHTML = _renderClubCompetitionsHtml({ upcoming, perComp, totalUpcomingReg, lastDetail });
     const cb = document.getElementById('k-varzybos-count'); if (cb) cb.textContent = upcoming.length;
@@ -15337,18 +15345,17 @@ function _renderClubCompetitionsHtml(d){
     const days = Math.floor((new Date() - new Date(c.event_date)) / 86400000);
     const ago = days <= 0 ? 'šiandien' : (days === 1 ? 'vakar' : 'prieš ' + days + ' d.');
     const header = `<div style="display:flex;align-items:center;gap:10px;padding:12px;border-bottom:.5px solid var(--bdr);"><div style="font-size:24px;flex-shrink:0;">${ICON[c.competition_type]||'🥇'}</div><div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:700;color:#fff;">${c.title||'Varžybos'}</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">${TLABEL[c.competition_type]||''} · ${formatDateLT(c.event_date)} · ${ago}${c.location?' · 📍 '+c.location:''}</div></div></div>`;
+    const allBtn = `<button onclick="viewCompetitionParticipants('${c.id}','${(c.title||'').replace(/'/g,"\\'")}')" style="width:calc(100% - 24px);margin:10px 12px 12px;background:rgba(255,255,255,.06);color:var(--mut);border:.5px solid var(--bdr);padding:9px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;">👥 Visi dalyviai →</button>`;
     let body;
     if (c.competition_type === 'belt_test'){
-      const pct = L.participants ? Math.round(L.passed / L.participants * 100) : 0;
-      const passers = L.passers.length ? L.passers.map(p => `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:12px;color:#fff;">${p.name}</div><div style="font-size:11px;color:var(--grn);">${p.kyu||'naujas diржas'} ✓</div></div>`).join('') : '';
-      body = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:12px;"><div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;">${L.participants}</div><div style="font-size:9px;color:var(--mut);">Laikė</div></div><div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--grn);">${L.passed}</div><div style="font-size:9px;color:var(--mut);">Išlaikė</div></div><div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);">${pct}%</div><div style="font-size:9px;color:var(--mut);">Sėkmė</div></div></div>${passers}`;
+      const kyuRows = L.kyuTable.length ? L.kyuTable.map(k => `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:12px;color:#fff;">${k.kyu}</div><div style="font-size:11px;color:var(--grn);">× ${k.n}</div></div>`).join('') : '<div style="padding:10px 12px;border-top:.5px solid var(--bdr);font-size:11px;color:var(--mut);text-align:center;">Nė vienas neišlaikė</div>';
+      body = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:12px;"><div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;">${L.participants}</div><div style="font-size:9px;color:var(--mut);">Laikė</div></div><div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--grn);">${L.passed}</div><div style="font-size:9px;color:var(--mut);">Išlaikė</div></div><div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);">${L.successPct}%</div><div style="font-size:9px;color:var(--mut);">Sėkmė</div></div></div><div style="font-size:9px;font-weight:800;color:var(--mut);letter-spacing:1.2px;padding:6px 12px 0;">🥋 NAUJI DIRŽAI</div>${kyuRows}`;
     } else {
-      const mIcon = { 1:'🥇', 2:'🥈', 3:'🥉' };
-      const medals = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px;"><div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;">${L.participants}</div><div style="font-size:9px;color:var(--mut);">Dalyvavo</div></div><div style="text-align:center;"><div style="font-size:15px;">🥇</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#FFD700;">${L.g}</div></div><div style="text-align:center;"><div style="font-size:15px;">🥈</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#C0C0C0;">${L.s}</div></div><div style="text-align:center;"><div style="font-size:15px;">🥉</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#CD7F32;">${L.b}</div></div></div>`;
-      const podiumList = L.podium.length ? L.podium.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:14px;">${mIcon[p.placement]||''}</div><div style="flex:1;font-size:12px;color:#fff;">${p.name}</div></div>`).join('') : '<div style="padding:10px 12px;border-top:.5px solid var(--bdr);font-size:11px;color:var(--mut);text-align:center;">Prizininkų dar nepatvirtinta</div>';
-      body = medals + podiumList;
+      const medals = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px 12px 6px;"><div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;">${L.participants}</div><div style="font-size:9px;color:var(--mut);">Dalyvavo</div></div><div style="text-align:center;"><div style="font-size:15px;">🥇</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#FFD700;">${L.g}</div></div><div style="text-align:center;"><div style="font-size:15px;">🥈</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#C0C0C0;">${L.s}</div></div><div style="text-align:center;"><div style="font-size:15px;">🥉</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#CD7F32;">${L.b}</div></div></div><div style="font-size:10px;color:var(--mut);text-align:center;padding:0 12px 6px;">🎯 Sėkmė ${L.successPct}% · ${L.medaled} iš ${L.participants} su medaliu</div>`;
+      const groupRows = L.groupTable.length ? `<div style="font-size:9px;font-weight:800;color:var(--mut);letter-spacing:1.2px;padding:6px 12px 0;">🏅 GERIAUSIOS GRUPĖS</div>` + L.groupTable.map(gt => `<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:.5px solid var(--bdr);"><div style="flex:1;font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gt.name}</div><div style="font-size:11px;white-space:nowrap;">🥇${gt.g} 🥈${gt.s} 🥉${gt.b}</div></div>`).join('') : '';
+      body = medals + groupRows;
     }
-    pastHtml = `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${header}${body}</div>`;
+    pastHtml = `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${header}${body}${allBtn}</div>`;
   }
   return `
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">🔜 ATEINANČIOS · iš viso dalyvaus ${d.totalUpcomingReg}</div>
