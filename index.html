@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v274</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v275</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -26349,17 +26349,19 @@ async function loadClubTrainers() {
     const _p = tPts[t.id] || 0;
     const _lv = (typeof getTrainerStageInfo === 'function') ? getTrainerStageInfo(_p) : { globalLevel:1, stageEmoji:'🥋' };
     const rankColor = i===0?'#FFD700':i===1?'#C0C0C0':i===2?'#CD7F32':'var(--mut)';
-    return `<div class="cd" style="margin-bottom:12px;padding:14px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${rankColor};width:18px;text-align:center;flex-shrink:0;">${i+1}</div>
-        <div class="av" style="background:var(--grn);">${name[0]?.toUpperCase() || 'T'}</div>
+    return `<div class="cd" style="margin-bottom:10px;padding:12px 13px;">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${rankColor};width:18px;text-align:center;flex-shrink:0;">${i+1}</div>
+        <div class="av" style="background:var(--grn);flex-shrink:0;">${name[0]?.toUpperCase() || 'T'}</div>
         <div style="flex:1;min-width:0;cursor:${isActive ? 'pointer' : 'default'};" ${isActive ? `onclick="openTrainerKidsModal('${trainerProfileId}', '${safeName}')"` : ''}>
-          <div style="font-size:14px;font-weight:900;">${name}</div>
-          <div style="font-size:11px;color:var(--mut);">Kodas: ${t.trainer_code || '–'}${isActive ? ` · ${_lv.stageEmoji} LVL ${_lv.globalLevel} · ${_p} tšk` : ''}</div>
+          <div style="font-size:14px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</div>
+          <div style="font-size:10.5px;color:var(--mut);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Kodas: ${t.trainer_code || '–'}</div>
           ${lightHtml ? `<div style="margin-top:3px;">${lightHtml}</div>` : ''}
         </div>
-        <div class="bg ${isActive ? 'gn' : 'or'}" style="flex-shrink:0;">${isActive ? 'Aktyvus' : 'Laukia'}</div>
-        <div onclick="event.stopPropagation();openTrainerManage('${trainerProfileId}','${safeName}','${safeCode}')" title="Valdyti trenerį" style="flex-shrink:0;cursor:pointer;width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:14px;">⚙️</div>
+        ${isActive
+          ? `<div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--br);line-height:1;">${_p.toLocaleString()}</div><div style="font-size:9px;color:var(--mut);white-space:nowrap;">${_lv.stageEmoji} LVL ${_lv.globalLevel}</div></div>`
+          : `<div class="bg or" style="flex-shrink:0;">Laukia</div>`}
+        <div onclick="event.stopPropagation();openTrainerManage('${trainerProfileId}','${safeName}','${safeCode}')" title="Valdyti trenerį" style="flex-shrink:0;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">⚙️</div>
       </div>
     </div>`;
   }).join('');
