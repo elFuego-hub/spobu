@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v276</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v277</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3481,7 +3481,12 @@ select.inp option{background:#222;}
     </div>
     <!-- MOKINIAI -->
     <div id="k-team-students" class="k-team-pane" style="display:none;">
+      <div style="display:flex;gap:6px;padding:0 16px 8px;">
+        <button class="k-stud-tab" data-stab="reg" onclick="switchClubStudentsTab('reg')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:7px 10px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;">📋 Registracijos</button>
+        <button class="k-stud-tab" data-stab="inactive" onclick="switchClubStudentsTab('inactive')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:7px 10px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;">😴 Neaktyvūs</button>
+      </div>
       <div id="k-students-list" style="padding:0 16px;"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
+      <div id="k-inactive-list" style="padding:0 16px;display:none;"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
     </div>
   </div>
   <div class="bn2">
@@ -26222,12 +26227,59 @@ function switchClubTeamTab(tab){
     b.style.color = on?'var(--br)':'var(--mut)';
     b.style.borderColor = on?'rgba(255,77,0,.4)':'var(--bdr)';
   });
-  if (tab==='students' && typeof loadClubStudents==='function') loadClubStudents();
+  if (tab==='students' && typeof switchClubStudentsTab==='function') switchClubStudentsTab('reg');
   else if (tab==='groups' && typeof loadClubGroups==='function') loadClubGroups();
   else if (tab==='trainers' && typeof loadClubTrainers==='function') loadClubTrainers();
 }
 
 // 🎒 MOKINIAI: nepriskirti prie grupės + laukia anketos patvirtinimo
+// Mokiniai sub-tabai: Registracijos / Neaktyvūs
+function switchClubStudentsTab(tab){
+  const reg = document.getElementById('k-students-list');
+  const ina = document.getElementById('k-inactive-list');
+  if (reg) reg.style.display = tab==='reg' ? 'block' : 'none';
+  if (ina) ina.style.display = tab==='inactive' ? 'block' : 'none';
+  document.querySelectorAll('#k-team-students .k-stud-tab').forEach(b=>{
+    const on = b.dataset.stab===tab;
+    b.style.background = on?'rgba(255,77,0,.15)':'transparent';
+    b.style.color = on?'var(--br)':'var(--mut)';
+    b.style.borderColor = on?'rgba(255,77,0,.4)':'var(--bdr)';
+  });
+  if (tab==='reg' && typeof loadClubStudents==='function') loadClubStudents();
+  if (tab==='inactive' && typeof loadClubInactiveKids==='function') loadClubInactiveKids();
+}
+
+// 😴 Neaktyvūs — nelankantys iš eilės (🟡 3–4, 🔴 5+)
+async function loadClubInactiveKids(){
+  const el = document.getElementById('k-inactive-list'); if(!el||!currentClub?.id) return;
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Kraunama...</div>';
+  try {
+    const { data: groups } = await sb.from('groups').select('id').eq('club_id', currentClub.id);
+    const gIds = (groups||[]).map(g=>g.id);
+    if (!gIds.length){ el.innerHTML='<div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Nėra grupių.</div>'; return; }
+    const cut = new Date(Date.now()-60*86400000).toISOString().split('T')[0];
+    const { data: att } = await sb.from('attendance').select('kid_id, present, session_date').in('group_id', gIds).gte('session_date', cut);
+    const rows = att||[];
+    if (!rows.length){ el.innerHTML='<div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Per 60 d. lankomumas nežymėtas.</div>'; return; }
+    const byKid = {}; rows.forEach(r=>{ (byKid[r.kid_id]=byKid[r.kid_id]||[]).push(r); });
+    const streaks = Object.entries(byKid).map(([kid, rs])=>{
+      rs.sort((a,b)=> a.session_date<b.session_date?1:(a.session_date>b.session_date?-1:0));
+      let streak=0, lastPresent=null;
+      for(const r of rs){ if(!r.present) streak++; else { lastPresent=r.session_date; break; } }
+      return { kid, streak, lastPresent };
+    }).filter(x=>x.streak>=3).sort((a,b)=>b.streak-a.streak);
+    if (!streaks.length){ el.innerHTML='<div style="text-align:center;color:var(--grn);padding:24px;font-size:13px;">🎉 Visi vaikai lanko reguliariai</div>'; return; }
+    const ids = streaks.map(s=>s.kid);
+    const { data: kd } = await sb.from('kids').select('id, first_name, last_name').in('id', ids);
+    const nameMap = {}; (kd||[]).forEach(k=>{ nameMap[k.id]=`${k.first_name||'Vaikas'} ${k.last_name||''}`.trim(); });
+    const redN = streaks.filter(x=>x.streak>=5).length, yelN = streaks.length-redN;
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">NELANKO IŠ EILĖS — VERTA SUSISIEKTI</span><span style="font-size:11px;font-weight:700;">🔴 ${redN} 🟡 ${yelN}</span></div>` + streaks.map(x=>{
+      const red = x.streak>=5, col = red?'#EF4444':'#EAB308'; const nm = nameMap[x.kid]||'Vaikas';
+      return `<div onclick="openKidDetailsModal('${x.kid}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;margin-bottom:8px;cursor:pointer;"><span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;${red?'box-shadow:0 0 6px #EF4444;':''}"></span><div style="flex:1;min-width:0;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nm}</div><div style="text-align:right;flex-shrink:0;"><div style="font-size:13px;font-weight:700;color:${col};">${x.streak} iš eilės</div><div style="font-size:9px;color:var(--mut);">${x.lastPresent?'paskutinį '+formatDateLT(x.lastPresent):'nė karto'}</div></div><span style="font-size:14px;color:var(--mut);flex-shrink:0;">›</span></div>`;
+    }).join('');
+  } catch(e){ console.error('[club-inactive]',e); el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:20px;font-size:12px;">Klaida: ${e.message||''}</div>`; }
+}
+
 async function loadClubStudents(){
   const el = document.getElementById('k-students-list'); if(!el||!currentClub?.id) return;
   el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Kraunama...</div>';
