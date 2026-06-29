@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v270</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v271</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -26011,17 +26011,23 @@ function renderClubGroupsRanked(){
   const el = document.getElementById('k-groups-list'); const D = window._clubGroupsRank; if(!el||!D) return;
   const { groups, tName, M, cats } = D;
   const key = _clubGroupsRankBy;
-  const valOf = gid => { const m=M[gid]||{}; if(key==='overall') return m.exp||0; if(key==='varzybos') return (m.g||0)*3+(m.s||0)*2+(m.b||0); if(key==='issukiai') return m.ch||0; return (m.cats&&m.cats[key])||0; };
-  const chip = (k,label) => `<button onclick="setClubGroupsRank('${k}')" style="flex-shrink:0;background:${key===k?'rgba(255,77,0,.15)':'transparent'};color:${key===k?'var(--br)':'var(--mut)'};border:.5px solid ${key===k?'rgba(255,77,0,.4)':'var(--bdr)'};padding:6px 11px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">${label}</button>`;
-  let chips = chip('overall','📊 Bendras');
-  cats.forEach(c=>{ chips += chip(c.id, `${c.icon||'💪'} ${c.name}`); });
-  chips += chip('varzybos','🥇 Varžybos') + chip('issukiai','🎯 Iššūkiai');
-  const chipsBar = `<div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 0 10px;">${chips}</div>`;
+  const isCareer = (key==='career') || cats.some(c=>c.id===key);
+  const careerSum = m => Object.values(m.cats||{}).reduce((a,b)=>a+(b||0),0);
+  const valOf = gid => { const m=M[gid]||{cats:{}}; if(key==='overall') return m.exp||0; if(key==='varzybos') return (m.g||0)*3+(m.s||0)*2+(m.b||0); if(key==='issukiai') return m.ch||0; if(key==='career') return careerSum(m); return (m.cats&&m.cats[key])||0; };
+  const chip = (k,label,active) => `<button onclick="setClubGroupsRank('${k}')" style="flex-shrink:0;background:${active?'rgba(255,77,0,.15)':'transparent'};color:${active?'var(--br)':'var(--mut)'};border:.5px solid ${active?'rgba(255,77,0,.4)':'var(--bdr)'};padding:7px 13px;border-radius:99px;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;">${label}</button>`;
+  const chips = chip('overall','📊 Bendras', key==='overall') + chip('career','📈 Karjera'+(isCareer?' ▾':''), isCareer) + chip('varzybos','🥇 Varžybos', key==='varzybos') + chip('issukiai','🎯 Iššūkiai', key==='issukiai');
+  let careerSel = '';
+  if (isCareer){
+    const opts = `<option value="career" ${key==='career'?'selected':''}>Visos karjeros sritys</option>` + cats.map(c=>`<option value="${c.id}" ${key===c.id?'selected':''}>${c.icon||''} ${c.name}</option>`).join('');
+    careerSel = `<select onchange="setClubGroupsRank(this.value)" style="width:100%;box-sizing:border-box;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:9px;color:#fff;font-size:12px;margin-bottom:10px;">${opts}</select>`;
+  }
+  const chipsBar = `<div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 0 ${isCareer?'8px':'10px'};">${chips}</div>${careerSel}`;
   const sorted = [...groups].sort((a,b)=> valOf(b.id)-valOf(a.id) || (a.name||'').localeCompare(b.name||''));
-  const valLabel = gid => { const m=M[gid]||{};
+  const valLabel = gid => { const m=M[gid]||{cats:{}};
     if(key==='overall'){ const lvl=m.n?Math.round(m.lvlSum/m.n):1; return `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${(m.exp||0).toLocaleString()}</div><div style="font-size:9px;color:var(--mut);">EXP · lvl ${lvl}</div>`; }
     if(key==='varzybos') return `<div style="font-size:13px;white-space:nowrap;">🥇${m.g||0} 🥈${m.s||0} 🥉${m.b||0}</div>`;
     if(key==='issukiai') return `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${(m.ch||0).toLocaleString()}</div><div style="font-size:9px;color:var(--mut);">iššūkių EXP</div>`;
+    if(key==='career') return `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${careerSum(m).toLocaleString()}</div><div style="font-size:9px;color:var(--mut);">karjeros EXP</div>`;
     const cat=cats.find(c=>c.id===key); return `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${valOf(gid).toLocaleString()}</div><div style="font-size:9px;color:var(--mut);">${cat?cat.icon:''} EXP</div>`;
   };
   const cards = sorted.map((g,i)=>{
