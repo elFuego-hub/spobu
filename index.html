@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v260</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v261</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -26014,6 +26014,54 @@ function _cgmAddDay(day, time){
   c.appendChild(row);
 }
 
+const CLUB_COLORS = ['#FF4D00','#3B82F6','#22C55E','#A855F7','#EAB308','#EC4899','#14B8A6'];
+function _cgmPickColor(el, color){
+  window._cgmColor = color;
+  document.querySelectorAll('#cgm-colors .cgm-sw').forEach(s => { s.style.outline='none'; });
+  if (el){ el.style.outline='2px solid #fff'; el.style.outlineOffset='2px'; }
+}
+async function _loadGroupKids(groupId){
+  const el = document.getElementById('cgm-kids-list'); if(!el) return;
+  const { data } = await sb.from('kids').select('id, first_name, last_name').eq('group_id', groupId).order('first_name');
+  const kids = data||[];
+  const cnt = document.getElementById('cgm-kids-count'); if(cnt) cnt.textContent = kids.length;
+  if(!kids.length){ el.innerHTML='<div style="color:var(--mut);font-size:12px;padding:8px 0;">Grupėje vaikų nėra. Pridėk →</div>'; return; }
+  el.innerHTML = kids.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:.5px solid var(--bdr);font-size:13px;color:#fff;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</span><button onclick="removeKidFromGroup('${k.id}','${groupId}')" style="background:transparent;border:.5px solid rgba(239,68,68,.3);color:#EF4444;border-radius:7px;width:28px;height:28px;cursor:pointer;flex-shrink:0;">✕</button></div>`).join('');
+}
+async function openAddKidToGroup(groupId){
+  const all = await _getClubKids(true);
+  const avail = (all||[]).filter(k => k.group_id !== groupId);
+  const old = document.getElementById('cgm-addkid-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='cgm-addkid-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100004;align-items:flex-end;justify-content:center;';
+  m.onclick=(e)=>{ if(e.target===m) m.remove(); };
+  const rows = avail.length ? avail.map(k=>`<div onclick="_pickKidToGroup('${k.id}','${groupId}')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:.5px solid var(--bdr);cursor:pointer;"><span style="font-size:13px;color:#fff;">${k.first_name||'Vaikas'} ${k.last_name||''}</span><span style="font-size:11px;color:${k.group_id?'#EAB308':'var(--blu)'};">${k.group_id?'kitoje grupėje →':'priskirti →'}</span></div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--mut);font-size:13px;">Nėra laisvų vaikų. Nauji/laukiantys — per anketų tvirtinimą (netrukus).</div>';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">PRIDĖTI VAIKĄ</div><button onclick="document.getElementById('cgm-addkid-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div>${rows}</div></div>`;
+  document.body.appendChild(m);
+}
+async function _pickKidToGroup(kidId, groupId){
+  try {
+    const { error } = await sb.rpc('set_kid_group', { p_kid: kidId, p_group: groupId });
+    if (error) throw error;
+    _clubKidsCache = null;
+    const mm = document.getElementById('cgm-addkid-modal'); if(mm) mm.remove();
+    showToast('✓ Vaikas pridėtas','success');
+    _loadGroupKids(groupId); loadClubGroups();
+  } catch(e){ console.error('[add-kid-group]',e); showToast('❌ '+(e.message||''),'error'); }
+}
+async function removeKidFromGroup(kidId, groupId){
+  if(!confirm('Pašalinti vaiką iš grupės? Liks be trenerio, kol priskirsi iš naujo.')) return;
+  try {
+    const { error } = await sb.rpc('remove_kid_from_group', { p_kid: kidId });
+    if (error) throw error;
+    _clubKidsCache = null;
+    showToast('✓ Pašalintas','success');
+    _loadGroupKids(groupId); loadClubGroups();
+  } catch(e){ console.error('[rm-kid-group]',e); showToast('❌ '+(e.message||''),'error'); }
+}
+
 async function openClubGroupModal(groupId){
   if (!currentClub?.id) return;
   if (!window._clubTrainerOpts){
@@ -26022,6 +26070,7 @@ async function openClubGroupModal(groupId){
   }
   let g = { id:null, name:'', trainer_id:'', assistant_trainer_ids:[], schedule:null };
   if (groupId){ const { data } = await sb.from('groups').select('*').eq('id', groupId).single(); if (data) g = data; }
+  window._cgmColor = g.color || '#FF4D00';
   const esc = s => (s||'').toString().replace(/"/g,'&quot;');
   const old = document.getElementById('club-group-modal'); if (old) old.remove();
   const m = document.createElement('div'); m.id='club-group-modal';
@@ -26034,6 +26083,7 @@ async function openClubGroupModal(groupId){
     </div>
     <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
       <div><label style="font-size:11px;color:var(--mut);font-weight:700;">Pavadinimas</label><input id="cgm-name" value="${esc(g.name)}" placeholder="pvz. Saulėtekis" style="width:100%;${_CGM_CSS}margin-top:4px;font-size:14px;padding:11px;"></div>
+      <div><label style="font-size:11px;color:var(--mut);font-weight:700;">Spalva</label><div id="cgm-colors" style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">${CLUB_COLORS.map(c=>`<button type="button" class="cgm-sw" onclick="_cgmPickColor(this,'${c}')" style="width:30px;height:30px;border-radius:8px;border:none;background:${c};cursor:pointer;${c===(g.color||'#FF4D00')?'outline:2px solid #fff;outline-offset:2px;':''}"></button>`).join('')}</div></div>
       <div><label style="font-size:11px;color:var(--mut);font-weight:700;">Pagrindinis treneris</label><select id="cgm-trainer" style="width:100%;${_CGM_CSS}margin-top:4px;font-size:14px;padding:11px;">${_cgmTrainerOpts(g.trainer_id)}</select></div>
       <div>
         <div style="display:flex;align-items:center;justify-content:space-between;"><label style="font-size:11px;color:var(--mut);font-weight:700;">Asistentai</label><button onclick="_cgmAddAssistant()" style="background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.3);color:var(--grn);font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;cursor:pointer;">+ Pridėti</button></div>
@@ -26043,6 +26093,10 @@ async function openClubGroupModal(groupId){
         <div style="display:flex;align-items:center;justify-content:space-between;"><label style="font-size:11px;color:var(--mut);font-weight:700;">Treniruočių dienos ir laikai</label><button onclick="_cgmAddDay()" style="background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.3);color:var(--grn);font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;cursor:pointer;">+ Diena</button></div>
         <div id="cgm-schedule"></div>
       </div>
+      ${groupId?`<div>
+        <div style="display:flex;align-items:center;justify-content:space-between;"><label style="font-size:11px;color:var(--mut);font-weight:700;">Vaikai grupėje (<span id="cgm-kids-count">0</span>)</label><button onclick="openAddKidToGroup('${groupId}')" style="background:rgba(59,130,246,.12);border:.5px solid rgba(59,130,246,.3);color:var(--blu);font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;cursor:pointer;">+ Pridėti vaiką</button></div>
+        <div id="cgm-kids-list" style="margin-top:4px;"><div style="color:var(--mut);font-size:12px;padding:8px 0;">Kraunama...</div></div>
+      </div>`:''}
       <div id="cgm-err" style="display:none;color:#EF4444;font-size:12px;"></div>
       <button onclick="submitClubGroup('${groupId||''}')" style="width:100%;background:var(--grn);border:none;color:#fff;font-size:14px;font-weight:800;padding:13px;border-radius:12px;cursor:pointer;">${groupId?'IŠSAUGOTI':'SUKURTI'}</button>
       ${groupId?`<button onclick="deleteClubGroup('${groupId}')" style="width:100%;background:transparent;border:.5px solid rgba(239,68,68,.4);color:#EF4444;font-size:12px;font-weight:700;padding:10px;border-radius:12px;cursor:pointer;">🗑 Ištrinti grupę</button>`:''}
@@ -26053,6 +26107,7 @@ async function openClubGroupModal(groupId){
   let sched = null; try { sched = g.schedule ? JSON.parse(g.schedule) : null; } catch(_){}
   if (Array.isArray(sched) && sched.length) sched.forEach(x => _cgmAddDay(x.day, x.time));
   else _cgmAddDay();
+  if (groupId) _loadGroupKids(groupId);
 }
 
 async function submitClubGroup(groupId){
@@ -26072,14 +26127,14 @@ async function submitClubGroup(groupId){
   const trainTime = schedule.length ? schedule[0].time : null;
   try {
     if (groupId){
-      await sb.from('groups').update({ name, schedule: scheduleJson, training_days: trainingDays, train_time: trainTime }).eq('id', groupId);
+      await sb.from('groups').update({ name, color: window._cgmColor||'#FF4D00', schedule: scheduleJson, training_days: trainingDays, train_time: trainTime }).eq('id', groupId);
       const { error } = await sb.rpc('set_group_trainer', { p_group: groupId, p_trainer: trainerId, p_assistants: assistants });
       if (error) throw error;
       showToast('✓ Grupė atnaujinta','success');
     } else {
       const { error } = await sb.from('groups').insert({
         club_id: currentClub.id, trainer_id: trainerId, assistant_trainer_ids: assistants,
-        name, schedule: scheduleJson, training_days: trainingDays, train_time: trainTime, color:'#FF4D00', is_active:true
+        name, schedule: scheduleJson, training_days: trainingDays, train_time: trainTime, color: window._cgmColor||'#FF4D00', is_active:true
       });
       if (error) throw error;
       showToast('✓ Grupė sukurta','success');
