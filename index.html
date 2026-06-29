@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v272</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v273</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -26079,7 +26079,7 @@ async function _loadGroupKids(groupId){
   const kids = data||[];
   const cnt = document.getElementById('cgm-kids-count'); if(cnt) cnt.textContent = kids.length;
   if(!kids.length){ el.innerHTML='<div style="color:var(--mut);font-size:12px;padding:8px 0;">Grupėje vaikų nėra. Pridėk →</div>'; return; }
-  el.innerHTML = kids.map(k=>`<div onclick="openKidDetailsModal('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 2px;border-top:.5px solid var(--bdr);cursor:pointer;"><div style="width:30px;height:30px;border-radius:50%;background:var(--bdr);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--mut);flex-shrink:0;">${(k.first_name||'?').charAt(0)}</div><span style="flex:1;min-width:0;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</span><button onclick="event.stopPropagation();_clubRemoveKidFromGroup('${k.id}','${groupId}')" style="background:transparent;border:.5px solid rgba(239,68,68,.3);color:#EF4444;border-radius:7px;width:28px;height:28px;cursor:pointer;flex-shrink:0;">✕</button><span style="font-size:14px;color:var(--mut);flex-shrink:0;">›</span></div>`).join('');
+  el.innerHTML = kids.map(k=>`<div onclick="var _gm=document.getElementById('club-group-modal');if(_gm)_gm.remove();openKidDetailsModal('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 2px;border-top:.5px solid var(--bdr);cursor:pointer;"><div style="width:30px;height:30px;border-radius:50%;background:var(--bdr);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--mut);flex-shrink:0;">${(k.first_name||'?').charAt(0)}</div><span style="flex:1;min-width:0;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</span><button onclick="event.stopPropagation();_clubRemoveKidFromGroup('${k.id}','${groupId}')" style="background:transparent;border:.5px solid rgba(239,68,68,.3);color:#EF4444;border-radius:7px;width:28px;height:28px;cursor:pointer;flex-shrink:0;">✕</button><span style="font-size:14px;color:var(--mut);flex-shrink:0;">›</span></div>`).join('');
 }
 async function openAddKidToGroup(groupId){
   const all = await _getClubKids(true);
