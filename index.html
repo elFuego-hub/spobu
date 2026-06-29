@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v263</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v264</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -14484,30 +14484,36 @@ async function submitChallengeResult() {
     }
   }
   
-  const btn = document.getElementById('vsc-submit-btn');
-  btn.disabled = true;
-  btn.textContent = 'SIUNČIAMA...';
-  
-  // BUG FIX: Trenerio ID iš PAČIO IŠŠŪKIO (ne iš currentKid)
-  // Kadangi iššūkis galimai sukurtas kito trenerio, naudojam challenge.trainer_id
-  const trainerId = currentChallengeForSubmission.trainer_id;
-  
-  if (!trainerId) {
-    console.error('❌ Iššūkis neturi trainer_id:', currentChallengeForSubmission);
-    showToast('❌ Iššūkis neturi trenerio - susisiek su klubu', 'error', 5000);
-    btn.disabled = false;
-    btn.textContent = 'SIŲSTI';
+  // Etapas 5: vaikas pasirenka trenerį (kaip karjeros). 1 grupės treneris → auto; >1 → popup.
+  let _chTrs = [];
+  try { _chTrs = await getMyTrainers(); } catch(_){}
+  if (_chTrs.length > 1){
+    _chPendingSubmit = { value: resultStr, numeric: numericValue };
+    _showChallengeTrainerPicker(_chTrs);
     return;
   }
-  
-  console.log('📤 Siunčiame submission:', {
-    challenge_id: currentChallengeForSubmission.id,
-    kid_id: currentKid.id,
-    trainer_id: trainerId,
-    value: resultStr,
-    numeric_value: numericValue
-  });
-  
+  const trainerId = (_chTrs[0] && _chTrs[0].id) || currentChallengeForSubmission.trainer_id;
+  await _doChallengeSubmit(trainerId, resultStr, numericValue);
+}
+
+let _chPendingSubmit = null;
+function _showChallengeTrainerPicker(trainers){
+  const old = document.getElementById('ch-trainer-pick'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='ch-trainer-pick';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100005;align-items:flex-end;justify-content:center;';
+  m.onclick=(e)=>{ if(e.target===m) m.remove(); };
+  const rows = (trainers||[]).map(t=>{ const nm=`${t.first_name||''} ${t.last_name||''}`.trim()||'Treneris'; return `<div onclick="_chPickTrainer('${t.id}')" style="padding:13px 16px;border-top:.5px solid var(--bdr);cursor:pointer;font-size:14px;color:#fff;">🥋 ${nm}</div>`; }).join('');
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;animation:slideUp .3s ease-out;"><div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">KAM SIŲSTI?</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Pasirink trenerį, kuris patvirtins</div></div>${rows}<div style="height:10px;"></div></div>`;
+  document.body.appendChild(m);
+}
+function _chPickTrainer(trainerId){
+  const m = document.getElementById('ch-trainer-pick'); if(m) m.remove();
+  const p = _chPendingSubmit || {}; _chPendingSubmit = null;
+  _doChallengeSubmit(trainerId, p.value, p.numeric);
+}
+async function _doChallengeSubmit(trainerId, resultStr, numericValue){
+  if (!trainerId){ showToast('❌ Nėra trenerio — susisiek su klubu','error',5000); return; }
+  const btn = document.getElementById('vsc-submit-btn'); if(btn){ btn.disabled=true; btn.textContent='SIUNČIAMA...'; }
   const { data, error } = await sb.from('challenge_submissions').insert({
     challenge_id: currentChallengeForSubmission.id,
     kid_id: currentKid.id,
@@ -14516,26 +14522,14 @@ async function submitChallengeResult() {
     numeric_value: numericValue,
     status: 'pending'
   }).select();
-  
-  btn.disabled = false;
-  btn.textContent = 'SIŲSTI';
-  
-  if (error) {
-    console.error('Challenge submission error:', error);
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
-    return;
-  }
-  
-  if (!data || data.length === 0) {
-    showToast('❌ Nepavyko išsiųsti', 'error', 5000);
-    return;
-  }
-  
+  if(btn){ btn.disabled=false; btn.textContent='SIŲSTI'; }
+  if (error){ console.error('Challenge submission error:', error); showToast('❌ Klaida: ' + error.message, 'error', 5000); return; }
+  if (!data || data.length === 0){ showToast('❌ Nepavyko išsiųsti', 'error', 5000); return; }
   showToast('✅ Rezultatas išsiųstas treneriui patvirtinimui!', 'success', 4000);
   playSound('send');
   notifyTrainersNewSubmission('🎯 Naujas iššūkio pateikimas', 'pateikė iššūkį — laukia patvirtinimo');
   closeSubmitChallenge();
-  await loadChallenges(); // perkrauti
+  await loadChallenges();
 }
 
 // ════════════════════════════════════════
@@ -28158,7 +28152,7 @@ async function loadPendingChallengeSubmissions() {
   const { data: subs, error } = await sb.from('challenge_submissions')
     .select('*, challenges(title, icon, type, exp_reward, target_value, target_unit, content_type, allow_partial)')
     .eq('status', 'pending')
-    .in('kid_id', myKidIds)
+    .eq('trainer_id', currentUser.id)
     .order('created_at', { ascending: false })
     .limit(50);
   
