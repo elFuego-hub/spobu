@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v273</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v274</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -26333,7 +26333,12 @@ async function loadClubTrainers() {
     (act || []).forEach(a => { actMap[a.trainer_id] = a; });
   } catch (e) { /* funkcija dar nesukurta */ }
 
-  const html = trainers.map(t => {
+  // Trenerio veiklos taškai (EXP) reitingui — serveris skaičiuoja (RLS apeinama)
+  let tPts = {};
+  try { const { data: pp } = await sb.rpc('club_trainer_points', { club_uuid: currentClub.id }); (pp||[]).forEach(r=>{ tPts[r.trainer_id]=r.points||0; }); } catch(e){}
+  trainers.sort((a,b)=>(tPts[b.id]||0)-(tPts[a.id]||0));
+
+  const html = trainers.map((t, i) => {
     const p = t.profiles;
     const name = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Bevardis';
     const isActive = p.status === 'active';
@@ -26341,12 +26346,16 @@ async function loadClubTrainers() {
     const safeName = name.replace(/'/g, "\\'");
     const safeCode = (t.trainer_code || '').replace(/'/g, "\\'");
     const lightHtml = isActive ? _trainerActivityHtml(actMap[trainerProfileId]) : '';
+    const _p = tPts[t.id] || 0;
+    const _lv = (typeof getTrainerStageInfo === 'function') ? getTrainerStageInfo(_p) : { globalLevel:1, stageEmoji:'🥋' };
+    const rankColor = i===0?'#FFD700':i===1?'#C0C0C0':i===2?'#CD7F32':'var(--mut)';
     return `<div class="cd" style="margin-bottom:12px;padding:14px;">
-      <div style="display:flex;align-items:center;gap:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${rankColor};width:18px;text-align:center;flex-shrink:0;">${i+1}</div>
         <div class="av" style="background:var(--grn);">${name[0]?.toUpperCase() || 'T'}</div>
         <div style="flex:1;min-width:0;cursor:${isActive ? 'pointer' : 'default'};" ${isActive ? `onclick="openTrainerKidsModal('${trainerProfileId}', '${safeName}')"` : ''}>
           <div style="font-size:14px;font-weight:900;">${name}</div>
-          <div style="font-size:11px;color:var(--mut);">Kodas: ${t.trainer_code || '–'}</div>
+          <div style="font-size:11px;color:var(--mut);">Kodas: ${t.trainer_code || '–'}${isActive ? ` · ${_lv.stageEmoji} LVL ${_lv.globalLevel} · ${_p} tšk` : ''}</div>
           ${lightHtml ? `<div style="margin-top:3px;">${lightHtml}</div>` : ''}
         </div>
         <div class="bg ${isActive ? 'gn' : 'or'}" style="flex-shrink:0;">${isActive ? 'Aktyvus' : 'Laukia'}</div>
