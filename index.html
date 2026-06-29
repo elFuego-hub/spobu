@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v264</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v265</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2100,7 +2100,6 @@ select.inp option{background:#222;}
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">MANO GRUPĖS</div>
     <div style="display:flex;gap:6px;align-items:center;">
       <div onclick="openTrInfo('groups')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div>
-      <button class="btn btng" style="font-size:11px;padding:6px 12px;" onclick="openCreateGroupModal()">+ GRUPĖ</button>
     </div>
   </div>
   <div class="sa" id="tr-groups-content">
@@ -21188,10 +21187,9 @@ async function loadTrainerGroups() {
       <div style="text-align:center;padding:40px 20px;">
         <div style="font-size:48px;margin-bottom:12px;">👥</div>
         <div style="font-weight:800;font-size:16px;margin-bottom:8px;">Dar nėra grupių</div>
-        <div style="font-size:13px;color:var(--mut);line-height:1.5;margin-bottom:20px;">
-          Sukurk savo pirmąją grupę – pavyzdžiui<br>"Pradedantieji 6-9m." arba "Mergaitės"
+        <div style="font-size:13px;color:var(--mut);line-height:1.5;">
+          Grupes kuria ir trenerius priskiria <b>klubas</b>.<br>Kreipkis į savo klubo administratorių.
         </div>
-        <button class="btn btng" onclick="openCreateGroupModal()">+ SUKURTI PIRMĄ GRUPĘ</button>
       </div>
     `;
     return;
