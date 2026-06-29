@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v275</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v276</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -26492,10 +26492,7 @@ function openTrainerManage(tid, name, code){
       <button onclick="document.getElementById('club-trmanage-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
     </div>
     <div style="padding:16px 20px;">
-      <label class="lbl">TRENERIO KODAS</label>
-      <input class="inp" id="trm-code" value="${(code||'').replace(/"/g,'&quot;')}" style="margin-bottom:12px;">
-      <button class="btn btng" style="width:100%;margin:0 0 16px;" onclick="saveTrainerEdit('${tid}')">💾 IŠSAUGOTI</button>
-      <div style="height:.5px;background:var(--bdr);margin:4px 0 16px;"></div>
+      <div style="font-size:12px;color:var(--mut);margin-bottom:16px;">🆔 Trenerio kodas: <span style="color:#fff;font-weight:700;">${code||'–'}</span></div>
       <button class="btn" style="width:100%;margin:0 0 8px;background:rgba(234,179,8,.15);color:#EAB308;border:.5px solid rgba(234,179,8,.4);" onclick="suspendTrainer('${tid}','${name.replace(/'/g,"\\'")}')">⏸️ SUSTABDYTI TRENERĮ</button>
       <button class="btn" style="width:100%;margin:0;background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.35);" onclick="openTrainerRemove('${tid}','${name.replace(/'/g,"\\'")}')">🗑️ PAŠALINTI TRENERĮ</button>
       <div style="font-size:11px;color:var(--mut);margin-top:10px;line-height:1.5;">⏸️ Sustabdytas treneris nebegali prisijungti, bet vaikai lieka jam priskirti. 🗑️ Šalinant — privalai perskirti visus jo vaikus kitam treneriui.</div>
