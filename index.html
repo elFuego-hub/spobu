@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v258</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v259</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3457,6 +3457,12 @@ select.inp option{background:#222;}
     <button class="bb" onclick="openInviteTrainer()" style="background:var(--br);border-color:var(--br);color:white;">+</button>
   </div>
   <div class="sa">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px;">
+      <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.4px;">📅 GRUPĖS</div>
+      <button onclick="openClubGroupModal()" style="background:var(--br);border:none;color:#fff;font-size:11px;font-weight:800;padding:6px 12px;border-radius:99px;cursor:pointer;">+ Nauja grupė</button>
+    </div>
+    <div id="k-groups-list" style="padding:0 16px 6px;"><div style="text-align:center;padding:18px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
+    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.4px;padding:10px 16px 8px;border-top:.5px solid var(--bdr);margin-top:6px;">🥋 TRENERIAI</div>
     <div id="k-trainers-list" style="padding:0 16px;">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
@@ -25922,6 +25928,7 @@ async function loadClubData() {
   document.getElementById('k-kids-count').textContent = kidsRes.count || 0;
 
   await loadClubTrainers();
+  if (typeof loadClubGroups === 'function') loadClubGroups();
   if (typeof loadClubMainPreview === 'function') loadClubMainPreview();
   updateClubNotifBadge(true); // 🔔 varpelio badge (Blokas 8)
 }
@@ -25948,6 +25955,120 @@ async function loadClubMainPreview(){
     const leadRow = (icon,lbl,e)=> e ? `<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:14px;">${icon}</div><div style="flex:1;font-size:11px;color:var(--mut);">${lbl}</div><div style="font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%;">${nm(e.kidId)}</div></div>` : '';
     el.innerHTML = `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">${top3html}${leadRow('🏆','Skill lyderis',skTop)}${leadRow('🥇','Varžybų lyderis',coTop)}${leadRow('🎯','Iššūkių lyderis',chTop)}</div>`;
   } catch(e){ console.error('[club-main-preview]',e); el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:12px;font-size:12px;">Statistika nepasiekiama</div>'; }
+}
+
+// ════════════════════════════════════════
+// 📅 KLUBO GRUPIŲ VALDYMAS (struktūros modelis) — klubas kuria grupes, priskiria trenerį
+// ════════════════════════════════════════
+async function loadClubGroups(){
+  const el = document.getElementById('k-groups-list');
+  if (!el || !currentClub?.id) return;
+  try {
+    const [gRes, tRes] = await Promise.all([
+      sb.from('groups').select('id, name, color, training_days, train_time, trainer_id, assistant_trainer_id, is_active').eq('club_id', currentClub.id),
+      sb.from('trainers').select('id, profiles!inner(first_name,last_name)').eq('invited_by_club_id', currentClub.id)
+    ]);
+    const groups = (gRes.data||[]).filter(g => g.is_active !== false).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    window._clubTrainerOpts = (tRes.data||[]).map(t => ({ id:t.id, name:`${t.profiles.first_name||''} ${t.profiles.last_name||''}`.trim()||'Treneris' }));
+    const tName = {}; window._clubTrainerOpts.forEach(t => { tName[t.id]=t.name; });
+    const ids = groups.map(g=>g.id);
+    const kidCount = {};
+    if (ids.length){
+      const { data: kc } = await sb.from('kids').select('group_id').in('group_id', ids);
+      (kc||[]).forEach(k => { if (k.group_id) kidCount[k.group_id]=(kidCount[k.group_id]||0)+1; });
+    }
+    if (!groups.length){ el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:16px;font-size:12px;">Dar nėra grupių. Sukurk pirmą ↑</div>'; return; }
+    el.innerHTML = groups.map(g => {
+      const tr = g.trainer_id ? (tName[g.trainer_id]||'Treneris') : '⚠️ be trenerio';
+      const asst = g.assistant_trainer_id ? ' + '+(tName[g.assistant_trainer_id]||'asist.') : '';
+      const sched = [g.training_days, g.train_time].filter(Boolean).join(' · ');
+      return `<div onclick="openClubGroupModal('${g.id}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+        <div style="width:6px;height:36px;border-radius:3px;background:${g.color||'var(--br)'};flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13.5px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name||'Grupė'}</div>
+          <div style="font-size:11px;color:${g.trainer_id?'var(--mut)':'#EF4444'};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🥋 ${tr}${asst}${sched?' · '+sched:''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${kidCount[g.id]||0}</div><div style="font-size:9px;color:var(--mut);">vaikai</div></div>
+      </div>`;
+    }).join('');
+  } catch(e){ console.error('[club-groups]',e); el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:16px;font-size:12px;">Klaida: ${e.message||''}</div>`; }
+}
+
+async function openClubGroupModal(groupId){
+  if (!currentClub?.id) return;
+  if (!window._clubTrainerOpts){
+    const { data: tRes } = await sb.from('trainers').select('id, profiles!inner(first_name,last_name)').eq('invited_by_club_id', currentClub.id);
+    window._clubTrainerOpts = (tRes||[]).map(t => ({ id:t.id, name:`${t.profiles.first_name||''} ${t.profiles.last_name||''}`.trim()||'Treneris' }));
+  }
+  let g = { id:null, name:'', training_days:'', train_time:'', trainer_id:'', assistant_trainer_id:'' };
+  if (groupId){ const { data } = await sb.from('groups').select('*').eq('id', groupId).single(); if (data) g = data; }
+  const opts = (sel) => window._clubTrainerOpts.map(t => `<option value="${t.id}" ${sel===t.id?'selected':''}>${t.name}</option>`).join('');
+  const esc = s => (s||'').toString().replace(/"/g,'&quot;');
+  const old = document.getElementById('club-group-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id='club-group-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100003;align-items:flex-end;justify-content:center;';
+  m.onclick=(e)=>{ if(e.target===m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${groupId?'REDAGUOTI GRUPĘ':'NAUJA GRUPĖ'}</div>
+      <button onclick="document.getElementById('club-group-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+      <div><label style="font-size:11px;color:var(--mut);font-weight:700;">Pavadinimas</label><input id="cgm-name" value="${esc(g.name)}" placeholder="pvz. Saulėtekis" style="width:100%;box-sizing:border-box;margin-top:4px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:11px;color:#fff;font-size:14px;"></div>
+      <div><label style="font-size:11px;color:var(--mut);font-weight:700;">Pagrindinis treneris</label><select id="cgm-trainer" style="width:100%;box-sizing:border-box;margin-top:4px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:11px;color:#fff;font-size:14px;"><option value="">— pasirink —</option>${opts(g.trainer_id)}</select></div>
+      <div><label style="font-size:11px;color:var(--mut);font-weight:700;">Asistentas (nebūtina)</label><select id="cgm-assistant" style="width:100%;box-sizing:border-box;margin-top:4px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:11px;color:#fff;font-size:14px;"><option value="">— nėra —</option>${opts(g.assistant_trainer_id)}</select></div>
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;"><label style="font-size:11px;color:var(--mut);font-weight:700;">Dienos</label><input id="cgm-days" value="${esc(g.training_days)}" placeholder="Pr · Tr · Pn" style="width:100%;box-sizing:border-box;margin-top:4px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:11px;color:#fff;font-size:14px;"></div>
+        <div style="flex:1;"><label style="font-size:11px;color:var(--mut);font-weight:700;">Laikas</label><input id="cgm-time" value="${esc(g.train_time)}" placeholder="18:00" style="width:100%;box-sizing:border-box;margin-top:4px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:11px;color:#fff;font-size:14px;"></div>
+      </div>
+      <div id="cgm-err" style="display:none;color:#EF4444;font-size:12px;"></div>
+      <button onclick="submitClubGroup('${groupId||''}')" style="width:100%;background:var(--grn);border:none;color:#fff;font-size:14px;font-weight:800;padding:13px;border-radius:12px;cursor:pointer;margin-top:4px;">${groupId?'IŠSAUGOTI':'SUKURTI'}</button>
+      ${groupId?`<button onclick="deleteClubGroup('${groupId}')" style="width:100%;background:transparent;border:.5px solid rgba(239,68,68,.4);color:#EF4444;font-size:12px;font-weight:700;padding:10px;border-radius:12px;cursor:pointer;">🗑 Ištrinti grupę</button>`:''}
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function submitClubGroup(groupId){
+  const name = (document.getElementById('cgm-name')?.value||'').trim();
+  const trainerId = document.getElementById('cgm-trainer')?.value || '';
+  const assistantId = document.getElementById('cgm-assistant')?.value || '';
+  const days = (document.getElementById('cgm-days')?.value||'').trim();
+  const time = (document.getElementById('cgm-time')?.value||'').trim();
+  const err = document.getElementById('cgm-err');
+  const showE = (msg)=>{ if(err){ err.textContent=msg; err.style.display='block'; } };
+  if (name.length < 2){ showE('Pavadinimas per trumpas (min. 2)'); return; }
+  if (!trainerId){ showE('Pasirink pagrindinį trenerį'); return; }
+  if (assistantId && assistantId === trainerId){ showE('Asistentas negali būti tas pats treneris'); return; }
+  try {
+    if (groupId){
+      await sb.from('groups').update({ name, training_days: days||null, train_time: time||null }).eq('id', groupId);
+      const { error } = await sb.rpc('set_group_trainer', { p_group: groupId, p_trainer: trainerId, p_assistant: assistantId||null });
+      if (error) throw error;
+      showToast('✓ Grupė atnaujinta','success');
+    } else {
+      const { error } = await sb.from('groups').insert({
+        club_id: currentClub.id, trainer_id: trainerId, assistant_trainer_id: assistantId||null,
+        name, training_days: days||null, train_time: time||null, color:'#FF4D00', is_active:true
+      });
+      if (error) throw error;
+      showToast('✓ Grupė sukurta','success');
+    }
+    const mm = document.getElementById('club-group-modal'); if (mm) mm.remove();
+    loadClubGroups();
+  } catch(e){ console.error('[club-group-save]',e); showE('Klaida: '+(e.message||'')); }
+}
+
+async function deleteClubGroup(groupId){
+  if (!confirm('Ištrinti grupę? Vaikai liks be grupės — reikės priskirti iš naujo.')) return;
+  try {
+    await sb.from('kids').update({ group_id: null }).eq('group_id', groupId);
+    const { error } = await sb.from('groups').update({ is_active:false }).eq('id', groupId);
+    if (error) throw error;
+    showToast('✓ Grupė ištrinta','success');
+    const mm = document.getElementById('club-group-modal'); if (mm) mm.remove();
+    loadClubGroups();
+  } catch(e){ console.error('[club-group-del]',e); showToast('❌ '+(e.message||''),'error'); }
 }
 
 async function loadClubTrainers() {
@@ -29202,6 +29323,10 @@ function nv(p,el,sid){
   }
   if (sid === 'k-main' && typeof loadClubMainPreview === 'function') {
     loadClubMainPreview();
+  }
+  if (sid === 'k-trainers'){
+    if (typeof loadClubGroups === 'function') loadClubGroups();
+    if (typeof loadClubTrainers === 'function') loadClubTrainers();
   }
   if (sid === 'k-fullstat' && typeof loadClubOverallStat === 'function') {
     loadClubOverallStat();
