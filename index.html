@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v261</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v262</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3444,7 +3444,7 @@ select.inp option{background:#222;}
   </div>
   <div class="bn2">
     <div class="ni on" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">👥</span><span class="lb">Klubas</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
@@ -3453,23 +3453,39 @@ select.inp option{background:#222;}
 <!-- KLUBAS: TRENERIAI -->
 <div class="sc" id="k-trainers">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('k','k-main')">←</div><div class="tt">TRENERIAI</div>
-    <button class="bb" onclick="openInviteTrainer()" style="background:var(--br);border-color:var(--br);color:white;">+</button>
+  <div class="tb"><div class="bb" onclick="g('k','k-main')">←</div><div class="tt">KLUBAS</div></div>
+  <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
+    <button class="k-team-tab on" data-tab="groups" onclick="switchClubTeamTab('groups')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">📅 Grupės</button>
+    <button class="k-team-tab" data-tab="trainers" onclick="switchClubTeamTab('trainers')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥋 Treneriai</button>
+    <button class="k-team-tab" data-tab="students" onclick="switchClubTeamTab('students')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🎒 Mokiniai</button>
   </div>
   <div class="sa">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px;">
-      <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.4px;">📅 GRUPĖS</div>
-      <button onclick="openClubGroupModal()" style="background:var(--br);border:none;color:#fff;font-size:11px;font-weight:800;padding:6px 12px;border-radius:99px;cursor:pointer;">+ Nauja grupė</button>
+    <!-- GRUPĖS -->
+    <div id="k-team-groups" class="k-team-pane">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px;">
+        <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.4px;">📅 GRUPĖS</div>
+        <button onclick="openClubGroupModal()" style="background:var(--br);border:none;color:#fff;font-size:11px;font-weight:800;padding:6px 12px;border-radius:99px;cursor:pointer;">+ Nauja grupė</button>
+      </div>
+      <div id="k-groups-list" style="padding:0 16px 6px;"><div style="text-align:center;padding:18px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
     </div>
-    <div id="k-groups-list" style="padding:0 16px 6px;"><div style="text-align:center;padding:18px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
-    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.4px;padding:10px 16px 8px;border-top:.5px solid var(--bdr);margin-top:6px;">🥋 TRENERIAI</div>
-    <div id="k-trainers-list" style="padding:0 16px;">
-      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    <!-- TRENERIAI -->
+    <div id="k-team-trainers" class="k-team-pane" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px;">
+        <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.4px;">🥋 TRENERIAI</div>
+        <button onclick="openInviteTrainer()" style="background:var(--br);border:none;color:#fff;font-size:11px;font-weight:800;padding:6px 12px;border-radius:99px;cursor:pointer;">+ Pakviesti</button>
+      </div>
+      <div id="k-trainers-list" style="padding:0 16px;">
+        <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+      </div>
+    </div>
+    <!-- MOKINIAI -->
+    <div id="k-team-students" class="k-team-pane" style="display:none;">
+      <div id="k-students-list" style="padding:0 16px;"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
     </div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('k',this,'k-trainers')"><span class="ic">👥</span><span class="lb">Klubas</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
@@ -3515,7 +3531,7 @@ select.inp option{background:#222;}
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">👥</span><span class="lb">Klubas</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -3555,7 +3571,7 @@ select.inp option{background:#222;}
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">👥</span><span class="lb">Klubas</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div><div class="ni on" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
@@ -3598,7 +3614,7 @@ select.inp option{background:#222;}
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">👥</span><span class="lb">Klubas</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -3694,7 +3710,7 @@ select.inp option{background:#222;}
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">🥋</span><span class="lb">Treneriai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic">👥</span><span class="lb">Klubas</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-events')"><span class="ic">📅</span><span class="lb">Renginiai</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('k',this,'k-stat')"><span class="ic">📊</span><span class="lb">Analitika</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -26154,6 +26170,97 @@ async function deleteClubGroup(groupId){
     const mm = document.getElementById('club-group-modal'); if (mm) mm.remove();
     loadClubGroups();
   } catch(e){ console.error('[club-group-del]',e); showToast('❌ '+(e.message||''),'error'); }
+}
+
+// 🗂 Klubo „KLUBAS" ekrano sub-tabai: Grupės / Treneriai / Mokiniai
+function switchClubTeamTab(tab){
+  ['groups','trainers','students'].forEach(t => {
+    const p = document.getElementById('k-team-'+t); if(p) p.style.display = (t===tab)?'block':'none';
+  });
+  document.querySelectorAll('#k-trainers .k-team-tab').forEach(b => {
+    const on = b.dataset.tab===tab;
+    b.style.background = on?'rgba(255,77,0,.15)':'transparent';
+    b.style.color = on?'var(--br)':'var(--mut)';
+    b.style.borderColor = on?'rgba(255,77,0,.4)':'var(--bdr)';
+  });
+  if (tab==='students' && typeof loadClubStudents==='function') loadClubStudents();
+  else if (tab==='groups' && typeof loadClubGroups==='function') loadClubGroups();
+  else if (tab==='trainers' && typeof loadClubTrainers==='function') loadClubTrainers();
+}
+
+// 🎒 MOKINIAI: nepriskirti prie grupės + laukia anketos patvirtinimo
+async function loadClubStudents(){
+  const el = document.getElementById('k-students-list'); if(!el||!currentClub?.id) return;
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Kraunama...</div>';
+  try {
+    const [trRes, grpRes] = await Promise.all([
+      sb.from('trainers').select('id').eq('invited_by_club_id', currentClub.id),
+      sb.from('groups').select('id').eq('club_id', currentClub.id)
+    ]);
+    const trIds = (trRes.data||[]).map(t=>t.id);
+    const grpIds = (grpRes.data||[]).map(g=>g.id);
+    const SEL = 'id, first_name, last_name, birth_date, birth_year, group_id, approval_status';
+    const kidMap = {};
+    const qs = [];
+    if (trIds.length) qs.push(sb.from('kids').select(SEL).in('assigned_trainer_id', trIds));
+    if (grpIds.length) qs.push(sb.from('kids').select(SEL).in('group_id', grpIds));
+    if (trIds.length){
+      const { data: kt } = await sb.from('kid_trainers').select('kid_id').in('trainer_id', trIds);
+      const ktIds = [...new Set((kt||[]).map(l=>l.kid_id))];
+      if (ktIds.length) qs.push(sb.from('kids').select(SEL).in('id', ktIds));
+    }
+    (await Promise.all(qs)).forEach(r => (r.data||[]).forEach(k => { kidMap[k.id]=k; }));
+    const kids = Object.values(kidMap);
+    const pending = kids.filter(k => k.approval_status==='pending');
+    const noGroup = kids.filter(k => k.approval_status!=='pending' && !k.group_id);
+    const ageOf = k => k.birth_date ? calculateAge(k.birth_date) : (k.birth_year ? (new Date().getFullYear()-k.birth_year) : null);
+    const row = (k, pend) => `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:.5px solid var(--bdr);">
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</div><div style="font-size:10px;color:var(--mut);">${ageOf(k)!=null?ageOf(k)+' m.':''}${pend?' · ⏳ laukia anketos':''}</div></div>
+        <button onclick="openAssignKidGroup('${k.id}',${pend?'true':'false'})" style="background:var(--grn);border:none;color:#fff;font-size:11px;font-weight:700;padding:7px 12px;border-radius:8px;cursor:pointer;flex-shrink:0;">${pend?'Patvirtinti →':'Priskirti →'}</button>
+      </div>`;
+    let html = `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;padding:6px 4px;">⏳ LAUKIA PATVIRTINIMO (${pending.length})</div>`;
+    html += pending.length ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${pending.map(k=>row(k,true)).join('')}</div>` : '<div style="color:var(--mut);font-size:12px;padding:4px 4px 14px;">Nėra laukiančių.</div>';
+    html += `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;padding:6px 4px;">📋 BE GRUPĖS (${noGroup.length})</div>`;
+    html += noGroup.length ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${noGroup.map(k=>row(k,false)).join('')}</div>` : '<div style="color:var(--mut);font-size:12px;padding:4px;">Visi priskirti grupėms 🎉</div>';
+    el.innerHTML = html;
+  } catch(e){ console.error('[club-students]',e); el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:20px;font-size:12px;">Klaida: ${e.message||''}</div>`; }
+}
+
+async function openAssignKidGroup(kidId, isPending){
+  if (!currentClub?.id) return;
+  const { data: groups } = await sb.from('groups').select('id, name, color, is_active').eq('club_id', currentClub.id);
+  const gs = (groups||[]).filter(g=>g.is_active!==false).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  const old = document.getElementById('assign-group-modal'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='assign-group-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100004;align-items:flex-end;justify-content:center;';
+  m.onclick=(e)=>{ if(e.target===m) m.remove(); };
+  const rows = gs.length ? gs.map(g=>`<div onclick="_assignKidToGroup('${kidId}','${g.id}',${isPending?'true':'false'})" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:.5px solid var(--bdr);cursor:pointer;"><div style="width:6px;height:24px;border-radius:3px;background:${g.color||'var(--br)'};"></div><span style="font-size:13px;color:#fff;">${g.name||'Grupė'}</span></div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--mut);font-size:13px;">Nėra grupių. Pirma sukurk grupę skiltyje „Grupės".</div>';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${isPending?'PATVIRTINTI Į GRUPĘ':'PRISKIRTI GRUPĘ'}</div><button onclick="document.getElementById('assign-group-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div>${rows}</div>
+    ${isPending?`<div style="padding:12px 16px 16px;"><button onclick="_approveKidOnly('${kidId}')" style="width:100%;background:transparent;border:.5px solid var(--bdr);color:var(--mut);font-size:12px;font-weight:700;padding:10px;border-radius:10px;cursor:pointer;">Tik patvirtinti (be grupės)</button></div>`:''}
+  </div>`;
+  document.body.appendChild(m);
+}
+async function _assignKidToGroup(kidId, groupId, isPending){
+  try {
+    if (isPending){ const { error: ae } = await sb.rpc('club_approve_kid', { p_kid: kidId }); if (ae) throw ae; }
+    const { error } = await sb.rpc('set_kid_group', { p_kid: kidId, p_group: groupId });
+    if (error) throw error;
+    _clubKidsCache = null;
+    const mm = document.getElementById('assign-group-modal'); if(mm) mm.remove();
+    showToast('✓ Priskirta','success');
+    loadClubStudents(); loadClubGroups();
+  } catch(e){ console.error('[assign-kid]',e); showToast('❌ '+(e.message||''),'error'); }
+}
+async function _approveKidOnly(kidId){
+  try {
+    const { error } = await sb.rpc('club_approve_kid', { p_kid: kidId }); if (error) throw error;
+    _clubKidsCache = null;
+    const mm = document.getElementById('assign-group-modal'); if(mm) mm.remove();
+    showToast('✓ Patvirtinta','success');
+    loadClubStudents();
+  } catch(e){ console.error('[approve-kid]',e); showToast('❌ '+(e.message||''),'error'); }
 }
 
 async function loadClubTrainers() {
