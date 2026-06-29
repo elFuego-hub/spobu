@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v267</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v268</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -8698,8 +8698,10 @@ async function akSubmit() {
     }
     
     // 4. Success
-    let trainersList = `<div style="font-size:11px;color:var(--mut);">Pagrindinis treneris: <strong style="color:var(--text);">${akData.trainer_name}</strong></div>`;
-    if (akData.assistant_1_name) {
+    let trainersList = akData.trainer_id
+      ? `<div style="font-size:11px;color:var(--mut);">Pagrindinis treneris: <strong style="color:var(--text);">${akData.trainer_name}</strong></div>`
+      : `<div style="font-size:11px;color:var(--mut);">Trenerį ir grupę priskirs klubas.</div>`;
+    if (akData.trainer_id && akData.assistant_1_name) {
       trainersList += `<div style="font-size:11px;color:var(--mut);">Pavaduojantis: ${akData.assistant_1_name}</div>`;
     }
     if (akData.assistant_2_name) {
@@ -8744,7 +8746,7 @@ async function akSubmit() {
           <div style="font-size:12px;">Email: <span style="color:var(--br);">${akData.kid_email}</span></div>
           <div style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5;">
             Vaikas gaus laišką su slaptažodžio nustatymo nuoroda. Po nustatymo galės prisijungti.<br>
-            ⏳ Bet pirma reikia trenerio patvirtinimo.
+            ⏳ Bet pirma reikia klubo patvirtinimo.
           </div>
         </div>
       `;
@@ -8752,9 +8754,9 @@ async function akSubmit() {
     
     successHTML += `
       <div style="background:rgba(255,77,0,.1);border:.5px solid var(--br);border-radius:10px;padding:12px;">
-        <div style="font-weight:900;color:var(--br);margin-bottom:6px;">⏳ Laukia trenerio patvirtinimo</div>
+        <div style="font-weight:900;color:var(--br);margin-bottom:6px;">⏳ Laukia klubo patvirtinimo</div>
         <div style="font-size:12px;line-height:1.5;">
-          Pagrindinis treneris <strong>${akData.trainer_name}</strong> gaus pranešimą ir patvirtins anketą.<br>
+          Klubas gaus pranešimą, patvirtins anketą ir priskirs grupę su treneriu.<br>
           Po patvirtinimo vaikas pilnai naudosis platforma.
         </div>
       </div>
@@ -14501,7 +14503,7 @@ function _showChallengeTrainerPicker(trainers){
   const m = document.createElement('div'); m.id='ch-trainer-pick';
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100005;align-items:flex-end;justify-content:center;';
   m.onclick=(e)=>{ if(e.target===m) m.remove(); };
-  const rows = (trainers||[]).map(t=>{ const nm=`${t.first_name||''} ${t.last_name||''}`.trim()||'Treneris'; return `<div onclick="_chPickTrainer('${t.id}')" style="padding:13px 16px;border-top:.5px solid var(--bdr);cursor:pointer;font-size:14px;color:#fff;">🥋 ${nm}</div>`; }).join('');
+  const rows = (trainers||[]).map(t=>{ const nm = t.name || 'Treneris'; return `<div onclick="_chPickTrainer('${t.id}')" style="padding:13px 16px;border-top:.5px solid var(--bdr);cursor:pointer;font-size:14px;color:#fff;">🥋 ${nm}</div>`; }).join('');
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;animation:slideUp .3s ease-out;"><div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">KAM SIŲSTI?</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Pasirink trenerį, kuris patvirtins</div></div>${rows}<div style="height:10px;"></div></div>`;
   document.body.appendChild(m);
 }
@@ -26032,7 +26034,7 @@ async function _loadGroupKids(groupId){
   const kids = data||[];
   const cnt = document.getElementById('cgm-kids-count'); if(cnt) cnt.textContent = kids.length;
   if(!kids.length){ el.innerHTML='<div style="color:var(--mut);font-size:12px;padding:8px 0;">Grupėje vaikų nėra. Pridėk →</div>'; return; }
-  el.innerHTML = kids.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:.5px solid var(--bdr);font-size:13px;color:#fff;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</span><button onclick="removeKidFromGroup('${k.id}','${groupId}')" style="background:transparent;border:.5px solid rgba(239,68,68,.3);color:#EF4444;border-radius:7px;width:28px;height:28px;cursor:pointer;flex-shrink:0;">✕</button></div>`).join('');
+  el.innerHTML = kids.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:.5px solid var(--bdr);font-size:13px;color:#fff;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</span><button onclick="_clubRemoveKidFromGroup('${k.id}','${groupId}')" style="background:transparent;border:.5px solid rgba(239,68,68,.3);color:#EF4444;border-radius:7px;width:28px;height:28px;cursor:pointer;flex-shrink:0;">✕</button></div>`).join('');
 }
 async function openAddKidToGroup(groupId){
   const all = await _getClubKids(true);
@@ -26057,7 +26059,7 @@ async function _pickKidToGroup(kidId, groupId){
     _loadGroupKids(groupId); loadClubGroups();
   } catch(e){ console.error('[add-kid-group]',e); showToast('❌ '+(e.message||''),'error'); }
 }
-async function removeKidFromGroup(kidId, groupId){
+async function _clubRemoveKidFromGroup(kidId, groupId){
   if(!confirm('Pašalinti vaiką iš grupės? Liks be trenerio, kol priskirsi iš naujo.')) return;
   try {
     const { error } = await sb.rpc('remove_kid_from_group', { p_kid: kidId });
@@ -26129,7 +26131,7 @@ async function submitClubGroup(groupId){
   if (name.length < 2){ showE('Pavadinimas per trumpas (min. 2)'); return; }
   if (!trainerId){ showE('Pasirink pagrindinį trenerį'); return; }
   const scheduleJson = schedule.length ? JSON.stringify(schedule) : null;
-  const trainingDays = schedule.length ? schedule.map(s=>CLUB_DAY_SHORT[s.day]||s.day).join(', ') : null;
+  const trainingDays = schedule.length ? schedule.map(s => CLUB_DAYS.indexOf(s.day)+1).filter(n => n>=1 && n<=7) : []; // int[] (1=Pr..7=Sk) — kaip trenerio pusėj (lankomumui)
   const trainTime = schedule.length ? schedule[0].time : null;
   try {
     if (groupId){
@@ -26153,7 +26155,9 @@ async function submitClubGroup(groupId){
 async function deleteClubGroup(groupId){
   if (!confirm('Ištrinti grupę? Vaikai liks be grupės — reikės priskirti iš naujo.')) return;
   try {
-    await sb.from('kids').update({ group_id: null }).eq('group_id', groupId);
+    // Švariai atkabinam kiekvieną vaiką (valo group_id + assigned_trainer_id + kid_trainers per RPC)
+    const { data: _gk } = await sb.from('kids').select('id').eq('group_id', groupId);
+    for (const _k of (_gk||[])) { try { await sb.rpc('remove_kid_from_group', { p_kid: _k.id }); } catch(_){} }
     const { error } = await sb.from('groups').update({ is_active:false }).eq('id', groupId);
     if (error) throw error;
     showToast('✓ Grupė ištrinta','success');
