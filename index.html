@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v262</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v263</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3174,14 +3174,15 @@ select.inp option{background:#222;}
     <!-- ===== EKRANAS 3: KLUBAS + TRENERIS ===== -->
     <div id="ak-screen-3" style="display:none;">
       <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
-        Pasirink klubą ir trenerius
+        Pasirink klubą. Klubas patvirtins anketą ir priskirs grupę su treneriu.
       </div>
-      
+
       <label class="lbl">KLUBAS</label>
       <select class="inp" id="ak-club" style="margin-bottom:14px;" onchange="akLoadTrainers()">
         <option value="">Pasirinkti klubą...</option>
       </select>
       
+      <div id="ak-trainer-sec" style="display:none;">
       <label class="lbl">PAGRINDINIS TRENERIS *</label>
       <select class="inp" id="ak-trainer" style="margin-bottom:6px;" disabled onchange="akOnPrimaryTrainerChange()">
         <option value="">Pirma pasirink klubą...</option>
@@ -3214,7 +3215,8 @@ select.inp option{background:#222;}
           <option value="">Be antrojo pavaduojančio</option>
         </select>
       </div>
-      
+      </div>
+
       <button class="btn-auth" onclick="akNext(3)">TĘSTI →</button>
       <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(3)">← Atgal</button>
     </div>
@@ -8476,8 +8478,7 @@ function akNext(currentScreen) {
     const assistant2Id = document.getElementById('ak-assistant-2').value || null;
     
     if (!clubId) { showErr(errEl, 'Pasirink klubą'); return; }
-    if (!trainerId) { showErr(errEl, 'Pasirink pagrindinį trenerį'); return; }
-    
+    // Etapas 4: treneris NEPRIVALOMAS — klubas priskirs grupę su treneriu
     akData.club_id = clubId;
     akData.trainer_id = trainerId;
     akData.trainer_name = document.getElementById('ak-trainer').options[document.getElementById('ak-trainer').selectedIndex]?.dataset?.name || '';
@@ -8568,7 +8569,8 @@ async function akSubmit() {
       has_phone: akData.has_phone,
       kid_phone: akData.kid_phone,
       approval_status: 'pending',
-      assigned_trainer_id: akData.trainer_id,
+      club_id: akData.club_id || null,
+      assigned_trainer_id: akData.trainer_id || null,
       user_id: null,
       // Sveikatos info
       health_allergies: akData.health_allergies,
@@ -8603,8 +8605,8 @@ async function akSubmit() {
       throw new Error('Susiejimo klaida: ' + linkError.message);
     }
     
-    // 2b. DABAR sukuriam kid_trainers įrašus (M:N sistema)
-    // RLS reikalauja kad kid_parent_links jau egzistuotų - todėl jis yra pirma
+    // 2b. kid_trainers (M:N) — TIK jei tėvas pasirinko trenerį (Etapas 4: galima be trenerio)
+    if (akData.trainer_id) {
     const trainerInserts = [
       {
         kid_id: kidId,
@@ -8640,7 +8642,8 @@ async function akSubmit() {
     } else {
       console.log(`✅ Sukurta ${trainerInserts.length} kid_trainers įrašų (1 primary + ${trainerInserts.length - 1} assistant)`);
     }
-    
+    } // (Etapas 4) kid_trainers tik jei buvo pasirinktas treneris
+
     // 3. Jei turi telefoną – sukuriam vaiko auth paskyrą per ATSKIRĄ klientą
     // (kad nesugadintumėm tėvų sesijos)
     if (akData.has_phone && akData.kid_email) {
@@ -26204,6 +26207,7 @@ async function loadClubStudents(){
     const qs = [];
     if (trIds.length) qs.push(sb.from('kids').select(SEL).in('assigned_trainer_id', trIds));
     if (grpIds.length) qs.push(sb.from('kids').select(SEL).in('group_id', grpIds));
+    qs.push(sb.from('kids').select(SEL).eq('club_id', currentClub.id)); // Etapas 4: nauji „be trenerio" per club_id
     if (trIds.length){
       const { data: kt } = await sb.from('kid_trainers').select('kid_id').in('trainer_id', trIds);
       const ktIds = [...new Set((kt||[]).map(l=>l.kid_id))];
