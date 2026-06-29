@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v266</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v267</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4875,7 +4875,7 @@ function openHelpModal(who) {
   const contactHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – klausimas')}`;
   const FAQ = {
     trainer: [
-      ['Kaip pridėti grupę ir vaikus?', '„Grupės" lange spausk „+ GRUPĖ", nustatyk tvarkaraštį ir spalvą. Tada „+👤 PRISKIRTI" pridėk vaikus.'],
+      ['Iš kur atsiranda grupės ir vaikai?', 'Grupes kuria ir vaikus priskiria KLUBAS. Tu matai tau priskirtas grupes (kaip pagrindinis treneris arba asistentas) ir valdai jų kasdienybę.'],
       ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai karjeros rekordus, iššūkius, varžybas ir dvikovas. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
       ['Kaip skirti iššūkį?', 'Grupės lange „🎯 IŠŠŪKIS GRUPEI" arba paspaudęs vaiką — asmeninį iššūkį. Siūlyk tik tai, ką gali patikrinti.'],
       ['Kaip žymiu lankomumą?', 'Grupės lange „📋 ŽYMĖTI LANKOMUMĄ". Pilna savaitė → +15 EXP vaikui, pilnas mėnuo → +100.'],
@@ -21228,8 +21228,7 @@ async function loadTrainerGroups() {
         </div>
         <!-- Veiksmai — tvarkinga apatinė juosta -->
         <div style="display:flex;border-top:.5px solid var(--bdr);" onclick="event.stopPropagation();">
-          <button onclick="composeMessageToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="flex:1;background:none;border:none;border-right:.5px solid var(--bdr);padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:#8b8df5;-webkit-tap-highlight-color:rgba(139,141,245,.2);" title="Pranešimai grupei">💬</button>
-          <button onclick="openEditGroupModal('${g.id}')" style="flex:1;background:none;border:none;padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:var(--mut);-webkit-tap-highlight-color:rgba(255,255,255,.1);" title="Redaguoti tvarkaraštį">✏️</button>
+          <button onclick="composeMessageToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="flex:1;background:none;border:none;padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:#8b8df5;-webkit-tap-highlight-color:rgba(139,141,245,.2);" title="Pranešimai grupei">💬</button>
         </div>
       </div>
     `;
@@ -21363,13 +21362,11 @@ async function openGroupView(groupId, silent) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 16px 10px;">
       <button onclick="openCreateChallenge({groupId:'${gObj.id}'})" style="${gvBtn}background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);">🎯 IŠŠŪKIS GRUPEI</button>
       <button onclick="composeMessageToGroup('${gObj.id}', '${(gObj.name || '').replace(/'/g, "\\'")}')" style="${gvBtn}background:rgba(99,102,241,.12);color:#8b8df5;border:.5px solid rgba(99,102,241,.35);">💬 PRANEŠIMAI</button>
-      <button onclick="openEditGroupModal('${gObj.id}')" style="${gvBtn}background:rgba(255,255,255,.06);color:white;border:.5px solid var(--bdr);">✏️ REDAGUOTI</button>
-      <button onclick="openAssignKidsToGroup('${gObj.id}', '${(gObj.name || '').replace(/'/g, "\\'")}')" style="${gvBtn}background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);">+👤 PRISKIRTI</button>
     </div>
 
     <div class="st">VAIKAI ${Object.keys(pend).length ? `<span style="color:var(--br);font-size:11px;">· ${Object.values(pend).reduce((a, b) => a + b, 0)} laukia patvirtinimo</span>` : ''}</div>
     <div style="margin:0 16px 16px;display:flex;flex-direction:column;gap:6px;">
-      ${kidRows || `<div style="text-align:center;padding:24px;color:var(--mut);font-size:11px;background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;">Grupė tuščia.<br>Spausk <strong style="color:var(--grn);">+👤 PRISKIRTI</strong> ir pridėk vaikus.</div>`}
+      ${kidRows || `<div style="text-align:center;padding:24px;color:var(--mut);font-size:11px;background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;">Grupė tuščia.<br>Vaikus į grupę priskiria <strong style="color:var(--grn);">klubas</strong>.</div>`}
     </div>
   `;
 }
