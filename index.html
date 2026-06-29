@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v265</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v266</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -21127,7 +21127,7 @@ async function loadTrainerGroups() {
   // 1. Užkrauname trenerio grupes
   const { data: groups, error } = await sb.from('groups')
     .select('*')
-    .eq('trainer_id', currentUser.id)
+    .or(`trainer_id.eq.${currentUser.id},assistant_trainer_ids.cs.{${currentUser.id}}`)
     .eq('is_active', true)
     .order('created_at', { ascending: true });
   
@@ -21229,17 +21229,15 @@ async function loadTrainerGroups() {
         <!-- Veiksmai — tvarkinga apatinė juosta -->
         <div style="display:flex;border-top:.5px solid var(--bdr);" onclick="event.stopPropagation();">
           <button onclick="composeMessageToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="flex:1;background:none;border:none;border-right:.5px solid var(--bdr);padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:#8b8df5;-webkit-tap-highlight-color:rgba(139,141,245,.2);" title="Pranešimai grupei">💬</button>
-          <button onclick="openAssignKidsToGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="flex:1;background:none;border:none;border-right:.5px solid var(--bdr);padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:var(--grn);-webkit-tap-highlight-color:rgba(34,197,94,.2);" title="Priskirti vaikus">＋👤</button>
-          <button onclick="openEditGroupModal('${g.id}')" style="flex:1;background:none;border:none;border-right:.5px solid var(--bdr);padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:var(--mut);-webkit-tap-highlight-color:rgba(255,255,255,.1);" title="Redaguoti grupę">✏️</button>
-          <button onclick="confirmDeleteGroup('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="flex:1;background:none;border:none;padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:#EF4444;-webkit-tap-highlight-color:rgba(239,68,68,.2);" title="Ištrinti grupę">🗑️</button>
+          <button onclick="openEditGroupModal('${g.id}')" style="flex:1;background:none;border:none;padding:12px 4px;cursor:pointer;font-size:16px;line-height:1;color:var(--mut);-webkit-tap-highlight-color:rgba(255,255,255,.1);" title="Redaguoti tvarkaraštį">✏️</button>
         </div>
       </div>
     `;
   });
   
-  // Vaikai BE grupės (visada matomi - todėl sutraukti, su strelyte)
+  // (Naujas modelis) „Be grupės" PAŠALINTA iš trenerio — vaikus į grupes priskiria KLUBAS (Mokiniai tab)
   const ungroupedKids = (kids || []).filter(k => !k.group_id);
-  if (ungroupedKids.length > 0) {
+  if (false) {
     html += `
       <div style="background:rgba(255,255,255,.03);border:.5px dashed var(--bdr);border-radius:14px;margin-bottom:10px;overflow:hidden;">
         <div onclick="toggleGroupExpand('ungrouped')" style="padding:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
