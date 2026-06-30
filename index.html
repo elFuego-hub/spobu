@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v293</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v294</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15159,77 +15159,74 @@ async function loadClubCompetitions() {
     return;
   }
   
-  // Skaičiuoti dalyvių skaičius (kiek pateikė rezultatus)
+  // Skaičiuoti dalyvavimą + medalius (artėjančioms: dalyvaus/nedalyvaus; pasibaigusioms: 🥇🥈🥉)
   const compIds = compsToShow.map(c => c.id);
   let resultsByComp = {};
   if (compIds.length > 0) {
     const { data: results } = await sb.from('competition_results')
-      .select('competition_id, status, approval_status')
+      .select('competition_id, status, approval_status, placement')
       .in('competition_id', compIds);
     (results || []).forEach(r => {
-      if (!resultsByComp[r.competition_id]) resultsByComp[r.competition_id] = { total: 0, approved: 0, pending: 0 };
-      resultsByComp[r.competition_id].total++;
-      if (r.approval_status === 'approved') resultsByComp[r.competition_id].approved++;
-      if (r.approval_status === 'pending') resultsByComp[r.competition_id].pending++;
+      const o = resultsByComp[r.competition_id] || (resultsByComp[r.competition_id] = { total:0, planning:0, wont:0, participated:0, pending:0, gold:0, silver:0, bronze:0 });
+      o.total++;
+      if (r.status === 'planning') o.planning++;
+      else if (r.status === 'wont_attend') o.wont++;
+      else if (r.status === 'participated') {
+        o.participated++;
+        if (r.approval_status === 'pending') o.pending++;
+        else if (r.approval_status === 'approved') { if (r.placement===1) o.gold++; else if (r.placement===2) o.silver++; else if (r.placement===3) o.bronze++; }
+      }
     });
   }
   
   const html = compsToShow.map(c => {
-    const stats = resultsByComp[c.id] || { total: 0, approved: 0, pending: 0 };
+    const stats = resultsByComp[c.id] || { total:0, planning:0, wont:0, participated:0, pending:0, gold:0, silver:0, bronze:0 };
     const isPast = c.event_date < today;
-    
-    // Countdown
     let timeInfo = '';
-    if (!isPast) {
-      const days = Math.ceil((new Date(c.event_date) - new Date()) / 86400000);
-      if (days === 0) timeInfo = '🔥 Šiandien!';
-      else if (days === 1) timeInfo = '⏱️ Rytoj';
-      else timeInfo = `⏱️ Liko ${days} d.`;
-    } else {
-      const days = Math.ceil((new Date() - new Date(c.event_date)) / 86400000);
-      timeInfo = `📅 Prieš ${days} d.`;
-    }
-    
+    if (!isPast) { const days = Math.ceil((new Date(c.event_date) - new Date()) / 86400000); timeInfo = days===0?'🔥 Šiandien!':(days===1?'⏱️ Rytoj':`⏱️ Liko ${days} d.`); }
+    else { const days = Math.ceil((new Date() - new Date(c.event_date)) / 86400000); timeInfo = `📅 Prieš ${days} d.`; }
     const typeLabel = COMP_TYPE_LABELS[c.competition_type] || c.competition_type;
     const levelLabel = c.level ? COMP_LEVEL_LABELS[c.level] : '';
-    
-    const cardOpacity = isPast ? 'opacity:.85;' : '';
-    
-    return `<div class="cd" style="margin-bottom:12px;${cardOpacity}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
+    const accent = { kumite:'#EF4444', kata:'#4FC3F7' }[c.competition_type] || 'var(--br)';
+    const safe = (c.title || '').replace(/'/g, "\\'");
+    let statsBlock;
+    if (isPast) {
+      statsBlock = `<div style="display:flex;gap:6px;margin-bottom:10px;">
+        <div style="flex:1;background:var(--bg);border-radius:10px;padding:9px 6px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;">${stats.participated}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">DALYVAVO</div></div>
+        <div style="flex:1.5;background:var(--bg);border-radius:10px;padding:9px 6px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🥇${stats.gold} 🥈${stats.silver} 🥉${stats.bronze}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">MEDALIAI</div></div>
+        ${stats.pending?`<div style="flex:.8;background:rgba(255,140,0,.08);border-radius:10px;padding:9px 6px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF8C00;">${stats.pending}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">LAUKIA</div></div>`:''}
+      </div>`;
+    } else {
+      statsBlock = `<div style="display:flex;gap:6px;margin-bottom:10px;">
+        <div style="flex:1;background:rgba(34,197,94,.06);border-radius:10px;padding:9px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--grn);">${stats.planning}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">DALYVAUS</div></div>
+        <div style="flex:1;background:rgba(239,68,68,.05);border-radius:10px;padding:9px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EF4444;">${stats.wont}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">NEDALYVAUS</div></div>
+      </div>`;
+    }
+    return `<div class="cd" style="margin-bottom:12px;border-left:3px solid ${accent};${isPast?'opacity:.92;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${c.title}</div>
-          <div style="font-size:11px;color:var(--mut);">${typeLabel}${levelLabel ? ' · ' + levelLabel : ''}</div>
+          <div style="font-size:15px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:5px;">${c.title}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <span style="font-size:9px;font-weight:800;color:${accent};background:${accent}1f;padding:2px 8px;border-radius:99px;">${typeLabel}</span>
+            ${levelLabel?`<span style="font-size:9px;font-weight:700;color:var(--mut);background:rgba(255,255,255,.06);padding:2px 8px;border-radius:99px;">${levelLabel}</span>`:''}
+          </div>
         </div>
-        <div class="bg ${isPast ? '' : 'gn'}" style="${isPast ? 'background:rgba(255,255,255,.1);color:var(--mut);' : ''}">${timeInfo}</div>
+        <span style="flex-shrink:0;font-size:10px;font-weight:800;padding:4px 10px;border-radius:99px;${isPast?'background:rgba(255,255,255,.08);color:var(--mut);':'background:rgba(34,197,94,.15);color:var(--grn);'}">${timeInfo}</span>
       </div>
-      
-      <div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:var(--mut);">
-        <div style="margin-bottom:4px;">📅 ${formatDateLT(c.event_date)}</div>
-        <div style="margin-bottom:4px;">📍 ${c.location || '–'}</div>
-        ${c.registration_url ? `<div style="margin-bottom:4px;"><a href="${c.registration_url}" target="_blank" style="color:var(--br);text-decoration:none;">🔗 Registracija</a></div>` : ''}
-        ${c.additional_info ? `<div style="margin-top:6px;color:var(--text);font-size:11px;">${c.additional_info}</div>` : ''}
+      <div style="font-size:11px;color:var(--mut);margin-bottom:10px;line-height:1.6;">
+        📅 ${formatDateLT(c.event_date)}${c.location?`  ·  📍 ${c.location}`:''}
+        ${c.registration_url?`<br><a href="${c.registration_url}" target="_blank" style="color:var(--br);text-decoration:none;">🔗 Registracija</a>`:''}
+        ${c.additional_info?`<div style="margin-top:5px;color:var(--text);">${c.additional_info}</div>`:''}
       </div>
-      
-      <!-- Statistikos -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px;">
-        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);">${stats.total}</div>
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">DALYVIAI</div>
-        </div>
-        <div style="background:rgba(34,197,94,.05);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">${stats.approved}</div>
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">PATVIRTINTA</div>
-        </div>
-        <div style="background:rgba(255,77,0,.05);border-radius:8px;padding:8px;text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${stats.pending}</div>
-          <div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAUKIA</div>
-        </div>
+      ${statsBlock}
+      ${isPast?`<div style="display:flex;gap:6px;margin-bottom:6px;">
+        <button onclick="openEventPostCard('comp','${c.id}')" style="flex:1;background:rgba(255,106,0,.12);color:#FF8C00;border:.5px solid rgba(255,106,0,.45);padding:9px;border-radius:9px;font-size:12px;cursor:pointer;font-weight:800;">📣 Postas</button>
+        <button onclick="exportCompetitionCSV('${c.id}','${safe}')" style="flex:1;background:rgba(34,197,94,.12);color:var(--grn);border:.5px solid rgba(34,197,94,.4);padding:9px;border-radius:9px;font-size:12px;cursor:pointer;font-weight:800;">📥 CSV</button>
+      </div>`:''}
+      <div style="display:flex;gap:6px;">
+        <button onclick="viewCompetitionParticipants('${c.id}', '${safe}')" style="flex:1;background:rgba(255,77,0,.06);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:9px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">👥 Dalyviai</button>
+        <button onclick="deleteCompetition('${c.id}', '${safe}')" style="flex-shrink:0;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:9px 14px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">🗑️</button>
       </div>
-      
-      ${isPast ? `<button onclick="openEventPostCard('comp','${c.id}')" style="width:100%;background:rgba(255,106,0,.12);color:#FF8C00;border:.5px solid rgba(255,106,0,.45);padding:9px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:800;margin-bottom:6px;">📣 Sukurti soc. postą</button>` : ''}
-      <button onclick="viewCompetitionParticipants('${c.id}', '${(c.title || '').replace(/'/g, "\\'")}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">👥 ŽIŪRĖTI DALYVIUS</button>
-      <button onclick="deleteCompetition('${c.id}', '${(c.title || '').replace(/'/g, "\\'")}')" style="width:100%;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
     </div>`;
   }).join('');
   
