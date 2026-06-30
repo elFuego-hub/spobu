@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v289</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v290</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3532,16 +3532,28 @@ select.inp option{background:#222;}
     </div>
     <!-- DIRŽŲ LAIKYMAS (belt_test) -->
     <div id="k-ev-belt" class="k-ev-pane" style="display:none;">
-      <button onclick="openCreateCompetition('belt_test')" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJAS DIRŽŲ LAIKYMAS</button>
+      <div class="tabs" style="margin-bottom:10px;">
+        <div class="tab on" onclick="switchEvSub(this,'belt','upcoming')">🔜 Artėjantys <span id="k-belt-upcoming-count" style="opacity:.6;">0</span></div>
+        <div class="tab" onclick="switchEvSub(this,'belt','past')">📦 Pasibaigę <span id="k-belt-past-count" style="opacity:.6;">0</span></div>
+      </div>
+      <button onclick="openCreateCompetition('belt_test')" id="k-new-belt-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJAS DIRŽŲ LAIKYMAS</button>
       <div id="k-belt-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
     </div>
     <!-- STOVYKLOS (Blokas 4) -->
     <div id="k-ev-camps" class="k-ev-pane" style="display:none;">
+      <div class="tabs" style="margin-bottom:10px;">
+        <div class="tab on" onclick="switchEvSub(this,'camps','upcoming')">🔜 Artėjančios <span id="k-camps-upcoming-count" style="opacity:.6;">0</span></div>
+        <div class="tab" onclick="switchEvSub(this,'camps','past')">📦 Pasibaigusios <span id="k-camps-past-count" style="opacity:.6;">0</span></div>
+      </div>
       <button onclick="openCreateCamp()" id="k-new-camp-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJA STOVYKLA</button>
       <div id="k-camps-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
     </div>
     <!-- GRUPIŲ IŠŠŪKIS (Blokas 5) -->
     <div id="k-ev-gc" class="k-ev-pane" style="display:none;">
+      <div class="tabs" style="margin-bottom:10px;">
+        <div class="tab on" onclick="switchEvSub(this,'gc','upcoming')">🟢 Aktyvūs <span id="k-gc-upcoming-count" style="opacity:.6;">0</span></div>
+        <div class="tab" onclick="switchEvSub(this,'gc','past')">🏁 Užbaigti <span id="k-gc-past-count" style="opacity:.6;">0</span></div>
+      </div>
       <button onclick="openCreateClubChallenge()" id="k-new-gc-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJAS GRUPIŲ IŠŠŪKIS</button>
       <div id="k-gc-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
     </div>
@@ -15093,6 +15105,18 @@ function switchKcTab(el, tabName) {
   loadClubCompetitions();
 }
 
+// Sub-filtras (Artėjantys/Pasibaigę) diržams/stovykloms/grupių iššūkiams — kaip switchKcTab varžyboms
+const evSub = { belt:'upcoming', camps:'upcoming', gc:'upcoming' };
+function switchEvSub(el, type, mode){
+  el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  evSub[type] = mode;
+  const btn = document.getElementById({ belt:'k-new-belt-btn', camps:'k-new-camp-btn', gc:'k-new-gc-btn' }[type]);
+  if (btn) btn.style.display = (mode === 'upcoming') ? 'block' : 'none';
+  const loader = { belt: loadClubBeltTests, camps: loadClubCamps, gc: loadClubGroupChallenges }[type];
+  if (typeof loader === 'function') loader();
+}
+
 async function loadClubCompetitions() {
   const clubId = currentClub?.id;
   if (!clubId) {
@@ -15251,7 +15275,12 @@ async function loadClubBeltTests(){
     (results||[]).forEach(r=>{ if(!byComp[r.competition_id]) byComp[r.competition_id]={total:0,approved:0,pending:0}; byComp[r.competition_id].total++; if(r.approval_status==='approved')byComp[r.competition_id].approved++; if(r.approval_status==='pending')byComp[r.competition_id].pending++; });
   }
   const today = new Date().toISOString().split('T')[0];
-  el.innerHTML = comps.map(c=>{
+  const _bUp = comps.filter(c=>c.event_date>=today), _bPast = comps.filter(c=>c.event_date<today);
+  const _bu=document.getElementById('k-belt-upcoming-count'); if(_bu)_bu.textContent=_bUp.length;
+  const _bp=document.getElementById('k-belt-past-count'); if(_bp)_bp.textContent=_bPast.length;
+  const _bShow = evSub.belt==='past' ? _bPast : _bUp;
+  if(!_bShow.length){ el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--mut);">${evSub.belt==='past'?'Nėra pasibaigusių diržų laikymų.':'Nėra artėjančių diržų laikymų.<br><br>Spausk + NAUJAS DIRŽŲ LAIKYMAS 🥋'}</div>`; return; }
+  el.innerHTML = _bShow.map(c=>{
     const s = byComp[c.id] || {total:0,approved:0,pending:0};
     const isPast = c.event_date < today;
     const when = isPast ? `📅 Prieš ${Math.ceil((new Date()-new Date(c.event_date))/86400000)} d.` : (c.event_date===today?'🔥 Šiandien!':`⏱️ Liko ${Math.ceil((new Date(c.event_date)-new Date())/86400000)} d.`);
@@ -16429,7 +16458,12 @@ async function loadClubCamps(){
     (rs||[]).forEach(r=>{ if(!byEv[r.event_id]) byEv[r.event_id]={going:0,attended:0}; if(r.status!=='not_going') byEv[r.event_id].going++; if(r.attended) byEv[r.event_id].attended++; });
   }
   const today = new Date().toISOString().split('T')[0];
-  el.innerHTML = camps.map(c=>{
+  const _cUp = camps.filter(c=>((c.ends_on||c.starts_on)>=today)), _cPast = camps.filter(c=>((c.ends_on||c.starts_on)<today));
+  const _cu=document.getElementById('k-camps-upcoming-count'); if(_cu)_cu.textContent=_cUp.length;
+  const _cp=document.getElementById('k-camps-past-count'); if(_cp)_cp.textContent=_cPast.length;
+  const _cShow = evSub.camps==='past' ? _cPast : _cUp;
+  if(!_cShow.length){ el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--mut);">${evSub.camps==='past'?'Nėra pasibaigusių stovyklų.':'Nėra artėjančių stovyklų.<br><br>Spausk + NAUJA STOVYKLA ⛺'}</div>`; return; }
+  el.innerHTML = _cShow.map(c=>{
     const s = byEv[c.id] || {going:0, attended:0};
     const endRef = c.ends_on || c.starts_on;
     const isPast = endRef < today;
@@ -16618,7 +16652,12 @@ async function loadClubGroupChallenges(){
   if (error){ el.innerHTML = `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`; return; }
   if (!chs || !chs.length){ el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Dar nėra grupių iššūkių.<br><br>Spausk + NAUJAS GRUPIŲ IŠŠŪKIS 🏆</div>'; return; }
   const today = new Date().toISOString().split('T')[0];
-  el.innerHTML = chs.map(c=>{
+  const _gUp = chs.filter(c=>c.is_active), _gPast = chs.filter(c=>!c.is_active);
+  const _gu=document.getElementById('k-gc-upcoming-count'); if(_gu)_gu.textContent=_gUp.length;
+  const _gp=document.getElementById('k-gc-past-count'); if(_gp)_gp.textContent=_gPast.length;
+  const _gShow = evSub.gc==='past' ? _gPast : _gUp;
+  if(!_gShow.length){ el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--mut);">${evSub.gc==='past'?'Nėra užbaigtų grupių iššūkių.':'Nėra aktyvių grupių iššūkių.<br><br>Spausk + NAUJAS GRUPIŲ IŠŠŪKIS 🏆'}</div>`; return; }
+  el.innerHTML = _gShow.map(c=>{
     const safe = (c.title||'').replace(/'/g,"\\'");
     const dateRange = (c.starts_on||c.ends_on) ? `${c.starts_on?formatDateLT(c.starts_on):'…'} – ${c.ends_on?formatDateLT(c.ends_on):'…'}` : 'Be datų';
     const timeEnded = c.ends_on && c.ends_on < today;
