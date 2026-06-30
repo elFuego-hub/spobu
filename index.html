@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v292</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v293</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -10030,8 +10030,8 @@ async function loadKidData() {
   // Diržas (header)
   updateBeltDisplay();
   
-  // Varžybų medaliai (Inventoriuje)
-  loadKidCompetitionMedals();
+  // „Laimėjimų lentelė" užpildoma atidarius Varžybų langą (updateCompStatsUI — medaliai pagal lygį, be diržų).
+  //   Senasis loadKidCompetitionMedals dubliavo į tą patį elementą ir rodė diržo testus kaip trofėjus (glitch) — nebekviečiam.
 
   // EXP baras
   updateExpBar(currentKid.total_exp || 0, currentKid.current_level || 1);
@@ -17173,10 +17173,11 @@ async function viewCompetitionParticipants(competitionId, title) {
   let kidsMap = {};
   if (kidIds.length > 0) {
     const { data: kidsData } = await sb.from('kids')
-      .select('id, first_name, last_name, gender, kyu')
+      .select('id, first_name, last_name, gender, kyu, avatar_url')
       .in('id', kidIds);
     (kidsData || []).forEach(k => { kidsMap[k.id] = k; });
   }
+  const nameMap = await _fetchKidNameMap(kidIds);
   
   // 4. Sugrupuoti pagal status
   const planning = results.filter(r => r.status === 'planning');
@@ -17263,31 +17264,27 @@ async function viewCompetitionParticipants(competitionId, title) {
   }
   
   // Vaiko kortelės helper
+  const _cardBadge = { '1':'🥇', '2':'🥈', '3':'🥉', 'pass':'🥋', 'planning':'✅', 'wont':'🚫' };
   function renderKidCard(result, label, color, bgColor) {
     const kid = kidsMap[result.kid_id];
-    const name = kid ? `${kid.first_name || 'Vaikas'} ${kid.last_name?.[0] || ''}.`.trim() : 'Nežinomas';
-    const genderIcon = kid?.gender === 'female' ? '👧' : '👦';
+    const name = nameMap[result.kid_id] || _kidDisplayName(kid) || 'Vaikas';
     const kyu = kid?.kyu || 'Mu kyu';
-    
+    const av = kid?.avatar_url;
+    const avStyle = av ? `background-image:url('${av}');background-size:cover;background-position:center;` : (kid?.gender === 'female' ? 'background:linear-gradient(135deg,#EC4899,#BE185D);' : 'background:linear-gradient(135deg,#3B82F6,#1D4ED8);');
+    const avInner = av ? '' : (name[0] || '?').toUpperCase();
     let extraInfo = '';
-    if (result.placement && result.approval_status === 'approved') {
-      if (result.wins !== null && result.losses !== null && (result.wins > 0 || result.losses > 0)) {
-        extraInfo = ` · ${result.wins}W:${result.losses}L`;
-      }
-    }
-    if (result.belt_passed === true && result.new_kyu) {
-      extraInfo = ` → ${result.new_kyu}`;
-    }
-    
+    if (result.placement && result.approval_status === 'approved' && result.wins != null && result.losses != null && (result.wins > 0 || result.losses > 0)) extraInfo = ` · ${result.wins}W:${result.losses}L`;
+    if (result.belt_passed === true && result.new_kyu) extraInfo = ` → ${result.new_kyu}`;
     const statusIcon = result.approval_status === 'pending' ? ' ⏳' : '';
-    
+    const badge = _cardBadge[label] ? `<div style="font-size:20px;flex-shrink:0;">${_cardBadge[label]}</div>` : '';
     return `
-      <div style="background:${bgColor};border:.5px solid ${color}50;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-        <div style="font-size:16px;flex-shrink:0;">${genderIcon}</div>
+      <div style="background:${bgColor};border:.5px solid ${color}40;border-radius:12px;padding:9px 11px;display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <div style="width:36px;height:36px;border-radius:50%;${avStyle}display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:#fff;flex-shrink:0;">${avInner}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:12px;">${name}${statusIcon}</div>
-          <div style="font-size:10px;color:var(--mut);">${kyu}${extraInfo}</div>
+          <div style="font-weight:700;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}${statusIcon}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;">${kyu}${extraInfo}</div>
         </div>
+        ${badge}
       </div>
     `;
   }
