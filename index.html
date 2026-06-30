@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v281</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v282</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2450,6 +2450,9 @@ select.inp option{background:#222;}
         <div style="text-align:right;font-size:9px;color:rgba(255,255,255,.8);font-weight:700;margin-top:3px;" id="tk-next-txt"></div>
       </div>
     </div>
+
+    <!-- ❌/⏳ Anketos būsenos juosta (rejected/pending) — pildoma loadParentKidMain -->
+    <div id="tk-approval-banner" style="display:none;margin:10px 16px 0;"></div>
 
     <!-- 🔥 STREAKAI -->
     <div style="display:flex;gap:6px;padding:0 16px;margin-top:10px;">
@@ -5142,10 +5145,12 @@ async function _parentFixAndReregister(kidId){
     if (error) throw error;
     showToast('✓ Pataisyta ir išsiųsta iš naujo — laukia patvirtinimo');
     closeEditKidModal();
-    if (typeof currentParentKid !== 'undefined' && currentParentKid && currentParentKid.id === kidId){ currentParentKid.approval_status = 'pending'; currentParentKid.rejection_reason = null; if(kyu) currentParentKid.kyu = kyu; if(weight) currentParentKid.weight_range = weight; }
-    if (typeof showKidDetail === 'function') await showKidDetail(kidId);
+    const _patch = (o) => { if (o && o.id === kidId){ o.approval_status = 'pending'; o.rejection_reason = null; if(kyu) o.kyu = kyu; if(weight) o.weight_range = weight; } };
+    if (typeof currentParentKid !== 'undefined') _patch(currentParentKid);
+    if (typeof parentActiveKid !== 'undefined') _patch(parentActiveKid);
     if (typeof refreshParentKidById === 'function') await refreshParentKidById(kidId);
-    if (typeof loadParentMainKidsPreview === 'function') loadParentMainKidsPreview();
+    if (typeof loadParentKidMain === 'function') loadParentKidMain();
+    if (typeof showKidDetail === 'function') await showKidDetail(kidId);
   } catch(e){ console.error('[fix-reregister]', e); if(errEl) showErr(errEl,'Klaida: '+(e.message||'')); else showToast('❌ '+(e.message||'')); }
 }
 
@@ -5458,11 +5463,15 @@ function openParentKidSwitcher() {
     const active = parentActiveKid && k.id === parentActiveKid.id;
     const info = (typeof getStageInfo === 'function') ? getStageInfo(k.total_exp || 0) : { globalLevel: 1, stage: '' };
     const avStyle = k.avatar_url ? `background-image:url('${k.avatar_url}');background-size:cover;background-position:center;` : 'background:linear-gradient(135deg,#FF4D00,#FFA500);';
+    const stBadge = k.approval_status === 'rejected'
+      ? '<span style="font-size:8px;font-weight:800;color:#EF4444;background:rgba(239,68,68,.15);padding:1px 6px;border-radius:99px;">❌ ATMESTA</span>'
+      : (k.approval_status === 'pending' ? '<span style="font-size:8px;font-weight:800;color:#FF8C00;background:rgba(255,140,0,.15);padding:1px 6px;border-radius:99px;">⏳ LAUKIA</span>' : '');
     return `<div onclick="parentSelectKid('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:10px;background:${active ? 'rgba(255,77,0,.1)' : 'transparent'};border:${active ? '1.5px solid var(--br)' : '.5px solid var(--bdr)'};border-radius:12px;margin-bottom:8px;cursor:pointer;">
       <div style="width:42px;height:42px;border-radius:50%;${avStyle}display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;color:white;flex-shrink:0;">${k.avatar_url ? '' : parentKidInitials(k)}</div>
       <div style="flex:1;min-width:0;text-align:left;">
         <div style="font-size:12px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${parentKidName(k)}</div>
         <div style="font-size:9px;color:var(--mut);font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-top:1px;">${(k.kyu || 'Be kyu')} · ${info.stage} · LVL ${info.globalLevel}</div>
+        ${stBadge ? `<div style="margin-top:3px;">${stBadge}</div>` : ''}
       </div>
       ${active ? '<div style="color:var(--br);font-size:16px;flex-shrink:0;">✓</div>' : ''}
     </div>`;
@@ -5491,6 +5500,29 @@ async function getCareerCategories() {
   return _careerCatsCache;
 }
 
+// ❌/⏳ Tėvo home: vaiko anketos būsenos juosta (rejected → taisyti; pending → laukia klubo)
+function _renderParentApprovalBanner(k){
+  const ab = document.getElementById('tk-approval-banner');
+  if (!ab) return;
+  if (k && k.approval_status === 'rejected') {
+    ab.style.display = 'block';
+    ab.innerHTML = `<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);border-radius:12px;padding:12px 14px;">
+      <div style="color:#EF4444;font-weight:800;font-size:13px;">❌ Anketa atmesta</div>
+      <div style="color:var(--mut);font-size:12px;line-height:1.45;margin-top:5px;"><span style="color:#fff;font-weight:700;">Priežastis: </span>${k.rejection_reason ? escapeHtml(k.rejection_reason) : 'Susisiek su klubu.'}</div>
+      <button onclick="showEditKidModal('${k.id}')" style="margin-top:9px;width:100%;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px;border-radius:8px;cursor:pointer;">🔄 Taisyti ir registruoti iš naujo</button>
+    </div>`;
+  } else if (k && k.approval_status === 'pending') {
+    ab.style.display = 'block';
+    ab.innerHTML = `<div style="background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.4);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:10px;">
+      <div style="font-size:20px;line-height:1;">⏳</div>
+      <div style="font-size:12px;color:var(--mut);line-height:1.45;"><span style="color:#FF8C00;font-weight:800;">Laukia klubo patvirtinimo.</span> Klubas peržiūri anketą ir priskirs grupę bei trenerį.</div>
+    </div>`;
+  } else {
+    ab.style.display = 'none';
+    ab.innerHTML = '';
+  }
+}
+
 // 🏠 PAGRINDINIS — vaiko dashboard
 async function loadParentKidMain() {
   const k = parentActiveKid;
@@ -5508,6 +5540,9 @@ async function loadParentKidMain() {
     return;
   }
 
+  // home rodomas vaikas = „dabartinis" valdomas (kad būsenos juostos „Taisyti" mygtukas turėtų currentParentKid)
+  currentParentKid = k;
+
   const info = getStageInfo(k.total_exp || 0);
   const stageObj = STAGES.find(s => s.name === info.stage) || STAGES[0];
   const hero = document.getElementById('tk-hero'); if (hero) hero.style.background = stageObj.bgGradient;
@@ -5516,6 +5551,9 @@ async function loadParentKidMain() {
   if (av) { if (k.avatar_url) { av.style.backgroundImage = `url('${k.avatar_url}')`; av.textContent = ''; } else { av.style.backgroundImage = ''; av.textContent = parentKidInitials(k); } }
   const sub = document.getElementById('tk-hero-sub');
   if (sub) sub.textContent = `${stageObj.emoji} ${(k.first_name || 'VAIKAS').toUpperCase()} · LVL ${info.globalLevel}`;
+
+  // ❌/⏳ Anketos būsenos juosta (atmesta/laukia)
+  _renderParentApprovalBanner(k);
 
   const exp = k.total_exp || 0;
   const expTxt = document.getElementById('tk-exp-txt');
@@ -7931,6 +7969,12 @@ function switchParentBellTab(tab) {
   if (el) el.innerHTML = _parentBellHtml[tab] || '<div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">–</div>';
 }
 
+// Tėvas: iš varpelio atidaryti atmestos anketos taisymą
+function _parentOpenRejectFix(){
+  const m = document.getElementById('parent-bell-modal'); if (m) m.remove();
+  if (parentActiveKid) { currentParentKid = parentActiveKid; if (typeof showEditKidModal === 'function') showEditKidModal(parentActiveKid.id); }
+}
+
 async function loadParentBellContent() {
   const el = document.getElementById('parent-bell-list'); if (!el) return;
   try {
@@ -8007,7 +8051,20 @@ async function loadParentBellContent() {
         (bellReps || []).forEach(rep => _addSeen('prepb', rep.id));
       }
     } catch (e) { /* nekritinis */ }
-    _parentBellHtml.ann = (repHtml || annHtml) ? (repHtml + annHtml) : '<div style="text-align:center;padding:24px 14px;color:var(--mut);font-size:11px;">📭 Naujų pranešimų nėra</div>';
+    // ❌ Registracijos atmetimas (aktyvaus vaiko) — viršuje varpelio
+    let rejHtml = '';
+    if (activeKid && activeKid.approval_status === 'rejected') {
+      rejHtml = `<div onclick="_parentOpenRejectFix()" style="background:var(--card);border:.5px solid rgba(239,68,68,.4);border-left:3px solid #EF4444;border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;">
+        <div style="font-size:18px;">❌</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:#EF4444;background:#EF444422;padding:1px 7px;border-radius:99px;margin-bottom:3px;">ANKETA ATMESTA</div>
+          <div style="font-size:11px;font-weight:800;color:white;">${activeKid.first_name ? escapeHtml(activeKid.first_name) : 'Vaiko'} registracija atmesta</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${activeKid.rejection_reason ? escapeHtml(activeKid.rejection_reason) : 'Susisiek su klubu.'} · Paspausk ir pataisyk</div>
+        </div>
+        <div style="width:7px;height:7px;background:#EF4444;border-radius:50%;margin-top:5px;flex-shrink:0;"></div>
+      </div>`;
+    }
+    _parentBellHtml.ann = (rejHtml || repHtml || annHtml) ? (rejHtml + repHtml + annHtml) : '<div style="text-align:center;padding:24px 14px;color:var(--mut);font-size:11px;">📭 Naujų pranešimų nėra</div>';
 
     // 2) Trenerio / klubo žinutės (pokalbiai) — chatMem jau gautas lygiagrečiai aukščiau
     const chatConvs = (chatMem || []).filter(m => m.conversations && m.conversations.last_message_at).filter(relatesToActiveKid)
