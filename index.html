@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v287</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v288</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3457,7 +3457,15 @@ select.inp option{background:#222;}
 <!-- KLUBAS: TRENERIAI -->
 <div class="sc" id="k-trainers">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('k','k-main')">←</div><div class="tt">KLUBAS</div></div>
+  <div class="tb" style="display:flex;align-items:center;gap:8px;">
+    <div class="bb" onclick="g('k','k-main')">←</div>
+    <div class="tt" style="flex:1;">KLUBAS</div>
+    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('team')" title="Apie šį langą">💡</div>
+      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai">🔔<div id="kt-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubSettings()" title="Nustatymai">⚙️</div>
+    </div>
+  </div>
   <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
     <button class="k-team-tab on" data-tab="groups" onclick="switchClubTeamTab('groups')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">📅 Grupės</button>
     <button class="k-team-tab" data-tab="trainers" onclick="switchClubTeamTab('trainers')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥋 Treneriai</button>
@@ -15398,6 +15406,8 @@ function _updateClubNotifCounts(){
   if (badge){ badge.textContent = total>99?'99+':total; badge.style.display = total?'flex':'none'; }
   const badge2 = document.getElementById('kp-notif-badge-count');
   if (badge2){ badge2.textContent = total>99?'99+':total; badge2.style.display = total?'flex':'none'; }
+  const badge3 = document.getElementById('kt-notif-badge-count');
+  if (badge3){ badge3.textContent = total>99?'99+':total; badge3.style.display = total?'flex':'none'; }
 }
 
 async function loadClubNotifications(){
@@ -15448,6 +15458,7 @@ function openClubInfo(screen){
     main: ['🏢 KLUBO PAGRINDINIS', 'Čia matai klubo apžvalgą: trenerių ir vaikų skaičių, žinutes ir greitus veiksmus. Viršuje — 💡 info, 🔔 pranešimai, ⚙️ nustatymai.'],
     events: ['📅 RENGINIAI', 'Kurk ir valdyk varžybas, diržų laikymą, stovyklas ir bendrus grupių iššūkius — viskas vienoje vietoje.'],
     trainers: ['🥋 TRENERIAI', 'Matai visus klubo trenerius, jų aktyvumą (🟢🟡🔴), gali redaguoti, perkelti vaikus ar pašalinti trenerį.'],
+    team: ['👥 KLUBAS', 'Čia tvarkai klubo komandą trijuose skirtukuose:<br><br>📅 <b>Grupės</b> — kuri grupes, priskiri joms trenerį (ir asistentus) bei treniruočių laikus, dedi vaikus į grupes. Vaiko treneris išvedamas iš jo grupės.<br><br>🥋 <b>Treneriai</b> — visi klubo treneriai, jų aktyvumas (🟢🟡🔴) ir EXP reitingas; gali valdyti, sustabdyti ar pašalinti.<br><br>🎒 <b>Mokiniai</b> — „Registracijos" (tvirtini arba atmeti naujų vaikų anketas) ir „Neaktyvūs" (vaikai, nustoję lankyti — verta susisiekti).'],
     stat: ['📊 ANALITIKA', 'Gili klubo statistika: diržai, medaliai, amžiai, lankomumas, apyvarta ir reitingai.']
   };
   const t = T[screen] || T.main;
@@ -26830,7 +26841,7 @@ async function openClubKidManage(kidId){
   const actTrainers = (trRes.data||[]).filter(t => t.profiles?.status === 'active');
   const grpOpts = `<option value="">— Be grupės —</option>` + (grpRes.data||[]).map(g => `<option value="${g.id}" ${g.id===kid.group_id?'selected':''}>${g.name}</option>`).join('');
   const trOpts = `<option value="">— Nepriskirta —</option>` + actTrainers.map(t => `<option value="${t.id}" ${t.id===kid.assigned_trainer_id?'selected':''}>${((t.profiles.first_name||'')+' '+(t.profiles.last_name||'')).trim()}</option>`).join('');
-  const KYU_OPTS = [['mu kyu','Mu kyu (baltas)'],['10 kyu','10 kyu (oranžinis)'],['9 kyu','9 kyu (oranžinis + mėlyna)'],['8 kyu','8 kyu (mėlynas)'],['7 kyu','7 kyu (mėlynas + geltona)'],['6 kyu','6 kyu (geltonas)'],['5 kyu','5 kyu (geltonas + žalia)'],['4 kyu','4 kyu (žalias)'],['3 kyu','3 kyu (žalias + ruda)'],['2 kyu','2 kyu (rudas)'],['1 kyu','1 kyu (rudas + juoda)']];
+  const KYU_OPTS = [['mu kyu','Mu kyu (baltas)'],['10 kyu','10 kyu (oranžinis)'],['9 kyu','9 kyu (oranžinis + mėlyna)'],['8 kyu','8 kyu (mėlynas)'],['7 kyu','7 kyu (mėlynas + geltona)'],['6 kyu','6 kyu (geltonas)'],['5 kyu','5 kyu (geltonas + žalia)'],['4 kyu','4 kyu (žalias)'],['3 kyu','3 kyu (žalias + ruda)'],['2 kyu','2 kyu (rudas)'],['1 kyu','1 kyu (rudas + juoda)'],['1 dan','1 dan (juodas · Shodan)'],['2 dan','2 dan (juodas · Nidan)'],['3 dan','3 dan (juodas · Sandan)'],['4 dan','4 dan (juodas · Yondan)'],['5 dan','5 dan (juodas · Godan)']];
   const _kk = (kid.kyu||'').toLowerCase().trim();
   const _kkKnown = KYU_OPTS.some(o => o[0] === _kk);
   const kyuOpts = (_kkKnown ? '' : `<option value="${(kid.kyu||'').replace(/"/g,'&quot;')}" selected>${kid.kyu ? kid.kyu+' (esama)' : '— Pasirinkti —'}</option>`) + KYU_OPTS.map(o => `<option value="${o[0]}" ${_kk===o[0]?'selected':''}>${o[1]}</option>`).join('');
