@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v294</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v295</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -781,7 +781,7 @@ select.inp option{background:#222;}
 <div class="mo" id="kcmo">
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div class="mt">NAUJOS VARŽYBOS</div>
+      <div class="mt" id="kc-modal-title">NAUJOS VARŽYBOS</div>
       <button class="bb" onclick="closeCreateCompetition()">✕</button>
     </div>
     
@@ -14979,13 +14979,25 @@ function openCreateCompetition(preType) {
   // Datos apribojimas pašalintas - galima kurti ir praeities varžybas (istoriniam įrašui)
   document.getElementById('kc-date').removeAttribute('min');
 
-  // 🚩 Ribojimas: kumite/kata pagal competitions_enabled, belt_test pagal belt_grading_enabled
+  // Diržo testas — TIK Diržų laikymo sekcijoje; Varžybose tik kumite/kata
+  const isBeltForm = (pt === 'belt_test');
+  const _titleEl = document.getElementById('kc-modal-title');
+  if (_titleEl) _titleEl.textContent = isBeltForm ? 'NAUJAS DIRŽŲ LAIKYMAS' : 'NAUJOS VARŽYBOS';
+  // 🚩 Ribojimas: kumite/kata pagal competitions_enabled, belt_test pagal belt_grading_enabled + sekcijų atskyrimas
   try {
     const _ctf = { kumite:'competitions_enabled', kata:'competitions_enabled', belt_test:'belt_grading_enabled' };
+    const _allowed = isBeltForm ? ['belt_test'] : ['kumite','kata'];
     Object.keys(_ctf).forEach(t => {
       const chip = document.querySelector(`#kcmo [data-type="${t}"]`);
-      if (chip) chip.style.display = (typeof flagOn === 'function' && !flagOn(_ctf[t])) ? 'none' : '';
+      if (chip) {
+        const flagOk = !(typeof flagOn === 'function' && !flagOn(_ctf[t]));
+        chip.style.display = (_allowed.includes(t) && flagOk) ? '' : 'none';
+      }
     });
+    const _typesRow = document.getElementById('kc-types');
+    const _typesLbl = _typesRow ? _typesRow.previousElementSibling : null;
+    if (_typesRow) _typesRow.style.display = isBeltForm ? 'none' : '';
+    if (_typesLbl && _typesLbl.classList && _typesLbl.classList.contains('lbl')) _typesLbl.style.display = isBeltForm ? 'none' : '';
     const visible = Array.from(document.querySelectorAll('#kcmo .chs .ch[data-type]')).filter(c => c.style.display !== 'none');
     if (!visible.length) { showToast('⚠️ Klubas išjungė varžybas ir diržų laikymą', 'error', 4000); return; }
     const curChip = document.querySelector(`#kcmo [data-type="${document.getElementById('kc-type').value}"]`);
@@ -15117,6 +15129,13 @@ function switchEvSub(el, type, mode){
   if (typeof loader === 'function') loader();
 }
 
+function _kcToggleMore(btn, id){
+  const t = document.getElementById(id); if (!t) return;
+  const show = (t.style.display === 'none');
+  t.style.display = show ? 'block' : 'none';
+  btn.innerHTML = show ? '⌃ Rodyti mažiau' : ('⌄ Rodyti daugiau (' + t.children.length + ')');
+}
+
 async function loadClubCompetitions() {
   const clubId = currentClub?.id;
   if (!clubId) {
@@ -15179,7 +15198,7 @@ async function loadClubCompetitions() {
     });
   }
   
-  const html = compsToShow.map(c => {
+  const cards = compsToShow.map(c => {
     const stats = resultsByComp[c.id] || { total:0, planning:0, wont:0, participated:0, pending:0, gold:0, silver:0, bronze:0 };
     const isPast = c.event_date < today;
     let timeInfo = '';
@@ -15228,8 +15247,13 @@ async function loadClubCompetitions() {
         <button onclick="deleteCompetition('${c.id}', '${safe}')" style="flex-shrink:0;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:9px 14px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">🗑️</button>
       </div>
     </div>`;
-  }).join('');
-  
+  });
+  let html = cards.slice(0, 2).join('');
+  if (cards.length > 2) {
+    const moreId = 'k-comp-more-' + kcActiveTab;
+    html += `<div id="${moreId}" style="display:none;">${cards.slice(2).join('')}</div>`;
+    html += `<button onclick="_kcToggleMore(this,'${moreId}')" style="width:100%;background:rgba(255,255,255,.05);color:var(--mut);border:.5px solid var(--bdr);padding:11px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-top:2px;">⌄ Rodyti daugiau (${cards.length - 2})</button>`;
+  }
   document.getElementById('k-comp-content').innerHTML = html;
 }
 
