@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v288</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v289</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3463,7 +3463,7 @@ select.inp option{background:#222;}
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
       <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('team')" title="Apie šį langą">💡</div>
       <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai">🔔<div id="kt-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubSettings()" title="Nustatymai">⚙️</div>
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai">⚙️</div>
     </div>
   </div>
   <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
@@ -15521,6 +15521,7 @@ function openClubAccountMenu(){
       <button onclick="document.getElementById('club-acct-menu').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
     </div>
     <div style="padding:12px 16px 16px;display:flex;flex-direction:column;gap:8px;">
+      <button onclick="document.getElementById('club-acct-menu').remove();openClubSettings();" style="width:100%;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:.5px solid var(--bdr);color:#fff;padding:14px 16px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;"><span style="font-size:17px;">⚙️</span> Klubo nustatymai</button>
       <button onclick="document.getElementById('club-acct-menu').remove();if(confirm('Atsijungti iš klubo paskyros?'))doLogout()" style="width:100%;display:flex;align-items:center;gap:12px;background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);color:#EF4444;padding:14px 16px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;"><span style="font-size:17px;">🚪</span> Atsijungti</button>
     </div>
   </div>`;
