@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v291</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v292</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15347,6 +15347,7 @@ async function openEventPostCard(type, id){
     showToast('📣 Generuojama...');
     const d = await _buildEventCardData(type, id);
     if (!d){ showToast('❌ Nepavyko surinkti duomenų','error'); return; }
+    _lastCardData = d;
     const cv = await _drawEventCard(d);
     _lastCardCanvas = cv;
     _showCardModal(cv);
@@ -15366,8 +15367,12 @@ function _showCardModal(canvas){
       <button onclick="document.getElementById('event-card-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
     </div>
     <div style="padding:16px 20px;">
-      <img src="${url}" style="width:100%;border-radius:14px;border:.5px solid var(--bdr);margin-bottom:12px;" alt="postas">
-      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:14px;">Skaičiai — iš realių renginio duomenų. Soc. tinkle pridėk savo nuotraukas ir paskelbk.</div>
+      <img id="event-card-img" src="${url}" style="width:100%;border-radius:14px;border:.5px solid var(--bdr);margin-bottom:12px;" alt="postas">
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button onclick="_pickEventPhoto()" style="flex:1;background:rgba(255,106,0,.12);color:#FF8C00;border:.5px solid rgba(255,106,0,.45);padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">📷 Su sava nuotrauka</button>
+        <button onclick="_revertEventCard()" style="flex:1;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:11px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">↩️ Grynas grafikas</button>
+      </div>
+      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:14px;">„📷 Su sava nuotrauka" uždeda klubo statistiką (medaliai ir kt.) ant tavo komandos nuotraukos — kaip Strava. Skaičiai be vaikų vardų.</div>
       ${canShare ? `<button onclick="_shareEventCard()" class="btn btng" style="width:100%;margin:0 0 8px;">📤 Pasidalinti</button>` : ''}
       <button onclick="_downloadEventCard()" style="width:100%;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">⬇️ Atsisiųsti paveiksliuką</button>
       <button onclick="_copyEventCard()" style="width:100%;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">📋 Kopijuoti paveiksliuką</button>
@@ -15393,6 +15398,65 @@ function _downloadEventCard(){
 async function _copyEventCard(){
   try { const b = await _cardBlob(); if (!b) return; await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); showToast('✓ Nukopijuota'); }
   catch(e){ showToast('Kopijavimas nepalaikomas — naudok „Atsisiųsti"','error',4500); }
+}
+
+// 📷 Nuotraukos + statistikos rėmelio versija (kaip Strava — klubo nuotrauka + skaičiai ant viršaus)
+let _lastCardData = null;
+function _updateCardPreview(cv){ const im = document.getElementById('event-card-img'); if (im) im.src = cv.toDataURL('image/png'); }
+function _ellipsizeCard(ctx, text, maxW){
+  text = (text||'').toString();
+  if (ctx.measureText(text).width <= maxW) return text;
+  while (text.length > 1 && ctx.measureText(text+'…').width > maxW) text = text.slice(0,-1);
+  return text + '…';
+}
+function _drawEventCardWithPhoto(img, d){
+  const cv = document.createElement('canvas'); cv.width = _CARD_W; cv.height = _CARD_H;
+  const x = cv.getContext('2d'); const accent = d.accent || '#FF6A00';
+  // Nuotrauka (cover — užpildo, centruoja)
+  const scale = Math.max(_CARD_W/img.width, _CARD_H/img.height);
+  const dw = img.width*scale, dh = img.height*scale;
+  x.drawImage(img, (_CARD_W-dw)/2, (_CARD_H-dh)/2, dw, dh);
+  // Tamsinimas viršuj (SPOBU) ir apačioj (tekstui)
+  const tg = x.createLinearGradient(0,0,0,220); tg.addColorStop(0,'rgba(0,0,0,.55)'); tg.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle = tg; x.fillRect(0,0,_CARD_W,220);
+  const bg = x.createLinearGradient(0,_CARD_H*0.42,0,_CARD_H); bg.addColorStop(0,'rgba(0,0,0,0)'); bg.addColorStop(1,'rgba(0,0,0,.9)'); x.fillStyle = bg; x.fillRect(0,_CARD_H*0.42,_CARD_W,_CARD_H*0.58);
+  // Rėmelis
+  x.strokeStyle = accent; x.lineWidth = 10; x.strokeRect(22,22,_CARD_W-44,_CARD_H-44);
+  // SPOBU viršuj
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  x.font = '700 60px "Bebas Neue", sans-serif'; x.fillStyle = '#fff'; x.fillText('SPO', 64, 112);
+  const sw = x.measureText('SPO').width; x.fillStyle = accent; x.fillText('BU.', 64+sw, 112);
+  // Apačios turinys (fiksuotos pozicijos)
+  x.fillStyle = accent; x.font = '700 40px "Bebas Neue", sans-serif'; x.fillText((d.typeLabel||'').toString().toUpperCase(), 64, 815);
+  x.fillStyle = '#fff'; x.font = '700 70px "Bebas Neue", sans-serif';
+  x.fillText(_ellipsizeCard(x, d.title||'', _CARD_W-128), 64, 884);
+  const line = (d.stats||[]).map(s => `${s.big} ${s.small}`).join('     ');
+  x.fillStyle = accent; x.font = '700 48px "Bebas Neue", sans-serif'; x.fillText(line, 64, 952);
+  if (d.extraLine){ x.fillStyle = 'rgba(255,255,255,.92)'; x.font = '600 32px system-ui, sans-serif'; x.fillText(d.extraLine, 64, 1000); }
+  x.fillStyle = 'rgba(255,255,255,.78)'; x.font = '600 26px system-ui, sans-serif';
+  x.fillText(`${(d.club||'').toString().toUpperCase()} · ${d.dateStr||''}`, 64, _CARD_H-46);
+  x.textAlign = 'right'; x.fillStyle = accent; x.fillText('#kyokushin', _CARD_W-64, _CARD_H-46);
+  return cv;
+}
+function _pickEventPhoto(){
+  if (!_lastCardData){ showToast('❌ Pirma atidaryk postą','error'); return; }
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    const img = new Image();
+    img.onload = async () => {
+      try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
+      try { const cv = _drawEventCardWithPhoto(img, _lastCardData); _lastCardCanvas = cv; _updateCardPreview(cv); }
+      catch(e){ console.error('[photo-card]',e); showToast('❌ '+(e.message||''),'error'); }
+      try { URL.revokeObjectURL(img.src); } catch(e){}
+    };
+    img.onerror = () => showToast('❌ Nepavyko užkrauti nuotraukos','error');
+    img.src = URL.createObjectURL(f);
+  };
+  inp.click();
+}
+async function _revertEventCard(){
+  if (!_lastCardData) return;
+  const cv = await _drawEventCard(_lastCardData); _lastCardCanvas = cv; _updateCardPreview(cv);
 }
 
 // ════════════════════════════════════════
