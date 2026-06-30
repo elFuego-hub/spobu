@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v290</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v291</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15227,12 +15227,172 @@ async function loadClubCompetitions() {
         </div>
       </div>
       
+      ${isPast ? `<button onclick="openEventPostCard('comp','${c.id}')" style="width:100%;background:rgba(255,106,0,.12);color:#FF8C00;border:.5px solid rgba(255,106,0,.45);padding:9px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:800;margin-bottom:6px;">📣 Sukurti soc. postą</button>` : ''}
       <button onclick="viewCompetitionParticipants('${c.id}', '${(c.title || '').replace(/'/g, "\\'")}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">👥 ŽIŪRĖTI DALYVIUS</button>
       <button onclick="deleteCompetition('${c.id}', '${(c.title || '').replace(/'/g, "\\'")}')" style="width:100%;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
     </div>`;
   }).join('');
   
   document.getElementById('k-comp-content').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// 📣 SOC. TINKLŲ POSTO KORTELĖ (renginių „Strava" stiliaus paveiksliukas)
+//   Tik agreguoti skaičiai (GDPR-saugu, BE vaikų vardų). Klubas prideda savo nuotraukas.
+// ════════════════════════════════════════
+const _CARD_W = 1080, _CARD_H = 1080;
+let _lastCardCanvas = null;
+
+function _wrapTextCard(ctx, text, maxW){
+  const words = (text||'').toString().split(/\s+/).filter(Boolean);
+  const lines = []; let cur = '';
+  words.forEach(w => { const t = cur ? cur+' '+w : w; if (ctx.measureText(t).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t; });
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+async function _drawEventCard(d){
+  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
+  const cv = document.createElement('canvas'); cv.width = _CARD_W; cv.height = _CARD_H;
+  const x = cv.getContext('2d');
+  const accent = d.accent || '#FF6A00';
+  // Fonas
+  x.fillStyle = '#0B0B0C'; x.fillRect(0,0,_CARD_W,_CARD_H);
+  const g = x.createRadialGradient(_CARD_W*0.78,_CARD_H*0.16,40,_CARD_W*0.78,_CARD_H*0.16,920);
+  g.addColorStop(0, accent+'55'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0,0,_CARD_W,_CARD_H);
+  // Blankus kanji
+  x.save(); x.globalAlpha = .06; x.fillStyle = '#fff'; x.textAlign = 'right'; x.textBaseline = 'top';
+  x.font = '700 540px "Noto Serif JP", serif'; x.fillText('武', _CARD_W-6, -70); x.restore();
+  // Rėmelis
+  x.strokeStyle = accent; x.lineWidth = 10; x.strokeRect(30,30,_CARD_W-60,_CARD_H-60);
+  // SPOBU + klubas
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  x.font = '700 66px "Bebas Neue", sans-serif'; x.fillStyle = '#fff'; x.fillText('SPO', 72, 138);
+  const spoW = x.measureText('SPO').width; x.fillStyle = accent; x.fillText('BU.', 72+spoW, 138);
+  x.fillStyle = 'rgba(255,255,255,.85)'; x.font = '600 34px system-ui, sans-serif';
+  x.fillText((d.club||'').toString().toUpperCase().slice(0,28), 72, 186);
+  // Ikona (centre)
+  x.textAlign = 'center';
+  x.font = '190px system-ui, sans-serif'; x.fillText(d.icon||'🥋', _CARD_W/2, 470);
+  // Tipo etiketė
+  x.fillStyle = accent; x.font = '700 42px "Bebas Neue", sans-serif';
+  x.fillText((d.typeLabel||'').toString().toUpperCase(), _CARD_W/2, 540);
+  // Pavadinimas (iki 2 eil.)
+  x.fillStyle = '#fff'; x.font = '700 72px "Bebas Neue", sans-serif';
+  const tl = _wrapTextCard(x, d.title||'', _CARD_W-180).slice(0,2);
+  let ty = 624; tl.forEach(ln => { x.fillText(ln, _CARD_W/2, ty); ty += 80; });
+  // Skaičiai
+  const stats = (d.stats||[]).slice(0,3); const n = stats.length;
+  if (n){
+    const colW = (_CARD_W-160)/n; const sy = 850;
+    stats.forEach((s,i) => {
+      const cx = 80 + colW*i + colW/2;
+      x.fillStyle = accent; x.font = '700 100px "Bebas Neue", sans-serif'; x.fillText(String(s.big), cx, sy);
+      x.fillStyle = 'rgba(255,255,255,.72)'; x.font = '600 27px system-ui, sans-serif'; x.fillText((s.small||'').toString().toUpperCase(), cx, sy+46);
+    });
+  }
+  // Papildoma eilutė (nugalėtojas / medaliai)
+  if (d.extraLine){ x.fillStyle = 'rgba(255,255,255,.92)'; x.font = '600 36px system-ui, sans-serif'; x.fillText(d.extraLine, _CARD_W/2, 962); }
+  // Apačia
+  x.font = '600 28px system-ui, sans-serif';
+  x.textAlign = 'left'; x.fillStyle = 'rgba(255,255,255,.6)'; x.fillText(d.dateStr||'', 72, _CARD_H-60);
+  x.textAlign = 'right'; x.fillStyle = accent; x.fillText('#kyokushin', _CARD_W-72, _CARD_H-60);
+  return cv;
+}
+
+async function _buildEventCardData(type, id){
+  const club = currentClub?.name || 'KLUBAS';
+  if (type === 'comp' || type === 'belt'){
+    const { data: c } = await sb.from('competitions').select('*').eq('id', id).single();
+    if (!c) return null;
+    const { data: rs } = await sb.from('competition_results').select('placement, approval_status').eq('competition_id', id);
+    const results = rs || []; const total = results.length;
+    if (type === 'belt'){
+      const passed = results.filter(r => r.approval_status === 'approved').length;
+      return { club, icon:'🥋', typeLabel:'Diržų egzaminas', title:c.title, dateStr:formatDateLT(c.event_date), accent:'#C8A24B',
+        stats:[{big:total,small:'Laikė'},{big:passed,small:'Išlaikė'}], extraLine: passed ? `${passed} nauji diržai užtarnauti! 🎉` : '' };
+    }
+    const appr = results.filter(r => r.approval_status === 'approved');
+    const gg = appr.filter(r => r.placement===1).length, ss = appr.filter(r => r.placement===2).length, bb = appr.filter(r => r.placement===3).length;
+    const medals = gg+ss+bb;
+    return { club, icon:'🥇', typeLabel:'Varžybos', title:c.title, dateStr:formatDateLT(c.event_date), accent:'#FF6A00',
+      stats:[{big:total,small:'Dalyviai'},{big:medals,small:'Medaliai'}], extraLine: medals ? `🥇 ${gg}   🥈 ${ss}   🥉 ${bb}` : '' };
+  }
+  if (type === 'camps'){
+    const { data: c } = await sb.from('club_events').select('*').eq('id', id).single();
+    if (!c) return null;
+    const { data: rs } = await sb.from('club_event_rsvp').select('status, attended').eq('event_id', id);
+    const att = (rs||[]).filter(r => r.attended).length; const going = (rs||[]).filter(r => r.status !== 'not_going').length;
+    const range = (c.ends_on && c.ends_on !== c.starts_on) ? `${formatDateLT(c.starts_on)} – ${formatDateLT(c.ends_on)}` : formatDateLT(c.starts_on);
+    return { club, icon:'⛺', typeLabel:'Stovykla', title:c.title, dateStr:range, accent:'#22C55E',
+      stats:[{big: att||going, small: att?'Dalyvavo':'Dalyvaus'}], extraLine:'Ačiū visiems! 💪' };
+  }
+  if (type === 'gc'){
+    const { data: c } = await sb.from('club_challenges').select('*').eq('id', id).single();
+    if (!c) return null;
+    let winner = '', total = 0;
+    try {
+      const { data: st } = await sb.rpc('club_challenge_standings', { challenge_uuid: id });
+      const rows = (st||[]).slice().sort((a,b)=>(a.rnk||0)-(b.rnk||0));
+      if (rows.length){ winner = rows[0].g_name || ''; total = rows.reduce((a,r)=>a+(+r.total_val||0),0); }
+    } catch(e){}
+    return { club, icon:'🏆', typeLabel:'Grupių iššūkis', title:c.title, dateStr: c.ends_on?formatDateLT(c.ends_on):'', accent:'#EAB308',
+      stats:[{big: total||'—', small: (typeof _gcMetricLabel==='function'?_gcMetricLabel(c):'Rezultatas')}], extraLine: winner ? `🏆 Nugalėtoja: ${winner}` : '' };
+  }
+  return null;
+}
+
+async function openEventPostCard(type, id){
+  try {
+    showToast('📣 Generuojama...');
+    const d = await _buildEventCardData(type, id);
+    if (!d){ showToast('❌ Nepavyko surinkti duomenų','error'); return; }
+    const cv = await _drawEventCard(d);
+    _lastCardCanvas = cv;
+    _showCardModal(cv);
+  } catch(e){ console.error('[event-card]', e); showToast('❌ '+(e.message||'Klaida'),'error'); }
+}
+
+function _showCardModal(canvas){
+  const old = document.getElementById('event-card-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'event-card-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100004;align-items:flex-end;justify-content:center;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  const url = canvas.toDataURL('image/png');
+  const canShare = !!(navigator.share && navigator.canShare);
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:94vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">📣 RENGINIO POSTAS</div>
+      <button onclick="document.getElementById('event-card-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px 20px;">
+      <img src="${url}" style="width:100%;border-radius:14px;border:.5px solid var(--bdr);margin-bottom:12px;" alt="postas">
+      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:14px;">Skaičiai — iš realių renginio duomenų. Soc. tinkle pridėk savo nuotraukas ir paskelbk.</div>
+      ${canShare ? `<button onclick="_shareEventCard()" class="btn btng" style="width:100%;margin:0 0 8px;">📤 Pasidalinti</button>` : ''}
+      <button onclick="_downloadEventCard()" style="width:100%;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">⬇️ Atsisiųsti paveiksliuką</button>
+      <button onclick="_copyEventCard()" style="width:100%;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">📋 Kopijuoti paveiksliuką</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+function _cardBlob(){ return new Promise(res => { if (!_lastCardCanvas){ res(null); return; } _lastCardCanvas.toBlob(b => res(b), 'image/png'); }); }
+async function _shareEventCard(){
+  const b = await _cardBlob(); if (!b) return;
+  const file = new File([b], 'spobu-postas.png', { type:'image/png' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files:[file] })) await navigator.share({ files:[file], title:'SPOBU' });
+    else _downloadEventCard();
+  } catch(e){ if (e && e.name !== 'AbortError') _downloadEventCard(); }
+}
+function _downloadEventCard(){
+  if (!_lastCardCanvas) return;
+  const a = document.createElement('a'); a.href = _lastCardCanvas.toDataURL('image/png'); a.download = 'spobu-postas.png'; a.click();
+  showToast('✓ Atsisiųsta');
+}
+async function _copyEventCard(){
+  try { const b = await _cardBlob(); if (!b) return; await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); showToast('✓ Nukopijuota'); }
+  catch(e){ showToast('Kopijavimas nepalaikomas — naudok „Atsisiųsti"','error',4500); }
 }
 
 // ════════════════════════════════════════
@@ -15299,6 +15459,7 @@ async function loadClubBeltTests(){
         <div style="background:rgba(34,197,94,.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">${s.approved}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">IŠLAIKĖ</div></div>
         <div style="background:rgba(255,77,0,.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${s.pending}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAUKIA</div></div>
       </div>
+      ${isPast ? `<button onclick="openEventPostCard('belt','${c.id}')" style="width:100%;background:rgba(200,162,75,.15);color:#C8A24B;border:.5px solid rgba(200,162,75,.5);padding:9px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:800;margin-bottom:6px;">📣 Sukurti soc. postą</button>` : ''}
       <button onclick="viewCompetitionParticipants('${c.id}', '${(c.title||'').replace(/'/g,"\\'")}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">👥 ŽIŪRĖTI DALYVIUS</button>
       <button onclick="deleteCompetition('${c.id}', '${(c.title||'').replace(/'/g,"\\'")}')" style="width:100%;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
     </div>`;
@@ -16485,6 +16646,7 @@ async function loadClubCamps(){
         <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;">${s.going}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">DALYVAUS</div></div>
         <div style="background:rgba(34,197,94,.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">${s.attended}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">DALYVAVO</div></div>
       </div>
+      ${isPast ? `<button onclick="openEventPostCard('camps','${c.id}')" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.45);padding:9px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:800;margin-bottom:6px;">📣 Sukurti soc. postą</button>` : ''}
       <button onclick="viewCampParticipants('${c.id}','${safe}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">👥 DALYVIAI</button>
       <div style="display:flex;gap:6px;">
         <button onclick="openCreateCamp('${c.id}')" style="flex:1;background:rgba(255,255,255,.05);color:var(--text);border:.5px solid var(--bdr);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">✏️ Redaguoti</button>
@@ -16670,6 +16832,7 @@ async function loadClubGroupChallenges(){
         <div class="bg" style="flex-shrink:0;${statusColor}">${status}</div>
       </div>
       ${c.winner_exp>0?`<div style="font-size:11px;color:var(--br);margin-bottom:8px;">⭐ Laimėtojų grupei: ${c.winner_exp} EXP ${(!c.is_active&&c.exp_awarded)?'· ✅ skirta':''}</div>`:''}
+      ${!c.is_active ? `<button onclick="openEventPostCard('gc','${c.id}')" style="width:100%;background:rgba(234,179,8,.15);color:#EAB308;border:.5px solid rgba(234,179,8,.45);padding:9px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:800;margin-bottom:6px;">📣 Sukurti soc. postą</button>` : ''}
       <button onclick="viewChallengeStandings('${c.id}','${safe}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">📊 GRUPIŲ REZULTATAI</button>
       ${canEntry?`<button onclick="viewChallengeEntries('${c.id}','${safe}')" style="width:100%;background:rgba(99,102,241,.1);color:#818CF8;border:.5px solid rgba(99,102,241,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">✏️ SUVESTI REZULTATUS</button>`:''}
       <div style="display:flex;gap:6px;">
