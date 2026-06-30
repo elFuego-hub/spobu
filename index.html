@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v286</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v287</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -26830,6 +26830,10 @@ async function openClubKidManage(kidId){
   const actTrainers = (trRes.data||[]).filter(t => t.profiles?.status === 'active');
   const grpOpts = `<option value="">— Be grupės —</option>` + (grpRes.data||[]).map(g => `<option value="${g.id}" ${g.id===kid.group_id?'selected':''}>${g.name}</option>`).join('');
   const trOpts = `<option value="">— Nepriskirta —</option>` + actTrainers.map(t => `<option value="${t.id}" ${t.id===kid.assigned_trainer_id?'selected':''}>${((t.profiles.first_name||'')+' '+(t.profiles.last_name||'')).trim()}</option>`).join('');
+  const KYU_OPTS = [['mu kyu','Mu kyu (baltas)'],['10 kyu','10 kyu (oranžinis)'],['9 kyu','9 kyu (oranžinis + mėlyna)'],['8 kyu','8 kyu (mėlynas)'],['7 kyu','7 kyu (mėlynas + geltona)'],['6 kyu','6 kyu (geltonas)'],['5 kyu','5 kyu (geltonas + žalia)'],['4 kyu','4 kyu (žalias)'],['3 kyu','3 kyu (žalias + ruda)'],['2 kyu','2 kyu (rudas)'],['1 kyu','1 kyu (rudas + juoda)']];
+  const _kk = (kid.kyu||'').toLowerCase().trim();
+  const _kkKnown = KYU_OPTS.some(o => o[0] === _kk);
+  const kyuOpts = (_kkKnown ? '' : `<option value="${(kid.kyu||'').replace(/"/g,'&quot;')}" selected>${kid.kyu ? kid.kyu+' (esama)' : '— Pasirinkti —'}</option>`) + KYU_OPTS.map(o => `<option value="${o[0]}" ${_kk===o[0]?'selected':''}>${o[1]}</option>`).join('');
   const old = document.getElementById('club-kidmanage-modal'); if(old) old.remove();
   const m = document.createElement('div'); m.id = 'club-kidmanage-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
@@ -26845,7 +26849,8 @@ async function openClubKidManage(kidId){
       <label class="lbl">GRUPĖ</label>
       <select class="inp" id="ckm-group" style="margin-bottom:12px;">${grpOpts}</select>
       <label class="lbl">KYU (DIRŽAS)</label>
-      <input class="inp" id="ckm-kyu" value="${(kid.kyu||'').replace(/"/g,'&quot;')}" placeholder="pvz. 8 kyu" style="margin-bottom:16px;">
+      <select class="inp" id="ckm-kyu" style="margin-bottom:6px;">${kyuOpts}</select>
+      <div style="font-size:10px;color:var(--mut);margin-bottom:16px;line-height:1.4;">💡 Diržas paprastai kyla per egzaminus — čia tik rankinis taisymas (pvz. perėjus iš kito klubo).</div>
       <button class="btn btng" style="width:100%;margin:0;" onclick="saveClubKidManage('${kidId}')">💾 IŠSAUGOTI</button>
     </div></div>`;
   document.body.appendChild(m);
