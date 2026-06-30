@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v285</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v286</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15565,9 +15565,13 @@ function _renderClubSettingsHtml(s){
       ${toggle(f.k)}</div>`);
   });
   flush();
-  // 😴 Neaktyvumo slenksčiai (skaitiniai — atskira nuo perjungiklių)
-  html += `<div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.5px;margin:14px 4px 7px;">😴 NEAKTYVUMO ŽYMĖJIMAS</div>
-    <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
+  // 😴 Neaktyvumo slenksčiai (suskleidžiama sekcija, kaip kitos — numatytai uždaryta)
+  const _inOpen = !!_clubSecOpen['inactive'];
+  html += `<div onclick="toggleClubSettingsSection('inactive')" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:14px 2px 7px;padding:2px;">
+      <span id="cs-chev-inactive" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;transform:rotate(${_inOpen?'90':'0'}deg);">▶</span>
+      <span style="flex:1;font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.5px;">😴 NEAKTYVUMO ŽYMĖJIMAS</span>
+    </div>
+    <div id="cs-rows-inactive" style="display:${_inOpen?'block':'none'};background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
       <div style="font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:11px;">Po kiek praleistų <b>treniruočių iš eilės</b> vaikas pažymimas „Mokiniai → Neaktyvūs" sąraše.</div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">
         <span style="font-size:14px;">🟡</span><span style="flex:1;font-size:13px;font-weight:700;color:#fff;">Geltona po</span>
