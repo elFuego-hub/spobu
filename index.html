@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v297</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v298</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1584,7 +1584,13 @@ select.inp option{background:#222;}
     <div id="v-comp-medals-table" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;overflow:hidden;">
       <!-- Užpildoma dinamiškai -->
     </div>
-    
+
+    <!-- ⛺ STOVYKLOS (klubo renginiai — RSVP) -->
+    <div id="v-camps-section" style="padding:0 16px;margin:0 0 12px;display:none;">
+      <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;margin-bottom:8px;">⛺ STOVYKLOS</div>
+      <div id="v-camps-list"></div>
+    </div>
+
     <!-- Tabai -->
     <div style="display:flex;gap:4px;margin:0 16px 6px;">
       <button class="vc-tab on" data-tab="upcoming" onclick="switchVcTab(this,'upcoming')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">📅 ARTĖJA <span id="vc-upcoming-count" style="opacity:.7;">0</span></button>
@@ -1594,12 +1600,6 @@ select.inp option{background:#222;}
     
     <div id="v-comp-list" style="padding:0 16px;">
       <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
-    </div>
-
-    <!-- ⛺ STOVYKLOS (klubo renginiai — RSVP) -->
-    <div id="v-camps-section" style="padding:0 16px;margin-top:16px;display:none;">
-      <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;margin-bottom:8px;">⛺ STOVYKLOS</div>
-      <div id="v-camps-list"></div>
     </div>
   </div>
   <div class="bn2">
@@ -16870,8 +16870,7 @@ async function _renderCampParticipants(eventId){
   const { data: rsvps } = await sb.from('club_event_rsvp').select('kid_id, status, attended').eq('event_id', eventId);
   if (!rsvps || !rsvps.length){ el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:20px;">Dar nėra registruotų dalyvių.<br>Spausk „➕ Pridėti dalyvį".</div>'; return; }
   const kidIds = rsvps.map(r=>r.kid_id);
-  const { data: kids } = await sb.from('kids').select('id, first_name, last_name').in('id', kidIds);
-  const nameMap = {}; (kids||[]).forEach(k=>{ nameMap[k.id] = `${k.first_name||'Vaikas'} ${k.last_name||''}`.trim(); });
+  const nameMap = await _fetchKidNameMap(kidIds);
   el.innerHTML = rsvps.map(r=>{
     const name = nameMap[r.kid_id] || 'Vaikas';
     return `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:8px;">
@@ -16894,6 +16893,7 @@ async function addCampParticipant(eventId){
   const { data: existing } = await sb.from('club_event_rsvp').select('kid_id').eq('event_id', eventId);
   const have = new Set((existing||[]).map(r=>r.kid_id));
   const avail = kids.filter(k=>!have.has(k.id));
+  const _pnm = await _fetchKidNameMap(avail.map(k=>k.id));
   const old = document.getElementById('club-camp-pick-modal'); if(old) old.remove();
   const m = document.createElement('div'); m.id='club-camp-pick-modal';
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100003;align-items:flex-end;justify-content:center;';
@@ -16903,7 +16903,7 @@ async function addCampParticipant(eventId){
       <button onclick="document.getElementById('club-camp-pick-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
     </div>
     <div style="padding:12px 20px;">
-      ${avail.length ? avail.map(k=>`<div onclick="rsvpCampKid('${eventId}','${k.id}')" style="padding:10px 12px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>`).join('') : '<div style="text-align:center;color:var(--mut);padding:20px;">Visi klubo vaikai jau pridėti (arba klube nėra vaikų).</div>'}
+      ${avail.length ? avail.map(k=>`<div onclick="rsvpCampKid('${eventId}','${k.id}')" style="padding:10px 12px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:13px;font-weight:700;">${_pnm[k.id]||'Vaikas'}</div>`).join('') : '<div style="text-align:center;color:var(--mut);padding:20px;">Visi klubo vaikai jau pridėti (arba klube nėra vaikų).</div>'}
     </div>
   </div>`;
   document.body.appendChild(m);
