@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v295</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v296</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15516,8 +15516,13 @@ async function loadClubBeltTests(){
   let byComp = {};
   const ids = comps.map(c=>c.id);
   if (ids.length){
-    const { data: results } = await sb.from('competition_results').select('competition_id, approval_status').in('competition_id', ids);
-    (results||[]).forEach(r=>{ if(!byComp[r.competition_id]) byComp[r.competition_id]={total:0,approved:0,pending:0}; byComp[r.competition_id].total++; if(r.approval_status==='approved')byComp[r.competition_id].approved++; if(r.approval_status==='pending')byComp[r.competition_id].pending++; });
+    const { data: results } = await sb.from('competition_results').select('competition_id, status, approval_status, belt_passed').in('competition_id', ids);
+    (results||[]).forEach(r=>{
+      const o = byComp[r.competition_id] || (byComp[r.competition_id]={planning:0,wont:0,participated:0,passed:0,pending:0});
+      if (r.status==='planning') o.planning++;
+      else if (r.status==='wont_attend') o.wont++;
+      else if (r.status==='participated'){ o.participated++; if(r.approval_status==='pending')o.pending++; else if(r.approval_status==='approved'&&r.belt_passed===true)o.passed++; }
+    });
   }
   const today = new Date().toISOString().split('T')[0];
   const _bUp = comps.filter(c=>c.event_date>=today), _bPast = comps.filter(c=>c.event_date<today);
@@ -15525,30 +15530,55 @@ async function loadClubBeltTests(){
   const _bp=document.getElementById('k-belt-past-count'); if(_bp)_bp.textContent=_bPast.length;
   const _bShow = evSub.belt==='past' ? _bPast : _bUp;
   if(!_bShow.length){ el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--mut);">${evSub.belt==='past'?'Nėra pasibaigusių diržų laikymų.':'Nėra artėjančių diržų laikymų.<br><br>Spausk + NAUJAS DIRŽŲ LAIKYMAS 🥋'}</div>`; return; }
-  el.innerHTML = _bShow.map(c=>{
-    const s = byComp[c.id] || {total:0,approved:0,pending:0};
+  const _bAccent = '#A855F7';
+  const cards = _bShow.map(c=>{
+    const s = byComp[c.id] || {planning:0,wont:0,participated:0,passed:0,pending:0};
     const isPast = c.event_date < today;
     const when = isPast ? `📅 Prieš ${Math.ceil((new Date()-new Date(c.event_date))/86400000)} d.` : (c.event_date===today?'🔥 Šiandien!':`⏱️ Liko ${Math.ceil((new Date(c.event_date)-new Date())/86400000)} d.`);
-    return `<div class="cd" style="margin-bottom:12px;${isPast?'opacity:.85;':''}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
-        <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:900;margin-bottom:4px;">${c.title}</div><div style="font-size:11px;color:var(--mut);">🥋 Diržo testas</div></div>
-        <div class="bg ${isPast?'':'gn'}" style="${isPast?'background:rgba(255,255,255,.1);color:var(--mut);':''}">${when}</div>
+    const safe = (c.title||'').replace(/'/g,"\\'");
+    let statsBlock;
+    if (isPast) {
+      statsBlock = `<div style="display:flex;gap:6px;margin-bottom:10px;">
+        <div style="flex:1;background:var(--bg);border-radius:10px;padding:9px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;">${s.participated}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">LAIKĖ</div></div>
+        <div style="flex:1;background:rgba(34,197,94,.06);border-radius:10px;padding:9px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--grn);">${s.passed}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">IŠLAIKĖ</div></div>
+        ${s.pending?`<div style="flex:.8;background:rgba(255,140,0,.08);border-radius:10px;padding:9px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF8C00;">${s.pending}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">LAUKIA</div></div>`:''}
+      </div>`;
+    } else {
+      statsBlock = `<div style="display:flex;gap:6px;margin-bottom:10px;">
+        <div style="flex:1;background:rgba(34,197,94,.06);border-radius:10px;padding:9px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--grn);">${s.planning}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">DALYVAUS</div></div>
+        <div style="flex:1;background:rgba(239,68,68,.05);border-radius:10px;padding:9px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EF4444;">${s.wont}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">NEDALYVAUS</div></div>
+      </div>`;
+    }
+    return `<div class="cd" style="margin-bottom:12px;border-left:3px solid ${_bAccent};${isPast?'opacity:.92;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:5px;">${c.title}</div>
+          <span style="font-size:9px;font-weight:800;color:#C084FC;background:rgba(168,85,247,.14);padding:2px 8px;border-radius:99px;">🥋 Diržo testas</span>
+        </div>
+        <span style="flex-shrink:0;font-size:10px;font-weight:800;padding:4px 10px;border-radius:99px;${isPast?'background:rgba(255,255,255,.08);color:var(--mut);':'background:rgba(34,197,94,.15);color:var(--grn);'}">${when}</span>
       </div>
-      <div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:var(--mut);">
-        <div style="margin-bottom:4px;">📅 ${formatDateLT(c.event_date)}</div>
-        <div>📍 ${c.location || '–'}</div>
-        ${c.additional_info?`<div style="margin-top:6px;color:var(--text);">${c.additional_info}</div>`:''}
+      <div style="font-size:11px;color:var(--mut);margin-bottom:10px;line-height:1.6;">
+        📅 ${formatDateLT(c.event_date)}${c.location?`  ·  📍 ${c.location}`:''}
+        ${c.additional_info?`<div style="margin-top:5px;color:var(--text);">${c.additional_info}</div>`:''}
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px;">
-        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;">${s.total}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAIKĖ</div></div>
-        <div style="background:rgba(34,197,94,.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);">${s.approved}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">IŠLAIKĖ</div></div>
-        <div style="background:rgba(255,77,0,.05);border-radius:8px;padding:8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${s.pending}</div><div style="font-size:9px;color:var(--mut);letter-spacing:1px;">LAUKIA</div></div>
+      ${statsBlock}
+      ${isPast?`<div style="display:flex;gap:6px;margin-bottom:6px;">
+        <button onclick="openEventPostCard('belt','${c.id}')" style="flex:1;background:rgba(168,85,247,.14);color:#C084FC;border:.5px solid rgba(168,85,247,.45);padding:9px;border-radius:9px;font-size:12px;cursor:pointer;font-weight:800;">📣 Postas</button>
+        <button onclick="exportCompetitionCSV('${c.id}','${safe}')" style="flex:1;background:rgba(34,197,94,.12);color:var(--grn);border:.5px solid rgba(34,197,94,.4);padding:9px;border-radius:9px;font-size:12px;cursor:pointer;font-weight:800;">📥 CSV</button>
+      </div>`:''}
+      <div style="display:flex;gap:6px;">
+        <button onclick="viewCompetitionParticipants('${c.id}', '${safe}')" style="flex:1;background:rgba(255,77,0,.06);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:9px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">👥 Dalyviai</button>
+        <button onclick="deleteCompetition('${c.id}', '${safe}')" style="flex-shrink:0;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:9px 14px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">🗑️</button>
       </div>
-      ${isPast ? `<button onclick="openEventPostCard('belt','${c.id}')" style="width:100%;background:rgba(200,162,75,.15);color:#C8A24B;border:.5px solid rgba(200,162,75,.5);padding:9px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:800;margin-bottom:6px;">📣 Sukurti soc. postą</button>` : ''}
-      <button onclick="viewCompetitionParticipants('${c.id}', '${(c.title||'').replace(/'/g,"\\'")}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">👥 ŽIŪRĖTI DALYVIUS</button>
-      <button onclick="deleteCompetition('${c.id}', '${(c.title||'').replace(/'/g,"\\'")}')" style="width:100%;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
     </div>`;
-  }).join('');
+  });
+  let html = cards.slice(0, 2).join('');
+  if (cards.length > 2) {
+    const moreId = 'k-belt-more-' + evSub.belt;
+    html += `<div id="${moreId}" style="display:none;">${cards.slice(2).join('')}</div>`;
+    html += `<button onclick="_kcToggleMore(this,'${moreId}')" style="width:100%;background:rgba(255,255,255,.05);color:var(--mut);border:.5px solid var(--bdr);padding:11px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-top:2px;">⌄ Rodyti daugiau (${cards.length - 2})</button>`;
+  }
+  el.innerHTML = html;
 }
 
 // 🔔 Klubo varpelis
