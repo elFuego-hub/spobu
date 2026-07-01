@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v304</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v306</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -16748,7 +16748,7 @@ async function loadClubCamps(){
     const safe = (c.title||'').replace(/'/g,"\\'");
     return `<div class="cd" style="margin-bottom:12px;${isPast?'opacity:.85;':''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
-        <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:900;margin-bottom:4px;">⛺ ${c.title}</div><div style="font-size:11px;color:var(--mut);">📅 ${dateRange}</div></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:900;margin-bottom:4px;">${_campType(c.event_type).icon} ${c.title}</div><div style="font-size:11px;color:var(--mut);">${_campType(c.event_type).label} · 📅 ${dateRange}</div></div>
         <div class="bg ${isPast?'':'gn'}" style="${isPast?'background:rgba(255,255,255,.1);color:var(--mut);':''}">${when}</div>
       </div>
       <div style="background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:var(--mut);">
@@ -16771,8 +16771,29 @@ async function loadClubCamps(){
   }).join('');
 }
 
+// ⛺ Renginių tipai + EXP lubos — platformos fairness-guardrail (SĄMONINGAI ne klubo
+// nustatymuose, kitaip klubai tiesiog maksimizuotų). Kiekvienas tipas turi savo lubas pagal
+// mastą; saugo karjeros „grind'ą" (30000 = 99 lvl ~8 m.). Enforce'inama IR serveryje
+// (least(reward, tipo_cap) RPC'uose per camp_exp_cap()).
+const CAMP_TYPES = {
+  seminar: { icon:'🎓', label:'Seminaras',            cap:100 },  // pusdienis / technikos sesija
+  weekend: { icon:'🏕️', label:'Savaitgalio stovykla', cap:200 },  // 1–2 d. intensyvas
+  camp:    { icon:'⛺', label:'Stovykla',             cap:300 },  // kelios d. / vasara
+};
+const CAMP_EXP_CAP = 300;  // absoliučios lubos (= didžiausio tipo cap)
+function _campType(t){ return CAMP_TYPES[t] || CAMP_TYPES.camp; }
+
+// Atnaujina EXP lauko lubas pagal pasirinktą tipą (kūrimo forma)
+function _updateCampExpCap(){
+  const cap = _campType(document.getElementById('camp-type')?.value).cap;
+  const inp = document.getElementById('camp-exp');
+  if (inp){ inp.max = cap; if ((parseInt(inp.value,10)||0) > cap) inp.value = cap; }
+  const capEl = document.getElementById('camp-exp-cap'); if (capEl) capEl.textContent = cap;
+  const hint = document.getElementById('camp-exp-hint'); if (hint) hint.textContent = `Maks. ${cap} EXP šiam tipui.`;
+}
+
 async function openCreateCamp(editId){
-  let c = { title:'', starts_on:'', ends_on:'', location:'', description:'', price_info:'', exp_reward:0 };
+  let c = { title:'', starts_on:'', ends_on:'', location:'', description:'', price_info:'', exp_reward:0, event_type:'camp' };
   if (editId){
     const { data } = await sb.from('club_events').select('*').eq('id', editId).single();
     if (data) c = data;
@@ -16796,8 +16817,13 @@ async function openCreateCamp(editId){
       <input class="inp" id="camp-loc" value="${(c.location||'').replace(/"/g,'&quot;')}" placeholder="pvz. Palanga" style="margin-bottom:12px;">
       <label class="lbl">KAINA (informacinė)</label>
       <input class="inp" id="camp-price" value="${(c.price_info||'').replace(/"/g,'&quot;')}" placeholder="pvz. 150 € / 5 dienos" style="margin-bottom:12px;">
-      <label class="lbl">EXP UŽ DALYVAVIMĄ</label>
-      <input class="inp" id="camp-exp" type="number" min="0" value="${c.exp_reward||0}" style="margin-bottom:12px;">
+      <label class="lbl">TIPAS</label>
+      <select class="inp" id="camp-type" onchange="_updateCampExpCap()" style="margin-bottom:12px;">
+        ${Object.entries(CAMP_TYPES).map(([k,t])=>`<option value="${k}" ${(c.event_type||'camp')===k?'selected':''}>${t.icon} ${t.label} (maks. ${t.cap} EXP)</option>`).join('')}
+      </select>
+      <label class="lbl">EXP UŽ DALYVAVIMĄ <span style="color:var(--mut);font-weight:600;">(0–<span id="camp-exp-cap">${_campType(c.event_type).cap}</span>)</span></label>
+      <input class="inp" id="camp-exp" type="number" min="0" max="${_campType(c.event_type).cap}" value="${Math.min(_campType(c.event_type).cap, c.exp_reward||0)}" style="margin-bottom:4px;">
+      <div id="camp-exp-hint" style="font-size:11px;color:var(--mut);margin-bottom:12px;">Maks. ${_campType(c.event_type).cap} EXP šiam tipui — kad renginiai nesugriautų karjeros balanso.</div>
       <label class="lbl">APRAŠYMAS</label>
       <textarea class="inp" id="camp-desc" rows="3" placeholder="Programa, ką pasiimti, kt." style="margin-bottom:16px;resize:vertical;">${c.description||''}</textarea>
       <button class="btn btng" style="width:100%;margin:0;" onclick="submitNewCamp('${editId||''}')">💾 ${editId?'IŠSAUGOTI':'SUKURTI STOVYKLĄ'}</button>
@@ -16812,13 +16838,16 @@ async function submitNewCamp(editId){
   if (!title){ showToast('❌ Įvesk pavadinimą','error'); return; }
   if (!starts_on){ showToast('❌ Įvesk pradžios datą','error'); return; }
   if (typeof flagOn === 'function' && !flagOn('camps_enabled')) { showToast('⛺ Stovyklos klube išjungtos', 'error', 4000); return; }
+  const event_type = document.getElementById('camp-type')?.value || 'camp';
+  const _cap = _campType(event_type).cap;
   const payload = {
     title,
     starts_on,
     ends_on: document.getElementById('camp-end').value || null,
     location: document.getElementById('camp-loc').value.trim() || null,
     price_info: document.getElementById('camp-price').value.trim() || null,
-    exp_reward: parseInt(document.getElementById('camp-exp').value, 10) || 0,
+    event_type,
+    exp_reward: Math.min(_cap, Math.max(0, parseInt(document.getElementById('camp-exp').value, 10) || 0)),
     description: document.getElementById('camp-desc').value.trim() || null
   };
   let res;
@@ -17787,8 +17816,8 @@ function _kidCampCardHtml(c, rsvp){
   return `<div class="kid-comp-card" style="background:rgba(34,197,94,.06);border:.5px solid rgba(34,197,94,.25);border-radius:10px;padding:8px 10px;margin-bottom:5px;border-left:3px solid #22C55E;${isPast?'opacity:.9;':''}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:6px;">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:800;line-height:1.2;color:white;">⛺ ${c.title}</div>
-        <div style="font-size:9px;color:#22C55E;margin-top:2px;font-weight:700;">Stovykla${c.price_info?' · 💶 '+c.price_info:''}</div>
+        <div style="font-size:12px;font-weight:800;line-height:1.2;color:white;">${_campType(c.event_type).icon} ${c.title}</div>
+        <div style="font-size:9px;color:#22C55E;margin-top:2px;font-weight:700;">${_campType(c.event_type).label}${c.price_info?' · 💶 '+c.price_info:''}</div>
       </div>
       <div style="background:${isPast?'rgba(255,255,255,.1)':'rgba(34,197,94,.15)'};color:${isPast?'var(--mut)':'#22C55E'};border:.5px solid ${isPast?'var(--bdr)':'rgba(34,197,94,.3)'};padding:3px 8px;font-size:9px;font-weight:800;border-radius:99px;flex-shrink:0;white-space:nowrap;">${when}</div>
     </div>
