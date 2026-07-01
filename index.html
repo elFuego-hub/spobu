@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v303</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v304</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2061,7 +2061,7 @@ select.inp option{background:#222;}
       <div class="tab" onclick="switchTrTab(this,'challenges')">🎯 Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'competitions')">🥇 Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'duels')">🥊 Dvikovos <span id="tr-duels-count" style="opacity:.6;">0</span></div>
-      <div class="tab" onclick="switchTrTab(this,'forms')">📝 Anketos <span id="tr-forms-count" style="opacity:.6;">0</span></div>
+      <div class="tab" onclick="switchTrTab(this,'forms')">⛺ Stovyklos <span id="tr-forms-count" style="opacity:.6;">0</span></div>
     </div>
     <!-- Karjeros pateikimai -->
     <div id="tr-submissions-list">
@@ -21441,39 +21441,9 @@ async function loadNewKids() {
 
 // 📝 ANKETOS — naujų vaikų registracijos Patvirtinimų tabe (tie patys pending vaikai kaip pagrindinio kortelė)
 async function loadPendingKidForms() {
-  const { data: ktLinks } = await sb.from('kid_trainers').select('kid_id').eq('trainer_id', currentUser.id).eq('role', 'primary');
-  const mnKidIds = (ktLinks || []).map(l => l.kid_id);
-  const { data: legacyKids } = await sb.from('kids').select('id').eq('assigned_trainer_id', currentUser.id);
-  const allKidIds = [...new Set([...mnKidIds, ...((legacyKids || []).map(k => k.id))])];
-  let kids = [];
-  if (allKidIds.length) {
-    const { data } = await sb.from('kids')
-      .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id, group_id')
-      .in('id', allKidIds).eq('approval_status', 'pending').order('created_at', { ascending: false });
-    kids = data || [];
-  }
-  const cards = kids.map(k => {
-    const name = `${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim();
-    const age = k.birth_date ? calculateAge(k.birth_date) : (k.birth_year ? (new Date().getFullYear() - k.birth_year) : '?');
-    const genderIcon = k.gender === 'male' ? '👦' : k.gender === 'female' ? '👧' : '👤';
-    const hasAccount = !!k.user_id;
-    const when = k.created_at ? new Date(k.created_at).toLocaleDateString('lt-LT') : '';
-    return `<div class="cd" style="margin-bottom:12px;" id="form-${k.id}" data-gid="${k.group_id || ''}">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <div class="av" style="width:36px;height:36px;font-size:16px;background:var(--grn);">${genderIcon}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:900;">${name}</div>
-          <div style="font-size:11px;color:var(--mut);margin-top:2px;">${age}m. · ${k.weight_range || '–'}kg · ${k.kyu || 'Be kyu'}${when ? ' · ' + when : ''}</div>
-          <div style="font-size:10px;color:${hasAccount ? 'var(--grn)' : 'var(--mut)'};margin-top:2px;">${hasAccount ? '🔐 Vaikas turi paskyrą' : '👨‍👩 Tik tėvų valdoma'}</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveKid('${k.id}')">✓ Patvirtinti</button>
-        <button class="bsm" style="flex:1;background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);" onclick="rejectKid('${k.id}')">✗ Atmesti</button>
-      </div>
-    </div>`;
-  });
-  _trPatRenderTop('tr-forms-list', 'forms', cards, '<div style="text-align:center;padding:40px;color:var(--mut);">📝 Nėra naujų anketų</div>');
+  // Struktūros modelyje anketas tvirtina KLUBAS — ši skiltis dabar = STOVYKLŲ dalyvavimo patvirtinimai.
+  const cards = await _trainerPendingCampCards();
+  _trPatRenderTop('tr-forms-list', 'forms', cards, '<div style="text-align:center;padding:40px;color:var(--mut);">⛺ Nėra laukiančių stovyklų patvirtinimų</div>');
 }
 
 async function approveKid(kidId) {
@@ -22895,7 +22865,7 @@ function renderTrainerPatHero() {
 
 let _trPatFullHtml = { career: '', challenges: '', competitions: '', duels: '', forms: '' };
 let _trPatAllTab = 'career';
-const TR_PAT_TITLES = { career: '🏋️ KARJERA', challenges: '🎯 IŠŠŪKIAI', competitions: '🥇 VARŽYBOS', duels: '🥊 DVIKOVOS', forms: '📝 ANKETOS' };
+const TR_PAT_TITLES = { career: '🏋️ KARJERA', challenges: '🎯 IŠŠŪKIAI', competitions: '🥇 VARŽYBOS', duels: '🥊 DVIKOVOS', forms: '⛺ STOVYKLOS' };
 
 // Bendras renderis: pagrindiniam tabe TOP 3 + DAUGIAU, pilnas sąrašas — sub-lange
 function _trPatRenderTop(listId, tab, cardsArr, emptyHtml) {
@@ -23496,7 +23466,7 @@ function openTrInfo(which) {
         row('💪', 'Iššūkiai', 'Atlikti iššūkiai.') +
         row('🏅', 'Varžybos', 'Varžybų rezultatai ir medaliai.') +
         row('⚔️', 'Dvikovos', 'Dvikovų rezultatai.') +
-        row('📝', 'Anketos', 'Naujų vaikų registracijos (rodoma tik „Visos").') +
+        row('⛺', 'Stovyklos', 'Vaikų pažymėti stovyklų dalyvavimai — patvirtink, kad gautų EXP.') +
         `<div style="margin-top:10px;background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.45);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6;color:#fff;">⚠️ <b>Tvirtink atsakingai!</b> Patvirtink tik tai, ką vaikas tikrai atliko. Nuo to priklauso visa statistika, lygiai ir reitingai — klaidingas patvirtinimas iškreipia duomenis visiems.</div>`;
       break;
     case 'prof':
@@ -29050,7 +29020,7 @@ async function _trainerPendingCampCards(){
     const { data: pc } = await sb.rpc('trainer_pending_camps');
     if (!pc || !pc.length) return [];
     const cnm = await _fetchKidNameMap(pc.map(x=>x.kid_id));
-    return pc.map(x => `<div class="cd" id="camp-conf-${x.event_id}-${x.kid_id}" style="margin-bottom:12px;border-left:3px solid #22C55E;">
+    return pc.map(x => `<div class="cd" id="camp-conf-${x.event_id}-${x.kid_id}" data-gid="" style="margin-bottom:12px;border-left:3px solid #22C55E;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
         <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:900;margin-bottom:2px;">⛺ ${cnm[x.kid_id]||'Vaikas'}</div><div style="font-size:11px;color:var(--mut);">Stovyklos dalyvavimas</div></div>
         <div class="bg or" style="padding:3px 8px;font-size:10px;">⏳ Laukia</div>
@@ -29101,10 +29071,7 @@ async function loadPendingCompetitionResults() {
   updateTrainerPendingBadge();
   
   if (!results || results.length === 0) {
-    const _cc = await _trainerPendingCampCards();
-    document.getElementById('tr-competitions-count').textContent = _cc.length;
-    updateTrainerPendingBadge();
-    _trPatRenderTop('tr-competition-submissions-list', 'competitions', _cc, '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra laukiančių patvirtinimų</div>');
+    _trPatRenderTop('tr-competition-submissions-list', 'competitions', [], '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra laukiančių varžybų rezultatų</div>');
     return;
   }
   
@@ -29185,10 +29152,7 @@ async function loadPendingCompetitionResults() {
     </div>`;
   });
 
-  const _campCards = await _trainerPendingCampCards();
-  const _allCards = [...cards.filter(Boolean), ..._campCards];
-  document.getElementById('tr-competitions-count').textContent = _allCards.length;
-  _trPatRenderTop('tr-competition-submissions-list', 'competitions', _allCards, '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra laukiančių patvirtinimų</div>');
+  _trPatRenderTop('tr-competition-submissions-list', 'competitions', cards.filter(Boolean), '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra laukiančių varžybų rezultatų</div>');
 }
 
 async function approveCompetitionResult(resultId) {
