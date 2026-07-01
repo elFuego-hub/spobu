@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v298</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v299</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1583,12 +1583,6 @@ select.inp option{background:#222;}
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;">🏆 LAIMĖJIMŲ LENTELĖ</div>
     <div id="v-comp-medals-table" style="margin:0 12px 8px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;overflow:hidden;">
       <!-- Užpildoma dinamiškai -->
-    </div>
-
-    <!-- ⛺ STOVYKLOS (klubo renginiai — RSVP) -->
-    <div id="v-camps-section" style="padding:0 16px;margin:0 0 12px;display:none;">
-      <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;margin-bottom:8px;">⛺ STOVYKLOS</div>
-      <div id="v-camps-list"></div>
     </div>
 
     <!-- Tabai -->
@@ -17762,38 +17756,39 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
   // Rekordo skaičiai turi savo spalvas (Kumite=raudonas, Kata=mėlynas) - nesikeičia
 }
 
-// ⛺ Vaiko stovyklų sekcija (Varžybų lange) + self-RSVP
-let _kidCompClubId = null;
-async function loadKidCamps(clubId){
-  const sec = document.getElementById('v-camps-section');
-  const list = document.getElementById('v-camps-list');
-  if (!sec || !list) return;
-  if (!clubId || !currentKid?.id){ sec.style.display='none'; return; }
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const { data: camps } = await sb.from('club_events').select('*').eq('club_id', clubId).order('starts_on',{ascending:true});
-    const up = (camps||[]).filter(c => (c.ends_on||c.starts_on) >= today);
-    if (!up.length){ sec.style.display='none'; return; }
-    const ids = up.map(c=>c.id);
-    const { data: rsvps } = await sb.from('club_event_rsvp').select('event_id, status').eq('kid_id', currentKid.id).in('event_id', ids);
-    const myR = {}; (rsvps||[]).forEach(r=>{ myR[r.event_id]=r.status; });
-    sec.style.display='block';
-    list.innerHTML = up.map(c=>{
-      const range = (c.ends_on && c.ends_on!==c.starts_on) ? `${formatDateLT(c.starts_on)} – ${formatDateLT(c.ends_on)}` : formatDateLT(c.starts_on);
-      const st = myR[c.id]; const going = st==='going', notGoing = st==='not_going';
-      return `<div class="cd" style="margin-bottom:10px;border-left:3px solid #22C55E;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
-          <div style="font-size:14px;font-weight:900;color:#fff;min-width:0;">⛺ ${c.title}</div>
-          ${going?'<span style="font-size:9px;font-weight:800;color:var(--grn);background:rgba(34,197,94,.15);padding:3px 8px;border-radius:99px;flex-shrink:0;">✓ Dalyvausiu</span>':(notGoing?'<span style="font-size:9px;font-weight:800;color:#EF4444;background:rgba(239,68,68,.12);padding:3px 8px;border-radius:99px;flex-shrink:0;">Nedalyvausiu</span>':'')}
-        </div>
-        <div style="font-size:11px;color:var(--mut);line-height:1.6;margin-bottom:9px;">📅 ${range}${c.location?`  ·  📍 ${c.location}`:''}${c.price_info?`<br>💶 ${c.price_info}`:''}${c.exp_reward>0?`<br><span style="color:var(--br);">⭐ +${c.exp_reward} EXP už dalyvavimą</span>`:''}${c.description?`<div style="margin-top:5px;color:var(--text);">${c.description}</div>`:''}</div>
-        <div style="display:flex;gap:6px;">
-          <button onclick="kidRsvpCamp('${c.id}','going')" style="flex:1;background:${going?'var(--grn)':'rgba(34,197,94,.1)'};color:${going?'#fff':'var(--grn)'};border:.5px solid rgba(34,197,94,.4);padding:9px;border-radius:9px;font-size:12px;cursor:pointer;font-weight:800;">🙋 Dalyvausiu</button>
-          <button onclick="kidRsvpCamp('${c.id}','not_going')" style="flex:1;background:${notGoing?'#EF4444':'rgba(239,68,68,.08)'};color:${notGoing?'#fff':'#EF4444'};border:.5px solid rgba(239,68,68,.3);padding:9px;border-radius:9px;font-size:12px;cursor:pointer;font-weight:700;">🚫 Ne</button>
-        </div>
-      </div>`;
-    }).join('');
-  } catch(e){ console.error('[kid-camps]',e); sec.style.display='none'; }
+// ⛺ Vaiko stovyklos — ĮLIETOS į varžybų sąrašą (be atskiros sekcijos), su self-RSVP
+let _kidCompClubId = null, _kidCampsRaw = [], _kidCampRsvp = {};
+function _kidCampCardHtml(c, st){
+  const today = new Date().toISOString().split('T')[0];
+  const isPast = (c.ends_on||c.starts_on) < today;
+  const range = (c.ends_on && c.ends_on!==c.starts_on) ? `${formatDateLT(c.starts_on)} – ${formatDateLT(c.ends_on)}` : formatDateLT(c.starts_on);
+  const going = st==='going', notGoing = st==='not_going';
+  const when = isPast ? '📦 Pasibaigusi' : (c.starts_on<=today ? '🏃 Vyksta' : `⏱️ Liko ${Math.ceil((new Date(c.starts_on)-new Date())/86400000)} d.`);
+  return `<div class="kid-comp-card" style="background:rgba(34,197,94,.06);border:.5px solid rgba(34,197,94,.25);border-radius:10px;padding:8px 10px;margin-bottom:5px;border-left:3px solid #22C55E;${isPast?'opacity:.85;':''}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:6px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:800;line-height:1.2;color:white;">⛺ ${c.title}</div>
+        <div style="font-size:9px;color:#22C55E;margin-top:2px;font-weight:700;">Stovykla${c.price_info?' · 💶 '+c.price_info:''}</div>
+      </div>
+      <div style="background:${isPast?'rgba(255,255,255,.1)':'rgba(34,197,94,.15)'};color:${isPast?'var(--mut)':'#22C55E'};border:.5px solid ${isPast?'var(--bdr)':'rgba(34,197,94,.3)'};padding:3px 8px;font-size:9px;font-weight:800;border-radius:99px;flex-shrink:0;white-space:nowrap;">${when}</div>
+    </div>
+    <div style="background:var(--bg);border-radius:8px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:var(--mut);">
+      <div>📅 ${range}${c.location?' · 📍 '+c.location:''}</div>
+      ${c.exp_reward>0?`<div style="margin-top:3px;color:var(--br);">⭐ +${c.exp_reward} EXP už dalyvavimą</div>`:''}
+      ${c.description?`<div style="margin-top:3px;color:var(--text);">${c.description}</div>`:''}
+    </div>
+    ${isPast ? (going?'<span class="bg gn" style="padding:4px 10px;font-size:11px;">✓ Dalyvavai</span>':'') : `<div style="display:flex;gap:6px;margin-top:8px;">
+      <button onclick="kidRsvpCamp('${c.id}','going')" style="flex:1;background:${going?'var(--grn)':'rgba(34,197,94,.1)'};color:${going?'#fff':'var(--grn)'};border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🙋 ${going?'Dalyvausiu ✓':'Dalyvausiu'}</button>
+      <button onclick="kidRsvpCamp('${c.id}','not_going')" style="flex:1;background:${notGoing?'#EF4444':'rgba(239,68,68,.1)'};color:${notGoing?'#fff':'#EF4444'};border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Ne</button>
+    </div>`}
+  </div>`;
+}
+function _kidCampsHtmlForTab(){
+  if (vcActiveTab === 'pending') return '';
+  const today = new Date().toISOString().split('T')[0];
+  const up = (vcActiveTab !== 'completed');
+  const list = (_kidCampsRaw||[]).filter(c => { const past = (c.ends_on||c.starts_on) < today; return up ? !past : past; });
+  return list.map(c => _kidCampCardHtml(c, _kidCampRsvp[c.id])).join('');
 }
 async function kidRsvpCamp(eventId, status){
   if (!currentKid?.id) return;
@@ -17801,7 +17796,7 @@ async function kidRsvpCamp(eventId, status){
     const { error } = await sb.from('club_event_rsvp').upsert({ event_id: eventId, kid_id: currentKid.id, status, marked_by: currentUser.id }, { onConflict:'event_id,kid_id' });
     if (error) throw error;
     showToast(status==='going'?'🙋 Pažymėta — dalyvausi!':'Pažymėta — nedalyvausi');
-    loadKidCamps(_kidCompClubId);
+    if (typeof loadKidCompetitions === 'function') loadKidCompetitions();
   } catch(e){ console.error('[kid-rsvp]',e); showToast('❌ '+(e.message||'Nepavyko pažymėti'),'error'); }
 }
 
@@ -17824,7 +17819,16 @@ async function loadKidCompetitions() {
     return;
   }
   _kidCompClubId = clubId;
-  if (typeof loadKidCamps === 'function') loadKidCamps(clubId);
+  try {
+    const { data: _camps } = await sb.from('club_events').select('*').eq('club_id', clubId).order('starts_on', { ascending: true });
+    _kidCampsRaw = _camps || [];
+    const _cids = _kidCampsRaw.map(c=>c.id);
+    _kidCampRsvp = {};
+    if (_cids.length){
+      const { data: _rs } = await sb.from('club_event_rsvp').select('event_id, status').eq('kid_id', currentKid.id).in('event_id', _cids);
+      (_rs||[]).forEach(r=>{ _kidCampRsvp[r.event_id] = r.status; });
+    }
+  } catch(e){ _kidCampsRaw = []; _kidCampRsvp = {}; }
 
   // Visos klubo varžybos
   const { data: competitions, error } = await sb.from('competitions')
@@ -17891,7 +17895,7 @@ async function loadKidCompetitions() {
     else msg = 'Dar nesi dalyvavęs varžybose.';
     
     document.getElementById('v-comp-list').innerHTML =
-      `<div style="text-align:center;padding:40px;color:var(--mut);">${msg}</div>`;
+      _kidCampsHtmlForTab() + `<div style="text-align:center;padding:40px;color:var(--mut);">${msg}</div>`;
     return;
   }
   
@@ -18040,7 +18044,7 @@ async function loadKidCompetitions() {
     `;
   }
   
-  document.getElementById('v-comp-list').innerHTML = finalHtml;
+  document.getElementById('v-comp-list').innerHTML = _kidCampsHtmlForTab() + finalHtml;
 }
 
 // 🎯 Atveria varžybų modal'ą su likusiomis kortelėmis
@@ -33021,6 +33025,14 @@ async function loadAllNotifications(force) {
     });
   });
   
+  // ⛺ STOVYKLOS (naujos) → Varžybų tabe
+  try {
+    const { data: _newCamps } = await sb.from('club_events').select('id, title, starts_on, created_at').eq('club_id', currentProfile.club_id).gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10);
+    (_newCamps || []).forEach(cp => {
+      varzybos.push({ id: `newcamp-${cp.id}`, icon: '⛺', title: 'Nauja stovykla', body: `${cp.title || 'Stovykla'}${cp.starts_on ? ' · ' + new Date(cp.starts_on).toLocaleDateString('lt-LT') : ''}`, time: cp.created_at, link: 'v-comp' });
+    });
+  } catch(e){ /* nekritinis */ }
+
   // 💬 ŽINUTĖS + KLUBO PRANEŠIMAI → 💬 Žinutės (tik kur esu pokalbio narys)
   if (msgsRes.data && msgsRes.data.length > 0) {
     const convIds = [...new Set(msgsRes.data.map(m => m.conversation_id))];
