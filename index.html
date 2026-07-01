@@ -448,7 +448,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v306</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v307</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -16840,6 +16840,8 @@ async function submitNewCamp(editId){
   if (typeof flagOn === 'function' && !flagOn('camps_enabled')) { showToast('⛺ Stovyklos klube išjungtos', 'error', 4000); return; }
   const event_type = document.getElementById('camp-type')?.value || 'camp';
   const _cap = _campType(event_type).cap;
+  const _exp = Math.max(0, parseInt(document.getElementById('camp-exp').value, 10) || 0);
+  if (_exp > _cap){ showToast(`❌ ${_campType(event_type).label}: maks. ${_cap} EXP (įvedei ${_exp})`, 'error', 4500); return; }
   const payload = {
     title,
     starts_on,
@@ -16847,7 +16849,7 @@ async function submitNewCamp(editId){
     location: document.getElementById('camp-loc').value.trim() || null,
     price_info: document.getElementById('camp-price').value.trim() || null,
     event_type,
-    exp_reward: Math.min(_cap, Math.max(0, parseInt(document.getElementById('camp-exp').value, 10) || 0)),
+    exp_reward: _exp,
     description: document.getElementById('camp-desc').value.trim() || null
   };
   let res;
@@ -17851,11 +17853,38 @@ async function kidRsvpCamp(eventId, status){
     if (typeof loadKidCompetitions === 'function') loadKidCompetitions();
   } catch(e){ console.error('[kid-rsvp]',e); showToast('❌ '+(e.message||'Nepavyko pažymėti'),'error'); }
 }
-// Po stovyklos: vaikas patvirtina „Dalyvavau" (→ laukia trenerio patvirtinimo) arba „Nebuvau"
+// Po stovyklos: vaikas patvirtina „Dalyvavau" (→ pasirenka trenerį → laukia patvirtinimo) arba „Nebuvau"
 async function kidConfirmCamp(eventId, kind){
   if (!currentKid?.id) return;
+  // „Nebuvau" — trenerio nereikia
+  if (kind !== 'participated') return _doKidConfirmCamp(eventId, kind, null);
+  // „Dalyvavau" — vaikas pasirenka trenerį (kaip iššūkiai/varžybos): 1→auto, >1→popup
+  let trs = [];
+  try { trs = await getMyTrainers(); } catch(_){}
+  if (trs.length > 1){ _campPendingConfirm = { eventId }; _showCampTrainerPicker(trs); return; }
+  return _doKidConfirmCamp(eventId, 'participated', (trs[0] && trs[0].id) || null);
+}
+let _campPendingConfirm = null;
+function _showCampTrainerPicker(trainers){
+  const old = document.getElementById('camp-trainer-pick'); if(old) old.remove();
+  const m = document.createElement('div'); m.id='camp-trainer-pick';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100006;align-items:flex-end;justify-content:center;';
+  m.onclick=(e)=>{ if(e.target===m) m.remove(); };
+  const rows = (trainers||[]).map(t=>{ const nm = t.name || 'Treneris'; return `<div onclick="_campPickTrainer('${t.id}')" style="padding:13px 16px;border-top:.5px solid var(--bdr);cursor:pointer;font-size:14px;color:#fff;">🥋 ${nm}</div>`; }).join('');
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;animation:slideUp .3s ease-out;"><div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">KAM SIŲSTI?</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Pasirink trenerį, kuris patvirtins stovyklą</div></div>${rows}<div style="height:10px;"></div></div>`;
+  document.body.appendChild(m);
+}
+function _campPickTrainer(trainerId){
+  const m = document.getElementById('camp-trainer-pick'); if(m) m.remove();
+  const p = _campPendingConfirm || {}; _campPendingConfirm = null;
+  if (p.eventId) _doKidConfirmCamp(p.eventId, 'participated', trainerId);
+}
+async function _doKidConfirmCamp(eventId, kind, trainerId){
+  if (!currentKid?.id) return;
   try {
-    const { error } = await sb.from('club_event_rsvp').upsert({ event_id: eventId, kid_id: currentKid.id, status: kind, marked_by: currentUser.id }, { onConflict:'event_id,kid_id' });
+    const row = { event_id: eventId, kid_id: currentKid.id, status: kind, marked_by: currentUser.id };
+    if (kind === 'participated') row.confirm_trainer_id = trainerId || null;
+    const { error } = await sb.from('club_event_rsvp').upsert(row, { onConflict:'event_id,kid_id' });
     if (error) throw error;
     showToast(kind==='participated'?'✅ Išsiųsta treneriui — laukia patvirtinimo':'Pažymėta — nedalyvavai');
     if (typeof loadKidCompetitions === 'function') loadKidCompetitions();
