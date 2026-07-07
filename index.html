@@ -4303,8 +4303,14 @@ async function init() {
       currentUser = session.user;
       await afterLogin();
     } else if (event === 'SIGNED_OUT') {
+      // #11: account-switch be reload — išvalom realtime kanalus + flag'us + būseną
+      try { if (sb && sb.removeAllChannels) sb.removeAllChannels(); } catch (e) {}
+      _kidChannelsSubscribed = false;
+      _parentChannelsSubscribed = false;
+      if (window._msgBadgeInterval) { clearInterval(window._msgBadgeInterval); window._msgBadgeInterval = null; }
       currentUser = null;
       currentProfile = null;
+      currentKid = null;
       showLogin();
     }
   });
@@ -5468,11 +5474,9 @@ function parentSelectKid(kidId) {
   if (!k) return;
   parentActiveKid = k;
   renderParentKidPill();
-  const sid = _activeSid || 't-main';
-  if (sid === 't-kar') loadParentKidCareer();
-  else if (sid === 't-feed') loadParentKidFeed();
-  else if (sid === 't-prof') loadParentKidProfile();
-  else loadParentKidMain();
+  // #16/#30: perjungus vaiką perkraunam aktyvų ekraną (įsk. t-shop kreditus) IR re-gate'inam paywall
+  if (typeof refreshParentActiveScreen === 'function') refreshParentActiveScreen();
+  if (typeof applyParentTierGating === 'function') applyParentTierGating();
   if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge(); // badge → naujo vaiko neperskaityti
   const m = document.getElementById('parent-kid-switcher'); if (m) m.remove();
 }
@@ -5520,7 +5524,7 @@ async function getCareerCategories() {
   try {
     const { data } = await sb.from('career_categories').select('*');
     _careerCatsCache = data || [];
-  } catch (e) { _careerCatsCache = []; }
+  } catch (e) { _careerCatsCache = null; }  // #1: klaidos NEcacheinam ([] būtų truthy → įstrigtų visai sesijai)
   return _careerCatsCache;
 }
 
@@ -6188,7 +6192,7 @@ async function openMonthCard() {
   const old = document.getElementById('month-card-modal'); if (old) old.remove();
   const k = c.kid;
   const narrative = await computeMonthHighlight();
-  const curMonth = new Date().getMonth() + 1;
+  const curMonth = c.month || (new Date().getMonth() + 1); // #5: mėnuo iš feed-load laiko (kad neatsirastų phantom eilutė per mėn./metų ribą)
   _pmCurrentD = {
     name: c.name, avatar_url: k.avatar_url || null, initials: parentKidInitials(k),
     kyu: k.kyu || null, total_exp: k.total_exp || 0,
@@ -6257,7 +6261,7 @@ async function _snapshotMonth(c, narrative) {
   try {
     const k = c.kid;
     await sb.from('monthly_reports').upsert({
-      kid_id: k.id, year: c.year, month: (new Date().getMonth() + 1),
+      kid_id: k.id, year: c.year, month: (c.month || (new Date().getMonth() + 1)),
       month_label: c.monthLabel, exp: c.exp, challenges: c.challenges,
       records: c.records, medals: c.medals, narrative: narrative || null,
       kyu: k.kyu || null, total_exp: k.total_exp || 0, updated_at: new Date().toISOString()
@@ -6386,7 +6390,7 @@ async function loadParentKidFeed() {
     }
     const attLine = _attStats ? `🗓️ Lankomumas · sav. ${_attStats.weekPresent}/${_attStats.weekScheduled} · mėn. ${_attStats.monthPresent}/${_attStats.monthScheduled}` : '';
     // 📲 Mėnesio kortelei (dalinimasis) — išsaugom šio mėnesio statistiką
-    _pmCard = { kid: k, name: (k.first_name || 'VAIKAS'), monthLabel, year: now.getFullYear(), exp: monthExp, challenges: chCount, records: recCount, medals: medalCount, wonComps: items.filter(i => i.kind === 'comp' && i.won), att: _attStats ? { wPres: _attStats.weekPresent, wSch: _attStats.weekScheduled, mPres: _attStats.monthPresent, mSch: _attStats.monthScheduled } : null };
+    _pmCard = { kid: k, name: (k.first_name || 'VAIKAS'), monthLabel, month: (now.getMonth() + 1), year: now.getFullYear(), exp: monthExp, challenges: chCount, records: recCount, medals: medalCount, wonComps: items.filter(i => i.kind === 'comp' && i.won), att: _attStats ? { wPres: _attStats.weekPresent, wSch: _attStats.weekScheduled, mPres: _attStats.monthPresent, mSch: _attStats.monthScheduled } : null };
     // Hero fonas pagal vaiko stadiją (toks pat kaip karjeros / pagrindinio hero)
     const stageInfo = getStageInfo(k.total_exp || 0);
     const stage = STAGES.find(s => s.name === stageInfo.stage) || STAGES[0];
@@ -6602,8 +6606,11 @@ function _kidDataDays(k, gateDays){
 function _summerDaysLeft(){
   if (localStorage.getItem('spobu_nocd') === '1') return 0;  // 🧪 TEST: apeiti vasaros terminą
   const now = new Date();
-  let target = new Date(now.getFullYear(), 4, 15); // gegužės 15
-  if (now >= target) target = new Date(now.getFullYear() + 1, 4, 15);
+  const y = now.getFullYear();
+  const winStart = new Date(y, 4, 15);   // gegužės 15
+  const winEnd = new Date(y, 8, 1);      // rugsėjo 1 (vasaros langas geg.15–rugpj.31)
+  if (now >= winStart && now < winEnd) return 0;  // #P3: langas atviras → prieinama
+  let target = (now < winStart) ? winStart : new Date(y + 1, 4, 15);
   return Math.ceil((target.getTime() - now.getTime()) / 86400000);
 }
 function _setShopCard(key, credits, redeemFn, buyFn, priceLabel){
@@ -7029,6 +7036,7 @@ async function submitReportOrder(btn){
       if (w) k.weight_kg = Number(w);
       loadMyReports();
       if (_reportCreditMode) { consumeReportCredit(); _reportCreditMode = false; }
+      btn.dataset.done = '1'; // #P1: po sėkmės mygtuko NEbeatrakinam (kad nesugeneruotų dar kartą be nurašymo)
       if (data.status === 'pending_review') {
         // Peržiūros vartai — tėvas negauna iškart; SPOBU specialistai patikrina
         if (status) { status.style.color = 'var(--grn)'; status.textContent = '✅ Užsakyta! SPOBU specialistai peržiūrės ir paruoš per 24 val. — pranešim, kai bus gatava.'; }
@@ -7040,7 +7048,8 @@ async function submitReportOrder(btn){
   } catch (e) {
     if (status) { status.style.display = 'block'; status.style.color = 'var(--br)'; status.textContent = '❌ ' + (e?.message || e); }
   } finally {
-    btn.disabled = false; btn.textContent = '✨ Generuoti ataskaitą';
+    // #P1: sėkmės atveju (dataset.done) mygtuko NEbeatrakinam; klaidos atveju — leidžiam bandyti dar kartą
+    if (btn.dataset.done !== '1') { btn.disabled = false; btn.textContent = '✨ Generuoti ataskaitą'; }
   }
 }
 
@@ -11924,7 +11933,18 @@ async function submitDuelResult(duelId) {
     showToast('❌ Dvikova nerasta', 'error');
     return;
   }
-  
+
+  // #44: neleisti pateikti į neaktyvią dvikovą; neleisti PERRAŠYTI savo reikšmės (matyti oponentą → keisti)
+  if (duel.status !== 'active') {
+    showToast('⏳ Dvikova jau pateikta arba nebeaktyvi', 'error');
+    return;
+  }
+  const _myVal = (duel.challenger_id === currentKid.id) ? duel.challenger_value : duel.opponent_value;
+  if (_myVal !== null && _myVal !== undefined) {
+    showToast('✅ Savo rezultatą jau pateikei — laukiam draugo', 'info');
+    return;
+  }
+
   const isChallenger = duel.challenger_id === currentKid.id;
   const updateData = {};
   if (isChallenger) {
@@ -27634,13 +27654,14 @@ async function rejectDuel(duelId) {
   
   const { error } = await sb.from('duels')
     .update({ status: 'active', challenger_value: null, opponent_value: null })
-    .eq('id', duelId);
-  
+    .eq('id', duelId)
+    .eq('status', 'submitted');  // #46: TIK submitted → jau patvirtintos (completed) NEresetinam (kad EXP nebūtų skiriamas 2×)
+
   if (error) {
     showToast('❌ Klaida: ' + error.message, 'error');
     return;
   }
-  
+
   showToast('Dvikova grąžinta - vaikai įves rezultatus iš naujo.', 'info');
   loadPendingDuels();
 }
