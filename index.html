@@ -465,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v313</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v314</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -18843,10 +18843,10 @@ async function _kidGroupChallengesScreen(){
   try {
     const { data: parts } = await sb.from('club_challenge_groups').select('challenge_id').eq('group_id', currentKid.group_id);
     if (!parts || !parts.length){ wrap.innerHTML=''; return; }
-    const { data: chs } = await sb.from('club_challenges').select('id, title, unit, ends_on')
-      .in('id', parts.map(p=>p.challenge_id)).eq('is_active', true).order('created_at',{ascending:false});
+    const { data: chs } = await sb.from('club_challenges').select('id, title, unit, ends_on, winner_exp, exp_awarded, is_active')
+      .in('id', parts.map(p=>p.challenge_id)).order('created_at',{ascending:false});
     if (!chs || !chs.length){ wrap.innerHTML=''; return; }
-    const cards = [];
+    const active = []; const arch = [];
     for (const ch of chs){
       const { data: st } = await sb.rpc('club_challenge_standings', { challenge_uuid: ch.id });
       const N = (st||[]).length;
@@ -18855,19 +18855,35 @@ async function _kidGroupChallengesScreen(){
       const total = mine ? (+mine.total_val||0) : 0;
       const avg = mine ? (+mine.avg_kid||0) : 0;
       const medal = rnk===1?'🥇':rnk===2?'🥈':rnk===3?'🥉':`${rnk}.`;
-      const daysLeft = ch.ends_on ? Math.max(0, Math.ceil((new Date(ch.ends_on)-new Date())/86400000)) : null;
       const safe = (ch.title||'').replace(/'/g,"\\'");
-      cards.push(`<div onclick="viewChallengeStandings('${ch.id}','${safe}')" style="background:linear-gradient(135deg,rgba(234,179,8,.1),rgba(234,179,8,.03));border:.5px solid rgba(234,179,8,.3);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #EAB308;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:800;color:white;">🏆 ${ch.title}</div>
-            <div style="font-size:9px;color:#EAB308;margin-top:2px;font-weight:700;">TAVO GRUPĖ ${medal} vieta iš ${N}${daysLeft!=null?' · liko '+daysLeft+' d.':''}</div>
+      if (ch.is_active){
+        const daysLeft = ch.ends_on ? Math.max(0, Math.ceil((new Date(ch.ends_on)-new Date())/86400000)) : null;
+        active.push(`<div onclick="viewChallengeStandings('${ch.id}','${safe}')" style="background:linear-gradient(135deg,rgba(234,179,8,.1),rgba(234,179,8,.03));border:.5px solid rgba(234,179,8,.3);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #EAB308;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:800;color:white;">🏆 ${ch.title}</div>
+              <div style="font-size:9px;color:#EAB308;margin-top:2px;font-weight:700;">TAVO GRUPĖ ${medal} vieta iš ${N}${daysLeft!=null?' · liko '+daysLeft+' d.':''}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#EAB308;line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);">${ch.unit||''} · vid.${avg}</div></div>
           </div>
-          <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#EAB308;line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);">${ch.unit||''} · vid.${avg}</div></div>
-        </div>
-      </div>`);
+        </div>`);
+      } else {
+        const gotExp = (typeof _gcTierExp==='function') ? _gcTierExp(ch.winner_exp, rnk) : 0;
+        arch.push(`<div onclick="viewChallengeStandings('${ch.id}','${safe}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #6B7280;opacity:.9;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:800;color:white;">📦 ${ch.title}</div>
+              <div style="font-size:9px;color:var(--mut);margin-top:2px;font-weight:700;">TAVO GRUPĖ ${medal} vieta iš ${N}${ch.exp_awarded&&gotExp>0?' · <span style="color:#EAB308;">+'+gotExp+' EXP</span>':''}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);">${ch.unit||''}</div></div>
+          </div>
+        </div>`);
+      }
     }
-    wrap.innerHTML = `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:2px 0 6px;">🏆 GRUPIŲ IŠŠŪKIS</div>` + cards.join('');
+    let html = '';
+    if (active.length) html += `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:2px 0 6px;">🏆 GRUPIŲ IŠŠŪKIS</div>` + active.join('');
+    if (arch.length) html += `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:8px 0 6px;">📦 PASIBAIGĘ</div>` + arch.join('');
+    wrap.innerHTML = html;
   } catch(e){ wrap.innerHTML=''; }
 }
 
@@ -28563,8 +28579,8 @@ async function _trainerGroupChallenges(){
   const wrap = document.getElementById('tr-gc-section');
   if (!wrap) return;
   _trGcData = {};
-  // Rodoma tik AKTYVIŲ tabe (kaip kiti iššūkiai)
-  if (typeof myChallengesActiveTab !== 'undefined' && myChallengesActiveTab === 'completed'){ wrap.innerHTML=''; return; }
+  // Aktyvių tabe — kasdienis žymėjimas; „Pasibaigę" tabe — archyvas (read-only rezultatai)
+  const done = (typeof myChallengesActiveTab !== 'undefined' && myChallengesActiveTab === 'completed');
   if (typeof flagOn === 'function' && !flagOn('group_challenges_enabled')){ wrap.innerHTML=''; return; }
   // Trenerio grupės (pagrindinis treneris + asistentas)
   const [{ data: g1 }, { data: g2 }] = await Promise.all([
@@ -28578,8 +28594,42 @@ async function _trainerGroupChallenges(){
   const { data: parts } = await sb.from('club_challenge_groups').select('challenge_id, group_id').in('group_id', gIds);
   if (!parts || !parts.length){ wrap.innerHTML=''; return; }
   const chIds = [...new Set(parts.map(p=>p.challenge_id))];
-  const { data: chs } = await sb.from('club_challenges').select('*').in('id', chIds).eq('is_active', true).in('metric', ['reps','km']);
+  const { data: chs } = await sb.from('club_challenges').select('*').in('id', chIds).eq('is_active', !done).in('metric', ['reps','km']);
   if (!chs || !chs.length){ wrap.innerHTML=''; return; }
+  // 📦 ARCHYVAS („Pasibaigę" tabas): read-only grupės rezultatas + gautas EXP
+  if (done){
+    const arr = [];
+    for (const ch of chs){
+      const chGroups = myGroups.filter(g => parts.some(p=>p.challenge_id===ch.id && p.group_id===g.id));
+      if (!chGroups.length) continue;
+      const { data: st } = await sb.rpc('club_challenge_standings', { challenge_uuid: ch.id });
+      const N = (st||[]).length;
+      const rowsHtml = chGroups.map(g=>{
+        const mine = (st||[]).find(r=>r.g_id===g.id);
+        const rnk = mine ? +mine.rnk : N;
+        const total = mine ? (+mine.total_val||0) : 0;
+        const medal = rnk===1?'🥇':rnk===2?'🥈':rnk===3?'🥉':`${rnk}.`;
+        const gotExp = (typeof _gcTierExp==='function') ? _gcTierExp(ch.winner_exp, rnk) : 0;
+        return `<div style="font-size:11px;color:var(--text);padding:3px 0;">${g.name||'Grupė'}: <b>${medal} ${rnk} v.</b> iš ${N} · ${total} ${ch.unit||''}${ch.exp_awarded&&gotExp>0?' · <span style="color:#EAB308;">+'+gotExp+' EXP/vaikui</span>':''}</div>`;
+      }).join('');
+      const safe=(ch.title||'').replace(/'/g,"\\'");
+      arr.push(`<div class="cd" onclick="viewChallengeStandings('${ch.id}','${safe}')" style="margin-bottom:10px;border-left:3px solid #6B7280;opacity:.92;cursor:pointer;">
+        <div style="font-size:13px;font-weight:900;">📦 ${ch.title}</div>
+        <div style="font-size:9px;color:var(--mut);margin:2px 0 6px;">${ch.exercise_label||_gcMetricLabel(ch)} · pasibaigęs</div>
+        ${rowsHtml}</div>`);
+    }
+    if (!arr.length){ wrap.innerHTML=''; return; }
+    const hdr = `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:2px 4px 6px;">📦 PASIBAIGĘ GRUPIŲ IŠŠŪKIAI</div>`;
+    const SHOW=2;
+    if (arr.length>SHOW){
+      wrap.innerHTML = hdr + arr.slice(0,SHOW).join('')
+        + `<div id="trgc-more" style="display:none;">${arr.slice(SHOW).join('')}</div>`
+        + `<button onclick="_trGcToggleMore(this)" style="width:100%;padding:8px;background:transparent;border:.5px dashed rgba(107,114,128,.5);color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;border-radius:10px;margin-bottom:10px;">▼ DAUGIAU (${arr.length-SHOW})</button>`;
+    } else {
+      wrap.innerHTML = hdr + arr.join('');
+    }
+    return;
+  }
   const { data: daily } = await sb.from('club_challenge_daily').select('challenge_id, group_id, session_date, value')
     .in('challenge_id', chIds).order('session_date', { ascending: false });
   const today = new Date().toISOString().split('T')[0];
