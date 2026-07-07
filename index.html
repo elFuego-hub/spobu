@@ -216,6 +216,23 @@ body.full-mobile-preview #ptr .sc { height: 100% !important; min-height: 0 !impo
 body.full-mobile-preview #pk .ph { height: 780px !important; min-height: 0 !important; }
 body.full-mobile-preview #pk .sc { height: 100% !important; min-height: 0 !important; }
 
+/* 👦 VAIKO PORTALAS — FIXED LAYOUT (v308, kaip #ptr/#pk): telefone/rėmelyje aukštis
+   fiksuotas, turinys scrollinasi .sa viduje, .bn2 visada vietoje (nebelipa per viršų).
+   Desktop grid (≥1024px) NEliečiamas — ten lieka page scroll (žr. override žemiau). */
+#pv .ph { height: 780px; display: flex; flex-direction: column; }
+#pv .sc { min-height: 0 !important; height: 100%; flex: 1; }
+#pv .sa { min-height: 0; }
+@media (max-width: 500px) {
+  #pv .ph { height: 100vh !important; height: 100dvh !important; min-height: 0 !important; }
+  #pv .sc { height: 100% !important; }
+}
+body.full-mobile-preview #pv .ph { height: 780px !important; min-height: 0 !important; }
+body.full-mobile-preview #pv .sc { height: 100% !important; min-height: 0 !important; }
+@media (min-width: 1024px) {
+  body.am.portal-v:not(.full-mobile-preview) #pv .ph { height: auto !important; display: block !important; }
+  body.am.portal-v:not(.full-mobile-preview) #pv .sc { height: auto !important; flex: none !important; }
+}
+
 /* 🃏 Klubo Analitikos sekcijų kortelės (gražesnės nei plikas sąrašas) */
 .k-sec{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;margin:0 16px 8px;transition:border-color .15s,transform .1s;}
 .k-sec:active{transform:scale(.99);border-color:rgba(255,77,0,.45);}
@@ -448,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v307</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v308</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -1566,16 +1583,6 @@ select.inp option{background:#222;}
             <!-- užpildoma -->
           </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- ⏳ LAUKIA REZULTATŲ kortelė -->
-    <div id="v-comp-pending-card" style="margin:0 12px 8px;padding:10px;background:linear-gradient(135deg,rgba(255,140,0,.12),rgba(255,140,0,.04));border:1px solid rgba(255,140,0,.3);border-radius:12px;display:none;cursor:pointer;align-items:center;gap:10px;" onclick="switchVcTab(document.querySelector('.vc-tab[data-tab=pending]'),'pending')">
-      <div style="font-size:28px;line-height:1;flex-shrink:0;">⏳</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:8px;color:#FF8C00;letter-spacing:1.5px;font-weight:800;">LAUKIA REZULTATŲ</div>
-        <div style="font-size:12px;color:white;font-weight:800;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-comp-pending-title">–</div>
-        <div style="font-size:9px;color:var(--mut);margin-top:2px;" id="v-comp-pending-meta">–</div>
       </div>
     </div>
     
@@ -17780,20 +17787,6 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     tableEl.innerHTML = rowsHtml;
   }
   
-  // ⏳ LAUKIA REZULTATŲ kortelė - rodyti pirmą pending (TIK kai NEesi pending tab'e)
-  const pendingCard = document.getElementById('v-comp-pending-card');
-  if (pendingCard) {
-    if (pending && pending.length > 0 && vcActiveTab !== 'pending') {
-      const p = pending[0];
-      pendingCard.style.display = 'flex';
-      setText('v-comp-pending-title', p.title);
-      const levelLabel = COMP_LEVEL_LABELS[p.level] || '🏘️ Vietinės';
-      setText('v-comp-pending-meta', `📅 ${p.event_date} · ${levelLabel}`);
-    } else {
-      pendingCard.style.display = 'none';
-    }
-  }
-  
   // 🎨 HERO fonas pagal stage
   const totalExp = currentKid?.total_exp || 0;
   const stageInfo = getStageInfo(totalExp);
@@ -29121,7 +29114,7 @@ async function approveCampConf(eventId, kidId){
   const { error } = await sb.rpc('approve_camp_attendance', { p_event: eventId, p_kid: kidId });
   if (error){ if(el){el.style.opacity='';el.style.pointerEvents='';delete el.dataset.busy;} showToast('❌ '+error.message,'error',5000); return; }
   showToast('✅ Patvirtinta! EXP pridėtas vaikui.','success',4000);
-  loadPendingCompetitionResults();
+  loadPendingKidForms();  // stovyklų kortelės gyvena „⛺ Stovyklos" (forms) tabe
 }
 
 async function loadPendingCompetitionResults() {
@@ -33144,8 +33137,12 @@ async function loadAllNotifications(force) {
   });
   
   // ⛺ STOVYKLOS (naujos) → Varžybų tabe
+  // Klubo ID: vaiko kids.club_id → profilio club_id → per trenerį resolvintas (_kidCompClubId).
+  // currentProfile.club_id vaikui dažnai NULL — be fallback pranešimai niekada nesirodytų.
   try {
-    const { data: _newCamps } = await sb.from('club_events').select('id, title, starts_on, created_at').eq('club_id', currentProfile.club_id).gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10);
+    const _bellClubId = currentKid?.club_id || currentProfile?.club_id || _kidCompClubId;
+    if (!_bellClubId) throw 0;
+    const { data: _newCamps } = await sb.from('club_events').select('id, title, starts_on, created_at').eq('club_id', _bellClubId).gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10);
     (_newCamps || []).forEach(cp => {
       varzybos.push({ id: `newcamp-${cp.id}`, icon: '⛺', title: 'Nauja stovykla', body: `${cp.title || 'Stovykla'}${cp.starts_on ? ' · ' + new Date(cp.starts_on).toLocaleDateString('lt-LT') : ''}`, time: cp.created_at, link: 'v-comp' });
     });
