@@ -465,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v312</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v313</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -28583,7 +28583,7 @@ async function _trainerGroupChallenges(){
   const { data: daily } = await sb.from('club_challenge_daily').select('challenge_id, group_id, session_date, value')
     .in('challenge_id', chIds).order('session_date', { ascending: false });
   const today = new Date().toISOString().split('T')[0];
-  const cards = chs.map(ch=>{
+  const cardArr = chs.map(ch=>{
     // Trenerio grupės, dalyvaujančios ŠIAME iššūkyje
     const chGroups = myGroups.filter(g => parts.some(p=>p.challenge_id===ch.id && p.group_id===g.id));
     if (!chGroups.length) return '';
@@ -28614,8 +28614,24 @@ async function _trainerGroupChallenges(){
       <div style="font-size:9px;color:var(--mut);margin-bottom:6px;">Įvesk TOS DIENOS rezultatą — bendras kaupiasi automatiškai. Ta pati data = perrašo (ne prideda).</div>
       <div id="trgc-${ch.id}-recent" style="display:flex;flex-wrap:wrap;gap:4px;">${_trGcRecentHtml((dailyByGid[first.id]||[]).slice(0,5))}</div>
     </div>`;
-  }).join('');
-  wrap.innerHTML = `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:2px 4px 6px;">🏆 GRUPIŲ IŠŠŪKIS · PAŽYMĖK DIENOS REZULTATĄ</div>` + cards;
+  }).filter(Boolean);
+  const header = `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:2px 4px 6px;">🏆 GRUPIŲ IŠŠŪKIS · PAŽYMĖK DIENOS REZULTATĄ</div>`;
+  const SHOW = 2;  // pirmos 2 + „DAUGIAU" (kaip vaiko varžybos/stovyklos)
+  let body;
+  if (cardArr.length > SHOW){
+    body = cardArr.slice(0,SHOW).join('')
+      + `<div id="trgc-more" style="display:none;">${cardArr.slice(SHOW).join('')}</div>`
+      + `<button onclick="_trGcToggleMore(this)" style="width:100%;padding:8px;background:transparent;border:.5px dashed rgba(234,179,8,.5);color:#EAB308;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;border-radius:10px;margin-bottom:10px;">▼ DAUGIAU (${cardArr.length-SHOW})</button>`;
+  } else {
+    body = cardArr.join('');
+  }
+  wrap.innerHTML = header + body;
+}
+function _trGcToggleMore(btn){
+  const m = document.getElementById('trgc-more'); if(!m) return;
+  const open = m.style.display !== 'none';
+  m.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? `▼ DAUGIAU (${m.children.length})` : '▲ SUTRAUKTI';
 }
 function _trGcRecentHtml(rows){
   return (rows && rows.length)
