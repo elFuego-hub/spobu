@@ -465,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v329</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v330</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15780,20 +15780,16 @@ async function _fetchClubNotifications(force){
   systemItems.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
 
   // ŽINUTĖS: pokalbiai su perskaityta/neperskaityta būsena (kaip tėvo varpelis) — rodomi VISI, taškas = neperskaityta
-  const _rawMsgs = ((msR.data)||[])
+  const msgItems = ((msR.data)||[])
     .filter(m => m.conversations && m.conversations.last_message_at && m.conversations.type !== 'announcement')  // TIK chatai, NE išsiųsti skelbimai
     .sort((a,b)=>new Date(b.conversations.last_message_at)-new Date(a.conversations.last_message_at))
-    .slice(0,25);
-  // Paskutinio siuntėjo rolės (žinučių filtrui: tėvų / trenerių)
-  const _msgSndIds = [...new Set(_rawMsgs.map(m=>m.conversations.last_message_sender_id).filter(Boolean))];
-  const _sndRole = {};
-  if (_msgSndIds.length){ try { const { data: _rs } = await sb.from('profiles').select('id, role').in('id', _msgSndIds); (_rs||[]).forEach(p=>_sndRole[p.id]=p.role); } catch(_){} }
-  const msgItems = _rawMsgs.map(m=>{
-    const c = m.conversations;
-    const unread = !m.last_read_at || (new Date(c.last_message_at) > new Date(m.last_read_at));
-    const fromOther = !!(c.last_message_sender_id && c.last_message_sender_id !== currentUser.id);
-    return { id:'conv-'+c.id, icon:'💬', title:c.title||'Pokalbis', sub:(c.last_message_preview||'').slice(0,60), ts:c.last_message_at, convId:c.id, unread, fromOther, senderRole:(_sndRole[c.last_message_sender_id]||'other') };
-  });
+    .slice(0,25)
+    .map(m=>{
+      const c = m.conversations;
+      const unread = !m.last_read_at || (new Date(c.last_message_at) > new Date(m.last_read_at));
+      const fromOther = !!(c.last_message_sender_id && c.last_message_sender_id !== currentUser.id);
+      return { id:'conv-'+c.id, icon:'💬', title:c.title||'Pokalbis', sub:(c.last_message_preview||'').slice(0,60), ts:c.last_message_at, convId:c.id, unread, fromOther };
+    });
 
   const dedupe = arr => { const s=new Set(); return arr.filter(n=>{ if(s.has(n.id))return false; s.add(n.id); return true; }); };
   clubNotifications = { system:dedupe(systemItems), events:dedupe(eventItems), messages:dedupe(msgItems) };
@@ -15804,12 +15800,12 @@ async function _fetchClubNotifications(force){
 // 🔔 Pranešimų filtrai (per vartotoją, localStorage). Numatyta — viskas įjungta.
 function _clubNotifPrefs(){ try { return JSON.parse(localStorage.getItem('spobu_club_notif_prefs_'+(currentUser?.id||''))||'{}'); } catch(_){ return {}; } }
 function _setClubNotifPref(k,v){ const p=_clubNotifPrefs(); p[k]=v; try { localStorage.setItem('spobu_club_notif_prefs_'+(currentUser?.id||''), JSON.stringify(p)); } catch(_){} }
-// Ar įrašas praeina filtrus. Privalomi (registracijos, laukiantys rezultatai, GC užbaigimas) VISADA matomi.
+// Ar įrašas matomas — paprastas jungiklis kiekvienai varpelio kategorijai (Klubas/Renginiai/Žinutės).
 function _clubNotifVisible(tab, it){
   const p=_clubNotifPrefs();
-  if (tab==='messages'){ const f=p.msgFrom||'all'; if(f==='off')return false; if(f==='parents')return it.senderRole==='parent'; if(f==='trainers')return it.senderRole==='trainer'; return true; }
-  if (it.id && it.id.indexOf('rsvpagg-')===0 && p.rsvp===false) return false;   // stovyklų RSVP (neprivaloma)
-  if (it.id && it.id.indexOf('rep-')===0 && p.reports===false) return false;    // nupirktos ataskaitos (neprivaloma)
+  if (tab==='system')   return p.klubas    !== false;  // 📋 Klubas
+  if (tab==='events')   return p.renginiai !== false;  // 🥇 Renginiai
+  if (tab==='messages') return p.zinutes   !== false;  // 💬 Žinutės
   return true;
 }
 function _clubUnseen(tab){ const items=(clubNotifications?.[tab]||[]).filter(it=>_clubNotifVisible(tab,it)); if(tab==='messages') return items.filter(it=>it.unread && it.fromOther); return items.filter(it=>!_isSeen(CLUB_NOTIF_SK[tab], it.id)); }
@@ -15928,28 +15924,23 @@ function clubOpenMessages(){
 // 🔔 Klubo pranešimų filtrai
 function openClubNotifPrefs(){
   const old=document.getElementById('club-notif-prefs'); if(old) old.remove();
-  const p=_clubNotifPrefs(); const mf=p.msgFrom||'all'; const rsvpOn=p.rsvp!==false, repOn=p.reports!==false;
-  const seg=(val,label)=>`<button onclick="_clubMsgFromSet('${val}')" style="flex:1;${mf===val?'background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);':'background:transparent;color:var(--mut);border:.5px solid var(--bdr);'}padding:8px 4px;border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;">${label}</button>`;
-  const tgl=(on,fn)=>`<div onclick="${fn}" style="flex-shrink:0;width:42px;height:24px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;"><div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;"></div></div>`;
-  const rowT=(icon,title,sub,tglHtml)=>`<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;"><div style="font-size:22px;flex-shrink:0;">${icon}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${title}</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">${sub}</div></div>${tglHtml}</div>`;
+  const p=_clubNotifPrefs();
+  const tgl=(on,fn)=>`<div onclick="${fn}" style="flex-shrink:0;width:44px;height:26px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;"><div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;"></div></div>`;
+  const row=(icon,title,sub,key)=>{ const on=p[key]!==false; return `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;"><div style="font-size:24px;flex-shrink:0;">${icon}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${title}</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">${sub}</div></div>${tgl(on,"_clubTglPref('"+key+"')")}</div>`; };
   const m=document.createElement('div'); m.id='club-notif-prefs';
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100006;align-items:flex-end;justify-content:center;';
   m.onclick=e=>{ if(e.target===m) m.remove(); };
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔔 PRANEŠIMAI</div><button onclick="document.getElementById('club-notif-prefs').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
-    <div style="padding:14px 16px 22px;">
-      <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:2px 2px 6px;">ŽINUTĖS NUO</div>
-      <div style="display:flex;gap:6px;margin-bottom:6px;">${seg('all','Visi')}${seg('parents','Tėvų')}${seg('trainers','Trenerių')}${seg('off','Išj.')}</div>
-      <div style="font-size:10px;color:var(--mut);margin:0 2px 14px;">Kokių pokalbių žinutes rodyti varpelyje.</div>
-      <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:2px 2px 6px;">NEPRIVALOMI</div>
-      ${rowT('⛺','Stovyklų registracijos','Kai vaikas užsiregistruoja į stovyklą', tgl(rsvpOn,"_clubTglPref('rsvp')"))}
-      ${rowT('💶','Nupirktos ataskaitos','Kai tėvas nusiperka AI ataskaitą', tgl(repOn,"_clubTglPref('reports')"))}
-      <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-top:8px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px;">ℹ️ Registracijų tvirtinimas, laukiantys rezultatai ir grupių iššūkių užbaigimas rodomi <b>visada</b> — kad nepraleistum svarbių veiksmų.</div>
+    <div style="padding:16px 16px 22px;">
+      <div style="font-size:11px;color:var(--mut);margin:0 2px 12px;">Kokias pranešimų grupes gauti į varpelį:</div>
+      ${row('📋','Klubas','Registracijos, neaktyvūs vaikai, ataskaitos','klubas')}
+      ${row('🥇','Renginiai','Varžybos, stovyklos, grupių iššūkiai','renginiai')}
+      ${row('💬','Žinutės','Pokalbiai su tėvais ir treneriais','zinutes')}
     </div>
   </div>`;
   document.body.appendChild(m);
 }
-function _clubMsgFromSet(v){ _setClubNotifPref('msgFrom', v); openClubNotifPrefs(); _clubNotifRefresh(); }
 function _clubTglPref(k){ const cur=_clubNotifPrefs()[k]!==false; _setClubNotifPref(k, !cur); openClubNotifPrefs(); _clubNotifRefresh(); }
 function _clubNotifRefresh(){ if(typeof _updateClubNotifCounts==='function') _updateClubNotifCounts(); const s=document.getElementById('kh-notif-section'); if(s && s.style.display!=='none' && typeof renderClubNotifTab==='function') renderClubNotifTab(clubNotifTab); }
 
