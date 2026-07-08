@@ -465,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v328</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v329</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15780,17 +15780,20 @@ async function _fetchClubNotifications(force){
   systemItems.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
 
   // ŽINUTĖS: pokalbiai su perskaityta/neperskaityta būsena (kaip tėvo varpelis) — rodomi VISI, taškas = neperskaityta
-  const msgItems = ((msR.data)||[])
-    .filter(m => m.conversations && m.conversations.last_message_at && m.conversations.type !== 'announcement')  // TIK chatai (direct/group), NE išsiųsti skelbimai
+  const _rawMsgs = ((msR.data)||[])
+    .filter(m => m.conversations && m.conversations.last_message_at && m.conversations.type !== 'announcement')  // TIK chatai, NE išsiųsti skelbimai
     .sort((a,b)=>new Date(b.conversations.last_message_at)-new Date(a.conversations.last_message_at))
-    .slice(0,25)
-    .map(m=>{
-      const c = m.conversations;
-      const unread = !m.last_read_at || (new Date(c.last_message_at) > new Date(m.last_read_at));
-      const isAnn = c.type==='announcement';
-      const fromOther = !!(c.last_message_sender_id && c.last_message_sender_id !== currentUser.id);
-      return { id:'conv-'+c.id, icon:isAnn?'📢':'💬', title:c.title||(isAnn?'Skelbimas':'Pokalbis'), sub:(c.last_message_preview||'').slice(0,60), ts:c.last_message_at, convId:c.id, unread, fromOther };
-    });
+    .slice(0,25);
+  // Paskutinio siuntėjo rolės (žinučių filtrui: tėvų / trenerių)
+  const _msgSndIds = [...new Set(_rawMsgs.map(m=>m.conversations.last_message_sender_id).filter(Boolean))];
+  const _sndRole = {};
+  if (_msgSndIds.length){ try { const { data: _rs } = await sb.from('profiles').select('id, role').in('id', _msgSndIds); (_rs||[]).forEach(p=>_sndRole[p.id]=p.role); } catch(_){} }
+  const msgItems = _rawMsgs.map(m=>{
+    const c = m.conversations;
+    const unread = !m.last_read_at || (new Date(c.last_message_at) > new Date(m.last_read_at));
+    const fromOther = !!(c.last_message_sender_id && c.last_message_sender_id !== currentUser.id);
+    return { id:'conv-'+c.id, icon:'💬', title:c.title||'Pokalbis', sub:(c.last_message_preview||'').slice(0,60), ts:c.last_message_at, convId:c.id, unread, fromOther, senderRole:(_sndRole[c.last_message_sender_id]||'other') };
+  });
 
   const dedupe = arr => { const s=new Set(); return arr.filter(n=>{ if(s.has(n.id))return false; s.add(n.id); return true; }); };
   clubNotifications = { system:dedupe(systemItems), events:dedupe(eventItems), messages:dedupe(msgItems) };
@@ -15798,7 +15801,18 @@ async function _fetchClubNotifications(force){
   return clubNotifications;
 }
 
-function _clubUnseen(tab){ const items=clubNotifications?.[tab]||[]; if(tab==='messages') return items.filter(it=>it.unread && it.fromOther); return items.filter(it=>!_isSeen(CLUB_NOTIF_SK[tab], it.id)); }
+// 🔔 Pranešimų filtrai (per vartotoją, localStorage). Numatyta — viskas įjungta.
+function _clubNotifPrefs(){ try { return JSON.parse(localStorage.getItem('spobu_club_notif_prefs_'+(currentUser?.id||''))||'{}'); } catch(_){ return {}; } }
+function _setClubNotifPref(k,v){ const p=_clubNotifPrefs(); p[k]=v; try { localStorage.setItem('spobu_club_notif_prefs_'+(currentUser?.id||''), JSON.stringify(p)); } catch(_){} }
+// Ar įrašas praeina filtrus. Privalomi (registracijos, laukiantys rezultatai, GC užbaigimas) VISADA matomi.
+function _clubNotifVisible(tab, it){
+  const p=_clubNotifPrefs();
+  if (tab==='messages'){ const f=p.msgFrom||'all'; if(f==='off')return false; if(f==='parents')return it.senderRole==='parent'; if(f==='trainers')return it.senderRole==='trainer'; return true; }
+  if (it.id && it.id.indexOf('rsvpagg-')===0 && p.rsvp===false) return false;   // stovyklų RSVP (neprivaloma)
+  if (it.id && it.id.indexOf('rep-')===0 && p.reports===false) return false;    // nupirktos ataskaitos (neprivaloma)
+  return true;
+}
+function _clubUnseen(tab){ const items=(clubNotifications?.[tab]||[]).filter(it=>_clubNotifVisible(tab,it)); if(tab==='messages') return items.filter(it=>it.unread && it.fromOther); return items.filter(it=>!_isSeen(CLUB_NOTIF_SK[tab], it.id)); }
 
 function _updateClubNotifCounts(){
   let total = 0;
@@ -15831,8 +15845,8 @@ async function updateClubNotifBadge(force){
 
 function renderClubNotifTab(tab){
   const list = document.getElementById('kh-notif-list'); if(!list) return;
-  const items = clubNotifications?.[tab] || [];
-  if (tab === 'messages'){ _renderClubMsgTab(list, items); return; }  // atskiras: Neperskaityti / Pokalbiai
+  const items = (clubNotifications?.[tab] || []).filter(it=>_clubNotifVisible(tab,it));
+  if (tab === 'messages'){ _renderClubMsgTab(list, clubNotifications?.messages||[]); return; }  // atskiras: Neperskaityti / Pokalbiai (filtras viduje)
   if (!items.length){
     list.innerHTML = '<div style="text-align:center;padding:30px 16px;color:var(--mut);font-size:11px;">Naujų pranešimų nėra 🧘</div>';
     return;
@@ -15856,8 +15870,9 @@ function renderClubNotifTab(tab){
 let _clubMsgSub = 'unread';
 function _setClubMsgSub(s){ _clubMsgSub = s; const list=document.getElementById('kh-notif-list'); if(list) _renderClubMsgTab(list, clubNotifications?.messages||[]); }
 function _renderClubMsgTab(list, items){
-  const unreadItems = (items||[]).filter(it=>it.unread && it.fromOther);
-  const shown = _clubMsgSub==='unread' ? unreadItems : (items||[]);
+  const vis = (items||[]).filter(it=>_clubNotifVisible('messages', it));  // siuntėjo filtras (tėvų/trenerių/išj.)
+  const unreadItems = vis.filter(it=>it.unread && it.fromOther);
+  const shown = _clubMsgSub==='unread' ? unreadItems : vis;
   const chip = on => on ? 'background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);' : 'background:transparent;color:var(--mut);border:.5px solid var(--bdr);';
   const toggle = `<div style="display:flex;gap:6px;margin-bottom:10px;">
     <button onclick="_setClubMsgSub('unread')" style="flex:1;${chip(_clubMsgSub==='unread')}padding:8px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;">🔴 Neperskaityti${unreadItems.length?' ('+unreadItems.length+')':''}</button>
@@ -15908,6 +15923,55 @@ function clubNotifClick(tab, id, convId){
 function clubOpenMessages(){
   const s = document.getElementById('kh-notif-section'); if(s) s.style.display='none';
   if (typeof openMessages==='function') openMessages();
+}
+
+// 🔔 Klubo pranešimų filtrai
+function openClubNotifPrefs(){
+  const old=document.getElementById('club-notif-prefs'); if(old) old.remove();
+  const p=_clubNotifPrefs(); const mf=p.msgFrom||'all'; const rsvpOn=p.rsvp!==false, repOn=p.reports!==false;
+  const seg=(val,label)=>`<button onclick="_clubMsgFromSet('${val}')" style="flex:1;${mf===val?'background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);':'background:transparent;color:var(--mut);border:.5px solid var(--bdr);'}padding:8px 4px;border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;">${label}</button>`;
+  const tgl=(on,fn)=>`<div onclick="${fn}" style="flex-shrink:0;width:42px;height:24px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;"><div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;"></div></div>`;
+  const rowT=(icon,title,sub,tglHtml)=>`<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;"><div style="font-size:22px;flex-shrink:0;">${icon}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${title}</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">${sub}</div></div>${tglHtml}</div>`;
+  const m=document.createElement('div'); m.id='club-notif-prefs';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100006;align-items:flex-end;justify-content:center;';
+  m.onclick=e=>{ if(e.target===m) m.remove(); };
+  m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔔 PRANEŠIMAI</div><button onclick="document.getElementById('club-notif-prefs').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:14px 16px 22px;">
+      <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:2px 2px 6px;">ŽINUTĖS NUO</div>
+      <div style="display:flex;gap:6px;margin-bottom:6px;">${seg('all','Visi')}${seg('parents','Tėvų')}${seg('trainers','Trenerių')}${seg('off','Išj.')}</div>
+      <div style="font-size:10px;color:var(--mut);margin:0 2px 14px;">Kokių pokalbių žinutes rodyti varpelyje.</div>
+      <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:2px 2px 6px;">NEPRIVALOMI</div>
+      ${rowT('⛺','Stovyklų registracijos','Kai vaikas užsiregistruoja į stovyklą', tgl(rsvpOn,"_clubTglPref('rsvp')"))}
+      ${rowT('💶','Nupirktos ataskaitos','Kai tėvas nusiperka AI ataskaitą', tgl(repOn,"_clubTglPref('reports')"))}
+      <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-top:8px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px;">ℹ️ Registracijų tvirtinimas, laukiantys rezultatai ir grupių iššūkių užbaigimas rodomi <b>visada</b> — kad nepraleistum svarbių veiksmų.</div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+function _clubMsgFromSet(v){ _setClubNotifPref('msgFrom', v); openClubNotifPrefs(); _clubNotifRefresh(); }
+function _clubTglPref(k){ const cur=_clubNotifPrefs()[k]!==false; _setClubNotifPref(k, !cur); openClubNotifPrefs(); _clubNotifRefresh(); }
+function _clubNotifRefresh(){ if(typeof _updateClubNotifCounts==='function') _updateClubNotifCounts(); const s=document.getElementById('kh-notif-section'); if(s && s.style.display!=='none' && typeof renderClubNotifTab==='function') renderClubNotifTab(clubNotifTab); }
+
+// ℹ️ „Kaip veikia SPOBU" — rolių ir atsakomybių gidas
+function openClubRolesGuide(){
+  const old=document.getElementById('club-roles-guide'); if(old) old.remove();
+  const role=(icon,name,color,items)=>`<div style="background:var(--card);border:.5px solid var(--bdr);border-left:3px solid ${color};border-radius:12px;padding:12px 14px;margin-bottom:10px;"><div style="font-size:14px;font-weight:900;color:white;margin-bottom:6px;">${icon} ${name}</div>${items.map(t=>`<div style="font-size:11px;color:var(--mut);line-height:1.5;padding:1px 0;">• ${t}</div>`).join('')}</div>`;
+  const m=document.createElement('div'); m.id='club-roles-guide';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100006;align-items:flex-end;justify-content:center;';
+  m.onclick=e=>{ if(e.target===m) m.remove(); };
+  m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">ℹ️ KAIP VEIKIA SPOBU</div><button onclick="document.getElementById('club-roles-guide').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:14px 16px 24px;">
+      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Keturios paskyros, kiekviena su savo vaidmeniu. Kad viskas suktųsi — kiekvienas daro savo dalį:</div>
+      ${role('🏢','KLUBAS — tu (administratorius)','#3B82F6',['Kuri grupes ir priskiri joms trenerius','Tvirtini arba atmeti naujų vaikų registracijas','Kuri varžybas, diržų laikymą, stovyklas, grupių iššūkius','Kvieti ir valdai trenerius','Matai analitiką, apyvartą, bonusą'])}
+      ${role('🥋','TRENERIS','#22C55E',['Žymi lankomumą','Tvirtina rezultatus: varžybų, iššūkių, karjeros, dvikovų, stovyklų','Skiria EXP už elgesį','Pildo grupių iššūkio dienos rezultatus','Bendrauja su tėvais (žinutės, skelbimai)'])}
+      ${role('👨‍👩‍👧','TĖVAS','#8B5CF6',['Stebi vaiko progresą ir pasiekimus','Gauna pranešimus apie vaiką','Perka AI ataskaitas','Bendrauja su treneriu ir klubu','NEteikia rezultatų — tik stebi'])}
+      ${role('🧒','VAIKAS','#FF8C00',['Pats atlieka veiklas: teikia iššūkius, varžybų rezultatus, karjeros rekordus','Kviečia draugus į dvikovas','Mato savo EXP, lygį, reitingus, karjerą'])}
+      <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-top:6px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px;">💡 Trumpai: <b>klubas</b> tvarko struktūrą (grupės, registracijos, renginiai), <b>treneris</b> tvirtina ir vertina, <b>tėvas</b> stebi, <b>vaikas</b> daro.</div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
 }
 
 // 💡 Info modalas (apie langą)
@@ -16000,6 +16064,11 @@ function openClubAccountMenu(){
         <div style="font-size:24px;flex-shrink:0;" id="club-push-icon">🔔</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Push pranešimai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;" id="club-push-status">Pranešimai net su uždarytu appsu</div></div>
       </div>
+      <div onclick="document.getElementById('club-acct-menu').remove();openClubNotifPrefs();" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">🎛️</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Pranešimų nustatymai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Kokius pranešimus rodyti (žinutės, RSVP…)</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>
       <div onclick="document.getElementById('club-acct-menu').remove();openClubSettings();" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">⚙️</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Klubo funkcijos ir logotipas</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Įjunk/išjunk funkcijas, keisk logo ir info</div></div>
@@ -16011,6 +16080,11 @@ function openClubAccountMenu(){
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
       <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;padding:10px 2px 6px;">TEISINIAI IR PAGALBA</div>
+      <div onclick="document.getElementById('club-acct-menu').remove();openClubRolesGuide();" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">ℹ️</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Kaip veikia SPOBU</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Rolės: ką daro klubas, treneris, tėvas, vaikas</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>
       <a href="${contactHref}" style="text-decoration:none;display:block;"><div style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">📧</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Klausimas el. paštu (${SUP})</div></div>
