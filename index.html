@@ -465,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v322</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v323</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3485,6 +3485,7 @@ select.inp option{background:#222;}
     <!-- Veiksmai -->
     <div style="padding:11px 14px 9px;display:flex;gap:8px;">
       <button class="btn" style="flex:1;margin:0;background:#6366f1;color:#fff;" onclick="composeMessageToClub()">📢 Rašyti pranešimą</button>
+      <button class="btn btnd" style="margin:0;flex:0 0 52px;width:52px;padding:0;font-size:16px;" onclick="openMessages()" title="Žinutės">💬</button>
       <button class="btn btnd" style="margin:0;flex:0 0 52px;width:52px;padding:0;font-size:16px;" onclick="nv('k',null,'k-fullstat')" title="Visa statistika">📊</button>
     </div>
     <div style="height:14px;"></div>
@@ -15840,7 +15841,11 @@ async function updateClubNotifBadge(force){
 function renderClubNotifTab(tab){
   const list = document.getElementById('kh-notif-list'); if(!list) return;
   const items = clubNotifications?.[tab] || [];
-  if (!items.length){ list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Pranešimų nėra 🧘</div>'; return; }
+  if (!items.length){
+    const extra = tab==='messages' ? '<div style="margin-top:14px;"><button onclick="clubOpenMessages()" style="background:rgba(99,102,241,.15);color:#818cf8;border:.5px solid rgba(99,102,241,.4);padding:9px 16px;border-radius:99px;font-size:12px;font-weight:800;cursor:pointer;">💬 Atidaryti visas žinutes</button></div>' : '';
+    list.innerHTML = '<div style="text-align:center;padding:30px 16px;color:var(--mut);font-size:11px;">Naujų pranešimų nėra 🧘'+extra+'</div>';
+    return;
+  }
   const sk = CLUB_NOTIF_SK[tab];
   list.innerHTML = items.map(it=>{
     const fresh = !_isSeen(sk, it.id);
@@ -15877,6 +15882,12 @@ function clubNotifClick(tab, id, convId){
     return;
   }
   renderClubNotifTab(tab);
+}
+
+// Atidaryti visą žinučių sąrašą (iš varpelio tuščios Žinutės skilties / k-main 💬)
+function clubOpenMessages(){
+  const s = document.getElementById('kh-notif-section'); if(s) s.style.display='none';
+  if (typeof openMessages==='function') openMessages();
 }
 
 // 💡 Info modalas (apie langą)
