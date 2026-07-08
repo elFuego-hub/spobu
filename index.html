@@ -465,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v327</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v328</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15968,23 +15968,96 @@ function openClubSettings(){
   loadClubSettings();
 }
 
-// ⚙️ Klubo nustatymų meniu (paskyros lygmens) — kol kas tik Atsijungti; vėliau daugiau punktų
+// ⚙️ Klubo nustatymų meniu: paskyra + garsai/push + funkcijos + slaptažodis + teisiniai/pagalba + atsijungti
 function openClubAccountMenu(){
   const old = document.getElementById('club-acct-menu'); if (old) old.remove();
+  const email = currentProfile?.email || currentUser?.email || '–';
+  const clubName = currentClub?.name || 'Klubas';
+  const appV = document.getElementById('app-version')?.textContent || '';
+  const SUP = 'pagalba@spobu.lt';
+  const contactHref = `mailto:${SUP}?subject=${encodeURIComponent('SPOBU klubas – klausimas')}`;
+  const gdprHref = `mailto:${SUP}?subject=${encodeURIComponent('SPOBU klubas – duomenys/ištrynimas')}&body=${encodeURIComponent('Prašau (pažymėk):\n[ ] eksportuoti klubo duomenis (GDPR)\n[ ] ištrinti klubo paskyrą\n\nKlubas: '+clubName+'\nApp: '+appV+'\n')}`;
   const m = document.createElement('div'); m.id = 'club-acct-menu';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100003;align-items:flex-end;justify-content:center;';
   m.onclick = (e) => { if (e.target === m) m.remove(); };
-  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">⚙️ NUSTATYMAI</div>
+  const rs = 'background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:13px;cursor:pointer;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">⚙️ NUSTATYMAI</div>
       <button onclick="document.getElementById('club-acct-menu').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
     </div>
-    <div style="padding:12px 16px 16px;display:flex;flex-direction:column;gap:8px;">
-      <button onclick="document.getElementById('club-acct-menu').remove();openClubSettings();" style="width:100%;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:.5px solid var(--bdr);color:#fff;padding:14px 16px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;"><span style="font-size:17px;">⚙️</span> Klubo nustatymai</button>
-      <button onclick="document.getElementById('club-acct-menu').remove();if(confirm('Atsijungti iš klubo paskyros?'))doLogout()" style="width:100%;display:flex;align-items:center;gap:12px;background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);color:#EF4444;padding:14px 16px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;"><span style="font-size:17px;">🚪</span> Atsijungti</button>
+    <div style="padding:14px 20px;border-bottom:.5px solid var(--bdr);background:rgba(255,77,0,.05);">
+      <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:800;margin-bottom:6px;">PRISIJUNGĘS KAIP</div>
+      <div style="font-size:14px;font-weight:800;color:white;">${clubName} 🏢</div>
+      <div style="font-size:11px;color:var(--mut);margin-top:2px;">${email}</div>
+    </div>
+    <div style="padding:12px 16px 16px;">
+      <div onclick="toggleAppSound()" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;" id="club-sound-icon">🔊</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Garsai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;" id="club-sound-status">Pranešimų garsai</div></div>
+      </div>
+      <div onclick="toggleAppPush()" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;" id="club-push-icon">🔔</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Push pranešimai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;" id="club-push-status">Pranešimai net su uždarytu appsu</div></div>
+      </div>
+      <div onclick="document.getElementById('club-acct-menu').remove();openClubSettings();" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">⚙️</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Klubo funkcijos ir logotipas</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Įjunk/išjunk funkcijas, keisk logo ir info</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>
+      <div onclick="openClubChangePassword()" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">🔒</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Keisti slaptažodį</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Klubo paskyros slaptažodis</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>
+      <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;padding:10px 2px 6px;">TEISINIAI IR PAGALBA</div>
+      <a href="${contactHref}" style="text-decoration:none;display:block;"><div style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">📧</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Klausimas el. paštu (${SUP})</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div></a>
+      <a href="${gdprHref}" style="text-decoration:none;display:block;"><div style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">📄</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Duomenys ir paskyra</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Eksportas (GDPR) ar paskyros ištrynimas</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div></a>
+      <div style="text-align:center;font-size:10px;color:var(--mut);margin:12px 0 14px;">SPOBU · ${appV}</div>
+      <button onclick="document.getElementById('club-acct-menu').remove();if(confirm('Atsijungti iš klubo paskyros?'))doLogout()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);color:#EF4444;padding:14px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;"><span style="font-size:17px;">🚪</span> Atsijungti</button>
     </div>
   </div>`;
   document.body.appendChild(m);
+  if (typeof updateSoundToggleUI==='function') updateSoundToggleUI();
+  if (typeof updatePushToggleUI==='function') updatePushToggleUI();
+}
+
+// 🔒 Klubo slaptažodžio keitimas (Supabase auth)
+function openClubChangePassword(){
+  const old=document.getElementById('club-pw-modal'); if(old) old.remove();
+  const m=document.createElement('div'); m.id='club-pw-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100005;align-items:flex-end;justify-content:center;';
+  m.onclick=e=>{ if(e.target===m) m.remove(); };
+  m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔒 KEISTI SLAPTAŽODĮ</div><button onclick="document.getElementById('club-pw-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:16px 20px 22px;">
+      <label class="lbl">NAUJAS SLAPTAŽODIS</label>
+      <input class="inp" id="club-pw-new" type="password" placeholder="min. 6 simboliai" autocomplete="new-password" style="margin-bottom:10px;">
+      <label class="lbl">PAKARTOK</label>
+      <input class="inp" id="club-pw-new2" type="password" placeholder="dar kartą" autocomplete="new-password" style="margin-bottom:14px;">
+      <button class="btn btng" style="width:100%;margin:0;" onclick="_clubChangePassword()">💾 IŠSAUGOTI</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+async function _clubChangePassword(){
+  const p1=document.getElementById('club-pw-new')?.value||''; const p2=document.getElementById('club-pw-new2')?.value||'';
+  if (p1.length<6){ showToast('❌ Min. 6 simboliai','error'); return; }
+  if (p1!==p2){ showToast('❌ Slaptažodžiai nesutampa','error'); return; }
+  try {
+    const { error } = await sb.auth.updateUser({ password:p1 });
+    if (error) throw error;
+    showToast('✅ Slaptažodis pakeistas','success',3500);
+    document.getElementById('club-pw-modal')?.remove();
+  } catch(e){ showToast('❌ '+(e.message||'Nepavyko'),'error',5000); }
 }
 
 // Suskleidžiamos „grouped settings" sekcijos (accordion) — numatytai suskleista
@@ -31653,6 +31726,10 @@ function updateSoundToggleUI() {
   const pStatus = document.getElementById('parent-sound-status');
   if (pIcon) pIcon.textContent = on ? '🔊' : '🔇';
   if (pStatus) pStatus.textContent = on ? 'Įjungti · pranešimų garsai' : 'Išjungti';
+  const cIcon = document.getElementById('club-sound-icon');
+  const cStatus = document.getElementById('club-sound-status');
+  if (cIcon) cIcon.textContent = on ? '🔊' : '🔇';
+  if (cStatus) cStatus.textContent = on ? 'Įjungti · pranešimų garsai' : 'Išjungti';
 }
 
 // 🔔 Pranešimų jungiklis
@@ -31678,6 +31755,8 @@ async function updatePushToggleUI() {
   // Tėvų nustatymų modalas (be jungiklio)
   const pIcon = document.getElementById('parent-push-icon');
   const pStatus = document.getElementById('parent-push-status');
+  const cIcon = document.getElementById('club-push-icon');
+  const cStatus = document.getElementById('club-push-status');
 
   if (!pushSupported()) {
     if (icon) icon.textContent = '📵';
@@ -31686,6 +31765,8 @@ async function updatePushToggleUI() {
     if (knob) knob.style.left = '3px';
     if (pIcon) pIcon.textContent = '📵';
     if (pStatus) pStatus.textContent = 'Naršyklė nepalaiko';
+    if (cIcon) cIcon.textContent = '📵';
+    if (cStatus) cStatus.textContent = 'Naršyklė nepalaiko';
     return;
   }
 
@@ -31698,6 +31779,8 @@ async function updatePushToggleUI() {
     if (knob) knob.style.left = on ? '21px' : '3px';
     if (pIcon) pIcon.textContent = on ? '🔔' : '🔕';
     if (pStatus) pStatus.textContent = on ? 'Įjungti · gausi pranešimus' : 'Išjungti · spausk įjungti';
+    if (cIcon) cIcon.textContent = on ? '🔔' : '🔕';
+    if (cStatus) cStatus.textContent = on ? 'Įjungti · gausi pranešimus' : 'Išjungti · spausk įjungti';
   };
   applyState(cached);
   
