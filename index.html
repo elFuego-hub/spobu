@@ -465,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v326</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v327</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3416,9 +3416,8 @@ select.inp option{background:#222;}
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
         <button onclick="toggleClubNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
       </div>
-      <div style="padding:12px 16px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+      <div style="padding:12px 16px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">
         <button class="notif-tab" data-tab="system" onclick="switchClubNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>📋</span><span>Klubas <span id="kh-notif-count-system" style="opacity:.7;"></span></span></button>
-        <button class="notif-tab" data-tab="trainers" onclick="switchClubNotifTab('trainers')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🥋</span><span>Treneriai <span id="kh-notif-count-trainers" style="opacity:.7;"></span></span></button>
         <button class="notif-tab" data-tab="events" onclick="switchClubNotifTab('events')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🥇</span><span>Renginiai <span id="kh-notif-count-events" style="opacity:.7;"></span></span></button>
         <button class="notif-tab" data-tab="messages" onclick="switchClubNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>💬</span><span>Žinutės <span id="kh-notif-count-messages" style="opacity:.7;"></span></span></button>
       </div>
@@ -15695,7 +15694,7 @@ function markAllClubNotifRead(){
 // ════════════════════════════════════════
 // KLUBO VARPELIO PRANEŠIMAI (Blokas 8) — realūs įvykiai + dedup (_isSeen/_addSeen)
 // ════════════════════════════════════════
-const CLUB_NOTIF_SK = { system:'cns', trainers:'cnt', events:'cne', messages:'cnm' };
+const CLUB_NOTIF_SK = { system:'cns', events:'cne', messages:'cnm' };
 let clubNotifications = null;
 let _clubNotifCacheTs = 0;
 
@@ -15760,9 +15759,8 @@ async function _fetchClubNotifications(force){
     ...((gcR.data||[]).map(c=>({ id:'gcend-'+c.id, icon:'🏆', title:'Grupių iššūkis baigėsi', sub:c.title||'Iššūkis', ts:c.created_at, link:{screen:'k-events',evTab:'gc'} })))
   ].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
 
-  // KLUBAS (buv. Sistema): nupirktos ataskaitos + naujos registracijos + neaktyvūs vaikai
-  const typeLbl = t => t==='plan'?'Veiksmų planas':(t==='summer'?'Vasaros programa':'Diagnostika');
-  const systemItems = (repR.data||[]).map(r=>({ id:'rep-'+r.id, icon:'💶', title:'Nupirkta ataskaita', sub:`${typeLbl(r.type)} · ${kidName(r.kid_id)}`, ts:r.created_at }));
+  // KLUBAS: trenerių įvykiai (prisijungė/neaktyvus) + naujos registracijos + neaktyvūs vaikai. Ataskaitų notif NEREIKIA.
+  const systemItems = [...trainerItems];
   if (pendR && pendR.length){
     systemItems.push({ id:'reg-pending-'+pendR.length, icon:'⏳', title:`${pendR.length} laukia registracijos`, sub:'Patvirtink naujų vaikų anketas', ts:pendR[0].created_at, link:{screen:'k-trainers',teamTab:'students'} });
   }
@@ -15795,7 +15793,7 @@ async function _fetchClubNotifications(force){
     });
 
   const dedupe = arr => { const s=new Set(); return arr.filter(n=>{ if(s.has(n.id))return false; s.add(n.id); return true; }); };
-  clubNotifications = { system:dedupe(systemItems), trainers:dedupe(trainerItems), events:dedupe(eventItems), messages:dedupe(msgItems) };
+  clubNotifications = { system:dedupe(systemItems), events:dedupe(eventItems), messages:dedupe(msgItems) };
   _clubNotifCacheTs = Date.now();
   return clubNotifications;
 }
