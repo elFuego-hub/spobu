@@ -244,6 +244,8 @@ body.full-mobile-preview #pv .sc { height: 100% !important; min-height: 0 !impor
 /* Horizontalios scroll juostos be matomo scrollbar'o (tabai, filtrų chips) */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+/* 🔑 Vadybininko režimas: paslėpti tik-savininkui elementus (verslas, flags, trynimas, trenerio šalinimas) */
+body.club-manager-mode .owner-only { display: none !important; }
 
 /* 💻 DESKTOP LAYOUT — TIK vaiko portalui (body.portal-v) */
 #v-desktop-nav { display: none; }  /* default — mobile slepiama */
@@ -465,7 +467,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v333</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v334</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3641,9 +3643,9 @@ select.inp option{background:#222;}
     </div>
     <!-- 📊 Apžvalgų sekcijos perkeltos į Analitiką (k-stat) -->
 
-    <div class="st" id="k-settings-anchor">⚙️ KLUBO NUSTATYMAI</div>
-    <div style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
-    <div style="padding:0 16px;" id="k-prof-settings">
+    <div class="st owner-only" id="k-settings-anchor">⚙️ KLUBO NUSTATYMAI</div>
+    <div class="owner-only" style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
+    <div class="owner-only" style="padding:0 16px;" id="k-prof-settings">
       <div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Kraunama...</div>
     </div>
     <div style="height:16px;"></div>
@@ -3714,7 +3716,7 @@ select.inp option{background:#222;}
   <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
     <button class="k-anal-tab on" data-tab="people" onclick="switchClubAnalyticsTab('people')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">👥 Žmonės</button>
     <button class="k-anal-tab" data-tab="activity" onclick="switchClubAnalyticsTab('activity')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🔥 Veikla</button>
-    <button class="k-anal-tab" data-tab="business" onclick="switchClubAnalyticsTab('business')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">💼 Verslas</button>
+    <button class="k-anal-tab owner-only" data-tab="business" onclick="switchClubAnalyticsTab('business')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">💼 Verslas</button>
   </div>
   <div class="sa">
     <!-- 👥 ŽMONĖS -->
@@ -16078,11 +16080,11 @@ function openClubAccountMenu(){
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Trenerių prieiga</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Kurie treneriai gali administruoti klubą</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>` : ''}
-      <div onclick="document.getElementById('club-acct-menu').remove();openClubSettings();" style="${rs}">
+      ${!_clubManagerMode ? `<div onclick="document.getElementById('club-acct-menu').remove();openClubSettings();" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">⚙️</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Klubo funkcijos ir logotipas</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Įjunk/išjunk funkcijas, keisk logo ir info</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
-      </div>
+      </div>` : ''}
       <div onclick="openClubChangePassword()" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">🔒</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Keisti slaptažodį</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Klubo paskyros slaptažodis</div></div>
@@ -16437,6 +16439,7 @@ function toggleClubBusinessSection(){
 }
 
 async function loadClubBusinessOverview(){
+  if (_clubManagerMode) return;  // vadybininkas nemato verslo/finansų
   const el = document.getElementById('k-verslas-content');
   if (!el || !currentClub?.id) return;
   el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Kraunama...</div>';
@@ -16947,6 +16950,7 @@ function showClubFlagInfo(k){
 }
 
 async function toggleClubFlag(flag, val){
+  if (_ownerOnly()) return;
   const { error } = await sb.from('club_settings').upsert({ club_id: currentClub.id, [flag]: val, updated_at: new Date().toISOString() }, { onConflict:'club_id' });
   if (error){ showToast('❌ '+error.message,'error'); return; }
   clubFlags[flag] = val;
@@ -17184,6 +17188,7 @@ async function submitNewCamp(editId){
 }
 
 async function deleteCamp(id, title){
+  if (_ownerOnly()) return;
   if (!confirm(`Ištrinti stovyklą "${title}"?\n\nVisi dalyvių įrašai bus ištrinti.`)) return;
   const { error } = await sb.from('club_events').delete().eq('id', id);
   if (error){ showToast('❌ '+error.message,'error'); return; }
@@ -17494,6 +17499,7 @@ async function finalizeClubChallengeUI(id, title){
 }
 
 async function deleteClubChallenge(id, title){
+  if (_ownerOnly()) return;
   if (!confirm(`Ištrinti iššūkį "${title}"?\n\nVisi rezultatai bus ištrinti.`)) return;
   const { error } = await sb.from('club_challenges').delete().eq('id', id);
   if (error){ showToast('❌ '+error.message,'error'); return; }
@@ -17569,6 +17575,7 @@ async function _checkClubChallengeResultsTrainer(){
 }
 
 async function deleteCompetition(id, title) {
+  if (_ownerOnly()) return;
   if (!confirm(`Ar tikrai ištrinti "${title}"?\n\nVisi pateikti rezultatai bus IŠTRINTI!`)) return;
   
   const { error } = await sb.from('competitions').delete().eq('id', id);
@@ -21243,6 +21250,7 @@ let _clubRevenueCSV = null;
 function setClubRevenuePeriod(p){ clubRevenuePeriod = p; loadClubRevenue(); }
 
 async function loadClubRevenue(){
+  if (_clubManagerMode) return;  // vadybininkas nemato apyvartos
   const el = document.getElementById('club-stat-tab-revenue');
   if (!el || !currentClub?.id) return;
   const now = new Date();
@@ -27003,6 +27011,7 @@ async function enterClubAsManager(){
   _origRoleBeforeClub = currentProfile.role;
   currentProfile.role = 'club_admin';   // kliento rolės patikros praeis (DB prieiga — per my_admin_club_id RLS)
   _clubManagerMode = true;
+  document.body.classList.add('club-manager-mode');  // paslepia .owner-only elementus
   await loadClubData(_managedClub.id);
   op('k');
   _showClubManagerBar();
@@ -27011,9 +27020,12 @@ function exitClubManagerMode(){
   if (_origRoleBeforeClub) currentProfile.role = _origRoleBeforeClub;
   _origRoleBeforeClub = null;
   _clubManagerMode = false;
+  document.body.classList.remove('club-manager-mode');
   document.getElementById('club-mgr-bar')?.remove();
   op('tr');
 }
+// Tik klubo savininkui — vadybininkui blokuojam (trynimas, trenerio šalinimas ir kt.)
+function _ownerOnly(){ if (_clubManagerMode){ if(typeof showToast==='function') showToast('🔒 Tai gali daryti tik klubo savininkas','error',4000); return true; } return false; }
 function _showClubManagerBar(){
   document.getElementById('club-mgr-bar')?.remove();
   const b = document.createElement('div'); b.id='club-mgr-bar';
@@ -27481,6 +27493,7 @@ async function submitClubGroup(groupId){
 }
 
 async function deleteClubGroup(groupId){
+  if (_ownerOnly()) return;
   if (!confirm('Ištrinti grupę? Vaikai liks be grupės — reikės priskirti iš naujo.')) return;
   try {
     // Švariai atkabinam kiekvieną vaiką (valo group_id + assigned_trainer_id + kid_trainers per RPC)
@@ -27838,8 +27851,8 @@ function openTrainerManage(tid, name, code){
     </div>
     <div style="padding:16px 20px;">
       <div style="font-size:12px;color:var(--mut);margin-bottom:16px;">🆔 Trenerio kodas: <span style="color:#fff;font-weight:700;">${code||'–'}</span></div>
-      <button class="btn" style="width:100%;margin:0 0 8px;background:rgba(234,179,8,.15);color:#EAB308;border:.5px solid rgba(234,179,8,.4);" onclick="suspendTrainer('${tid}','${name.replace(/'/g,"\\'")}')">⏸️ SUSTABDYTI TRENERĮ</button>
-      <button class="btn" style="width:100%;margin:0;background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.35);" onclick="openTrainerRemove('${tid}','${name.replace(/'/g,"\\'")}')">🗑️ PAŠALINTI TRENERĮ</button>
+      <button class="btn owner-only" style="width:100%;margin:0 0 8px;background:rgba(234,179,8,.15);color:#EAB308;border:.5px solid rgba(234,179,8,.4);" onclick="suspendTrainer('${tid}','${name.replace(/'/g,"\\'")}')">⏸️ SUSTABDYTI TRENERĮ</button>
+      <button class="btn owner-only" style="width:100%;margin:0;background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.35);" onclick="openTrainerRemove('${tid}','${name.replace(/'/g,"\\'")}')">🗑️ PAŠALINTI TRENERĮ</button>
       <div style="font-size:11px;color:var(--mut);margin-top:10px;line-height:1.5;">⏸️ Sustabdytas treneris nebegali prisijungti, bet vaikai lieka jam priskirti. 🗑️ Šalinant — privalai perskirti visus jo vaikus kitam treneriui.</div>
     </div>
   </div>`;
@@ -27856,6 +27869,7 @@ async function saveTrainerEdit(tid){
 }
 
 async function suspendTrainer(tid, name){
+  if (_ownerOnly()) return;
   if (!confirm(`Sustabdyti trenerį "${name}"?\n\nJis nebegalės prisijungti. Vaikai liks priskirti — gali juos perskirti vėliau.`)) return;
   const { error } = await sb.from('profiles').update({ status:'suspended' }).eq('id', tid);
   if (error){ showToast('❌ '+error.message,'error'); return; }
@@ -27866,6 +27880,7 @@ async function suspendTrainer(tid, name){
 
 // 🗑️ Šalinimas su PRIVALOMU vaikų perskirstymu
 async function openTrainerRemove(tid, name){
+  if (_ownerOnly()) return;
   const [ktRes, lgRes, otherRes] = await Promise.all([
     sb.from('kid_trainers').select('kid_id').eq('trainer_id', tid),
     sb.from('kids').select('id').eq('assigned_trainer_id', tid),
