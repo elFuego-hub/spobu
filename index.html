@@ -465,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v330</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v331</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -15797,15 +15797,34 @@ async function _fetchClubNotifications(force){
   return clubNotifications;
 }
 
-// 🔔 Pranešimų filtrai (per vartotoją, localStorage). Numatyta — viskas įjungta.
-function _clubNotifPrefs(){ try { return JSON.parse(localStorage.getItem('spobu_club_notif_prefs_'+(currentUser?.id||''))||'{}'); } catch(_){ return {}; } }
-function _setClubNotifPref(k,v){ const p=_clubNotifPrefs(); p[k]=v; try { localStorage.setItem('spobu_club_notif_prefs_'+(currentUser?.id||''), JSON.stringify(p)); } catch(_){} }
-// Ar įrašas matomas — paprastas jungiklis kiekvienai varpelio kategorijai (Klubas/Renginiai/Žinutės).
+// 🔔 Klubo push tipų jungikliai (kaip trenerio): profiles.push_prefs {club_admin, club_events, messages}.
+// 3 jungikliai = ir ĮJUNGIMAS (pirmas ON registruoja push telefone), ir FILTRAS (galioja push IR varpeliui).
+const CLUB_PUSH_KEYS = ['club_admin','club_events','messages'];
+let _clubPushPrefs = { club_admin:true, club_events:true, messages:true };
+function _applyClubPushSwitch(key,on){ const sw=document.getElementById('kpp-sw-'+key), knob=document.getElementById('kpp-knob-'+key); if(sw) sw.style.background=on?'#66BB6A':'rgba(255,255,255,.15)'; if(knob) knob.style.left=on?'21px':'3px'; }
+async function loadClubPushPrefs(){
+  let p=null;
+  try { p=currentProfile?.push_prefs; if(!p){ const {data}=await sb.from('profiles').select('push_prefs').eq('id',currentUser.id).maybeSingle(); p=data?.push_prefs||null; if(currentProfile&&p) currentProfile.push_prefs=p; } } catch(e){}
+  const saved={ club_admin:true, club_events:true, messages:true, ...(p||{}) };
+  const subscribed=localStorage.getItem('spobu_push_on')==='1';
+  _clubPushPrefs = subscribed ? { club_admin:saved.club_admin!==false, club_events:saved.club_events!==false, messages:saved.messages!==false } : { club_admin:false, club_events:false, messages:false };
+  CLUB_PUSH_KEYS.forEach(k=>_applyClubPushSwitch(k,_clubPushPrefs[k]!==false));
+}
+async function toggleClubPushPref(key){
+  const turningOn=_clubPushPrefs[key]===false;
+  if (turningOn && localStorage.getItem('spobu_push_on')!=='1'){ const ok=(typeof enablePushNotifications==='function')?await enablePushNotifications():false; if(!ok){ _applyClubPushSwitch(key,false); return; } }
+  _clubPushPrefs[key]=turningOn; _applyClubPushSwitch(key,turningOn);
+  if (currentProfile) currentProfile.push_prefs={ ...(currentProfile.push_prefs||{}), ..._clubPushPrefs };
+  try { const {error}=await sb.from('profiles').update({ push_prefs: currentProfile.push_prefs }).eq('id',currentUser.id); if(error && typeof showToast==='function') showToast('⚠️ Neišsaugota (ar paleidai SQL push_prefs?)','error',7000); } catch(e){}
+  if (typeof _updateClubNotifCounts==='function') _updateClubNotifCounts();
+  const s=document.getElementById('kh-notif-section'); if(s && s.style.display!=='none' && typeof renderClubNotifTab==='function') renderClubNotifTab(clubNotifTab);
+}
+// Ar įrašas matomas — pagal push_prefs (tas pats filtras kaip telefono pranešimams).
 function _clubNotifVisible(tab, it){
-  const p=_clubNotifPrefs();
-  if (tab==='system')   return p.klubas    !== false;  // 📋 Klubas
-  if (tab==='events')   return p.renginiai !== false;  // 🥇 Renginiai
-  if (tab==='messages') return p.zinutes   !== false;  // 💬 Žinutės
+  const p=currentProfile?.push_prefs||{};
+  if (tab==='system')   return p.club_admin  !== false;  // 📋 Klubas
+  if (tab==='events')   return p.club_events !== false;  // 🥇 Renginiai
+  if (tab==='messages') return p.messages    !== false;  // 💬 Žinutės
   return true;
 }
 function _clubUnseen(tab){ const items=(clubNotifications?.[tab]||[]).filter(it=>_clubNotifVisible(tab,it)); if(tab==='messages') return items.filter(it=>it.unread && it.fromOther); return items.filter(it=>!_isSeen(CLUB_NOTIF_SK[tab], it.id)); }
@@ -15921,28 +15940,25 @@ function clubOpenMessages(){
   if (typeof openMessages==='function') openMessages();
 }
 
-// 🔔 Klubo pranešimų filtrai
+// 🔔 Klubo PUSH pranešimų jungikliai (3 tipai = įjungimas + filtras, kaip trenerio; profiles.push_prefs)
 function openClubNotifPrefs(){
   const old=document.getElementById('club-notif-prefs'); if(old) old.remove();
-  const p=_clubNotifPrefs();
-  const tgl=(on,fn)=>`<div onclick="${fn}" style="flex-shrink:0;width:44px;height:26px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;"><div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;"></div></div>`;
-  const row=(icon,title,sub,key)=>{ const on=p[key]!==false; return `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;"><div style="font-size:24px;flex-shrink:0;">${icon}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${title}</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">${sub}</div></div>${tgl(on,"_clubTglPref('"+key+"')")}</div>`; };
+  const rowP=(icon,title,sub,key)=>`<div onclick="toggleClubPushPref('${key}')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;margin-bottom:8px;cursor:pointer;"><div style="font-size:24px;flex-shrink:0;">${icon}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${title}</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">${sub}</div></div><div id="kpp-sw-${key}" style="width:44px;height:26px;border-radius:99px;background:rgba(255,255,255,.15);position:relative;transition:background .2s;flex-shrink:0;"><div id="kpp-knob-${key}" style="width:20px;height:20px;border-radius:50%;background:white;position:absolute;top:3px;left:3px;transition:left .2s;"></div></div></div>`;
   const m=document.createElement('div'); m.id='club-notif-prefs';
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100006;align-items:flex-end;justify-content:center;';
   m.onclick=e=>{ if(e.target===m) m.remove(); };
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔔 PRANEŠIMAI</div><button onclick="document.getElementById('club-notif-prefs').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
-    <div style="padding:16px 16px 22px;">
-      <div style="font-size:11px;color:var(--mut);margin:0 2px 12px;">Kokias pranešimų grupes gauti į varpelį:</div>
-      ${row('📋','Klubas','Registracijos, neaktyvūs vaikai, ataskaitos','klubas')}
-      ${row('🥇','Renginiai','Varžybos, stovyklos, grupių iššūkiai','renginiai')}
-      ${row('💬','Žinutės','Pokalbiai su tėvais ir treneriais','zinutes')}
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔔 PUSH PRANEŠIMAI</div><button onclick="document.getElementById('club-notif-prefs').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:14px 16px 22px;">
+      <div style="font-size:11px;color:var(--mut);margin:0 2px 12px;">Įjunk, apie ką nori gauti pranešimus į telefoną — net kai programėlė uždaryta. Tas pats filtras galioja ir varpeliui.</div>
+      ${rowP('📋','Klubas','Registracijos, neaktyvūs vaikai, ataskaitos','club_admin')}
+      ${rowP('🥇','Renginiai','Varžybos, stovyklos, grupių iššūkiai','club_events')}
+      ${rowP('💬','Žinutės','Pokalbiai su tėvais ir treneriais','messages')}
     </div>
   </div>`;
   document.body.appendChild(m);
+  loadClubPushPrefs();
 }
-function _clubTglPref(k){ const cur=_clubNotifPrefs()[k]!==false; _setClubNotifPref(k, !cur); openClubNotifPrefs(); _clubNotifRefresh(); }
-function _clubNotifRefresh(){ if(typeof _updateClubNotifCounts==='function') _updateClubNotifCounts(); const s=document.getElementById('kh-notif-section'); if(s && s.style.display!=='none' && typeof renderClubNotifTab==='function') renderClubNotifTab(clubNotifTab); }
 
 // ℹ️ „Kaip veikia SPOBU" — rolių ir atsakomybių gidas
 function openClubRolesGuide(){
@@ -16051,13 +16067,9 @@ function openClubAccountMenu(){
         <div style="font-size:24px;flex-shrink:0;" id="club-sound-icon">🔊</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Garsai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;" id="club-sound-status">Pranešimų garsai</div></div>
       </div>
-      <div onclick="toggleAppPush()" style="${rs}">
-        <div style="font-size:24px;flex-shrink:0;" id="club-push-icon">🔔</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Push pranešimai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;" id="club-push-status">Pranešimai net su uždarytu appsu</div></div>
-      </div>
       <div onclick="document.getElementById('club-acct-menu').remove();openClubNotifPrefs();" style="${rs}">
-        <div style="font-size:24px;flex-shrink:0;">🎛️</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Pranešimų nustatymai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Kokius pranešimus rodyti (žinutės, RSVP…)</div></div>
+        <div style="font-size:24px;flex-shrink:0;">🔔</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Push pranešimai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">3 tipai: klubas, renginiai, žinutės — net su uždarytu appsu</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
       <div onclick="document.getElementById('club-acct-menu').remove();openClubSettings();" style="${rs}">
