@@ -465,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v321</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v322</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3417,7 +3417,7 @@ select.inp option{background:#222;}
         <button onclick="toggleClubNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
       </div>
       <div style="padding:12px 16px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
-        <button class="notif-tab" data-tab="system" onclick="switchClubNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🤖</span><span>Sistema <span id="kh-notif-count-system" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="system" onclick="switchClubNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>📋</span><span>Klubas <span id="kh-notif-count-system" style="opacity:.7;"></span></span></button>
         <button class="notif-tab" data-tab="trainers" onclick="switchClubNotifTab('trainers')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🥋</span><span>Treneriai <span id="kh-notif-count-trainers" style="opacity:.7;"></span></span></button>
         <button class="notif-tab" data-tab="events" onclick="switchClubNotifTab('events')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🥇</span><span>Renginiai <span id="kh-notif-count-events" style="opacity:.7;"></span></span></button>
         <button class="notif-tab" data-tab="messages" onclick="switchClubNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>💬</span><span>Žinutės <span id="kh-notif-count-messages" style="opacity:.7;"></span></span></button>
@@ -15719,40 +15719,66 @@ async function _fetchClubNotifications(force){
   const compTitle = {}; (compsRes.data||[]).forEach(c=>compTitle[c.id]=c.title); const compIds = Object.keys(compTitle);
   const campTitle = {}; (campsRes.data||[]).forEach(c=>campTitle[c.id]=c.title); const campIds = Object.keys(campTitle);
 
-  const [actR, rsvpR, gcR, repR, crR, msR] = await Promise.all([
+  const [actR, rsvpR, gcR, repR, crR, msR, pendR, gcActiveR] = await Promise.all([
     sb.rpc('club_trainer_activity', { club_uuid: clubId }).then(r=>r.data||[]).catch(()=>[]),
-    campIds.length ? sb.from('club_event_rsvp').select('id, kid_id, event_id, created_at').in('event_id', campIds).gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(20) : Promise.resolve({data:[]}),
+    campIds.length ? sb.from('club_event_rsvp').select('id, kid_id, event_id, status, created_at').in('event_id', campIds).gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(60) : Promise.resolve({data:[]}),
     sb.from('club_challenges').select('id, title, created_at').eq('club_id', clubId).eq('is_active', false).gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(10),
     kidIds.length ? sb.from('reports').select('id, kid_id, type, created_at').in('kid_id', kidIds).neq('status','error').gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(20) : Promise.resolve({data:[]}),
     compIds.length ? sb.from('competition_results').select('id, kid_id, competition_id, created_at').in('competition_id', compIds).eq('approval_status','pending').order('created_at',{ascending:false}).limit(20) : Promise.resolve({data:[]}),
-    sb.from('messages').select('id, conversation_id, sender_id, body, sent_at').neq('sender_id', currentUser.id).gte('sent_at', cutoffISO).order('sent_at',{ascending:false}).limit(30)
+    sb.from('messages').select('id, conversation_id, sender_id, body, sent_at').neq('sender_id', currentUser.id).gte('sent_at', cutoffISO).order('sent_at',{ascending:false}).limit(30),
+    sb.from('kids').select('id, created_at').eq('club_id', clubId).eq('approval_status','pending').order('created_at',{ascending:false}).limit(50).then(r=>r.data||[]).catch(()=>[]),
+    sb.from('club_challenges').select('id, title, ends_on').eq('club_id', clubId).eq('is_active', true).then(r=>r.data||[]).catch(()=>[])
   ]);
+
+  const today = new Date().toISOString().split('T')[0];
 
   // TRENERIAI: nauji (priėmė kvietimą) + neaktyvūs 🔴 (≥7 d.)
   const actMap = {}; (actR||[]).forEach(a=>{ actMap[a.trainer_id]=a; });
   const trainerItems = [];
   trainers.forEach(t=>{
     if (t.profiles?.status==='active' && t.profiles?.activated_at && t.profiles.activated_at >= cutoffISO){
-      trainerItems.push({ id:'tract-'+t.id, icon:'✅', title:`${trName(t)} prisijungė`, sub:'Priėmė kvietimą', ts:t.profiles.activated_at });
+      trainerItems.push({ id:'tract-'+t.id, icon:'✅', title:`${trName(t)} prisijungė`, sub:'Priėmė kvietimą', ts:t.profiles.activated_at, link:{screen:'k-trainers',teamTab:'trainers'} });
     }
     const a = actMap[t.id];
     if (a && a.last_active){
       const days = Math.floor((Date.now()-new Date(a.last_active).getTime())/86400000);
-      if (days>=7) trainerItems.push({ id:'trin-'+t.id, icon:'🔴', title:`${trName(t)} neaktyvus`, sub:`Paskutinis veiksmas prieš ${days} d.`, ts:a.last_active });
+      if (days>=7) trainerItems.push({ id:'trin-'+t.id, icon:'🔴', title:`${trName(t)} neaktyvus`, sub:`Paskutinis veiksmas prieš ${days} d.`, ts:a.last_active, link:{screen:'k-trainers',teamTab:'trainers'} });
     }
   });
   trainerItems.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
 
-  // RENGINIAI: laukiantys rezultatai + nauji RSVP + pasibaigę grupių iššūkiai
+  // RENGINIAI: GC laukia užbaigimo + laukiantys rezultatai + RSVP (agreguota) + pasibaigę GC
+  const rsvpByEvent = {};
+  (rsvpR.data||[]).forEach(r=>{ if(r.status==='not_going') return; (rsvpByEvent[r.event_id]=rsvpByEvent[r.event_id]||[]).push(r); });
+  const rsvpAggItems = Object.entries(rsvpByEvent).map(([eid,arr])=>({ id:'rsvpagg-'+eid, icon:'⛺', title:`${arr.length} užsiregistravo`, sub:campTitle[eid]||'Stovykla', ts:arr.map(x=>x.created_at).sort().reverse()[0], link:{screen:'k-events',evTab:'camps'} }));
+  const gcFinItems = (gcActiveR||[]).filter(c=>c.ends_on && c.ends_on < today).map(c=>({ id:'gcfin-'+c.id, icon:'⏰', title:'Grupių iššūkis pasibaigė', sub:`${c.title||'Iššūkis'} · užbaik ir skirk EXP`, ts:c.ends_on, link:{screen:'k-events',evTab:'gc'} }));
   const eventItems = [
-    ...((crR.data||[]).map(r=>({ id:'cr-'+r.id, icon:'⏳', title:`${kidName(r.kid_id)} — rezultatas`, sub:`${compTitle[r.competition_id]||'Varžybos'} · laukia trenerio`, ts:r.created_at }))),
-    ...((rsvpR.data||[]).map(r=>({ id:'rsvp-'+r.id, icon:'⛺', title:`${kidName(r.kid_id)} registravosi`, sub:`${campTitle[r.event_id]||'Stovykla'}`, ts:r.created_at }))),
-    ...((gcR.data||[]).map(c=>({ id:'gcend-'+c.id, icon:'🏆', title:'Grupių iššūkis baigėsi', sub:c.title||'Iššūkis', ts:c.created_at })))
+    ...gcFinItems,
+    ...((crR.data||[]).map(r=>({ id:'cr-'+r.id, icon:'⏳', title:`${kidName(r.kid_id)} — rezultatas`, sub:`${compTitle[r.competition_id]||'Varžybos'} · laukia trenerio`, ts:r.created_at, link:{screen:'k-events',evTab:'comp'} }))),
+    ...rsvpAggItems,
+    ...((gcR.data||[]).map(c=>({ id:'gcend-'+c.id, icon:'🏆', title:'Grupių iššūkis baigėsi', sub:c.title||'Iššūkis', ts:c.created_at, link:{screen:'k-events',evTab:'gc'} })))
   ].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
 
-  // SISTEMA / APYVARTA: naujos nupirktos ataskaitos
+  // KLUBAS (buv. Sistema): nupirktos ataskaitos + naujos registracijos + neaktyvūs vaikai
   const typeLbl = t => t==='plan'?'Veiksmų planas':(t==='summer'?'Vasaros programa':'Diagnostika');
-  const systemItems = (repR.data||[]).map(r=>({ id:'rep-'+r.id, icon:'💶', title:'Nupirkta ataskaita', sub:`${typeLbl(r.type)} · ${kidName(r.kid_id)}`, ts:r.created_at })).sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  const systemItems = (repR.data||[]).map(r=>({ id:'rep-'+r.id, icon:'💶', title:'Nupirkta ataskaita', sub:`${typeLbl(r.type)} · ${kidName(r.kid_id)}`, ts:r.created_at }));
+  if (pendR && pendR.length){
+    systemItems.push({ id:'reg-pending-'+pendR.length, icon:'⏳', title:`${pendR.length} laukia registracijos`, sub:'Patvirtink naujų vaikų anketas', ts:pendR[0].created_at, link:{screen:'k-trainers',teamTab:'students'} });
+  }
+  // Neaktyvūs vaikai — agreguota, pagal lankomumo raudoną slenkstį (kaip loadClubInactiveKids)
+  try {
+    const { data: grps } = await sb.from('groups').select('id').eq('club_id', clubId);
+    const gg = (grps||[]).map(x=>x.id);
+    if (gg.length){
+      const cut60 = new Date(Date.now()-60*86400000).toISOString().split('T')[0];
+      const { data: att } = await sb.from('attendance').select('kid_id, present, session_date').in('group_id', gg).gte('session_date', cut60);
+      const byKid={}; (att||[]).forEach(r=>{ (byKid[r.kid_id]=byKid[r.kid_id]||[]).push(r); });
+      const RED = Math.max(2, parseInt(clubFlags?.inactive_red)||5); let redN=0;
+      Object.values(byKid).forEach(rs=>{ rs.sort((a,b)=>a.session_date<b.session_date?1:(a.session_date>b.session_date?-1:0)); let s=0; for(const r of rs){ if(!r.present)s++; else break; } if(s>=RED) redN++; });
+      if (redN>0) systemItems.push({ id:'inactive-kids-'+redN, icon:'🔴', title:`${redN} nustojo lankyti`, sub:'Vaikai praleido daug treniruočių — verta susisiekti', ts:today+'T08:00:00Z', link:{screen:'k-trainers',teamTab:'students'} });
+    }
+  } catch(_){}
+  systemItems.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
 
   // ŽINUTĖS (narystė per conversation_members; be savo)
   const msgItems = [];
@@ -15838,6 +15864,16 @@ function clubNotifClick(tab, id, convId){
     if (typeof openMessages==='function') openMessages();
     const cid = convId || (clubNotifications?.messages||[]).find(it=>it.id===id)?.convId;
     if (cid && typeof openConversation==='function') openConversation(cid);
+    return;
+  }
+  // Navigacija jei įrašas turi „link" (registracijos, GC, renginiai, treneriai)
+  const it = (clubNotifications?.[tab]||[]).find(x=>x.id===id);
+  if (it && it.link){
+    const s = document.getElementById('kh-notif-section'); if(s) s.style.display='none';
+    if (typeof nv==='function') nv('k', null, it.link.screen);
+    if (it.link.teamTab && typeof switchClubTeamTab==='function') switchClubTeamTab(it.link.teamTab);
+    if (it.link.evTab && typeof switchClubEventsTab==='function') switchClubEventsTab(it.link.evTab);
+    if (it.link.anaTab && typeof switchClubAnalyticsTab==='function') switchClubAnalyticsTab(it.link.anaTab);
     return;
   }
   renderClubNotifTab(tab);
