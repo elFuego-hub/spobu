@@ -465,7 +465,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v331</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v332</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4546,6 +4546,7 @@ async function afterLogin() {
       op('k');
     } else if (profile.role === 'trainer') {
       await loadTrainerData();
+      await _detectClubManager(); // 🔑 deleguota klubo prieiga (club_managers)
       subscribeTrainerNotifications(); // po duomenų — realtime tik papildomas, negali blokuoti portalo
       op('tr');
       _checkClubChallengeResultsTrainer(); // 🏆 grupių iššūkio pabaigos pop-up (vieną kartą)
@@ -16072,6 +16073,11 @@ function openClubAccountMenu(){
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Push pranešimai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">3 tipai: klubas, renginiai, žinutės — net su uždarytu appsu</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
+      ${!_clubManagerMode ? `<div onclick="openClubManagers()" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">🔑</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Trenerių prieiga</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Kurie treneriai gali administruoti klubą</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>` : ''}
       <div onclick="document.getElementById('club-acct-menu').remove();openClubSettings();" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">⚙️</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Klubo funkcijos ir logotipas</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Įjunk/išjunk funkcijas, keisk logo ir info</div></div>
@@ -25262,6 +25268,14 @@ async function openTrainerSettings() {
           </div>
         </div>
 
+        ${_managedClub ? `<div style="padding:12px 16px 0;">
+          <div onclick="enterClubAsManager()" style="background:linear-gradient(135deg,rgba(29,78,216,.18),rgba(37,99,235,.06));border:.5px solid rgba(37,99,235,.5);border-radius:14px;padding:14px;display:flex;align-items:center;gap:13px;cursor:pointer;">
+            <div style="font-size:24px;flex-shrink:0;">🏢</div>
+            <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Klubo administravimas</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Įeiti į „${_managedClub.name}" admin vaizdą</div></div>
+            <div style="font-size:16px;color:#60a5fa;flex-shrink:0;">›</div>
+          </div>
+        </div>` : ''}
+
         <!-- 📷 PROFILIO NUOTRAUKA -->
         <div style="padding:12px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;">
@@ -26964,16 +26978,109 @@ async function submitNewClub() {
 // ════════════════════════════════════════
 let currentClub = null;
 
-async function loadClubData() {
-  console.log('🏢 [loadClubData] STARTAS, user_id:', currentUser?.id);
+// ════════════════════════════════════════
+// 🔑 DELEGUOTA KLUBO PRIEIGA (vadybininkai) — server-klubas-vadybininkai.sql
+// Savininkas pažymi trenerį → tas su savo login įeina į klubo admin vaizdą.
+// my_admin_club_id() SQL papildytas → visa klubo RLS veikia vadybininkui.
+// ════════════════════════════════════════
+let _managedClub = null;        // {id, name} — klubas, kurį šis treneris gali administruoti
+let _clubManagerMode = false;   // ar dabar treneris veikia kaip klubas
+let _origRoleBeforeClub = null;
+
+async function _detectClubManager(){
+  _managedClub = null;
+  try {
+    const { data } = await sb.from('club_managers').select('club_id, clubs(name)').eq('profile_id', currentUser.id).maybeSingle();
+    if (data) _managedClub = { id: data.club_id, name: data.clubs?.name || 'Klubas' };
+  } catch(_){ _managedClub = null; }
+}
+
+// Treneris → įeina į klubo admin vaizdą (laikinai vaidina klubą; rolė atkuriama išeinant)
+async function enterClubAsManager(){
+  if (!_managedClub) return;
+  document.getElementById('trainer-settings-modal')?.remove();
+  _origRoleBeforeClub = currentProfile.role;
+  currentProfile.role = 'club_admin';   // kliento rolės patikros praeis (DB prieiga — per my_admin_club_id RLS)
+  _clubManagerMode = true;
+  await loadClubData(_managedClub.id);
+  op('k');
+  _showClubManagerBar();
+}
+function exitClubManagerMode(){
+  if (_origRoleBeforeClub) currentProfile.role = _origRoleBeforeClub;
+  _origRoleBeforeClub = null;
+  _clubManagerMode = false;
+  document.getElementById('club-mgr-bar')?.remove();
+  op('tr');
+}
+function _showClubManagerBar(){
+  document.getElementById('club-mgr-bar')?.remove();
+  const b = document.createElement('div'); b.id='club-mgr-bar';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:100010;background:#1D4ED8;color:#fff;font-size:12px;font-weight:800;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+  b.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🔑 Administruoji: ${_managedClub?.name||'Klubas'}</span><button onclick="exitClubManagerMode()" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;margin-left:8px;">← Grįžti į trenerį</button>`;
+  document.body.appendChild(b);
+}
+
+// ── Savininkas: vadybininkų (trenerių su prieiga) valdymas ──
+async function openClubManagers(){
+  document.getElementById('club-acct-menu')?.remove();
+  const old=document.getElementById('club-mgr-modal'); if(old) old.remove();
+  const m=document.createElement('div'); m.id='club-mgr-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100006;align-items:flex-end;justify-content:center;';
+  m.onclick=e=>{ if(e.target===m) m.remove(); };
+  m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔑 TRENERIŲ PRIEIGA</div><button onclick="document.getElementById('club-mgr-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:14px 16px 22px;">
+      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin:0 2px 12px;">Treneris su prieiga gali su SAVO prisijungimu įeiti į klubo administravimą (pilna prieiga). Duok tik patikimiems.</div>
+      <div id="club-mgr-list"><div style="text-align:center;color:var(--mut);padding:14px;font-size:12px;">Kraunama...</div></div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  _loadClubManagers();
+}
+async function _loadClubManagers(){
+  const el=document.getElementById('club-mgr-list'); if(!el) return;
+  if (!currentClub?.id){ el.innerHTML='<div style="color:var(--mut);font-size:12px;text-align:center;padding:14px;">Klubo info trūksta</div>'; return; }
+  const [{ data: trs }, { data: mgrs }] = await Promise.all([
+    sb.from('trainers').select('id, profiles!inner(first_name,last_name)').eq('invited_by_club_id', currentClub.id),
+    sb.from('club_managers').select('profile_id').eq('club_id', currentClub.id)
+  ]);
+  const mgrSet = new Set((mgrs||[]).map(x=>x.profile_id));
+  const list = trs||[];
+  if (!list.length){ el.innerHTML='<div style="color:var(--mut);font-size:12px;text-align:center;padding:14px;">Klube dar nėra trenerių.</div>'; return; }
+  el.innerHTML = list.map(t=>{
+    const nm = `${t.profiles?.first_name||''} ${t.profiles?.last_name||''}`.trim()||'Treneris';
+    const on = mgrSet.has(t.id);
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;margin-bottom:8px;">
+      <div style="font-size:20px;">🥋</div>
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${nm}</div><div style="font-size:10px;color:${on?'var(--grn)':'var(--mut)'};margin-top:2px;">${on?'✓ Turi klubo prieigą':'Nėra prieigos'}</div></div>
+      <button onclick="_clubToggleManager('${t.id}', ${on?'false':'true'})" style="background:${on?'rgba(239,68,68,.12)':'rgba(34,197,94,.15)'};color:${on?'#EF4444':'var(--grn)'};border:.5px solid ${on?'rgba(239,68,68,.3)':'rgba(34,197,94,.4)'};padding:7px 13px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;">${on?'Atimti':'Suteikti'}</button>
+    </div>`;
+  }).join('');
+}
+async function _clubToggleManager(profileId, grant){
+  if (!currentClub?.id) return;
+  try {
+    if (grant===true || grant==='true'){
+      const { error } = await sb.from('club_managers').insert({ club_id: currentClub.id, profile_id: profileId });
+      if (error) throw error;
+      showToast('✅ Prieiga suteikta','success');
+    } else {
+      const { error } = await sb.from('club_managers').delete().eq('club_id', currentClub.id).eq('profile_id', profileId);
+      if (error) throw error;
+      showToast('Prieiga atimta');
+    }
+    _loadClubManagers();
+  } catch(e){ showToast('❌ '+(e.message||'Nepavyko')+' (ar paleidai server-klubas-vadybininkai.sql?)','error',6000); }
+}
+
+async function loadClubData(clubIdOverride) {
+  console.log('🏢 [loadClubData] STARTAS, user_id:', currentUser?.id, 'override:', clubIdOverride||'-');
   if (!currentProfile) { console.warn('🚫 [loadClubData] Nėra currentProfile!'); return; }
 
-  // Gaunam klubą, kuriam šis vartotojas yra admin
-  console.log('🔍 [loadClubData] 1. Ieškom klubo pagal admin_profile_id...');
-  const { data: club, error } = await sb.from('clubs')
-    .select('*, sports(name, icon)')
-    .eq('admin_profile_id', currentUser.id)
-    .single();
+  // Gaunam klubą: savininkui pagal admin_profile_id, vadybininkui pagal perduotą club_id
+  const _cq = sb.from('clubs').select('*, sports(name, icon)');
+  const { data: club, error } = await (clubIdOverride ? _cq.eq('id', clubIdOverride) : _cq.eq('admin_profile_id', currentUser.id)).single();
   console.log('📦 [loadClubData] club:', club, 'error:', error);
 
   if (error || !club) {
