@@ -602,7 +602,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v349</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v350</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4070,6 +4070,11 @@ select.inp option{background:#222;}
     </div>
 
     <div class="adash-col">
+    <div class="st">⚠️ REIKIA DĖMESIO</div>
+    <div class="cd" id="a-nudges" style="padding:8px 14px;">
+      <div style="text-align:center;padding:10px;color:var(--mut);font-size:12px;">Kraunama...</div>
+    </div>
+
     <div class="st">VEIKSMAI</div>
     <div class="cd" style="padding:12px;">
       <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openCreateClub()">➕ Sukurti naują klubą</button>
@@ -4979,6 +4984,7 @@ async function afterLogin() {
       updateAdminNotifBadge(true);     // 🔔 varpelio badge
       loadAdminActivity();             // 📰 gyvas veiklos srautas
       startAdminStatusBar();           // 🛰️ Mission Control statuso juosta (desktop)
+      loadAdminNudges();               // ⚠️ REIKIA DĖMESIO (alertai + nudges, Blokas G)
     } else if (profile.role === 'club_admin') {
       console.log('🏢 [afterLogin] loadClubData()...');
       await loadClubData();
@@ -28645,6 +28651,56 @@ async function submitFbReply(id){
 }
 
 // ════════════════════════════════════════
+// ⚠️ REIKIA DĖMESIO (Blokas G) — admin_alerts (cron) + klientiniai nudges
+// ════════════════════════════════════════
+async function loadAdminNudges(){
+  const el = document.getElementById('a-nudges'); if (!el) return;
+  const safe = p => Promise.resolve(p).then(r => r, () => ({ data: null, count: null }));
+  const dayAgo = new Date(Date.now() - 864e5).toISOString();
+  const h20 = new Date(Date.now() - 20 * 36e5).toISOString();
+  const [al, rp, pr, links, cc, subs] = await Promise.all([
+    safe(sb.from('admin_alerts').select('id, kind, title, body, created_at, seen').order('created_at', { ascending: false }).limit(15)),
+    safe(sb.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'pending_review').lt('created_at', h20)),
+    safe(sb.from('profiles').select('id, created_at').eq('role', 'parent').lt('created_at', dayAgo).order('created_at', { ascending: false }).limit(300)),
+    safe(sb.from('kid_parent_links').select('parent_id').limit(5000)),
+    safe(sb.rpc('admin_club_compare')),
+    safe(sb.from('purchases').select('id').eq('item_type', 'subscription')
+      .gte('created_at', new Date(Date.now() - 365 * 864e5).toISOString())
+      .lte('created_at', new Date(Date.now() - 335 * 864e5).toISOString()))
+  ]);
+  const items = [];
+  // Cron/serverio alertai (nauji viršuje; ✓ pažymi matytu)
+  const alertIco = { error_spike: '🚨', review_sla: '⏰', big_purchase: '💶', digest: '📬' };
+  (al.data || []).filter(a => !a.seen && a.kind !== 'digest').forEach(a => {
+    items.push({ html: `${alertIco[a.kind] || '📌'} <b>${_aaiEsc(a.title || a.kind)}</b>${a.body ? ' — ' + _aaiEsc(a.body) : ''} <span class="aerr-meta" style="display:inline;">${typeof _agoLT === 'function' ? _agoLT(a.created_at) : ''}</span>`, alertId: a.id });
+  });
+  // Klientiniai nudges (skaičiuojami čia pat — veikia ir be pg_cron)
+  const slaCnt = rp.count || 0;
+  if (slaCnt > 0) items.push({ html: `⏰ <b>${slaCnt} AI ataskait${slaCnt === 1 ? 'a' : 'os'} vėluoja</b> (>20 val.) — <span style="color:#FF8C00;cursor:pointer;font-weight:700;" onclick="nv('a',null,'a-ai')">peržiūrėti →</span>` });
+  const withKid = new Set((links.data || []).map(l => l.parent_id));
+  const orphanCnt = (pr.data || []).filter(p => !withKid.has(p.id)).length;
+  if (orphanCnt > 0) items.push({ html: `👨‍👩‍👦 <b>${orphanCnt} tėv${orphanCnt === 1 ? 'as' : 'ai'} be vaiko</b> (>24 val. po registracijos) — galimai užstrigo pradžioje` });
+  const stale = (cc.data || []).filter(c => !c.last_event || (Date.now() - new Date(c.last_event).getTime()) > 7 * 864e5);
+  if (stale.length) items.push({ html: `🏢 <b>${stale.length} klub${stale.length === 1 ? 'as' : 'ai'} 7 d. be veiklos</b>: ${stale.slice(0, 3).map(c => _aaiEsc(c.club_name || '')).join(', ')}${stale.length > 3 ? '…' : ''} — verta paskambinti` });
+  const expCnt = (subs.data || []).length;
+  if (expCnt > 0) items.push({ html: `💎 <b>${expCnt} prenumerat${expCnt === 1 ? 'a' : 'os'} baigiasi per 30 d.</b> — win-back kandidatai` });
+  // Paskutinio digest santrauka (visada apačioje, jei yra)
+  const dg = (al.data || []).find(a => a.kind === 'digest');
+  el.innerHTML = (items.length
+    ? items.map(i => `<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:.5px solid var(--bdr);font-size:12px;line-height:1.45;">
+        <div style="flex:1;min-width:0;">${i.html}</div>
+        ${i.alertId ? `<button class="aerr-tool" style="padding:2px 7px;font-size:10px;flex-shrink:0;" title="Pažymėti matytu" onclick="markAlertSeen('${i.alertId}')">✓</button>` : ''}
+      </div>`).join('')
+    : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:12px;">Viskas ramu 🧘</div>')
+    + (dg ? `<div class="aerr-meta" style="margin-top:8px;white-space:normal;">📬 ${new Date(dg.created_at).toLocaleDateString('lt-LT')}: ${_aaiEsc(dg.body || '')}</div>` : '');
+}
+
+async function markAlertSeen(id){
+  try { await sb.from('admin_alerts').update({ seen: true }).eq('id', id); } catch(e){}
+  loadAdminNudges();
+}
+
+// ════════════════════════════════════════
 // CREATE CLUB MODAL
 // ════════════════════════════════════════
 async function openCreateClub() {
@@ -32993,6 +33049,7 @@ function nv(p,el,sid){
   }
   // 👑 ADMIN: ekranų loaderiai (Blokas A; B–H funkcijas pildys vėliau — typeof guard)
   if (sid === 'a-main' && typeof loadAdminActivity === 'function') loadAdminActivity();
+  if (sid === 'a-main' && typeof loadAdminNudges === 'function') loadAdminNudges();
   if (sid === 'a-errors' && typeof loadAdminErrors === 'function') loadAdminErrors();
   if (sid === 'a-fin' && typeof loadAdminFinance === 'function') loadAdminFinance();
   if (sid === 'a-analytics' && typeof loadAdminAnalytics === 'function') loadAdminAnalytics();
