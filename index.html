@@ -585,7 +585,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v343</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v344</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -24985,9 +24985,12 @@ async function _trainerOverallEntries() {
   if (typeof trainerStatSeasonFilter !== 'undefined' && trainerStatSeasonFilter === 'all') return base;
   const combined = {};
   (base || []).forEach(e => { combined[e.kidId] = { ...e, score: 0 }; });
-  const s = await getTrainerFilteredEntries('kid_records');
-  const c = await getTrainerFilteredEntries('challenge_submissions');
-  const p = await getTrainerFilteredEntries('competition_results');
+  // 🚀 3 nuoseklūs kvietimai → lygiagretūs (Promise.all)
+  const [s, c, p] = await Promise.all([
+    getTrainerFilteredEntries('kid_records'),
+    getTrainerFilteredEntries('challenge_submissions'),
+    getTrainerFilteredEntries('competition_results')
+  ]);
   [...(s || []), ...(c || []), ...(p || [])].forEach(e => {
     if (!combined[e.kidId]) combined[e.kidId] = { ...e, score: 0 };
     combined[e.kidId].score += (e.score || 0);
@@ -27755,22 +27758,17 @@ async function loadClubAttentionBar(){
 async function loadClubMainPreview(){
   const el = document.getElementById('k-main-preview'); if(!el||!currentClub?.id) return;
   try {
-    const [ov, sk, ch, co] = await Promise.all([
-      getClubFilteredEntries('total_exp'),
-      getClubFilteredEntries('kid_records'),
-      getClubFilteredEntries('challenge_submissions'),
-      getClubFilteredEntries('competition_results')
-    ]);
-    const top = arr => (arr||[]).slice().sort((a,b)=>(b.score||0)-(a.score||0));
-    const top3 = top(ov).slice(0,3);
-    const skTop = top(sk)[0], chTop = top(ch)[0], coTop = top(co)[0];
-    const ids = [...new Set([...top3.map(e=>e.kidId), skTop&&skTop.kidId, chTop&&chTop.kidId, coTop&&coTop.kidId].filter(Boolean))];
-    const nameMap = {};
-    if (ids.length){ const { data } = await sb.from('kids').select('id, first_name, last_name').in('id', ids); (data||[]).forEach(k=>{ nameMap[k.id]=`${k.first_name||'Vaikas'} ${k.last_name||''}`.trim(); }); }
-    const nm = id => nameMap[id] || '—';
+    // 🚀 4 leaderboard kvietimai → 1 RPC (leaderboard_top grąžina top-N iš visų šaltinių + anonimizuotus vardus)
+    const { data: rows, error: _lbErr } = await sb.rpc('leaderboard_top', { p_scope_club_id: currentClub.id, p_limit: 3 });
+    if (_lbErr) throw _lbErr;
+    const bySrc = { total_exp: [], kid_records: [], challenge_submissions: [], competition_results: [] };
+    (rows||[]).forEach(r => { (bySrc[r.source] || (bySrc[r.source] = [])).push(r); });
+    const top3 = (bySrc.total_exp || []).slice(0, 3);
+    const skTop = (bySrc.kid_records || [])[0], chTop = (bySrc.challenge_submissions || [])[0], coTop = (bySrc.competition_results || [])[0];
+    const nm = e => (e && e.name) || '—';
     const medal = ['🥇','🥈','🥉'];
-    const top3html = top3.length ? top3.map((e,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;${i?'border-top:.5px solid var(--bdr);':''}"><div style="font-size:16px;width:22px;text-align:center;">${medal[i]}</div><div style="flex:1;min-width:0;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nm(e.kidId)}</div><div style="font-size:12px;color:var(--br);font-weight:700;">${Math.round(e.score||0).toLocaleString()}</div></div>`).join('') : '<div style="padding:14px;text-align:center;color:var(--mut);font-size:12px;">Nėra duomenų</div>';
-    const leadRow = (icon,lbl,e)=> e ? `<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:14px;">${icon}</div><div style="flex:1;font-size:11px;color:var(--mut);">${lbl}</div><div style="font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%;">${nm(e.kidId)}</div></div>` : '';
+    const top3html = top3.length ? top3.map((e,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;${i?'border-top:.5px solid var(--bdr);':''}"><div style="font-size:16px;width:22px;text-align:center;">${medal[i]}</div><div style="flex:1;min-width:0;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nm(e)}</div><div style="font-size:12px;color:var(--br);font-weight:700;">${Math.round(e.score||0).toLocaleString()}</div></div>`).join('') : '<div style="padding:14px;text-align:center;color:var(--mut);font-size:12px;">Nėra duomenų</div>';
+    const leadRow = (icon,lbl,e)=> e ? `<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:14px;">${icon}</div><div style="flex:1;font-size:11px;color:var(--mut);">${lbl}</div><div style="font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%;">${nm(e)}</div></div>` : '';
     el.innerHTML = `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">${top3html}${leadRow('🏆','Skill lyderis',skTop)}${leadRow('🥇','Varžybų lyderis',coTop)}${leadRow('🎯','Iššūkių lyderis',chTop)}</div>`;
   } catch(e){ console.error('[club-main-preview]',e); el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:12px;font-size:12px;">Statistika nepasiekiama</div>'; }
 }
