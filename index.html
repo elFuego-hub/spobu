@@ -321,6 +321,37 @@ body.club-manager-mode .owner-only { display: none !important; }
   body.am.portal-v:not(.full-mobile-preview) #pv .sb { display: none !important; }
 }
 
+/* 💻 DESKTOP LAYOUT — ADMIN „Mission Control" (body.portal-a): platus, be telefono rėmelio */
+#a-desktop-nav { display: none; }
+body.full-mobile-preview #a-desktop-nav { display: none !important; }
+@media (min-width: 1024px) {
+  body.am.portal-a:not(.full-mobile-preview) { padding: 0 !important; }
+  body.am.portal-a:not(.full-mobile-preview) #pa { display: grid !important; grid-template-columns: 240px 1fr; height: 100vh; overflow: hidden; }
+  body.am.portal-a:not(.full-mobile-preview) #a-desktop-nav {
+    display: flex; flex-direction: column;
+    background: var(--card); border-right: 1px solid var(--bdr);
+    padding: 24px 14px 18px; height: 100vh; overflow-y: auto;
+  }
+  body.am.portal-a:not(.full-mobile-preview) #pa .df {
+    width: 100% !important; max-width: 100% !important;
+    padding: 0 !important; border-radius: 0 !important;
+    background: var(--bg) !important; box-shadow: none !important;
+    height: 100vh; overflow-y: auto;
+  }
+  body.am.portal-a:not(.full-mobile-preview) #pa .ds {
+    width: 100% !important; max-width: 1200px !important;
+    margin: 0 auto !important; border-radius: 0 !important; background: var(--bg) !important;
+  }
+  body.am.portal-a:not(.full-mobile-preview) #pa .ph { width: 100% !important; min-height: auto !important; padding: 24px 20px 60px !important; }
+  body.am.portal-a:not(.full-mobile-preview) #pa .sc { min-height: auto !important; }
+  body.am.portal-a:not(.full-mobile-preview) #pa .bn2 { display: none !important; }
+  body.am.portal-a:not(.full-mobile-preview) #pa .sb { display: none !important; }
+  /* Varpelis dubliuojasi side nav'e — mobilų mygtuką slepiam */
+  body.am.portal-a:not(.full-mobile-preview) #pa .sc #ah-notif-btn { display: none !important; }
+  /* Admin stat kortelės desktop'e — 4 stulpeliai */
+  body.am.portal-a:not(.full-mobile-preview) #a-stats-grid { grid-template-columns: repeat(4,1fr) !important; }
+}
+
 .sc{display:none;flex-direction:column;min-height:780px;}
 .sc.on{display:flex;}
 .sa{overflow-y:auto;flex:1;padding-bottom:8px;}
@@ -467,7 +498,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v334</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v336</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3806,7 +3837,27 @@ select.inp option{background:#222;}
 </div>
 </div></div></div></div>
 
-<div id="pa" style="display:none;"><div class="df"><div class="ds"><div class="ph">
+<div id="pa" style="display:none;">
+  <!-- 💻 ADMIN DESKTOP ŠONINĖ NAVIGACIJA (matoma tik ≥1024px per body.portal-a) -->
+  <aside id="a-desktop-nav">
+    <div class="vdn-logo">SPO<span style="color:var(--br);">BU</span> <span style="font-size:11px;color:var(--pur);letter-spacing:2px;">ADMIN</span></div>
+    <nav class="vdn-nav">
+      <a class="vdn-item" data-sid="a-main" onclick="adminNvDesktop('a-main')"><span class="vdn-ico">🏠</span> Apžvalga</a>
+      <a class="vdn-item" data-sid="a-errors" onclick="adminNvDesktop('a-errors')"><span class="vdn-ico">🚨</span> Klaidos</a>
+      <a class="vdn-item" data-sid="a-fin" onclick="adminNvDesktop('a-fin')"><span class="vdn-ico">💶</span> Finansai</a>
+      <a class="vdn-item" data-sid="a-analytics" onclick="adminNvDesktop('a-analytics')"><span class="vdn-ico">📊</span> Analitika</a>
+      <a class="vdn-item" data-sid="a-ai" onclick="adminNvDesktop('a-ai')"><span class="vdn-ico">🤖</span> AI studija</a>
+      <a class="vdn-item" data-sid="a-users" onclick="adminNvDesktop('a-users')"><span class="vdn-ico">👥</span> Vartotojai</a>
+      <a class="vdn-item" data-sid="a-clubs" onclick="adminNvDesktop('a-clubs')"><span class="vdn-ico">🏢</span> Klubai</a>
+      <a class="vdn-item" data-sid="a-platform" onclick="adminNvDesktop('a-platform')"><span class="vdn-ico">⚙️</span> Platforma</a>
+      <a class="vdn-item" data-sid="a-prof" onclick="adminNvDesktop('a-prof')"><span class="vdn-ico">👤</span> Profilis</a>
+    </nav>
+    <div class="vdn-bottom">
+      <button onclick="toggleAdminNotifications()" class="vdn-btn">🔔 Pranešimai <span id="adn-notif-badge" class="vdn-badge">0</span></button>
+      <button onclick="doLogout()" class="vdn-btn">🚪 Atsijungti</button>
+    </div>
+  </aside>
+<div class="df"><div class="ds"><div class="ph">
 <!-- ADMIN: PAGRINDINIS -->
 <div class="sc on" id="a-main">
   <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
@@ -3815,11 +3866,38 @@ select.inp option{background:#222;}
       <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">ADMINISTRATORIUS</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;" id="a-name">ADMIN 👑</div>
     </div>
-    <div style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--pur);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--pur);" id="a-avatar">A</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openAdminInfo()" title="Apie portalą">💡</div>
+      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleAdminNotifications()" id="ah-notif-btn" title="Pranešimai">🔔
+        <span id="ah-notif-badge-count" style="display:none;position:absolute;top:-5px;right:-5px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;align-items:center;justify-content:center;padding:0 4px;">0</span>
+      </div>
+      <div style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--pur);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--pur);" id="a-avatar">A</div>
+    </div>
   </div>
+
+  <!-- 🔔 ADMIN VARPELIO MODALAS (perkeliamas į body atidarius; pattern = klubo kh-notif-section) -->
+  <div style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.85);align-items:flex-end;justify-content:center;" id="ah-notif-section">
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
+      <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">🔔 PRANEŠIMAI</div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="markAllAdminNotifRead()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 10px;border-radius:99px;font-size:10px;font-weight:800;cursor:pointer;">✓ VISKĄ</button>
+          <button onclick="toggleAdminNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">✕</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 16px 4px;">
+        <button class="notif-tab" data-tab="errors" onclick="switchAdminNotifTab('errors')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🚨</span><span>Klaidos <span id="ah-notif-count-errors" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="purchases" onclick="switchAdminNotifTab('purchases')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>💶</span><span>Pirkimai <span id="ah-notif-count-purchases" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="feedback" onclick="switchAdminNotifTab('feedback')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>📨</span><span>Atsiliep. <span id="ah-notif-count-feedback" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="reports" onclick="switchAdminNotifTab('reports')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🤖</span><span>Ataskaitos <span id="ah-notif-count-reports" style="opacity:.7;"></span></span></button>
+      </div>
+      <div id="ah-notif-list" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
+    </div>
+  </div>
+
   <div class="sa">
     <!-- Greita statistika -->
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;">
+    <div id="a-stats-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;">
       <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
         <div style="font-size:22px;margin-bottom:4px;">🏢</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--pur);" id="a-clubs-count">0</div>
@@ -3865,9 +3943,11 @@ select.inp option{background:#222;}
     <div style="height:16px;"></div>
   </div>
   <div class="bn2">
-    <div class="ni on" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-clubs')"><span class="ic">🏢</span><span class="lb">Klubai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic">🚨</span><span class="lb">Klaidos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic">💶</span><span class="lb">Finansai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic">🤖</span><span class="lb">AI</span><div class="nd"></div></div>
+    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
   </div>
 </div>
 
@@ -3883,9 +3963,11 @@ select.inp option{background:#222;}
     </div>
   </div>
   <div class="bn2">
-    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('a',this,'a-clubs')"><span class="ic">🏢</span><span class="lb">Klubai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic">🚨</span><span class="lb">Klaidos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic">💶</span><span class="lb">Finansai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic">🤖</span><span class="lb">AI</span><div class="nd"></div></div>
+    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
   </div>
 </div>
 
@@ -3907,9 +3989,107 @@ select.inp option{background:#222;}
     </div>
   </div>
   <div class="bn2">
-    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-clubs')"><span class="ic">🏢</span><span class="lb">Klubai</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('a',this,'a-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic">🚨</span><span class="lb">Klaidos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic">💶</span><span class="lb">Finansai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic">🤖</span><span class="lb">AI</span><div class="nd"></div></div>
+    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- ADMIN: KLAIDOS (Blokas B) -->
+<div class="sc" id="a-errors">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">🚨 KLAIDOS</div></div>
+  <div class="sa">
+    <div id="a-errors-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">Klaidų telemetrija</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas B)</div></div></div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('a',this,'a-errors')"><span class="ic">🚨</span><span class="lb">Klaidos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic">💶</span><span class="lb">Finansai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic">🤖</span><span class="lb">AI</span><div class="nd"></div></div>
+    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- ADMIN: FINANSAI (Blokas C) -->
+<div class="sc" id="a-fin">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">💶 FINANSAI</div></div>
+  <div class="sa">
+    <div id="a-fin-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">Apskaita ir bonusai</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas C)</div></div></div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic">🚨</span><span class="lb">Klaidos</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('a',this,'a-fin')"><span class="ic">💶</span><span class="lb">Finansai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic">🤖</span><span class="lb">AI</span><div class="nd"></div></div>
+    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- ADMIN: ANALITIKA (Blokas D) -->
+<div class="sc" id="a-analytics">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">📊 ANALITIKA</div></div>
+  <div class="sa">
+    <div id="a-analytics-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">Verslo analitika</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas D)</div></div></div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic">🚨</span><span class="lb">Klaidos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic">💶</span><span class="lb">Finansai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic">🤖</span><span class="lb">AI</span><div class="nd"></div></div>
+    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- ADMIN: AI STUDIJA (Blokas E) -->
+<div class="sc" id="a-ai">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">🤖 AI STUDIJA</div></div>
+  <div class="sa">
+    <div id="a-ai-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">AI ataskaitų studija</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas E)</div></div></div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic">🚨</span><span class="lb">Klaidos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic">💶</span><span class="lb">Finansai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('a',this,'a-ai')"><span class="ic">🤖</span><span class="lb">AI</span><div class="nd"></div></div>
+    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- ADMIN: VARTOTOJAI (Blokas F) -->
+<div class="sc" id="a-users">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">👥 VARTOTOJAI</div></div>
+  <div class="sa">
+    <div id="a-users-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">Vartotojai ir support</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas F)</div></div></div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic">🚨</span><span class="lb">Klaidos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic">💶</span><span class="lb">Finansai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic">🤖</span><span class="lb">AI</span><div class="nd"></div></div>
+    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
+  </div>
+</div>
+
+<!-- ADMIN: PLATFORMA (Blokas H) -->
+<div class="sc" id="a-platform">
+  <div class="sb"><span>9:41</span><span>🔋</span></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">⚙️ PLATFORMA</div></div>
+  <div class="sa">
+    <div id="a-platform-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">Platformos valdymas</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas H)</div></div></div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic">🚨</span><span class="lb">Klaidos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic">💶</span><span class="lb">Finansai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic">🤖</span><span class="lb">AI</span><div class="nd"></div></div>
+    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
   </div>
 </div>
 </div></div></div></div>
@@ -4358,6 +4538,7 @@ async function init() {
 
   // Realaus laiko prisijungimas
   sb.auth.onAuthStateChange(async (event, session) => {
+    if (window._suppressAuthChange) return;  // 🔑 kviečiant trenerį (signUp auto-loginina) — nekeisti klubo sesijos
     if (event === 'SIGNED_IN' && session) {
       currentUser = session.user;
       await afterLogin();
@@ -4541,6 +4722,9 @@ async function afterLogin() {
     if (profile.role === 'admin') {
       await loadAdminData();
       op('a');
+      subscribeAdminNotifications();   // 📡 admin realtime (Blokas A)
+      updateAdminNotifBadge(true);     // 🔔 varpelio badge
+      loadAdminActivity();             // 📰 gyvas veiklos srautas
     } else if (profile.role === 'club_admin') {
       console.log('🏢 [afterLogin] loadClubData()...');
       await loadClubData();
@@ -26846,6 +27030,232 @@ async function loadAdminClubs() {
 }
 
 // ════════════════════════════════════════
+// ADMIN „MISSION CONTROL" — Blokas A: desktop nav, varpelis, realtime, veiklos srautas
+// ════════════════════════════════════════
+
+// 💻 Desktop šoninės nav perjungimas (kaip vaiko nvDesktop)
+function adminNvDesktop(sid){ nv('a', null, sid); }
+
+// ⋯ „Daugiau" — mobile bottom-sheet su likusiais ekranais
+function openAdminMore(){
+  const old = document.getElementById('admin-more-modal'); if(old){ old.remove(); return; }
+  const m = document.createElement('div'); m.id='admin-more-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
+  m.onclick = (e)=>{ if(e.target===m) m.remove(); };
+  const item = (sid, ico, lbl) => `<div onclick="document.getElementById('admin-more-modal').remove();nv('a',null,'${sid}');" style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:12px;margin-bottom:8px;cursor:pointer;font-size:14px;font-weight:800;"><span style="font-size:18px;">${ico}</span> ${lbl}</div>`;
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;padding:16px 20px 24px;animation:slideUp .3s ease-out;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:12px;">⋯ DAUGIAU</div>
+    ${item('a-analytics','📊','Analitika')}
+    ${item('a-users','👥','Vartotojai')}
+    ${item('a-clubs','🏢','Klubai')}
+    ${item('a-platform','⚙️','Platforma')}
+    ${item('a-prof','👤','Profilis')}
+  </div>`;
+  document.body.appendChild(m);
+}
+
+// 💡 Info apie admin portalą
+function openAdminInfo(){
+  const old = document.getElementById('admin-info-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id='admin-info-modal';
+  m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">👑 MISSION CONTROL</div>
+      <button onclick="document.getElementById('admin-info-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:18px 20px;font-size:13px;color:var(--text);line-height:1.7;">
+      Platformos valdymo centras.<br><br>
+      🏠 <b>Apžvalga</b> — skaitliukai, atsiliepimai, AI ataskaitos, gyva veikla.<br>
+      🚨 <b>Klaidos</b> — kliento klaidų telemetrija (mini-Sentry).<br>
+      💶 <b>Finansai</b> — pajamos, klubo bonusai, kainodara.<br>
+      📊 <b>Analitika</b> — KPI, funnel, klubų palyginimas.<br>
+      🤖 <b>AI studija</b> — ataskaitų peržiūra, kokybė, žinių bazė.<br>
+      👥 <b>Vartotojai</b> — paieška, support, GDPR.<br>
+      ⚙️ <b>Platforma</b> — globalūs nustatymai ir versijos.
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+// 🔔 ADMIN VARPELIS (pattern = klubo kh-*; dedup per _isSeen/_addSeen)
+const ADMIN_NOTIF_SK = { errors:'ans', purchases:'anp', feedback:'anf', reports:'anr' };
+let adminNotifTab = 'errors';
+let adminNotifications = null;
+let _adminNotifCacheTs = 0;
+
+function toggleAdminNotifications(){
+  const s = document.getElementById('ah-notif-section');
+  if(!s) return;
+  if (s.parentElement !== document.body) document.body.appendChild(s);
+  if (s.style.display==='none' || s.style.display===''){ s.style.display='flex'; loadAdminNotifications(); }
+  else { s.style.display='none'; }
+}
+
+function switchAdminNotifTab(tab){
+  adminNotifTab = tab;
+  document.querySelectorAll('#ah-notif-section .notif-tab').forEach(b=>{
+    const on = b.dataset.tab === tab;
+    b.style.background = on ? 'rgba(255,77,0,.15)' : 'transparent';
+    b.style.color = on ? '#FF8C00' : 'var(--mut)';
+    b.style.borderColor = on ? 'rgba(255,77,0,.4)' : 'var(--bdr)';
+  });
+  renderAdminNotifTab(tab);
+}
+
+function markAllAdminNotifRead(){
+  if (adminNotifications){
+    Object.keys(ADMIN_NOTIF_SK).forEach(tab=>{ (adminNotifications[tab]||[]).forEach(it=>_addSeen(ADMIN_NOTIF_SK[tab], it.id)); });
+  }
+  _updateAdminNotifCounts();
+  renderAdminNotifTab(adminNotifTab);
+  showToast('✓ Pažymėta','success');
+}
+
+async function _fetchAdminNotifications(force){
+  if (!force && adminNotifications && (Date.now() - _adminNotifCacheTs) < 8000) return adminNotifications;
+  const empty = { errors:[], purchases:[], feedback:[], reports:[] };
+  if (!currentUser){ adminNotifications = empty; return adminNotifications; }
+  const cutoff = new Date(Date.now() - 30*864e5).toISOString();
+  const safe = p => Promise.resolve(p).then(r => r, () => ({ data: [] }));
+  const [erR, puR, fbR, rpR] = await Promise.all([
+    safe(sb.from('client_errors').select('id, message, app_version, role, created_at').gte('created_at', cutoff).order('created_at',{ascending:false}).limit(30)),
+    safe(sb.from('purchases').select('id, item_type, plan, amount_eur, created_at').gte('created_at', cutoff).order('created_at',{ascending:false}).limit(30)),
+    safe(sb.from('feedback').select('id, type, name, role, message, created_at').gte('created_at', cutoff).order('created_at',{ascending:false}).limit(30)),
+    safe(sb.from('reports').select('id, status, type, created_at, kids(first_name, last_name)').in('status',['pending_review','error']).order('created_at',{ascending:false}).limit(20))
+  ]);
+  const tLbl = { report:'Diagnostika', plan:'Namų planas', homeplan:'Namų planas', summer:'Vasaros programa', subscription:'Prenumerata', bundle:'Rinkinys' };
+  adminNotifications = {
+    errors: (erR.data||[]).map(e => ({ id:'ce-'+e.id, icon:'🚨', title:(e.message||'Klaida').slice(0,70), sub:`${e.app_version||'?'} · ${e.role||'?'}`, ts:e.created_at })),
+    purchases: (puR.data||[]).map(p => ({ id:'pu-'+p.id, icon:'💶', title:`+${(+p.amount_eur||0).toFixed(2)} € · ${tLbl[p.item_type]||p.item_type||''}`, sub:p.plan||'', ts:p.created_at })),
+    feedback: (fbR.data||[]).map(f => ({ id:'fb-'+f.id, icon:f.type==='bug'?'🐞':'📨', title:`${f.name||'Vartotojas'} (${f.role||'?'})`, sub:(f.message||'').slice(0,60), ts:f.created_at })),
+    reports: (rpR.data||[]).map(r => ({ id:'rp-'+r.id, icon:r.status==='error'?'❌':'⏳', title:r.status==='error'?'AI klaida':'Laukia peržiūros', sub:`${tLbl[r.type]||r.type||''} · ${((r.kids?.first_name||'')+' '+(r.kids?.last_name||'')).trim()}`, ts:r.created_at }))
+  };
+  _adminNotifCacheTs = Date.now();
+  return adminNotifications;
+}
+
+function _adminUnseen(tab){ return (adminNotifications?.[tab]||[]).filter(it=>!_isSeen(ADMIN_NOTIF_SK[tab], it.id)); }
+
+function _updateAdminNotifCounts(){
+  let total = 0;
+  Object.keys(ADMIN_NOTIF_SK).forEach(tab=>{
+    const n = _adminUnseen(tab).length; total += n;
+    const el = document.getElementById('ah-notif-count-'+tab);
+    if (el) el.textContent = n ? `(${n})` : '';
+  });
+  const badge = document.getElementById('ah-notif-badge-count');
+  if (badge){ badge.textContent = total>99?'99+':total; badge.style.display = total?'flex':'none'; }
+  const dBadge = document.getElementById('adn-notif-badge');
+  if (dBadge){ dBadge.textContent = total>99?'99+':total; dBadge.classList.toggle('on', total>0); }
+}
+
+async function loadAdminNotifications(){
+  await _fetchAdminNotifications(false);
+  _updateAdminNotifCounts();
+  renderAdminNotifTab(adminNotifTab);
+}
+
+async function updateAdminNotifBadge(force){
+  try { await _fetchAdminNotifications(force); _updateAdminNotifCounts(); } catch(e){}
+}
+
+function renderAdminNotifTab(tab){
+  const list = document.getElementById('ah-notif-list'); if(!list) return;
+  const items = adminNotifications?.[tab] || [];
+  if (!items.length){ list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Pranešimų nėra 🧘</div>'; return; }
+  const sk = ADMIN_NOTIF_SK[tab];
+  list.innerHTML = items.map(it=>{
+    const fresh = !_isSeen(sk, it.id);
+    return `<div onclick="adminNotifClick('${tab}','${it.id}')" style="background:${fresh?'rgba(255,77,0,.07)':'var(--card)'};border:.5px solid ${fresh?'rgba(255,77,0,.3)':'var(--bdr)'};border-radius:12px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <div style="font-size:16px;flex-shrink:0;">${it.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:800;color:white;">${it.title}${fresh?' <span style="display:inline-block;width:7px;height:7px;background:var(--br);border-radius:50%;margin-left:4px;"></span>':''}</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.sub||''}</div>
+        <div style="font-size:9px;color:var(--mut);margin-top:1px;">${typeof _agoLT==='function'?_agoLT(it.ts):''}</div>
+      </div>
+      <div style="font-size:12px;color:var(--mut);flex-shrink:0;">›</div>
+    </div>`;
+  }).join('');
+}
+
+function adminNotifClick(tab, id){
+  _addSeen(ADMIN_NOTIF_SK[tab], id);
+  _updateAdminNotifCounts();
+  const target = tab==='errors' ? 'a-errors' : (tab==='purchases' ? 'a-fin' : 'a-main');
+  const s = document.getElementById('ah-notif-section'); if(s) s.style.display='none';
+  nv('a', null, target);
+}
+
+// 📡 ADMIN REALTIME — gyvi toast'ai + badge + veiklos srautas
+let _adminChannelsSubscribed = false;
+function subscribeAdminNotifications(){
+  if (_adminChannelsSubscribed || !currentUser) return;
+  _adminChannelsSubscribed = true;
+  const uid = currentUser.id;
+  try {
+    sb.channel('admin-feedback-'+uid)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'feedback' }, p => {
+        showToast(p.new?.type==='bug' ? '🐞 Naujas bug pranešimas' : '📨 Naujas atsiliepimas', 'success');
+        if (typeof loadAdminFeedback==='function') loadAdminFeedback();
+        updateAdminNotifBadge(true); loadAdminActivity();
+      }).subscribe();
+  } catch(e){}
+  try {
+    sb.channel('admin-purchases-'+uid)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'purchases' }, p => {
+        showToast(`💶 Naujas pirkimas: ${(+p.new?.amount_eur||0).toFixed(2)} €`, 'success');
+        updateAdminNotifBadge(true); loadAdminActivity();
+      }).subscribe();
+  } catch(e){}
+  try {
+    sb.channel('admin-reports-'+uid)
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'reports' }, p => {
+        if (p.new?.status === 'pending_review'){
+          showToast('🤖 AI ataskaita laukia peržiūros', 'success');
+          if (typeof loadAdminReports==='function') loadAdminReports();
+          updateAdminNotifBadge(true); loadAdminActivity();
+        }
+      }).subscribe();
+  } catch(e){}
+  try {
+    // client_errors lentelė atsiras Bloke B — iki tol kanalas tiesiog tylės
+    sb.channel('admin-errors-'+uid)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'client_errors' }, p => {
+        showToast('🚨 Nauja kliento klaida', 'error');
+        updateAdminNotifBadge(true);
+        if (typeof loadAdminErrors==='function') loadAdminErrors();
+      }).subscribe();
+  } catch(e){}
+}
+
+// 📰 GYVAS VEIKLOS SRAUTAS (a-recent-activity) — pirkimai + atsiliepimai + ataskaitos + naujos paskyros
+async function loadAdminActivity(){
+  const el = document.getElementById('a-recent-activity'); if(!el) return;
+  const safe = p => Promise.resolve(p).then(r => r, () => ({ data: [] }));
+  const weekAgo = new Date(Date.now() - 7*864e5).toISOString();
+  const [pu, fb, rp, pr] = await Promise.all([
+    safe(sb.from('purchases').select('id, item_type, plan, amount_eur, created_at').order('created_at',{ascending:false}).limit(10)),
+    safe(sb.from('feedback').select('id, type, name, role, created_at').order('created_at',{ascending:false}).limit(10)),
+    safe(sb.from('reports').select('id, status, type, created_at').in('status',['pending_review','done','error']).order('created_at',{ascending:false}).limit(10)),
+    safe(sb.from('profiles').select('id, first_name, role, created_at').gte('created_at', weekAgo).order('created_at',{ascending:false}).limit(10))
+  ]);
+  const tLbl = { report:'Diagnostika', plan:'Namų planas', homeplan:'Namų planas', summer:'Vasaros programa', subscription:'Prenumerata', bundle:'Rinkinys' };
+  const items = [];
+  (pu.data||[]).forEach(p=>items.push({ ts:p.created_at, icon:'💶', txt:`Pirkimas: ${tLbl[p.item_type]||p.item_type||'?'} · ${(+p.amount_eur||0).toFixed(2)} €` }));
+  (fb.data||[]).forEach(f=>items.push({ ts:f.created_at, icon:f.type==='bug'?'🐞':'📨', txt:`Atsiliepimas: ${f.name||f.role||'vartotojas'}` }));
+  (rp.data||[]).forEach(r=>{ const s = r.status==='pending_review'?'laukia peržiūros':(r.status==='error'?'KLAIDA':'paruošta'); items.push({ ts:r.created_at, icon:'🤖', txt:`AI ataskaita (${tLbl[r.type]||r.type||'?'}) — ${s}` }); });
+  (pr.data||[]).forEach(p=>items.push({ ts:p.created_at, icon:'🆕', txt:`Nauja paskyra: ${p.first_name||''} (${p.role||'?'})` }));
+  items.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  const top = items.slice(0, 25);
+  el.innerHTML = top.length ? top.map(i=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--bdr);">
+    <div style="font-size:15px;flex-shrink:0;">${i.icon}</div>
+    <div style="flex:1;min-width:0;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.txt}</div>
+    <div style="font-size:9px;color:var(--mut);flex-shrink:0;">${typeof _agoLT==='function'?_agoLT(i.ts):''}</div>
+  </div>`).join('') : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Veiklos dar nėra</div>';
+}
+
+// ════════════════════════════════════════
 // CREATE CLUB MODAL
 // ════════════════════════════════════════
 async function openCreateClub() {
@@ -26940,7 +27350,11 @@ async function submitNewClub() {
       // Net jei pending_invitations nesukūrė, klubas jau yra
     }
 
-    // 4. Sukuriame vartotoją per signUp su laikinu slaptažodžiu
+    // 🔑 Išsaugom ADMINO sesiją (signUp ją pakeistų į naują klubo adminą) + nuslopinam auth-change
+    window._admSess = (await sb.auth.getSession()).data.session;
+    window._suppressAuthChange = true;
+
+    // 4. Sukuriame vartotoją per signUp su laikinu slaptažodžiu (⚠️ auto-loginina — sesiją atkuriam žemiau)
     const tempPassword = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
     const { data: signUpData, error: signUpError } = await sb.auth.signUp({
       email: adminEmail,
@@ -26969,6 +27383,10 @@ async function submitNewClub() {
       showToast(`✅ Klubas sukurtas!\n\n📧 ${adminEmail}\nIšsiųstas aktyvavimo email'as`, 'success');
     }
 
+    // 🔑 Atkuriam admino sesiją PRIEŠ perkraunant admino duomenis
+    if (window._admSess){ try { await sb.auth.setSession({ access_token: window._admSess.access_token, refresh_token: window._admSess.refresh_token }); } catch(e){ console.warn('setSession restore', e); } }
+    window._suppressAuthChange = false;
+
     closeCreateClub();
     await loadAdminClubs();
     await loadAdminData();
@@ -26977,6 +27395,9 @@ async function submitNewClub() {
     console.error('submitNewClub error:', error);
     showToast('❌ Klaida: ' + (error.message || JSON.stringify(error)), 'error', 6000);
   } finally {
+    // Jei signUp metė klaidą — vis tiek atkuriam sesiją ir leidžiam auth-change
+    if (window._admSess){ try { await sb.auth.setSession({ access_token: window._admSess.access_token, refresh_token: window._admSess.refresh_token }); } catch(e){} window._admSess = null; }
+    window._suppressAuthChange = false;
     btn.disabled = false;
     btn.textContent = 'SUKURTI KLUBĄ';
   }
@@ -28016,62 +28437,56 @@ async function submitInviteTrainer() {
   btn.disabled = true;
   btn.textContent = 'SIUNČIAMA...';
 
+  let _savedSession = null;   // klubo sesija (signUp ją pakeistų į naujo trenerio)
+  let _ok = false;
   try {
+    // 0. Išsaugom SAVO (klubo) sesiją PRIEŠ signUp + nuslopinam auth-change
+    const { data: { session: _s } } = await sb.auth.getSession();
+    _savedSession = _s;
+    window._suppressAuthChange = true;
+
     // 1. Sukuriame pending invitation
     const { error: invError } = await sb.from('pending_invitations').insert({
-      email,
-      role: 'trainer',
-      invited_by: currentUser.id,
-      first_name: fname,
-      last_name: lname,
-      invited_by_club_id: currentClub.id,
-      status: 'pending'
+      email, role: 'trainer', invited_by: currentUser.id,
+      first_name: fname, last_name: lname, invited_by_club_id: currentClub.id, status: 'pending'
     });
+    if (invError) { console.error('Invitation error:', invError); throw invError; }
 
-    if (invError) {
-      console.error('Invitation error:', invError);
-      throw invError;
-    }
-
-    // 2. Sukuriame vartotoją per signUp su laikinu slaptažodžiu
+    // 2. Sukuriame vartotoją per signUp (⚠️ auto-loginina kaip naujas treneris — todėl sesiją atkuriam finally)
     const tempPassword = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
-    const { data: signUpData, error: signUpError } = await sb.auth.signUp({
-      email,
-      password: tempPassword,
-      options: {
-        emailRedirectTo: `${window.location.origin}/spobu/set-password.html`
-      }
+    const { error: signUpError } = await sb.auth.signUp({
+      email, password: tempPassword,
+      options: { emailRedirectTo: `${window.location.origin}/spobu/set-password.html` }
     });
 
     if (signUpError) {
-      // Jei vartotojas jau egzistuoja
       if (signUpError.message.includes('already') || signUpError.message.includes('exists')) {
-        await sb.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/spobu/set-password.html`
-        });
-        showToast(`✅ Kvietimas išsiųstas!\n\n${fname} ${lname} jau yra sistemoje, jam išsiųsta nauja prisijungimo nuoroda.`, 'success');
-      } else {
-        throw signUpError;
-      }
+        await sb.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/spobu/set-password.html` });
+        showToast(`✅ Kvietimas išsiųstas!\n\n${fname} ${lname} jau yra sistemoje — išsiųsta nauja prisijungimo nuoroda.`, 'success');
+      } else { throw signUpError; }
     } else {
-      // 3. Iškart siunčiame password reset
-      await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/spobu/set-password.html`
-      });
-      
+      await sb.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/spobu/set-password.html` });
       showToast(`✅ Kvietimas išsiųstas!\n\n📧 ${email}\nTreneris gaus aktyvavimo email'ą`, 'success');
     }
-
-    closeInviteTrainer();
-    await loadClubTrainers();
-    await loadClubData();
+    _ok = true;
 
   } catch (error) {
     console.error('submitInviteTrainer error:', error);
     showToast('❌ Klaida: ' + (error.message || JSON.stringify(error)), 'error', 6000);
   } finally {
+    // 🔑 ATKURIAM klubo sesiją (signUp ją pakeitė) PRIEŠ bet kokias klubo užklausas
+    if (_savedSession) {
+      try { await sb.auth.setSession({ access_token: _savedSession.access_token, refresh_token: _savedSession.refresh_token }); } catch(e){ console.warn('setSession restore', e); }
+    }
+    window._suppressAuthChange = false;
     btn.disabled = false;
     btn.textContent = 'SIŲSTI KVIETIMĄ';
+  }
+
+  // Perkraunam klubo duomenis TIK atkūrus sesiją (kad užklausos eitų klubo, ne trenerio vardu)
+  if (_ok) {
+    closeInviteTrainer();
+    try { await loadClubTrainers(); await loadClubData(); } catch(e){ console.warn('reload after invite', e); }
   }
 }
 
@@ -31079,7 +31494,7 @@ function nv(p,el,sid){
   });
 
   // 💻 DESKTOP nav sinchronizacija
-  document.querySelectorAll('#v-desktop-nav .vdn-item').forEach(a => {
+  document.querySelectorAll('#v-desktop-nav .vdn-item, #a-desktop-nav .vdn-item').forEach(a => {
     if (a.dataset.sid === sid) a.classList.add('on');
     else a.classList.remove('on');
   });
@@ -31127,6 +31542,14 @@ function nv(p,el,sid){
   if (sid === 'k-prof' && typeof loadClubSettings === 'function') {
     loadClubSettings();
   }
+  // 👑 ADMIN: ekranų loaderiai (Blokas A; B–H funkcijas pildys vėliau — typeof guard)
+  if (sid === 'a-main' && typeof loadAdminActivity === 'function') loadAdminActivity();
+  if (sid === 'a-errors' && typeof loadAdminErrors === 'function') loadAdminErrors();
+  if (sid === 'a-fin' && typeof loadAdminFinance === 'function') loadAdminFinance();
+  if (sid === 'a-analytics' && typeof loadAdminAnalytics === 'function') loadAdminAnalytics();
+  if (sid === 'a-ai' && typeof loadAdminAI === 'function') loadAdminAI();
+  if (sid === 'a-users' && typeof loadAdminUsers === 'function') loadAdminUsers();
+  if (sid === 'a-platform' && typeof loadAdminPlatform === 'function') loadAdminPlatform();
   // 👶 TĖVAI: naujų ekranų loaderiai (vaiko peržiūra)
   if (sid === 't-main' && typeof loadParentKidMain === 'function') loadParentKidMain();
   if (sid === 't-kar' && typeof loadParentKidCareer === 'function') loadParentKidCareer();
@@ -32229,6 +32652,11 @@ let _toastQueue = [];
 let _toastShowing = false;
 
 function showToast(msg, type='', duration=null, opts=null){
+  // 🔒 RLS klaidas (serverio „nėra prieigos") paverčiam draugišku pranešimu — nesvarbu kur atsirado
+  if (typeof msg === 'string' && /row-level security|violates[^]*policy|policy[^]*violat/i.test(msg)){
+    msg = '🔒 Neturi prieigos šiam veiksmui';
+    type = 'error';
+  }
   _toastQueue.push({ msg, type, duration, opts });
   if (!_toastShowing) _nextToast();
 }
