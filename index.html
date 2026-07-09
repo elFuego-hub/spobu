@@ -585,7 +585,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v340</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v341</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -10666,6 +10666,29 @@ function _compressImage(file, size = 320, quality = 0.82) {
   });
 }
 
+// 🏢 LOGO kompresija — SKIRTINGAI nei avataras: išsaugo PROPORCIJAS (be kvadratinio kropo),
+// didesnė raiška (512px ilgoji kraštinė) ir PNG (skaidrumas + ryškūs kraštai) — tinka share kortelėms.
+function _compressLogo(file, maxDim = 512) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));  // tik mažinam
+      const w = Math.max(1, Math.round(img.width*scale)), h = Math.max(1, Math.round(img.height*scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob nepavyko')), 'image/png');
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 // Vaikas pasirenka failą → suspaudžia → įkelia į Storage → įrašo kids.avatar_url
 async function uploadKidAvatar(inputEl) {
   try {
@@ -15664,6 +15687,21 @@ function _wrapTextCard(ctx, text, maxW){
   return lines;
 }
 
+// 🏢 Klubo logo → data URL (CORS-saugu Canvas eksportui; kešuota per URL)
+let _clubLogoDataCache = {};
+async function _getClubLogoDataUrl(logoUrl){
+  if (!logoUrl) return null;
+  if (_clubLogoDataCache[logoUrl]) return _clubLogoDataCache[logoUrl];
+  try {
+    const res = await fetch(logoUrl, { cache:'force-cache' });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const dataUrl = await new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(blob); });
+    _clubLogoDataCache[logoUrl] = dataUrl;
+    return dataUrl;
+  } catch(e){ return null; }
+}
+
 async function _drawEventCard(d){
   try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
   const cv = document.createElement('canvas'); cv.width = _CARD_W; cv.height = _CARD_H;
@@ -15684,6 +15722,15 @@ async function _drawEventCard(d){
   const spoW = x.measureText('SPO').width; x.fillStyle = accent; x.fillText('BU.', 72+spoW, 138);
   x.fillStyle = 'rgba(255,255,255,.85)'; x.font = '600 34px system-ui, sans-serif';
   x.fillText((d.club||'').toString().toUpperCase().slice(0,28), 72, 186);
+  // 🏢 Klubo logo — viršuje dešinėje, proporcingas (aukštis ~104px ant 1080px kortelės)
+  if (d.logo){
+    try {
+      const limg = await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=d.logo; });
+      const maxH=104, maxW=300; const sc=Math.min(maxH/limg.height, maxW/limg.width);
+      const lw=Math.round(limg.width*sc), lh=Math.round(limg.height*sc);
+      x.drawImage(limg, _CARD_W-72-lw, 104, lw, lh);
+    } catch(e){}
+  }
   // Ikona (centre)
   x.textAlign = 'center';
   x.font = '190px system-ui, sans-serif'; x.fillText(d.icon||'🥋', _CARD_W/2, 470);
@@ -15715,6 +15762,7 @@ async function _drawEventCard(d){
 
 async function _buildEventCardData(type, id){
   const club = currentClub?.name || 'KLUBAS';
+  const logo = await _getClubLogoDataUrl(currentClub?.logo_url);   // klubo logo → data URL (share kortelei)
   if (type === 'comp' || type === 'belt'){
     const { data: c } = await sb.from('competitions').select('*').eq('id', id).single();
     if (!c) return null;
@@ -15722,13 +15770,13 @@ async function _buildEventCardData(type, id){
     const results = rs || []; const total = results.length;
     if (type === 'belt'){
       const passed = results.filter(r => r.approval_status === 'approved').length;
-      return { club, icon:'🥋', typeLabel:'Diržų egzaminas', title:c.title, dateStr:formatDateLT(c.event_date), accent:'#C8A24B',
+      return { club, logo, icon:'🥋', typeLabel:'Diržų egzaminas', title:c.title, dateStr:formatDateLT(c.event_date), accent:'#C8A24B',
         stats:[{big:total,small:'Laikė'},{big:passed,small:'Išlaikė'}], extraLine: passed ? `${passed} nauji diržai užtarnauti! 🎉` : '' };
     }
     const appr = results.filter(r => r.approval_status === 'approved');
     const gg = appr.filter(r => r.placement===1).length, ss = appr.filter(r => r.placement===2).length, bb = appr.filter(r => r.placement===3).length;
     const medals = gg+ss+bb;
-    return { club, icon:'🥇', typeLabel:'Varžybos', title:c.title, dateStr:formatDateLT(c.event_date), accent:'#FF6A00',
+    return { club, logo, icon:'🥇', typeLabel:'Varžybos', title:c.title, dateStr:formatDateLT(c.event_date), accent:'#FF6A00',
       stats:[{big:total,small:'Dalyviai'},{big:medals,small:'Medaliai'}], extraLine: medals ? `🥇 ${gg}   🥈 ${ss}   🥉 ${bb}` : '' };
   }
   if (type === 'camps'){
@@ -15737,7 +15785,7 @@ async function _buildEventCardData(type, id){
     const { data: rs } = await sb.from('club_event_rsvp').select('status, attended').eq('event_id', id);
     const att = (rs||[]).filter(r => r.attended).length; const going = (rs||[]).filter(r => r.status !== 'not_going').length;
     const range = (c.ends_on && c.ends_on !== c.starts_on) ? `${formatDateLT(c.starts_on)} – ${formatDateLT(c.ends_on)}` : formatDateLT(c.starts_on);
-    return { club, icon:'⛺', typeLabel:'Stovykla', title:c.title, dateStr:range, accent:'#22C55E',
+    return { club, logo, icon:'⛺', typeLabel:'Stovykla', title:c.title, dateStr:range, accent:'#22C55E',
       stats:[{big: att||going, small: att?'Dalyvavo':'Dalyvaus'}], extraLine:'Ačiū visiems! 💪' };
   }
   if (type === 'gc'){
@@ -15753,7 +15801,7 @@ async function _buildEventCardData(type, id){
         podium = rows.slice(0,3).map((r,i)=>`${med[i]} ${r.g_name||'Grupė'}`).join('   ');
       }
     } catch(e){}
-    return { club, icon:'🏆', typeLabel:'Grupių iššūkis', title:c.title, dateStr: c.ends_on?formatDateLT(c.ends_on):'', accent:'#EAB308',
+    return { club, logo, icon:'🏆', typeLabel:'Grupių iššūkis', title:c.title, dateStr: c.ends_on?formatDateLT(c.ends_on):'', accent:'#EAB308',
       stats:[{big: total||'—', small: (typeof _gcMetricLabel==='function'?_gcMetricLabel(c):'Rezultatas')}], extraLine: podium };
   }
   return null;
@@ -25878,10 +25926,10 @@ async function uploadClubLogo(inputEl) {
     if (!file.type.startsWith('image/')) { showToast('❌ Pasirink nuotrauką', 'error'); return; }
     if (!currentClub?.id) { showToast('❌ Klubo info trūksta', 'error'); return; }
     showToast('📷 Įkeliama...', 'info');
-    const blob = await _compressImage(file);
-    const path = `club-${currentClub.id}.jpg`;
+    const blob = await _compressLogo(file);   // proporcinga + 512px + PNG (share kortelėms)
+    const path = `club-logo-${currentClub.id}.png`;
     const { error: upErr } = await sb.storage.from(KID_AVATAR_BUCKET)
-      .upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '3600' });
+      .upload(path, blob, { upsert: true, contentType: 'image/png', cacheControl: '3600' });
     if (upErr) { console.error('[club-logo] upload:', upErr); showToast('❌ Įkelti nepavyko: ' + upErr.message, 'error', 5000); return; }
     const { data: pub } = sb.storage.from(KID_AVATAR_BUCKET).getPublicUrl(path);
     const url = pub.publicUrl;
