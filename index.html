@@ -441,6 +441,7 @@ body.full-mobile-preview #a-desktop-nav, body.full-mobile-preview #a-statusbar {
   body.am.portal-a:not(.full-mobile-preview) #a-stats-grid > div > div:nth-child(3) { font-family: var(--amc-mono) !important; font-size: 10px !important; letter-spacing: 1.6px !important; color: #898781 !important; text-transform: uppercase; margin-top: 2px; }
   body.am.portal-a:not(.full-mobile-preview) #afin-kpis { grid-template-columns: repeat(4,1fr) !important; gap: 12px !important; }
   body.am.portal-a:not(.full-mobile-preview) #ana-kpis { grid-template-columns: repeat(4,1fr) !important; gap: 12px !important; }
+  body.am.portal-a:not(.full-mobile-preview) #aai-kpis { grid-template-columns: repeat(4,1fr) !important; gap: 12px !important; }
   /* Dashboard 2 kolonos */
   body.am.portal-a:not(.full-mobile-preview) #pa .adash { display: grid; grid-template-columns: 1.35fr 1fr; gap: 0 14px; align-items: start; }
   body.am.portal-a:not(.full-mobile-preview) #a-feedback-list { max-height: 420px !important; }
@@ -601,7 +602,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v347</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v348</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4258,7 +4259,32 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">🤖 AI STUDIJA</div></div>
   <div class="sa">
-    <div id="a-ai-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">AI ataskaitų studija</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas E)</div></div></div>
+    <div id="a-ai-content">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
+        <button class="aerr-f aai-f on" data-f="pending_review" onclick="setAaiFilter('pending_review')">⏳ Laukia</button>
+        <button class="aerr-f aai-f" data-f="error" onclick="setAaiFilter('error')">❌ Klaidos</button>
+        <button class="aerr-f aai-f" data-f="done" onclick="setAaiFilter('done')">✅ Patvirtintos</button>
+        <button class="aerr-f aai-f" data-f="rejected" onclick="setAaiFilter('rejected')">🚫 Atmestos</button>
+        <button class="aerr-f aai-f" data-f="all" onclick="setAaiFilter('all')">Visos</button>
+        <div style="flex:1;"></div>
+        <button class="aerr-tool" onclick="openAaiInsight()">🧠 Įžvalga</button>
+      </div>
+      <div id="aai-kpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;"></div>
+      <div class="adash">
+      <div class="adash-col">
+        <div class="st">REVIEW EILĖ</div>
+        <div id="aai-queue" style="padding:0 16px;"><div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
+      </div>
+      <div class="adash-col">
+        <div class="st">ĮVERTINIMŲ TAG'AI</div>
+        <div class="cd" id="aai-tags" style="padding:8px 14px;"></div>
+        <div class="st">A/B — VERSIJA · MODELIS · KAŠTAI</div>
+        <div class="cd" id="aai-ab" style="padding:8px 14px;"></div>
+        <div class="st">ŽINIŲ BAZĖ</div>
+        <div class="cd" id="aai-kb" style="padding:12px 14px;"></div>
+      </div>
+      </div>
+    </div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
@@ -28010,6 +28036,357 @@ function _anaBarChart(months, unit){
     bars += `<text x="${(i * slot + slot / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#898781">${m.lbl}</text>`;
   });
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:420px;display:block;"><line x1="0" y1="${H - bot}" x2="${W}" y2="${H - bot}" stroke="#2c2c2a" stroke-width="1"/>${bars}</svg>`;
+}
+
+// ════════════════════════════════════════
+// 🤖 AI STUDIJA (Blokas E) — review eilė (edit/reject/retry), kokybė, tag'ai, A/B, žinių bazė
+// (EF rašys prompt_version/usage_json + palaikys retry — žr. SERVERIO TODO SQL faile)
+// ════════════════════════════════════════
+let _aaiFilter = 'pending_review';
+let _aaiReports = null;
+let _aaiKbTab = 'knowledge';
+let _aaiKbRows = { knowledge: [], inserts: [] };
+const _aaiTypeLbl = { report: 'Diagnostika', plan: 'Namų planas', summer: 'Vasaros programa' };
+const _aaiEsc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+function setAaiFilter(f){
+  _aaiFilter = f;
+  document.querySelectorAll('.aai-f').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+  renderAaiQueue();
+}
+
+async function loadAdminAI(){
+  const kEl = document.getElementById('aai-kpis'); if (!kEl) return;
+  const safe = p => Promise.resolve(p).then(r => r, () => ({ data: null }));
+  const [rp, kn, ins] = await Promise.all([
+    safe(sb.from('reports').select('id, kid_id, status, type, created_at, reviewed_at, rating_up, rating_tags, rating_comment, prompt_version, model, usage_json, error_text, admin_note, kids(first_name, last_name)').order('created_at', { ascending: false }).limit(300)),
+    safe(sb.from('report_knowledge').select('id, topic, title, content, is_active, sort_order, source').order('topic').order('sort_order')),
+    safe(sb.from('report_inserts').select('id, kind, seq, title, content, source_url, is_active, source').order('kind').order('seq'))
+  ]);
+  _aaiReports = rp.data || [];
+  _aaiKbRows.knowledge = kn.data || [];
+  _aaiKbRows.inserts = ins.data || [];
+  renderAaiKpis(); renderAaiQueue(); renderAaiTags(); renderAaiAB(); renderAaiKb();
+}
+
+function renderAaiKpis(){
+  const el = document.getElementById('aai-kpis'); if (!el) return;
+  const all = _aaiReports || [];
+  const rated = all.filter(r => r.rating_up === true || r.rating_up === false);
+  const up = rated.filter(r => r.rating_up === true).length;
+  const upPct = rated.length ? Math.round(up / rated.length * 100) : null;
+  const pending = all.filter(r => r.status === 'pending_review').length;
+  const errPct = all.length ? Math.round(all.filter(r => r.status === 'error').length / all.length * 100) : 0;
+  const revTimes = all.filter(r => r.reviewed_at && r.created_at).map(r => (new Date(r.reviewed_at) - new Date(r.created_at)) / 36e5);
+  const avgRev = revTimes.length ? (revTimes.reduce((a, b) => a + b, 0) / revTimes.length) : null;
+  const tile = (v, l) => `<div class="cd" style="margin:0;padding:14px 16px;"><div style="font-size:26px;font-weight:650;color:#fff;letter-spacing:-.4px;">${v}</div><div class="aerr-meta" style="text-transform:uppercase;letter-spacing:1.2px;white-space:normal;">${l}</div></div>`;
+  el.innerHTML =
+    tile(upPct === null ? '—' : upPct + '%', `👍 iš įvertintų (${rated.length})`) +
+    tile(pending, 'Laukia peržiūros') +
+    tile(errPct + '%', 'Klaidų dalis') +
+    tile(avgRev === null ? '—' : avgRev.toFixed(1) + ' val.', 'Vid. laikas iki peržiūros');
+}
+
+function renderAaiQueue(){
+  const el = document.getElementById('aai-queue'); if (!el || !_aaiReports) return;
+  let rows = _aaiReports;
+  if (_aaiFilter !== 'all') rows = rows.filter(r => r.status === _aaiFilter);
+  rows = rows.slice(0, 50);
+  if (!rows.length){ el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Pagal šį filtrą ataskaitų nėra 🧘</div>'; return; }
+  el.innerHTML = rows.map(r => {
+    const name = `${r.kids?.first_name || ''} ${r.kids?.last_name || ''}`.trim() || 'Vaikas';
+    const hrs = (Date.now() - new Date(r.created_at).getTime()) / 36e5;
+    let chip = '';
+    if (r.status === 'pending_review') chip = hrs > 24 ? '<span class="aerr-st bad">⏰ VĖLUOJA</span>' : '<span class="aerr-st warn">⧗ LAUKIA</span>';
+    else if (r.status === 'error') chip = '<span class="aerr-st bad">❌ KLAIDA</span>';
+    else if (r.status === 'rejected') chip = '<span class="aerr-st bad">🚫 ATMESTA</span>';
+    else if (r.status === 'done') chip = `<span class="aerr-st ok">✅ ${r.rating_up === true ? '👍' : (r.rating_up === false ? '👎' : '')}</span>`;
+    else chip = '<span class="aerr-st warn">⚙️ GENERUOJAMA</span>';
+    const btns = [];
+    if (r.status !== 'error' && r.status !== 'pending' && r.status !== 'generating') btns.push(`<button class="aerr-tool" onclick="openAaiViewer('${r.id}')">👁️</button>`);
+    if (r.status === 'pending_review'){
+      btns.push(`<button class="aerr-tool" onclick="openAaiEdit('${r.id}')">✏️</button>`);
+      btns.push(`<button class="aerr-tool" style="color:#4ade4a;border-color:rgba(12,163,12,.35);" onclick="approveReport('${r.id}');setTimeout(loadAdminAI,900)">✅</button>`);
+      btns.push(`<button class="aerr-tool" style="color:#ff9c9c;border-color:rgba(208,59,59,.35);" onclick="aaiReject('${r.id}')">🚫</button>`);
+    }
+    if (r.status === 'error') btns.push(`<button class="aerr-tool" onclick="aaiRetry('${r.id}')">🔄 Retry</button>`);
+    if (r.status === 'rejected') btns.push(`<button class="aerr-tool" onclick="aaiUnreject('${r.id}')">↩️</button>`);
+    return `<div class="cd" style="margin:0 0 8px;padding:11px 14px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:700;color:white;">${name} <span class="aerr-meta" style="display:inline;">· ${_aaiTypeLbl[r.type] || r.type || '?'}</span></div>
+          <div class="aerr-meta">${new Date(r.created_at).toLocaleString('lt-LT')} · ${typeof _agoLT === 'function' ? _agoLT(r.created_at) : ''}${r.model ? ' · ' + r.model : ''}${r.prompt_version ? ' · ' + r.prompt_version : ''}${r.admin_note ? ' · 📝 ' + _aaiEsc(r.admin_note).slice(0, 40) : ''}</div>
+          ${r.status === 'error' && r.error_text ? `<div class="aerr-meta" style="color:#ff9c9c;">${_aaiEsc(r.error_text).slice(0, 100)}</div>` : ''}
+          ${r.rating_comment ? `<div class="aerr-meta" style="color:#c3c2b7;">💬 ${_aaiEsc(r.rating_comment).slice(0, 80)}</div>` : ''}
+        </div>
+        ${chip}
+        <div style="display:flex;gap:5px;flex-shrink:0;">${btns.join('')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openAaiViewer(id){
+  const { data: r, error } = await sb.from('reports').select('*, kids(first_name, last_name)').eq('id', id).single();
+  if (error || !r){ showToast('❌ Nepavyko užkrauti', 'error'); return; }
+  if (typeof openReportViewer === 'function') openReportViewer(r);
+}
+
+// ✏️ Redagavimas: per-key editorius (string → textarea; kita → JSON textarea)
+async function openAaiEdit(id){
+  const { data: r, error } = await sb.from('reports').select('id, type, report_json, admin_note').eq('id', id).single();
+  if (error || !r || !r.report_json){ showToast('❌ Ataskaita neturi turinio', 'error'); return; }
+  const old = document.getElementById('aai-edit-modal'); if (old) old.remove();
+  const fields = Object.keys(r.report_json).map(k => {
+    const v = r.report_json[k];
+    const isStr = typeof v === 'string';
+    const val = isStr ? v : JSON.stringify(v, null, 2);
+    return `<label class="lbl" style="margin-top:8px;">${_aaiEsc(k)}${isStr ? '' : ' (JSON)'}</label>
+      <textarea class="inp" data-key="${_aaiEsc(k)}" data-json="${isStr ? '0' : '1'}" rows="${Math.min(10, Math.max(3, Math.ceil(val.length / 90)))}" style="margin:0 0 4px;resize:vertical;font-size:12px;${isStr ? '' : 'font-family:ui-monospace,Consolas,monospace;'}">${_aaiEsc(val)}</textarea>`;
+  }).join('');
+  const m = document.createElement('div'); m.id = 'aai-edit-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
+  m.innerHTML = `<div style="width:100%;max-width:760px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:13.5px;font-weight:800;">✏️ Redaguoti ataskaitą (${_aaiTypeLbl[r.type] || r.type})</div>
+      <button onclick="document.getElementById('aai-edit-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:10px 18px;">${fields}
+      <label class="lbl" style="margin-top:10px;">ADMIN PASTABA (vidinė)</label>
+      <input class="inp" id="aaie-note" value="${_aaiEsc(r.admin_note || '')}" style="margin:0;">
+    </div>
+    <div style="padding:12px 18px;border-top:.5px solid var(--bdr);display:flex;gap:8px;">
+      <button class="aerr-tool" style="flex:1;" onclick="document.getElementById('aai-edit-modal').remove()">Atšaukti</button>
+      <button class="btn btng" style="flex:1;margin:0;" onclick="submitAaiEdit('${r.id}')">💾 Išsaugoti pakeitimus</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function submitAaiEdit(id){
+  const areas = document.querySelectorAll('#aai-edit-modal textarea[data-key]');
+  const obj = {};
+  for (const a of areas){
+    const k = a.dataset.key;
+    if (a.dataset.json === '1'){
+      try { obj[k] = JSON.parse(a.value); } catch(e){ showToast('❌ Blogas JSON lauke: ' + k, 'error'); return; }
+    } else obj[k] = a.value;
+  }
+  const note = document.getElementById('aaie-note')?.value?.trim() || null;
+  const { error } = await sb.from('reports').update({ report_json: obj, admin_note: note }).eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  showToast('💾 Ataskaita atnaujinta', 'success');
+  document.getElementById('aai-edit-modal')?.remove();
+  loadAdminAI();
+  if (typeof loadAdminReports === 'function') loadAdminReports();
+}
+
+async function aaiReject(id){
+  const reason = prompt('Atmetimo priežastis (vidinė pastaba):');
+  if (reason === null) return;
+  const { error } = await sb.from('reports').update({ status: 'rejected', admin_note: reason || 'Atmesta', reviewed_at: new Date().toISOString(), reviewed_by: currentProfile?.id }).eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  showToast('🚫 Atmesta (tėvui liks „ruošiama")', 'success');
+  loadAdminAI();
+  if (typeof loadAdminReports === 'function') loadAdminReports();
+}
+
+async function aaiRetry(id){
+  if (!confirm('Pažymėti RETRY?\n\nStatusas → pending. EF pakartotinį generavimą reikia įjungti pagal SERVERIO TODO (server-admin-ai-studija.sql).')) return;
+  const { error } = await sb.from('reports').update({ status: 'pending', error_text: null, admin_note: 'RETRY ' + new Date().toISOString().slice(0, 16) }).eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  showToast('🔄 Pažymėta RETRY', 'success');
+  loadAdminAI();
+}
+
+async function aaiUnreject(id){
+  const { error } = await sb.from('reports').update({ status: 'pending_review', admin_note: null }).eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  showToast('↩️ Grąžinta į peržiūros eilę', 'success');
+  loadAdminAI();
+}
+
+function renderAaiTags(){
+  const el = document.getElementById('aai-tags'); if (!el) return;
+  const rated = (_aaiReports || []).filter(r => r.rating_up === true || r.rating_up === false);
+  if (!rated.length){ el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Įvertinimų dar nėra</div>'; return; }
+  const cnt = (rows) => { const m = {}; rows.forEach(r => (r.rating_tags || []).forEach(t => { m[t] = (m[t] || 0) + 1; })); return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 8); };
+  const neg = cnt(rated.filter(r => r.rating_up === false));
+  const pos = cnt(rated.filter(r => r.rating_up === true));
+  const row = (t, c, col) => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bdr);font-size:11.5px;"><span style="color:${col};">${_aaiEsc(t)}</span><b>${c}</b></div>`;
+  el.innerHTML =
+    `<div class="aerr-meta" style="margin-bottom:4px;">👎 KO TRŪKO (AI mokymo žemėlapis)</div>` +
+    (neg.length ? neg.map(([t, c]) => row(t, c, '#ff9c9c')).join('') : '<div style="padding:6px 0;color:var(--mut);font-size:11px;">Neigiamų nėra 🎉</div>') +
+    `<div class="aerr-meta" style="margin:10px 0 4px;">👍 KAS PATIKO</div>` +
+    (pos.length ? pos.map(([t, c]) => row(t, c, '#4ade4a')).join('') : '<div style="padding:6px 0;color:var(--mut);font-size:11px;">—</div>');
+}
+
+function renderAaiAB(){
+  const el = document.getElementById('aai-ab'); if (!el) return;
+  const rated = (_aaiReports || []).filter(r => r.rating_up === true || r.rating_up === false);
+  const grp = (key) => {
+    const m = {};
+    rated.forEach(r => { const k = r[key] || '—'; if (!m[k]) m[k] = { n: 0, up: 0 }; m[k].n++; if (r.rating_up) m[k].up++; });
+    return Object.entries(m).sort((a, b) => b[1].n - a[1].n);
+  };
+  const tbl = (title, rows) => `<div class="aerr-meta" style="margin:6px 0 3px;">${title}</div>` +
+    (rows.length ? rows.map(([k, v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:.5px solid var(--bdr);font-size:11.5px;"><span>${_aaiEsc(k)}</span><span><b>${v.n ? Math.round(v.up / v.n * 100) : 0}% 👍</b> <span class="aerr-meta" style="display:inline;">· ${v.n} vnt.</span></span></div>`).join('') : '<div style="color:var(--mut);font-size:11px;padding:4px 0;">—</div>');
+  const withUsage = (_aaiReports || []).filter(r => r.usage_json && (r.usage_json.input_tokens || r.usage_json.output_tokens));
+  let cost = '<div class="aerr-meta" style="margin-top:8px;">Kaštai: — (EF dar nerašo usage_json — žr. SERVERIO TODO)</div>';
+  if (withUsage.length){
+    const ain = withUsage.reduce((s, r) => s + (+r.usage_json.input_tokens || 0), 0) / withUsage.length;
+    const aout = withUsage.reduce((s, r) => s + (+r.usage_json.output_tokens || 0), 0) / withUsage.length;
+    cost = `<div class="aerr-meta" style="margin-top:8px;">Vid. tokenai/ataskaitai: ${Math.round(ain)} in · ${Math.round(aout)} out (${withUsage.length} vnt.)</div>`;
+  }
+  const hasVer = rated.some(r => r.prompt_version);
+  el.innerHTML = tbl('PAGAL PROMPT VERSIJĄ' + (hasVer ? '' : ' (EF dar nerašo)'), grp('prompt_version')) + tbl('PAGAL MODELĮ', grp('model')) + cost;
+}
+
+// ── Žinių bazė: report_knowledge + report_inserts CRUD ──
+function switchAaiKbTab(t){ _aaiKbTab = t; renderAaiKb(); }
+
+function renderAaiKb(){
+  const el = document.getElementById('aai-kb'); if (!el) return;
+  const kn = _aaiKbRows.knowledge || [], ins = _aaiKbRows.inserts || [];
+  const tab = (id, lbl, n) => `<button class="aerr-f ${_aaiKbTab === id ? 'on' : ''}" onclick="switchAaiKbTab('${id}')" style="padding:5px 10px;font-size:10.5px;">${lbl} <span style="opacity:.7;">${n}</span></button>`;
+  let rows = '';
+  if (_aaiKbTab === 'knowledge'){
+    rows = kn.length ? kn.map(r => `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);">
+      <span class="aerr-led ${r.is_active ? 'ok' : ''}" style="border-radius:50%;"></span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">[${_aaiEsc(r.topic)}] ${_aaiEsc(r.title || '(be pavadinimo)')}</div>
+        <div class="aerr-meta">${_aaiEsc((r.content || '').slice(0, 70))}…</div>
+      </div>
+      <button class="aerr-tool" style="padding:4px 8px;" onclick="openAaiKbEdit('knowledge','${r.id}')">✏️</button>
+      <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" onclick="deleteAaiKb('knowledge','${r.id}')">🗑️</button>
+    </div>`).join('') : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:11px;">Tuščia</div>';
+  } else {
+    rows = ins.length ? ins.map(r => `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);">
+      <span class="aerr-led ${r.is_active ? 'ok' : ''}" style="border-radius:50%;"></span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">[${_aaiEsc(r.kind)} #${r.seq}] ${_aaiEsc(r.title || '')}</div>
+        <div class="aerr-meta">${_aaiEsc((r.content || '').slice(0, 70))}…</div>
+      </div>
+      <button class="aerr-tool" style="padding:4px 8px;" onclick="openAaiKbEdit('inserts','${r.id}')">✏️</button>
+      <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" onclick="deleteAaiKb('inserts','${r.id}')">🗑️</button>
+    </div>`).join('') : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:11px;">Tuščia</div>';
+  }
+  el.innerHTML = `<div style="display:flex;gap:5px;align-items:center;margin-bottom:8px;">
+    ${tab('knowledge', '📚 Žinios', kn.length)}${tab('inserts', '🧩 Priedai', ins.length)}
+    <div style="flex:1;"></div>
+    <button class="aerr-tool" style="padding:4px 9px;" onclick="openAaiKbEdit('${_aaiKbTab}', null)">➕ Naujas</button>
+  </div>
+  <div style="max-height:340px;overflow-y:auto;">${rows}</div>
+  <div class="aerr-meta" style="margin-top:6px;white-space:normal;">Pakeitimai galioja kitai generacijai iškart (EF skaito iš DB).</div>`;
+}
+
+function openAaiKbEdit(type, id){
+  const row = id ? (_aaiKbRows[type] || []).find(x => x.id === id) : null;
+  const r = row || (type === 'knowledge'
+    ? { topic: 'bendra', title: '', content: '', sort_order: 0, is_active: true }
+    : { kind: 'diagnostika_sveikata', seq: 1, title: '', content: '', source_url: '', is_active: true });
+  const old = document.getElementById('aai-kb-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'aai-kb-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:center;justify-content:center;padding:20px;';
+  const head = type === 'knowledge'
+    ? `<label class="lbl">TEMA</label>
+       <select class="inp" id="kb-f1" style="margin-bottom:8px;">${['technika','augimas','mityba','rengimas','bendra'].map(t => `<option ${r.topic === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+       <label class="lbl">RIKIAVIMAS (sort_order)</label>
+       <input class="inp" id="kb-f2" type="number" value="${r.sort_order || 0}" style="margin-bottom:8px;">`
+    : `<label class="lbl">RŪŠIS (kind)</label>
+       <select class="inp" id="kb-f1" style="margin-bottom:8px;">${['diagnostika_sveikata','planas_kovotojai','planas_kultura','vasara_motyvacija'].map(t => `<option ${r.kind === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+       <label class="lbl">EILĖS NR. (seq — unikalus rūšiai)</label>
+       <input class="inp" id="kb-f2" type="number" min="1" value="${r.seq || 1}" style="margin-bottom:8px;">
+       <label class="lbl">YOUTUBE NUORODA (source_url)</label>
+       <input class="inp" id="kb-f3" value="${_aaiEsc(r.source_url || '')}" style="margin-bottom:8px;">`;
+  m.innerHTML = `<div style="width:100%;max-width:620px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:13.5px;font-weight:800;">${id ? '✏️ Redaguoti' : '➕ Naujas'} · ${type === 'knowledge' ? '📚 Žinios' : '🧩 Priedas'}</div>
+      <button onclick="document.getElementById('aai-kb-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:12px 18px;">
+      ${head}
+      <label class="lbl">PAVADINIMAS</label>
+      <input class="inp" id="kb-title" value="${_aaiEsc(r.title || '')}" style="margin-bottom:8px;">
+      <label class="lbl">TURINYS *</label>
+      <textarea class="inp" id="kb-content" rows="8" style="margin-bottom:8px;resize:vertical;font-size:12px;">${_aaiEsc(r.content || '')}</textarea>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;"><input type="checkbox" id="kb-active" ${r.is_active ? 'checked' : ''}> Aktyvus (naudojamas generacijoje)</label>
+    </div>
+    <div style="padding:12px 18px;border-top:.5px solid var(--bdr);display:flex;gap:8px;">
+      <button class="aerr-tool" style="flex:1;" onclick="document.getElementById('aai-kb-modal').remove()">Atšaukti</button>
+      <button class="btn btng" style="flex:1;margin:0;" onclick="submitAaiKb('${type}', ${id ? `'${id}'` : 'null'})">💾 Išsaugoti</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function submitAaiKb(type, id){
+  const content = document.getElementById('kb-content')?.value?.trim();
+  if (!content){ showToast('❌ Turinys privalomas', 'error'); return; }
+  const title = document.getElementById('kb-title')?.value?.trim() || null;
+  const active = !!document.getElementById('kb-active')?.checked;
+  let payload;
+  if (type === 'knowledge'){
+    payload = { topic: document.getElementById('kb-f1').value, sort_order: parseInt(document.getElementById('kb-f2').value, 10) || 0, title, content, is_active: active, updated_at: new Date().toISOString() };
+  } else {
+    payload = { kind: document.getElementById('kb-f1').value, seq: parseInt(document.getElementById('kb-f2').value, 10) || 1, source_url: document.getElementById('kb-f3')?.value?.trim() || null, title, content, is_active: active, updated_at: new Date().toISOString() };
+  }
+  const tbl = type === 'knowledge' ? 'report_knowledge' : 'report_inserts';
+  const res = id ? await sb.from(tbl).update(payload).eq('id', id) : await sb.from(tbl).insert(payload);
+  if (res.error){ showToast('❌ ' + res.error.message, 'error'); return; }
+  showToast('💾 Išsaugota', 'success');
+  document.getElementById('aai-kb-modal')?.remove();
+  loadAdminAI();
+}
+
+async function deleteAaiKb(type, id){
+  if (!confirm('Ištrinti šį žinių bazės įrašą?')) return;
+  const tbl = type === 'knowledge' ? 'report_knowledge' : 'report_inserts';
+  const { error } = await sb.from(tbl).delete().eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  showToast('🗑️ Ištrinta', 'success');
+  loadAdminAI();
+}
+
+// 🧠 Įžvalga: neigiamų įvertinimų suvestinė → tekstas į iškarpinę (analizei su Claude)
+function openAaiInsight(){
+  const cutoff = Date.now() - 60 * 864e5;
+  const rated = (_aaiReports || []).filter(r => (r.rating_up === true || r.rating_up === false) && new Date(r.created_at).getTime() > cutoff);
+  const neg = rated.filter(r => r.rating_up === false);
+  const tagCnt = {};
+  neg.forEach(r => (r.rating_tags || []).forEach(t => { tagCnt[t] = (tagCnt[t] || 0) + 1; }));
+  const lines = [];
+  lines.push('SPOBU AI ataskaitų kokybės analizė (paskutinės 60 d.)');
+  lines.push(`Įvertinta: ${rated.length}, iš jų neigiamai: ${neg.length} (${rated.length ? Math.round(neg.length / rated.length * 100) : 0}%).`);
+  lines.push('');
+  lines.push('Neigiamų įvertinimų tag\'ai:');
+  Object.entries(tagCnt).sort((a, b) => b[1] - a[1]).forEach(([t, c]) => lines.push(`- ${t}: ${c}`));
+  lines.push('');
+  lines.push('Neigiami komentarai:');
+  neg.filter(r => r.rating_comment).forEach(r => lines.push(`- [${_aaiTypeLbl[r.type] || r.type}] "${r.rating_comment}"`));
+  lines.push('');
+  lines.push('UŽDUOTIS: išanalizuok, ko tėvams trūksta SPOBU AI ataskaitose, ir pasiūlyk 5 konkrečius');
+  lines.push('report_knowledge žinių bazės papildymus (tema + pavadinimas + turinys lietuviškai) bei');
+  lines.push('2 prompt\'o pakeitimus, kurie labiausiai pagerintų 👍 dalį.');
+  const txt = lines.join('\n');
+  const old = document.getElementById('aai-insight-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'aai-insight-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:640px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:13.5px;font-weight:800;">🧠 Kokybės įžvalgos promptas</div>
+      <button onclick="document.getElementById('aai-insight-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:12px 18px;">
+      <textarea id="aai-insight-txt" class="inp" rows="16" readonly style="margin:0;font-size:11.5px;font-family:ui-monospace,Consolas,monospace;resize:vertical;">${_aaiEsc(txt)}</textarea>
+      <div class="aerr-meta" style="margin-top:6px;white-space:normal;">Nukopijuok į Claude — gausi žinių bazės papildymo pasiūlymus. Patvirtintus įrašus pridėk per „Žinių bazė → ➕ Naujas".</div>
+    </div>
+    <div style="padding:12px 18px;border-top:.5px solid var(--bdr);">
+      <button class="btn btng" style="width:100%;margin:0;" onclick="(navigator.clipboard?navigator.clipboard.writeText(document.getElementById('aai-insight-txt').value).then(()=>showToast('📋 Nukopijuota','success')):showToast('Pažymėk ir kopijuok ranka','error'))">📋 Kopijuoti</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
 }
 
 // ════════════════════════════════════════
