@@ -585,7 +585,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v341</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v343</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -20421,119 +20421,37 @@ async function getFilteredKidEntries(scoreSource, scoreField) {
 
 async function _getFilteredKidEntriesUncached(scoreSource, scoreField) {
   // scoreSource: 'total_exp' | 'kid_records' | 'challenge_submissions' | 'competition_results'
-  
-  // 1. Pirma gauti profilius (klubo arba visus)
-  let userIds = null;
-  
-  if (statFilters.scope === 'club' && currentProfile?.club_id) {
-    const { data: clubProfiles } = await sb.from('profiles')
-      .select('id')
-      .eq('club_id', currentProfile.club_id);
-    
-    userIds = (clubProfiles || []).map(p => p.id);
-    
-    if (userIds.length === 0) {
-      console.warn('Klube nėra profilių');
-      return [];
-    }
-  }
-  
-  // 2. Gauti vaikus
-  let kidsQuery = sb.from('kids')
-    .select('id, first_name, last_name, gender, birth_date, kyu, weight_range, total_exp, is_anonymous, user_id, avatar_url')
-    .eq('approval_status', 'approved');
-  
-  if (userIds) {
-    kidsQuery = kidsQuery.in('user_id', userIds);
-  }
-  
-  const { data: allKids, error } = await kidsQuery;
-  
+  // 🚀 Serverio RPC leaderboard_entries: filtruoja + sumuoja + ANONIMIZUOJA serveryje.
+  //    Anksčiau traukdavo VISŲ vaikų PII (last_name, birth_date, weight_range) į klientą ir
+  //    filtruodavo JS'e → K-61 GDPR nutekėjimas + 4× pilni kids skenai. Dabar 1 saugus kvietimas.
+  const g = AGE_GROUPS.find(x => x.id === statFilters.ageGroup) || AGE_GROUPS[0];
+  const clubId = (statFilters.scope === 'club' && currentProfile?.club_id) ? currentProfile.club_id : null;
+  const seasonFrom = (statSeasonFilter === 'season' && scoreSource !== 'total_exp')
+    ? getCurrentSeason().start.toISOString() : null;
+
+  const { data, error } = await sb.rpc('leaderboard_entries', {
+    p_scope_club_id: clubId,
+    p_score_source: scoreSource,
+    p_gender: statFilters.gender || 'all',
+    p_age_min: g.min,
+    p_age_max: g.max,
+    p_weight: statFilters.weight || 'all',
+    p_skill: statFilters.skillId || null,
+    p_season_from: seasonFrom
+  });
+
   if (error) {
-    console.error('getFilteredKidEntries kids query:', error);
+    console.error('leaderboard_entries RPC:', error);
     return [];
   }
-  
-  if (!allKids || allKids.length === 0) {
-    console.warn('Nėra vaikų - gal approval_status filter? gal user_ids tušti?', { 
-      userIdsCount: userIds?.length, 
-      scope: statFilters.scope 
-    });
-    return [];
-  }
-  
-  console.log('🔍 getFilteredKidEntries:', { 
-    scoreSource,
-    totalKids: allKids.length, 
-    scope: statFilters.scope,
-    filters: statFilters 
-  });
-  
-  // 3. Filtruoti pagal lytį, amžių, svorį
-  const filteredKids = allKids.filter(k => {
-    if (statFilters.gender !== 'all' && k.gender !== statFilters.gender) return false;
-    if (!inAgeGroup(k.birth_date, statFilters.ageGroup)) return false;
-    if (statFilters.weight !== 'all' && k.weight_range !== statFilters.weight) return false;
-    return true;
-  });
-  
-  if (filteredKids.length === 0) return [];
-  
-  // 4. Apskaičiuoti score kiekvienam pagal scoreSource
-  if (scoreSource === 'total_exp') {
-    return filteredKids.map(k => ({
-      kidId: k.id,
-      name: k.is_anonymous ? 'Anonimas' : `${k.first_name} ${k.last_name?.[0] || ''}.`,
-      kyu: k.kyu,
-      score: k.total_exp || 0,
-      isAnonymous: k.is_anonymous,
-      avatarUrl: k.is_anonymous ? null : (k.avatar_url || null)
-    }));
-  }
-  
-  // Kitos scoreSources reikalauja papildomas užklausų
-  const kidIds = filteredKids.map(k => k.id);
-  let scoresMap = {};
-  
-  if (scoreSource === 'kid_records') {
-    let q = sb.from('kid_records').select('kid_id, category_id, category_exp, updated_at').in('kid_id', kidIds);
-    if (statFilters.skillId) q = q.eq('category_id', statFilters.skillId);
-    const { data: records } = await q;
-    
-    const filtered = filterBySeasonFilter(records || [], 'updated_at');
-    filtered.forEach(r => {
-      scoresMap[r.kid_id] = (scoresMap[r.kid_id] || 0) + (r.category_exp || 0);
-    });
-  } else if (scoreSource === 'challenge_submissions') {
-    const { data: subs } = await sb.from('challenge_submissions')
-      .select('kid_id, exp_gain, reviewed_at')
-      .in('kid_id', kidIds)
-      .eq('status', 'approved');
-    
-    const filtered = filterBySeasonFilter(subs || [], 'reviewed_at');
-    filtered.forEach(r => {
-      scoresMap[r.kid_id] = (scoresMap[r.kid_id] || 0) + (r.exp_gain || 0);
-    });
-  } else if (scoreSource === 'competition_results') {
-    const { data: results } = await sb.from('competition_results')
-      .select('kid_id, exp_gained, approved_at')
-      .in('kid_id', kidIds)
-      .eq('approval_status', 'approved');
-    
-    const filtered = filterBySeasonFilter(results || [], 'approved_at');
-    filtered.forEach(r => {
-      scoresMap[r.kid_id] = (scoresMap[r.kid_id] || 0) + (r.exp_gained || 0);
-    });
-  }
-  
-  // 5. Suformuoti entries (paliekam visus, net su 0 - kad vaikas matytų savo poziciją)
-  return filteredKids.map(k => ({
-    kidId: k.id,
-    name: k.is_anonymous ? 'Anonimas' : `${k.first_name} ${k.last_name?.[0] || ''}.`,
-    kyu: k.kyu,
-    score: scoresMap[k.id] || 0,
-    isAnonymous: k.is_anonymous,
-    avatarUrl: k.is_anonymous ? null : (k.avatar_url || null)
+
+  return (data || []).map(r => ({
+    kidId: r.kid_id,
+    name: r.name,
+    kyu: r.kyu,
+    score: Number(r.score) || 0,
+    isAnonymous: r.is_anonymous,
+    avatarUrl: r.avatar_url || null
   }));
 }
 
@@ -32067,6 +31985,16 @@ async function showMissedEvents() {
 
     if (events.length === 0) return;
 
+    // 🚀 N+1 fix: iš anksto surenkam VISŲ pratimų vardus vienu užklausimu (vietoj po vieną cikle)
+    const _exIds = [...new Set(events.filter(e => e.type === 'exercise' && e.data?.exercise_id).map(e => e.data.exercise_id))];
+    const _exNameMap = {};
+    if (_exIds.length) {
+      try {
+        const { data: _exRows } = await sb.from('exercises').select('id, name').in('id', _exIds);
+        (_exRows || []).forEach(x => { _exNameMap[x.id] = x.name; });
+      } catch (_e) {}
+    }
+
     // Parodyti per toast EILĘ (vienas po kito) STANDARTINIU stiliumi (kaip gyvi pranešimai).
     // Eilė pati išdėsto pranešimus laike + paleidžia konfeti/garsą sinchroniškai (be lago).
     for (let i = 0; i < events.length; i++) {
@@ -32078,11 +32006,7 @@ async function showMissedEvents() {
       } else if (ev.type === 'competition') {
         // ⛔ Žalio NEBERODOM — varžybų medalio/dalyvavimo šventę parodo detectNewMedals (žemiau, atsibudus)
       } else if (ev.type === 'exercise') {
-        let exName = 'Pratimas';
-        try {
-          const { data: ex } = await sb.from('exercises').select('name').eq('id', ev.data.exercise_id).single();
-          exName = ex?.name || 'Pratimas';
-        } catch (_e) {}
+        const exName = _exNameMap[ev.data.exercise_id] || 'Pratimas';
         showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
       } else if (ev.type === 'duel') {
         const won = ev.data.winner_id === kidId;
