@@ -602,7 +602,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v348</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v349</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4300,7 +4300,26 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">👥 VARTOTOJAI</div></div>
   <div class="sa">
-    <div id="a-users-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">Vartotojai ir support</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas F)</div></div></div>
+    <div id="a-users-content">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
+        <input class="inp" id="au-search" placeholder="🔎 Vardas..." style="margin:0;flex:1;min-width:150px;max-width:260px;padding:8px 11px;" oninput="renderAdminUsers()">
+        <button class="aerr-f au-f on" data-f="all" onclick="setAuFilter('all')">Visi</button>
+        <button class="aerr-f au-f" data-f="parent" onclick="setAuFilter('parent')">Tėvai</button>
+        <button class="aerr-f au-f" data-f="trainer" onclick="setAuFilter('trainer')">Treneriai</button>
+        <button class="aerr-f au-f" data-f="kid" onclick="setAuFilter('kid')">Vaikai</button>
+        <button class="aerr-f au-f" data-f="club_admin" onclick="setAuFilter('club_admin')">Klubai</button>
+      </div>
+      <div class="adash">
+      <div class="adash-col">
+        <div class="st">VARTOTOJAI <span id="au-count" class="aerr-meta" style="display:inline;"></span></div>
+        <div id="au-list" style="padding:0 16px;"><div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
+      </div>
+      <div class="adash-col">
+        <div class="st">SUPPORT — ATSILIEPIMAI</div>
+        <div class="cd" id="au-feedback" style="padding:8px 14px;"></div>
+      </div>
+      </div>
+    </div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
@@ -28387,6 +28406,242 @@ function openAaiInsight(){
     </div>
   </div>`;
   document.body.appendChild(m);
+}
+
+// ════════════════════════════════════════
+// 👥 VARTOTOJAI + SUPPORT + GDPR (Blokas F)
+// (vartotojo pusės „Mano žinutės" — bendro kodo etapas; čia admin valdymas)
+// ════════════════════════════════════════
+let _auRows = null;
+let _auFilter = 'all';
+let _auClubs = [];
+let _auFeedback = [];
+
+// Admin veiksmų auditas (admin_actions) — tyliai, nekritiška
+async function logAdminAction(action, targetType, targetId, details){
+  try { await sb.from('admin_actions').insert({ actor: currentUser?.id || null, action, target_type: targetType || null, target_id: targetId != null ? String(targetId) : null, details: details || null }); } catch(e){}
+}
+
+function setAuFilter(f){
+  _auFilter = f;
+  document.querySelectorAll('.au-f').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+  renderAdminUsers();
+}
+
+async function loadAdminUsers(){
+  const el = document.getElementById('au-list'); if (!el) return;
+  const safe = p => Promise.resolve(p).then(r => r, () => ({ data: null }));
+  const [pr, cl, fb] = await Promise.all([
+    safe(sb.from('profiles').select('id, first_name, last_name, role, status, club_id, created_at').order('created_at', { ascending: false }).limit(1000)),
+    safe(sb.from('clubs').select('id, name')),
+    safe(sb.from('feedback').select('id, user_id, type, name, role, message, kid_name, app_version, status, admin_reply, replied_at, created_at').order('created_at', { ascending: false }).limit(50))
+  ]);
+  _auRows = pr.data || [];
+  _auClubs = cl.data || [];
+  _auFeedback = fb.data || [];
+  renderAdminUsers();
+  renderAuFeedback();
+}
+
+const _auRoleLbl = { parent: ['TĖVAS', '#3987e5'], trainer: ['TRENERIS', '#199e70'], kid: ['VAIKAS', '#FF8C00'], club_admin: ['KLUBAS', '#9085e9'], admin: ['ADMIN', '#e0c341'] };
+
+function renderAdminUsers(){
+  const el = document.getElementById('au-list'); if (!el || !_auRows) return;
+  const q = (document.getElementById('au-search')?.value || '').trim().toLowerCase();
+  let rows = _auRows;
+  if (_auFilter !== 'all') rows = rows.filter(r => r.role === _auFilter);
+  if (q) rows = rows.filter(r => (`${r.first_name || ''} ${r.last_name || ''}`).toLowerCase().includes(q));
+  const cnt = document.getElementById('au-count'); if (cnt) cnt.textContent = `(${rows.length})`;
+  rows = rows.slice(0, 60);
+  if (!rows.length){ el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Nieko nerasta</div>'; return; }
+  const cName = {}; _auClubs.forEach(c => cName[c.id] = c.name);
+  el.innerHTML = rows.map(r => {
+    const rl = _auRoleLbl[r.role] || [r.role || '?', '#898781'];
+    const st = r.status === 'active' ? ['AKTYVUS', 'ok'] : (r.status === 'suspended' ? ['SUSTABDYTAS', 'bad'] : [(r.status || 'laukia').toUpperCase(), 'warn']);
+    return `<div class="cd" onclick="openAdminUserCard('${r.id}')" style="margin:0 0 8px;padding:10px 14px;cursor:pointer;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:700;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(r.first_name || '') + ' ' + (r.last_name || '')}</div>
+          <div class="aerr-meta"><span style="color:${rl[1]};">${rl[0]}</span> · ${cName[r.club_id] || 'be klubo'} · ${typeof _agoLT === 'function' ? _agoLT(r.created_at) : ''}</div>
+        </div>
+        <span class="aerr-st ${st[1]}">${st[0]}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// 🪪 Kliento kortelė
+async function openAdminUserCard(id){
+  const p = (_auRows || []).find(x => x.id === id);
+  if (!p){ showToast('❌ Nerastas', 'error'); return; }
+  const safe = q => Promise.resolve(q).then(r => r, () => ({ data: null }));
+  let kids = [];
+  if (p.role === 'parent'){
+    const { data: links } = await safe(sb.from('kid_parent_links').select('kid_id').eq('parent_id', id));
+    const kidIds = (links || []).map(l => l.kid_id);
+    if (kidIds.length){ const { data } = await safe(sb.from('kids').select('id, first_name, last_name, total_exp, current_level, subscription_tier').in('id', kidIds)); kids = data || []; }
+  } else if (p.role === 'kid'){
+    const { data } = await safe(sb.from('kids').select('id, first_name, last_name, total_exp, current_level, subscription_tier').eq('user_id', id));
+    kids = data || [];
+  }
+  const kidIds = kids.map(k => k.id);
+  const d14 = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
+  const [puR, uaR] = await Promise.all([
+    kidIds.length || p.role === 'parent'
+      ? safe(sb.from('purchases').select('item_type, amount_eur, created_at, kid_id, parent_id').or(`parent_id.eq.${id}${kidIds.length ? ',kid_id.in.(' + kidIds.join(',') + ')' : ''}`).order('created_at', { ascending: false }).limit(15))
+      : Promise.resolve({ data: [] }),
+    safe(sb.from('user_activity').select('day').eq('user_id', id).gte('day', d14))
+  ]);
+  const purch = puR.data || [];
+  const actDays = new Set((uaR.data || []).map(r => r.day)).size;
+  const myFb = (_auFeedback || []).filter(f => f.user_id === id);
+  const rl = _auRoleLbl[p.role] || [p.role, '#898781'];
+  const tLbl = { report: 'Diagnostika', homeplan: 'Namų planas', summer: 'Vasara', subscription: 'Prenumerata', bundle: 'Rinkinys' };
+  const old = document.getElementById('au-card-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'au-card-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:640px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:800;">${(p.first_name || '') + ' ' + (p.last_name || '')}</div>
+        <div class="aerr-meta"><span style="color:${rl[1]};">${rl[0]}</span> · ${p.status || '?'} · reg. ${new Date(p.created_at).toLocaleDateString('lt-LT')} · aktyvumas: ${actDays ? actDays + ' d./14 d.' : '—'}</div>
+      </div>
+      <button onclick="document.getElementById('au-card-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;flex-shrink:0;">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:12px 18px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        ${p.status === 'suspended'
+          ? `<button class="aerr-tool" style="color:#4ade4a;" onclick="setUserStatus('${p.id}','active')">▶️ Aktyvuoti</button>`
+          : `<button class="aerr-tool" style="color:#fab219;" onclick="setUserStatus('${p.id}','suspended')">⏸️ Sustabdyti</button>`}
+        <select class="inp" id="au-role-sel" style="margin:0;width:130px;padding:6px;">${['parent','trainer','kid','club_admin','admin'].map(r => `<option value="${r}" ${p.role === r ? 'selected' : ''}>${(_auRoleLbl[r] || [r])[0]}</option>`).join('')}</select>
+        <button class="aerr-tool" onclick="changeUserRole('${p.id}')">Keisti rolę</button>
+      </div>
+      ${kids.length ? `<div class="aerr-meta" style="margin-bottom:4px;">VAIKAI</div>` + kids.map(k => `
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:12px;">
+          <div style="flex:1;min-width:0;">${(k.first_name || '') + ' ' + (k.last_name || '')} <span class="aerr-meta" style="display:inline;">· ${k.total_exp || 0} EXP · lvl ${k.current_level || 1} · ${k.subscription_tier || 'free'}</span></div>
+          <button class="aerr-tool" style="padding:4px 8px;" title="GDPR eksportas" onclick="exportKidData('${k.id}','${((k.first_name || '') + '-' + (k.last_name || '')).replace(/'/g, '')}')">📦</button>
+          <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" title="IŠTRINTI VISKĄ" onclick="deleteKidCascadeUI('${k.id}','${(k.first_name || '').replace(/'/g, '')}')">🗑️</button>
+        </div>`).join('') : ''}
+      <div class="aerr-meta" style="margin:12px 0 4px;">PIRKIMAI (${purch.length})</div>
+      ${purch.length ? purch.map(x => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bdr);font-size:11.5px;"><span>${tLbl[x.item_type] || x.item_type}</span><span><b style="color:#4ade4a;">${(+x.amount_eur || 0).toFixed(2)} €</b> <span class="aerr-meta" style="display:inline;">${new Date(x.created_at).toLocaleDateString('lt-LT')}</span></span></div>`).join('') : '<div style="color:var(--mut);font-size:11px;padding:4px 0;">Nėra</div>'}
+      <div class="aerr-meta" style="margin:12px 0 4px;">ATSILIEPIMAI (${myFb.length})</div>
+      ${myFb.length ? myFb.slice(0, 6).map(f => `<div style="padding:5px 0;border-bottom:.5px solid var(--bdr);font-size:11.5px;">${f.type === 'bug' ? '🐞' : '📨'} ${_aaiEsc((f.message || '').slice(0, 80))} <span class="aerr-meta" style="display:inline;">· ${f.status || 'new'}</span></div>`).join('') : '<div style="color:var(--mut);font-size:11px;padding:4px 0;">Nėra</div>'}
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function setUserStatus(id, status){
+  if (!confirm(status === 'suspended' ? 'Sustabdyti šį vartotoją? Jis nebegalės prisijungti.' : 'Aktyvuoti vartotoją?')) return;
+  const { error } = await sb.from('profiles').update({ status }).eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  logAdminAction(status === 'suspended' ? 'suspend' : 'activate', 'profile', id);
+  showToast(status === 'suspended' ? '⏸️ Sustabdytas' : '▶️ Aktyvuotas', 'success');
+  document.getElementById('au-card-modal')?.remove();
+  loadAdminUsers();
+}
+
+async function changeUserRole(id){
+  const role = document.getElementById('au-role-sel')?.value;
+  const p = (_auRows || []).find(x => x.id === id);
+  if (!role || !p || role === p.role) return;
+  if (!confirm(`Keisti rolę: ${p.role} → ${role}?\n\nVartotojas po perkrovimo pateks į kitą portalą.`)) return;
+  const { error } = await sb.from('profiles').update({ role }).eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  logAdminAction('role_change', 'profile', id, { from: p.role, to: role });
+  showToast('✅ Rolė pakeista', 'success');
+  document.getElementById('au-card-modal')?.remove();
+  loadAdminUsers();
+}
+
+// 📦 GDPR eksportas → JSON failas
+async function exportKidData(kidId, fname){
+  const { data, error } = await sb.rpc('admin_export_kid_data', { p_kid: kidId });
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  logAdminAction('kid_export', 'kid', kidId);
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'spobu-gdpr-' + (fname || kidId) + '.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('📦 Eksportuota', 'success');
+}
+
+// 🗑️ GDPR kaskadinis trynimas (dvigubas patvirtinimas su vardu)
+async function deleteKidCascadeUI(kidId, firstName){
+  const typed = prompt(`⚠️ NEGRĮŽTAMA!\n\nBus ištrinti VISI šio vaiko duomenys (EXP, karjera, lankomumas, ataskaitos...).\nApskaitos pirkimai liks be asmens ryšio.\n\nPatvirtinimui įrašyk vaiko vardą: ${firstName}`);
+  if (typed === null) return;
+  if ((typed || '').trim().toLowerCase() !== (firstName || '').trim().toLowerCase()){ showToast('❌ Vardas nesutampa — atšaukta', 'error'); return; }
+  if (!confirm('PASKUTINIS patvirtinimas: trinti negrįžtamai?')) return;
+  const { data, error } = await sb.rpc('admin_delete_kid_cascade', { p_kid: kidId });
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  alert('✅ ' + (data || 'Ištrinta.'));
+  document.getElementById('au-card-modal')?.remove();
+  loadAdminUsers();
+  if (typeof loadAdminData === 'function') loadAdminData();
+}
+
+// ── SUPPORT: atsiliepimų srautas su statusais ir atsakymu ──
+function renderAuFeedback(){
+  const el = document.getElementById('au-feedback'); if (!el) return;
+  const rows = _auFeedback || [];
+  if (!rows.length){ el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Atsiliepimų nėra</div>'; return; }
+  const stL = { new: ['NAUJA', 'bad'], in_progress: ['TVARKOMA', 'warn'], answered: ['ATSAKYTA', 'ok'], closed: ['UŽDARYTA', ''] };
+  el.innerHTML = rows.slice(0, 30).map(f => {
+    const s = stL[f.status || 'new'] || stL.new;
+    return `<div style="padding:9px 0;border-bottom:.5px solid var(--bdr);">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:700;">${f.type === 'bug' ? '🐞' : '📨'} ${_aaiEsc(f.name || 'Vartotojas')} <span class="aerr-meta" style="display:inline;">· ${f.role || '?'} · ${f.app_version || ''} · ${typeof _agoLT === 'function' ? _agoLT(f.created_at) : ''}</span></div>
+          <div style="font-size:11.5px;color:#c3c2b7;margin-top:2px;">${_aaiEsc((f.message || '').slice(0, 110))}</div>
+          ${f.admin_reply ? `<div class="aerr-meta" style="color:#4ade4a;white-space:normal;">↩ ${_aaiEsc(f.admin_reply.slice(0, 90))}</div>` : ''}
+        </div>
+        <span class="aerr-st ${s[1]}" style="flex-shrink:0;">${s[0]}</span>
+      </div>
+      <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;">
+        <button class="aerr-tool" style="padding:3px 8px;font-size:10px;" onclick="openFbReply('${f.id}')">✍️ Atsakyti</button>
+        ${f.status !== 'in_progress' ? `<button class="aerr-tool" style="padding:3px 8px;font-size:10px;" onclick="setFbStatus('${f.id}','in_progress')">Tvarkoma</button>` : ''}
+        ${f.status !== 'closed' ? `<button class="aerr-tool" style="padding:3px 8px;font-size:10px;" onclick="setFbStatus('${f.id}','closed')">Uždaryti</button>` : `<button class="aerr-tool" style="padding:3px 8px;font-size:10px;" onclick="setFbStatus('${f.id}','new')">Atidaryti</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function setFbStatus(id, status){
+  const { error } = await sb.from('feedback').update({ status }).eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  logAdminAction('feedback_status', 'feedback', id, { status });
+  loadAdminUsers();
+  if (typeof loadAdminFeedback === 'function') loadAdminFeedback();
+}
+
+function openFbReply(id){
+  const f = (_auFeedback || []).find(x => x.id === id); if (!f) return;
+  const old = document.getElementById('au-fb-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'au-fb-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:center;justify-content:center;padding:20px;';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;padding:18px 20px;">
+    <div style="font-size:13.5px;font-weight:800;margin-bottom:8px;">✍️ Atsakymas: ${_aaiEsc(f.name || 'vartotojui')}</div>
+    <div style="font-size:11.5px;color:var(--mut);margin-bottom:10px;">„${_aaiEsc((f.message || '').slice(0, 140))}"</div>
+    <textarea class="inp" id="au-fb-reply" rows="4" placeholder="Tavo atsakymas..." style="margin-bottom:12px;resize:vertical;">${_aaiEsc(f.admin_reply || '')}</textarea>
+    <div style="display:flex;gap:8px;">
+      <button class="aerr-tool" style="flex:1;" onclick="document.getElementById('au-fb-modal').remove()">Atšaukti</button>
+      <button class="btn btng" style="flex:1;margin:0;" onclick="submitFbReply('${f.id}')">📨 Išsaugoti atsakymą</button>
+    </div>
+    <div class="aerr-meta" style="margin-top:8px;white-space:normal;">Vartotojas atsakymą pamatys Pagalbos lange po bendro kodo etapo („Mano žinutės").</div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function submitFbReply(id){
+  const reply = document.getElementById('au-fb-reply')?.value?.trim();
+  if (!reply){ showToast('❌ Įrašyk atsakymą', 'error'); return; }
+  const { error } = await sb.from('feedback').update({ admin_reply: reply, replied_at: new Date().toISOString(), replied_by: currentUser?.id, status: 'answered' }).eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  logAdminAction('feedback_reply', 'feedback', id);
+  showToast('📨 Atsakymas išsaugotas', 'success');
+  document.getElementById('au-fb-modal')?.remove();
+  loadAdminUsers();
 }
 
 // ════════════════════════════════════════
