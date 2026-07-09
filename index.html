@@ -440,6 +440,7 @@ body.full-mobile-preview #a-desktop-nav, body.full-mobile-preview #a-statusbar {
   body.am.portal-a:not(.full-mobile-preview) #a-stats-grid > div > div:nth-child(2) { font-family: system-ui, sans-serif !important; font-size: 38px !important; font-weight: 650 !important; letter-spacing: -.5px !important; color: #fff !important; line-height: 1.15 !important; }
   body.am.portal-a:not(.full-mobile-preview) #a-stats-grid > div > div:nth-child(3) { font-family: var(--amc-mono) !important; font-size: 10px !important; letter-spacing: 1.6px !important; color: #898781 !important; text-transform: uppercase; margin-top: 2px; }
   body.am.portal-a:not(.full-mobile-preview) #afin-kpis { grid-template-columns: repeat(4,1fr) !important; gap: 12px !important; }
+  body.am.portal-a:not(.full-mobile-preview) #ana-kpis { grid-template-columns: repeat(4,1fr) !important; gap: 12px !important; }
   /* Dashboard 2 kolonos */
   body.am.portal-a:not(.full-mobile-preview) #pa .adash { display: grid; grid-template-columns: 1.35fr 1fr; gap: 0 14px; align-items: start; }
   body.am.portal-a:not(.full-mobile-preview) #a-feedback-list { max-height: 420px !important; }
@@ -600,7 +601,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v346</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v347</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4223,7 +4224,25 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">📊 ANALITIKA</div></div>
   <div class="sa">
-    <div id="a-analytics-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">Verslo analitika</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas D)</div></div></div>
+    <div id="a-analytics-content">
+      <div id="ana-kpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;"></div>
+      <div class="st">NORTH STAR — AKTYVŪS VAIKAI PER SAVAITĘ (≥1 EXP ĮVYKIS)</div>
+      <div class="cd" style="padding:14px 16px;"><div id="ana-ns-chart" style="overflow-x:auto;"></div></div>
+      <div class="adash">
+      <div class="adash-col">
+        <div class="st">PILTUVĖLIS — NUO REGISTRACIJOS IKI PIRKIMO</div>
+        <div class="cd" id="ana-funnel" style="padding:12px 14px;"></div>
+        <div class="st">KLUBŲ PALYGINIMAS</div>
+        <div class="cd" id="ana-clubs" style="padding:8px 14px;"></div>
+      </div>
+      <div class="adash-col">
+        <div class="st">FUNKCIJŲ NAUDOJIMAS (30 D.)</div>
+        <div class="cd" id="ana-features" style="padding:8px 14px;"></div>
+        <div class="st">RETENTION KOHORTOS (SAVAITĖMIS)</div>
+        <div class="cd" id="ana-retention" style="padding:12px 14px;"></div>
+      </div>
+      </div>
+    </div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
@@ -27841,6 +27860,156 @@ async function backfillPurchases(){
   if (error){ showToast('❌ ' + error.message, 'error'); return; }
   showToast('🧩 Sukurta įrašų: ' + (data ?? 0), 'success');
   loadAdminFinance();
+}
+
+// ════════════════════════════════════════
+// 📊 ANALITIKA (Blokas D) — north-star, funnel, klubų palyginimas, feature usage, retention
+// (user_activity ping'ą visose rolėse įjungs bendro kodo etapas — iki tol DAU/WAU/MAU „—")
+// ════════════════════════════════════════
+async function loadAdminAnalytics(){
+  const kEl = document.getElementById('ana-kpis'); if (!kEl) return;
+  const safe = p => Promise.resolve(p).then(r => r, () => ({ data: null, error: { message: 'nepasiekiama' } }));
+  const since56 = new Date(Date.now() - 56 * 864e5).toISOString().slice(0, 10);
+  const [ns, fu, cc, fe, ua] = await Promise.all([
+    safe(sb.rpc('admin_north_star')),
+    safe(sb.rpc('admin_funnel')),
+    safe(sb.rpc('admin_club_compare')),
+    safe(sb.rpc('admin_feature_usage', { p_days: 30 })),
+    safe(sb.from('user_activity').select('user_id, day').gte('day', since56).limit(20000))
+  ]);
+  if (ns.error && fu.error){
+    kEl.innerHTML = '<div class="cd" style="margin:0;grid-column:1/-1;padding:16px;text-align:center;color:var(--mut);font-size:12px;">Paleisk server-admin-analitika.sql</div>';
+    return;
+  }
+  // ── KPI: north-star (ši savaitė) + DAU/WAU/MAU ──
+  const nsRows = ns.data || [];
+  const thisWeek = nsRows.length ? (nsRows[nsRows.length - 1].active_kids || 0) : 0;
+  const prevWeek = nsRows.length > 1 ? (nsRows[nsRows.length - 2].active_kids || 0) : 0;
+  const uaRows = ua.data || [];
+  const today = new Date().toISOString().slice(0, 10);
+  const d7 = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+  const d30 = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+  const dau = uaRows.length ? new Set(uaRows.filter(r => r.day === today).map(r => r.user_id)).size : null;
+  const wau = uaRows.length ? new Set(uaRows.filter(r => r.day >= d7).map(r => r.user_id)).size : null;
+  const mau = uaRows.length ? new Set(uaRows.filter(r => r.day >= d30).map(r => r.user_id)).size : null;
+  const uaNote = uaRows.length ? '' : ' (ping — SHARED etape)';
+  const tile = (v, l) => `<div class="cd" style="margin:0;padding:14px 16px;"><div style="font-size:26px;font-weight:650;color:#fff;letter-spacing:-.4px;">${v}</div><div class="aerr-meta" style="text-transform:uppercase;letter-spacing:1.2px;white-space:normal;">${l}</div></div>`;
+  kEl.innerHTML =
+    tile(thisWeek, `⭐ Aktyvūs vaikai šią sav. ${prevWeek ? (thisWeek >= prevWeek ? '(↑ buvo ' + prevWeek + ')' : '(↓ buvo ' + prevWeek + ')') : ''}`) +
+    tile(dau ?? '—', 'DAU šiandien' + uaNote) +
+    tile(wau ?? '—', 'WAU 7 d.' + uaNote) +
+    tile(mau ?? '—', 'MAU 30 d.' + uaNote);
+  // ── North-star grafikas (8 sav.) ──
+  const chEl = document.getElementById('ana-ns-chart');
+  if (chEl){
+    if (nsRows.length){
+      const months = nsRows.map(r => ({ key: r.week_start, lbl: String(r.week_start).slice(5), sum: r.active_kids || 0 }));
+      chEl.innerHTML = _anaBarChart(months, ' vaik.');
+    } else chEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nėra duomenų</div>';
+  }
+  // ── Funnel ──
+  const fEl = document.getElementById('ana-funnel');
+  if (fEl){
+    const f = (fu.data && fu.data[0]) || null;
+    if (f){
+      const steps = [
+        ['Tėvų paskyros', f.parents_total],
+        ['Tėvai su ≥1 vaiku', f.parents_with_kid],
+        ['Patvirtinti vaikai', f.kids_approved],
+        ['Vaikai su ≥1 EXP įvykiu', f.kids_with_exp],
+        ['Perkančios šeimos', f.families_paying]
+      ];
+      const base = Math.max(1, steps[0][1]);
+      fEl.innerHTML = steps.map((s, i) => {
+        const pct = Math.round((s[1] / base) * 100);
+        const conv = i > 0 && steps[i-1][1] > 0 ? Math.round((s[1] / steps[i-1][1]) * 100) : null;
+        return `<div style="padding:7px 0;${i < steps.length-1 ? 'border-bottom:.5px solid var(--bdr);' : ''}">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span>${s[0]}</span>
+            <span><b>${s[1]}</b>${conv !== null ? ` <span class="aerr-meta" style="display:inline;">· ${conv}% iš ankstesnio</span>` : ''}</span>
+          </div>
+          <div style="height:7px;border-radius:99px;background:rgba(255,255,255,.05);overflow:hidden;"><i style="display:block;height:100%;width:${Math.max(2, pct)}%;border-radius:99px;background:#3987e5;"></i></div>
+        </div>`;
+      }).join('');
+    } else fEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Paleisk server-admin-analitika.sql</div>';
+  }
+  // ── Klubų palyginimas ──
+  const cEl = document.getElementById('ana-clubs');
+  if (cEl){
+    const rows = cc.data || [];
+    cEl.innerHTML = rows.length ? rows.map(c => {
+      const stale = !c.last_event || (Date.now() - new Date(c.last_event).getTime()) > 7 * 864e5;
+      return `<div style="padding:9px 0;border-bottom:.5px solid var(--bdr);${stale ? 'border-left:3px solid #d03b3b;padding-left:9px;' : ''}">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+          <b>${c.club_name || 'Klubas'}</b>
+          <span style="color:#4ade4a;font-weight:700;">${(+c.gross30 || 0).toFixed(2)} € /30d</span>
+        </div>
+        <div class="aerr-meta">${c.kids_cnt} vaik. · aktyvūs 30d: ${c.active30} · 💎 ${c.premium_cnt} · 🥋 ${c.trainers_cnt} trén. · pask. įvykis ${c.last_event ? (typeof _agoLT === 'function' ? _agoLT(c.last_event) : c.last_event) : '—'}${stale ? ' ⚠️' : ''}</div>
+      </div>`;
+    }).join('') : '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nėra klubų</div>';
+  }
+  // ── Feature usage ──
+  const feEl = document.getElementById('ana-features');
+  if (feEl){
+    const rows = fe.data || [];
+    const max = Math.max(1, ...rows.map(r => +r.cnt || 0));
+    feEl.innerHTML = rows.length ? rows.map(r => `<div style="padding:7px 0;border-bottom:.5px solid var(--bdr);">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span>${r.feature}</span><b>${r.cnt}</b></div>
+      <div style="height:5px;border-radius:99px;background:rgba(255,255,255,.05);overflow:hidden;"><i style="display:block;height:100%;width:${Math.max(2, Math.round((+r.cnt / max) * 100))}%;border-radius:99px;background:#9085e9;"></i></div>
+    </div>`).join('') : '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nėra duomenų</div>';
+  }
+  // ── Retention kohortos (iš user_activity; savaitės × offset) ──
+  const rEl = document.getElementById('ana-retention');
+  if (rEl){
+    if (!uaRows.length){
+      rEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11.5px;line-height:1.5;">Kohortos kaupsis nuo aktyvumo ping įjungimo<br>(bendro kodo etapas — user_activity dar tuščia)</div>';
+    } else {
+      const wk = d => { const t = new Date(d + 'T00:00:00'); const day = (t.getDay() + 6) % 7; t.setDate(t.getDate() - day); return t.toISOString().slice(0, 10); };
+      const firstWeek = {}, activeWeeks = {};
+      uaRows.forEach(r => {
+        const w = wk(r.day);
+        if (!firstWeek[r.user_id] || w < firstWeek[r.user_id]) firstWeek[r.user_id] = w;
+        (activeWeeks[r.user_id] = activeWeeks[r.user_id] || new Set()).add(w);
+      });
+      const cohorts = {};
+      Object.entries(firstWeek).forEach(([u, w]) => { (cohorts[w] = cohorts[w] || []).push(u); });
+      const weeks = Object.keys(cohorts).sort().slice(-8);
+      const addW = (w, n) => { const t = new Date(w + 'T00:00:00'); t.setDate(t.getDate() + n * 7); return t.toISOString().slice(0, 10); };
+      let html = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:10px;width:100%;"><tr><th style="text-align:left;padding:3px 6px;color:var(--mut);">Kohorta</th>';
+      for (let i = 0; i < 8; i++) html += `<th style="padding:3px 4px;color:var(--mut);">S${i}</th>`;
+      html += '</tr>';
+      weeks.forEach(w => {
+        const users = cohorts[w];
+        html += `<tr><td style="padding:3px 6px;color:var(--mut);white-space:nowrap;">${w.slice(5)} (${users.length})</td>`;
+        for (let i = 0; i < 8; i++){
+          const target = addW(w, i);
+          if (target > today){ html += '<td></td>'; continue; }
+          const act = users.filter(u => activeWeeks[u].has(target)).length;
+          const pct = Math.round((act / users.length) * 100);
+          html += `<td style="padding:3px 4px;text-align:center;background:rgba(57,135,229,${(pct / 100 * 0.55).toFixed(2)});border-radius:3px;">${pct}%</td>`;
+        }
+        html += '</tr>';
+      });
+      rEl.innerHTML = html + '</table></div>';
+    }
+  }
+}
+
+// Stulpelinė (bendra): mėlyna serija, paskutinis — akcentas; žymim max ir paskutinį
+function _anaBarChart(months, unit){
+  const W = 480, H = 120, bot = 16, top = 16, slot = W / months.length, bw = Math.min(24, slot * 0.55);
+  const max = Math.max(1, ...months.map(m => m.sum));
+  const maxIdx = months.reduce((mi, m, i) => m.sum > months[mi].sum ? i : mi, 0);
+  let bars = '';
+  months.forEach((m, i) => {
+    const h = m.sum > 0 ? Math.max(2, (m.sum / max) * (H - top - bot)) : 0;
+    const x = i * slot + (slot - bw) / 2, y = H - bot - h;
+    const cur = i === months.length - 1;
+    if (h > 0) bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${cur ? '#FF8C00' : '#3987e5'}"><title>${m.key}: ${m.sum}${unit || ''}</title></rect>`;
+    if ((i === maxIdx && m.sum > 0) || (cur && m.sum > 0)) bars += `<text x="${(i * slot + slot / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" font-size="9" fill="#c3c2b7">${m.sum}</text>`;
+    bars += `<text x="${(i * slot + slot / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#898781">${m.lbl}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:420px;display:block;"><line x1="0" y1="${H - bot}" x2="${W}" y2="${H - bot}" stroke="#2c2c2a" stroke-width="1"/>${bars}</svg>`;
 }
 
 // ════════════════════════════════════════
