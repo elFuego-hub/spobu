@@ -350,6 +350,16 @@ body.full-mobile-preview #a-desktop-nav { display: none !important; }
   body.am.portal-a:not(.full-mobile-preview) #pa .sc #ah-notif-btn { display: none !important; }
   /* Admin stat kortelės desktop'e — 4 stulpeliai */
   body.am.portal-a:not(.full-mobile-preview) #a-stats-grid { grid-template-columns: repeat(4,1fr) !important; }
+  /* 🖥️ Tikras web-dashboard: fonas be „rėmelio", pilnas plotis, 2 kolonų grid */
+  body.am.portal-a:not(.full-mobile-preview) { background: var(--bg) !important; }
+  body.am.portal-a:not(.full-mobile-preview) #pa .ds { max-width: 1500px !important; }
+  body.am.portal-a:not(.full-mobile-preview) #pa .ph { padding: 28px 36px 60px !important; }
+  body.am.portal-a:not(.full-mobile-preview) #pa .adash { display: grid; grid-template-columns: 1.5fr 1fr; gap: 0 24px; align-items: start; }
+  body.am.portal-a:not(.full-mobile-preview) #a-feedback-list { max-height: 420px !important; }
+  body.am.portal-a:not(.full-mobile-preview) #a-reports-list { max-height: 620px !important; }
+  /* Klubai — kortelių tinklelis vietoj stulpelio */
+  body.am.portal-a:not(.full-mobile-preview) #a-clubs-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
+  body.am.portal-a:not(.full-mobile-preview) #a-clubs-list > * { margin: 0 !important; }
 }
 
 .sc{display:none;flex-direction:column;min-height:780px;}
@@ -498,7 +508,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v336</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v337</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3920,6 +3930,9 @@ select.inp option{background:#222;}
       </div>
     </div>
 
+    <!-- 🖥️ Dashboard grid: desktop'e 2 kolonos (kairė — darbo eilė, dešinė — veiksmai+veikla); mobile — įprastas stulpelis -->
+    <div class="adash">
+    <div class="adash-col">
     <div class="st">📨 ATSILIEPIMAI <span id="a-feedback-badge" style="display:none;font-size:9px;font-weight:800;color:white;background:#FF4D00;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:middle;">0</span></div>
     <div class="cd" id="a-feedback-list" style="padding:4px 14px;max-height:320px;overflow-y:auto;">
       <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Kraunama...</div>
@@ -3929,16 +3942,20 @@ select.inp option{background:#222;}
     <div class="cd" id="a-reports-list" style="padding:4px 14px;max-height:380px;overflow-y:auto;">
       <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Kraunama...</div>
     </div>
+    </div>
 
+    <div class="adash-col">
     <div class="st">VEIKSMAI</div>
     <div class="cd" style="padding:12px;">
       <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openCreateClub()">➕ Sukurti naują klubą</button>
       <button class="btn btnd" style="margin:0;width:100%;" onclick="g('a','a-clubs')">🏢 Valdyti klubus</button>
     </div>
-    
+
     <div class="st">NAUJAUSIA VEIKLA</div>
     <div class="cd" id="a-recent-activity">
       <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Veikla atsiras kai bus klubų</div>
+    </div>
+    </div>
     </div>
     <div style="height:16px;"></div>
   </div>
