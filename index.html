@@ -360,10 +360,14 @@ body.full-mobile-preview #a-desktop-nav, body.full-mobile-preview #a-statusbar {
 @media (min-width: 1024px) {
   :root { --amc-mono: ui-monospace, "Cascadia Mono", Consolas, monospace; --amc-bg: #0d0d0d; --amc-panel: #1a1a19; --amc-line: #2c2c2a; --amc-side: #111110; }
   @keyframes amcPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
-  body.am.portal-a:not(.full-mobile-preview) { padding: 0 !important; background: var(--amc-bg) !important; }
+  /* Body užrakintas: jokio išorinio scroll, jokio centravimo — kaip tikras web dashboard */
+  body.am.portal-a:not(.full-mobile-preview) {
+    padding: 0 !important; margin: 0 !important; display: block !important;
+    height: 100vh; overflow: hidden !important; background: var(--amc-bg) !important;
+  }
   body.am.portal-a:not(.full-mobile-preview) #pa {
     display: grid !important; grid-template-columns: 196px 1fr; grid-template-rows: 38px 1fr;
-    height: 100vh; overflow: hidden; background: var(--amc-bg);
+    width: 100vw; height: 100vh; overflow: hidden; background: var(--amc-bg);
   }
   /* 🛰️ Statuso juosta per visą viršų */
   body.am.portal-a:not(.full-mobile-preview) #a-statusbar {
@@ -405,8 +409,8 @@ body.full-mobile-preview #a-desktop-nav, body.full-mobile-preview #a-statusbar {
     height: calc(100vh - 38px); overflow-y: auto;
   }
   body.am.portal-a:not(.full-mobile-preview) #pa .ds {
-    width: 100% !important; max-width: 1560px !important;
-    margin: 0 auto !important; border-radius: 0 !important; background: var(--amc-bg) !important;
+    width: 100% !important; max-width: 100% !important;
+    margin: 0 !important; border-radius: 0 !important; background: var(--amc-bg) !important;
   }
   body.am.portal-a:not(.full-mobile-preview) #pa .ph { width: 100% !important; min-height: auto !important; padding: 20px 26px 60px !important; }
   body.am.portal-a:not(.full-mobile-preview) #pa .sc { min-height: auto !important; }
@@ -581,7 +585,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v339</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v340</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
