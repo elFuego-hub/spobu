@@ -439,6 +439,7 @@ body.full-mobile-preview #a-desktop-nav, body.full-mobile-preview #a-statusbar {
   body.am.portal-a:not(.full-mobile-preview) #a-stats-grid > div > div:nth-child(1) { display: none; }
   body.am.portal-a:not(.full-mobile-preview) #a-stats-grid > div > div:nth-child(2) { font-family: system-ui, sans-serif !important; font-size: 38px !important; font-weight: 650 !important; letter-spacing: -.5px !important; color: #fff !important; line-height: 1.15 !important; }
   body.am.portal-a:not(.full-mobile-preview) #a-stats-grid > div > div:nth-child(3) { font-family: var(--amc-mono) !important; font-size: 10px !important; letter-spacing: 1.6px !important; color: #898781 !important; text-transform: uppercase; margin-top: 2px; }
+  body.am.portal-a:not(.full-mobile-preview) #afin-kpis { grid-template-columns: repeat(4,1fr) !important; gap: 12px !important; }
   /* Dashboard 2 kolonos */
   body.am.portal-a:not(.full-mobile-preview) #pa .adash { display: grid; grid-template-columns: 1.35fr 1fr; gap: 0 14px; align-items: start; }
   body.am.portal-a:not(.full-mobile-preview) #a-feedback-list { max-height: 420px !important; }
@@ -599,7 +600,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v345</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v346</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4170,7 +4171,43 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">💶 FINANSAI</div></div>
   <div class="sa">
-    <div id="a-fin-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">Apskaita ir bonusai</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas C)</div></div></div>
+    <div id="a-fin-content">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
+        <button class="aerr-f afin-p on" data-p="month" onclick="setAfinPeriod('month')">Šis mėn.</button>
+        <button class="aerr-f afin-p" data-p="q" onclick="setAfinPeriod('q')">3 mėn.</button>
+        <button class="aerr-f afin-p" data-p="year" onclick="setAfinPeriod('year')">Metai</button>
+        <button class="aerr-f afin-p" data-p="all" onclick="setAfinPeriod('all')">Visi</button>
+        <div style="flex:1;"></div>
+        <button class="aerr-tool" onclick="openAfinAdjModal()">➕ Korekcija</button>
+        <button class="aerr-tool" onclick="backfillPurchases()">🧩 Backfill</button>
+      </div>
+      <div id="afin-kpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;"></div>
+      <div class="st">PAJAMOS PAGAL MĖNESĮ (12 MĖN.)</div>
+      <div class="cd" style="padding:14px 16px;"><div id="afin-chart" style="overflow-x:auto;"></div></div>
+      <div class="adash">
+      <div class="adash-col">
+        <div class="st">💶 BONUSŲ LEDGERIS</div>
+        <div class="cd" style="padding:12px 14px;">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+            <input type="month" id="afin-period" class="inp" style="margin:0;width:150px;padding:7px;" onchange="loadAfinPayouts()">
+            <button class="aerr-tool" onclick="recalcPayouts()">🔄 Perskaičiuoti</button>
+            <button class="aerr-tool" onclick="exportPayoutsCSV()">⬇️ CSV</button>
+          </div>
+          <div id="afin-payouts"><div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
+        </div>
+        <div class="st">KOREKCIJOS</div>
+        <div class="cd" id="afin-adjustments" style="padding:8px 14px;"></div>
+      </div>
+      <div class="adash-col">
+        <div class="st">PAGAL TIPĄ</div>
+        <div class="cd" id="afin-bytype" style="padding:8px 14px;"></div>
+        <div class="st">PAGAL KLUBĄ</div>
+        <div class="cd" id="afin-byclub" style="padding:8px 14px;"></div>
+        <div class="st">💶 KAINODARA</div>
+        <div class="cd" id="afin-prices" style="padding:8px 14px;"></div>
+      </div>
+      </div>
+    </div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
@@ -27569,6 +27606,241 @@ async function pruneAdminErrors(){
   if (error){ showToast('❌ ' + error.message, 'error'); return; }
   showToast('🧹 Ištrinta įrašų: ' + (data ?? 0), 'success');
   loadAdminErrors();
+}
+
+// ════════════════════════════════════════
+// 💶 APSKAITA (Blokas C) — KPI, 12 mėn. grafikas, bonusų ledgeris, korekcijos, kainodara
+// (kainų perėmimas KLIENTE visose rolėse — bendro kodo etapas; čia tik admin ekranas)
+// ════════════════════════════════════════
+let _afinPeriod = 'month';
+let _afinPurch = null;
+let _afinPrices = {};
+let _afinClubs = [];
+let _afinAdj = [];
+let _afinPayoutRows = [];
+
+function setAfinPeriod(p){
+  _afinPeriod = p;
+  document.querySelectorAll('.afin-p').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+  renderAdminFinance();
+}
+
+function _afinRange(){
+  const now = new Date();
+  if (_afinPeriod === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
+  if (_afinPeriod === 'q') return new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  if (_afinPeriod === 'year') return new Date(now.getFullYear(), 0, 1);
+  return null;
+}
+
+async function loadAdminFinance(){
+  const kEl = document.getElementById('afin-kpis'); if (!kEl) return;
+  const safe = p => Promise.resolve(p).then(r => r, () => ({ data: null }));
+  const [pr, pu, cl, adj] = await Promise.all([
+    safe(sb.from('prices').select('key, label, amount_eur')),
+    safe(sb.from('purchases').select('id, kid_id, club_id, item_type, plan, amount_eur, created_at').order('created_at', { ascending: false }).limit(5000)),
+    safe(sb.from('clubs').select('id, name')),
+    safe(sb.from('purchase_adjustments').select('id, club_id, amount_eur, reason, created_at').order('created_at', { ascending: false }).limit(30))
+  ]);
+  _afinPrices = {}; (pr.data || []).forEach(x => { _afinPrices[x.key] = x; });
+  _afinPurch = pu.data || [];
+  _afinClubs = cl.data || [];
+  _afinAdj = adj.data || [];
+  const pi = document.getElementById('afin-period');
+  if (pi && !pi.value) pi.value = new Date().toISOString().slice(0, 7);
+  renderAdminFinance();
+  renderAfinPrices();
+  renderAfinAdjustments();
+  loadAfinPayouts();
+}
+
+function renderAdminFinance(){
+  const kEl = document.getElementById('afin-kpis'); if (!kEl || !_afinPurch) return;
+  const from = _afinRange();
+  const inP = _afinPurch.filter(p => !from || new Date(p.created_at) >= from);
+  const gross = inP.reduce((s, p) => s + (+p.amount_eur || 0), 0);
+  const buyers = new Set(inP.filter(p => p.kid_id).map(p => p.kid_id)).size;
+  const avgBasket = buyers ? gross / buyers : 0;
+  // MRR: metinės prenumeratos per paskutinius 365 d. × kaina ÷ 12 (mėnesinio plano nėra)
+  const yAgo = Date.now() - 365 * 864e5;
+  const annCnt = _afinPurch.filter(p => p.item_type === 'subscription' && new Date(p.created_at).getTime() > yAgo).length;
+  const annPrice = +(_afinPrices.subscription_annual?.amount_eur) || 41.94;
+  const mrr = annCnt * annPrice / 12;
+  const tile = (v, l) => `<div class="cd" style="margin:0;padding:14px 16px;"><div style="font-size:26px;font-weight:650;color:#fff;letter-spacing:-.4px;">${v}</div><div class="aerr-meta" style="text-transform:uppercase;letter-spacing:1.2px;">${l}</div></div>`;
+  kEl.innerHTML =
+    tile(gross.toFixed(2) + ' €', 'Pajamos (periodas)') +
+    tile(mrr.toFixed(2) + ' €', 'MRR (metinės ÷ 12)') +
+    tile(inP.length, 'Pirkimų per periodą') +
+    tile(avgBasket.toFixed(2) + ' €', 'Vid. krepšelis / pirkėją');
+  // 12 mėn. grafikas
+  const months = []; const now = new Date();
+  for (let i = 11; i >= 0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ key: d.toISOString().slice(0, 7), lbl: String(d.getMonth() + 1).padStart(2, '0'), sum: 0 });
+  }
+  const mMap = {}; months.forEach(m => mMap[m.key] = m);
+  _afinPurch.forEach(p => { const k = String(p.created_at).slice(0, 7); if (mMap[k]) mMap[k].sum += (+p.amount_eur || 0); });
+  const chEl = document.getElementById('afin-chart');
+  if (chEl) chEl.innerHTML = _afinBarChart(months);
+  // Pagal tipą
+  const tl = { report: '📄 Diagnostika', homeplan: '🏋️ Namų planas', summer: '☀️ Vasaros programa', subscription: '💎 Prenumerata', bundle: '📦 Rinkinys' };
+  const byT = {};
+  inP.forEach(p => { const t = p.item_type || '?'; if (!byT[t]) byT[t] = { cnt: 0, sum: 0 }; byT[t].cnt++; byT[t].sum += (+p.amount_eur || 0); });
+  const btEl = document.getElementById('afin-bytype');
+  if (btEl) btEl.innerHTML = Object.keys(byT).length ? Object.entries(byT).sort((a, b) => b[1].sum - a[1].sum).map(([t, v]) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid var(--bdr);font-size:12px;"><span>${tl[t] || t}</span><span style="text-align:right;"><b style="color:#4ade4a;">${v.sum.toFixed(2)} €</b> <span class="aerr-meta" style="display:inline;">· ${v.cnt} vnt.</span></span></div>`).join('')
+    : '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nėra pirkimų per periodą</div>';
+  // Pagal klubą
+  const cName = {}; _afinClubs.forEach(c => cName[c.id] = c.name);
+  const byC = {};
+  inP.forEach(p => { const c = p.club_id || '—'; if (!byC[c]) byC[c] = { cnt: 0, sum: 0 }; byC[c].cnt++; byC[c].sum += (+p.amount_eur || 0); });
+  const bcEl = document.getElementById('afin-byclub');
+  if (bcEl) bcEl.innerHTML = Object.keys(byC).length ? Object.entries(byC).sort((a, b) => b[1].sum - a[1].sum).map(([c, v]) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid var(--bdr);font-size:12px;"><span>${cName[c] || 'Be klubo'}</span><span style="text-align:right;"><b style="color:#4ade4a;">${v.sum.toFixed(2)} €</b> <span class="aerr-meta" style="display:inline;">· ${v.cnt} vnt.</span></span></div>`).join('')
+    : '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nėra duomenų</div>';
+}
+
+// 12 mėn. stulpelinė (SVG): mėlyna serija, einamasis mėnuo — akcentas; žymim tik max ir einamąjį
+function _afinBarChart(months){
+  const W = 480, H = 120, bot = 16, top = 16, slot = W / 12, bw = 22;
+  const max = Math.max(1, ...months.map(m => m.sum));
+  const maxIdx = months.reduce((mi, m, i) => m.sum > months[mi].sum ? i : mi, 0);
+  let bars = '';
+  months.forEach((m, i) => {
+    const h = m.sum > 0 ? Math.max(2, (m.sum / max) * (H - top - bot)) : 0;
+    const x = i * slot + (slot - bw) / 2, y = H - bot - h;
+    const cur = i === months.length - 1;
+    if (h > 0) bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw}" height="${h.toFixed(1)}" rx="3" fill="${cur ? '#FF8C00' : '#3987e5'}"><title>${m.key}: ${m.sum.toFixed(2)} €</title></rect>`;
+    if ((i === maxIdx && m.sum > 0) || (cur && m.sum > 0)) bars += `<text x="${(i * slot + slot / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" font-size="9" fill="#c3c2b7">${Math.round(m.sum)}€</text>`;
+    bars += `<text x="${(i * slot + slot / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#898781">${m.lbl}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:420px;display:block;"><line x1="0" y1="${H - bot}" x2="${W}" y2="${H - bot}" stroke="#2c2c2a" stroke-width="1"/>${bars}</svg>`;
+}
+
+// ── Bonusų ledgeris ──
+async function loadAfinPayouts(){
+  const el = document.getElementById('afin-payouts'); if (!el) return;
+  const period = document.getElementById('afin-period')?.value || new Date().toISOString().slice(0, 7);
+  const { data, error } = await sb.from('club_payouts').select('*').eq('period', period).order('total', { ascending: false });
+  if (error){ el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Paleisk server-admin-apskaita.sql</div>'; return; }
+  _afinPayoutRows = data || [];
+  if (!_afinPayoutRows.length){ el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Šis mėnuo dar neskaičiuotas — spausk 🔄 Perskaičiuoti</div>'; return; }
+  const cName = {}; _afinClubs.forEach(c => cName[c.id] = c.name);
+  const stL = { draft: ['JUODRAŠTIS', 'bad'], approved: ['PATVIRTINTA', 'warn'], paid: ['IŠMOKĖTA', 'ok'] };
+  el.innerHTML = _afinPayoutRows.map(r => {
+    const s = stL[r.status] || stL.draft;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:.5px solid var(--bdr);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12.5px;font-weight:700;">${cName[r.club_id] || 'Klubas'}</div>
+        <div class="aerr-meta">gross ${(+r.gross || 0).toFixed(2)} € · bazė ${(+r.bonus_base || 0).toFixed(2)} + extra ${(+r.bonus_extra || 0).toFixed(2)}</div>
+      </div>
+      <b style="color:#4ade4a;font-size:13px;flex-shrink:0;">${(+r.total || 0).toFixed(2)} €</b>
+      <span class="aerr-st ${s[1]}" style="flex-shrink:0;">${s[0]}</span>
+      ${r.status === 'draft' ? `<button class="aerr-tool" style="flex-shrink:0;" title="Patvirtinti" onclick="setPayoutStatus('${r.id}','approved')">✅</button>` : ''}
+      ${r.status === 'approved' ? `<button class="aerr-tool" style="flex-shrink:0;" title="Pažymėti išmokėta" onclick="setPayoutStatus('${r.id}','paid')">💸</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function recalcPayouts(){
+  const period = document.getElementById('afin-period')?.value;
+  if (!period){ showToast('Pasirink mėnesį', 'error'); return; }
+  const { data, error } = await sb.rpc('admin_recalc_payouts', { p_period: period });
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  showToast('🔄 Perskaičiuota klubų: ' + (data ?? 0), 'success');
+  loadAfinPayouts();
+}
+
+async function setPayoutStatus(id, status){
+  const upd = { status };
+  if (status === 'paid') upd.paid_at = new Date().toISOString();
+  const { error } = await sb.from('club_payouts').update(upd).eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  showToast(status === 'paid' ? '💸 Pažymėta išmokėta' : '✅ Patvirtinta', 'success');
+  loadAfinPayouts();
+}
+
+function exportPayoutsCSV(){
+  if (!_afinPayoutRows.length){ showToast('Nėra duomenų', 'error'); return; }
+  const cName = {}; _afinClubs.forEach(c => cName[c.id] = c.name);
+  const period = document.getElementById('afin-period')?.value || '';
+  let csv = 'Klubas,Periodas,Gross(EUR),Baze(EUR),Extra(EUR),Viso(EUR),Statusas\n';
+  _afinPayoutRows.forEach(r => { csv += `${(cName[r.club_id] || '').replace(/[,\n]/g, ' ')},${r.period},${(+r.gross || 0).toFixed(2)},${(+r.bonus_base || 0).toFixed(2)},${(+r.bonus_extra || 0).toFixed(2)},${(+r.total || 0).toFixed(2)},${r.status}\n`; });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'bonusai-' + period + '.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Korekcijos ──
+function renderAfinAdjustments(){
+  const el = document.getElementById('afin-adjustments'); if (!el) return;
+  const cName = {}; _afinClubs.forEach(c => cName[c.id] = c.name);
+  el.innerHTML = (_afinAdj && _afinAdj.length) ? _afinAdj.map(a => `<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:11.5px;">
+    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cName[a.club_id] || '—'} · ${a.reason || ''}</span>
+    <b style="color:${(+a.amount_eur || 0) >= 0 ? '#4ade4a' : '#ff9c9c'};flex-shrink:0;">${(+a.amount_eur || 0) >= 0 ? '+' : ''}${(+a.amount_eur || 0).toFixed(2)} €</b>
+  </div>`).join('') : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:11px;">Korekcijų nėra</div>';
+}
+
+function openAfinAdjModal(){
+  const old = document.getElementById('afin-adj-modal'); if (old) old.remove();
+  const opts = _afinClubs.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  const m = document.createElement('div'); m.id = 'afin-adj-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:420px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;padding:18px 20px;">
+    <div style="font-size:14px;font-weight:800;margin-bottom:12px;">➕ Apskaitos korekcija</div>
+    <label class="lbl">KLUBAS</label>
+    <select class="inp" id="adj-club" style="margin-bottom:10px;">${opts}</select>
+    <label class="lbl">SUMA € (gali būti neigiama)</label>
+    <input class="inp" id="adj-amount" type="number" step="0.01" placeholder="pvz. -9.99" style="margin-bottom:10px;">
+    <label class="lbl">PRIEŽASTIS *</label>
+    <input class="inp" id="adj-reason" placeholder="pvz. grąžinimas tėvui" style="margin-bottom:14px;">
+    <div style="display:flex;gap:8px;">
+      <button class="aerr-tool" style="flex:1;" onclick="document.getElementById('afin-adj-modal').remove()">Atšaukti</button>
+      <button class="btn btng" style="flex:1;margin:0;" onclick="submitAfinAdj()">💾 Išsaugoti</button>
+    </div></div>`;
+  document.body.appendChild(m);
+}
+
+async function submitAfinAdj(){
+  const club = document.getElementById('adj-club').value;
+  const amount = parseFloat(document.getElementById('adj-amount').value);
+  const reason = document.getElementById('adj-reason').value.trim();
+  if (isNaN(amount) || !reason){ showToast('❌ Įvesk sumą ir priežastį', 'error'); return; }
+  const { error } = await sb.from('purchase_adjustments').insert({ club_id: club || null, amount_eur: amount, reason, created_by: currentUser?.id });
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  showToast('✅ Korekcija įrašyta', 'success');
+  document.getElementById('afin-adj-modal')?.remove();
+  loadAdminFinance();
+}
+
+// ── Kainodara (klientas kainas perims bendro kodo etape) ──
+function renderAfinPrices(){
+  const el = document.getElementById('afin-prices'); if (!el) return;
+  const rows = Object.values(_afinPrices);
+  el.innerHTML = rows.length ? rows.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:12px;">
+    <span style="flex:1;min-width:0;">${p.label}</span>
+    <input class="inp" id="price-${p.key}" type="number" step="0.01" value="${(+p.amount_eur).toFixed(2)}" style="width:84px;margin:0;padding:6px;text-align:right;">
+    <button class="aerr-tool" onclick="savePrice('${p.key}')">💾</button>
+  </div>`).join('') + '<div class="aerr-meta" style="padding-top:8px;white-space:normal;">⚠️ Vartotojų UI kainas iš DB perims bendro kodo etape — iki tol ten rodomos senos.</div>'
+  : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:11px;">Paleisk server-admin-apskaita.sql</div>';
+}
+
+async function savePrice(key){
+  const v = parseFloat(document.getElementById('price-' + key)?.value);
+  if (isNaN(v) || v < 0){ showToast('❌ Neteisinga suma', 'error'); return; }
+  const { error } = await sb.from('prices').update({ amount_eur: v, updated_at: new Date().toISOString() }).eq('key', key);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  showToast('💾 Kaina atnaujinta', 'success');
+}
+
+async function backfillPurchases(){
+  if (!confirm('Backfill: sukurti trūkstamus pirkimų įrašus iš senų AI ataskaitų?\n\nIdempotentiška — dublikatų nekurs.')) return;
+  const { data, error } = await sb.rpc('admin_backfill_purchases');
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  showToast('🧩 Sukurta įrašų: ' + (data ?? 0), 'success');
+  loadAdminFinance();
 }
 
 // ════════════════════════════════════════
