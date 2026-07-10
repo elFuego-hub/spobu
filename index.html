@@ -612,7 +612,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v354</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v355</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -6562,9 +6562,13 @@ function openParentKidSwitcher() {
   m.innerHTML = `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:20px;padding:18px;width:100%;max-width:380px;max-height:80vh;overflow-y:auto;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;text-align:center;margin-bottom:14px;">PASIRINKITE VAIKĄ</div>
     ${items || '<div style="text-align:center;color:var(--mut);font-size:11px;padding:10px 0 16px;">Dar nėra pridėtų vaikų</div>'}
-    <div onclick="document.getElementById('parent-kid-switcher').remove(); if(typeof openAddKidWizard==='function') openAddKidWizard();" style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:.5px dashed rgba(255,77,0,.4);border-radius:12px;margin-bottom:14px;cursor:pointer;">
+    <div onclick="document.getElementById('parent-kid-switcher').remove(); if(typeof openAddKidWizard==='function') openAddKidWizard();" style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:.5px dashed rgba(255,77,0,.4);border-radius:12px;margin-bottom:8px;cursor:pointer;">
       <div style="width:42px;height:42px;border-radius:50%;background:rgba(255,77,0,.15);display:flex;align-items:center;justify-content:center;color:var(--br);font-size:20px;font-weight:800;flex-shrink:0;">+</div>
       <div style="flex:1;text-align:left;"><div style="font-size:12px;font-weight:800;color:var(--br);">Pridėti vaiką</div><div style="font-size:9px;color:var(--mut);margin-top:1px;">→ Registracijos forma</div></div>
+    </div>
+    <div onclick="document.getElementById('parent-kid-switcher').remove(); if(typeof openLinkKidByCode==='function') openLinkKidByCode();" style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(79,195,247,.05);border:.5px dashed rgba(79,195,247,.45);border-radius:12px;margin-bottom:14px;cursor:pointer;">
+      <div style="width:42px;height:42px;border-radius:50%;background:rgba(79,195,247,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🎟️</div>
+      <div style="flex:1;text-align:left;"><div style="font-size:12px;font-weight:800;color:#4FC3F7;">Prijungti vaiką su kodu</div><div style="font-size:9px;color:var(--mut);margin-top:1px;">Vaikas (14+) jau turi paskyrą — įvesk jo kodą</div></div>
     </div>
     <button onclick="document.getElementById('parent-kid-switcher').remove()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">UŽDARYTI</button>
   </div>`;
