@@ -612,7 +612,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v358</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v359</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -23703,12 +23703,8 @@ async function _attAwardBonus(kidId, periodType, periodKey, exp, reason){
   const { error }=await sb.from('attendance_bonuses').insert({ kid_id:kidId, period_type:periodType, period_key:periodKey, exp });
   if(error) return; // dublis (23505) ar RLS → EXP nepridedam
   try{
-    await sb.from('kid_exp_adjustments').insert({ kid_id:kidId, trainer_id:currentUser.id, exp_change:exp, reason });
-    const { data: kr }=await sb.from('kids').select('total_exp').eq('id',kidId).maybeSingle();
-    const newExp=Math.max(0,(kr?.total_exp||0)+exp);
-    const upd={ total_exp:newExp };
-    if(typeof getStageInfo==='function') upd.current_level=getStageInfo(newExp).globalLevel;
-    await sb.from('kids').update(upd).eq('id',kidId);
+    // Serverio RPC: istorija + atominis total_exp/current_level (anti-cheat)
+    await sb.rpc('award_kid_exp', { p_kid:kidId, p_amount:exp, p_reason:reason, p_log:true });
   }catch(_){}
 }
 
@@ -27689,16 +27685,13 @@ async function awardBehaviorExp() {
   const reset = () => { if (btn) { btn.disabled = false; btn.dataset.busy = ''; btn.textContent = '⚡ Skirti EXP'; btn.style.opacity = '1'; } };
   if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.disabled = true; btn.textContent = 'SKIRIAMA...'; btn.style.opacity = '.6'; }
   try {
-    // 1. Įrašom į kid_exp_adjustments (EXP gavimo istorija — vaiko ir tėvų feed'ai skaito iš čia)
-    const { error: adjErr } = await sb.from('kid_exp_adjustments').insert({
-      kid_id: kid.id, trainer_id: currentUser.id, exp_change: amount, reason: reason
+    // Serverio RPC: įrašo istoriją + atominis total_exp/current_level (anti-cheat: EXP skiria tik serveris)
+    const { data: newExpVal, error: rpcErr } = await sb.rpc('award_kid_exp', {
+      p_kid: kid.id, p_amount: amount, p_reason: reason, p_log: true
     });
-    if (adjErr) throw adjErr;
-    // 2. Vaikui realiai prisideda EXP (lygis išvedamas iš total_exp per getStageInfo — 99 sistema)
-    const newExp = Math.max(0, (kid.total_exp || 0) + amount);
+    if (rpcErr) throw rpcErr;
+    const newExp = (typeof newExpVal === 'number') ? newExpVal : Math.max(0, (kid.total_exp || 0) + amount);
     const newLevel = (typeof getStageInfo === 'function') ? getStageInfo(newExp).globalLevel : (kid.current_level || 1);
-    const { error: kidErr } = await sb.from('kids').update({ total_exp: newExp, current_level: newLevel }).eq('id', kid.id);
-    if (kidErr) throw kidErr;
     // Lokaliai atnaujinam modalo UI
     kid.total_exp = newExp; kid.current_level = newLevel;
     const expEl = document.getElementById('kd-exp'); if (expEl) expEl.textContent = newExp.toLocaleString('lt-LT');
@@ -31045,10 +31038,9 @@ async function approveDuel(duelId) {
 // Pridėti EXP vaikui (helper)
 async function addExpToKid(kidId, expAmount) {
   if (!kidId || !expAmount) return;
-  const { data: kid } = await sb.from('kids').select('total_exp').eq('id', kidId).single();
-  if (!kid) return;
-  const newExp = (kid.total_exp || 0) + expAmount;
-  await sb.from('kids').update({ total_exp: newExp }).eq('id', kidId);
+  // Serverio RPC (anti-cheat): atominis total_exp+current_level; dvikovoms istorijos neįrašom (p_log:false)
+  try { await sb.rpc('award_kid_exp', { p_kid: kidId, p_amount: expAmount, p_reason: 'Dvikova', p_log: false }); }
+  catch (e) { console.error('[addExpToKid]', e); }
 }
 
 // Treneris atmeta dvikovą
