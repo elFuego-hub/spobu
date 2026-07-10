@@ -10,14 +10,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700;800;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <link href="https://fonts.bunny.net/css?family=bebas-neue:400|nunito:400,700,800,900|noto-serif-jp:700,900&display=swap" rel="stylesheet">
-<!-- GLOBAL ERROR CATCHER - rodo VISKĄ ant ekrano (debugging) -->
+<!-- GLOBAL ERROR CATCHER - rodo VISKĄ ant ekrano (debugging) + kaupia telemetrijai (Blokas B) -->
 <script>
+// 📡 Telemetrijos buferis: sb dar neinicializuotas, tad tik kaupiam — išsiųs _spobuLogError po login
+window._earlyErrors = [];
+window._spobuBuffErr = function(message, source, lineno, colno, stack){
+  try {
+    if (window._earlyErrors.length >= 10) return;
+    window._earlyErrors.push({ message: String(message||'').slice(0,300), source: String(source||'').slice(0,200), lineno: lineno||null, colno: colno||null, stack: String(stack||'').slice(0,2000), ts: Date.now() });
+  } catch(_){}
+};
 window.addEventListener('error', function(e) {
   const errDiv = document.createElement('div');
   errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;z-index:99999;font-family:monospace;font-size:12px;white-space:pre-wrap;';
   errDiv.textContent = '❌ JS KLAIDA: ' + e.message + '\nFAILAS: ' + (e.filename||'?') + ':' + (e.lineno||'?');
   if (document.body) document.body.appendChild(errDiv);
   else document.addEventListener('DOMContentLoaded', () => document.body.appendChild(errDiv));
+  window._spobuBuffErr(e.message, e.filename, e.lineno, e.colno, e.error && e.error.stack);
 });
 window.addEventListener('unhandledrejection', function(e) {
   const errDiv = document.createElement('div');
@@ -25,6 +34,7 @@ window.addEventListener('unhandledrejection', function(e) {
   errDiv.textContent = '⚠️ PROMISE KLAIDA: ' + (e.reason?.message || e.reason);
   if (document.body) document.body.appendChild(errDiv);
   else document.addEventListener('DOMContentLoaded', () => document.body.appendChild(errDiv));
+  window._spobuBuffErr('Promise: ' + (e.reason?.message || e.reason), '', null, null, e.reason && e.reason.stack);
 });
 </script>
 <!-- SUPABASE SDK - su fallback (be document.write!) -->
@@ -602,7 +612,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v351</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v352</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -2913,11 +2923,11 @@ select.inp option{background:#222;}
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Pristatoma automatiškai, visus metus</li>
       </ul>
       <div style="background:rgba(0,0,0,.28);border:.5px solid var(--bdr);border-radius:10px;padding:9px 11px;margin:2px 0 9px;font-size:10.5px;color:var(--mut);">
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>💎 Premium (statistika) metams</span><span style="color:#cfcfd6;font-weight:600;">41.94€</span></div>
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>📋 3 ataskaitos (3 × 9.99€)</span><span style="color:#cfcfd6;font-weight:600;">29.97€</span></div>
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>🏋️ 3 namų planai (3 × 19.99€)</span><span style="color:#cfcfd6;font-weight:600;">59.97€</span></div>
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>☀️ Vasaros programa</span><span style="color:#cfcfd6;font-weight:600;">29.99€</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0 2px;margin-top:3px;border-top:.5px solid var(--bdr);"><span style="color:white;font-weight:700;">Viskas atskirai</span><span style="text-decoration:line-through;">161.87€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>💎 Premium (statistika) metams</span><span id="ps-annual-v" style="color:#cfcfd6;font-weight:600;">41.94€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span id="ps-rep-l">📋 3 ataskaitos (3 × 9.99€)</span><span id="ps-rep-v" style="color:#cfcfd6;font-weight:600;">29.97€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span id="ps-home-l">🏋️ 3 namų planai (3 × 19.99€)</span><span id="ps-home-v" style="color:#cfcfd6;font-weight:600;">59.97€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>☀️ Vasaros programa</span><span id="ps-sum-v" style="color:#cfcfd6;font-weight:600;">29.99€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0 2px;margin-top:3px;border-top:.5px solid var(--bdr);"><span style="color:white;font-weight:700;">Viskas atskirai</span><span id="ps-total-v" style="text-decoration:line-through;">161.87€</span></div>
         <div style="display:flex;justify-content:space-between;padding:2px 0;"><span style="color:var(--gld);font-weight:900;font-size:12px;">Su Premium+</span><span style="color:var(--gld);font-weight:900;font-size:12px;">81.00€</span></div>
       </div>
       <div style="text-align:center;background:rgba(34,197,94,.15);color:var(--grn);font-size:10px;font-weight:800;padding:6px;border-radius:8px;margin-bottom:10px;">💰 –50% NUOLAIDA · sutaupai 80.87€ (viskas viename, automatiškai)</div>
@@ -4886,6 +4896,178 @@ async function checkApprovalStatus() {
   }
 }
 
+// ════════════════════════════════════════
+// 🌐 BENDRAS KODAS (AD-SHARED): telemetrija (B1) + kainos (C5) + ping (D1) +
+// „Mano žinutės" (F3) + platformos juostos (H1-H2). Veikia VISOMS rolėms.
+// ════════════════════════════════════════
+
+// ── C5: kainos iš DB (prices lentelė; fallback — esamos reikšmės) ──
+let PRICES = { report: 9.99, homeplan: 19.99, summer: 29.99, subscription_annual: 41.94 };
+async function loadPrices(){
+  try {
+    const { data } = await sb.from('prices').select('key, amount_eur');
+    (data || []).forEach(r => { if (r.key && r.amount_eur != null) PRICES[r.key] = +r.amount_eur; });
+  } catch(e){}
+  _applyPricesToUI();
+}
+function _applyPricesToUI(){
+  try {
+    const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    const f = v => (Math.round(v * 100) / 100).toFixed(2) + '€';
+    set('ps-annual-v', f(PRICES.subscription_annual));
+    set('ps-rep-l', `📋 3 ataskaitos (3 × ${f(PRICES.report)})`);
+    set('ps-rep-v', f(PRICES.report * 3));
+    set('ps-home-l', `🏋️ 3 namų planai (3 × ${f(PRICES.homeplan)})`);
+    set('ps-home-v', f(PRICES.homeplan * 3));
+    set('ps-sum-v', f(PRICES.summer));
+    set('ps-total-v', f(PRICES.subscription_annual + PRICES.report * 3 + PRICES.homeplan * 3 + PRICES.summer));
+  } catch(e){}
+}
+
+// ── D1: dienos aktyvumo ping (DAU/WAU/MAU + retention; user_activity lentelė) ──
+async function pingActivity(){
+  try {
+    if (!currentUser?.id) return;
+    const day = new Date().toISOString().slice(0, 10);
+    const key = 'spobu_ping_' + currentUser.id;
+    if (localStorage.getItem(key) === day) return;
+    localStorage.setItem(key, day);
+    await sb.from('user_activity').upsert(
+      { user_id: currentUser.id, day, role: (typeof currentProfile !== 'undefined' && currentProfile?.role) || null },
+      { onConflict: 'user_id,day', ignoreDuplicates: true });
+  } catch(e){}
+}
+
+// ── B1: klaidų telemetrija → client_errors (flood apsauga: 10/sesija, 1/min per hash) ──
+let _errSessCount = 0;
+const _errLastByHash = {};
+function _spobuHash(s){ let h = 0; for (let i = 0; i < s.length; i++){ h = ((h << 5) - h + s.charCodeAt(i)) | 0; } return 'e' + Math.abs(h); }
+async function _spobuLogError(message, source, lineno, colno, stack){
+  try {
+    if (typeof sb === 'undefined' || !currentUser?.id) return;   // iki login kaupia HEAD buferis
+    if (_errSessCount >= 10) return;
+    const msg = String(message || '').slice(0, 300);
+    if (!msg || /ResizeObserver|Script error\.?$/.test(msg)) return;
+    const hash = _spobuHash(msg + '|' + String(source || '').split('/').pop() + '|' + (lineno || ''));
+    const now = Date.now();
+    if (_errLastByHash[hash] && now - _errLastByHash[hash] < 60000) return;
+    _errLastByHash[hash] = now; _errSessCount++;
+    await sb.from('client_errors').insert({
+      err_hash: hash, message: msg, source: String(source || '').slice(0, 200),
+      lineno: lineno || null, colno: colno || null, stack: String(stack || '').slice(0, 2000),
+      url: (location.hash || location.pathname || '').slice(0, 150),
+      app_version: document.getElementById('app-version')?.textContent || null,
+      role: (typeof currentProfile !== 'undefined' && currentProfile?.role) || null,
+      user_id: currentUser.id, ua: navigator.userAgent.slice(0, 180)
+    });
+  } catch(e){}
+}
+async function _flushEarlyErrors(){
+  try {
+    const buf = window._earlyErrors || [];
+    window._spobuBuffErr = function(){};   // nuo dabar siunčia tiesioginiai listeneriai
+    for (const e of buf.splice(0, 10)) await _spobuLogError(e.message, e.source, e.lineno, e.colno, e.stack);
+  } catch(e){}
+}
+window.addEventListener('error', function(e){ _spobuLogError(e.message, e.filename, e.lineno, e.colno, e.error && e.error.stack); });
+window.addEventListener('unhandledrejection', function(e){ _spobuLogError('Promise: ' + (e.reason?.message || e.reason), '', null, null, e.reason && e.reason.stack); });
+
+// ── F3: „Mano žinutės" — savo feedback + SPOBU atsakymai (visų rolių Pagalboje) ──
+async function _checkFeedbackReplies(){
+  try {
+    if (!currentUser?.id) return;
+    const { data } = await sb.from('feedback').select('replied_at').eq('user_id', currentUser.id)
+      .not('admin_reply', 'is', null).order('replied_at', { ascending: false }).limit(1);
+    const last = data && data[0] && data[0].replied_at;
+    if (!last) return;
+    if (localStorage.getItem('spobu_fb_reply_seen_' + currentUser.id) === last) return;
+    showToast('📨 Gavai atsakymą iš SPOBU — Pagalba → „Mano žinutės"', 'success', 6000);
+  } catch(e){}
+}
+async function openMyMessages(){
+  const old = document.getElementById('my-msgs-modal'); if (old) old.remove();
+  let rows = [];
+  try {
+    const { data } = await sb.from('feedback').select('type, message, status, admin_reply, replied_at, created_at')
+      .eq('user_id', currentUser?.id).order('created_at', { ascending: false }).limit(15);
+    rows = data || [];
+  } catch(e){}
+  try {
+    const last = rows.filter(r => r.replied_at).map(r => r.replied_at).sort().pop();
+    if (last && currentUser?.id) localStorage.setItem('spobu_fb_reply_seen_' + currentUser.id, last);
+  } catch(e){}
+  const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const m = document.createElement('div'); m.id = 'my-msgs-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">📨 MANO ŽINUTĖS</div>
+      <button onclick="document.getElementById('my-msgs-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:14px 18px 26px;">
+      ${rows.length ? rows.map(r => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:8px;">
+        <div style="font-size:12px;color:white;line-height:1.5;">${r.type === 'bug' ? '🐞' : '💬'} ${esc(r.message)}</div>
+        <div style="font-size:9.5px;color:var(--mut);margin-top:3px;">${new Date(r.created_at).toLocaleString('lt-LT')}</div>
+        ${r.admin_reply
+          ? `<div style="margin-top:8px;background:rgba(34,197,94,.08);border-left:3px solid var(--grn);border-radius:0 8px 8px 0;padding:8px 10px;font-size:12px;color:#d8f5df;line-height:1.5;">↩ <b>SPOBU:</b> ${esc(r.admin_reply)}</div>`
+          : `<div style="margin-top:6px;font-size:10px;color:var(--mut);">⏳ Laukia atsakymo</div>`}
+      </div>`).join('') : '<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Žinučių dar nesiuntei.<br>Rašyk per „Pranešti problemą" — atsakymą rasi čia.</div>'}
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+// ── H1-H2: platformos juostos (maintenance / skelbimas / min. versija) ──
+async function loadPlatformGuards(){
+  try {
+    const { data } = await sb.from('platform_settings').select('key, value');
+    const map = {}; (data || []).forEach(r => { map[r.key] = r.value; });
+    window._platformSettings = map;
+  } catch(e){ window._platformSettings = {}; }
+}
+function applyPlatformGuards(role){
+  try {
+    const s = window._platformSettings || {};
+    // 🔧 Maintenance — ne-admin mato užsklandą ir toliau nekraunama
+    if (s.maintenance_mode === true && role !== 'admin'){
+      const d = document.createElement('div');
+      d.id = 'maintenance-overlay';
+      d.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#0b0b0f;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;';
+      d.innerHTML = `<div><div style="font-size:56px;margin-bottom:14px;">🔧</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:white;">VYKSTA ATNAUJINIMAS</div>
+        <div style="font-size:13px;color:#898781;margin-top:8px;line-height:1.6;">SPOBU tuoj grįš — pabandyk po kelių minučių.<br>OSU! 🥋</div></div>`;
+      document.body.appendChild(d);
+      return false;
+    }
+    // 📢 Globalus skelbimas (uždaromas; seen pagal turinį)
+    const ann = s.global_announcement;
+    if (ann && ann.text){
+      const hash = 'a' + String(ann.text).length + '_' + String(ann.text).slice(0, 24);
+      if (localStorage.getItem('spobu_ann_seen') !== hash && !document.getElementById('global-ann-bar')){
+        const warn = ann.type === 'warning';
+        const b = document.createElement('div');
+        b.id = 'global-ann-bar';
+        b.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:100005;max-width:560px;width:calc(100% - 24px);margin-top:6px;background:' + (warn ? 'rgba(64,34,6,.97)' : 'rgba(8,36,52,.97)') + ';border:1px solid ' + (warn ? '#fab219' : '#3987e5') + ';border-radius:12px;padding:10px 38px 10px 14px;font-size:12.5px;color:white;line-height:1.5;box-shadow:0 8px 30px rgba(0,0,0,.5);';
+        b.innerHTML = (warn ? '⚠️ ' : '📢 ') + String(ann.text).replace(/&/g, '&amp;').replace(/</g, '&lt;') +
+          `<button onclick="localStorage.setItem('spobu_ann_seen','${hash}');document.getElementById('global-ann-bar').remove()" style="position:absolute;top:6px;right:8px;background:transparent;border:none;color:#c3c2b7;font-size:16px;cursor:pointer;">✕</button>`;
+        document.body.appendChild(b);
+      }
+    }
+    // 🔄 Min. versija — sena programa gauna atnaujinimo juostą
+    const minV = (typeof s.min_app_version === 'string') ? parseInt(s.min_app_version.replace(/\D/g, ''), 10) : null;
+    const curV = parseInt((document.getElementById('app-version')?.textContent || '').replace(/\D/g, ''), 10);
+    if (minV && curV && curV < minV && !document.getElementById('minver-bar')){
+      const u = document.createElement('div');
+      u.id = 'minver-bar';
+      u.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:100006;background:rgba(38,16,2,.97);border:1px solid #FF8C00;border-radius:12px;padding:10px 14px;font-size:12.5px;color:white;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);';
+      u.innerHTML = '🔄 Yra nauja SPOBU versija <button onclick="location.reload(true)" style="background:#FF4D00;border:none;color:white;border-radius:8px;padding:6px 12px;font-weight:800;cursor:pointer;">Atnaujinti</button>';
+      document.body.appendChild(u);
+    }
+  } catch(e){}
+  return true;
+}
+
 async function afterLogin() {
   console.log('🚀 [afterLogin] STARTAS, user:', currentUser?.email);
   
@@ -4996,6 +5178,13 @@ async function afterLogin() {
 
   await loadClubFlags(); // 🚩 klubo feature-flags (visom rolėm; trūkstant — viskas įjungta)
 
+  // 🌐 AD-SHARED: platformos juostos + kainos + ping + atsakymai (visom rolėm)
+  await loadPlatformGuards();
+  if (!applyPlatformGuards(profile.role)) return;  // 🔧 maintenance — ne-admin sustoja čia
+  loadPrices();            // 💶 C5: kainos iš DB
+  pingActivity();          // 📊 D1: DAU/WAU/MAU ping
+  _checkFeedbackReplies(); // 📨 F3: SPOBU atsakymų toast
+
   // Pagal rolę krauname tinkamą duomenis
   try {
     if (profile.role === 'admin') {
@@ -5049,6 +5238,7 @@ async function afterLogin() {
     }
     applyClubFlagGates(); // 🚪 paslėpti išjungtas funkcijas (visi portalai)
     console.log('🎉 [afterLogin] BAIGTA SĖKMINGAI');
+    _flushEarlyErrors(); // 📡 B1: iki-login sukauptos klaidos → client_errors
   } catch (e) {
     console.error('❌ [afterLogin] EXCEPTION rolės kraunant:', e);
     showToast('❌ Klaida kraunant duomenis: ' + e.message, 'error', 8000);
@@ -5472,11 +5662,18 @@ function openHelpModal(who) {
             <div style="font-size:18px;color:#8B5CF6;">›</div>
           </div>
         </a>
-        <div onclick="openHelpReportModal()" style="cursor:pointer;margin-bottom:16px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+        <div onclick="openHelpReportModal()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
           <div style="background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">🐞</div>
             <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Radai klaidą? Keliaus tiesiai administratoriui</div></div>
             <div style="font-size:18px;color:var(--br);">›</div>
+          </div>
+        </div>
+        <div onclick="openMyMessages()" style="cursor:pointer;margin-bottom:16px;-webkit-tap-highlight-color:rgba(34,197,94,.2);">
+          <div style="background:rgba(34,197,94,.10);border:.5px solid rgba(34,197,94,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">📨</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Mano žinutės</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Tavo pranešimai ir SPOBU atsakymai</div></div>
+            <div style="font-size:18px;color:var(--grn);">›</div>
           </div>
         </div>
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:4px 2px 8px;">❓ DAŽNIAUSI KLAUSIMAI</div>
@@ -7406,7 +7603,7 @@ async function setKidTier(tier){
   // 💾 Prenumeratos pakopa į DB + pirkimų žurnalas (server-klubas-purchases.sql)
   try { await sb.from('kids').update({ subscription_tier: tier }).eq('id', k.id); } catch(e){}
   if (tier === 'premium' || tier === 'premium_plus'){
-    const _items = [{ item_type:'subscription', amount_eur:41.94, plan:'annual' }];
+    const _items = [{ item_type:'subscription', amount_eur: (typeof PRICES !== 'undefined' ? PRICES.subscription_annual : 41.94), plan:'annual' }];
     if (tier === 'premium_plus'){
       // bundle ataskaitos — skaičiuojamos kaip „pirkta", bet €0 (įskaičiuota į prenumeratos kainą; nedubliuojam apyvartos)
       for (let i=0;i<3;i++) _items.push({ item_type:'report', amount_eur:0 });
