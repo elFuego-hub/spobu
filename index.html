@@ -28281,7 +28281,7 @@ function renderAdminErrors(){
       <div style="display:flex;align-items:center;gap:10px;">
         <span class="aerr-led ${r.status==='fixed' ? 'ok' : (fresh ? 'bad' : 'warn')}"></span>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12.5px;font-weight:700;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(r.message||'').slice(0,140)}</div>
+          <div style="font-size:12.5px;font-weight:700;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml((r.message||'').slice(0,140))}</div>
           <div class="aerr-meta">${r.count}× · ${r.users.size} naud. · ${vTxt} · ${[...r.roles].join(',')||'?'} · paskutinė ${typeof _agoLT==='function'?_agoLT(r.last):''}</div>
         </div>
         <span class="aerr-st ${stCls[r.status]||'bad'}">${stLbl[r.status]||'NAUJA'}</span>
@@ -28305,8 +28305,8 @@ async function openAdminErrorGroup(hash){
   m.innerHTML = `<div style="width:100%;max-width:760px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
     <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:10px;">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13.5px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🚨 ${(grp?.message||r0.message||'Klaida')}</div>
-        <div class="aerr-meta">${grp?grp.count:(rows||[]).length}× · ${r0.source||'?'}:${r0.lineno||'?'} · ${r0.url||''}</div>
+        <div style="font-size:13.5px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🚨 ${escapeHtml(grp?.message||r0.message||'Klaida')}</div>
+        <div class="aerr-meta">${grp?grp.count:(rows||[]).length}× · ${escapeHtml(r0.source||'?')}:${r0.lineno||'?'} · ${escapeHtml(r0.url||'')}</div>
       </div>
       <button onclick="document.getElementById('admin-err-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;flex-shrink:0;">✕</button>
     </div>
@@ -28316,13 +28316,13 @@ async function openAdminErrorGroup(hash){
       <button class="aerr-tool" onclick="setAdminErrStatus('${safeHash}','new')">↩ Grąžinti į naujas</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:14px 18px;">
-      ${r0.stack ? `<div class="aerr-meta" style="margin-bottom:6px;">STACK</div><pre style="background:rgba(255,255,255,.04);border:.5px solid var(--bdr);border-radius:10px;padding:12px;font-size:10.5px;line-height:1.5;color:#c3c2b7;white-space:pre-wrap;word-break:break-all;margin:0 0 14px;">${(r0.stack||'').slice(0,3000)}</pre>` : ''}
+      ${r0.stack ? `<div class="aerr-meta" style="margin-bottom:6px;">STACK</div><pre style="background:rgba(255,255,255,.04);border:.5px solid var(--bdr);border-radius:10px;padding:12px;font-size:10.5px;line-height:1.5;color:#c3c2b7;white-space:pre-wrap;word-break:break-all;margin:0 0 14px;">${escapeHtml((r0.stack||'').slice(0,3000))}</pre>` : ''}
       <div class="aerr-meta" style="margin-bottom:6px;">PASKUTINIAI ĮVYKIAI (${(rows||[]).length})</div>
       ${(rows||[]).map(r => `<div style="display:flex;gap:10px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:11px;color:var(--mut);">
         <span style="flex-shrink:0;">${new Date(r.created_at).toLocaleString('lt-LT')}</span>
         <span style="flex-shrink:0;">${r.app_version||'?'}</span>
         <span style="flex-shrink:0;">${r.role||'?'}</span>
-        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(r.ua||'').slice(0,60)}</span>
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml((r.ua||'').slice(0,60))}</span>
       </div>`).join('')}
     </div>
   </div>`;
