@@ -612,7 +612,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v356</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v357</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -649,6 +649,11 @@ select.inp option{background:#222;}
     </div>
     <div style="text-align:center;margin-top:8px;">
       <button class="btn-link" onclick="showForgot()">Pamiršau slaptažodį</button>
+      <div style="margin-top:14px;font-size:10px;color:var(--mut);text-align:center;">
+        <a href="privatumo-politika.html" target="_blank" rel="noopener" style="color:var(--mut);text-decoration:underline;">Privatumo politika</a>
+        &nbsp;·&nbsp;
+        <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="color:var(--mut);text-decoration:underline;">Naudojimo taisyklės</a>
+      </div>
     </div>
   </div>
 </div>
@@ -722,7 +727,7 @@ select.inp option{background:#222;}
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;">
           <input type="checkbox" id="rw-consent-1" style="width:18px;height:18px;margin-top:2px;flex-shrink:0;">
           <label for="rw-consent-1" style="font-size:12px;color:var(--txt);line-height:1.5;">
-            Sutinku su <span style="color:var(--br);">Privatumo politika</span> ir <span style="color:var(--br);">Naudojimo sąlygomis</span>
+            Sutinku su <a href="privatumo-politika.html" target="_blank" rel="noopener" style="color:var(--br);font-weight:700;">Privatumo politika</a> ir <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="color:var(--br);font-weight:700;">Naudojimo taisyklėmis</a>
           </label>
         </div>
         
@@ -5156,7 +5161,8 @@ function openKidSelfSignup(){
       <input class="inp" id="ksr-health" maxlength="200" placeholder="pvz. astma; alergija riešutams (nebūtina)" style="margin-bottom:6px;">
       <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:10px;cursor:pointer;"><input type="checkbox" id="ksr-c3" style="margin-top:2px;"> Sutinku, kad mano nurodyta sveikatos informacija būtų matoma treneriui ir klubui saugumo tikslais <span style="opacity:.75;">(reikia tik jei įrašei sveikatos info)</span>.</label>
       <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:6px;cursor:pointer;"><input type="checkbox" id="ksr-c1" style="margin-top:2px;"> Sutinku, kad SPOBU tvarkytų mano sportinius duomenis (rezultatai, lygiai, lankomumas), kad programėlė veiktų.</label>
-      <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:12px;cursor:pointer;"><input type="checkbox" id="ksr-c2" style="margin-top:2px;"> Suprantu, kad mano anketą patvirtins klubas, o tėvus galėsiu prisijungti vėliau su kodu.</label>
+      <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="ksr-c2" style="margin-top:2px;"> Suprantu, kad mano anketą patvirtins klubas, o tėvus galėsiu prisijungti vėliau su kodu.</label>
+      <div style="font-size:10px;color:var(--mut);margin-bottom:12px;">📄 <a href="privatumo-politika.html" target="_blank" rel="noopener" style="color:#4FC3F7;">Privatumo politika</a> (viršuje — santrauka tau paprastai) · <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="color:#4FC3F7;">Naudojimo taisyklės</a></div>
       <button class="btn btng" style="width:100%;margin:0 0 8px;" id="ksr-submit" onclick="submitKidSelfSignup()">🥋 Sukurti paskyrą</button>
       <button class="btn" style="width:100%;margin:0;background:transparent;border:.5px solid var(--bdr);color:var(--mut);" onclick="document.getElementById('ksr-step2').style.display='none';document.getElementById('ksr-step1').style.display='block';">← Atgal</button>
     </div>
