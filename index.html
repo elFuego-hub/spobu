@@ -612,7 +612,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v355</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v356</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -5114,7 +5114,26 @@ function openKidSelfSignup(){
       <label class="lbl">LYTIS *</label>
       <select class="inp" id="ksr-gender" style="margin-bottom:8px;"><option value="male">👦 Vaikinas</option><option value="female">👧 Mergina</option></select>
       <label class="lbl">GIMIMO DATA *</label>
-      <input class="inp" id="ksr-bdate" type="date" style="margin-bottom:12px;">
+      <input class="inp" id="ksr-bdate" type="date" style="margin-bottom:8px;">
+      <label class="lbl">DIRŽAS (KYU) *</label>
+      <select class="inp" id="ksr-kyu" style="margin-bottom:8px;">
+        <option value="mu kyu">Baltas (mu kyu) — dar be egzamino</option>
+        <option value="10 kyu">10 kyu (oranžinis)</option>
+        <option value="9 kyu">9 kyu (oranžinis + mėlyna juostelė)</option>
+        <option value="8 kyu">8 kyu (mėlynas)</option>
+        <option value="7 kyu">7 kyu (mėlynas + geltona juostelė)</option>
+        <option value="6 kyu">6 kyu (geltonas)</option>
+        <option value="5 kyu">5 kyu (geltonas + žalia juostelė)</option>
+        <option value="4 kyu">4 kyu (žalias)</option>
+        <option value="3 kyu">3 kyu (žalias + ruda juostelė)</option>
+        <option value="2 kyu">2 kyu (rudas)</option>
+        <option value="1 kyu">1 kyu (rudas + juoda juostelė)</option>
+      </select>
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;"><label class="lbl">ŪGIS (cm)</label><input class="inp" id="ksr-height" type="number" inputmode="numeric" placeholder="pvz. 165"></div>
+        <div style="flex:1;"><label class="lbl">SVORIS (kg)</label><input class="inp" id="ksr-weight" type="number" inputmode="decimal" placeholder="pvz. 52"></div>
+      </div>
+      <div style="font-size:9.5px;color:var(--mut);margin:4px 0 12px;line-height:1.4;">Ūgis ir svoris nebūtini — bet padės varžybų kategorijoms ir AI ataskaitoms.</div>
       <button class="btn btng" style="width:100%;margin:0;" onclick="ksrNext()">Toliau →</button>
     </div>
     <div id="ksr-step2" style="display:none;">
@@ -5127,7 +5146,15 @@ function openKidSelfSignup(){
       <label class="lbl">KLUBO KODAS * <span style="color:var(--mut);font-weight:400;">(pvz. SPOBU-4821)</span></label>
       <input class="inp" id="ksr-club" style="margin-bottom:8px;text-transform:uppercase;">
       <label class="lbl">TELEFONAS <span style="color:var(--mut);font-weight:400;">(nebūtina)</span></label>
-      <input class="inp" id="ksr-phone" style="margin-bottom:10px;">
+      <input class="inp" id="ksr-phone" style="margin-bottom:8px;">
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;"><label class="lbl">TĖVŲ VARDAS</label><input class="inp" id="ksr-emg-name" maxlength="40" placeholder="pvz. Mama Rasa"></div>
+        <div style="flex:1;"><label class="lbl">TĖVŲ TELEFONAS</label><input class="inp" id="ksr-emg-phone" type="tel" placeholder="+3706..."></div>
+      </div>
+      <div style="font-size:9.5px;color:var(--mut);margin:4px 0 8px;line-height:1.4;">Nebūtina — treneriui saugumui, jei sportuojant reikėtų susisiekti su tavo tėvais.</div>
+      <label class="lbl">SVEIKATA: ALERGIJOS / TRAUMOS / LIGOS</label>
+      <input class="inp" id="ksr-health" maxlength="200" placeholder="pvz. astma; alergija riešutams (nebūtina)" style="margin-bottom:6px;">
+      <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:10px;cursor:pointer;"><input type="checkbox" id="ksr-c3" style="margin-top:2px;"> Sutinku, kad mano nurodyta sveikatos informacija būtų matoma treneriui ir klubui saugumo tikslais <span style="opacity:.75;">(reikia tik jei įrašei sveikatos info)</span>.</label>
       <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:6px;cursor:pointer;"><input type="checkbox" id="ksr-c1" style="margin-top:2px;"> Sutinku, kad SPOBU tvarkytų mano sportinius duomenis (rezultatai, lygiai, lankomumas), kad programėlė veiktų.</label>
       <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:12px;cursor:pointer;"><input type="checkbox" id="ksr-c2" style="margin-top:2px;"> Suprantu, kad mano anketą patvirtins klubas, o tėvus galėsiu prisijungti vėliau su kodu.</label>
       <button class="btn btng" style="width:100%;margin:0 0 8px;" id="ksr-submit" onclick="submitKidSelfSignup()">🥋 Sukurti paskyrą</button>
@@ -5166,6 +5193,10 @@ function ksrNext(){
   const age = (Date.now() - new Date(bd).getTime()) / (365.25 * 864e5);
   if (age < 14){ _ksrErr('Iki 14 metų registruoja tėvai — paprašyk jų paspausti „Registruotis".'); return; }
   if (age > 100){ _ksrErr('Patikrink gimimo datą'); return; }
+  const hV = document.getElementById('ksr-height').value.trim();
+  const wV = document.getElementById('ksr-weight').value.trim();
+  if (hV && (+hV < 100 || +hV > 230)){ _ksrErr('Patikrink ūgį — centimetrais (pvz. 165)'); return; }
+  if (wV && (+wV.replace(',', '.') < 25 || +wV.replace(',', '.') > 150)){ _ksrErr('Patikrink svorį — kilogramais (pvz. 52)'); return; }
   document.getElementById('ksr-step1').style.display = 'none';
   document.getElementById('ksr-step2').style.display = 'block';
 }
@@ -5182,11 +5213,20 @@ async function submitKidSelfSignup(){
   const lname = document.getElementById('ksr-lname').value.trim();
   const gender = document.getElementById('ksr-gender').value;
   const bdate = document.getElementById('ksr-bdate').value;
+  const kyu = document.getElementById('ksr-kyu').value;
+  const hRaw = document.getElementById('ksr-height').value.trim();
+  const wRaw = document.getElementById('ksr-weight').value.trim();
+  const heightCm = hRaw ? Math.round(+hRaw) : null;
+  const weightKg = wRaw ? +wRaw.replace(',', '.') : null;
+  const emgName = document.getElementById('ksr-emg-name').value.trim();
+  const emgPhone = document.getElementById('ksr-emg-phone').value.trim();
+  const health = document.getElementById('ksr-health').value.trim();
   if (!/^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)){ _ksrErr('Neteisingas el. pašto formatas'); return; }
   if (!pass || pass.length < 8){ _ksrErr('Slaptažodis — bent 8 simboliai'); return; }
   if (pass !== pass2){ _ksrErr('Slaptažodžiai nesutampa'); return; }
   if (!clubCode){ _ksrErr('Įvesk klubo kodą'); return; }
   if (!document.getElementById('ksr-c1').checked || !document.getElementById('ksr-c2').checked){ _ksrErr('Pažymėk abu sutikimus'); return; }
+  if (health && !document.getElementById('ksr-c3').checked){ _ksrErr('Įrašei sveikatos informaciją — pažymėk sutikimą, kad ją matytų treneris'); return; }
   const btn = document.getElementById('ksr-submit');
   btn.disabled = true; btn.textContent = 'KURIAMA...';
   try {
@@ -5209,11 +5249,20 @@ async function submitKidSelfSignup(){
       await new Promise(r => setTimeout(r, 700));   // trigeriui sukurti profilį
     }
     // 3) atominis vaiko sukūrimas serveryje (visa validacija ten — amžius/klubas/vėliavos)
-    const { error: rpcErr } = await sb.rpc('register_self_kid', {
+    let rpcRes = await sb.rpc('register_self_kid', {
       p_fname: fname, p_lname: lname || null, p_gender: gender, p_birth_date: bdate,
-      p_club_code: clubCode, p_phone: phone || null
+      p_club_code: clubCode, p_phone: phone || null,
+      p_kyu: kyu, p_height_cm: heightCm, p_weight_kg: weightKg,
+      p_emg_name: emgName || null, p_emg_phone: emgPhone || null, p_health_notes: health || null
     });
-    if (rpcErr) throw rpcErr;
+    if (rpcRes.error && /PGRST202|Could not find the function/i.test(rpcRes.error.message || '')){
+      // serveryje dar senas RPC (be anketos laukų — patch1 nepaleistas) — registruojam be jų
+      rpcRes = await sb.rpc('register_self_kid', {
+        p_fname: fname, p_lname: lname || null, p_gender: gender, p_birth_date: bdate,
+        p_club_code: clubCode, p_phone: phone || null
+      });
+    }
+    if (rpcRes.error) throw rpcRes.error;
     // Sėkmė: sesija lieka (status='pending') — po „Supratau" reload parodys laukimo ekraną
     window._suppressAuthChange = false;
     document.getElementById('ksr-step2').style.display = 'none';
