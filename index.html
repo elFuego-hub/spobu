@@ -612,7 +612,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v352</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v353</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -643,6 +643,9 @@ select.inp option{background:#222;}
     <div style="text-align:center;">
       <span style="font-size:13px;color:var(--mut);">Neturi paskyros? </span>
       <button class="btn-link" onclick="showRegister()">Registruotis</button>
+    </div>
+    <div style="text-align:center;margin-top:8px;display:none;" id="kid-selfreg-entry">
+      <button class="btn-link" style="color:var(--br);" onclick="openKidSelfSignup()">🥋 Man 14+ — registruojuosi pats</button>
     </div>
     <div style="text-align:center;margin-top:8px;">
       <button class="btn-link" onclick="showForgot()">Pamiršau slaptažodį</button>
@@ -1903,6 +1906,12 @@ select.inp option{background:#222;}
         </div>
         <div style="font-size:16px;color:#4FC3F7;">›</div>
       </div>
+    </div>
+
+    <!-- 📄 AI ATASKAITOS — 14+ prašymai tėvams (pildo loadKidProductsCard; rodoma tik kai yra ką rodyti) -->
+    <div class="cd" id="v-prod-card" style="display:none;margin:0 12px 6px;padding:12px 14px;">
+      <div style="font-size:12px;font-weight:800;color:white;margin-bottom:8px;">📄 AI ATASKAITOS</div>
+      <div id="v-prod-list"></div>
     </div>
 
     <!-- 🏆 TROFĖJAI + 🏅 BADGES + 🎯 IŠŠŪKIAI - 3 mygtukai -->
@@ -5068,6 +5077,308 @@ function applyPlatformGuards(role){
   return true;
 }
 
+// ════════════════════════════════════════
+// 🧍 14+ SAVARANKIŠKUMAS (PA): registracija be tėvų + tėvo kodas + „prašyti tėvų"
+// (server-paaugliai.sql; platformos vėliava — Admin → Platforma, klubo — jo nustatymuose)
+// ════════════════════════════════════════
+
+// Login mygtuko matomumas pagal platformos vėliavą (anon skaito TIK šį raktą)
+async function _checkSelfSignupFlag(){
+  try {
+    if (typeof sb === 'undefined' || !sb) return;
+    const { data } = await sb.from('platform_settings').select('value').eq('key', 'self_signup_14_enabled').maybeSingle();
+    const el = document.getElementById('kid-selfreg-entry');
+    if (el) el.style.display = (data && data.value === true) ? 'block' : 'none';
+  } catch(e){}
+}
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfSignupFlag, 1500); });
+
+// ── 🥋 Registracijos modalas (2 žingsniai, vienas pateikimas) ──
+function openKidSelfSignup(){
+  const old = document.getElementById('kid-selfreg-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'kid-selfreg-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:100010;align-items:center;justify-content:center;padding:16px;overflow-y:auto;';
+  m.innerHTML = `<div style="width:100%;max-width:420px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;max-height:92vh;overflow-y:auto;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;">🥋 REGISTRACIJA 14+</div>
+      <button onclick="document.getElementById('kid-selfreg-modal').remove()" style="background:none;border:none;font-size:22px;color:var(--mut);cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.5;">Registruojiesi pats — be tėvų. Tavo anketą patvirtins KLUBAS, todėl reikės klubo kodo (paklausk trenerio arba klubo).</div>
+    <div class="err-msg" id="ksr-err" style="display:none;"></div>
+    <div id="ksr-step1">
+      <label class="lbl">VARDAS *</label>
+      <input class="inp" id="ksr-fname" maxlength="40" style="margin-bottom:8px;">
+      <label class="lbl">PAVARDĖ</label>
+      <input class="inp" id="ksr-lname" maxlength="40" style="margin-bottom:8px;">
+      <label class="lbl">LYTIS *</label>
+      <select class="inp" id="ksr-gender" style="margin-bottom:8px;"><option value="male">👦 Vaikinas</option><option value="female">👧 Mergina</option></select>
+      <label class="lbl">GIMIMO DATA *</label>
+      <input class="inp" id="ksr-bdate" type="date" style="margin-bottom:12px;">
+      <button class="btn btng" style="width:100%;margin:0;" onclick="ksrNext()">Toliau →</button>
+    </div>
+    <div id="ksr-step2" style="display:none;">
+      <label class="lbl">EL. PAŠTAS *</label>
+      <input class="inp" id="ksr-email" type="email" style="margin-bottom:8px;">
+      <label class="lbl">SLAPTAŽODIS (min. 8) *</label>
+      <input class="inp" id="ksr-pass" type="password" style="margin-bottom:8px;">
+      <label class="lbl">PAKARTOK SLAPTAŽODĮ *</label>
+      <input class="inp" id="ksr-pass2" type="password" style="margin-bottom:8px;">
+      <label class="lbl">KLUBO KODAS * <span style="color:var(--mut);font-weight:400;">(pvz. SPOBU-4821)</span></label>
+      <input class="inp" id="ksr-club" style="margin-bottom:8px;text-transform:uppercase;">
+      <label class="lbl">TELEFONAS <span style="color:var(--mut);font-weight:400;">(nebūtina)</span></label>
+      <input class="inp" id="ksr-phone" style="margin-bottom:10px;">
+      <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:6px;cursor:pointer;"><input type="checkbox" id="ksr-c1" style="margin-top:2px;"> Sutinku, kad SPOBU tvarkytų mano sportinius duomenis (rezultatai, lygiai, lankomumas), kad programėlė veiktų.</label>
+      <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:12px;cursor:pointer;"><input type="checkbox" id="ksr-c2" style="margin-top:2px;"> Suprantu, kad mano anketą patvirtins klubas, o tėvus galėsiu prisijungti vėliau su kodu.</label>
+      <button class="btn btng" style="width:100%;margin:0 0 8px;" id="ksr-submit" onclick="submitKidSelfSignup()">🥋 Sukurti paskyrą</button>
+      <button class="btn" style="width:100%;margin:0;background:transparent;border:.5px solid var(--bdr);color:var(--mut);" onclick="document.getElementById('ksr-step2').style.display='none';document.getElementById('ksr-step1').style.display='block';">← Atgal</button>
+    </div>
+    <div id="ksr-done" style="display:none;text-align:center;padding:12px 0;">
+      <div style="font-size:52px;">🎉</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin:8px 0;">PASKYRA SUKURTA!</div>
+      <div style="font-size:12px;color:var(--mut);line-height:1.6;margin-bottom:14px;">Lauk, kol KLUBAS patvirtins tavo anketą ir priskirs tave grupei — tada pamatysi savo trenerį.<br>OSU! 🥋</div>
+      <button class="btn btng" style="width:100%;margin:0;" onclick="location.reload()">Supratau</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+function _ksrErr(msg){ const e = document.getElementById('ksr-err'); if (e){ e.textContent = msg; e.style.display = 'block'; } }
+
+function ksrNext(){
+  const e = document.getElementById('ksr-err'); if (e) e.style.display = 'none';
+  const f = document.getElementById('ksr-fname').value.trim();
+  const bd = document.getElementById('ksr-bdate').value;
+  if (!f){ _ksrErr('Įvesk vardą'); return; }
+  if (!bd){ _ksrErr('Įvesk gimimo datą'); return; }
+  const age = (Date.now() - new Date(bd).getTime()) / (365.25 * 864e5);
+  if (age < 14){ _ksrErr('Iki 14 metų registruoja tėvai — paprašyk jų paspausti „Registruotis".'); return; }
+  if (age > 100){ _ksrErr('Patikrink gimimo datą'); return; }
+  document.getElementById('ksr-step1').style.display = 'none';
+  document.getElementById('ksr-step2').style.display = 'block';
+}
+
+let _ksrSignedUp = false;   // jei signUp pavyko, o RPC ne (pvz. blogas klubo kodas) — kartojam TIK RPC
+async function submitKidSelfSignup(){
+  const e = document.getElementById('ksr-err'); if (e) e.style.display = 'none';
+  const email = document.getElementById('ksr-email').value.trim().toLowerCase();
+  const pass = document.getElementById('ksr-pass').value;
+  const pass2 = document.getElementById('ksr-pass2').value;
+  const clubCode = document.getElementById('ksr-club').value.trim();
+  const phone = document.getElementById('ksr-phone').value.trim();
+  const fname = document.getElementById('ksr-fname').value.trim();
+  const lname = document.getElementById('ksr-lname').value.trim();
+  const gender = document.getElementById('ksr-gender').value;
+  const bdate = document.getElementById('ksr-bdate').value;
+  if (!/^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)){ _ksrErr('Neteisingas el. pašto formatas'); return; }
+  if (!pass || pass.length < 8){ _ksrErr('Slaptažodis — bent 8 simboliai'); return; }
+  if (pass !== pass2){ _ksrErr('Slaptažodžiai nesutampa'); return; }
+  if (!clubCode){ _ksrErr('Įvesk klubo kodą'); return; }
+  if (!document.getElementById('ksr-c1').checked || !document.getElementById('ksr-c2').checked){ _ksrErr('Pažymėk abu sutikimus'); return; }
+  const btn = document.getElementById('ksr-submit');
+  btn.disabled = true; btn.textContent = 'KURIAMA...';
+  try {
+    if (!_ksrSignedUp){
+      // 1) pending_invitations role='kid' → handle_new_user priskirs rolę (identiškai tėvų wizard'ui)
+      const { error: invErr } = await sb.from('pending_invitations').insert({
+        email, role: 'kid', invited_by: null, first_name: fname, last_name: lname || null, status: 'pending'
+      });
+      if (invErr) throw new Error('Registracija: ' + invErr.message);
+      // 2) signUp
+      const { error: suErr } = await sb.auth.signUp({ email, password: pass });
+      if (suErr){
+        if ((suErr.message || '').includes('already')) throw new Error('Šis el. paštas jau užregistruotas — bandyk prisijungti.');
+        throw suErr;
+      }
+      _ksrSignedUp = true;
+      await new Promise(r => setTimeout(r, 700));   // trigeriui sukurti profilį
+    }
+    // 3) atominis vaiko sukūrimas serveryje (visa validacija ten — amžius/klubas/vėliavos)
+    const { error: rpcErr } = await sb.rpc('register_self_kid', {
+      p_fname: fname, p_lname: lname || null, p_gender: gender, p_birth_date: bdate,
+      p_club_code: clubCode, p_phone: phone || null
+    });
+    if (rpcErr) throw rpcErr;
+    document.getElementById('ksr-step2').style.display = 'none';
+    document.getElementById('ksr-done').style.display = 'block';
+  } catch(err){
+    _ksrErr('❌ ' + (err.message || 'Nepavyko — bandyk dar kartą'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = _ksrSignedUp ? '🔁 Bandyti dar kartą' : '🥋 Sukurti paskyrą';
+  }
+}
+
+// ── 📄 Vaiko kortelė: produktai + „paprašyti tėvų" / „pakviesti tėvą" ──
+async function loadKidProductsCard(){
+  try {
+    const card = document.getElementById('v-prod-card'); if (!card) return;
+    if (typeof flagOn === 'function' && !flagOn('ai_reports_enabled')){ card.style.display = 'none'; return; }
+    const { data: ov, error } = await sb.rpc('kid_request_overview');
+    if (error || !ov || !ov.has_kid){ card.style.display = 'none'; return; }
+    const items = [
+      { key: 'report', ico: '📄', t: 'AI diagnostika' },
+      { key: 'homeplan', ico: '🏋️', t: 'Namų planas' },
+      { key: 'summer', ico: '☀️', t: 'Vasaros programa' }
+    ];
+    const priceOf = k => (typeof PRICES !== 'undefined' && PRICES[k] != null) ? (+PRICES[k]).toFixed(2) + ' €' : '';
+    const st = (ov.requests || {});
+    const list = document.getElementById('v-prod-list');
+    list.innerHTML = items.map(it => {
+      const s = st[it.key];
+      let right;
+      if (!ov.has_parent) right = '';
+      else if (s === 'pending') right = '<span style="font-size:10px;color:#EAB308;font-weight:800;">⏳ Laukiama tėvų</span>';
+      else if (s === 'approved') right = '<span style="font-size:10px;color:var(--grn);font-weight:800;">✅ Tėvai patvirtino</span>';
+      else right = `<button onclick="kidAskParents('${it.key}')" style="background:rgba(255,77,0,.14);border:.5px solid rgba(255,77,0,.4);color:var(--br);font-size:10px;font-weight:800;padding:6px 10px;border-radius:99px;cursor:pointer;">🙏 Paprašyti tėvų</button>`;
+      return `<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:.5px solid var(--bdr);">
+        <span style="font-size:16px;">${it.ico}</span>
+        <div style="flex:1;min-width:0;"><div style="font-size:11.5px;font-weight:700;color:white;">${it.t}</div><div style="font-size:9.5px;color:var(--mut);">${priceOf(it.key)}</div></div>
+        ${right}
+      </div>`;
+    }).join('') + (!ov.has_parent
+      ? `<div style="padding-top:9px;"><div style="font-size:10px;color:var(--mut);line-height:1.45;margin-bottom:7px;">Kad galėtum paprašyti ataskaitos — pakviesk tėvą prie savo paskyros.</div><button onclick="openInviteParentModal()" style="width:100%;background:rgba(79,195,247,.12);border:.5px solid rgba(79,195,247,.4);color:#4FC3F7;font-size:11px;font-weight:800;padding:9px;border-radius:10px;cursor:pointer;">👨‍👩‍👦 Pakviesti tėvą</button></div>`
+      : '');
+    card.style.display = 'block';
+  } catch(e){}
+}
+
+async function kidAskParents(itemType){
+  try {
+    if (!currentKid?.id) return;
+    const { error } = await sb.from('purchase_requests').insert({ kid_id: currentKid.id, item_type: itemType });
+    if (error){
+      if (error.code === '23505' || (error.message || '').includes('duplicate')) showToast('⏳ Prašymas jau išsiųstas — laukiama tėvų', 'success');
+      else showToast('❌ ' + error.message, 'error');
+    } else showToast('🙏 Prašymas išsiųstas tėvams!', 'success');
+    loadKidProductsCard();
+  } catch(e){}
+}
+
+async function openInviteParentModal(){
+  let code = '';
+  try { const { data, error } = await sb.rpc('set_parent_link_code'); if (error) throw error; code = data || ''; }
+  catch(e){ showToast('❌ ' + (e.message || 'Nepavyko sugeneruoti'), 'error'); return; }
+  const old = document.getElementById('invite-parent-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'invite-parent-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100010;align-items:center;justify-content:center;padding:20px;';
+  m.onclick = (ev) => { if (ev.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:360px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:22px;text-align:center;">
+    <div style="font-size:40px;">👨‍👩‍👦</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin:8px 0 4px;">TAVO KODAS TĖVAMS</div>
+    <div style="font-family:ui-monospace,Consolas,monospace;font-size:34px;font-weight:800;letter-spacing:6px;color:#4FC3F7;margin:10px 0;">${code}</div>
+    <div style="font-size:11px;color:var(--mut);line-height:1.55;margin-bottom:14px;">Padiktuok šį kodą tėvams. Jie savo SPOBU paskyroje spaudžia<br><b>„🎟️ Su kodu"</b> ir įveda jį. Kodas vienkartinis.</div>
+    <button class="btn btng" style="width:100%;margin:0;" onclick="(navigator.clipboard?navigator.clipboard.writeText('${code}').then(()=>showToast('📋 Nukopijuota','success')):null);">📋 Kopijuoti kodą</button>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+// ── 👨‍👩‍👦 Tėvo pusė: prisijungimas kodu + prašymų sprendimas ──
+function openLinkKidByCode(){
+  const old = document.getElementById('link-kid-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'link-kid-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100010;align-items:center;justify-content:center;padding:20px;';
+  m.onclick = (ev) => { if (ev.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:360px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:22px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">🎟️ VAIKO KODAS</div>
+    <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Vaikas (14+) savo profilyje paspaudė „Pakviesti tėvą" ir gavo 6 ženklų kodą — įvesk jį čia.</div>
+    <input class="inp" id="lkc-code" maxlength="6" placeholder="A7K2M9" style="text-transform:uppercase;text-align:center;font-size:20px;letter-spacing:5px;font-weight:800;margin-bottom:12px;">
+    <button class="btn btng" style="width:100%;margin:0;" onclick="submitLinkKidByCode()">Prisijungti prie vaiko</button>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function submitLinkKidByCode(){
+  const code = document.getElementById('lkc-code')?.value?.trim();
+  if (!code || code.length < 6){ showToast('❌ Įvesk 6 ženklų kodą', 'error'); return; }
+  try {
+    const { data, error } = await sb.rpc('link_parent_by_code', { p_code: code });
+    if (error) throw error;
+    showToast('✅ Prisijungei prie: ' + (data || 'vaiko') + '!', 'success', 5000);
+    document.getElementById('link-kid-modal')?.remove();
+    if (typeof loadParentData === 'function') await loadParentData();
+  } catch(e){ showToast('❌ ' + (e.message || 'Kodas netinka'), 'error', 5000); }
+}
+
+async function _checkParentPurchaseRequests(){
+  try {
+    if (!currentProfile || currentProfile.role !== 'parent') return;
+    const { data: links } = await sb.from('kid_parent_links').select('kid_id').eq('parent_id', currentUser.id);
+    const kidIds = (links || []).map(l => l.kid_id);
+    if (!kidIds.length) return;
+    const { data: reqs } = await sb.from('purchase_requests').select('id').in('kid_id', kidIds).eq('status', 'pending').limit(5);
+    if (reqs && reqs.length && !sessionStorage.getItem('spobu_preq_shown')){
+      sessionStorage.setItem('spobu_preq_shown', '1');
+      openParentRequestsModal();
+    }
+  } catch(e){}
+}
+
+async function openParentRequestsModal(){
+  let rows = [];
+  try {
+    const { data: links } = await sb.from('kid_parent_links').select('kid_id').eq('parent_id', currentUser.id);
+    const kidIds = (links || []).map(l => l.kid_id);
+    if (kidIds.length){
+      const [{ data: reqs }, { data: kids }] = await Promise.all([
+        sb.from('purchase_requests').select('id, kid_id, item_type, created_at').in('kid_id', kidIds).eq('status', 'pending').order('created_at', { ascending: false }),
+        sb.from('kids').select('id, first_name, last_name').in('id', kidIds)
+      ]);
+      const nm = {}; (kids || []).forEach(k => nm[k.id] = `${k.first_name || ''} ${k.last_name || ''}`.trim());
+      rows = (reqs || []).map(r => ({ ...r, kidName: nm[r.kid_id] || 'Vaikas' }));
+    }
+  } catch(e){}
+  const tl = { report: ['📄', 'AI diagnostika'], homeplan: ['🏋️', 'Namų planas'], summer: ['☀️', 'Vasaros programa'] };
+  const priceOf = k => (typeof PRICES !== 'undefined' && PRICES[k] != null) ? (+PRICES[k]).toFixed(2) + ' €' : '';
+  const old = document.getElementById('parent-preq-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'parent-preq-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100005;align-items:center;justify-content:center;padding:20px;';
+  m.onclick = (ev) => { if (ev.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:420px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;max-height:85vh;overflow-y:auto;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">🙏 VAIKO PRAŠYMAI</div>
+      <button onclick="document.getElementById('parent-preq-modal').remove()" style="background:none;border:none;font-size:20px;color:var(--mut);cursor:pointer;">✕</button>
+    </div>
+    ${rows.length ? rows.map(r => {
+      const t = tl[r.item_type] || ['📦', r.item_type];
+      return `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:800;color:white;margin-bottom:2px;">${t[0]} ${r.kidName} prašo: ${t[1]}</div>
+        <div style="font-size:11px;color:var(--mut);margin-bottom:10px;">Kaina: <b style="color:#4ade4a;">${priceOf(r.item_type)}</b> · ${typeof _agoLT === 'function' ? _agoLT(r.created_at) : ''}</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="parentDecideRequest('${r.id}','approved')" style="flex:1;background:var(--grn);border:none;color:white;font-size:11px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">✅ Gerai, einu užsakyti</button>
+          <button onclick="parentDecideRequest('${r.id}','declined')" style="flex:1;background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);color:#EF4444;font-size:11px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">❌ Ne šįkart</button>
+        </div>
+      </div>`;
+    }).join('') : '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Laukiančių prašymų nėra 🧘</div>'}
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function parentDecideRequest(id, status){
+  try {
+    const { error } = await sb.from('purchase_requests').update({ status, decided_at: new Date().toISOString(), decided_by: currentUser?.id }).eq('id', id);
+    if (error) throw error;
+    document.getElementById('parent-preq-modal')?.remove();
+    if (status === 'approved'){ showToast('✅ Patvirtinta — užsakyk Parduotuvėje', 'success', 5000); if (typeof nv === 'function') nv('t', null, 't-shop'); }
+    else showToast('Prašymas atmestas', 'success');
+  } catch(e){ showToast('❌ ' + (e.message || ''), 'error'); }
+}
+
+// ── 🎟️ Klubo kodo helper'iai ──
+function copyClubInviteCode(){
+  const c = currentClub?.invite_code;
+  if (!c){ showToast('Kodo dar nėra — spausk „Generuoti"', 'error'); return; }
+  if (navigator.clipboard) navigator.clipboard.writeText(c).then(() => showToast('📋 Nukopijuota: ' + c, 'success'));
+}
+async function generateClubInviteCode(){
+  try {
+    const { data, error } = await sb.rpc('set_my_club_invite_code');
+    if (error) throw error;
+    if (currentClub) currentClub.invite_code = data;
+    showToast('🎟️ Kodas: ' + data, 'success', 5000);
+    if (typeof loadClubSettings === 'function') loadClubSettings();
+  } catch(e){ showToast('❌ ' + (e.message || ''), 'error'); }
+}
+
 async function afterLogin() {
   console.log('🚀 [afterLogin] STARTAS, user:', currentUser?.email);
   
@@ -5231,6 +5542,7 @@ async function afterLogin() {
       await loadParentData();
       subscribeParentNotifications();
       op('t');
+      if (typeof _checkParentPurchaseRequests === 'function') _checkParentPurchaseRequests(); // 🙏 vaiko (14+) pirkimo prašymai
       // 📬 Praleisti įvykiai (po reload arba prisijungimo)
       if (typeof showParentMissedEvents === 'function') {
         setTimeout(() => showParentMissedEvents(), 1500);
@@ -5829,6 +6141,7 @@ async function loadParentMainKidsPreview() {
         <div style="font-size:30px;margin-bottom:6px;">👶</div>
         <div style="font-size:12px;color:var(--mut);margin-bottom:10px;">Dar neturi pridėtų vaikų</div>
         <button class="btn btng" style="font-size:11px;padding:8px 16px;" onclick="openAddKidWizard()">+ Pridėti vaiką</button>
+        <button class="btn" style="font-size:11px;padding:8px 12px;margin-left:6px;background:rgba(79,195,247,.12);border:.5px solid rgba(79,195,247,.4);color:#4FC3F7;" onclick="openLinkKidByCode()">🎟️ Su kodu</button>
       </div>`;
     return;
   }
@@ -6287,7 +6600,7 @@ async function loadParentKidMain() {
     const sub = document.getElementById('tk-hero-sub'); if (sub) sub.textContent = 'Dar nėra pridėtų vaikų';
     const av = document.getElementById('tk-hero-avatar'); if (av) { av.style.backgroundImage = ''; av.textContent = '?'; }
     const pend = document.getElementById('tk-pending-list');
-    if (pend) pend.innerHTML = '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:18px;text-align:center;"><div style="font-size:30px;margin-bottom:6px;">👶</div><div style="font-size:12px;color:var(--mut);margin-bottom:10px;">Dar neturite pridėtų vaikų</div><button class="btn btng" style="font-size:11px;padding:8px 16px;" onclick="if(typeof openAddKidWizard===\'function\')openAddKidWizard()">+ Pridėti vaiką</button></div>';
+    if (pend) pend.innerHTML = '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:18px;text-align:center;"><div style="font-size:30px;margin-bottom:6px;">👶</div><div style="font-size:12px;color:var(--mut);margin-bottom:10px;">Dar neturite pridėtų vaikų</div><button class="btn btng" style="font-size:11px;padding:8px 16px;" onclick="if(typeof openAddKidWizard===\'function\')openAddKidWizard()">+ Pridėti vaiką</button><div style="margin-top:8px;"><button class="btn" style="font-size:11px;padding:8px 12px;background:rgba(79,195,247,.12);border:.5px solid rgba(79,195,247,.4);color:#4FC3F7;" onclick="if(typeof openLinkKidByCode===\'function\')openLinkKidByCode()">🎟️ Turiu vaiko kodą</button></div></div>';
     return;
   }
 
@@ -10618,6 +10931,7 @@ async function loadKidData() {
   setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
   _initArchiveButton(); // 🗄️ iki 14 m. skill ženkliukų mygtukas (jei perėjo į 14+)
   _checkClubChallengeResultsKid(); // 🏆 grupių iššūkio pabaigos pop-up (vieną kartą)
+  if (typeof loadKidProductsCard === 'function') loadKidProductsCard(); // 📄 14+ AI ataskaitų prašymai (v-prof kortelė)
   // 💻 DESKTOP side nav user info
   applyAvatarById('vdn-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
   setText('vdn-name', firstName);
@@ -16738,6 +17052,7 @@ const CLUB_FLAG_DEFS = [
   { k:'group_challenges_enabled', t:'🏆 Grupių iššūkis', d:'Klubo komandinis grupių iššūkis.', info:'Grupių iššūkis — klubinis komandinis iššūkis, kur būreliai (grupės) varžosi tarpusavyje; jų vaikų rezultatai sumuojami (vidurkis vienam vaikui).<br><br>Išjungus: nebegalėsi kurti grupių iššūkių.' },
   { k:'competitions_enabled', t:'🥇 Varžybos', d:'Varžybų kūrimas ir rezultatai.', info:'Varžybos — kumite/kata renginiai su registracija ir rezultatais (vietos, medaliai).<br><br>Išjungus: nebebus galima kurti varžybų, o vaikai jų nebematys.' },
   { k:'belt_grading_enabled', t:'🥋 Diržų laikymas', d:'Diržo testų registravimas.', info:'Diržų laikymas — egzaminai naujam kyu/diržui gauti.<br><br>Išjungus: nebebus galima registruoti diržų laikymo ir jų rezultatų.' },
+  { k:'self_signup_enabled', t:'🧍 Savarankiška 14+ registracija', d:'Paaugliai nuo 14 m. registruojasi patys su klubo kodu.', info:'Paauglys (14+) gali susikurti paskyrą pats, įvedęs TAVO KLUBO KODĄ. Jis pateks į „Laukia patvirtinimo" sąrašą BE grupės — tu priskiri grupę (treneris nusistato automatiškai) ir patvirtini TIK pažinodamas vaiką iš salės.<br><br>Išjungus: su tavo klubo kodu registruotis nebebus galima. Pastaba: funkcija veikia tik kai ją įjungęs ir platformos administratorius.' },
   { k:'camps_enabled', t:'⛺ Stovyklos', d:'Stovyklos ir renginiai su dalyvavimu.', info:'Stovyklos — daugiadieniai renginiai su dalyvavimo žymėjimu (RSVP) ir neprivalomu EXP už sudalyvavimą.<br><br>Išjungus: nebegalėsi kurti stovyklų.' },
   { sec:'IŠŠŪKIŲ TIPAI' },
   { k:'challenge_training_enabled', t:'🏋️ Treniruotės', d:'Užduotis per vieną treniruotę.', info:'Treniruotės iššūkis — užduotis, atliekama per konkrečią treniruotę (pvz. „šiandien 30 pritūpimų salėje").<br><br>Išjungus: tokio tipo iššūkių nebebus galima kurti.' },
@@ -16931,6 +17246,19 @@ function _renderClubSettingsHtml(s){
       </div>
       <button onclick="saveClubInactiveThresholds()" style="width:100%;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">💾 Išsaugoti slenksčius</button>
     </div>`;
+  // 🎟️ Klubo kodas — savarankiškai 14+ registracijai (server-paaugliai.sql)
+  html += `<div style="margin-top:14px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <span style="font-size:16px;">🎟️</span>
+      <span style="flex:1;font-size:12px;font-weight:800;color:#fff;">KLUBO KODAS</span>
+      <span id="cs-invite-code" style="font-family:ui-monospace,Consolas,monospace;font-size:14px;font-weight:800;color:#4FC3F7;letter-spacing:1px;">${currentClub?.invite_code || '—'}</span>
+    </div>
+    <div style="font-size:10.5px;color:var(--mut);line-height:1.45;margin-bottom:9px;">Šį kodą paauglys (14+) įveda registruodamasis pats. Naujas narys atsiras „Mokiniai → Laukia patvirtinimo" — priskirk grupę ir patvirtink tik pažinodamas jį iš salės.</div>
+    <div style="display:flex;gap:6px;">
+      <button onclick="copyClubInviteCode()" style="flex:1;background:rgba(79,195,247,.12);border:.5px solid rgba(79,195,247,.4);color:#4FC3F7;font-size:11px;font-weight:800;padding:8px;border-radius:9px;cursor:pointer;">📋 Kopijuoti</button>
+      ${!currentClub?.invite_code ? `<button onclick="generateClubInviteCode()" style="flex:1;background:var(--br);border:none;color:#fff;font-size:11px;font-weight:800;padding:8px;border-radius:9px;cursor:pointer;">Generuoti kodą</button>` : ''}
+    </div>
+  </div>`;
   html += `<div style="font-size:9px;color:var(--mut);text-align:center;margin:14px 8px 4px;line-height:1.5;">Bakstelėk skiltį, kad išskleistum. Prie funkcijos bakstelėk <span style="font-style:italic;font-family:Georgia,serif;">i</span> — sužinosi ką reiškia ją išjungti.</div>`;
   return html;
 }
@@ -26553,6 +26881,8 @@ async function openKidDetailsModal(kidId) {
       <div>${fullKid.is_anonymous ? '🔒 Slėpiamas' : '👁️ Matomas viešai'}</div>
       <div style="color:var(--mut);">Paskyra:</div>
       <div>${hasAccount ? '✅ Turi savo prisijungimą' : '⚪ Tik tėvų stebėjimas'}</div>
+      ${fullKid.self_registered ? `<div style="color:var(--mut);">Registracija:</div>
+      <div><span style="font-size:10px;background:rgba(79,195,247,.15);color:#4FC3F7;padding:2px 8px;border-radius:99px;font-weight:800;">🧍 SAVARANKIŠKA (14+)</span> <span style="font-size:11px;color:var(--mut);">— patvirtink tik pažinodamas iš salės</span></div>` : ''}
       <div style="color:var(--mut);">El. paštas:</div>
       <div>${kidEmail ? `<strong>${kidEmail}</strong>${!hasAccount ? ' <span style="color:var(--mut);font-size:11px;">(laukia paskyros)</span>' : ''}` : '–'}</div>
     </div>
@@ -28941,6 +29271,7 @@ async function loadAdminPlatform(){
   const maint = map.maintenance_mode === true;
   const minV = (typeof map.min_app_version === 'string') ? map.min_app_version : '';
   const ann = (map.global_announcement && typeof map.global_announcement === 'object') ? map.global_announcement : null;
+  const selfReg = map.self_signup_14_enabled === true;
   // Būsena
   st.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;padding:6px 0;">
@@ -28953,6 +29284,12 @@ async function loadAdminPlatform(){
       <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">📌 Min. programos versija</div><div class="aerr-meta" style="white-space:normal;">Senesni klientai gaus atnaujinimo juostą (po bendro kodo etapo)</div></div>
       <input class="inp" id="ap-minv" value="${_aaiEsc(minV)}" placeholder="v350" style="width:86px;margin:0;padding:6px;text-align:center;">
       <button class="aerr-tool" onclick="saveMinAppVersion()">💾</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0 4px;border-top:.5px solid var(--bdr);">
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">🧍 Savarankiška 14+ registracija ${selfReg ? '<span class="aerr-st ok">ĮJUNGTA</span>' : ''}</div><div class="aerr-meta" style="white-space:normal;">Paaugliai nuo 14 m. gali registruotis patys su klubo kodu (klubas tvirtina). Klubai turi ir savo jungiklį.</div></div>
+      <div onclick="savePlatformSetting('self_signup_14_enabled', ${selfReg ? 'false' : 'true'})" style="flex-shrink:0;width:46px;height:26px;border-radius:99px;background:${selfReg ? '#0ca30c' : 'rgba(255,255,255,.15)'};position:relative;cursor:pointer;">
+        <div style="position:absolute;top:3px;${selfReg ? 'right:3px' : 'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;"></div>
+      </div>
     </div>`;
   // Skelbimas
   const annEl = document.getElementById('ap-ann');
@@ -29884,7 +30221,7 @@ async function loadClubStudents(){
     ]);
     const trIds = (trRes.data||[]).map(t=>t.id);
     const grpIds = (grpRes.data||[]).map(g=>g.id);
-    const SEL = 'id, first_name, last_name, birth_date, birth_year, group_id, approval_status';
+    const SEL = 'id, first_name, last_name, birth_date, birth_year, group_id, approval_status, self_registered';
     const kidMap = {};
     const qs = [];
     if (trIds.length) qs.push(sb.from('kids').select(SEL).in('assigned_trainer_id', trIds));
@@ -29901,7 +30238,7 @@ async function loadClubStudents(){
     const noGroup = kids.filter(k => k.approval_status!=='pending' && !k.group_id);
     const ageOf = k => k.birth_date ? calculateAge(k.birth_date) : (k.birth_year ? (new Date().getFullYear()-k.birth_year) : null);
     const row = (k, pend) => `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:.5px solid var(--bdr);">
-        <div onclick="openKidDetailsModal('${k.id}')" style="flex:1;min-width:0;cursor:pointer;"><div style="font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}${pend?' <span style="color:var(--blu);font-size:11px;">› anketa</span>':''}</div><div style="font-size:10px;color:var(--mut);">${ageOf(k)!=null?ageOf(k)+' m.':''}${pend?' · ⏳ peržiūrėk anketą':''}</div></div>
+        <div onclick="openKidDetailsModal('${k.id}')" style="flex:1;min-width:0;cursor:pointer;"><div style="font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}${k.self_registered?' <span style="font-size:9px;background:rgba(79,195,247,.15);color:#4FC3F7;padding:1px 6px;border-radius:99px;font-weight:800;">🧍 14+ PATS</span>':''}${pend?' <span style="color:var(--blu);font-size:11px;">› anketa</span>':''}</div><div style="font-size:10px;color:var(--mut);">${ageOf(k)!=null?ageOf(k)+' m.':''}${pend?(k.self_registered?' · ⏳ registravosi PATS — tvirtink tik pažinodamas iš salės':' · ⏳ peržiūrėk anketą'):''}</div></div>
         <button onclick="event.stopPropagation();openAssignKidGroup('${k.id}',${pend?'true':'false'})" style="background:var(--grn);border:none;color:#fff;font-size:11px;font-weight:700;padding:7px 11px;border-radius:8px;cursor:pointer;flex-shrink:0;">${pend?'✓ Tvirtinti':'Priskirti →'}</button>
         ${pend?`<button onclick="event.stopPropagation();_clubRejectKid('${k.id}')" title="Atmesti su priežastimi" style="background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);color:#EF4444;font-size:13px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;flex-shrink:0;">✕</button>`:''}
       </div>`;
@@ -32682,6 +33019,18 @@ function subscribeParentNotifications() {
       const duel = payload.new; if (!duel || duel.status !== 'completed') return;
       const kidId = _parentKidIdSet.has(duel.challenger_id) ? duel.challenger_id : (_parentKidIdSet.has(duel.opponent_id) ? duel.opponent_id : null);
       if (kidId && isActive(kidId)) refreshParentActiveScreen();
+    })
+    .subscribe();
+
+  // KANALAS 2b: 🙏 vaiko pirkimo prašymai (14+) — toast + pasiūlymas atsidaryti
+  sb.channel('parent-preq-' + uid)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'purchase_requests' }, payload => {
+      const req = payload.new;
+      if (!req || !_parentKidIdSet.has(req.kid_id)) return;
+      if (_isSeen('preqR', req.id)) return;
+      _addSeen('preqR', req.id);
+      showToast('🙏 Vaikas prašo AI ataskaitos — žiūrėk prašymus', 'success', 6000);
+      if (typeof openParentRequestsModal === 'function') openParentRequestsModal();
     })
     .subscribe();
 
