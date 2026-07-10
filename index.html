@@ -602,7 +602,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v350</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v351</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -4340,7 +4340,28 @@ select.inp option{background:#222;}
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">⚙️ PLATFORMA</div></div>
   <div class="sa">
-    <div id="a-platform-content"><div style="text-align:center;padding:60px 20px;color:var(--mut);"><div style="font-size:40px;margin-bottom:12px;">🚧</div><div style="font-size:13px;font-weight:800;">Platformos valdymas</div><div style="font-size:11px;margin-top:6px;">Ruošiama (Blokas H)</div></div></div>
+    <div id="a-platform-content">
+      <div class="adash">
+      <div class="adash-col">
+        <div class="st">PLATFORMOS BŪSENA</div>
+        <div class="cd" id="ap-status" style="padding:12px 14px;"><div style="text-align:center;padding:10px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
+        <div class="st">GLOBALUS SKELBIMAS</div>
+        <div class="cd" id="ap-ann" style="padding:12px 14px;"></div>
+        <div class="st">NUORODOS</div>
+        <div class="cd" style="padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="aerr-tool" onclick="nv('a',null,'a-fin')">💶 Kainodara</button>
+          <button class="aerr-tool" onclick="nv('a',null,'a-errors')">🚨 Klaidos + deploy</button>
+          <button class="aerr-tool" onclick="nv('a',null,'a-clubs')">🏢 Klubai</button>
+        </div>
+      </div>
+      <div class="adash-col">
+        <div class="st">DEPLOY ŽURNALAS</div>
+        <div class="cd" id="ap-deploys" style="padding:8px 14px;"></div>
+        <div class="st">ADMIN VEIKSMŲ AUDITAS</div>
+        <div class="cd" id="ap-audit" style="padding:8px 14px;"></div>
+      </div>
+      </div>
+    </div>
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic">🏠</span><span class="lb">Apžvalga</span><div class="nd"></div></div>
@@ -27247,7 +27268,10 @@ async function loadAdminClubs() {
     return;
   }
 
-  const html = clubs.map(c => `
+  _admClubsCache = {};
+  const html = clubs.map(c => {
+    _admClubsCache[c.id] = c;
+    return `
     <div class="cd" style="margin-bottom:12px;padding:14px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <div style="width:44px;height:44px;border-radius:12px;background:var(--blu);display:flex;align-items:center;justify-content:center;font-size:20px;">${c.sports?.icon || '🏢'}</div>
@@ -27257,11 +27281,12 @@ async function loadAdminClubs() {
         </div>
         <div class="bg ${c.is_active ? 'gn' : 'mu'}">${c.is_active ? 'Aktyvus' : 'Neaktyvus'}</div>
       </div>
-      <div style="display:flex;gap:8px;font-size:11px;color:var(--mut);">
-        <span>📧 ${c.contact_email || '–'}</span>
+      <div style="display:flex;gap:8px;font-size:11px;color:var(--mut);align-items:center;">
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📧 ${c.contact_email || '–'} · bonusas ${c.bonus_pct != null ? c.bonus_pct : 10}%+${c.bonus_extra_pct != null ? c.bonus_extra_pct : 5}% · krepšelis ${c.basket_target_eur != null ? c.basket_target_eur : 40} €</span>
+        <button class="aerr-tool" style="padding:4px 10px;flex-shrink:0;" onclick="openAdminClubEdit('${c.id}')">✏️ Redaguoti</button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   document.getElementById('a-clubs-list').innerHTML = html;
 }
@@ -28698,6 +28723,147 @@ async function loadAdminNudges(){
 async function markAlertSeen(id){
   try { await sb.from('admin_alerts').update({ seen: true }).eq('id', id); } catch(e){}
   loadAdminNudges();
+}
+
+// ════════════════════════════════════════
+// ⚙️ PLATFORMA (Blokas H) — globalūs nustatymai, deploy/audito žurnalai, klubo redagavimas
+// (maintenance/skelbimo VEIKIMAS vartotojų pusėje — bendro kodo etapas; čia admin valdymas)
+// ════════════════════════════════════════
+let _admClubsCache = {};
+
+async function loadAdminPlatform(){
+  const st = document.getElementById('ap-status'); if (!st) return;
+  const safe = p => Promise.resolve(p).then(r => r, () => ({ data: null }));
+  const [ps, av, aa] = await Promise.all([
+    safe(sb.from('platform_settings').select('key, value')),
+    safe(sb.from('app_versions').select('version, deployed_at, notes').order('deployed_at', { ascending: false }).limit(10)),
+    safe(sb.from('admin_actions').select('action, target_type, target_id, details, created_at').order('created_at', { ascending: false }).limit(20))
+  ]);
+  if (!ps.data){ st.innerHTML = '<div style="text-align:center;padding:12px;color:var(--mut);font-size:11px;">Paleisk server-admin-platforma.sql</div>'; return; }
+  const map = {}; (ps.data || []).forEach(r => { map[r.key] = r.value; });
+  const maint = map.maintenance_mode === true;
+  const minV = (typeof map.min_app_version === 'string') ? map.min_app_version : '';
+  const ann = (map.global_announcement && typeof map.global_announcement === 'object') ? map.global_announcement : null;
+  // Būsena
+  st.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:6px 0;">
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">🔧 Maintenance režimas ${maint ? '<span class="aerr-st bad">ĮJUNGTAS</span>' : ''}</div><div class="aerr-meta" style="white-space:normal;">Įjungus — ne-admin vartotojai matys užsklandą (suveiks po bendro kodo etapo)</div></div>
+      <div onclick="savePlatformSetting('maintenance_mode', ${maint ? 'false' : 'true'})" style="flex-shrink:0;width:46px;height:26px;border-radius:99px;background:${maint ? '#d03b3b' : 'rgba(255,255,255,.15)'};position:relative;cursor:pointer;">
+        <div style="position:absolute;top:3px;${maint ? 'right:3px' : 'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 0 4px;border-top:.5px solid var(--bdr);">
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">📌 Min. programos versija</div><div class="aerr-meta" style="white-space:normal;">Senesni klientai gaus atnaujinimo juostą (po bendro kodo etapo)</div></div>
+      <input class="inp" id="ap-minv" value="${_aaiEsc(minV)}" placeholder="v350" style="width:86px;margin:0;padding:6px;text-align:center;">
+      <button class="aerr-tool" onclick="saveMinAppVersion()">💾</button>
+    </div>`;
+  // Skelbimas
+  const annEl = document.getElementById('ap-ann');
+  if (annEl) annEl.innerHTML = `
+    <select class="inp" id="ap-ann-type" style="margin:0 0 8px;width:150px;padding:7px;">
+      <option value="info" ${(!ann || ann.type !== 'warning') ? 'selected' : ''}>ℹ️ Informacija</option>
+      <option value="warning" ${(ann && ann.type === 'warning') ? 'selected' : ''}>⚠️ Įspėjimas</option>
+    </select>
+    <textarea class="inp" id="ap-ann-text" rows="2" placeholder="Skelbimo tekstas visoms rolėms..." style="margin:0 0 8px;resize:vertical;">${_aaiEsc(ann?.text || '')}</textarea>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btng" style="flex:1;margin:0;" onclick="saveGlobalAnnouncement()">📢 Išsaugoti</button>
+      <button class="aerr-tool" style="flex:1;" onclick="savePlatformSetting('global_announcement', null)">🧹 Išvalyti</button>
+    </div>
+    <div class="aerr-meta" style="margin-top:6px;white-space:normal;">Vartotojų viršuje pasirodys po bendro kodo etapo. ${ann?.text ? '<b>Dabar nustatyta.</b>' : 'Dabar tuščia.'}</div>`;
+  // Deploy žurnalas
+  const dEl = document.getElementById('ap-deploys');
+  if (dEl){
+    const rows = av.data || [];
+    dEl.innerHTML = (rows.length ? rows.map(v => `<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:.5px solid var(--bdr);font-size:11.5px;">
+      <span><b>${_aaiEsc(v.version)}</b>${v.notes ? ' · ' + _aaiEsc(v.notes.slice(0, 40)) : ''}</span>
+      <span class="aerr-meta" style="flex-shrink:0;">${new Date(v.deployed_at).toLocaleString('lt-LT')}</span>
+    </div>`).join('') : '<div style="text-align:center;padding:10px;color:var(--mut);font-size:11px;">Dar neregistruota</div>')
+    + `<button class="aerr-tool" style="width:100%;margin-top:8px;" onclick="registerDeploy();setTimeout(loadAdminPlatform,600)">📌 Registruoti deploy</button>`;
+  }
+  // Auditas
+  const aEl = document.getElementById('ap-audit');
+  if (aEl){
+    const rows = aa.data || [];
+    aEl.innerHTML = rows.length ? rows.map(a => `<div style="padding:5px 0;border-bottom:.5px solid var(--bdr);font-size:11px;">
+      <b>${_aaiEsc(a.action)}</b> <span class="aerr-meta" style="display:inline;">· ${_aaiEsc(a.target_type || '')} ${a.target_id ? '#' + _aaiEsc(String(a.target_id).slice(0, 8)) : ''} · ${typeof _agoLT === 'function' ? _agoLT(a.created_at) : ''}</span>
+      ${a.details ? `<div class="aerr-meta">${_aaiEsc(JSON.stringify(a.details).slice(0, 70))}</div>` : ''}
+    </div>`).join('') : '<div style="text-align:center;padding:10px;color:var(--mut);font-size:11px;">Veiksmų dar nėra</div>';
+  }
+}
+
+async function savePlatformSetting(key, val){
+  const { error } = await sb.from('platform_settings').upsert({ key, value: val, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  logAdminAction('platform_setting', 'platform', key, { value: val });
+  showToast('💾 Išsaugota', 'success');
+  loadAdminPlatform();
+}
+
+function saveMinAppVersion(){
+  const v = document.getElementById('ap-minv')?.value?.trim() || null;
+  savePlatformSetting('min_app_version', v);
+}
+
+function saveGlobalAnnouncement(){
+  const text = document.getElementById('ap-ann-text')?.value?.trim();
+  const type = document.getElementById('ap-ann-type')?.value || 'info';
+  savePlatformSetting('global_announcement', text ? { text, type } : null);
+}
+
+// 🏢 Klubo redagavimas (kūrimo srauto NELIEČIAM — tik update)
+function openAdminClubEdit(id){
+  const c = _admClubsCache[id]; if (!c){ showToast('❌ Klubas nerastas', 'error'); return; }
+  const old = document.getElementById('adm-club-edit'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'adm-club-edit';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  const num = (id2, lbl, val) => `<div style="flex:1;min-width:100px;"><label class="lbl">${lbl}</label><input class="inp" id="${id2}" type="number" step="0.5" value="${val}" style="margin:0;padding:7px;"></div>`;
+  m.innerHTML = `<div style="width:100%;max-width:520px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:90vh;overflow-y:auto;padding:18px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:14px;font-weight:800;">✏️ ${_aaiEsc(c.name || 'Klubas')}</div>
+      <button onclick="document.getElementById('adm-club-edit').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+    </div>
+    <label class="lbl">PAVADINIMAS</label>
+    <input class="inp" id="ace-name" value="${_aaiEsc(c.name || '')}" style="margin-bottom:8px;">
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;"><label class="lbl">MIESTAS</label><input class="inp" id="ace-city" value="${_aaiEsc(c.city || '')}" style="margin:0 0 8px;"></div>
+      <div style="flex:1;"><label class="lbl">TELEFONAS</label><input class="inp" id="ace-phone" value="${_aaiEsc(c.contact_phone || '')}" style="margin:0 0 8px;"></div>
+    </div>
+    <label class="lbl">KONTAKTINIS EL. PAŠTAS</label>
+    <input class="inp" id="ace-email" value="${_aaiEsc(c.contact_email || '')}" style="margin-bottom:8px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      ${num('ace-comm', 'KOMISINIS %', c.commission_pct != null ? c.commission_pct : 10)}
+      ${num('ace-bonus', 'BONUSAS %', c.bonus_pct != null ? c.bonus_pct : 10)}
+      ${num('ace-extra', 'EXTRA %', c.bonus_extra_pct != null ? c.bonus_extra_pct : 5)}
+      ${num('ace-basket', 'KREPŠELIS €', c.basket_target_eur != null ? c.basket_target_eur : 40)}
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;margin-bottom:14px;"><input type="checkbox" id="ace-active" ${c.is_active ? 'checked' : ''}> Klubas aktyvus</label>
+    <div class="aerr-meta" style="white-space:normal;margin-bottom:10px;">Bonusų % pakeitimai matysis klubo „Verslas" sekcijoje ir kito mėnesio perskaičiavime.</div>
+    <button class="btn btng" style="width:100%;margin:0;" onclick="saveAdminClubEdit('${id}')">💾 Išsaugoti</button>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function saveAdminClubEdit(id){
+  const val = x => document.getElementById(x)?.value;
+  const payload = {
+    name: (val('ace-name') || '').trim(),
+    city: (val('ace-city') || '').trim() || null,
+    contact_phone: (val('ace-phone') || '').trim() || null,
+    contact_email: (val('ace-email') || '').trim() || null,
+    commission_pct: parseFloat(val('ace-comm')) || 0,
+    bonus_pct: parseFloat(val('ace-bonus')) || 0,
+    bonus_extra_pct: parseFloat(val('ace-extra')) || 0,
+    basket_target_eur: parseFloat(val('ace-basket')) || 0,
+    is_active: !!document.getElementById('ace-active')?.checked
+  };
+  if (!payload.name){ showToast('❌ Pavadinimas privalomas', 'error'); return; }
+  const { error } = await sb.from('clubs').update(payload).eq('id', id);
+  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  logAdminAction('club_edit', 'club', id, { name: payload.name });
+  showToast('💾 Klubas atnaujintas', 'success');
+  document.getElementById('adm-club-edit')?.remove();
+  loadAdminClubs();
 }
 
 // ════════════════════════════════════════
