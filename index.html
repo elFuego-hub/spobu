@@ -612,7 +612,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v357</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v358</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -3443,6 +3443,10 @@ select.inp option{background:#222;}
         
         <label class="lbl" style="margin-top:8px;">KITI PASTABOS</label>
         <textarea class="inp" id="ak-health-notes" rows="2" placeholder="Bet kokia kita info treneriui..."></textarea>
+        <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-top:10px;cursor:pointer;">
+          <input type="checkbox" id="ak-health-consent" style="margin-top:2px;flex-shrink:0;">
+          Sutinku, kad nurodyta sveikatos informacija būtų matoma vaiko treneriui ir klubui saugumo tikslais <span style="opacity:.75;">(reikia tik jei pildai sveikatos laukus)</span>.
+        </label>
       </div>
       
       <!-- AVARINIS KONTAKTAS -->
@@ -5098,6 +5102,20 @@ async function _checkSelfSignupFlag(){
 }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfSignupFlag, 1500); });
 
+// ── 📜 Sutikimų žurnalas (server-consents.sql) — BDAR įrodymas: kas/kada/kokia versija ──
+const POLICY_VERSION = 'v1.0';   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
+async function logConsent(ctype, opts){
+  try {
+    const o = opts || {};
+    const uid = o.user_id || currentUser?.id || (await sb.auth.getSession())?.data?.session?.user?.id;
+    if (!uid) return;
+    await sb.from('consents').insert({
+      user_id: uid, kid_id: o.kid_id || null, ctype,
+      version: POLICY_VERSION, given: (o.given !== false), source: o.source || null
+    });
+  } catch(e){ /* žurnalas niekada neblokuoja pagrindinio srauto */ }
+}
+
 // ── 🥋 Registracijos modalas (2 žingsniai, vienas pateikimas) ──
 function openKidSelfSignup(){
   const old = document.getElementById('kid-selfreg-modal'); if (old) old.remove();
@@ -5271,6 +5289,10 @@ async function submitKidSelfSignup(){
     if (rpcRes.error) throw rpcRes.error;
     // Sėkmė: sesija lieka (status='pending') — po „Supratau" reload parodys laukimo ekraną
     window._suppressAuthChange = false;
+    // 📜 Sutikimų žurnalas (politika; sveikata — jei pildyta)
+    const _newKidId = rpcRes.data || null;
+    await logConsent('privacy_terms', { kid_id: _newKidId, source: 'kid_selfsignup' });
+    if (health) await logConsent('health', { kid_id: _newKidId, source: 'kid_selfsignup' });
     document.getElementById('ksr-step2').style.display = 'none';
     document.getElementById('ksr-done').style.display = 'block';
   } catch(err){
@@ -8070,7 +8092,7 @@ function openReportOrderModal(useCredit){
   const lockDays = _kidDataDays(k, 60);  // 📊 duomenų vartai: ataskaitos atrakinamos po 2 mėn. treniruočių (kol susikaupia duomenys)
   const orderCard = lockDays > 0
     ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:20px 14px;margin-bottom:16px;text-align:center;"><div style="font-size:36px;margin-bottom:8px;">🔒</div><div style="font-size:14px;font-weight:800;color:white;margin-bottom:7px;">Ataskaita dar kaupia duomenis</div><div style="font-size:11px;color:var(--mut);line-height:1.55;">Pirmoms ataskaitoms reikia ~2 mėn. treniruočių duomenų, kad būtų ką analizuoti. Kol kas vaikas kaupia rezultatus Karjeros lange — kuo daugiau jų užfiksuos, tuo asmeniškesnė bus analizė.</div><div style="margin-top:11px;font-size:12px;color:var(--br);font-weight:800;">⏳ Prieinama po ${lockDays} d.</div></div>`
-    : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div><div style="display:flex;gap:10px;"><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div></div><div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div><div style="margin-top:11px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">TRAUMOS / APRIBOJIMAI (NEBŪTINA)</label><input id="rep-injuries" type="text" placeholder="pvz. neseniai skaudėjo kelį" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><div style="margin-top:10px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">KO LABIAUSIAI TIKITĖS IŠ ATASKAITOS? (NEBŪTINA)</label><input id="rep-goal" type="text" placeholder="pvz. ar verta ruoštis varžyboms" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:13px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button><div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div></div>`;
+    : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div><div style="display:flex;gap:10px;"><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div></div><div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div><div style="margin-top:11px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">TRAUMOS / APRIBOJIMAI (NEBŪTINA)</label><input id="rep-injuries" type="text" placeholder="pvz. neseniai skaudėjo kelį" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><div style="margin-top:10px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">KO LABIAUSIAI TIKITĖS IŠ ATASKAITOS? (NEBŪTINA)</label><input id="rep-goal" type="text" placeholder="pvz. ar verta ruoštis varžyboms" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><label style="display:flex;gap:8px;font-size:10.5px;color:var(--mut);line-height:1.45;margin-top:11px;cursor:pointer;"><input type="checkbox" id="rep-consent" style="margin-top:2px;flex-shrink:0;"> Sutinku, kad ataskaita būtų parengta ir pateikta iš karto, ir suprantu, kad ją pateikus netenku teisės atsisakyti sutarties (CK 6.228¹⁰ str.).</label><button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:9px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button><div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div></div>`;
   const m = document.createElement('div');
   m.id = 'report-order-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
@@ -8127,6 +8149,13 @@ async function loadMyReports(){
 async function submitReportOrder(btn){
   const k = parentActiveKid;
   if (!k) return;
+  // 📜 CK 6.228¹⁰: be aiškaus sutikimo skaitmeninio turinio iš karto neteikiame
+  const _repC = document.getElementById('rep-consent');
+  if (_repC && !_repC.checked){
+    const st0 = document.getElementById('rep-gen-status');
+    if (st0){ st0.style.display = 'block'; st0.style.color = 'var(--br)'; st0.textContent = '❌ Pažymėk sutikimą virš mygtuko — be jo negalime pateikti ataskaitos iš karto.'; }
+    return;
+  }
   const h = document.getElementById('rep-height')?.value;
   const w = document.getElementById('rep-weight')?.value;
   const inj = document.getElementById('rep-injuries')?.value?.trim() || '';
@@ -8136,6 +8165,7 @@ async function submitReportOrder(btn){
   btn.disabled = true; btn.textContent = '⏳ Generuojama...';
   if (status) { status.style.display = 'block'; status.style.color = 'var(--mut)'; status.textContent = 'AI analizuoja vaiko duomenis… tai gali užtrukti iki ~40 s. Neuždaryk lango.'; }
   _savePrefs(k.id, 'report', { injuries: inj || null, parent_goal: gl || null });
+  if (_repC) await logConsent('digital_content', { kid_id: k.id, source: _reportCreditMode ? 'report_order_credit' : 'report_order' });
   try {
     const { data, error } = await sb.functions.invoke('generate-report', {
       body: { kid_id: k.id, height_cm: h ? Number(h) : null, weight_kg: w ? Number(w) : null, prefs: { injuries: inj || null, parent_goal: gl || null } }
@@ -9758,6 +9788,13 @@ function akNext(currentScreen) {
     // Media sutikimas (radio button)
     const mediaConsent = document.querySelector('input[name="ak-media-consent"]:checked');
     akData.media_consent = mediaConsent ? mediaConsent.value === 'true' : false;
+
+    // 📜 BDAR 9 str.: jei pildyti sveikatos laukai — privalomas aiškus sutikimas
+    const _akHealthAny = akData.health_allergies || akData.health_medications || akData.health_conditions || akData.health_injuries || akData.health_notes;
+    if (_akHealthAny && !document.getElementById('ak-health-consent')?.checked){
+      showToast('❌ Įrašei sveikatos informaciją — pažymėk sutikimą, kad ją matytų treneris', 'error', 5000);
+      return;
+    }
     
     akShowScreen(4);
   }
@@ -9855,6 +9892,11 @@ async function akSubmit() {
       console.error('Link error:', linkError);
       throw new Error('Susiejimo klaida: ' + linkError.message);
     }
+
+    // 📜 Sutikimų žurnalas: sveikata (jei pildyta) + media pasirinkimas (fiksuojam ir „ne")
+    const _akHealthLog = akData.health_allergies || akData.health_medications || akData.health_conditions || akData.health_injuries || akData.health_notes;
+    if (_akHealthLog) await logConsent('health', { kid_id: kidId, source: 'add_kid_wizard' });
+    await logConsent('media', { kid_id: kidId, given: !!akData.media_consent, source: 'add_kid_wizard' });
     
     // 2b. kid_trainers (M:N) — TIK jei tėvas pasirinko trenerį (Etapas 4: galima be trenerio)
     if (akData.trainer_id) {
@@ -10823,6 +10865,12 @@ async function rwSubmit() {
       throw parentSignUpError;
     }
     
+    // 📜 Sutikimų žurnalas — politika+taisyklės (+marketingas). BŪTINAI prieš signOut (RLS reikia sesijos)
+    if (parentSignUp?.user?.id) {
+      await logConsent('privacy_terms', { user_id: parentSignUp.user.id, source: 'parent_wizard' });
+      if (marketingConsent) await logConsent('marketing', { user_id: parentSignUp.user.id, source: 'parent_wizard' });
+    }
+
     // 3. Jei marketing pažymėta - atnaujinam profile (jis sukuriamas trigger'iu po signUp)
     if (marketingConsent && parentSignUp?.user?.id) {
       // Šiek tiek palaukiam kad trigger sukurtų profile
@@ -29288,7 +29336,7 @@ async function loadAdminNudges(){
   const safe = p => Promise.resolve(p).then(r => r, () => ({ data: null, count: null }));
   const dayAgo = new Date(Date.now() - 864e5).toISOString();
   const h20 = new Date(Date.now() - 20 * 36e5).toISOString();
-  const [al, rp, pr, links, cc, subs] = await Promise.all([
+  const [al, rp, pr, links, cc, subs, stl] = await Promise.all([
     safe(sb.from('admin_alerts').select('id, kind, title, body, created_at, seen').order('created_at', { ascending: false }).limit(15)),
     safe(sb.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'pending_review').lt('created_at', h20)),
     safe(sb.from('profiles').select('id, created_at').eq('role', 'parent').lt('created_at', dayAgo).order('created_at', { ascending: false }).limit(300)),
@@ -29296,7 +29344,10 @@ async function loadAdminNudges(){
     safe(sb.rpc('admin_club_compare')),
     safe(sb.from('purchases').select('id').eq('item_type', 'subscription')
       .gte('created_at', new Date(Date.now() - 365 * 864e5).toISOString())
-      .lte('created_at', new Date(Date.now() - 335 * 864e5).toISOString()))
+      .lte('created_at', new Date(Date.now() - 335 * 864e5).toISOString())),
+    safe(sb.from('kids').select('id', { count: 'exact', head: true })
+      .in('approval_status', ['pending', 'rejected'])
+      .lt('created_at', new Date(Date.now() - 365 * 864e5).toISOString()))
   ]);
   const items = [];
   // Cron/serverio alertai (nauji viršuje; ✓ pažymi matytu)
@@ -29314,6 +29365,8 @@ async function loadAdminNudges(){
   if (stale.length) items.push({ html: `🏢 <b>${stale.length} klub${stale.length === 1 ? 'as' : 'ai'} 7 d. be veiklos</b>: ${stale.slice(0, 3).map(c => _aaiEsc(c.club_name || '')).join(', ')}${stale.length > 3 ? '…' : ''} — verta paskambinti` });
   const expCnt = (subs.data || []).length;
   if (expCnt > 0) items.push({ html: `💎 <b>${expCnt} prenumerat${expCnt === 1 ? 'a' : 'os'} baigiasi per 30 d.</b> — win-back kandidatai` });
+  const staleCnt = stl.count || 0;
+  if (staleCnt > 0) items.push({ html: `🧹 <b>${staleCnt} anket${staleCnt === 1 ? 'a' : 'os'} laukia >12 mėn.</b> — pagal privatumo politiką šalintinos (Vartotojai → 🗑️)` });
   // Paskutinio digest santrauka (visada apačioje, jei yra)
   const dg = (al.data || []).find(a => a.kind === 'digest');
   el.innerHTML = (items.length
