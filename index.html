@@ -612,7 +612,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v360</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v361</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -13112,9 +13112,9 @@ function openDuelResultInput(duelId, duelType) {
 async function submitDuelResult(duelId) {
   const valueEl = document.getElementById('duel-result-value');
   const value = parseFloat(valueEl?.value);
-  
-  if (isNaN(value) || value < 0) {
-    showToast('❌ Įvesk teisingą skaičių', 'error');
+
+  if (isNaN(value) || value <= 0) {
+    showToast('❌ Įvesk teisingą skaičių (didesnį už 0)', 'error');
     return;
   }
   
@@ -24009,11 +24009,11 @@ async function _assignExpCareer() {
   const sorted = cats.slice().sort((a, c) => (a.sort_order || 0) - (c.sort_order || 0));
   b.innerHTML = _assignExpBack() +
     `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-bottom:4px;">PASIRINK KATEGORIJĄ:</div>` +
-    `<div style="font-size:10px;color:var(--mut);margin-bottom:10px;">Amžiaus grupė: <b style="color:white;">${ag.name}</b></div>` +
+    `<div style="font-size:10px;color:var(--mut);margin-bottom:10px;">Amžiaus grupė: <b style="color:white;">${escapeHtml(ag.name || '')}</b></div>` +
     sorted.map(c =>
       `<div onclick="_aecCategory('${c.id}','${(c.name || '').replace(/'/g, "\\'")}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
         <span style="font-size:20px;">${(typeof CATEGORY_ICONS !== 'undefined' && CATEGORY_ICONS[c.name]) || c.icon || '🏋️'}</span>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${c.name || 'Kategorija'}</div></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${escapeHtml(c.name || 'Kategorija')}</div></div>
         <div style="color:var(--br);font-size:14px;">›</div>
       </div>`).join('');
 }
