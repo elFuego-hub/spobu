@@ -612,7 +612,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v362</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v363</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -27863,7 +27863,7 @@ async function loadAdminReports() {
         ${r.rating_comment ? `<div style="font-size:9.5px;color:#d9b970;margin:-1px 0 7px;line-height:1.4;">💬 ${esc(r.rating_comment)}</div>` : ''}
         ${r.status === 'error' && r.error_text ? `<div style="font-size:9.5px;color:#ff8a8a;margin:-1px 0 7px;line-height:1.4;">⚠️ ${esc(r.error_text)}</div>` : ''}
         <div style="display:flex;gap:6px;">
-          ${r.report_json ? `<button onclick="openReportViewer(_adminReportsCache['${r.id}'])" style="font-size:11px;font-weight:700;padding:6px 11px;border-radius:8px;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);cursor:pointer;">👁️ Peržiūrėti</button>` : ''}
+          <button onclick="openAdminReport('${r.id}')" style="font-size:11px;font-weight:700;padding:6px 11px;border-radius:8px;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);cursor:pointer;">👁️ Peržiūrėti</button>
           ${canReview ? `<button onclick="approveReport('${r.id}')" style="font-size:11px;font-weight:800;padding:6px 13px;border-radius:8px;background:linear-gradient(90deg,#16A34A,#22C55E);color:#fff;border:none;cursor:pointer;">✅ Patvirtinti tėvui</button>` : ''}
         </div>
       </div>`;
@@ -27872,6 +27872,24 @@ async function loadAdminReports() {
     console.warn('loadAdminReports', e);
     list.innerHTML = `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nepavyko užkrauti (${e?.message || 'klaida'})</div>`;
   }
+}
+
+// Admin peržiūra: ima ataskaitą ŠVIEŽIAI iš DB (ne iš seno kešo, kuris gali pagauti dar tuščią
+// fone besigeneruojančią ataskaitą), + aiškus pranešimas jei be turinio (vietoj mįslingo tuščio lango).
+async function openAdminReport(id) {
+  try {
+    const { data, error } = await sb.from('reports').select('report_json, status, type').eq('id', id).single();
+    if (error || !data) { showToast('❌ Nepavyko užkrauti ataskaitos', 'error'); return; }
+    const rj = data.report_json || {};
+    const hasContent = !!(rj.summary || (Array.isArray(rj.skills) && rj.skills.length) || Array.isArray(rj.goals) || rj.intro);
+    if (!hasContent) {
+      showToast(data.status === 'generating'
+        ? '⏳ Ataskaita dar generuojama — palauk 1–2 min ir spausk „Peržiūrėti" vėl.'
+        : '⚠️ Ši ataskaita be turinio (generavimas nepavyko). Pergeneruok arba pažiūrėk klaidą.', 'error', 6000);
+      return;
+    }
+    openReportViewer(rj);
+  } catch (e) { showToast('❌ Klaida atidarant: ' + (e.message || ''), 'error'); }
 }
 
 async function approveReport(id) {
