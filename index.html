@@ -612,7 +612,7 @@ select.inp option{background:#222;}
 <body>
 
 <!-- 🏷️ VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v359</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v360</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">📱 PILNAS MOBILE</button>
@@ -12358,8 +12358,13 @@ window.testParticipation = function() {
 // Auto-detect naujų įveiktų iššūkių
 // ════════════════════════════════════════
 async function detectNewChallenges() {
+  // ⚠️ NEBEAKTYVUS (2026-07-10): ši funkcija skaitė iš `challenge_completions`, kurios DB NĖRA (404).
+  //   Iššūkių įveikimo šventimą PILNAI tvarko checkForNewApprovedSubmissions (per challenge_submissions).
+  //   No-op: pašalina 404 console spam ir K-54 dvigubą kvietimą per resume (loadKidData + handleAppResume).
+  return;
+  /* eslint-disable no-unreachable */
   if (!currentKid?.id) return;
-  
+
   const lsKey = `spobu_kid_${currentKid.id}_lastChallengeId`;
   
   const { data: completions } = await sb.from('challenge_completions')
@@ -14579,8 +14584,10 @@ async function checkForNewApprovedSubmissions() {
         const isCompleted = progress?.is_completed === true;
         
         if (isCompleted) {
-          // Pilnai atliktas - NEsiunčiam toast'o (yra bendras "pilnai atlikta" celebration)
-          return;
+          // ✅ FIX (2026-07-10): pilnai atliktas partial iššūkis — rodom tą patį tipo popup kaip standartinis.
+          //   Anksčiau `return` laukė detectNewChallenges → challenge_completions, kuri DB NEEGZISTUOJA (404) →
+          //   daugiažingsnio iššūkio įveikimo šventimas NIEKADA neiššokdavo.
+          showChallengeApprovedPopup(ch, sub);
         } else {
           // Tarpinis - rodom toast'ą + confetti
           const totalProgress = progress?.total_progress || 0;
