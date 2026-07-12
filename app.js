@@ -24170,12 +24170,20 @@ async function aaiReject(id){
   if (typeof loadAdminReports === 'function') loadAdminReports();
 }
 
+// 🔄 RETRY — EF pergeneruoja ESAMĄ eilutę (body.report_id; kredito nevartoja antrą kartą)
 async function aaiRetry(id){
-  if (!confirm('Pažymėti RETRY?\n\nStatusas → pending. EF pakartotinį generavimą reikia įjungti pagal SERVERIO TODO (server-admin-ai-studija.sql).')) return;
-  const { error } = await sb.from('reports').update({ status: 'pending', error_text: null, admin_note: 'RETRY ' + new Date().toISOString().slice(0, 16) }).eq('id', id);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  showToast('🔄 Pažymėta RETRY', 'success');
-  loadAdminAI();
+  if (!confirm('Pergeneruoti šią ataskaitą?\n\nEF paleis AI iš naujo su ta pačia eilute (kreditas nebus nurašytas antrą kartą).')) return;
+  showToast('⏳ Pergeneruojama — rezultatas grįš į peržiūros eilę...', 'success', 4000);
+  try {
+    const { data, error } = await sb.functions.invoke('generate-report', { body: { report_id: id } });
+    if (error) {
+      let detail = error.message || String(error);
+      try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
+      throw new Error(detail);
+    }
+    showToast('🔄 Paleista: ' + (data?.status === 'pending_review' ? 'grįš į LAUKIA eilę (iki ~5 min.)' : 'baigta'), 'success', 5000);
+  } catch (e) { showToast('❌ Retry nepavyko: ' + (e?.message || e), 'error', 6000); }
+  setTimeout(loadAdminAI, 1500);
 }
 
 async function aaiUnreject(id){
