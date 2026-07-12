@@ -65,7 +65,7 @@ window.addEventListener('unhandledrejection', function(e) {
     let idx = 0;
     function tryNext() {
       if (idx >= CDN_URLS.length) {
-        const msg = '❌ Nepavyko užkrauti Supabase iš nė vieno CDN!';
+        const msg = '<svg class="ico" aria-hidden="true"><use href="#i-klaida"></use></svg> Nepavyko užkrauti Supabase iš nė vieno CDN!';
         console.error(msg);
         const errDiv = document.createElement('div');
         errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:14px;z-index:99999;font-family:monospace;font-size:13px;text-align:center;';
@@ -331,9 +331,9 @@ window.addEventListener('unhandledrejection', function(e) {
       <label class="lbl">PAKARTOTI SLAPTAŽODĮ</label>
       <input class="inp" type="password" id="rw-parent-pass2" placeholder="••••••••" minlength="8" style="margin-bottom:14px;">
       
-      <button class="btn-auth" onclick="rwNext(1)">TĘSTI →</button>
+      <button class="btn-auth" onclick="rwNext(1)">TĘSTI <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></button>
       <div style="text-align:center;margin-top:12px;">
-        <button class="btn-link" onclick="showLogin()">← Grįžti į prisijungimą</button>
+        <button class="btn-link" onclick="showLogin()"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg> Grįžti į prisijungimą</button>
       </div>
     </div>
     
@@ -353,9 +353,9 @@ window.addEventListener('unhandledrejection', function(e) {
       <label class="lbl">TELEFONAS</label>
       <input class="inp" type="tel" id="rw-phone" placeholder="+370 600 00000" style="margin-bottom:14px;">
       
-      <button class="btn-auth" onclick="rwNext(2)">TĘSTI →</button>
+      <button class="btn-auth" onclick="rwNext(2)">TĘSTI <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></button>
       <div style="text-align:center;margin-top:12px;">
-        <button class="btn-link" onclick="rwPrev(2)">← Atgal</button>
+        <button class="btn-link" onclick="rwPrev(2)"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg> Atgal</button>
       </div>
     </div>
     
@@ -402,13 +402,13 @@ window.addEventListener('unhandledrejection', function(e) {
       
       <button class="btn-auth" id="rw-submit-btn" onclick="rwSubmit()">BAIGTI REGISTRACIJĄ</button>
       <div style="text-align:center;margin-top:12px;">
-        <button class="btn-link" onclick="rwPrev(3)">← Atgal</button>
+        <button class="btn-link" onclick="rwPrev(3)"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg> Atgal</button>
       </div>
     </div>
     
     <!-- ===== SUCCESS ===== -->
     <div id="rw-screen-success" style="display:none;text-align:center;padding:30px 0;">
-      <div style="font-size:60px;margin-bottom:16px;">✅</div>
+      <div style="font-size:60px;margin-bottom:16px;"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></div>
       <div class="auth-title" style="margin-bottom:14px;">REGISTRACIJA SĖKMINGA!</div>
       <div style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:20px;">
         Tavo paskyra sukurta!<br><br>
@@ -431,7 +431,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <input class="inp" type="email" id="forgot-email" placeholder="vardas@email.lt">
     <button class="btn-auth" onclick="doForgot()">SIŲSTI LAIŠKĄ</button>
     <div style="text-align:center;margin-top:12px;">
-      <button class="btn-link" onclick="showLogin()">← Grįžti</button>
+      <button class="btn-link" onclick="showLogin()"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg> Grįžti</button>
     </div>
   </div>
 </div>
@@ -441,7 +441,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="mbox">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div class="mt">PAKVIESTI TRENERĮ</div>
-      <button class="bb" onclick="closeInviteTrainer()">✕</button>
+      <button class="bb" onclick="closeInviteTrainer()"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     
     <label class="lbl">VARDAS</label>
@@ -464,7 +464,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div class="mt">NAUJAS KLUBAS</div>
-      <button class="bb" onclick="closeCreateClub()">✕</button>
+      <button class="bb" onclick="closeCreateClub()"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     
     <label class="lbl">KLUBO PAVADINIMAS</label>
@@ -514,7 +514,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div class="mt">PATEIK REZULTATĄ</div>
-      <button class="bb" onclick="closeSubmitCompResult()">✕</button>
+      <button class="bb" onclick="closeSubmitCompResult()"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     
     <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:14px;">
@@ -597,7 +597,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div class="mt" id="kc-modal-title">NAUJOS VARŽYBOS</div>
-      <button class="bb" onclick="closeCreateCompetition()">✕</button>
+      <button class="bb" onclick="closeCreateCompetition()"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     
     <label class="lbl">PAVADINIMAS</label>
@@ -648,7 +648,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div class="mt">NAUJAS IŠŠŪKIS</div>
-      <button class="bb" onclick="closeCreateChallenge()">✕</button>
+      <button class="bb" onclick="closeCreateChallenge()"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     
     <label class="lbl">PAVADINIMAS</label>
@@ -767,13 +767,13 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div class="mt" id="exo-title">PRATIMAI</div>
-      <button class="bb" onclick="closeExercises()">✕</button>
+      <button class="bb" onclick="closeExercises()"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     <div id="exo-list">
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
     <div id="exo-form" style="display:none;">
-      <button class="btn btnd" style="margin:0 0 14px;width:100%;" onclick="backToExerciseList()">← Atgal į pratimų sąrašą</button>
+      <button class="btn btnd" style="margin:0 0 14px;width:100%;" onclick="backToExerciseList()"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg> Atgal į pratimų sąrašą</button>
       <div class="cd" style="margin:0 0 14px;">
         <div style="font-size:13px;font-weight:900;margin-bottom:4px;" id="exo-form-name">Pratimas</div>
         <div style="font-size:11px;color:var(--mut);" id="exo-form-info">–</div>
@@ -783,7 +783,7 @@ window.addEventListener('unhandledrejection', function(e) {
           <div style="font-size:10px;color:var(--mut);">DABARTINIS PR</div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;" id="exo-form-pr">0</div>
         </div>
-        <div style="color:var(--mut);font-size:24px;">→</div>
+        <div style="color:var(--mut);font-size:24px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></div>
         <div style="text-align:center;">
           <div style="font-size:10px;color:var(--mut);">NAUJAS REKORDAS</div>
           <input type="text" inputmode="decimal" autocomplete="off" class="inp" id="exo-form-new" style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:24px;width:90px;margin:0;padding:6px;" oninput="recalcExpGain()">
@@ -797,7 +797,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <label class="lbl">KOMENTARAS (neprivalomai)</label>
       <textarea class="inp" id="exo-form-comment" placeholder="Pvz. nufilmavau, ant kilimėlio..." rows="2" style="resize:none;"></textarea>
       <button class="btn btng" id="exo-form-submit" style="margin:8px 0 0;width:100%;" onclick="submitExerciseResult()">SIŲSTI TRENERIUI</button>
-      <div style="font-size:11px;color:var(--mut);text-align:center;margin-top:8px;">⚠️ Galima siųsti tik geresnį rezultatą už PR</div>
+      <div style="font-size:11px;color:var(--mut);text-align:center;margin-top:8px;"><svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> Galima siųsti tik geresnį rezultatą už PR</div>
       <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:6px;line-height:1.5;">🙏 Treneris peržiūri kiekvieną pateikimą — siųsk tik <b style="color:#c9c9d4;">tikrą pagerėjimą</b>, idealiai po testavimo treniruotėje, ne po kelis kartus per dieną.</div>
     </div>
   </div>
@@ -808,7 +808,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="mbox" style="max-height:88vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div class="mt" style="margin:0;">💡 KAIP VEIKIA KARJERA</div>
-      <button class="bb" onclick="closeKarjeraInfo()">✕</button>
+      <button class="bb" onclick="closeKarjeraInfo()"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     <div id="kinfo-kid" style="display:none;">
       <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:11px;color:#c9c9d4;line-height:1.6;">
@@ -941,8 +941,8 @@ window.addEventListener('unhandledrejection', function(e) {
       <a class="vdn-item" data-sid="v-prof" onclick="nvDesktop('v-prof')"><span class="vdn-ico">👤</span> Profilis</a>
     </nav>
     <div class="vdn-bottom">
-      <button onclick="toggleNotifications()" class="vdn-btn">🔔 Pranešimai <span id="vdn-notif-badge" class="vdn-badge">0</span></button>
-      <button onclick="openKidSettings()" class="vdn-btn">⚙️ Nustatymai</button>
+      <button onclick="toggleNotifications()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> Pranešimai <span id="vdn-notif-badge" class="vdn-badge">0</span></button>
+      <button onclick="openKidSettings()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> Nustatymai</button>
     </div>
   </aside>
   <div class="df"><div class="ds"><div class="ph">
@@ -960,12 +960,12 @@ window.addEventListener('unhandledrejection', function(e) {
         </div>
         <!-- VARPELIO MYGTUKAS -->
         <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleNotifications()" id="v-notif-btn">
-          🔔
+          <svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
           <div id="v-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div>
         </div>
         <!-- NUSTATYMŲ MYGTUKAS -->
         <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidSettings()" id="v-settings-btn">
-          ⚙️
+          <svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg>
         </div>
       </div>
     </div>
@@ -1009,8 +1009,8 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
         <!-- HEADER -->
         <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
-          <button onclick="toggleNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> PRANEŠIMAI</div>
+          <button onclick="toggleNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI<svg class="ico" aria-hidden="true" style="margin-left:5px;"><use href="#i-uzdaryti"></use></svg></button>
         </div>
         
         <!-- 4 TABAI -->
@@ -1040,7 +1040,7 @@ window.addEventListener('unhandledrejection', function(e) {
         
         <!-- FOOTER -->
         <div style="padding:10px 16px;border-top:.5px solid var(--bdr);">
-          <button onclick="markAllNotifRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;">✓ Žymėti visus skaitytus</button>
+          <button onclick="markAllNotifRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg> Žymėti visus skaitytus</button>
         </div>
       </div>
     </div>
@@ -1154,7 +1154,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
     <div style="padding:4px 16px 0;">
-      <button onclick="openMainStat()" style="width:100%;padding:6px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:9px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA →</button>
+      <button onclick="openMainStat()" style="width:100%;padding:6px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:9px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></button>
     </div>
     
     <!-- 📅 ARTIMIAUSI RENGINIAI (varžybos + stovyklos) -->
@@ -1193,10 +1193,10 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 6px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">KARJERA</div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <div onclick="toggleNotifications()" style="position:relative;width:34px;height:34px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;border:.5px solid var(--bdr);">🔔
+      <div onclick="toggleNotifications()" style="position:relative;width:34px;height:34px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div id="v-kar-notif-badge" style="position:absolute;top:-2px;right:-2px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openKidSettings()" style="width:34px;height:34px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openKidSettings()" style="width:34px;height:34px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1246,10 +1246,10 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openKidInfo('ish')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div>
-      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
+      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1274,7 +1274,7 @@ window.addEventListener('unhandledrejection', function(e) {
         </div>
         <div style="text-align:center;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-ish-count-done">0</div>
-          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;">✅ Įveikti</div>
+          <div style="font-size:7px;color:rgba(255,255,255,.6);letter-spacing:1px;font-weight:700;margin-top:2px;text-transform:uppercase;"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> Įveikti</div>
         </div>
         <div style="text-align:center;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:white;line-height:1;" id="v-ish-count-total">0</div>
@@ -1359,10 +1359,10 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">VARŽYBOS</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openKidInfo('comp')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div>
-      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
+      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div id="v-comp-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1416,7 +1416,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="display:flex;gap:4px;margin:0 16px 6px;">
       <button class="vc-tab on" data-tab="upcoming" onclick="switchVcTab(this,'upcoming')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">📅 ARTĖJA <span id="vc-upcoming-count" style="opacity:.7;">0</span></button>
       <button class="vc-tab" data-tab="pending" onclick="switchVcTab(this,'pending')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">⏳ LAUKIA <span id="vc-pending-count" style="opacity:.7;">0</span></button>
-      <button class="vc-tab" data-tab="completed" onclick="switchVcTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">✅ ATLIKTOS <span id="vc-completed-count" style="opacity:.7;">0</span></button>
+      <button class="vc-tab" data-tab="completed" onclick="switchVcTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> ATLIKTOS <span id="vc-completed-count" style="opacity:.7;">0</span></button>
     </div>
     
     <div id="v-comp-list" style="padding:0 16px;">
@@ -1488,10 +1488,10 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openKidInfo('prof')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div>
-      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
+      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div id="v-prof-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1535,7 +1535,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- 💬 BIOGRAFIJA/MOTTO kortelė -->
     <div onclick="openBioEdit()" style="margin:0 12px 6px;padding:8px 11px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);position:relative;">
       <div id="v-prof-bio" style="font-size:10px;color:rgba(255,255,255,.85);line-height:1.35;font-style:italic;">"Karatė nėra kovos sportas - tai kelias į asmenybės ugdymą."</div>
-      <div style="font-size:7px;color:var(--mut);margin-top:3px;text-align:right;">✏️ Spausk redaguoti</div>
+      <div style="font-size:7px;color:var(--mut);margin-top:3px;text-align:right;"><svg class="ico" aria-hidden="true"><use href="#i-redaguoti"></use></svg> Spausk redaguoti</div>
     </div>
     
     <!-- 🥋 FLAT DIRŽAS - ribbon stilius -->
@@ -1610,12 +1610,12 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrInfo('main')" title="Apie šį langą">💡</div>
         <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrainerNormatyvai()" title="Pratimų normatyvai">💪</div>
         <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleTrainerNotifications()" id="trh-notif-btn">
-          🔔
+          <svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
           <div id="trh-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div>
           <div id="tr-notif-badge" style="display:none;"></div>
         </div>
         <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrainerSettings()">
-          ⚙️
+          <svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg>
         </div>
       </div>
     </div>
@@ -1624,8 +1624,8 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.85);align-items:flex-end;justify-content:center;" id="trh-notif-section">
       <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
         <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
-          <button onclick="toggleTrainerNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> PRANEŠIMAI</div>
+          <button onclick="toggleTrainerNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI<svg class="ico" aria-hidden="true" style="margin-left:5px;"><use href="#i-uzdaryti"></use></svg></button>
         </div>
         <div style="padding:12px 16px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
           <button class="notif-tab" data-tab="system" onclick="switchTrainerNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
@@ -1649,7 +1649,7 @@ window.addEventListener('unhandledrejection', function(e) {
           <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
         </div>
         <div style="padding:10px 16px;border-top:.5px solid var(--bdr);">
-          <button onclick="markAllTrainerNotifRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;">✓ Žymėti visus skaitytus</button>
+          <button onclick="markAllTrainerNotifRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg> Žymėti visus skaitytus</button>
         </div>
       </div>
     </div>
@@ -1688,7 +1688,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;">
           <div style="text-align:center;background:rgba(0,0,0,.28);border-radius:10px;padding:6px 4px;">
             <div id="trh-kpi-approved" style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:white;line-height:1;">0</div>
-            <div style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:.4px;font-weight:700;margin-top:2px;">✅ PATVIRTINIMAI</div>
+            <div style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:.4px;font-weight:700;margin-top:2px;"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> PATVIRTINIMAI</div>
           </div>
           <div style="text-align:center;background:rgba(0,0,0,.28);border-radius:10px;padding:6px 4px;">
             <div id="trh-kpi-created" style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:white;line-height:1;">0</div>
@@ -1730,7 +1730,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
     <div style="padding:4px 16px 0;">
-      <button onclick="openTrainerStatScreen()" style="width:100%;padding:6px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:9px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA →</button>
+      <button onclick="openTrainerStatScreen()" style="width:100%;padding:6px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:9px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></button>
     </div>
 
     <!-- 📅 ARTIMIAUSIOS VARŽYBOS (kopija vaiko bloko) -->
@@ -1771,7 +1771,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni on" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -1783,10 +1783,10 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openTrInfo('challenges')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div>
-      <div onclick="toggleTrainerNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
+      <div onclick="toggleTrainerNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="trh-nbadge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openTrainerSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openTrainerSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1856,7 +1856,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -1868,10 +1868,10 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PATVIRTINIMAI</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openTrInfo('pat')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div>
-      <div onclick="toggleTrainerNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
+      <div onclick="toggleTrainerNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="trh-nbadge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openTrainerSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openTrainerSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1886,7 +1886,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">⏳</div>
       <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">⏳ LAUKIA PATVIRTINIMO</div>
       <div id="tr-pending-badge" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#FF8C00;line-height:1;text-shadow:0 0 20px rgba(255,140,0,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;">0</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;">✅ Iš viso patvirtinta: <b style="color:var(--grn);" id="trp-approved-total">–</b></div>
+      <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> Iš viso patvirtinta: <b style="color:var(--grn);" id="trp-approved-total">–</b></div>
     </div>
 
     <!-- 👥 Filtras pagal grupę (pildo renderTrPatGroupFilter) -->
@@ -1925,7 +1925,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -1946,7 +1946,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -1958,7 +1958,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="max-width:420px;margin:20px auto;background:var(--card);border-radius:20px;padding:24px;border:.5px solid var(--bdr);">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;" id="cg-modal-title">SUKURTI GRUPĘ</div>
-      <button onclick="closeCreateGroupModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+      <button onclick="closeCreateGroupModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     
     <div class="err-msg" id="create-group-err"></div>
@@ -2010,7 +2010,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">PRISKIRTI VAIKUS</div>
         <div style="font-size:12px;color:var(--mut);margin-top:4px;" id="ak-group-name">–</div>
       </div>
-      <button onclick="closeAssignKidsModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+      <button onclick="closeAssignKidsModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     
     <div style="font-size:12px;color:var(--mut);margin-bottom:14px;line-height:1.5;">
@@ -2030,7 +2030,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- TRENERIS – VISI PATVIRTINIMAI (sub-langas iš „▼ DAUGIAU") -->
 <div class="sc" id="tr-pat-all">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('tr','tr-pat')">←</div><div class="tt" id="trpa-title">PATVIRTINIMAI</div>
+  <div class="tb"><div class="bb" onclick="g('tr','tr-pat')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt" id="trpa-title">PATVIRTINIMAI</div>
   <div style="width:36px;"></div></div>
   <div class="sa">
     <div id="trpa-filter" class="no-scrollbar" style="display:flex;gap:4px;margin:6px 16px;overflow-x:auto;padding-bottom:2px;"></div>
@@ -2042,7 +2042,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -2050,7 +2050,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- TRENERIS – VISI IŠŠŪKIAI (sub-langas iš „▼ DAUGIAU") -->
 <div class="sc" id="tr-challenges-all">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('tr','tr-challenges')">←</div><div class="tt">VISI IŠŠŪKIAI</div>
+  <div class="tb"><div class="bb" onclick="g('tr','tr-challenges')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">VISI IŠŠŪKIAI</div>
   <div style="width:36px;"></div></div>
   <div class="sa">
     <div id="trch-all-filter" class="no-scrollbar" style="display:flex;gap:4px;margin:6px 16px;overflow-x:auto;padding-bottom:2px;"></div>
@@ -2062,7 +2062,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -2074,10 +2074,10 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openTrInfo('prof')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą">💡</div>
-      <div onclick="toggleTrainerNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">🔔
+      <div onclick="toggleTrainerNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="trh-nbadge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openTrainerSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openTrainerSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -2134,7 +2134,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="margin:0 12px 6px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
       <div onclick="_trToggleSection('trp-career-body','trp-career-chev')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;">🕸️ VAIKŲ KARJEROS PROFILIS</div>
-        <span id="trp-career-chev" style="color:var(--mut);font-size:11px;">▸</span>
+        <span id="trp-career-chev" style="color:var(--mut);font-size:11px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="trp-career-body" style="display:none;margin-top:10px;">
         <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:10px;">Vidutinis srities lygis (0–600) visiems vaikams. Žemiausia sritis = kur grupei reikia padirbėti daugiau.</div>
@@ -2151,7 +2151,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="margin:0 12px 6px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
       <div onclick="_trToggleSection('trp-belts-body','trp-belts-chev')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;">🥋 VAIKŲ DIRŽAI</div>
-        <span id="trp-belts-chev" style="color:var(--mut);font-size:11px;">▸</span>
+        <span id="trp-belts-chev" style="color:var(--mut);font-size:11px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="trp-belts-body" style="display:none;margin-top:8px;">
         <div id="trp-belts"><div style="color:var(--mut);font-size:11px;text-align:center;padding:8px;">Kraunama...</div></div>
@@ -2171,7 +2171,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -2179,7 +2179,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- TRENERIS – GRUPĖS PILNO EKRANO LANGAS (fixed, vidinis scroll, nav lieka) -->
 <div class="sc" id="tr-group-view">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('tr','tr-groups')">←</div><div class="tt" id="gv-title">GRUPĖ</div>
+  <div class="tb"><div class="bb" onclick="g('tr','tr-groups')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt" id="gv-title">GRUPĖ</div>
   <div style="width:36px;"></div></div>
   <div class="sa" id="gv-body">
     <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
@@ -2188,7 +2188,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -2196,7 +2196,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- TRENERIS – STATISTIKA (atidaroma iš „VISA STATISTIKA →" pagrindiniame) -->
 <div class="sc" id="tr-stat">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('tr','tr-main')">←</div><div class="tt">STATISTIKA</div>
+  <div class="tb"><div class="bb" onclick="g('tr','tr-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">STATISTIKA</div>
   <div style="width:36px;"></div></div>
   <div class="sa">
 
@@ -2233,7 +2233,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic">🏠</span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic">👥</span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic">🎯</span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic">✅</span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic">👤</span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -2251,10 +2251,10 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;line-height:1;">SPO<span style="color:var(--br);text-shadow:0 0 10px rgba(255,77,0,.6);">BU</span><span style="color:var(--br);text-shadow:0 0 10px rgba(255,77,0,.6);">.</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openParentInfo('main')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą">💡</div>
-      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" title="Pasirinkti vaiką" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2378,7 +2378,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
     <div style="padding:4px 16px 0;">
-      <button onclick="openParentKidStats()" style="width:100%;padding:6px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:9px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA →</button>
+      <button onclick="openParentKidStats()" style="width:100%;padding:6px;background:linear-gradient(135deg, rgba(255,77,0,.15), rgba(255,128,0,.05));border:.5px solid rgba(255,77,0,.3);color:#FF8C00;font-size:9px;font-weight:800;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border-radius:8px;">VISA STATISTIKA <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></button>
     </div>
     </div><!-- /tk-stats-gate -->
 
@@ -2420,10 +2420,10 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px 6px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">KARJERA</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2473,10 +2473,10 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PASIEKIMAI</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openParentInfo('feed')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą">💡</div>
-      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2505,10 +2505,10 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PARDUOTUVĖ</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openParentInfo('shop')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą">💡</div>
-      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2523,9 +2523,9 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 16px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;">
       <div style="text-align:center;flex:1;"><div style="font-size:18px;">📊</div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">DIAGNOZĖ</div></div>
-      <div style="color:var(--br);font-size:13px;">→</div>
+      <div style="color:var(--br);font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></div>
       <div style="text-align:center;flex:1;"><div style="font-size:18px;">🏋️</div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">PLANAS</div></div>
-      <div style="color:var(--br);font-size:13px;">→</div>
+      <div style="color:var(--br);font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></div>
       <div style="text-align:center;flex:1;"><div style="font-size:18px;">📈</div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">PROGRESAS</div></div>
     </div>
 
@@ -2537,10 +2537,10 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Vaiko žaidimas ir ryšys</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--grn);margin:8px 0 6px;">0€</div>
       <ul style="list-style:none;margin:0 0 12px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Vaiko žaidimas: iššūkiai, karjera, dvikovos</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Trenerio žinutės ir pranešimai</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Laimėjimai realiu laiku (medaliai, lygiai)</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Lygis, diržas, serijos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Vaiko žaidimas: iššūkiai, karjera, dvikovos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Trenerio žinutės ir pranešimai</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Laimėjimai realiu laiku (medaliai, lygiai)</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Lygis, diržas, serijos</li>
       </ul>
       <button onclick="setKidTier('free')" style="width:100%;text-align:center;padding:11px;border-radius:11px;font-size:11.5px;font-weight:800;background:var(--bg);color:var(--mut);border:.5px solid var(--bdr);box-sizing:border-box;cursor:pointer;">Rinktis Nemokamą</button>
     </div>
@@ -2552,10 +2552,10 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="margin:9px 0 6px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:30px;">6,99€</span><span style="font-size:11px;color:var(--mut);"> /mėn</span></div>
       <ul style="list-style:none;margin:0 0 12px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
         <li style="padding:3px 0 3px 20px;position:relative;color:var(--mut);"><span style="position:absolute;left:0;">·</span> Viskas iš Nemokamos</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> 📊 Mėnesio pasiekimų suvestinė</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Gili karjeros statistika ir istorija</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> 👥 Bendraamžių percentiliai</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Pilni reitingai ir tendencijos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> 📊 Mėnesio pasiekimų suvestinė</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Gili karjeros statistika ir istorija</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> 👥 Bendraamžių percentiliai</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Pilni reitingai ir tendencijos</li>
       </ul>
       <div style="background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(34,197,94,.04));border:1px solid rgba(34,197,94,.45);border-radius:12px;padding:12px 14px;margin-bottom:10px;text-align:center;">
         <div style="font-size:10px;font-weight:900;color:var(--grn);letter-spacing:.5px;">🔥 GERIAUSIA VERTĖ — UŽ METUS IŠ KARTO</div>
@@ -2574,10 +2574,10 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="margin:9px 0 6px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:30px;">81€</span><span style="font-size:11px;color:var(--mut);"> /metams (12 mėn) · ≈6,75€/mėn</span></div>
       <ul style="list-style:none;margin:0 0 10px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
         <li style="padding:3px 0 3px 20px;position:relative;color:var(--mut);"><span style="position:absolute;left:0;">·</span> Viskas iš Premium</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> 📋 3 ketvirtinės AI ataskaitos (tęstinės)</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> 🏋️ 3 namų treniruočių planai</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> ☀️ Vasaros treniruočių programa</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Pristatoma automatiškai, visus metus</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> 📋 3 ketvirtinės AI ataskaitos (tęstinės)</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> 🏋️ 3 namų treniruočių planai</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> ☀️ Vasaros treniruočių programa</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Pristatoma automatiškai, visus metus</li>
       </ul>
       <div style="background:rgba(0,0,0,.28);border:.5px solid var(--bdr);border-radius:10px;padding:9px 11px;margin:2px 0 9px;font-size:10.5px;color:var(--mut);">
         <div style="display:flex;justify-content:space-between;padding:2px 0;"><span>💎 Premium (statistika) metams</span><span id="ps-annual-v" style="color:#cfcfd6;font-weight:600;">41.94€</span></div>
@@ -2661,10 +2661,10 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openParentInfo('prof')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą">💡</div>
-      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);">⚙️</div>
+      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2746,14 +2746,14 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="msg-list">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;">
-    <button onclick="goBackFromMessages()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
+    <button onclick="goBackFromMessages()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></button>
     <div style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">ŽINUTĖS</div>
   </div>
   <div class="sa">
     <!-- Filtrai -->
     <div style="display:flex;gap:6px;margin-bottom:14px;">
       <button class="msg-filter-btn on" data-filter="all" onclick="setMsgFilter('all')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">VISI</button>
-      <button class="msg-filter-btn" data-filter="unread" onclick="setMsgFilter('unread')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">🔴 NEPERSKAITYTI</button>
+      <button class="msg-filter-btn" data-filter="unread" onclick="setMsgFilter('unread')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;"><span class="dot dot-bad"></span> NEPERSKAITYTI</button>
     </div>
     
     <!-- Pokalbių sąrašas -->
@@ -2767,7 +2767,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="msg-conv">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
   <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:.5px solid var(--bdr);">
-    <button onclick="closeConversation()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
+    <button onclick="closeConversation()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></button>
     <div style="flex:1;min-width:0;">
       <div id="msg-conv-title" style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Pokalbis</div>
       <div id="msg-conv-subtitle" style="font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
@@ -2840,7 +2840,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <button class="msg-cat-btn" data-cat="schedule" onclick="setComposeCategory('schedule')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">📅<br>Tvarkaraštis</button>
         <button class="msg-cat-btn" data-cat="payments" onclick="setComposeCategory('payments')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">💰<br>Mokėjimai</button>
         <button class="msg-cat-btn" data-cat="events" onclick="setComposeCategory('events')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">🏖️<br>Renginiai</button>
-        <button class="msg-cat-btn" data-cat="urgent" onclick="setComposeCategory('urgent')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">⚠️<br>Skubu</button>
+        <button class="msg-cat-btn" data-cat="urgent" onclick="setComposeCategory('urgent')" style="background:transparent;color:var(--text);border:.5px solid var(--bdr);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;"><svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg><br>Skubu</button>
         <button class="msg-cat-btn on" data-cat="general" onclick="setComposeCategory('general')" style="background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 4px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;">📢<br>Bendra</button>
       </div>
     </div>
@@ -2863,7 +2863,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="t-kid-detail" style="display:none;">
   <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
   <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;">
-    <button class="btn-back" onclick="showTab('t','t-main')">←</button>
+    <button class="btn-back" onclick="showTab('t','t-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></button>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;" id="t-kid-name">Vaikas</div>
   </div>
   <div class="sa" id="t-kid-detail-content">
@@ -2881,7 +2881,7 @@ window.addEventListener('unhandledrejection', function(e) {
     
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">+ PRIDĖTI VAIKĄ</div>
-      <button onclick="closeAddKidWizard()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+      <button onclick="closeAddKidWizard()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     
     <!-- Progress -->
@@ -2905,7 +2905,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <option value="">Pasirinkti...</option>
       </select>
       
-      <button class="btn-auth" onclick="akNext(1)">TĘSTI →</button>
+      <button class="btn-auth" onclick="akNext(1)">TĘSTI <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></button>
     </div>
     
     <!-- ===== EKRANAS 2: VAIKO INFO ===== -->
@@ -3006,8 +3006,8 @@ window.addEventListener('unhandledrejection', function(e) {
         </div>
       </div>
       
-      <button class="btn-auth" onclick="akNext(2)">TĘSTI →</button>
-      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(2)">← Atgal</button>
+      <button class="btn-auth" onclick="akNext(2)">TĘSTI <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></button>
+      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(2)"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg> Atgal</button>
     </div>
     
     <!-- ===== EKRANAS 3: KLUBAS + TRENERIS ===== -->
@@ -3056,8 +3056,8 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       </div>
 
-      <button class="btn-auth" onclick="akNext(3)">TĘSTI →</button>
-      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(3)">← Atgal</button>
+      <button class="btn-auth" onclick="akNext(3)">TĘSTI <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></button>
+      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(3)"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg> Atgal</button>
     </div>
     
     <!-- ============================================ -->
@@ -3119,7 +3119,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;margin-bottom:6px;">
           <input type="radio" name="ak-media-consent" id="ak-media-no" value="false" checked style="margin-top:2px;flex-shrink:0;">
           <div>
-            <div style="font-weight:800;font-size:13px;color:var(--text);">🚫 Ne, neleidžiu</div>
+            <div style="font-weight:800;font-size:13px;color:var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-isjungta"></use></svg> Ne, neleidžiu</div>
             <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:2px;">
               Vaiko medžiaga nebus naudojama Spobu marketinge.
             </div>
@@ -3129,7 +3129,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;">
           <input type="radio" name="ak-media-consent" id="ak-media-yes" value="true" style="margin-top:2px;flex-shrink:0;">
           <div>
-            <div style="font-weight:800;font-size:13px;color:var(--text);">✅ Taip, leidžiu</div>
+            <div style="font-weight:800;font-size:13px;color:var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> Taip, leidžiu</div>
             <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:2px;">
               Spobu gali naudoti vaiko nuotraukas/video savo kanaluose.
             </div>
@@ -3141,8 +3141,8 @@ window.addEventListener('unhandledrejection', function(e) {
         </div>
       </div>
       
-      <button class="btn-auth" onclick="akNext('3b')">TĘSTI →</button>
-      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev('3b')">← Atgal</button>
+      <button class="btn-auth" onclick="akNext('3b')">TĘSTI <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></button>
+      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev('3b')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg> Atgal</button>
     </div>
     
     <!-- ===== EKRANAS 4: TELEFONAS ===== -->
@@ -3185,12 +3185,12 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       
       <button class="btn-auth" id="ak-submit-btn" onclick="akSubmit()">PRIDĖTI VAIKĄ</button>
-      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(4)">← Atgal</button>
+      <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev(4)"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg> Atgal</button>
     </div>
     
     <!-- ===== SUCCESS ===== -->
     <div id="ak-screen-success" style="display:none;text-align:center;padding:20px 0;">
-      <div style="font-size:60px;margin-bottom:16px;">✅</div>
+      <div style="font-size:60px;margin-bottom:16px;"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:14px;">VAIKAS PRIDĖTAS!</div>
       <div id="ak-success-content" style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:20px;text-align:left;">
         <!-- Užpildomas dinamiškai -->
@@ -3219,8 +3219,8 @@ window.addEventListener('unhandledrejection', function(e) {
     <a class="vdn-item" data-sid="k-prof" onclick="nv('k',null,'k-prof')"><span class="vdn-ico">👤</span> Profilis</a>
   </nav>
   <div class="vdn-bottom">
-    <button onclick="toggleClubNotifications()" class="vdn-btn">🔔 Pranešimai <span id="kdn-notif-badge" class="vdn-badge">0</span></button>
-    <button onclick="openClubAccountMenu()" class="vdn-btn">⚙️ Nustatymai</button>
+    <button onclick="toggleClubNotifications()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> Pranešimai <span id="kdn-notif-badge" class="vdn-badge">0</span></button>
+    <button onclick="openClubAccountMenu()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> Nustatymai</button>
   </div>
 </aside>
 <div class="df"><div class="ds"><div class="ph">
@@ -3234,8 +3234,8 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
       <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('main')" title="Apie šį langą">💡</div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" id="kh-notif-btn">🔔<div id="kh-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai">⚙️</div>
+      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" id="kh-notif-btn"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kh-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
 
@@ -3243,8 +3243,8 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.85);align-items:flex-end;justify-content:center;" id="kh-notif-section">
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
-        <button onclick="toggleClubNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI ✕</button>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> PRANEŠIMAI</div>
+        <button onclick="toggleClubNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">UŽDARYTI<svg class="ico" aria-hidden="true" style="margin-left:5px;"><use href="#i-uzdaryti"></use></svg></button>
       </div>
       <div style="padding:12px 16px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">
         <button class="notif-tab" data-tab="system" onclick="switchClubNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>📋</span><span>Klubas <span id="kh-notif-count-system" style="opacity:.7;"></span></span></button>
@@ -3252,7 +3252,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <button class="notif-tab" data-tab="messages" onclick="switchClubNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>💬</span><span>Žinutės <span id="kh-notif-count-messages" style="opacity:.7;"></span></span></button>
       </div>
       <div id="kh-notif-list" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
-      <div style="padding:10px 16px;border-top:.5px solid var(--bdr);"><button onclick="markAllClubNotifRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;">✓ Žymėti visus skaitytus</button></div>
+      <div style="padding:10px 16px;border-top:.5px solid var(--bdr);"><button onclick="markAllClubNotifRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg> Žymėti visus skaitytus</button></div>
     </div>
   </div>
   <div class="sa">
@@ -3334,8 +3334,8 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="tt" style="flex:1;">KLUBAS</div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
       <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('team')" title="Apie šį langą">💡</div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai">🔔<div id="kt-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai">⚙️</div>
+      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kt-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
@@ -3388,8 +3388,8 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="tt" style="flex:1;">RENGINIAI</div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
       <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('events')" title="Apie šį langą">💡</div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai">🔔<div id="kev-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai">⚙️</div>
+      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kev-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <!-- Sub-tabai -->
@@ -3430,7 +3430,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- GRUPIŲ IŠŠŪKIS (Blokas 5) -->
     <div id="k-ev-gc" class="k-ev-pane" style="display:none;">
       <div class="tabs" style="margin-bottom:10px;">
-        <div class="tab on" onclick="switchEvSub(this,'gc','upcoming')">🟢 Aktyvūs <span id="k-gc-upcoming-count" style="opacity:.6;">0</span></div>
+        <div class="tab on" onclick="switchEvSub(this,'gc','upcoming')"><span class="dot dot-ok"></span> Aktyvūs <span id="k-gc-upcoming-count" style="opacity:.6;">0</span></div>
         <div class="tab" onclick="switchEvSub(this,'gc','past')">🏁 Užbaigti <span id="k-gc-past-count" style="opacity:.6;">0</span></div>
       </div>
       <button onclick="openCreateClubChallenge()" id="k-new-gc-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJAS GRUPIŲ IŠŠŪKIS</button>
@@ -3452,8 +3452,8 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
       <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('prof')" title="Apie šį langą">💡</div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai">🔔<div id="kp-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai">⚙️</div>
+      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kp-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -3471,7 +3471,7 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     <!-- 📊 Apžvalgų sekcijos perkeltos į Analitiką (k-stat) -->
 
-    <div class="st owner-only" id="k-settings-anchor">⚙️ KLUBO NUSTATYMAI</div>
+    <div class="st owner-only" id="k-settings-anchor"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> KLUBO NUSTATYMAI</div>
     <div class="owner-only" style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
     <div class="owner-only" style="padding:0 16px;" id="k-prof-settings">
       <div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Kraunama...</div>
@@ -3489,7 +3489,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- KLUBAS: STATISTIKA -->
 <div class="sc" id="k-fullstat">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('k','k-main')">←</div><div class="tt">VISA STATISTIKA</div></div>
+  <div class="tb"><div class="bb" onclick="g('k','k-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">VISA STATISTIKA</div></div>
   <div class="sa">
     
     <!-- Sezono filtras -->
@@ -3537,8 +3537,8 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">ANALITIKA</div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
       <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('stat')" title="Apie šį langą">💡</div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai">🔔<div id="kst-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai">⚙️</div>
+      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kst-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
@@ -3552,13 +3552,13 @@ window.addEventListener('unhandledrejection', function(e) {
       <div onclick="toggleClubKidsSection()" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(59,130,246,.15);">👶</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">VAIKAI</div><div class="k-sec-ds">Amžius · lytis · diržai · medaliai</div></div>
-        <span id="k-vaikai-chev" class="k-sec-cv">▶</span>
+        <span id="k-vaikai-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-vaikai-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="toggleClubTrainersSection()" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(34,197,94,.15);">👨‍🏫</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">TRENERIAI</div><div class="k-sec-ds">Aktyvumas · apkrova · be trenerio</div></div>
-        <span id="k-treneriai-chev" class="k-sec-cv">▶</span>
+        <span id="k-treneriai-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-treneriai-content" style="display:none;padding:0 16px 10px;"></div>
     </div>
@@ -3567,31 +3567,31 @@ window.addEventListener('unhandledrejection', function(e) {
       <div onclick="_toggleSec('k-lank-content','k-lank-chev',loadClubAttendance)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(239,68,68,.15);">📋</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">LANKOMUMAS</div><div class="k-sec-ds">Kas nelanko — verta susisiekti</div></div>
-        <span id="k-lank-chev" class="k-sec-cv">▶</span>
+        <span id="k-lank-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-lank-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="_toggleSec('k-pulsas-content','k-pulsas-chev',loadClubPulse)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(255,140,0,.15);">🔥</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">KLUBO PULSAS</div><div class="k-sec-ds">Veikla per 30 dienų</div></div>
-        <span id="k-pulsas-chev" class="k-sec-cv">▶</span>
+        <span id="k-pulsas-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-pulsas-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="_toggleSec('k-skill-content','k-skill-chev',loadClubSkill)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(127,119,221,.18);">🗺️</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">SKILL ŽEMĖLAPIS</div><div class="k-sec-ds">Klubo stiprybės pagal sritį</div></div>
-        <span id="k-skill-chev" class="k-sec-cv">▶</span>
+        <span id="k-skill-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-skill-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="toggleClubChallengesSection()" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(168,85,247,.15);">🎯</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">IŠŠŪKIAI</div><div class="k-sec-ds">Visų trenerių iššūkiai</div></div>
-        <span id="k-issukiai-chev" class="k-sec-cv">▶</span>
+        <span id="k-issukiai-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-issukiai-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="toggleClubCompetitionsSection()" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(255,215,0,.15);">🥇</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">VARŽYBOS</div><div class="k-sec-ds">Rezultatai · medaliai · nauji diržai</div></div>
-        <span id="k-varzybos-chev" class="k-sec-cv">▶</span>
+        <span id="k-varzybos-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-varzybos-content" style="display:none;padding:0 16px 10px;"></div>
     </div>
@@ -3600,25 +3600,25 @@ window.addEventListener('unhandledrejection', function(e) {
       <div onclick="toggleClubBusinessSection()" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(34,197,94,.15);">💼</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">VERSLAS</div><div class="k-sec-ds">Bonusas · pardavimai pagal trenerį</div></div>
-        <span id="k-verslas-chev" class="k-sec-cv">▶</span>
+        <span id="k-verslas-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-verslas-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="_toggleSec('k-premium-content','k-premium-chev',loadClubPremium)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(34,211,238,.15);">💎</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">PREMIUM</div><div class="k-sec-ds">Konversija · ką pakalbinti</div></div>
-        <span id="k-premium-chev" class="k-sec-cv">▶</span>
+        <span id="k-premium-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-premium-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="_toggleSec('k-augimas-content','k-augimas-chev',loadClubGrowth)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(34,197,94,.15);">🌱</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">AUGIMAS</div><div class="k-sec-ds">Nauji vaikai · aktyvumas</div></div>
-        <span id="k-augimas-chev" class="k-sec-cv">▶</span>
+        <span id="k-augimas-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-augimas-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="_toggleSec('club-stat-tab-revenue','k-rev-chev',loadClubRevenue)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(255,140,0,.15);">💶</div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">APYVARTA</div><div class="k-sec-ds">Pajamos per laikotarpį</div></div>
-        <span id="k-rev-chev" class="k-sec-cv">▶</span>
+        <span id="k-rev-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="club-stat-tab-revenue" style="display:none;padding:0 16px 10px;"><div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Spausk, kad pamatytum...</div></div>
     </div>
@@ -3654,12 +3654,12 @@ window.addEventListener('unhandledrejection', function(e) {
       <a class="vdn-item" data-sid="a-ai" onclick="adminNvDesktop('a-ai')"><span class="vdn-ico">🤖</span> AI studija</a>
       <a class="vdn-item" data-sid="a-users" onclick="adminNvDesktop('a-users')"><span class="vdn-ico">👥</span> Vartotojai</a>
       <a class="vdn-item" data-sid="a-clubs" onclick="adminNvDesktop('a-clubs')"><span class="vdn-ico">🏢</span> Klubai</a>
-      <a class="vdn-item" data-sid="a-platform" onclick="adminNvDesktop('a-platform')"><span class="vdn-ico">⚙️</span> Platforma</a>
+      <a class="vdn-item" data-sid="a-platform" onclick="adminNvDesktop('a-platform')"><span class="vdn-ico"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></span> Platforma</a>
       <a class="vdn-item" data-sid="a-prof" onclick="adminNvDesktop('a-prof')"><span class="vdn-ico">👤</span> Profilis</a>
     </nav>
     <div id="adn-sysfoot">v— · SPOBU<br><span id="adn-sysfoot-user">—</span></div>
     <div class="vdn-bottom">
-      <button onclick="toggleAdminNotifications()" class="vdn-btn">🔔 Pranešimai <span id="adn-notif-badge" class="vdn-badge">0</span></button>
+      <button onclick="toggleAdminNotifications()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> Pranešimai <span id="adn-notif-badge" class="vdn-badge">0</span></button>
       <button onclick="doLogout()" class="vdn-btn">🚪 Atsijungti</button>
     </div>
   </aside>
@@ -3674,7 +3674,7 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openAdminInfo()" title="Apie portalą">💡</div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleAdminNotifications()" id="ah-notif-btn" title="Pranešimai">🔔
+      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleAdminNotifications()" id="ah-notif-btn" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <span id="ah-notif-badge-count" style="display:none;position:absolute;top:-5px;right:-5px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;align-items:center;justify-content:center;padding:0 4px;">0</span>
       </div>
       <div style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--pur);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--pur);" id="a-avatar">A</div>
@@ -3685,10 +3685,10 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.85);align-items:flex-end;justify-content:center;" id="ah-notif-section">
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">🔔 PRANEŠIMAI</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> PRANEŠIMAI</div>
         <div style="display:flex;gap:6px;">
-          <button onclick="markAllAdminNotifRead()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 10px;border-radius:99px;font-size:10px;font-weight:800;cursor:pointer;">✓ VISKĄ</button>
-          <button onclick="toggleAdminNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">✕</button>
+          <button onclick="markAllAdminNotifRead()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 10px;border-radius:99px;font-size:10px;font-weight:800;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg> VISKĄ</button>
+          <button onclick="toggleAdminNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 16px 4px;">
@@ -3741,14 +3741,14 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
 
     <div class="adash-col">
-    <div class="st">⚠️ REIKIA DĖMESIO</div>
+    <div class="st"><svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> REIKIA DĖMESIO</div>
     <div class="cd" id="a-nudges" style="padding:8px 14px;">
       <div style="text-align:center;padding:10px;color:var(--mut);font-size:12px;">Kraunama...</div>
     </div>
 
     <div class="st">VEIKSMAI</div>
     <div class="cd" style="padding:12px;">
-      <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openCreateClub()">➕ Sukurti naują klubą</button>
+      <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openCreateClub()"><svg class="ico" aria-hidden="true"><use href="#i-prideti"></use></svg> Sukurti naują klubą</button>
       <button class="btn btnd" style="margin:0;width:100%;" onclick="g('a','a-clubs')">🏢 Valdyti klubus</button>
     </div>
 
@@ -3772,7 +3772,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: KLUBAI -->
 <div class="sc" id="a-clubs">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">KLUBAI</div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">KLUBAI</div>
     <button class="bb" onclick="openCreateClub()" style="background:var(--br);border-color:var(--br);color:white;">+</button>
   </div>
   <div class="sa">
@@ -3818,7 +3818,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: KLAIDOS (Blokas B) -->
 <div class="sc" id="a-errors">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">🚨 KLAIDOS</div></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">🚨 KLAIDOS</div></div>
   <div class="sa">
     <div id="a-errors-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -3847,7 +3847,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: FINANSAI (Blokas C) -->
 <div class="sc" id="a-fin">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">💶 FINANSAI</div></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">💶 FINANSAI</div></div>
   <div class="sa">
     <div id="a-fin-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -3856,7 +3856,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <button class="aerr-f afin-p" data-p="year" onclick="setAfinPeriod('year')">Metai</button>
         <button class="aerr-f afin-p" data-p="all" onclick="setAfinPeriod('all')">Visi</button>
         <div style="flex:1;"></div>
-        <button class="aerr-tool" onclick="openAfinAdjModal()">➕ Korekcija</button>
+        <button class="aerr-tool" onclick="openAfinAdjModal()"><svg class="ico" aria-hidden="true"><use href="#i-prideti"></use></svg> Korekcija</button>
         <button class="aerr-tool" onclick="backfillPurchases()">🧩 Backfill</button>
       </div>
       <div id="afin-kpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;"></div>
@@ -3868,7 +3868,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div class="cd" style="padding:12px 14px;">
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
             <input type="month" id="afin-period" class="inp" style="margin:0;width:150px;padding:7px;" onchange="loadAfinPayouts()">
-            <button class="aerr-tool" onclick="recalcPayouts()">🔄 Perskaičiuoti</button>
+            <button class="aerr-tool" onclick="recalcPayouts()"><svg class="ico" aria-hidden="true"><use href="#i-atnaujinti"></use></svg> Perskaičiuoti</button>
             <button class="aerr-tool" onclick="exportPayoutsCSV()">⬇️ CSV</button>
           </div>
           <div id="afin-payouts"><div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
@@ -3899,7 +3899,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: ANALITIKA (Blokas D) -->
 <div class="sc" id="a-analytics">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">📊 ANALITIKA</div></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">📊 ANALITIKA</div></div>
   <div class="sa">
     <div id="a-analytics-content">
       <div id="ana-kpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;"></div>
@@ -3933,14 +3933,14 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: AI STUDIJA (Blokas E) -->
 <div class="sc" id="a-ai">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">🤖 AI STUDIJA</div></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">🤖 AI STUDIJA</div></div>
   <div class="sa">
     <div id="a-ai-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
         <button class="aerr-f aai-f on" data-f="pending_review" onclick="setAaiFilter('pending_review')">⏳ Laukia</button>
-        <button class="aerr-f aai-f" data-f="error" onclick="setAaiFilter('error')">❌ Klaidos</button>
-        <button class="aerr-f aai-f" data-f="done" onclick="setAaiFilter('done')">✅ Patvirtintos</button>
-        <button class="aerr-f aai-f" data-f="rejected" onclick="setAaiFilter('rejected')">🚫 Atmestos</button>
+        <button class="aerr-f aai-f" data-f="error" onclick="setAaiFilter('error')"><svg class="ico" aria-hidden="true"><use href="#i-klaida"></use></svg> Klaidos</button>
+        <button class="aerr-f aai-f" data-f="done" onclick="setAaiFilter('done')"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> Patvirtintos</button>
+        <button class="aerr-f aai-f" data-f="rejected" onclick="setAaiFilter('rejected')"><svg class="ico" aria-hidden="true"><use href="#i-isjungta"></use></svg> Atmestos</button>
         <button class="aerr-f aai-f" data-f="all" onclick="setAaiFilter('all')">Visos</button>
         <div style="flex:1;"></div>
         <button class="aerr-tool" onclick="openAaiInsight()">🧠 Įžvalga</button>
@@ -3974,7 +3974,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: VARTOTOJAI (Blokas F) -->
 <div class="sc" id="a-users">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">👥 VARTOTOJAI</div></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">👥 VARTOTOJAI</div></div>
   <div class="sa">
     <div id="a-users-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -4009,7 +4009,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: PLATFORMA (Blokas H) -->
 <div class="sc" id="a-platform">
   <div class="sb"><span>9:41</span><span>🔋</span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')">←</div><div class="tt">⚙️ PLATFORMA</div></div>
+  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> PLATFORMA</div></div>
   <div class="sa">
     <div id="a-platform-content">
       <div class="adash">
@@ -4053,7 +4053,7 @@ window.addEventListener('unhandledrejection', function(e) {
     
     <!-- Header su gradient'u -->
     <div id="kid-details-header" style="background:linear-gradient(135deg,var(--br),#FF6B35);padding:24px;color:white;position:relative;">
-      <button onclick="closeKidDetailsModal()" style="position:absolute;top:14px;right:14px;background:rgba(0,0,0,.3);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+      <button onclick="closeKidDetailsModal()" style="position:absolute;top:14px;right:14px;background:rgba(0,0,0,.3);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
       
       <div style="display:flex;align-items:center;gap:14px;">
         <div id="kd-avatar" style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;flex-shrink:0;">?</div>
@@ -4150,7 +4150,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;">🏥 SVEIKATOS INFO</div>
-          <button id="kd-edit-health-btn" onclick="kdToggleHealthEdit()" style="display:none;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:700;">✏️ REDAGUOTI</button>
+          <button id="kd-edit-health-btn" onclick="kdToggleHealthEdit()" style="display:none;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:700;"><svg class="ico" aria-hidden="true"><use href="#i-redaguoti"></use></svg> REDAGUOTI</button>
         </div>
         <div id="kd-health-display" style="font-size:13px;line-height:1.6;">
           <div style="text-align:center;color:var(--mut);">Kraunama...</div>
@@ -4182,7 +4182,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;">📞 AVARINIS KONTAKTAS</div>
-          <button id="kd-edit-emergency-btn" onclick="kdToggleEmergencyEdit()" style="display:none;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:700;">✏️ REDAGUOTI</button>
+          <button id="kd-edit-emergency-btn" onclick="kdToggleEmergencyEdit()" style="display:none;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-weight:700;"><svg class="ico" aria-hidden="true"><use href="#i-redaguoti"></use></svg> REDAGUOTI</button>
         </div>
         <div id="kd-emergency-display" style="font-size:13px;line-height:1.6;">
           <div style="text-align:center;color:var(--mut);">Kraunama...</div>
@@ -4223,7 +4223,7 @@ window.addEventListener('unhandledrejection', function(e) {
           <button class="kdbe-btn" data-amt="25" onclick="kdSelectBehavior(25,'Geras elgesys','Geras elgesys treniruotėje 👏')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">👏 +25 Geras elgesys</button>
           <button class="kdbe-btn" data-amt="10" onclick="kdSelectBehavior(10,'Aktyvus dalyvavimas','Labai aktyviai dirbo treniruotėje 🔥')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">🔥 +10 Aktyvumas</button>
           <button class="kdbe-btn" data-amt="50" onclick="kdSelectBehavior(50,'Pasiekimas treniruotėje','Šaunus pasiekimas treniruotėje ⭐')" style="background:rgba(34,197,94,.2);color:var(--grn);border:.5px solid rgba(34,197,94,.4);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">⭐ +50 Pasiekimas</button>
-          <button class="kdbe-btn" data-amt="-10" onclick="kdSelectBehavior(-10,'Drausmės pažeidimas','Drausmės pastaba — verta pakalbėti ⚠️')" style="background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;">⚠️ -10 Drausmė</button>
+          <button class="kdbe-btn" data-amt="-10" onclick="kdSelectBehavior(-10,'Drausmės pažeidimas','Drausmės pastaba — verta pakalbėti <svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg>')" style="background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> -10 Drausmė</button>
         </div>
         <textarea class="inp" id="kd-be-reason" rows="2" placeholder="Priežastis (matys vaikas ir tėvai)..." style="width:100%;resize:vertical;font-family:inherit;font-size:13px;margin:0 0 8px;"></textarea>
         <div id="kd-be-selected" style="font-size:11px;color:var(--mut);text-align:center;margin-bottom:8px;">↑ Pasirink taškus</div>
@@ -4241,7 +4241,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:380px;width:100%;padding:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">PATEIK REZULTATĄ</div>
-      <button onclick="closeSubmitChallenge()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;">✕</button>
+      <button onclick="closeSubmitChallenge()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     
     <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:14px;">
@@ -4282,7 +4282,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;opacity:.9;">KLUBO REITINGAS</div>
         <div id="vlb-title" style="font-size:13px;line-height:1.2;font-weight:700;margin-top:2px;">Iššūkis</div>
       </div>
-      <button onclick="closeChallengeLeaderboard()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+      <button onclick="closeChallengeLeaderboard()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     <div id="vlb-list" style="padding:14px;overflow-y:auto;flex:1;">
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
@@ -4306,7 +4306,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;opacity:.9;">DALYVIAI</div>
         <div id="cpm-title" style="font-size:14px;line-height:1.2;font-weight:700;margin-top:2px;">Varžybos</div>
       </div>
-      <button onclick="closeCompetitionParticipants()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+      <button onclick="closeCompetitionParticipants()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     <div id="cpm-list" style="padding:14px;overflow-y:auto;flex:1;">
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
@@ -4322,7 +4322,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;opacity:.9;">DALYVIAI</div>
         <div id="cp-title" style="font-size:14px;line-height:1.2;font-weight:700;margin-top:2px;">Iššūkis</div>
       </div>
-      <button onclick="closeChallengeParticipants()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+      <button onclick="closeChallengeParticipants()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     <div id="cp-list" style="padding:14px;overflow-y:auto;flex:1;">
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
@@ -4343,7 +4343,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div id="trk-trainer-name" style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;line-height:1.1;">TRENERIS</div>
         <div id="trk-trainer-email" style="font-size:11px;opacity:.85;margin-top:2px;">–</div>
       </div>
-      <button onclick="closeTrainerKidsModal()" style="background:rgba(0,0,0,.2);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+      <button onclick="closeTrainerKidsModal()" style="background:rgba(0,0,0,.2);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     
     <!-- Content -->
