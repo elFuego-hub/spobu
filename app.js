@@ -182,6 +182,18 @@ async function checkApprovalStatus() {
 // „Mano žinutės" (F3) + platformos juostos (H1-H2). Veikia VISOMS rolėms.
 // ════════════════════════════════════════
 
+// ── 🛡️ Saugus localStorage masyvo skaitymas (3.1 #3): sugadintas įrašas grąžina [] ir
+//    išsivalo, vietoj amžino JSON.parse crash tam vartotojui ──
+function lsGetArr(key){
+  try {
+    const v = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch(e){
+    try { localStorage.removeItem(key); } catch(_){}
+    return [];
+  }
+}
+
 // ── C5: kainos iš DB (prices lentelė; fallback — esamos reikšmės) ──
 let PRICES = { report: 9.99, homeplan: 19.99, summer: 29.99, subscription_annual: 41.94 };
 async function loadPrices(){
@@ -914,6 +926,8 @@ async function afterLogin() {
   } catch (e) {
     console.error('❌ [afterLogin] EXCEPTION rolės kraunant:', e);
     showToast('❌ Klaida kraunant duomenis: ' + e.message, 'error', 8000);
+    // 🛡️ 3.1 #2: vis tiek parodom portalą — dalinis vaizdas geriau nei užstrigęs login ekranas
+    try { op(portal); } catch(_){}
   }
 }
 
@@ -933,8 +947,8 @@ function showTab(portal, tabId) {
 
 async function loadParentData() {
   if (!currentProfile) return;
-  // Užkrauti tėvo vaikus (kid_parent_links → kids)
-  await loadParentKidsList();
+  // Užkrauti tėvo vaikus (kid_parent_links → kids); klaida nenulaužia viso portalo (3.1 #2)
+  try { await loadParentKidsList(); } catch(e) { console.error('loadParentKidsList:', e); }
   // Pasirinkti aktyvų vaiką (pirmą pagal EXP) ir atvaizduoti
   parentActiveKid = parentKids.length > 0 ? parentKids[0] : null;
   renderParentKidPill();
@@ -6467,7 +6481,7 @@ async function loadKidData() {
   }
   
   // Diržas (header)
-  updateBeltDisplay();
+  try { updateBeltDisplay(); } catch(e) { console.error('updateBeltDisplay:', e); }
   
   // „Laimėjimų lentelė" užpildoma atidarius Varžybų langą (updateCompStatsUI — medaliai pagal lygį, be diržų).
   //   Senasis loadKidCompetitionMedals dubliavo į tą patį elementą ir rodė diržo testus kaip trofėjus (glitch) — nebekviečiam.
@@ -6533,20 +6547,20 @@ async function loadKidData() {
     }
   }
 
-  // Kategorijos
-  await loadCategories();
+  // Kategorijos (kiekvienas loader su .catch — viena nepavykusi užklausa nenulaužia likusio krovimo, 3.1 #2)
+  await loadCategories().catch(e => console.error('loadCategories:', e));
 
   // Iššūkiai
-  await loadChallenges();
+  await loadChallenges().catch(e => console.error('loadChallenges:', e));
 
   // Leaderboard
-  await loadLeaderboard();
+  await loadLeaderboard().catch(e => console.error('loadLeaderboard:', e));
 
   // Prenumerata
-  loadSubscriptionCard();
+  try { loadSubscriptionCard(); } catch(e) { console.error('loadSubscriptionCard:', e); }
 
   // Laukiantys pateikimai
-  await loadKidPendingSubmissions();
+  await loadKidPendingSubmissions().catch(e => console.error('loadKidPendingSubmissions:', e));
   
   // Badge inventorius
   await loadBadges().catch(e => console.error('loadBadges:', e));
@@ -9485,7 +9499,7 @@ async function checkForNewChallenges() {
   try {
 
   const lsKey = `spobu_kid_${currentKid.id}_seen_challenge_ids`;
-  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  const seenIds = new Set(lsGetArr(lsKey));
   
   // Užkrauname VISUS klubo iššūkius
   const { data: allChallenges, error } = await sb.from('challenges')
@@ -9757,7 +9771,7 @@ async function checkForNewCompetitions() {
 
   const lsKey = `spobu_kid_${currentKid.id}_seen_competition_ids`;
   const firstRun = localStorage.getItem(lsKey) === null; // pirmas kartas - tik baseline
-  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  const seenIds = new Set(lsGetArr(lsKey));
 
   const { data: comps, error } = await sb.from('competitions')
     .select('id, title, competition_type, event_date, location')
@@ -9796,7 +9810,7 @@ async function checkForNewApprovedSubmissions() {
   if (!currentKid?.id) return;
   
   const lsKey = `spobu_kid_${currentKid.id}_seen_approved_sub_ids`;
-  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  const seenIds = new Set(lsGetArr(lsKey));
   
   // Užkraunam approved submissions (naujausi pirma, paskutinės 24h)
   const dayAgo = new Date(Date.now() - 86400000).toISOString();
@@ -10089,7 +10103,7 @@ async function checkForCompletedDuels() {
   
   // 1) Užbaigtos dvikovos - rezultato popup
   const lsKey = `spobu_kid_${currentKid.id}_seen_duels`;
-  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  const seenIds = new Set(lsGetArr(lsKey));
   
   const { data: duels } = await sb.from('duels')
     .select('*')
@@ -10107,7 +10121,7 @@ async function checkForCompletedDuels() {
   
   // 2) Nauji iškvietimai - PRIIMTI/ATMESTI popup
   const challKey = `spobu_kid_${currentKid.id}_seen_duel_challenges`;
-  const seenChall = new Set(JSON.parse(localStorage.getItem(challKey) || '[]'));
+  const seenChall = new Set(lsGetArr(challKey));
   
   const { data: pendingDuels } = await sb.from('duels')
     .select('*')
@@ -10203,7 +10217,7 @@ async function respondToDuelFromPopup(duelId, action) {
   // Pažymėti matytą iškvietimą
   if (currentKid?.id) {
     const challKey = `spobu_kid_${currentKid.id}_seen_duel_challenges`;
-    const seen = JSON.parse(localStorage.getItem(challKey) || '[]');
+    const seen = lsGetArr(challKey);
     if (!seen.includes(duelId)) {
       seen.push(duelId);
       localStorage.setItem(challKey, JSON.stringify(seen));
@@ -10216,7 +10230,7 @@ async function checkForNewStreakBonuses() {
   if (!currentKid?.id) return;
   
   const lsKey = `spobu_kid_${currentKid.id}_seen_streak_bonus_ids`;
-  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  const seenIds = new Set(lsGetArr(lsKey));
   
   // 1) Užkrauname VISUS bonus log'us (naujausi pirma)
   const { data: bonuses, error: bErr } = await sb.from('streak_bonus_log')
@@ -25097,7 +25111,7 @@ async function loadClubData(clubIdOverride) {
   document.getElementById('k-prof-club').textContent = club.name;
   if (typeof _applyClubLogo === 'function') _applyClubLogo(club.logo_url ? club.logo_url + '?r=' + Date.now() : null);
 
-  await loadClubTrainers();
+  try { await loadClubTrainers(); } catch(e) { console.error('loadClubTrainers:', e); }
   if (typeof loadClubGroups === 'function') loadClubGroups();
   if (typeof loadClubMainDashboard === 'function') loadClubMainDashboard();  // pagrindinio dashboard (v320)
   updateClubNotifBadge(true); // 🔔 varpelio badge (Blokas 8)
@@ -28250,7 +28264,7 @@ function subscribeKidNotifications() {
       
       // Pažymėti matytą iškvietimą
       const challKey = `spobu_kid_${myKidId}_seen_duel_challenges`;
-      const seenCh = JSON.parse(localStorage.getItem(challKey) || '[]');
+      const seenCh = lsGetArr(challKey);
       if (!seenCh.includes(duel.id)) {
         seenCh.push(duel.id);
         localStorage.setItem(challKey, JSON.stringify(seenCh));
@@ -28271,7 +28285,7 @@ function subscribeKidNotifications() {
       
       // Pažymėti matytą (kad checkForCompletedDuels nepasikartotų)
       const lsKey = `spobu_kid_${myKidId}_seen_duels`;
-      const seen = JSON.parse(localStorage.getItem(lsKey) || '[]');
+      const seen = lsGetArr(lsKey);
       if (!seen.includes(duel.id)) {
         seen.push(duel.id);
         localStorage.setItem(lsKey, JSON.stringify(seen));
@@ -29251,6 +29265,7 @@ async function handleAppResume() {
   
 
   if (!connectionAlive) {
+    try { showToast('📶 Ryšys atsistato — perkraunama...', 'info', 1400); } catch(_){}
     setTimeout(() => location.reload(), 1500);
     return;
   }
@@ -29309,7 +29324,21 @@ async function handleAppResume() {
       if (typeof showParentMissedEvents === 'function') await showParentMissedEvents();
     }
 
+    // 👨‍🏫 TRENERIS: perregistruoti kanalą (pats išsivalo seną) + badge + „Šiandien"
+    if (currentProfile?.role === 'trainer') {
+      if (typeof subscribeTrainerNotifications === 'function') subscribeTrainerNotifications();
+      if (typeof updateTrainerNotifBadge === 'function') updateTrainerNotifBadge(true);
+      if (typeof loadTrainerHome === 'function') loadTrainerHome();
+    }
+
+    // 🏛️ KLUBAS: realtime kanalų nėra (poll) — atnaujinam varpelio badge po miego
+    if (currentProfile?.role === 'club_admin') {
+      if (typeof updateClubNotifBadge === 'function') updateClubNotifBadge(true);
+    }
+
   } catch (e) {
+    console.error('[resume] klaida — perkraunam:', e);
+    try { showToast('🔄 Atnaujinama...', 'info', 1400); } catch(_){}
     setTimeout(() => location.reload(), 1500);
   }
 }
@@ -29333,6 +29362,9 @@ async function resubscribeKidChannels() {
     if (typeof subscribeKidNotifications === 'function') {
       subscribeKidNotifications();
     }
+    // 📡 Papildomi vaiko kanalai (patys pašalina savo seną kanalą prieš subscribe)
+    if (typeof subscribeToNewChallenges === 'function') subscribeToNewChallenges();
+    if (typeof subscribeToNewCompetitions === 'function') subscribeToNewCompetitions();
     console.log('[resume] Realtime kanalai perregistruoti:', myChans.length);
   } catch (e) {
     console.error('[resume] resubscribe klaida:', e);
@@ -31816,7 +31848,7 @@ async function loadAllNotifications(force) {
   // Cache short-circuit — jei užklausta < 8s atgal ir nepriverstinai, atsinaujinam tik renderį iš allNotifications atminties
   if (!force && _notifCacheTs && (Date.now() - _notifCacheTs) < _NOTIF_CACHE_TTL && allNotifications) {
     const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
-    const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+    const seenIds = new Set(lsGetArr(lsKey));
     updateNotifCounts(seenIds);
     renderNotifTab(currentNotifTab);
     return;
@@ -31826,7 +31858,7 @@ async function loadAllNotifications(force) {
   
   // localStorage seen IDs (kid-specific)
   const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
-  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  const seenIds = new Set(lsGetArr(lsKey));
   
   // Užkraunam IŠ 5 šaltinių (paskutinės 30 d.)
   const cutoff = new Date();
@@ -32232,7 +32264,7 @@ function renderNotifTab(tab) {
   }
   
   const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
-  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  const seenIds = new Set(lsGetArr(lsKey));
   
   const timeAgo = (dateStr) => {
     const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
@@ -32387,7 +32419,7 @@ async function _kidShareAction(kind) {
 function markNotifRead(notifId) {
   if (!currentKid?.id) return;
   const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
-  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  const seenIds = new Set(lsGetArr(lsKey));
   seenIds.add(notifId);
   // Riba: laikom tik paskutinius 500 ID (kad localStorage neaugtų be galo)
   let arr = [...seenIds];
@@ -32407,7 +32439,7 @@ function markNotifRead(notifId) {
 function markAllNotifRead() {
   if (!currentKid?.id) return;
   const lsKey = `spobu_kid_${currentKid.id}_seen_notif_ids`;
-  const seenIds = new Set(JSON.parse(localStorage.getItem(lsKey) || '[]'));
+  const seenIds = new Set(lsGetArr(lsKey));
   
   // Pridedam visus IDs iš visų kategorijų
   ['system', 'challenges', 'competitions', 'messages'].forEach(cat => {
