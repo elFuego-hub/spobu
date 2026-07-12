@@ -24548,7 +24548,7 @@ async function exportKidData(kidId, fname){
 
 // 🗑️ GDPR kaskadinis trynimas (dvigubas patvirtinimas su vardu)
 async function deleteKidCascadeUI(kidId, firstName){
-  const typed = prompt(`${ico('ispejimas')} NEGRĮŽTAMA!\n\nBus ištrinti VISI šio vaiko duomenys (EXP, karjera, lankomumas, ataskaitos...).\nApskaitos pirkimai liks be asmens ryšio.\n\nPatvirtinimui įrašyk vaiko vardą: ${firstName}`);
+  const typed = prompt(`⚠️ NEGRĮŽTAMA!\n\nBus ištrinti VISI šio vaiko duomenys (EXP, karjera, lankomumas, ataskaitos...).\nApskaitos pirkimai liks be asmens ryšio.\n\nPatvirtinimui įrašyk vaiko vardą: ${firstName}`);
   if (typed === null) return;
   if ((typed || '').trim().toLowerCase() !== (firstName || '').trim().toLowerCase()){ showToast(ico('klaida')+' Vardas nesutampa — atšaukta', 'error'); return; }
   if (!confirm('PASKUTINIS patvirtinimas: trinti negrįžtamai?')) return;
@@ -26419,7 +26419,7 @@ async function openCreateChallenge(prefill) {
   document.getElementById('cc-description').value = '';
   document.getElementById('cc-exp').value = '10';
   document.getElementById('cc-type').value = 'weekly';
-  document.getElementById('cc-icon').value = ''+ico('tikslas')+'';
+  document.getElementById('cc-icon').value = '🎯';
   document.getElementById('cc-content-type').value = 'achievement';
   document.getElementById('cc-target-value').value = '';
   document.getElementById('cc-target-unit').value = CHALLENGE_CONTENT_CONFIG.achievement.unit;
