@@ -6979,59 +6979,25 @@ function showLevelUpCelebration(newLevel, oldLevel = newLevel - 1) {
   }
   
   modal.innerHTML = `
-    <div style="
-      max-width:380px;width:100%;
-      background:linear-gradient(135deg,#FF4D00,#FF8C42);
-      border-radius:24px;padding:32px 24px;text-align:center;
-      box-shadow:0 20px 60px rgba(255,77,0,.5);
-      transform:scale(.7);transition:transform .4s cubic-bezier(.34,1.56,.64,1);
-      position:relative;overflow:hidden;
-    " id="level-up-content">
-      <!-- Sparkle background -->
-      <div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.15) 0%, transparent 50%);pointer-events:none;"></div>
-      
-      <!-- Pasveikinimo tekstas -->
-      <div style="font-size:11px;color:rgba(255,255,255,.85);font-weight:800;letter-spacing:3px;margin-bottom:12px;">
-        ${ico('gimtadienis')} LYGIO PAKĖLIMAS! ${ico('gimtadienis')}
+    <div style="max-width:372px;width:100%;background:radial-gradient(120% 90% at 50% 0%,#241a12 0%,#141414 55%,#0e0e0e 100%);border:.5px solid rgba(255,122,51,.22);border-radius:26px;padding:30px 22px 26px;text-align:center;position:relative;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.6);transform:scale(.7);transition:transform .4s cubic-bezier(.34,1.56,.64,1);" id="level-up-content">
+      <div class="lu-conf" style="left:14%;background:#FF4D00;animation-delay:0s;"></div><div class="lu-conf" style="left:34%;background:#FFD700;animation-delay:.5s;"></div><div class="lu-conf" style="left:56%;background:#FF7A33;animation-delay:.9s;"></div><div class="lu-conf" style="left:74%;background:#FFD700;animation-delay:.3s;"></div><div class="lu-conf" style="left:88%;background:#FF4D00;animation-delay:1.2s;"></div>
+      <div style="position:absolute;right:-8px;top:6px;font-family:'Noto Serif JP',serif;font-weight:900;font-size:118px;color:rgba(255,122,51,.06);line-height:1;pointer-events:none;">昇</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:#FF7A33;letter-spacing:5px;position:relative;">LYGIO PAKĖLIMAS</div>
+      <div style="position:relative;width:130px;height:130px;margin:18px auto 6px;">
+        <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,#FF4D00,#FFD700,#FF7A33,#FF4D00);animation:luRing 6s linear infinite;-webkit-mask:radial-gradient(closest-side,transparent 68%,#000 70%);mask:radial-gradient(closest-side,transparent 68%,#000 70%);"></div>
+        <div style="position:absolute;inset:10px;border-radius:50%;background:#141414;box-shadow:0 0 40px rgba(255,77,0,.45) inset;"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#FF8C42;font-size:56px;animation:luFloat 2.4s ease-in-out infinite;filter:drop-shadow(0 0 14px rgba(255,140,66,.55));">${reward.icon}</div>
       </div>
-      
-      <!-- Didelis ikona -->
-      <div style="font-size:72px;margin:14px 0;line-height:1;animation:bounce 1.5s infinite;">${reward.icon}</div>
-      
-      <!-- Lygio info -->
-      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:18px 0;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:rgba(255,255,255,.5);">${oldLevel}</div>
-        <div style="font-size:24px;color:rgba(255,255,255,.7);">→</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:56px;color:white;text-shadow:0 4px 20px rgba(0,0,0,.3);">${newLevel}</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin:4px 0;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#5a5a63;">${oldLevel}</div>
+        <svg class="ico" style="width:22px;height:22px;color:#FF7A33;stroke-width:2;" aria-hidden="true"><use href="#i-toliau"></use></svg>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:60px;color:#F5F2ED;text-shadow:0 0 24px rgba(255,77,0,.5);line-height:.9;">${newLevel}</div>
       </div>
-      
-      <!-- Antraštė -->
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:white;margin-bottom:12px;line-height:1.2;">
-        ${reward.title}
-      </div>
-      
-      <!-- Motyvacinis tekstas -->
-      <div style="font-size:13px;color:rgba(255,255,255,.95);line-height:1.5;margin-bottom:20px;font-style:italic;">
-        "${reward.message}"
-      </div>
-      
-      <!-- Mygtukas -->
-      <button onclick="closeLevelUpCelebration()" style="
-        background:white;color:var(--br);border:none;
-        padding:14px 32px;border-radius:99px;
-        font-size:14px;font-weight:900;letter-spacing:1px;
-        cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.2);
-      ">
-        TĘSTI KELIA! ${ico('dvikova')}
-      </button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:25px;letter-spacing:1px;color:#fff;margin-top:4px;line-height:1.15;">${reward.title}</div>
+      <div style="font-size:12.5px;color:#b9b9c2;line-height:1.55;margin:8px 14px 20px;">${reward.message}</div>
+      <button onclick="closeLevelUpCelebration()" style="background:linear-gradient(135deg,#FF4D00,#FF7A33);color:#fff;border:none;padding:14px 30px;border-radius:99px;font-size:13.5px;font-weight:900;letter-spacing:1px;cursor:pointer;box-shadow:0 10px 24px rgba(255,77,0,.4);display:inline-flex;align-items:center;gap:8px;font-family:inherit;"><svg class="ico" style="width:17px;height:17px;" aria-hidden="true"><use href="#i-dvikova"></use></svg>TĘSTI KELIĄ</button>
     </div>
-    
-    <style>
-      @keyframes bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-      }
-    </style>
+    <style>@keyframes luRing{to{transform:rotate(360deg)}}@keyframes luFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes lu-conffall{0%{transform:translateY(-16px) rotate(0);opacity:1}100%{transform:translateY(220px) rotate(300deg);opacity:0}}.lu-conf{position:absolute;top:0;width:8px;height:12px;border-radius:2px;animation:lu-conffall 2.6s linear infinite;}</style>
   `;
   
   modal.style.display = 'flex';
@@ -7181,47 +7147,23 @@ function showCompetitionCelebration(placement, competitionTitle = '', expEarned 
   }
   
   modal.innerHTML = `
-    <div style="
-      max-width:380px;width:100%;
-      background:${reward.bgGradient};
-      border-radius:24px;padding:32px 24px;text-align:center;
-      box-shadow:0 20px 60px rgba(255,215,0,.4);
-      transform:scale(.7);transition:transform .4s cubic-bezier(.34,1.56,.64,1);
-      position:relative;overflow:hidden;
-    " id="comp-celebration-content">
-      <div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.2) 0%, transparent 50%);pointer-events:none;"></div>
-      
-      <div style="font-size:11px;color:rgba(255,255,255,.9);font-weight:800;letter-spacing:3px;margin-bottom:12px;">
-        ${ico('trofejai')} PERGALĖ! ${ico('trofejai')}
+    <div style="max-width:372px;width:100%;background:radial-gradient(120% 90% at 50% 0%,${placement===1?'#2a2410':placement===2?'#20242a':'#241a12'} 0%,#141414 55%,#0e0e0e 100%);border:.5px solid ${placement===1?'rgba(255,215,0,.22)':placement===2?'rgba(192,192,192,.22)':'rgba(205,127,50,.25)'};border-radius:26px;padding:30px 22px 26px;text-align:center;position:relative;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.6);transform:scale(.7);transition:transform .4s cubic-bezier(.34,1.56,.64,1);" id="comp-celebration-content">
+      <div class="cc-conf" style="left:16%;background:${placement===1?'#FFD700':placement===2?'#E8E8E8':'#E39A5C'};animation-delay:0s;"></div><div class="cc-conf" style="left:40%;background:#fff;animation-delay:.6s;"></div><div class="cc-conf" style="left:66%;background:${placement===1?'#FFA500':placement===2?'#A8A8A8':'#B8702A'};animation-delay:.3s;"></div><div class="cc-conf" style="left:84%;background:${placement===1?'#FFD700':placement===2?'#C0C0C0':'#CD7F32'};animation-delay:1s;"></div>
+      <div style="position:absolute;right:-8px;top:6px;font-family:'Noto Serif JP',serif;font-weight:900;font-size:118px;color:${placement===1?'rgba(255,215,0,.06)':placement===2?'rgba(192,192,192,.06)':'rgba(205,127,50,.07)'};line-height:1;pointer-events:none;">${placement===1?'勝':placement===2?'力':'努'}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:${placement===1?'#FFD700':placement===2?'#C0C0C0':'#CD7F32'};letter-spacing:5px;position:relative;">${placement<=3?'PERGALĖ':'DALYVAVIMAS'}</div>
+      <div style="position:relative;width:130px;height:130px;margin:18px auto 8px;">
+        <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,${placement===1?'#FFD700,#FFF6C2,#FFA500,#FFD700':placement===2?'#C0C0C0,#F2F2F2,#A8A8A8,#C0C0C0':'#CD7F32,#E39A5C,#B8702A,#CD7F32'});animation:ccRing 6s linear infinite;-webkit-mask:radial-gradient(closest-side,transparent 68%,#000 70%);mask:radial-gradient(closest-side,transparent 68%,#000 70%);"></div>
+        <div style="position:absolute;inset:10px;border-radius:50%;background:#141414;box-shadow:0 0 40px ${placement===1?'rgba(255,215,0,.4)':placement===2?'rgba(192,192,192,.35)':'rgba(205,127,50,.35)'} inset;"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:58px;color:${placement===1?'#FFD700':placement===2?'#C0C0C0':'#CD7F32'};animation:ccFloat 2.4s ease-in-out infinite;filter:drop-shadow(0 0 15px ${placement===1?'rgba(255,215,0,.6)':placement===2?'rgba(192,192,192,.5)':'rgba(205,127,50,.5)'});">${reward.icon}</div>
       </div>
-      
-      <div style="font-size:96px;margin:14px 0;line-height:1;animation:bounce 1.5s infinite;">${reward.icon}</div>
-      
-      ${competitionTitle ? `<div style="font-size:13px;color:rgba(255,255,255,.85);margin-bottom:8px;font-weight:700;">${escapeHtml(competitionTitle)}</div>` : ''}
-      
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;color:white;margin-bottom:12px;line-height:1.1;text-shadow:0 4px 20px rgba(0,0,0,.3);">
-        ${reward.title}
-      </div>
-      
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;margin-bottom:14px;">
-        ${placement}-A VIETA
-      </div>
-      
-      ${expEarned > 0 ? `<div style="display:inline-block;background:rgba(0,0,0,.3);padding:6px 16px;border-radius:99px;font-size:12px;color:white;font-weight:800;letter-spacing:1px;margin-bottom:14px;">${ico('tikslas')} +${expEarned} EXP</div>` : ''}
-      
-      <div style="font-size:13px;color:rgba(255,255,255,.95);line-height:1.5;margin-bottom:20px;font-style:italic;padding:0 10px;">
-        "${reward.message}"
-      </div>
-      
-      <button onclick="closeCompetitionCelebration()" style="
-        background:white;color:#333;border:none;
-        padding:14px 32px;border-radius:99px;
-        font-size:14px;font-weight:900;letter-spacing:1px;
-        cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.2);
-      ">
-        TĘSTI! ${ico('dvikova')}
-      </button>
+      ${competitionTitle ? '<div style="font-size:12px;color:rgba(255,255,255,.75);font-weight:700;margin-bottom:4px;">'+escapeHtml(competitionTitle)+'</div>' : ''}
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:33px;letter-spacing:1px;color:#fff;line-height:1.05;text-shadow:0 0 24px ${placement===1?'rgba(255,215,0,.4)':'rgba(255,255,255,.15)'};">${reward.title}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:19px;color:${placement===1?'#FFD700':placement===2?'#C0C0C0':'#CD7F32'};margin:6px 0 12px;">${placement}-A VIETA</div>
+      ${expEarned > 0 ? '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.35);padding:6px 16px;border-radius:99px;font-size:12px;color:#fff;font-weight:800;letter-spacing:1px;margin-bottom:16px;">'+ico('greitis')+' +'+expEarned+' EXP</div>' : ''}
+      <div style="font-size:12.5px;color:#b9b9c2;line-height:1.55;margin:0 14px 20px;">${reward.message}</div>
+      <button onclick="closeCompetitionCelebration()" style="background:${placement===1?'linear-gradient(135deg,#FFD700,#FFA500)':placement===2?'#F2F2F2':'#F5F2ED'};color:#2a2100;border:none;padding:14px 30px;border-radius:99px;font-size:13.5px;font-weight:900;letter-spacing:1px;cursor:pointer;box-shadow:0 10px 24px rgba(0,0,0,.3);font-family:inherit;">ŠAUNU!</button>
     </div>
+    <style>@keyframes ccRing{to{transform:rotate(360deg)}}@keyframes ccFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@keyframes cc-conffall{0%{transform:translateY(-16px) rotate(0);opacity:1}100%{transform:translateY(220px) rotate(300deg);opacity:0}}.cc-conf{position:absolute;top:0;width:8px;height:12px;border-radius:2px;animation:cc-conffall 2.6s linear infinite;}</style>
   `;
   
   modal.style.display = 'flex';
