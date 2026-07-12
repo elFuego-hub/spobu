@@ -652,7 +652,8 @@ async function submitLinkKidByCode(){
   try {
     const { data, error } = await sb.rpc('link_parent_by_code', { p_code: code });
     if (error) throw error;
-    showToast('✅ Prisijungei prie: ' + (data || 'vaiko') + '!', 'success', 5000);
+    if (!data){ showToast('❌ Kodas netinka arba pasibaigęs (galioja 30 min) — paprašyk vaiko sugeneruoti naują', 'error', 6000); return; }
+    showToast('✅ Prisijungei prie: ' + data + '!', 'success', 5000);
     document.getElementById('link-kid-modal')?.remove();
     if (typeof loadParentData === 'function') await loadParentData();
   } catch(e){ showToast('❌ ' + (e.message || 'Kodas netinka'), 'error', 5000); }
@@ -24515,9 +24516,9 @@ async function changeUserRole(id){
   const p = (_auRows || []).find(x => x.id === id);
   if (!role || !p || role === p.role) return;
   if (!confirm(`Keisti rolę: ${p.role} → ${role}?\n\nVartotojas po perkrovimo pateks į kitą portalą.`)) return;
-  const { error } = await sb.from('profiles').update({ role }).eq('id', id);
+  // Rolės keitimas per SECURITY DEFINER RPC — audito įrašas admin_actions daromas serveryje (#5)
+  const { error } = await sb.rpc('admin_set_user_role', { p_user_id: id, p_role: role });
   if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  logAdminAction('role_change', 'profile', id, { from: p.role, to: role });
   showToast('✅ Rolė pakeista', 'success');
   document.getElementById('au-card-modal')?.remove();
   loadAdminUsers();
@@ -24525,9 +24526,9 @@ async function changeUserRole(id){
 
 // 📦 GDPR eksportas → JSON failas
 async function exportKidData(kidId, fname){
-  const { data, error } = await sb.rpc('admin_export_kid_data', { p_kid: kidId });
+  // PII eksportas per RPC-wrapper'į — audito įrašas admin_actions daromas serveryje (#5)
+  const { data, error } = await sb.rpc('admin_export_kid', { p_kid: kidId });
   if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  logAdminAction('kid_export', 'kid', kidId);
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'spobu-gdpr-' + (fname || kidId) + '.json'; a.click();
@@ -30725,7 +30726,7 @@ function formatMessageTime(ts) {
 // ESCAPE HTML
 function escapeHtml(text) {
   if (!text) return '';
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ATIDARYTI POKALBĮ
