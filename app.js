@@ -9337,17 +9337,17 @@ function openBioEdit() {
 }
 
 const CATEGORY_ICONS = {
-  'Jėga': '💪',
-  'Jėga ir korpusas': '💪',
-  'Ištvermė': '🏃',
-  'Technika': '🥋',
-  'Lankstumas': '🤸',
-  'Greitis': '⚡',
-  'Greitis ir vikrumas': '⚡',
-  'Karate atributika': '🎓',
-  'Atributika': '🎓',
-  'Karate Atributika': '🎓',
-  'Drausmė': '🧘'
+  'Jėga': ico('jega'),
+  'Jėga ir korpusas': ico('jega'),
+  'Ištvermė': ico('istverme'),
+  'Technika': ico('kata'),
+  'Lankstumas': ico('lankstumas'),
+  'Greitis': ico('greitis'),
+  'Greitis ir vikrumas': ico('greitis'),
+  'Karate atributika': ico('mokslas'),
+  'Atributika': ico('mokslas'),
+  'Karate Atributika': ico('mokslas'),
+  'Drausmė': ico('teisingumas')
 };
 
 // 🥋 Karjeros pratimų piktogramos (stick-karateka su juodu diržu). Raktas = pratimo pavadinimas DB.
