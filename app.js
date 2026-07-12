@@ -6891,6 +6891,7 @@ function updateExpBar(totalExp, level) {
   if (mainHero) {
     const stage = STAGES.find(s => s.name === info.stage) || STAGES[0];
     mainHero.style.background = stage.bgGradient;
+    mainHero.style.setProperty('--acc', stage.color);
     
     // Fone kanji
     const kanjiBg = document.getElementById('v-hero-kanji-bg');
