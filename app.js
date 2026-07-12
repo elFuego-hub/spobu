@@ -12300,8 +12300,8 @@ function renderClubNotifTab(tab){
     return `<div onclick="clubNotifClick('${tab}','${it.id}','${it.convId||''}')" style="background:${fresh?'rgba(255,77,0,.07)':'var(--card)'};border:.5px solid ${fresh?'rgba(255,77,0,.3)':'var(--bdr)'};border-radius:12px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;">
       <div style="font-size:16px;flex-shrink:0;">${it.icon}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:800;color:white;">${it.title}${fresh?' <span style="display:inline-block;width:7px;height:7px;background:var(--br);border-radius:50%;margin-left:4px;"></span>':''}</div>
-        <div style="font-size:10px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.sub||''}</div>
+        <div style="font-size:12px;font-weight:800;color:white;">${escapeHtml(it.title)}${fresh?' <span style="display:inline-block;width:7px;height:7px;background:var(--br);border-radius:50%;margin-left:4px;"></span>':''}</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(it.sub||'')}</div>
         <div style="font-size:9px;color:var(--mut);margin-top:1px;">${_agoLT(it.ts)}</div>
       </div>
       <div style="font-size:12px;color:var(--mut);flex-shrink:0;">›</div>
@@ -12330,8 +12330,8 @@ function _renderClubMsgTab(list, items){
     return `<div onclick="clubNotifClick('messages','${it.id}','${it.convId||''}')" style="background:${fresh?'rgba(255,77,0,.07)':'var(--card)'};border:.5px solid ${fresh?'rgba(255,77,0,.3)':'var(--bdr)'};border-radius:12px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;">
       <div style="font-size:16px;flex-shrink:0;">${it.icon}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:800;color:white;">${it.title}${fresh?' <span style="display:inline-block;width:7px;height:7px;background:var(--br);border-radius:50%;margin-left:4px;"></span>':''}</div>
-        <div style="font-size:10px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.sub||''}</div>
+        <div style="font-size:12px;font-weight:800;color:white;">${escapeHtml(it.title)}${fresh?' <span style="display:inline-block;width:7px;height:7px;background:var(--br);border-radius:50%;margin-left:4px;"></span>':''}</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(it.sub||'')}</div>
         <div style="font-size:9px;color:var(--mut);margin-top:1px;">${_agoLT(it.ts)}</div>
       </div>
       <div style="font-size:12px;color:var(--mut);flex-shrink:0;">›</div>
@@ -23369,8 +23369,8 @@ function renderAdminNotifTab(tab){
     return `<div onclick="adminNotifClick('${tab}','${it.id}')" style="background:${fresh?'rgba(255,77,0,.07)':'var(--card)'};border:.5px solid ${fresh?'rgba(255,77,0,.3)':'var(--bdr)'};border-radius:12px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;">
       <div style="font-size:16px;flex-shrink:0;">${it.icon}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:800;color:white;">${it.title}${fresh?' <span style="display:inline-block;width:7px;height:7px;background:var(--br);border-radius:50%;margin-left:4px;"></span>':''}</div>
-        <div style="font-size:10px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.sub||''}</div>
+        <div style="font-size:12px;font-weight:800;color:white;">${escapeHtml(it.title)}${fresh?' <span style="display:inline-block;width:7px;height:7px;background:var(--br);border-radius:50%;margin-left:4px;"></span>':''}</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(it.sub||'')}</div>
         <div style="font-size:9px;color:var(--mut);margin-top:1px;">${typeof _agoLT==='function'?_agoLT(it.ts):''}</div>
       </div>
       <div style="font-size:12px;color:var(--mut);flex-shrink:0;">›</div>
@@ -23501,7 +23501,7 @@ async function loadAdminActivity(){
   el.innerHTML = top.length ? top.map(i=>`<div class="a-act-row">
     <div class="a-act-ico">${i.icon}</div>
     <span class="a-act-tag ${i.cls||''}">${i.tag||''}</span>
-    <div class="a-act-txt">${i.txt}</div>
+    <div class="a-act-txt">${escapeHtml(i.txt)}</div>
     <div class="a-act-time">${typeof _agoLT==='function'?_agoLT(i.ts):''}</div>
   </div>`).join('') : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Veiklos dar nėra</div>';
 }
@@ -24429,8 +24429,8 @@ function renderAdminUsers(){
     return `<div class="cd" onclick="openAdminUserCard('${r.id}')" style="margin:0 0 8px;padding:10px 14px;cursor:pointer;">
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12.5px;font-weight:700;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(r.first_name || '') + ' ' + (r.last_name || '')}</div>
-          <div class="aerr-meta"><span style="color:${rl[1]};">${rl[0]}</span> · ${cName[r.club_id] || 'be klubo'} · ${typeof _agoLT === 'function' ? _agoLT(r.created_at) : ''}</div>
+          <div style="font-size:12.5px;font-weight:700;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml((r.first_name || '') + ' ' + (r.last_name || ''))}</div>
+          <div class="aerr-meta"><span style="color:${rl[1]};">${escapeHtml(rl[0])}</span> · ${escapeHtml(cName[r.club_id] || 'be klubo')} · ${typeof _agoLT === 'function' ? _agoLT(r.created_at) : ''}</div>
         </div>
         <span class="aerr-st ${st[1]}">${st[0]}</span>
       </div>
@@ -24472,8 +24472,8 @@ async function openAdminUserCard(id){
   m.innerHTML = `<div style="width:100%;max-width:640px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
     <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:10px;">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:800;">${(p.first_name || '') + ' ' + (p.last_name || '')}</div>
-        <div class="aerr-meta"><span style="color:${rl[1]};">${rl[0]}</span> · ${p.status || '?'} · reg. ${new Date(p.created_at).toLocaleDateString('lt-LT')} · aktyvumas: ${actDays ? actDays + ' d./14 d.' : '—'}</div>
+        <div style="font-size:14px;font-weight:800;">${escapeHtml((p.first_name || '') + ' ' + (p.last_name || ''))}</div>
+        <div class="aerr-meta"><span style="color:${rl[1]};">${escapeHtml(rl[0])}</span> · ${escapeHtml(p.status || '?')} · reg. ${new Date(p.created_at).toLocaleDateString('lt-LT')} · aktyvumas: ${actDays ? actDays + ' d./14 d.' : '—'}</div>
       </div>
       <button onclick="document.getElementById('au-card-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;flex-shrink:0;">✕</button>
     </div>
@@ -24487,9 +24487,9 @@ async function openAdminUserCard(id){
       </div>
       ${kids.length ? `<div class="aerr-meta" style="margin-bottom:4px;">VAIKAI</div>` + kids.map(k => `
         <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:12px;">
-          <div style="flex:1;min-width:0;">${(k.first_name || '') + ' ' + (k.last_name || '')} <span class="aerr-meta" style="display:inline;">· ${k.total_exp || 0} EXP · lvl ${k.current_level || 1} · ${k.subscription_tier || 'free'}</span></div>
-          <button class="aerr-tool" style="padding:4px 8px;" title="GDPR eksportas" onclick="exportKidData('${k.id}','${((k.first_name || '') + '-' + (k.last_name || '')).replace(/'/g, '')}')">📦</button>
-          <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" title="IŠTRINTI VISKĄ" onclick="deleteKidCascadeUI('${k.id}','${(k.first_name || '').replace(/'/g, '')}')">🗑️</button>
+          <div style="flex:1;min-width:0;">${escapeHtml((k.first_name || '') + ' ' + (k.last_name || ''))} <span class="aerr-meta" style="display:inline;">· ${k.total_exp || 0} EXP · lvl ${k.current_level || 1} · ${escapeHtml(k.subscription_tier || 'free')}</span></div>
+          <button class="aerr-tool" style="padding:4px 8px;" title="GDPR eksportas" onclick="exportKidData('${k.id}','${((k.first_name || '') + '-' + (k.last_name || '')).replace(/['"<>\\]/g, '')}')">📦</button>
+          <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" title="IŠTRINTI VISKĄ" onclick="deleteKidCascadeUI('${k.id}','${(k.first_name || '').replace(/['"<>\\]/g, '')}')">🗑️</button>
         </div>`).join('') : ''}
       <div class="aerr-meta" style="margin:12px 0 4px;">PIRKIMAI (${purch.length})</div>
       ${purch.length ? purch.map(x => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bdr);font-size:11.5px;"><span>${tLbl[x.item_type] || x.item_type}</span><span><b style="color:#4ade4a;">${(+x.amount_eur || 0).toFixed(2)} €</b> <span class="aerr-meta" style="display:inline;">${new Date(x.created_at).toLocaleDateString('lt-LT')}</span></span></div>`).join('') : '<div style="color:var(--mut);font-size:11px;padding:4px 0;">Nėra</div>'}
