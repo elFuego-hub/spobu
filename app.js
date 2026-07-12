@@ -2997,8 +2997,12 @@ async function loadParentShopCredits(){
   const k = parentActiveKid;
   if (!k) { parentEntitlements = null; renderShopCredits(); return; }
   try {
-    const { data } = await sb.from('kid_entitlements').select('*').eq('kid_id', k.id).limit(1);
-    parentEntitlements = (data && data[0]) || {};
+    const { data, error } = await sb.from('kid_entitlements').select('*').eq('kid_id', k.id).limit(1);
+    if (error) throw error;
+    // Tiesos šaltinis pakopai — kid_entitlements.tier (serveris); nėra eilutės = free
+    parentEntitlements = (data && data[0]) || { kid_id: k.id, tier: 'free' };
+    try { localStorage.setItem(_kidTierKey(k.id), parentEntitlements.tier || 'free'); } catch (e) {}
+    applyParentTierGating();
   } catch (e) { console.warn('loadParentShopCredits', e); parentEntitlements = {}; }
   renderShopCredits();
 }
@@ -3161,7 +3165,7 @@ async function _runProductGeneration(type, prefs){
       throw new Error(detail);
     }
     if (data && (data.report_json || data.status === 'pending_review')) {
-      if (isPlan) await consumeHomeCredit(); else await consumeSummerCredit();
+      await loadParentShopCredits();  // kreditą jau nurašė serveris (EF → consume_entitlement)
       showToast(isPlan
         ? '✅ Užsakyta! SPOBU specialistai peržiūrės ir planas bus paruoštas per 24 val. Rasi „Mano namų planai".'
         : '✅ Užsakyta! SPOBU specialistai peržiūrės ir programa bus paruošta per 24 val. Rasi „Mano vasaros programos".', 'success', 6000);
@@ -3184,14 +3188,6 @@ async function redeemHome(){
   // Klausimynas (įranga/laikas/vieta/fokusas) → tada generavimas su atsakymais
   openProductQuestionsModal('plan');
 }
-async function consumeHomeCredit(){
-  const k = parentActiveKid; if (!k) return;
-  const e = parentEntitlements || {};
-  try {
-    await sb.from('kid_entitlements').update({ homeplan_credits: Math.max(0, (e.homeplan_credits || 0) - 1), homeplan_last_used: new Date().toISOString() }).eq('kid_id', k.id);
-  } catch (err) { console.warn('consumeHomeCredit', err); }
-  await loadParentShopCredits();
-}
 let _summerGenBusy = false;
 async function redeemSummer(){
   const e = parentEntitlements || {};
@@ -3206,22 +3202,8 @@ async function redeemSummer(){
   // Klausimynas (išvykimai/lauko galimybės/tikslas/laikas) → tada generavimas su atsakymais
   openProductQuestionsModal('summer');
 }
-async function consumeSummerCredit(){
-  const k = parentActiveKid; if (!k) return;
-  const e = parentEntitlements || {};
-  try {
-    await sb.from('kid_entitlements').update({ summer_credits: Math.max(0, (e.summer_credits || 0) - 1) }).eq('kid_id', k.id);
-  } catch (err) { console.warn('consumeSummerCredit', err); }
-  await loadParentShopCredits();
-}
-async function consumeReportCredit(){
-  const k = parentActiveKid; if (!k) return;
-  const e = parentEntitlements || {};
-  try {
-    await sb.from('kid_entitlements').update({ report_credits: Math.max(0, (e.report_credits || 0) - 1), report_last_used: new Date().toISOString() }).eq('kid_id', k.id);
-  } catch (err) { console.warn('consumeReportCredit', err); }
-  await loadParentShopCredits();
-}
+// (consume*Credit funkcijos pašalintos — kreditą atomiškai nurašo SERVERIS:
+//  EF generate-report → consume_entitlement RPC; klientas po sėkmės tik persikrauna likučius)
 // ── PAKOPOS (Free/Premium/Premium+) GATING — kol nėra mokėjimų, perjungia mygtukai ──
 function gateScreen(screenId, locked, ctaHtml){
   const sc = document.getElementById(screenId);
@@ -3254,56 +3236,50 @@ function gateElement(elId, locked, ctaHtml){
 }
 const _PG_STATS = '<div class="pg-card" style="padding:12px 14px;max-width:240px;"><div class="pg-title" style="font-size:16px;margin-top:0;">📊 PREMIUM</div><div class="pg-sub" style="margin:3px 0 9px;font-size:10.5px;">Statistika — su Premium prenumerata.</div><button class="pg-btn" style="padding:9px 14px;font-size:11.5px;" onclick="nv(\'t\',null,\'t-shop\')">💎 Užsisakyti Premium</button></div>';
 function _kidTierKey(id){ return 'spobu_tier_' + id; }
+// localStorage — TIK kešas (rašomas iš serverio atsakymo); tiesa gyvena kid_entitlements.tier
 function getKidTierLocal(id){ try { return localStorage.getItem(_kidTierKey(id)) || 'free'; } catch(e){ return 'free'; } }
+function _parentKidTier(k){
+  if (!k) return 'free';
+  if (parentEntitlements && parentEntitlements.kid_id === k.id) return parentEntitlements.tier || 'free';
+  return getKidTierLocal(k.id);  // fallback, kol serverio duomenys neužsikrovė
+}
 function applyParentTierGating(){
   const k = parentActiveKid;
-  const free = !k || getKidTierLocal(k.id) === 'free';
+  const free = !k || _parentKidTier(k) === 'free';
   gateElement('tk-stats-gate', free, _PG_STATS);
   gateScreen('t-feed', free, _PG_PARENT);
 }
-let _kidTier = 'free';
-function loadKidTierGate(){
+let _kidTier = null;  // vaiko portalo pakopa iš serverio (kid_read_entitlements politika)
+async function loadKidTierGate(){
   if (!currentKid || !currentKid.id) return;
-  gateScreen('v-stat', getKidTierLocal(currentKid.id) === 'free', _PG_KID);
+  if (_kidTier === null) {
+    try {
+      const { data, error } = await sb.from('kid_entitlements').select('tier').eq('kid_id', currentKid.id).maybeSingle();
+      if (error) throw error;
+      _kidTier = (data && data.tier) || 'free';
+      try { localStorage.setItem(_kidTierKey(currentKid.id), _kidTier); } catch (e) {}
+    } catch (e) { console.warn('loadKidTierGate', e); _kidTier = getKidTierLocal(currentKid.id); }
+  }
+  gateScreen('v-stat', _kidTier === 'free', _PG_KID);
 }
-// 🧾 Pirkimo įrašymas į žurnalą (apskaitai + klubo bonusui) — server-klubas-purchases.sql
-// items: [{ item_type:'subscription'|'report'|'homeplan'|'summer'|'bundle', amount_eur, plan }]
-async function _logKidPurchases(kid, items){
-  try {
-    if (!kid?.id || !items || !items.length) return;
-    let trainerId = kid.assigned_trainer_id || null, clubId = null;
-    if (kid.group_id){ const { data: g } = await sb.from('groups').select('club_id').eq('id', kid.group_id).maybeSingle(); if (g?.club_id) clubId = g.club_id; }
-    if (!trainerId){ const { data: kt } = await sb.from('kid_trainers').select('trainer_id').eq('kid_id', kid.id).limit(1).maybeSingle(); if (kt?.trainer_id) trainerId = kt.trainer_id; }
-    if (!clubId && trainerId){ const { data: t } = await sb.from('trainers').select('invited_by_club_id').eq('id', trainerId).maybeSingle(); if (t?.invited_by_club_id) clubId = t.invited_by_club_id; }
-    const rows = items.map(it => ({ kid_id: kid.id, parent_id: currentUser?.id || null, trainer_id: trainerId, club_id: clubId, item_type: it.item_type, plan: it.plan || null, amount_eur: it.amount_eur }));
-    await sb.from('purchases').insert(rows);
-  } catch(e){ console.warn('logPurchases', e); }
-}
-
+// 💳 Pakopos keitimas — TIK per serverio RPC set_kid_tier (server-monetizacija-enforcement.sql).
+// Serveris: gate payments_live=false, kreditų INCREMENT (+3/+3/+1), purchases žurnalas su
+// club/trainer atribucija, kids.subscription_tier veidrodis. Klientas — tik UX + kešas.
 async function setKidTier(tier){
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
-  // Pakopa — localStorage (mokėjimo stand-in; vėliau DB per webhook). Veikia be jokio SQL.
-  try { localStorage.setItem(_kidTierKey(k.id), tier); } catch(e){}
-  // Premium+ → kreditai į DB (esami stulpeliai report/homeplan/summer_credits)
-  if (tier === 'premium_plus') {
-    const nowIso = new Date().toISOString();  // countdown'as skaičiuojamas NUO pirkimo (ataskaita +1 mėn, namų +2 mėn)
-    try { await sb.from('kid_entitlements').upsert({ kid_id: k.id, report_credits: 3, homeplan_credits: 3, summer_credits: 1, report_last_used: nowIso, homeplan_last_used: nowIso }, { onConflict: 'kid_id' }); }
-    catch(e){ console.warn('grant credits', e); showToast('⚠️ Kreditų nepavyko pridėti — paleisk server-kreditai.sql', 'error', 5000); }
+  let data;
+  try {
+    const res = await sb.rpc('set_kid_tier', { p_kid: k.id, p_tier: tier });
+    if (res.error) throw res.error;
+    data = res.data;
+  } catch(e){
+    console.warn('setKidTier', e);
+    showToast('❌ Nepavyko pakeisti pakopos: ' + (e?.message || e), 'error', 5500);
+    return;
   }
-  // 💾 Prenumeratos pakopa į DB + pirkimų žurnalas (server-klubas-purchases.sql)
-  try { await sb.from('kids').update({ subscription_tier: tier }).eq('id', k.id); } catch(e){}
-  if (tier === 'premium' || tier === 'premium_plus'){
-    const _items = [{ item_type:'subscription', amount_eur: (typeof PRICES !== 'undefined' ? PRICES.subscription_annual : 41.94), plan:'annual' }];
-    if (tier === 'premium_plus'){
-      // bundle ataskaitos — skaičiuojamos kaip „pirkta", bet €0 (įskaičiuota į prenumeratos kainą; nedubliuojam apyvartos)
-      for (let i=0;i<3;i++) _items.push({ item_type:'report', amount_eur:0 });
-      for (let i=0;i<3;i++) _items.push({ item_type:'homeplan', amount_eur:0 });
-      _items.push({ item_type:'summer', amount_eur:0 });
-    }
-    await _logKidPurchases(k, _items);
-  }
-  showToast(tier === 'free' ? 'Pakeista į Nemokamą planą' : (tier === 'premium' ? '✅ Premium aktyvuotas (testas)' : '👑 Premium+! Pridėta 3 ataskaitos + 1 namų planas + vasaros programa.'), 'success', 4500);
+  try { localStorage.setItem(_kidTierKey(k.id), (data && data.tier) || tier); } catch(e){}
+  showToast(tier === 'free' ? 'Pakeista į Nemokamą planą' : (tier === 'premium' ? '✅ Premium aktyvuotas (testas)' : '👑 Premium+! Pridėta +3 ataskaitos, +3 namų planai, +1 vasaros programa.'), 'success', 4500);
   await loadParentShopCredits();
   applyParentTierGating();
 }
@@ -3457,7 +3433,8 @@ async function submitReportOrder(btn){
       if (h) k.height_cm = Number(h);
       if (w) k.weight_kg = Number(w);
       loadMyReports();
-      if (_reportCreditMode) { consumeReportCredit(); _reportCreditMode = false; }
+      _reportCreditMode = false;
+      loadParentShopCredits();  // kreditą jau nurašė serveris (EF → consume_entitlement)
       btn.dataset.done = '1'; // #P1: po sėkmės mygtuko NEbeatrakinam (kad nesugeneruotų dar kartą be nurašymo)
       if (data.status === 'pending_review') {
         // Peržiūros vartai — tėvas negauna iškart; SPOBU specialistai patikrina
@@ -24702,6 +24679,7 @@ async function loadAdminPlatform(){
   const minV = (typeof map.min_app_version === 'string') ? map.min_app_version : '';
   const ann = (map.global_announcement && typeof map.global_announcement === 'object') ? map.global_announcement : null;
   const selfReg = map.self_signup_14_enabled === true;
+  const payLive = map.payments_live === true;
   // Būsena
   st.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;padding:6px 0;">
@@ -24719,6 +24697,12 @@ async function loadAdminPlatform(){
       <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">🧍 Savarankiška 14+ registracija ${selfReg ? '<span class="aerr-st ok">ĮJUNGTA</span>' : ''}</div><div class="aerr-meta" style="white-space:normal;">Paaugliai nuo 14 m. gali registruotis patys su klubo kodu (klubas tvirtina). Klubai turi ir savo jungiklį.</div></div>
       <div onclick="savePlatformSetting('self_signup_14_enabled', ${selfReg ? 'false' : 'true'})" style="flex-shrink:0;width:46px;height:26px;border-radius:99px;background:${selfReg ? '#0ca30c' : 'rgba(255,255,255,.15)'};position:relative;cursor:pointer;">
         <div style="position:absolute;top:3px;${selfReg ? 'right:3px' : 'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0 4px;border-top:.5px solid var(--bdr);">
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">💳 Mokėjimai gyvai (payments_live) ${payLive ? '<span class="aerr-st ok">ĮJUNGTA</span>' : ''}</div><div class="aerr-meta" style="white-space:normal;">OFF = test režimas: tėvų savitarnos pakopos jungiklis veikia (set_kid_tier RPC). Įjungus — savitarna atsijungia, pirkimai TIK per mokėjimų sistemą (Fazė B webhook).</div></div>
+      <div onclick="savePlatformSetting('payments_live', ${payLive ? 'false' : 'true'})" style="flex-shrink:0;width:46px;height:26px;border-radius:99px;background:${payLive ? '#0ca30c' : 'rgba(255,255,255,.15)'};position:relative;cursor:pointer;">
+        <div style="position:absolute;top:3px;${payLive ? 'right:3px' : 'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;"></div>
       </div>
     </div>`;
   // Skelbimas
