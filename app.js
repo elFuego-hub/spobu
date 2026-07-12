@@ -2346,10 +2346,10 @@ async function loadParentKidCareer() {
     const medalsGrid = document.getElementById('tk-kar-medals');
     if (medalsGrid) {
       const allMedals = [
-        { count: countMaster, icon: '🏆', label: 'Master', color: '#FF4D00' },
-        { count: countGold,   icon: '🥇', label: 'Gold',   color: '#FFD700' },
-        { count: countSilver, icon: '🥈', label: 'Silver', color: '#C0C0C0' },
-        { count: countBronze, icon: '🥉', label: 'Bronze', color: '#CD7F32' }
+        { count: countMaster, icon: ico('trofejai','ico-master'), label: 'Master', color: '#FF4D00' },
+        { count: countGold,   icon: ico('medalis','ico-gold'), label: 'Gold',   color: '#FFD700' },
+        { count: countSilver, icon: ico('medalis','ico-silver'), label: 'Silver', color: '#C0C0C0' },
+        { count: countBronze, icon: ico('medalis','ico-bronze'), label: 'Bronze', color: '#CD7F32' }
       ];
       let medalsToShow = allMedals.filter(m => m.count > 0);
       if (medalsToShow.length < 3) { const remaining = allMedals.filter(m => m.count === 0); medalsToShow = [...medalsToShow, ...remaining].slice(0, 3); }
@@ -7862,10 +7862,10 @@ async function loadCategories() {
   const medalsGrid = document.getElementById('v-kar-medals-grid');
   if (medalsGrid) {
     const allMedals = [
-      { count: countMaster, icon: '🏆', label: 'Master', color: '#FF4D00' },
-      { count: countGold,   icon: '🥇', label: 'Gold',   color: '#FFD700' },
-      { count: countSilver, icon: '🥈', label: 'Silver', color: '#C0C0C0' },
-      { count: countBronze, icon: '🥉', label: 'Bronze', color: '#CD7F32' }
+      { count: countMaster, icon: ico('trofejai','ico-master'), label: 'Master', color: '#FF4D00' },
+      { count: countGold,   icon: ico('medalis','ico-gold'), label: 'Gold',   color: '#FFD700' },
+      { count: countSilver, icon: ico('medalis','ico-silver'), label: 'Silver', color: '#C0C0C0' },
+      { count: countBronze, icon: ico('medalis','ico-bronze'), label: 'Bronze', color: '#CD7F32' }
     ];
     
     // Filtruoti tik turimus (count > 0), bet jei vaikas turi mažiau nei 3 - parodyti nuo aukščiausio
@@ -14524,9 +14524,9 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
   const kumiteGrid = document.getElementById('v-comp-kumite-medals');
   if (kumiteGrid) {
     const medalsData = [
-      { count: kumiteMedals.gold,   icon: '🥇', color: '#FFD700' },
-      { count: kumiteMedals.silver, icon: '🥈', color: '#C0C0C0' },
-      { count: kumiteMedals.bronze, icon: '🥉', color: '#CD7F32' }
+      { count: kumiteMedals.gold,   icon: ico('medalis','ico-gold'), color: '#FFD700' },
+      { count: kumiteMedals.silver, icon: ico('medalis','ico-silver'), color: '#C0C0C0' },
+      { count: kumiteMedals.bronze, icon: ico('medalis','ico-bronze'), color: '#CD7F32' }
     ];
     kumiteGrid.innerHTML = medalsData.map(m => `
       <div style="text-align:center;padding:2px 0;">
@@ -14540,9 +14540,9 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
   const kataGrid = document.getElementById('v-comp-kata-medals');
   if (kataGrid) {
     const medalsData = [
-      { count: kataMedals.gold,   icon: '🥇', color: '#FFD700' },
-      { count: kataMedals.silver, icon: '🥈', color: '#C0C0C0' },
-      { count: kataMedals.bronze, icon: '🥉', color: '#CD7F32' }
+      { count: kataMedals.gold,   icon: ico('medalis','ico-gold'), color: '#FFD700' },
+      { count: kataMedals.silver, icon: ico('medalis','ico-silver'), color: '#C0C0C0' },
+      { count: kataMedals.bronze, icon: ico('medalis','ico-bronze'), color: '#CD7F32' }
     ];
     kataGrid.innerHTML = medalsData.map(m => `
       <div style="text-align:center;padding:2px 0;">
