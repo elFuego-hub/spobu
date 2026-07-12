@@ -2945,7 +2945,7 @@ function openHomePlanInfoModal(){
         <div style="font-size:10px;letter-spacing:1.5px;color:var(--mut);font-weight:800;margin-bottom:8px;">KĄ GAUNI UŽ 19,99€</div>
         <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:4px 14px;margin-bottom:16px;">
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">${ico('jega')}</div><div><div style="font-size:12px;font-weight:700;color:white;">Jėga ir kūno valdymas</div><div style="font-size:10px;color:var(--mut);">Saugūs pratimai pagal amžių</div></div></div>
-          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">🤸</div><div><div style="font-size:12px;font-weight:700;color:white;">Lankstumas</div><div style="font-size:10px;color:var(--mut);">Aukštesni spyriai, mažiau traumų</div></div></div>
+          <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">${ico('lankstumas')}</div><div><div style="font-size:12px;font-weight:700;color:white;">Lankstumas</div><div style="font-size:10px;color:var(--mut);">Aukštesni spyriai, mažiau traumų</div></div></div>
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">${ico('istverme')}</div><div><div style="font-size:12px;font-weight:700;color:white;">Ištvermės blokai</div><div style="font-size:10px;color:var(--mut);">Kondicijai ir kvėpavimui</div></div></div>
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr);"><div style="font-size:19px;">${ico('kalendorius')}</div><div><div style="font-size:12px;font-weight:700;color:white;">2 mėnesių planas</div><div style="font-size:10px;color:var(--mut);">Išdėliota po savaitę — aišku ką daryti</div></div></div>
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;"><div style="font-size:19px;">${ico('tikslas')}</div><div><div style="font-size:12px;font-weight:700;color:white;">Pagal vaiko silpnąsias puses</div><div style="font-size:10px;color:var(--mut);">Sustiprina tai, ko trūksta (iš ataskaitos)</div></div></div>
@@ -5405,7 +5405,7 @@ async function showKidDetail(kidId) {
           </div>
           ${kidEmail ? `<div style="font-size:12px;margin-bottom:10px;">${ico('pastas')} El. paštas: <strong>${kidEmail}</strong> <span style="color:var(--mut);">(laukia paskyros)</span></div>` : ''}
           <button class="btn btng" style="width:100%;" onclick="showAddKidAccess('${kidId}')">
-            ➕ PRIDĖTI VAIKO PRIEIGĄ
+            ${ico('prideti')} PRIDĖTI VAIKO PRIEIGĄ
           </button>
         ` : `
           <div style="font-size:12px;color:var(--mut);line-height:1.5;">
@@ -13663,7 +13663,7 @@ async function viewCampParticipants(eventId, title){
 async function _renderCampParticipants(eventId){
   const el = document.getElementById('camp-part-list'); if(!el) return;
   const { data: rsvps } = await sb.from('club_event_rsvp').select('kid_id, status, attended').eq('event_id', eventId);
-  if (!rsvps || !rsvps.length){ el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:20px;">Dar nėra registruotų dalyvių.<br>Spausk „➕ Pridėti dalyvį".</div>'; return; }
+  if (!rsvps || !rsvps.length){ el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:20px;">Dar nėra registruotų dalyvių.<br>Spausk „'+ico('prideti')+' Pridėti dalyvį".</div>'; return; }
   const kidIds = rsvps.map(r=>r.kid_id);
   const nameMap = await _fetchKidNameMap(kidIds);
   el.innerHTML = rsvps.map(r=>{
@@ -20313,7 +20313,7 @@ function openTrInfo(which) {
     case 'groups':
       title = ''+ico('pagalba')+' GRUPĖS';
       html = intro('Čia kuri ir valdai savo grupes.') +
-        row('➕', 'Sukurti grupę', 'Pavadinimas, spalva ir tvarkaraštis (dienos + laikas).') +
+        row(ico('prideti'), 'Sukurti grupę', 'Pavadinimas, spalva ir tvarkaraštis (dienos + laikas).') +
         row(''+ico('profilis')+'', 'Priskirti vaikus', 'Pridėk mokinius į grupę.') +
         row(''+ico('ranka')+'', 'Paspausk ant vaiko', 'Atsidaro vaiko kortelė: duomenys, el. paštas, tėvai, sveikata, laukiantys patvirtinimai. Gali skirti EXP, asmeninį iššūkį ar EXP už elgesį.') +
         row(''+ico('dokumentas')+'', 'Lankomumas', 'Žymėk, kas atėjo. Pilna savaitė → +15 EXP, pilnas mėnuo → +100.') +
@@ -20461,7 +20461,7 @@ function openKidInfo(which) {
            Iškviesk komandos draugą į draugišką dvikovą! Kaip:
            <div style="margin-top:6px;color:#fff;line-height:1.75;">
              <b>1.</b> Rask komandos draugą ir paspausk „Iškviesti į dvikovą".<br>
-             <b>2.</b> Pasirink tipą: ${ico('jega')} atsispaudimai · ${ico('koja')} pritūpimai · 🤸 presas · ${ico('laikmatis')} lenta · ${ico('istverme')} bėgimas.<br>
+             <b>2.</b> Pasirink tipą: ${ico('jega')} atsispaudimai · ${ico('koja')} pritūpimai · ${ico('lankstumas')} presas · ${ico('laikmatis')} lenta · ${ico('istverme')} bėgimas.<br>
              <b>3.</b> Draugas priima iššūkį.<br>
              <b>4.</b> Abu atliekate ir įvedate savo rezultatą.<br>
              <b>5.</b> Treneris patvirtina — ir paaiškėja nugalėtojas! ${ico('trofejai')}
