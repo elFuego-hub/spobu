@@ -682,7 +682,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- TARPINIAI REZULTATAI (toggle) -->
     <div id="cc-partial-section" style="margin-bottom:14px;display:none;">
       <div id="cc-partial-box" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
-        <div style="font-size:24px;">📊</div>
+        <div style="font-size:24px;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></div>
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:800;color:white;">Leisti tarpinius rezultatus</div>
           <div style="font-size:10px;color:var(--mut);margin-top:2px;" id="cc-partial-desc">Vaikas pateikia po dalį (pvz. po 2 km), sumuojama iki tikslo</div>
@@ -847,15 +847,15 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;">🏅 Ką reiškia lygiai</div>
       Normatyvai bendri visai amžiaus grupei, todėl lygį natūraliai lemia <b style="color:#e8d9c5;">amžius ir treniruočių stažas</b> — tai ne trūkumas, o kelias:
       <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;">🥉🥈</span><span><b style="color:#e8d9c5;">Bronze ir Silver</b> — jei vaikui 8–10 m. arba jis <b style="color:#e8d9c5;">neseniai pradėjo lankyti</b>, ši zona reiškia, kad jis puikiai juda pagal savo amžių ir patirtį.</span></div>
-      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;">🥇</span><span><b style="color:#e8d9c5;">Gold</b> ateina su branda ir stažu — augančia jėga, ūgiu ir treniruočių metais.</span></div>
-      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;">🏆</span><span><b style="color:#e8d9c5;">Completed</b> — elito tikslas, kurio siekiama metais. Nepasiekti jo šiandien — normalu. Siekti — privaloma.</span></div>
+      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span><b style="color:#e8d9c5;">Gold</b> ateina su branda ir stažu — augančia jėga, ūgiu ir treniruočių metais.</span></div>
+      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;"><svg class="ico" aria-hidden="true"><use href="#i-varzybos"></use></svg></span><span><b style="color:#e8d9c5;">Completed</b> — elito tikslas, kurio siekiama metais. Nepasiekti jo šiandien — normalu. Siekti — privaloma.</span></div>
       <div style="margin-top:6px;color:#d9d9e2;"><b>Pasiekimai ateina su laiku</b> — svarbiausia ne greitis, o kryptis ir nuoseklumas.</div>
     </div>
     <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
       <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;">🔬 Iš kur normatyvai</div>
       <div style="display:flex;gap:7px;margin-top:4px;"><span style="flex:none;">🔬</span><span><b style="color:#e8d9c5;">Mokslas</b> — apatiniai lygiai pagrįsti tarptautinėmis vaikų fizinio pajėgumo normomis (FITNESSGRAM — Cooper instituto standartas JAV mokyklose).</span></div>
-      <div style="display:flex;gap:7px;margin-top:4px;"><span style="flex:none;">⭐</span><span><b style="color:#e8d9c5;">Elitas</b> — viršutiniai lygiai kalibruoti pagal Europos vaikų tyrimų top 5% (Eurofit P95).</span></div>
-      <div style="display:flex;gap:7px;margin-top:4px;"><span style="flex:none;">🥋</span><span><b style="color:#e8d9c5;">Karatė</b> — kur pasaulinių normų nėra (technika, kumite), tikslus nustato Kyokushin ekspertizė.</span></div>
+      <div style="display:flex;gap:7px;margin-top:4px;"><span style="flex:none;"><svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg></span><span><b style="color:#e8d9c5;">Elitas</b> — viršutiniai lygiai kalibruoti pagal Europos vaikų tyrimų top 5% (Eurofit P95).</span></div>
+      <div style="display:flex;gap:7px;margin-top:4px;"><span style="flex:none;"><svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg></span><span><b style="color:#e8d9c5;">Karatė</b> — kur pasaulinių normų nėra (technika, kumite), tikslus nustato Kyokushin ekspertizė.</span></div>
       <div style="display:flex;gap:7px;margin-top:4px;"><span style="flex:none;">🧠</span><span><b style="color:#e8d9c5;">Įvertinimas</b> — sporto praktika, nuolat tikslinama pagal realius SPOBU vaikų duomenis.</span></div>
     </div>
     <div style="background:rgba(255,140,0,.07);border:1px solid rgba(255,140,0,.3);border-radius:12px;padding:10px 12px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
@@ -900,7 +900,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div><div style="font-size:15px;font-weight:900;color:var(--txt);">Tėvų paskyra</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Vaiko progreso stebėjimas</div></div>
   </button>
   <button class="pb" onclick="op('tr')">
-    <div class="pi" style="background:var(--card);border:1px solid var(--grn);">🥋</div>
+    <div class="pi" style="background:var(--card);border:1px solid var(--grn);"><svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg></div>
     <div><div style="font-size:15px;font-weight:900;color:var(--txt);">Trenerio paskyra</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Nariai, patvirtinimai, statistika</div></div>
   </button>
   <button class="pb" onclick="op('k')">
@@ -908,7 +908,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div><div style="font-size:15px;font-weight:900;color:var(--txt);">Klubo paskyra</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Treneriai, varžybos, statistika</div></div>
   </button>
   <button class="pb" onclick="op('a')">
-    <div class="pi" style="background:var(--card);border:1px solid var(--pur);">👑</div>
+    <div class="pi" style="background:var(--card);border:1px solid var(--pur);"><svg class="ico" aria-hidden="true"><use href="#i-premium"></use></svg></div>
     <div><div style="font-size:15px;font-weight:900;color:var(--txt);">Admin paskyra</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Visa platforma – visi klubai</div></div>
   </button>
   <button class="pb" style="border-color:rgba(255,77,0,.3);" onclick="doLogout()">
@@ -977,7 +977,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <!-- Mažesnis kanji fone -->
         <div id="v-hero-kanji-bg" style="position:absolute;font-family:'Noto Serif JP',serif;font-size:130px;right:-15px;top:-30px;opacity:.08;color:white;line-height:1;font-weight:900;transition:opacity .6s, color .6s;">武</div>
         <!-- Mažas dekoratyvinis emoji -->
-        <div style="position:absolute;font-size:40px;left:-10px;bottom:-15px;opacity:.06;transform:rotate(-15deg);">🥋</div>
+        <div style="position:absolute;font-size:40px;left:-10px;bottom:-15px;opacity:.06;transform:rotate(-15deg);"><svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg></div>
         <!-- Slankiojantys aplikatūros taškai -->
         <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.3);border-radius:50%;top:20%;left:15%;animation:floatDot 4s ease-in-out infinite;"></div>
         <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.25);border-radius:50%;top:60%;left:25%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
@@ -1020,11 +1020,11 @@ window.addEventListener('unhandledrejection', function(e) {
             <span>Sistema <span id="v-notif-count-system" style="opacity:.7;"></span></span>
           </button>
           <button class="notif-tab" data-tab="challenges" onclick="switchNotifTab('challenges')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
-            <span>🎯</span>
+            <span><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></span>
             <span>Iššūkiai <span id="v-notif-count-challenges" style="opacity:.7;"></span></span>
           </button>
           <button class="notif-tab" data-tab="competitions" onclick="switchNotifTab('competitions')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
-            <span>🏆</span>
+            <span><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></span>
             <span>Varžybos <span id="v-notif-count-competitions" style="opacity:.7;"></span></span>
           </button>
           <button class="notif-tab" data-tab="messages" onclick="switchNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
@@ -1048,21 +1048,21 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- 🔥 STREAKAI - kompaktiška juosta -->
     <div style="display:flex;gap:6px;padding:0 16px;margin-top:10px;">
       <div id="v-home-streak-training" style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
-        <div style="font-size:14px;line-height:1;">🔥</div>
+        <div style="font-size:14px;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg></div>
         <div style="flex:1;min-width:0;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF8C00;line-height:1;" id="v-home-streak-train-num">0</div>
           <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Treniruotės</div>
         </div>
       </div>
       <div id="v-home-streak-weekly" style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
-        <div style="font-size:14px;line-height:1;">📅</div>
+        <div style="font-size:14px;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-kalendorius"></use></svg></div>
         <div style="flex:1;min-width:0;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF8C00;line-height:1;" id="v-home-streak-week-num">0</div>
           <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Savaitės</div>
         </div>
       </div>
       <div id="v-home-streak-monthly" style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
-        <div style="font-size:14px;line-height:1;">🏆</div>
+        <div style="font-size:14px;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
         <div style="flex:1;min-width:0;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF8C00;line-height:1;" id="v-home-streak-month-num">0</div>
           <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Mėnesiai</div>
@@ -1074,7 +1074,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="v-week-challenge-card" onclick="openActiveWeeklyChallenge()" style="margin:8px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(79,195,247,.12), rgba(79,195,247,.04));border: 1px solid rgba(79,195,247,.25);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(79,195,247,.2);transition:border-color .2s;display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
         <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:13px;flex-shrink:0;">⚡</span>
+          <span style="font-size:13px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></span>
           <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-week-challenge-title">–</span>
         </div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#4FC3F7;line-height:1;flex-shrink:0;" id="v-week-challenge-progress">0 / 0</div>
@@ -1092,7 +1092,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="v-month-challenge-card" onclick="openActiveMonthlyChallenge()" style="margin:4px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(186,104,200,.12), rgba(186,104,200,.04));border: 1px solid rgba(186,104,200,.25);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(186,104,200,.2);transition:border-color .2s;display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
         <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:13px;flex-shrink:0;">🌙</span>
+          <span style="font-size:13px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-menesinis"></use></svg></span>
           <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-month-challenge-title">–</span>
         </div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#BA68C8;line-height:1;flex-shrink:0;" id="v-month-challenge-progress">0 / 0</div>
@@ -1110,7 +1110,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="v-group-challenge-card" onclick="_kidOpenGroupChallenge()" style="margin:4px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(234,179,8,.14), rgba(234,179,8,.04));border:1px solid rgba(234,179,8,.3);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(234,179,8,.2);transition:border-color .2s;display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
         <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:13px;flex-shrink:0;">🏆</span>
+          <span style="font-size:13px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></span>
           <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-group-challenge-title">–</span>
         </div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#EAB308;line-height:1;flex-shrink:0;" id="v-group-challenge-rank">–</div>
@@ -1130,25 +1130,25 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     
     <!-- 📊 REITINGAI - kompaktiški 4 kvadratai vienoje eilėje -->
-    <div class="st">📊 MANO REITINGAI <span style="font-size:10px;color:rgba(255,255,255,.55);font-weight:700;text-transform:none;letter-spacing:.5px;" id="v-rank-category-info">(kategorija)</span></div>
+    <div class="st"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-statistika"></use></svg>MANO REITINGAI <span style="font-size:10px;color:rgba(255,255,255,.55);font-weight:700;text-transform:none;letter-spacing:.5px;" id="v-rank-category-info">(kategorija)</span></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 16px;">
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openStatWithFilter('competitions')">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">🏆</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#FFD700;text-shadow:0 0 6px rgba(255,215,0,.4);line-height:1;" id="v-rank-comp">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Varžybos</div>
       </div>
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openStatWithFilter('overall')">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">⚡</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#C0C0C0;text-shadow:0 0 6px rgba(192,192,192,.4);line-height:1;" id="v-rank-exp">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">EXP</div>
       </div>
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openStatWithFilter('challenges')">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">🎯</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#CD7F32;text-shadow:0 0 6px rgba(205,127,50,.4);line-height:1;" id="v-rank-ish">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Iššūkiai</div>
       </div>
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" id="v-top-skill-card" onclick="openStatWithFilter('skills')">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">🥋</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:#FF4D00;text-shadow:0 0 6px rgba(255,77,0,.4);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="v-top-skill">–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">TOP skil</div>
       </div>
@@ -1158,9 +1158,9 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     
     <!-- 📅 ARTIMIAUSI RENGINIAI (varžybos + stovyklos) -->
-    <div class="st">📅 ARTIMIAUSI RENGINIAI</div>
+    <div class="st"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-kalendorius"></use></svg>ARTIMIAUSI RENGINIAI</div>
     <div id="v-next-event" onclick="g('v','v-comp');if(typeof loadKidCompetitions==='function')loadKidCompetitions();" style="margin:0 16px;padding:12px;background:linear-gradient(135deg, rgba(255,215,0,.12), rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.3);border-radius:14px;display:flex;align-items:center;gap:12px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,215,0,.2);transition:transform .15s, border-color .2s;" onmouseenter="this.style.borderColor='rgba(255,215,0,.6)'" onmouseleave="this.style.borderColor='rgba(255,215,0,.3)'">
-      <div style="font-size:28px;line-height:1;" id="v-next-event-icon">🏆</div>
+      <div style="font-size:28px;line-height:1;" id="v-next-event-icon"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:800;color:white;margin-bottom:2px;" id="v-next-event-name">Nėra suplanuotų varžybų</div>
         <div style="font-size:10px;color:rgba(255,215,0,.8);font-weight:700;" id="v-next-event-meta">Treneris pridės kai bus žinoma</div>
@@ -1263,7 +1263,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.18);border-radius:50%;top:32%;right:28%;animation:floatDot 6s ease-in-out infinite 1.5s;"></div>
         <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:28%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
       </div>
-      <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">🎯</div>
+      <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
       <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">🎯 ĮVEIKTI IŠŠŪKIAI</div>
       <div id="v-ish-total-completed" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#66BB6A;line-height:1;text-shadow:0 0 20px rgba(102,187,106,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;--glow-color:#66BB6A;">0</div>
       <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="v-ish-total-exp">+0 EXP gauta</div>
@@ -1293,13 +1293,13 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-size:8px;color:rgba(255,77,0,.6);margin-top:1px;" id="v-ish-type-training-exp">+0 EXP</div>
       </div>
       <div style="background:linear-gradient(135deg,rgba(79,195,247,.12),rgba(79,195,247,.04));border:.5px solid rgba(79,195,247,.35);border-radius:10px;padding:7px 4px;text-align:center;" id="v-ish-cell-weekly">
-        <div style="font-size:18px;line-height:1;margin-bottom:2px;">⚡</div>
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#4FC3F7;line-height:1;" id="v-ish-type-weekly-num">0</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Savait.</div>
         <div style="font-size:8px;color:rgba(79,195,247,.6);margin-top:1px;" id="v-ish-type-weekly-exp">+0 EXP</div>
       </div>
       <div style="background:linear-gradient(135deg,rgba(186,104,200,.12),rgba(186,104,200,.04));border:.5px solid rgba(186,104,200,.35);border-radius:10px;padding:7px 4px;text-align:center;" id="v-ish-cell-monthly">
-        <div style="font-size:18px;line-height:1;margin-bottom:2px;">🌙</div>
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-menesinis"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#BA68C8;line-height:1;" id="v-ish-type-monthly-num">0</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Mėnes.</div>
         <div style="font-size:8px;color:rgba(186,104,200,.6);margin-top:1px;" id="v-ish-type-monthly-exp">+0 EXP</div>
@@ -1376,7 +1376,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.18);border-radius:50%;top:32%;right:28%;animation:floatDot 6s ease-in-out infinite 1.5s;"></div>
         <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:28%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
       </div>
-      <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">🏆</div>
+      <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
       
       <!-- KUMITE + KATA REKORDAI - 2 stulpeliai -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;position:relative;">
@@ -1565,17 +1565,17 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- 🏆 TROFĖJAI + 🏅 BADGES + 🎯 IŠŠŪKIAI - 3 mygtukai -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:0 12px 6px;">
       <div class="tap-react" onclick="openTrophiesModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
-        <div style="font-size:20px;line-height:1;margin-bottom:3px;">🏆</div>
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
         <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">TROFĖJAI</div>
         <div id="v-prof-trophies-summary" style="font-size:8px;color:var(--mut);margin-top:2px;">🥇0 🥈0 🥉0</div>
       </div>
       <div class="tap-react" onclick="openBadgesModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
-        <div style="font-size:20px;line-height:1;margin-bottom:3px;">🏅</div>
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-zenkliukai"></use></svg></div>
         <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">SKILL BADGES</div>
         <div id="v-prof-badges-summary" style="font-size:8px;color:var(--mut);margin-top:2px;">🏆0 🥇0 🥈0 🥉0</div>
       </div>
       <div class="tap-react" onclick="openChallengeTypesModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
-        <div style="font-size:20px;line-height:1;margin-bottom:3px;">🎯</div>
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
         <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">IŠŠŪKIAI</div>
         <div id="v-prof-challenges-summary" style="font-size:8px;color:var(--mut);margin-top:3px;">0 įveikta</div>
       </div>
@@ -1608,7 +1608,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;line-height:1;">SPO<span style="color:var(--br);text-shadow:0 0 10px rgba(255,77,0,.6);">BU</span><span style="color:var(--br);text-shadow:0 0 10px rgba(255,77,0,.6);">.</span></div>
       <div style="display:flex;gap:5px;align-items:center;">
         <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrInfo('main')" title="Apie šį langą">💡</div>
-        <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrainerNormatyvai()" title="Pratimų normatyvai">💪</div>
+        <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrainerNormatyvai()" title="Pratimų normatyvai"><svg class="ico" aria-hidden="true"><use href="#i-jega"></use></svg></div>
         <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleTrainerNotifications()" id="trh-notif-btn">
           <svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
           <div id="trh-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div>
@@ -1633,11 +1633,11 @@ window.addEventListener('unhandledrejection', function(e) {
             <span>Sistema <span id="trh-notif-count-system" style="opacity:.7;"></span></span>
           </button>
           <button class="notif-tab" data-tab="challenges" onclick="switchTrainerNotifTab('challenges')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
-            <span>🎯</span>
+            <span><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></span>
             <span>Iššūkiai <span id="trh-notif-count-challenges" style="opacity:.7;"></span></span>
           </button>
           <button class="notif-tab" data-tab="competitions" onclick="switchTrainerNotifTab('competitions')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
-            <span>🏆</span>
+            <span><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></span>
             <span>Varžybos <span id="trh-notif-count-competitions" style="opacity:.7;"></span></span>
           </button>
           <button class="notif-tab" data-tab="messages" onclick="switchTrainerNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
@@ -1706,20 +1706,20 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="trh-groups-strip" style="display:flex;flex-direction:column;gap:6px;padding:0 16px;margin-top:10px;"></div>
 
     <!-- 📊 GERIAUSI MANO VAIKAI — geriausio vaiko VIETA klubo poole pagal kategoriją (v124) -->
-    <div class="st">📊 GERIAUSI VAIKAI · VIETA KLUBE</div>
+    <div class="st"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-statistika"></use></svg>GERIAUSI VAIKAI · VIETA KLUBE</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 16px;">
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openTrainerStatScreen('competitions')">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">🥇</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:#FFD700;text-shadow:0 0 6px rgba(255,215,0,.4);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="trh-best-comp">–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Varžybos</div>
       </div>
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openTrainerStatScreen('overall')">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">⚡</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:#C0C0C0;text-shadow:0 0 6px rgba(192,192,192,.4);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="trh-best-exp">–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">EXP</div>
       </div>
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openTrainerStatScreen('challenges')">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">🎯</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:#CD7F32;text-shadow:0 0 6px rgba(205,127,50,.4);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="trh-best-ish">–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Iššūkiai</div>
       </div>
@@ -1734,9 +1734,9 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
 
     <!-- 📅 ARTIMIAUSIOS VARŽYBOS (kopija vaiko bloko) -->
-    <div class="st">📅 ARTIMIAUSIOS VARŽYBOS</div>
+    <div class="st"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-kalendorius"></use></svg>ARTIMIAUSIOS VARŽYBOS</div>
     <div id="trh-next-event" style="margin:0 16px;padding:12px;background:linear-gradient(135deg, rgba(255,215,0,.12), rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.3);border-radius:14px;display:flex;align-items:center;gap:12px;">
-      <div style="font-size:28px;line-height:1;">🏆</div>
+      <div style="font-size:28px;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:800;color:white;margin-bottom:2px;" id="trh-next-event-name">Nėra suplanuotų varžybų</div>
         <div style="font-size:10px;color:rgba(255,215,0,.8);font-weight:700;" id="trh-next-event-meta">Pridėk varžybas, kai bus žinoma</div>
@@ -1798,7 +1798,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.2);border-radius:50%;top:62%;left:24%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
         <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:28%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
       </div>
-      <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;">🎯</div>
+      <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
       <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">🎯 AKTYVŪS IŠŠŪKIAI</div>
       <div id="tr-my-challenges-count" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#66BB6A;line-height:1;text-shadow:0 0 20px rgba(102,187,106,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;">0</div>
       <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="trch-hero-sub">0 pasibaigę · 0 iš viso</div>
@@ -1813,12 +1813,12 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Treniruot.</div>
       </div>
       <div style="background:linear-gradient(135deg,rgba(79,195,247,.12),rgba(79,195,247,.04));border:.5px solid rgba(79,195,247,.35);border-radius:10px;padding:7px 4px;text-align:center;">
-        <div style="font-size:18px;line-height:1;margin-bottom:2px;">⚡</div>
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#4FC3F7;line-height:1;" id="trch-type-weekly">0</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Savait.</div>
       </div>
       <div style="background:linear-gradient(135deg,rgba(186,104,200,.12),rgba(186,104,200,.04));border:.5px solid rgba(186,104,200,.35);border-radius:10px;padding:7px 4px;text-align:center;">
-        <div style="font-size:18px;line-height:1;margin-bottom:2px;">🌙</div>
+        <div style="font-size:18px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-menesinis"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#BA68C8;line-height:1;" id="trch-type-monthly">0</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Mėnes.</div>
       </div>
@@ -2114,17 +2114,17 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- 📊 3 KPI apie vaikus -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:0 12px 6px;">
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;">
-        <div style="font-size:20px;line-height:1;margin-bottom:3px;">👥</div>
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--blu);line-height:1;" id="trp-kids-num">0</div>
         <div style="font-size:8px;color:var(--mut);margin-top:2px;font-weight:700;text-transform:uppercase;">Vaikai</div>
       </div>
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;">
-        <div style="font-size:20px;line-height:1;margin-bottom:3px;">🏆</div>
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:#FFD700;line-height:1.3;" id="trp-medals">🥇0 🥈0 🥉0</div>
         <div style="font-size:8px;color:var(--mut);margin-top:2px;font-weight:700;text-transform:uppercase;">Medaliai</div>
       </div>
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;">
-        <div style="font-size:20px;line-height:1;margin-bottom:3px;">🎯</div>
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--grn);line-height:1;" id="trp-ish-num">0</div>
         <div style="font-size:8px;color:var(--mut);margin-top:2px;font-weight:700;text-transform:uppercase;">Įveikti išš.</div>
       </div>
@@ -2266,7 +2266,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="hero" id="tk-hero" onclick="nv('t',null,'t-prof')" style="background:linear-gradient(135deg,var(--br),var(--br2));position:relative;overflow:hidden;cursor:pointer;padding:12px 14px;margin:0 16px;transition:background .6s ease;">
       <div id="tk-hero-anim" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
         <div id="tk-hero-kanji-bg" style="position:absolute;font-family:'Noto Serif JP',serif;font-size:130px;right:-15px;top:-30px;opacity:.08;color:white;line-height:1;font-weight:900;">武</div>
-        <div style="position:absolute;font-size:40px;left:-10px;bottom:-15px;opacity:.06;transform:rotate(-15deg);">🥋</div>
+        <div style="position:absolute;font-size:40px;left:-10px;bottom:-15px;opacity:.06;transform:rotate(-15deg);"><svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg></div>
         <div style="position:absolute;width:4px;height:4px;background:rgba(255,255,255,.3);border-radius:50%;top:20%;left:15%;animation:floatDot 4s ease-in-out infinite;"></div>
         <div style="position:absolute;width:3px;height:3px;background:rgba(255,255,255,.25);border-radius:50%;top:60%;left:25%;animation:floatDot 5s ease-in-out infinite .8s;"></div>
         <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:30%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
@@ -2294,21 +2294,21 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- 🔥 STREAKAI -->
     <div style="display:flex;gap:6px;padding:0 16px;margin-top:10px;">
       <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
-        <div style="font-size:14px;line-height:1;">🔥</div>
+        <div style="font-size:14px;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg></div>
         <div style="flex:1;min-width:0;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF8C00;line-height:1;" id="tk-streak-train">0</div>
           <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Treniruotės</div>
         </div>
       </div>
       <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
-        <div style="font-size:14px;line-height:1;">📅</div>
+        <div style="font-size:14px;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-kalendorius"></use></svg></div>
         <div style="flex:1;min-width:0;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF8C00;line-height:1;" id="tk-streak-week">0</div>
           <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Savaitės</div>
         </div>
       </div>
       <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
-        <div style="font-size:14px;line-height:1;">🏆</div>
+        <div style="font-size:14px;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
         <div style="flex:1;min-width:0;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF8C00;line-height:1;" id="tk-streak-month">0</div>
           <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Mėnesiai</div>
@@ -2320,7 +2320,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="tk-week-card" style="margin:8px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(79,195,247,.12), rgba(79,195,247,.04));border:1px solid rgba(79,195,247,.25);border-radius:10px;display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
         <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:13px;flex-shrink:0;">⚡</span>
+          <span style="font-size:13px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></span>
           <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="tk-week-title">–</span>
         </div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#4FC3F7;line-height:1;flex-shrink:0;" id="tk-week-progress">0 / 0</div>
@@ -2338,7 +2338,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="tk-month-card" style="margin:6px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(186,104,200,.12), rgba(186,104,200,.04));border:1px solid rgba(186,104,200,.25);border-radius:10px;display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
         <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:13px;flex-shrink:0;">🎯</span>
+          <span style="font-size:13px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></span>
           <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="tk-month-title">–</span>
         </div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#BA68C8;line-height:1;flex-shrink:0;" id="tk-month-progress">0 / 0</div>
@@ -2354,25 +2354,25 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- 📊 VAIKO REITINGAI (gated) -->
     <div id="tk-stats-gate" style="position:relative;overflow:hidden;border-radius:14px;">
-    <div class="st" id="tk-rank-title">📊 REITINGAI <span style="font-size:10px;color:rgba(255,255,255,.55);font-weight:700;text-transform:none;letter-spacing:.5px;" id="tk-rank-cat-info">(kategorija)</span></div>
+    <div class="st" id="tk-rank-title"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-statistika"></use></svg>REITINGAI <span style="font-size:10px;color:rgba(255,255,255,.55);font-weight:700;text-transform:none;letter-spacing:.5px;" id="tk-rank-cat-info">(kategorija)</span></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 16px;">
       <div onclick="openParentKidStats('competitions')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">🏆</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#FFD700;text-shadow:0 0 6px rgba(255,215,0,.4);line-height:1;" id="tk-rank-comp">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Varžybos</div>
       </div>
       <div onclick="openParentKidStats('overall')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">⚡</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#C0C0C0;text-shadow:0 0 6px rgba(192,192,192,.4);line-height:1;" id="tk-rank-exp">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">EXP</div>
       </div>
       <div onclick="openParentKidStats('challenges')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">🎯</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#CD7F32;text-shadow:0 0 6px rgba(205,127,50,.4);line-height:1;" id="tk-rank-ish">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Iššūkiai</div>
       </div>
       <div onclick="openParentKidStats('skills')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;">
-        <div style="font-size:16px;line-height:1;margin-bottom:2px;">🥋</div>
+        <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:#FF4D00;text-shadow:0 0 6px rgba(255,77,0,.4);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="tk-top-skill">–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">TOP skil</div>
       </div>
@@ -2383,9 +2383,9 @@ window.addEventListener('unhandledrejection', function(e) {
     </div><!-- /tk-stats-gate -->
 
     <!-- 📅 ARTIMIAUSIOS VARŽYBOS -->
-    <div class="st">📅 ARTIMIAUSIOS VARŽYBOS</div>
+    <div class="st"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-kalendorius"></use></svg>ARTIMIAUSIOS VARŽYBOS</div>
     <div style="margin:0 16px;padding:12px;background:linear-gradient(135deg, rgba(255,215,0,.12), rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.3);border-radius:14px;display:flex;align-items:center;gap:12px;">
-      <div style="font-size:28px;line-height:1;">🏆</div>
+      <div style="font-size:28px;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
       <div style="flex:1;">
         <div style="font-size:13px;font-weight:800;color:white;margin-bottom:2px;" id="tk-next-event-name">Nėra suplanuotų varžybų</div>
         <div style="font-size:10px;color:rgba(255,215,0,.8);font-weight:700;" id="tk-next-event-meta">Treneris pridės kai bus žinoma</div>
@@ -2522,11 +2522,11 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
 
     <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 16px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;">
-      <div style="text-align:center;flex:1;"><div style="font-size:18px;">📊</div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">DIAGNOZĖ</div></div>
+      <div style="text-align:center;flex:1;"><div style="font-size:18px;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">DIAGNOZĖ</div></div>
       <div style="color:var(--br);font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></div>
       <div style="text-align:center;flex:1;"><div style="font-size:18px;">🏋️</div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">PLANAS</div></div>
       <div style="color:var(--br);font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></div>
-      <div style="text-align:center;flex:1;"><div style="font-size:18px;">📈</div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">PROGRESAS</div></div>
+      <div style="text-align:center;flex:1;"><div style="font-size:18px;"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">PROGRESAS</div></div>
     </div>
 
     <div class="st">PRENUMERATOS</div>
@@ -2712,17 +2712,17 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- 🏆 TROFĖJAI / 🏅 BADGES / 🎯 IŠŠŪKIAI -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:0 12px 10px;">
       <div class="tap-react" onclick="openParentTrophies()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
-        <div style="font-size:20px;line-height:1;margin-bottom:3px;">🏆</div>
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
         <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">TROFĖJAI</div>
         <div id="tk-prof-trophies" style="font-size:8px;color:var(--mut);margin-top:2px;">🥇0 🥈0 🥉0</div>
       </div>
       <div class="tap-react" onclick="openParentBadges()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
-        <div style="font-size:20px;line-height:1;margin-bottom:3px;">🏅</div>
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-zenkliukai"></use></svg></div>
         <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">SKILL BADGES</div>
         <div id="tk-prof-badges" style="font-size:8px;color:var(--mut);margin-top:2px;">🏆0 🥇0 🥈0 🥉0</div>
       </div>
       <div class="tap-react" onclick="openParentChallengeTypes()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
-        <div style="font-size:20px;line-height:1;margin-bottom:3px;">🎯</div>
+        <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
         <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">IŠŠŪKIAI</div>
         <div id="tk-prof-challenges" style="font-size:8px;color:var(--mut);margin-top:3px;">0 įveikta</div>
       </div>
@@ -3571,7 +3571,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       <div id="k-lank-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="_toggleSec('k-pulsas-content','k-pulsas-chev',loadClubPulse)" class="k-sec">
-        <div class="k-sec-ico" style="background:rgba(255,140,0,.15);">🔥</div>
+        <div class="k-sec-ico" style="background:rgba(255,140,0,.15);"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">KLUBO PULSAS</div><div class="k-sec-ds">Veikla per 30 dienų</div></div>
         <span id="k-pulsas-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
@@ -3583,13 +3583,13 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       <div id="k-skill-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="toggleClubChallengesSection()" class="k-sec">
-        <div class="k-sec-ico" style="background:rgba(168,85,247,.15);">🎯</div>
+        <div class="k-sec-ico" style="background:rgba(168,85,247,.15);"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">IŠŠŪKIAI</div><div class="k-sec-ds">Visų trenerių iššūkiai</div></div>
         <span id="k-issukiai-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-issukiai-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="toggleClubCompetitionsSection()" class="k-sec">
-        <div class="k-sec-ico" style="background:rgba(255,215,0,.15);">🥇</div>
+        <div class="k-sec-ico" style="background:rgba(255,215,0,.15);"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">VARŽYBOS</div><div class="k-sec-ds">Rezultatai · medaliai · nauji diržai</div></div>
         <span id="k-varzybos-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
@@ -3604,7 +3604,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       <div id="k-verslas-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="_toggleSec('k-premium-content','k-premium-chev',loadClubPremium)" class="k-sec">
-        <div class="k-sec-ico" style="background:rgba(34,211,238,.15);">💎</div>
+        <div class="k-sec-ico" style="background:rgba(34,211,238,.15);"><svg class="ico" aria-hidden="true"><use href="#i-premium-plus"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">PREMIUM</div><div class="k-sec-ds">Konversija · ką pakalbinti</div></div>
         <span id="k-premium-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
@@ -3710,12 +3710,12 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-size:10px;color:var(--mut);font-weight:700;">KLUBAI</div>
       </div>
       <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
-        <div style="font-size:22px;margin-bottom:4px;">🥋</div>
+        <div style="font-size:22px;margin-bottom:4px;"><svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--grn);" id="a-trainers-count">0</div>
         <div style="font-size:10px;color:var(--mut);font-weight:700;">TRENERIAI</div>
       </div>
       <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
-        <div style="font-size:22px;margin-bottom:4px;">🎯</div>
+        <div style="font-size:22px;margin-bottom:4px;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--br);" id="a-kids-count">0</div>
         <div style="font-size:10px;color:var(--mut);font-weight:700;">VAIKAI</div>
       </div>
@@ -3734,7 +3734,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Kraunama...</div>
     </div>
 
-    <div class="st">📋 AI ATASKAITOS <span id="a-reports-badge" style="display:none;font-size:9px;font-weight:800;color:white;background:#FF4D00;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:middle;">0</span></div>
+    <div class="st"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-dokumentas"></use></svg>AI ATASKAITOS <span id="a-reports-badge" style="display:none;font-size:9px;font-weight:800;color:white;background:#FF4D00;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:middle;">0</span></div>
     <div class="cd" id="a-reports-list" style="padding:4px 14px;max-height:380px;overflow-y:auto;">
       <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Kraunama...</div>
     </div>
@@ -4246,7 +4246,7 @@ window.addEventListener('unhandledrejection', function(e) {
     
     <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:14px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <div id="vsc-icon" style="font-size:32px;">⚡</div>
+        <div id="vsc-icon" style="font-size:32px;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></div>
         <div style="flex:1;">
           <div id="vsc-title" style="font-size:16px;font-weight:900;">Iššūkio pavadinimas</div>
           <div id="vsc-exp" style="font-size:11px;color:var(--br);font-weight:700;letter-spacing:1px;margin-top:2px;">+10 EXP</div>
@@ -4277,7 +4277,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <div id="vlb-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10001;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
   <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:380px;width:100%;padding:0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
     <div style="background:linear-gradient(135deg,var(--br),#FFD700);padding:18px 20px;color:white;display:flex;align-items:center;gap:10px;">
-      <div style="font-size:28px;">🏆</div>
+      <div style="font-size:28px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
       <div style="flex:1;min-width:0;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;opacity:.9;">KLUBO REITINGAS</div>
         <div id="vlb-title" style="font-size:13px;line-height:1.2;font-weight:700;margin-top:2px;">Iššūkis</div>
@@ -4301,7 +4301,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <div id="cpm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10001;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
   <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:380px;width:100%;padding:0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
     <div style="background:linear-gradient(135deg,var(--br),#FF6B33);padding:16px 18px;color:white;display:flex;align-items:center;gap:10px;">
-      <div style="font-size:24px;">🥇</div>
+      <div style="font-size:24px;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></div>
       <div style="flex:1;min-width:0;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;opacity:.9;">DALYVIAI</div>
         <div id="cpm-title" style="font-size:14px;line-height:1.2;font-weight:700;margin-top:2px;">Varžybos</div>
@@ -4317,7 +4317,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <div id="cp-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10001;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
   <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:380px;width:100%;padding:0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
     <div style="background:linear-gradient(135deg,var(--br),#FF6B33);padding:16px 18px;color:white;display:flex;align-items:center;gap:10px;">
-      <div style="font-size:24px;">⚡</div>
+      <div style="font-size:24px;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></div>
       <div style="flex:1;min-width:0;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;opacity:.9;">DALYVIAI</div>
         <div id="cp-title" style="font-size:14px;line-height:1.2;font-weight:700;margin-top:2px;">Iššūkis</div>
