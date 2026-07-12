@@ -19073,8 +19073,8 @@ function _assignExpStep1() {
   b.innerHTML = `
     <div style="font-size:12px;color:var(--mut);margin-bottom:14px;">Vaikui <b style="color:white;">${name}</b> (be telefono) — pasirink, už ką skirti EXP:</div>
     <button onclick="_assignExpCareer()" style="${btn}"><span style="font-size:26px;">🏋️</span><div><div style="font-size:14px;font-weight:800;">Karjera</div><div style="font-size:11px;color:var(--mut);">Pratimo rezultatas (EXP pagal pakopas)</div></div></button>
-    <button onclick="_assignExpChallengeList()" style="${btn}"><span style="font-size:26px;">🎯</span><div><div style="font-size:14px;font-weight:800;">Iššūkis</div><div style="font-size:11px;color:var(--mut);">Pažymėti iššūkį atliktą</div></div></button>
-    <button onclick="_assignExpCompetitionList()" style="${btn}"><span style="font-size:26px;">🏆</span><div><div style="font-size:14px;font-weight:800;">Varžybos</div><div style="font-size:11px;color:var(--mut);">Įrašyti varžybų rezultatą</div></div></button>`;
+    <button onclick="_assignExpChallengeList()" style="${btn}"><span style="font-size:26px;">${ico('issukiai')}</span><div><div style="font-size:14px;font-weight:800;">Iššūkis</div><div style="font-size:11px;color:var(--mut);">Pažymėti iššūkį atliktą</div></div></button>
+    <button onclick="_assignExpCompetitionList()" style="${btn}"><span style="font-size:26px;">${ico('varzybos')}</span><div><div style="font-size:14px;font-weight:800;">Varžybos</div><div style="font-size:11px;color:var(--mut);">Įrašyti varžybų rezultatą</div></div></button>`;
 }
 
 // 🎯 IŠŠŪKIS — TIK šiam vaikui taikomi (audience match kaip vaiko loadGoals), neatlikti; partial → tarpinis
