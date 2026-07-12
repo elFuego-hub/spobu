@@ -1,3 +1,14 @@
+// ══ SPOBU ico() helperis (4 etapo 0 partija) — įklijuoti app.js viršuje ══
+// ico('varzybos')                  → mono ikona tekste
+// ico('issukiai','ico-xl ico-duo') → didelė duotone (vaiko nav)
+// ico('medalis','ico-gold')        → auksinis medalis
+// ico('trinti','', 'Ištrinti')     → savarankiška ikona su aria-label
+function ico(name, cls = '', label = ''){
+  const a = label ? 'role="img" aria-label="' + label + '"' : 'aria-hidden="true"';
+  const duo = cls.indexOf('ico-duo') !== -1 ? '<use class="duo" href="#i-' + name + '"/>' : '';
+  return '<svg class="ico' + (cls ? ' ' + cls : '') + '" ' + a + '>' + duo + '<use href="#i-' + name + '"/></svg>';
+}
+
 // ════════════════════════════════════════════════════════
 // SUPABASE KONFIGŪRACIJA
 // SVARBU: pakeisk šiuos raktus savo Supabase projekto raktais!
