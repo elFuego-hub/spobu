@@ -159,7 +159,7 @@ async function showPendingApprovalScreen(profile) {
           📧 Apie patvirtinimą informuosime per paštą: <span style="color:var(--br);">${currentUser.email}</span><br><br>
           Atvyk vėliau!
         </div>
-        <button class="btn-auth" onclick="checkApprovalStatus()">🔄 PATIKRINTI BŪKLĘ</button>
+        <button class="btn-auth" onclick="checkApprovalStatus()">${ico('atnaujinti')} PATIKRINTI BŪKLĘ</button>
         <div style="margin-top:12px;">
           <button class="btn-link" onclick="logout()">Atsijungti</button>
         </div>
@@ -177,11 +177,11 @@ async function checkApprovalStatus() {
     .single();
   
   if (profile && profile.status === 'active') {
-    showToast('✓ Paskyra patvirtinta!');
+    showToast(ico('atlikta')+' Paskyra patvirtinta!');
     document.getElementById('pending-approval-screen').style.display = 'none';
     await afterLogin(); // Iš naujo paleisti
   } else if (profile && profile.status === 'suspended') {
-    showToast('❌ Paskyra atmesta');
+    showToast(ico('klaida')+' Paskyra atmesta');
     await sb.auth.signOut();
   } else {
     showToast('⏳ Vis dar laukia patvirtinimo');
@@ -307,7 +307,7 @@ async function openMyMessages(){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">📨 MANO ŽINUTĖS</div>
-      <button onclick="document.getElementById('my-msgs-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('my-msgs-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:14px 18px 26px;">
       ${rows.length ? rows.map(r => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:8px;">
@@ -354,7 +354,7 @@ function applyPlatformGuards(role){
         b.id = 'global-ann-bar';
         b.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:100005;max-width:560px;width:calc(100% - 24px);margin-top:6px;background:' + (warn ? 'rgba(64,34,6,.97)' : 'rgba(8,36,52,.97)') + ';border:1px solid ' + (warn ? '#fab219' : '#3987e5') + ';border-radius:12px;padding:10px 38px 10px 14px;font-size:12.5px;color:white;line-height:1.5;box-shadow:0 8px 30px rgba(0,0,0,.5);';
         b.innerHTML = (warn ? '⚠️ ' : '📢 ') + String(ann.text).replace(/&/g, '&amp;').replace(/</g, '&lt;') +
-          `<button onclick="localStorage.setItem('spobu_ann_seen','${hash}');document.getElementById('global-ann-bar').remove()" style="position:absolute;top:6px;right:8px;background:transparent;border:none;color:#c3c2b7;font-size:16px;cursor:pointer;">✕</button>`;
+          `<button onclick="localStorage.setItem('spobu_ann_seen','${hash}');document.getElementById('global-ann-bar').remove()" style="position:absolute;top:6px;right:8px;background:transparent;border:none;color:#c3c2b7;font-size:16px;cursor:pointer;">${ico('uzdaryti')}</button>`;
         document.body.appendChild(b);
       }
     }
@@ -411,7 +411,7 @@ function openKidSelfSignup(){
   m.innerHTML = `<div style="width:100%;max-width:420px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;max-height:92vh;overflow-y:auto;padding:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;">🥋 REGISTRACIJA 14+</div>
-      <button onclick="ksrClose()" style="background:none;border:none;font-size:22px;color:var(--mut);cursor:pointer;">✕</button>
+      <button onclick="ksrClose()" style="background:none;border:none;font-size:22px;color:var(--mut);cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.5;">Registruojiesi pats — be tėvų. Tavo anketą patvirtins KLUBAS, todėl reikės klubo kodo (paklausk trenerio arba klubo).</div>
     <div class="err-msg" id="ksr-err" style="display:none;"></div>
@@ -468,7 +468,7 @@ function openKidSelfSignup(){
       <label style="display:flex;gap:8px;font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="ksr-c2" style="margin-top:2px;"> Suprantu, kad mano anketą patvirtins klubas, o tėvus galėsiu prisijungti vėliau su kodu.</label>
       <div style="font-size:10px;color:var(--mut);margin-bottom:12px;">📄 <a href="privatumo-politika.html" target="_blank" rel="noopener" style="color:#4FC3F7;">Privatumo politika</a> (viršuje — santrauka tau paprastai) · <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="color:#4FC3F7;">Naudojimo taisyklės</a></div>
       <button class="btn btng" style="width:100%;margin:0 0 8px;" id="ksr-submit" onclick="submitKidSelfSignup()">🥋 Sukurti paskyrą</button>
-      <button class="btn" style="width:100%;margin:0;background:transparent;border:.5px solid var(--bdr);color:var(--mut);" onclick="document.getElementById('ksr-step2').style.display='none';document.getElementById('ksr-step1').style.display='block';">← Atgal</button>
+      <button class="btn" style="width:100%;margin:0;background:transparent;border:.5px solid var(--bdr);color:var(--mut);" onclick="document.getElementById('ksr-step2').style.display='none';document.getElementById('ksr-step1').style.display='block';">${ico('atgal')} Atgal</button>
     </div>
     <div id="ksr-done" style="display:none;text-align:center;padding:12px 0;">
       <div style="font-size:52px;">🎉</div>
@@ -610,7 +610,7 @@ async function loadKidProductsCard(){
       let right;
       if (!ov.has_parent) right = '';
       else if (s === 'pending') right = '<span style="font-size:10px;color:#EAB308;font-weight:800;">⏳ Laukiama tėvų</span>';
-      else if (s === 'approved') right = '<span style="font-size:10px;color:var(--grn);font-weight:800;">✅ Tėvai patvirtino</span>';
+      else if (s === 'approved') right = '<span style="font-size:10px;color:var(--grn);font-weight:800;">'+ico('patvirtinta')+' Tėvai patvirtino</span>';
       else right = `<button onclick="kidAskParents('${it.key}')" style="background:rgba(255,77,0,.14);border:.5px solid rgba(255,77,0,.4);color:var(--br);font-size:10px;font-weight:800;padding:6px 10px;border-radius:99px;cursor:pointer;">🙏 Paprašyti tėvų</button>`;
       return `<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:.5px solid var(--bdr);">
         <span style="font-size:16px;">${it.ico}</span>
@@ -630,7 +630,7 @@ async function kidAskParents(itemType){
     const { error } = await sb.from('purchase_requests').insert({ kid_id: currentKid.id, item_type: itemType });
     if (error){
       if (error.code === '23505' || (error.message || '').includes('duplicate')) showToast('⏳ Prašymas jau išsiųstas — laukiama tėvų', 'success');
-      else showToast('❌ ' + error.message, 'error');
+      else showToast(ico('klaida')+' ' + error.message, 'error');
     } else showToast('🙏 Prašymas išsiųstas tėvams!', 'success');
     loadKidProductsCard();
   } catch(e){}
@@ -639,7 +639,7 @@ async function kidAskParents(itemType){
 async function openInviteParentModal(){
   let code = '';
   try { const { data, error } = await sb.rpc('set_parent_link_code'); if (error) throw error; code = data || ''; }
-  catch(e){ showToast('❌ ' + (e.message || 'Nepavyko sugeneruoti'), 'error'); return; }
+  catch(e){ showToast(ico('klaida')+' ' + (e.message || 'Nepavyko sugeneruoti'), 'error'); return; }
   const old = document.getElementById('invite-parent-modal'); if (old) old.remove();
   const m = document.createElement('div'); m.id = 'invite-parent-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100010;align-items:center;justify-content:center;padding:20px;';
@@ -671,15 +671,15 @@ function openLinkKidByCode(){
 
 async function submitLinkKidByCode(){
   const code = document.getElementById('lkc-code')?.value?.trim();
-  if (!code || code.length < 6){ showToast('❌ Įvesk 6 ženklų kodą', 'error'); return; }
+  if (!code || code.length < 6){ showToast(ico('klaida')+' Įvesk 6 ženklų kodą', 'error'); return; }
   try {
     const { data, error } = await sb.rpc('link_parent_by_code', { p_code: code });
     if (error) throw error;
-    if (!data){ showToast('❌ Kodas netinka arba pasibaigęs (galioja 30 min) — paprašyk vaiko sugeneruoti naują', 'error', 6000); return; }
-    showToast('✅ Prisijungei prie: ' + data + '!', 'success', 5000);
+    if (!data){ showToast(ico('klaida')+' Kodas netinka arba pasibaigęs (galioja 30 min) — paprašyk vaiko sugeneruoti naują', 'error', 6000); return; }
+    showToast(ico('patvirtinta')+' Prisijungei prie: ' + data + '!', 'success', 5000);
     document.getElementById('link-kid-modal')?.remove();
     if (typeof loadParentData === 'function') await loadParentData();
-  } catch(e){ showToast('❌ ' + (e.message || 'Kodas netinka'), 'error', 5000); }
+  } catch(e){ showToast(ico('klaida')+' ' + (e.message || 'Kodas netinka'), 'error', 5000); }
 }
 
 async function _checkParentPurchaseRequests(){
@@ -719,7 +719,7 @@ async function openParentRequestsModal(){
   m.innerHTML = `<div style="width:100%;max-width:420px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;max-height:85vh;overflow-y:auto;padding:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">🙏 VAIKO PRAŠYMAI</div>
-      <button onclick="document.getElementById('parent-preq-modal').remove()" style="background:none;border:none;font-size:20px;color:var(--mut);cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('parent-preq-modal').remove()" style="background:none;border:none;font-size:20px;color:var(--mut);cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     ${rows.length ? rows.map(r => {
       const t = tl[r.item_type] || ['📦', r.item_type];
@@ -727,8 +727,8 @@ async function openParentRequestsModal(){
         <div style="font-size:13px;font-weight:800;color:white;margin-bottom:2px;">${t[0]} ${r.kidName} prašo: ${t[1]}</div>
         <div style="font-size:11px;color:var(--mut);margin-bottom:10px;">Kaina: <b style="color:#4ade4a;">${priceOf(r.item_type)}</b> · ${typeof _agoLT === 'function' ? _agoLT(r.created_at) : ''}</div>
         <div style="display:flex;gap:8px;">
-          <button onclick="parentDecideRequest('${r.id}','approved')" style="flex:1;background:var(--grn);border:none;color:white;font-size:11px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">✅ Gerai, einu užsakyti</button>
-          <button onclick="parentDecideRequest('${r.id}','declined')" style="flex:1;background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);color:#EF4444;font-size:11px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">❌ Ne šįkart</button>
+          <button onclick="parentDecideRequest('${r.id}','approved')" style="flex:1;background:var(--grn);border:none;color:white;font-size:11px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">${ico('patvirtinta')} Gerai, einu užsakyti</button>
+          <button onclick="parentDecideRequest('${r.id}','declined')" style="flex:1;background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);color:#EF4444;font-size:11px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">${ico('klaida')} Ne šįkart</button>
         </div>
       </div>`;
     }).join('') : '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Laukiančių prašymų nėra 🧘</div>'}
@@ -741,9 +741,9 @@ async function parentDecideRequest(id, status){
     const { error } = await sb.from('purchase_requests').update({ status, decided_at: new Date().toISOString(), decided_by: currentUser?.id }).eq('id', id);
     if (error) throw error;
     document.getElementById('parent-preq-modal')?.remove();
-    if (status === 'approved'){ showToast('✅ Patvirtinta — užsakyk Parduotuvėje', 'success', 5000); if (typeof nv === 'function') nv('t', null, 't-shop'); }
+    if (status === 'approved'){ showToast(ico('patvirtinta')+' Patvirtinta — užsakyk Parduotuvėje', 'success', 5000); if (typeof nv === 'function') nv('t', null, 't-shop'); }
     else showToast('Prašymas atmestas', 'success');
-  } catch(e){ showToast('❌ ' + (e.message || ''), 'error'); }
+  } catch(e){ showToast(ico('klaida')+' ' + (e.message || ''), 'error'); }
 }
 
 // ── 🎟️ Klubo kodo helper'iai ──
@@ -759,7 +759,7 @@ async function generateClubInviteCode(){
     if (currentClub) currentClub.invite_code = data;
     showToast('🎟️ Kodas: ' + data, 'success', 5000);
     if (typeof loadClubSettings === 'function') loadClubSettings();
-  } catch(e){ showToast('❌ ' + (e.message || ''), 'error'); }
+  } catch(e){ showToast(ico('klaida')+' ' + (e.message || ''), 'error'); }
 }
 
 async function afterLogin() {
@@ -795,7 +795,7 @@ async function afterLogin() {
 
   if (profileErr || !profile) {
     console.error('❌ [afterLogin] Profile error:', profileErr);
-    showToast('❌ Paskyra nėra sukurta. Kreipkis į administratorių.', 'error', 6000);
+    showToast(ico('klaida')+' Paskyra nėra sukurta. Kreipkis į administratorių.', 'error', 6000);
     await sb.auth.signOut();
     return;
   }
@@ -840,7 +840,7 @@ async function afterLogin() {
   
   if (profile.status === 'suspended') {
     console.log('🚫 [afterLogin] Suspended');
-    showToast('❌ Tavo paskyra buvo atmesta. Kreipkis į trenerį.', 'error', 8000);
+    showToast(ico('klaida')+' Tavo paskyra buvo atmesta. Kreipkis į trenerį.', 'error', 8000);
     await sb.auth.signOut();
     return;
   }
@@ -864,7 +864,7 @@ async function afterLogin() {
 
   if (!portal) {
     console.error('❌ [afterLogin] Nežinoma rolė:', profile.role);
-    showToast('❌ Nežinoma paskyros rolė: ' + profile.role, 'error');
+    showToast(ico('klaida')+' Nežinoma paskyros rolė: ' + profile.role, 'error');
     return;
   }
 
@@ -907,7 +907,7 @@ async function afterLogin() {
         .select('*').eq('user_id', currentUser.id).maybeSingle();
       
       if (!kidData) {
-        showToast('❌ Vaiko duomenys nerasti DB. Kreipkis į administratorių.', 'error', 8000);
+        showToast(ico('klaida')+' Vaiko duomenys nerasti DB. Kreipkis į administratorių.', 'error', 8000);
         await sb.auth.signOut();
         return;
       }
@@ -936,7 +936,7 @@ async function afterLogin() {
     _flushEarlyErrors(); // 📡 B1: iki-login sukauptos klaidos → client_errors
   } catch (e) {
     console.error('❌ [afterLogin] EXCEPTION rolės kraunant:', e);
-    showToast('❌ Klaida kraunant duomenis: ' + e.message, 'error', 8000);
+    showToast(ico('klaida')+' Klaida kraunant duomenis: ' + e.message, 'error', 8000);
     // 🛡️ 3.1 #2: vis tiek parodom portalą — dalinis vaizdas geriau nei užstrigęs login ekranas
     try { op(portal); } catch(_){}
   }
@@ -1004,11 +1004,11 @@ async function parentToggleMarketing() {
     .eq('id', currentProfile.id)
     .select();
   
-  if (error) { showToast('❌ Klaida: ' + error.message, 'error', 5000); return; }
-  if (!data || data.length === 0) { showToast('❌ Nepavyko atnaujinti', 'error', 5000); return; }
+  if (error) { showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000); return; }
+  if (!data || data.length === 0) { showToast(ico('klaida')+' Nepavyko atnaujinti', 'error', 5000); return; }
   
   currentProfile.marketing_consent = newConsent;
-  showToast(newConsent ? '✅ Sutikta gauti marketing' : '🚫 Atsisakyta marketing', 'success');
+  showToast(newConsent ? ico('patvirtinta')+' Sutikta gauti marketing' : ico('isjungta')+' Atsisakyta marketing', 'success');
   loadParentMarketingToggle();
   // Atnaujinti pagrindinio lango duomenis (mini-kortelės, vaikų preview, naujausias pranešimas)
   loadParentMain();
@@ -1026,8 +1026,8 @@ async function openParentSettings() {
     modal.innerHTML = `
       <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
         <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">⚙️ NUSTATYMAI</div>
-          <button onclick="document.getElementById('parent-settings-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">${ico('nustatymai')} NUSTATYMAI</div>
+          <button onclick="document.getElementById('parent-settings-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
         </div>
         <div style="padding:14px 20px;border-bottom:.5px solid var(--bdr);background:rgba(99,102,241,.05);">
           <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:800;margin-bottom:6px;">PRISIJUNGTAS KAIP</div>
@@ -1036,7 +1036,7 @@ async function openParentSettings() {
               <div style="font-size:14px;font-weight:800;color:white;" id="parent-settings-user">–</div>
               <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="parent-settings-email">–</div>
             </div>
-            <button onclick="openEditParentNameModal()" style="background:rgba(99,102,241,.15);border:.5px solid rgba(99,102,241,.4);color:#8B5CF6;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ Vardas</button>
+            <button onclick="openEditParentNameModal()" style="background:rgba(99,102,241,.15);border:.5px solid rgba(99,102,241,.4);color:#8B5CF6;border-radius:10px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">${ico('redaguoti')} Vardas</button>
           </div>
         </div>
         <div style="padding:12px 16px 0;">
@@ -1050,7 +1050,7 @@ async function openParentSettings() {
         </div>
         <div style="padding:8px 16px 0;">
           <div onclick="toggleAppPush()" id="parent-push-toggle" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-            <div style="font-size:28px;" id="parent-push-icon">🔔</div>
+            <div style="font-size:28px;" id="parent-push-icon">${ico('pranesimai')}</div>
             <div style="flex:1;">
               <div style="font-size:13px;font-weight:800;color:white;">Push pranešimai</div>
               <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="parent-push-status">Pranešimai apie vaiko progresą</div>
@@ -1060,7 +1060,7 @@ async function openParentSettings() {
         <div style="padding:8px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
             <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
-              <div style="font-size:28px;">🔍</div>
+              <div style="font-size:28px;">${ico('paieska')}</div>
               <div style="flex:1;">
                 <div style="font-size:13px;font-weight:800;color:white;">Vaizdo dydis</div>
                 <div style="font-size:11px;color:var(--mut);margin-top:2px;">Padidink, jei sunku įžiūrėti</div>
@@ -1165,7 +1165,7 @@ async function loadParentSettingsTrainers() {
       return `<div onclick="document.getElementById('parent-settings-modal').remove(); parentStartTrainerChat('${t.id}','${safe}')" style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.04);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:6px;cursor:pointer;">
         <div style="font-size:18px;">🥋</div>
         <div style="flex:1;font-size:13px;font-weight:800;color:white;">${t.name}</div>
-        <div style="font-size:11px;color:var(--br);font-weight:800;">✏️ Rašyti</div>
+        <div style="font-size:11px;color:var(--br);font-weight:800;">${ico('redaguoti')} Rašyti</div>
       </div>`;
     }).join('');
   } catch (e) {
@@ -1194,7 +1194,7 @@ function openParentReportModal() {
 
 async function submitParentReport(btn) {
   const txt = (document.getElementById('preport-text')?.value || '').trim();
-  if (!txt) { showToast('⚠️ Aprašyk problemą'); return; }
+  if (!txt) { showToast(ico('ispejimas')+' Aprašyk problemą'); return; }
   if (btn) { btn.disabled = true; btn.textContent = 'Siunčiama...'; }
   try {
     const appV = document.getElementById('app-version')?.textContent || '';
@@ -1210,12 +1210,12 @@ async function submitParentReport(btn) {
     }).select('id');
     if (error) throw error;
     if (!ins || !ins.length) throw new Error('Pranešimas neįrašytas — parašyk pagalba@spobu.lt');
-    showToast('✓ Ačiū! Pranešimas išsiųstas administratoriui');
+    showToast(ico('atlikta')+' Ačiū! Pranešimas išsiųstas administratoriui');
     const rm = document.getElementById('parent-report-modal'); if (rm) rm.remove();
     const hm = document.getElementById('parent-help-modal'); if (hm) hm.remove();
   } catch (e) {
     console.warn('submitParentReport', e);
-    showToast('❌ ' + (e?.message || e?.hint || 'Nepavyko išsiųsti'), 'error', 7000);
+    showToast(ico('klaida')+' ' + (e?.message || e?.hint || 'Nepavyko išsiųsti'), 'error', 7000);
     if (btn) { btn.disabled = false; btn.textContent = 'Siųsti'; }
   }
 }
@@ -1245,7 +1245,7 @@ function openParentHelpModal() {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">❓ PAGALBA</div>
-        <button onclick="document.getElementById('parent-help-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+        <button onclick="document.getElementById('parent-help-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:16px 18px 28px;">
         <a href="${contactHref}" style="text-decoration:none;display:block;margin-bottom:8px;">
@@ -1291,7 +1291,7 @@ function openHelpReportModal() {
 
 async function submitHelpReport(btn) {
   const txt = (document.getElementById('help-report-text')?.value || '').trim();
-  if (!txt) { showToast('⚠️ Aprašyk problemą'); return; }
+  if (!txt) { showToast(ico('ispejimas')+' Aprašyk problemą'); return; }
   if (btn) { btn.disabled = true; btn.textContent = 'Siunčiama...'; }
   try {
     const appV = document.getElementById('app-version')?.textContent || '';
@@ -1307,12 +1307,12 @@ async function submitHelpReport(btn) {
     }).select('id');
     if (error) throw error;
     if (!ins || !ins.length) throw new Error('Pranešimas neįrašytas — parašyk pagalba@spobu.lt');
-    showToast('✓ Ačiū! Pranešimas išsiųstas administratoriui');
+    showToast(ico('atlikta')+' Ačiū! Pranešimas išsiųstas administratoriui');
     const rm = document.getElementById('help-report-modal'); if (rm) rm.remove();
     const hm = document.getElementById('help-modal'); if (hm) hm.remove();
   } catch (e) {
     console.warn('submitHelpReport', e);
-    showToast('❌ ' + (e?.message || e?.hint || 'Nepavyko išsiųsti'), 'error', 7000);
+    showToast(ico('klaida')+' ' + (e?.message || e?.hint || 'Nepavyko išsiųsti'), 'error', 7000);
     if (btn) { btn.disabled = false; btn.textContent = 'Siųsti'; }
   }
 }
@@ -1349,7 +1349,7 @@ function openHelpModal(who) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">${title}</div>
-        <button onclick="document.getElementById('help-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+        <button onclick="document.getElementById('help-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:16px 18px 28px;">
         <a href="${contactHref}" style="text-decoration:none;display:block;margin-bottom:8px;">
@@ -1392,7 +1392,7 @@ function openParentInfoModal() {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">💡 TĖVŲ GIDAS</div>
-        <button onclick="document.getElementById('parent-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+        <button onclick="document.getElementById('parent-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:16px 18px 28px;">
         ${sec('👀', 'KĄ MATAI', 'Realiu laiku matai vaiko progresą: lygį ir stadiją, karjeros statistiką pagal 7 kategorijas, varžybų medalius, įveiktus iššūkius, diržą ir naujausių pasiekimų srautą. Esi pasyvus stebėtojas — pateikti gali tik pats vaikas.')}
@@ -1416,7 +1416,7 @@ function openEditParentNameModal() {
     m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;align-items:center;justify-content:center;padding:20px;';
     m.innerHTML = `
       <div style="width:100%;max-width:360px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:20px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:14px;">✏️ JŪSŲ VARDAS</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:14px;">${ico('redaguoti')} JŪSŲ VARDAS</div>
         <label style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">VARDAS</label>
         <input class="inp" id="epn-fname" type="text" maxlength="40" placeholder="Pvz. Petras" style="margin:4px 0 12px;">
         <label style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">PAVARDĖ</label>
@@ -1439,19 +1439,19 @@ function openEditParentNameModal() {
 async function saveParentName(btn) {
   const fn = (document.getElementById('epn-fname')?.value || '').trim();
   const ln = (document.getElementById('epn-lname')?.value || '').trim();
-  if (!fn) { showToast('⚠️ Įveskite vardą'); return; }
+  if (!fn) { showToast(ico('ispejimas')+' Įveskite vardą'); return; }
   if (btn) { btn.disabled = true; btn.textContent = 'Saugoma...'; }
   try {
     const { error } = await sb.from('profiles').update({ first_name: fn, last_name: ln }).eq('id', currentUser.id);
     if (error) throw error;
     if (currentProfile) { currentProfile.first_name = fn; currentProfile.last_name = ln; }
-    showToast('✓ Vardas atnaujintas');
+    showToast(ico('atlikta')+' Vardas atnaujintas');
     const m = document.getElementById('edit-parent-name-modal'); if (m) m.remove();
     const userEl = document.getElementById('parent-settings-user'); if (userEl) userEl.textContent = `${fn} ${ln}`.trim();
     if (typeof loadParentKidMain === 'function') loadParentKidMain();
   } catch (e) {
     console.warn('saveParentName', e);
-    showToast('❌ Nepavyko išsaugoti vardo');
+    showToast(ico('klaida')+' Nepavyko išsaugoti vardo');
     if (btn) { btn.disabled = false; btn.textContent = 'Išsaugoti'; }
   }
 }
@@ -1552,14 +1552,14 @@ async function loadParentMainKidsPreview() {
           <div style="width:40px;height:40px;border-radius:50%;${avStyle}display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:white;flex-shrink:0;">${avInner}</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
-            <div style="font-size:10px;color:#EF4444;margin-top:2px;font-weight:800;">❌ Anketa atmesta</div>
+            <div style="font-size:10px;color:#EF4444;margin-top:2px;font-weight:800;">${ico('klaida')} Anketa atmesta</div>
           </div>
           <div style="font-size:18px;color:var(--br);flex-shrink:0;">→</div>
         </div>
         <div style="background:rgba(239,68,68,.08);border-radius:8px;padding:9px 11px;margin-top:9px;font-size:11px;color:var(--mut);line-height:1.45;">
           <span style="color:#fff;font-weight:700;">Priežastis: </span>${k.rejection_reason ? escapeHtml(k.rejection_reason) : 'Susisiek su klubu.'}
         </div>
-        <button onclick="showKidDetail('${k.id}')" style="margin-top:8px;width:100%;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px;border-radius:8px;cursor:pointer;">🔄 Taisyti ir registruoti iš naujo</button>
+        <button onclick="showKidDetail('${k.id}')" style="margin-top:8px;width:100%;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px;border-radius:8px;cursor:pointer;">${ico('atnaujinti')} Taisyti ir registruoti iš naujo</button>
       </div>`;
     }
     const isPending = k.approval_status !== 'approved';
@@ -1594,7 +1594,7 @@ async function _parentFixAndReregister(kidId){
   try {
     const { error } = await sb.rpc('parent_reregister_kid', { p_kid: kidId, p_kyu: kyu||null, p_weight: weight||null, p_first: fname||null, p_last: lname||null, p_gender: gender||null, p_birth: birth||null });
     if (error) throw error;
-    showToast('✓ Pataisyta ir išsiųsta iš naujo — laukia patvirtinimo');
+    showToast(ico('atlikta')+' Pataisyta ir išsiųsta iš naujo — laukia patvirtinimo');
     closeEditKidModal();
     const _patch = (o) => { if (o && o.id === kidId){ o.approval_status='pending'; o.rejection_reason=null; if(kyu)o.kyu=kyu; if(weight)o.weight_range=weight; if(fname)o.first_name=fname; o.last_name=lname; o.gender=gender; if(birth)o.birth_date=birth; } };
     if (typeof currentParentKid !== 'undefined') _patch(currentParentKid);
@@ -1602,7 +1602,7 @@ async function _parentFixAndReregister(kidId){
     if (typeof refreshParentKidById === 'function') await refreshParentKidById(kidId);
     if (typeof loadParentKidMain === 'function') loadParentKidMain();
     if (typeof showKidDetail === 'function') await showKidDetail(kidId);
-  } catch(e){ console.error('[fix-reregister]', e); if(errEl) showErr(errEl,'Klaida: '+(e.message||'')); else showToast('❌ '+(e.message||'')); }
+  } catch(e){ console.error('[fix-reregister]', e); if(errEl) showErr(errEl,'Klaida: '+(e.message||'')); else showToast(ico('klaida')+' '+(e.message||'')); }
 }
 
 async function loadParentMainLatestAnnouncement(annMemberships) {
@@ -1724,7 +1724,7 @@ async function loadParentKids() {
     if (k.approval_status === 'pending') {
       statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(255,77,0,.2);color:var(--br);font-weight:700;">⏳ Laukia trenerio</span>';
     } else if (isApproved) {
-      statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(34,197,94,.2);color:var(--grn);font-weight:700;">✓ Aktyvi</span>';
+      statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(34,197,94,.2);color:var(--grn);font-weight:700;">'+ico('atlikta')+' Aktyvi</span>';
     } else {
       statusBadge = '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(255,77,0,.2);color:var(--br);font-weight:700;">' + (k.approval_status||'?') + '</span>';
     }
@@ -1913,7 +1913,7 @@ function openParentKidSwitcher() {
     const info = (typeof getStageInfo === 'function') ? getStageInfo(k.total_exp || 0) : { globalLevel: 1, stage: '' };
     const avStyle = k.avatar_url ? `background-image:url('${k.avatar_url}');background-size:cover;background-position:center;` : 'background:linear-gradient(135deg,#FF4D00,#FFA500);';
     const stBadge = k.approval_status === 'rejected'
-      ? '<span style="font-size:8px;font-weight:800;color:#EF4444;background:rgba(239,68,68,.15);padding:1px 6px;border-radius:99px;">❌ ATMESTA</span>'
+      ? '<span style="font-size:8px;font-weight:800;color:#EF4444;background:rgba(239,68,68,.15);padding:1px 6px;border-radius:99px;">'+ico('klaida')+' ATMESTA</span>'
       : (k.approval_status === 'pending' ? '<span style="font-size:8px;font-weight:800;color:#FF8C00;background:rgba(255,140,0,.15);padding:1px 6px;border-radius:99px;">⏳ LAUKIA</span>' : '');
     return `<div onclick="parentSelectKid('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:10px;background:${active ? 'rgba(255,77,0,.1)' : 'transparent'};border:${active ? '1.5px solid var(--br)' : '.5px solid var(--bdr)'};border-radius:12px;margin-bottom:8px;cursor:pointer;">
       <div style="width:42px;height:42px;border-radius:50%;${avStyle}display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;color:white;flex-shrink:0;">${k.avatar_url ? '' : parentKidInitials(k)}</div>
@@ -1922,7 +1922,7 @@ function openParentKidSwitcher() {
         <div style="font-size:9px;color:var(--mut);font-family:'Bebas Neue',sans-serif;letter-spacing:1px;margin-top:1px;">${(k.kyu || 'Be kyu')} · ${info.stage} · LVL ${info.globalLevel}</div>
         ${stBadge ? `<div style="margin-top:3px;">${stBadge}</div>` : ''}
       </div>
-      ${active ? '<div style="color:var(--br);font-size:16px;flex-shrink:0;">✓</div>' : ''}
+      ${active ? '<div style="color:var(--br);font-size:16px;flex-shrink:0;">'+ico('atlikta')+'</div>' : ''}
     </div>`;
   }).join('');
   m.innerHTML = `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:20px;padding:18px;width:100%;max-width:380px;max-height:80vh;overflow-y:auto;">
@@ -1960,9 +1960,9 @@ function _renderParentApprovalBanner(k){
   if (k && k.approval_status === 'rejected') {
     ab.style.display = 'block';
     ab.innerHTML = `<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);border-radius:12px;padding:12px 14px;">
-      <div style="color:#EF4444;font-weight:800;font-size:13px;">❌ Anketa atmesta</div>
+      <div style="color:#EF4444;font-weight:800;font-size:13px;">${ico('klaida')} Anketa atmesta</div>
       <div style="color:var(--mut);font-size:12px;line-height:1.45;margin-top:5px;"><span style="color:#fff;font-weight:700;">Priežastis: </span>${k.rejection_reason ? escapeHtml(k.rejection_reason) : 'Susisiek su klubu.'}</div>
-      <button onclick="showEditKidModal('${k.id}')" style="margin-top:9px;width:100%;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px;border-radius:8px;cursor:pointer;">🔄 Taisyti ir registruoti iš naujo</button>
+      <button onclick="showEditKidModal('${k.id}')" style="margin-top:9px;width:100%;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px;border-radius:8px;cursor:pointer;">${ico('atnaujinti')} Taisyti ir registruoti iš naujo</button>
     </div>`;
   } else if (k && k.approval_status === 'pending') {
     ab.style.display = 'block';
@@ -2192,7 +2192,7 @@ async function loadParentKidChallenges(k) {
 
 // „VISA STATISTIKA" — atidaro aktyvaus vaiko statistikos langą (tą patį kaip ⚙️→Vaiko duomenys→STATISTIKA)
 async function openParentKidStats(tab) {
-  if (!parentActiveKid) { showToast('⚠️ Nėra pasirinkto vaiko'); return; }
+  if (!parentActiveKid) { showToast(ico('ispejimas')+' Nėra pasirinkto vaiko'); return; }
   parentStatPage = 1;
   // Iš reitingų kortelės (tab nurodytas) → filtruojam pagal vaiko kategoriją (lytis+amžius), kad sutaptų su REITINGAI.
   // „VISA STATISTIKA" (be tab) → visas klubas (kaip vaiko openMainStat).
@@ -2866,7 +2866,7 @@ function openParentFeedModal() {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">📰 VISI PASIEKIMAI</div>
-        <button onclick="document.getElementById('tk-feed-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+        <button onclick="document.getElementById('tk-feed-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:14px 16px 24px;">${_parentFeedAllHtml}</div>
     </div>`;
@@ -2893,7 +2893,7 @@ function openReportInfoModal(){
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:21px;letter-spacing:2px;">📋 IŠSAMI AI ATASKAITA</div>
-        <button onclick="document.getElementById('report-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);">✕</button>
+        <button onclick="document.getElementById('report-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:18px;">
         <div style="font-size:12.5px;color:var(--mut);line-height:1.55;margin-bottom:16px;">Tavo vaiko sportinė analizė — tarsi asmeninė trenerio-analitiko konsultacija, paruošta dirbtinio intelekto pagal tikrus SPOBU duomenis ir ekspertinę metodiką.</div>
@@ -2908,10 +2908,10 @@ function openReportInfoModal(){
         </div>
         <div style="font-size:10px;letter-spacing:1.5px;color:var(--mut);font-weight:800;margin-bottom:8px;">KODĖL VERTA</div>
         <div style="margin-bottom:16px;">
-          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Tikri vaiko duomenys</b>, ne bendros frazės — analizė būtent apie tavo vaiką.</span></div>
-          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Konkretu ir aišku</b> — stipriosios pusės, ką tobulinti ir kaip tai daryti.</span></div>
-          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Tęstinumas</b> — kita ataskaita parodo pažangą, tad matai ar planas veikia.</span></div>
-          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Ekspertinė metodika</b> — paremta jaunių sporto ir Kyokushin principais.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">${ico('atlikta')}</span><span><b style="color:#fff;">Tikri vaiko duomenys</b>, ne bendros frazės — analizė būtent apie tavo vaiką.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">${ico('atlikta')}</span><span><b style="color:#fff;">Konkretu ir aišku</b> — stipriosios pusės, ką tobulinti ir kaip tai daryti.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">${ico('atlikta')}</span><span><b style="color:#fff;">Tęstinumas</b> — kita ataskaita parodo pažangą, tad matai ar planas veikia.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">${ico('atlikta')}</span><span><b style="color:#fff;">Ekspertinė metodika</b> — paremta jaunių sporto ir Kyokushin principais.</span></div>
         </div>
         <div style="background:rgba(34,197,94,.1);border:.5px solid rgba(34,197,94,.3);border-radius:12px;padding:13px 14px;margin-bottom:16px;">
           <div style="font-size:11px;font-weight:800;color:var(--grn);letter-spacing:.5px;margin-bottom:4px;">💡 KAIP DAŽNAI UŽSISAKYTI</div>
@@ -2938,7 +2938,7 @@ function openHomePlanInfoModal(){
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">🏋️ NAMŲ TRENIRUOČIŲ PLANAS</div>
-        <button onclick="document.getElementById('home-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);">✕</button>
+        <button onclick="document.getElementById('home-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:18px;">
         <div style="font-size:12.5px;color:var(--mut);line-height:1.55;margin-bottom:16px;">Individualios treniruotės <b style="color:#fff;">tarp dojo užsiėmimų</b> — kad vaikas progresuotų ir namuose. Sudaromas 2 mėnesiams pagal vaiko poreikius.</div>
@@ -2951,9 +2951,9 @@ function openHomePlanInfoModal(){
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;"><div style="font-size:19px;">🎯</div><div><div style="font-size:12px;font-weight:700;color:white;">Pagal vaiko silpnąsias puses</div><div style="font-size:10px;color:var(--mut);">Sustiprina tai, ko trūksta (iš ataskaitos)</div></div></div>
         </div>
         <div style="margin-bottom:16px;">
-          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span><b style="color:#fff;">Papildo dojo</b>, ne dubliuoja techniką.</span></div>
-          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Vaikas <b style="color:#fff;">progresuoja ir tarp treniruočių</b>.</span></div>
-          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Sudaromas <b style="color:#fff;">2 mėnesiams</b> → atnaujinamas kas 2 mėn.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">${ico('atlikta')}</span><span><b style="color:#fff;">Papildo dojo</b>, ne dubliuoja techniką.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">${ico('atlikta')}</span><span>Vaikas <b style="color:#fff;">progresuoja ir tarp treniruočių</b>.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">${ico('atlikta')}</span><span>Sudaromas <b style="color:#fff;">2 mėnesiams</b> → atnaujinamas kas 2 mėn.</span></div>
         </div>
         <div style="background:linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;">
           <div style="font-size:11px;color:var(--mut);">Asmeninė sporto specialisto programa kainuotų <b style="color:#fff;">60–120€</b></div>
@@ -2975,7 +2975,7 @@ function openSummerInfoModal(){
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">☀️ VASAROS PROGRAMA</div>
-        <button onclick="document.getElementById('summer-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);">✕</button>
+        <button onclick="document.getElementById('summer-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:18px;">
         <div style="font-size:12.5px;color:var(--mut);line-height:1.55;margin-bottom:16px;"><b style="color:#fff;">12 savaičių programa vasarai</b> — kad vaikas neprarastų formos per atostogas ir rugsėjį grįžtų stipresnis už kitus.</div>
@@ -2987,8 +2987,8 @@ function openSummerInfoModal(){
           <div style="display:flex;gap:11px;align-items:center;padding:9px 0;"><div style="font-size:19px;">🏖️</div><div><div style="font-size:12px;font-weight:700;color:white;">Be salės</div><div style="font-size:10px;color:var(--mut);">Namuose ar lauke · PDF</div></div></div>
         </div>
         <div style="margin-bottom:16px;">
-          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Vasara = forma prarandama; <b style="color:#fff;">programa tai sustabdo</b>.</span></div>
-          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">✓</span><span>Rugsėjį grįžta <b style="color:#fff;">pranašesnis</b> už nesitreniravusius.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">${ico('atlikta')}</span><span>Vasara = forma prarandama; <b style="color:#fff;">programa tai sustabdo</b>.</span></div>
+          <div style="display:flex;gap:9px;padding:5px 0;font-size:11.5px;color:#d6d6dd;line-height:1.45;"><span style="color:var(--grn);font-weight:900;">${ico('atlikta')}</span><span>Rugsėjį grįžta <b style="color:#fff;">pranašesnis</b> už nesitreniravusius.</span></div>
         </div>
         <div style="background:linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;">
           <div style="font-size:11px;color:var(--mut);">Vasaros stovykla ar individuali programa kainuotų <b style="color:#fff;">100€+</b></div>
@@ -3117,7 +3117,7 @@ async function openProductQuestionsModal(type){
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;padding:18px 16px 26px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
         <div style="font-size:15px;font-weight:900;color:#fff;">${cfg.title}</div>
-        <div onclick="document.getElementById('pq-modal').remove()" style="font-size:20px;color:var(--mut);cursor:pointer;padding:4px 8px;">✕</div>
+        <div onclick="document.getElementById('pq-modal').remove()" style="font-size:20px;color:var(--mut);cursor:pointer;padding:4px 8px;">${ico('uzdaryti')}</div>
       </div>
       <div style="font-size:10.5px;color:var(--mut);line-height:1.5;margin-bottom:15px;">${cfg.sub}</div>
       ${qHtml}
@@ -3182,7 +3182,7 @@ async function _runProductGeneration(type, prefs){
         : '✅ Užsakyta! SPOBU specialistai peržiūrės ir programa bus paruošta per 24 val. Rasi „Mano vasaros programos".', 'success', 6000);
     } else { throw new Error((data && data.error) || 'Tuščias atsakymas'); }
   } catch (err) {
-    showToast('❌ ' + (err?.message || err), 'error', 5000);
+    showToast(ico('klaida')+' ' + (err?.message || err), 'error', 5000);
   } finally { if (isPlan) _planGenBusy = false; else _summerGenBusy = false; }
 }
 let _planGenBusy = false;
@@ -3286,11 +3286,11 @@ async function setKidTier(tier){
     data = res.data;
   } catch(e){
     console.warn('setKidTier', e);
-    showToast('❌ Nepavyko pakeisti pakopos: ' + (e?.message || e), 'error', 5500);
+    showToast(ico('klaida')+' Nepavyko pakeisti pakopos: ' + (e?.message || e), 'error', 5500);
     return;
   }
   try { localStorage.setItem(_kidTierKey(k.id), (data && data.tier) || tier); } catch(e){}
-  showToast(tier === 'free' ? 'Pakeista į Nemokamą planą' : (tier === 'premium' ? '✅ Premium aktyvuotas (testas)' : '👑 Premium+! Pridėta +3 ataskaitos, +3 namų planai, +1 vasaros programa.'), 'success', 4500);
+  showToast(tier === 'free' ? 'Pakeista į Nemokamą planą' : (tier === 'premium' ? ico('patvirtinta')+' Premium aktyvuotas (testas)' : '👑 Premium+! Pridėta +3 ataskaitos, +3 namų planai, +1 vasaros programa.'), 'success', 4500);
   await loadParentShopCredits();
   applyParentTierGating();
 }
@@ -3306,7 +3306,7 @@ function openHistoryModal(type){
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">${titles[type] || 'ISTORIJA'}</div>
-        <button onclick="document.getElementById('history-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);">✕</button>
+        <button onclick="document.getElementById('history-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--mut);">${ico('uzdaryti')}</button>
       </div>
       <div id="history-list" style="padding:16px 18px 26px;">${typeof loadingSpinnerHtml==='function'?loadingSpinnerHtml('Kraunama...'):'Kraunama...'}</div>
     </div>`;
@@ -3365,7 +3365,7 @@ function openReportOrderModal(useCredit){
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">📋 AI ATASKAITA</div>
-        <button onclick="document.getElementById('report-order-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+        <button onclick="document.getElementById('report-order-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:16px 18px 26px;">
         ${orderCard}
@@ -3905,7 +3905,7 @@ function buildReportPrintDoc(r){
   const nutriSrc = Array.isArray(r.nutrition) ? r.nutrition : (r.nutrition && Array.isArray(r.nutrition.principles) ? r.nutrition.principles : []);
   const nutri = nutriSrc.map(x => '<tr><td style="width:32%;"><b>'+E(x.icon||'•')+' '+E(x.title_lt)+'</b></td><td>'+E(x.text_lt)+'</td></tr>').join('');
   const prioTxt={high:'PRIORITETAS',mid:'SVARBU',low:'PALAIKYTI'}, prioCls={high:'p-hi',mid:'p-mid',low:'p-lo'};
-  const plan = A(r.plan).map((x,i) => '<div class="planitem"><div class="plannum">'+(i+1)+'</div><div><div class="pi-h">'+E(x.title_lt)+' <span class="prio '+(prioCls[x.priority]||'p-mid')+'">'+(prioTxt[x.priority]||'SVARBU')+'</span></div><p style="margin:0;" class="small">'+E(x.text_lt)+'</p>'+(x.first_step_lt?'<p style="margin:4px 0 0;" class="small"><b style="color:#16A34A;">▶ Pirmas žingsnis (nemokamas):</b> '+E(x.first_step_lt)+'</p>':'')+'</div></div>').join('');
+  const plan = A(r.plan).map((x,i) => '<div class="planitem"><div class="plannum">'+(i+1)+'</div><div><div class="pi-h">'+E(x.title_lt)+' <span class="prio '+(prioCls[x.priority]||'p-mid')+'">'+(prioTxt[x.priority]||'SVARBU')+'</span></div><p style="margin:0;" class="small">'+E(x.text_lt)+'</p>'+(x.first_step_lt?'<p style="margin:4px 0 0;" class="small"><b style="color:#16A34A;">'+ico('leisti')+' Pirmas žingsnis (nemokamas):</b> '+E(x.first_step_lt)+'</p>':'')+'</div></div>').join('');
   const strTags=A(s.strengths_lt).map(E).join(' · '), growTags=A(s.grow_lt).map(E).join(' · ');
   const idx = Math.max(0,Math.min(100, s.index||0));
 
@@ -3976,7 +3976,7 @@ table.t td.n{text-align:center;font-weight:600;}
   const growthBlock = (g.bmi_value!=null) ? ('<div class="sec-h"><span class="num">__N__</span> Augimas ir kūno sudėjimas</div>'+
     '<div class="callout co-med"><div class="co-h"><span class="chip">AUGIMAS</span> KMI '+E(g.bmi_value)+bmiCatShow+(g.bmi_percentile!=null?' · ~'+E(g.bmi_percentile)+' perc.':'')+'</div>'+
     (g.bmi_line_lt?'<p style="margin:0 0 6px;">'+E(g.bmi_line_lt)+'</p>':'')+(g.trajectory_lt?'<p style="margin:0 0 6px;">'+E(g.trajectory_lt)+'</p>':'')+(g.parent_note_lt?'<p style="margin:0;"><b>Tėvams:</b> '+E(g.parent_note_lt)+'</p>':'')+
-    (g.refer_to_doctor?'<p style="margin:8px 0 0;color:#B45309;"><b>⚠️ '+E(g.refer_lt||'Verta pasitarti su vaiko gydytoju.')+'</b></p>':'')+'</div>') : '';
+    (g.refer_to_doctor?'<p style="margin:8px 0 0;color:#B45309;"><b>'+ico('ispejimas')+' '+E(g.refer_lt||'Verta pasitarti su vaiko gydytoju.')+'</b></p>':'')+'</div>') : '';
   // Jei mėnesio puslapyje liktų TIK KPI kortelės (be trendo ir KMI) — neleidžiam pustuščio lapo:
   // KPI keliasi į pirmą puslapį, atskiras mėnesio puslapis nerodomas.
   const monthHasExtras = !!(trendBars || growthBlock);
@@ -4027,7 +4027,7 @@ table.t td.n{text-align:center;font-weight:600;}
   const pagePlan = '<section class="page"><div class="pagehead"><div style="display:flex;align-items:center;gap:9px;"><div class="ph-badge">空</div><div class="ph-title">Rekomendacijos</div></div><div style="font-size:9px;color:#6B7280;text-align:right;">'+E(c.kid_name||'')+'</div></div>'+
     (plan?('<div class="sec-h"><span class="num">__N__</span> Į ką sutelkti dėmesį</div>'+plan):'')+
     '<div class="callout co-fight" style="margin:12px 0;"><div class="co-h"><span class="chip">PAPILDOMAI</span> 🏋️ Nori konkretaus plano?</div><p style="margin:0;" class="small">Ši analizė rodo, <b>ką</b> tobulinti. Detalų profesionalų <b>2 mėn. namų treniruočių planą</b> — su konkrečiais pratimais, progresija ir <b>mitybos planu (ką valgyti)</b> pagal vaiko silpnąsias sritis — gali užsisakyti papildomai.</p></div>'+
-    ((par.celebrate_lt||par.help_lt)?('<div class="sec-h"><span class="num">★</span> Trumpai tėvams</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+(par.celebrate_lt?'<div class="callout co-phys" style="margin:0;"><div class="co-h">✅ Kuo pasidžiaugti</div><p style="margin:0;" class="small">'+E(par.celebrate_lt)+'</p></div>':'')+(par.help_lt?'<div class="callout co-med" style="margin:0;"><div class="co-h">🎯 Kur padėti</div><p style="margin:0;" class="small">'+E(par.help_lt)+'</p></div>':'')+'</div>'):'')+
+    ((par.celebrate_lt||par.help_lt)?('<div class="sec-h"><span class="num">★</span> Trumpai tėvams</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'+(par.celebrate_lt?'<div class="callout co-phys" style="margin:0;"><div class="co-h">'+ico('patvirtinta')+' Kuo pasidžiaugti</div><p style="margin:0;" class="small">'+E(par.celebrate_lt)+'</p></div>':'')+(par.help_lt?'<div class="callout co-med" style="margin:0;"><div class="co-h">🎯 Kur padėti</div><p style="margin:0;" class="small">'+E(par.help_lt)+'</p></div>':'')+'</div>'):'')+
     eduBlock+
     '<div class="disc"><b>SVARBU.</b> Ši analizė parengta naudojant dirbtinį intelektą pagal vaiko treniruočių duomenis ir yra bendro pobūdžio fizinio ugdymo bei sveikos gyvensenos rekomendacija, o <b>ne medicininė diagnozė ar gydymo planas</b>. Dėl individualių sveikatos, mitybos ar augimo klausimų kreipkitės į vaiko gydytoją. Treniruočių krūvį derinkite su treneriu. Duomenys konfidencialūs.</div>'+
     '<div style="text-align:center;margin-top:20px;"><div class="brand-badge" style="margin:0 auto 8px;">空</div><div style="font-family:\'Bebas Neue\';font-size:22px;letter-spacing:3px;">SPOBU</div><div class="tiny mut" style="letter-spacing:2px;">spobu.lt</div></div>'+
@@ -4264,8 +4264,8 @@ async function toggleParentNotifications() {
   modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
   modal.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">🔔 PRANEŠIMAI</div>
-      <button onclick="document.getElementById('parent-bell-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;font-family:inherit;">UŽDARYTI ✕</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">${ico('pranesimai')} PRANEŠIMAI</div>
+      <button onclick="document.getElementById('parent-bell-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;font-family:inherit;">UŽDARYTI ${ico('uzdaryti')}</button>
     </div>
     <div style="padding:12px 16px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;">
       <button class="pbell-tab" data-tab="ann" onclick="switchParentBellTab('ann')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 3px;border-radius:10px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;"><span style="font-size:16px;">📢</span><span>Pranešimai <span class="pbell-cnt-ann" style="opacity:.7;"></span></span></button>
@@ -4276,8 +4276,8 @@ async function toggleParentNotifications() {
       <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
     </div>
     <div style="padding:10px 16px;border-top:.5px solid var(--bdr);display:flex;flex-direction:column;gap:8px;">
-      <button onclick="parentComposeToTrainer()" style="width:100%;background:var(--br);color:white;border:none;padding:12px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;">✏️ RAŠYTI TRENERIUI</button>
-      <button onclick="markAllParentRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;font-family:inherit;">✓ Žymėti visus skaitytus</button>
+      <button onclick="parentComposeToTrainer()" style="width:100%;background:var(--br);color:white;border:none;padding:12px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;">${ico('redaguoti')} RAŠYTI TRENERIUI</button>
+      <button onclick="markAllParentRead()" style="width:100%;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;font-family:inherit;">${ico('atlikta')} Žymėti visus skaitytus</button>
     </div>
   </div>`;
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
@@ -4293,7 +4293,7 @@ async function markAllParentRead() {
     await sb.from('conversation_members')
       .update({ last_read_at: new Date().toISOString() })
       .eq('user_id', currentProfile.id);
-    if (typeof showToast === 'function') showToast('✓ Visi pažymėti skaitytais', 'success');
+    if (typeof showToast === 'function') showToast(ico('atlikta')+' Visi pažymėti skaitytais', 'success');
     if (typeof loadParentBellContent === 'function') loadParentBellContent();
     if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
   } catch (e) { console.warn('markAllParentRead', e); }
@@ -4377,7 +4377,7 @@ async function parentStartTrainerChat(trainerId, trainerName) {
     if (convId) {
       // ESAMAS pokalbis — atnaujinam pavadinimą+kid_id (kad senas test-pokalbis irgi rodytų vardą)
       const { error: upErr } = await sb.from('conversations').update({ title: convTitle, kid_id: kidId }).eq('id', convId);
-      if (upErr && typeof showToast === 'function') showToast('⚠️ Pavadinimo neįrašė (RLS): ' + (upErr.message || ''), 'error', 9000);
+      if (upErr && typeof showToast === 'function') showToast(ico('ispejimas')+' Pavadinimo neįrašė (RLS): ' + (upErr.message || ''), 'error', 9000);
     } else {
       // 2. Nėra — kuriam naują su pavadinimu
       const clubId = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : (currentProfile?.club_id || null);
@@ -4485,7 +4485,7 @@ async function loadParentBellContent() {
           repHtml += `<div onclick="document.getElementById('parent-bell-modal').remove(); if(typeof openHistoryModal==='function') openHistoryModal('${histKey}');" style="background:var(--card);border:.5px solid var(--bdr);border-left:3px solid #22C55E;border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;">
             <div style="font-size:18px;">${tIco}</div>
             <div style="flex:1;min-width:0;">
-              <div style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:#22C55E;background:#22C55E22;padding:1px 7px;border-radius:99px;margin-bottom:3px;">✅ PARUOŠTA</div>
+              <div style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:#22C55E;background:#22C55E22;padding:1px 7px;border-radius:99px;margin-bottom:3px;">${ico('patvirtinta')} PARUOŠTA</div>
               <div style="font-size:11px;font-weight:800;color:white;">${tLabel} paruošta!</div>
               <div style="font-size:10px;color:var(--mut);margin-top:2px;">Paspausk ir atsidaryk dokumentą</div>
               <div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(rep.reviewed_at)}</div>
@@ -4501,7 +4501,7 @@ async function loadParentBellContent() {
     let rejHtml = '';
     if (activeKid && activeKid.approval_status === 'rejected') {
       rejHtml = `<div onclick="_parentOpenRejectFix()" style="background:var(--card);border:.5px solid rgba(239,68,68,.4);border-left:3px solid #EF4444;border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;">
-        <div style="font-size:18px;">❌</div>
+        <div style="font-size:18px;">${ico('klaida')}</div>
         <div style="flex:1;min-width:0;">
           <div style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:#EF4444;background:#EF444422;padding:1px 7px;border-radius:99px;margin-bottom:3px;">ANKETA ATMESTA</div>
           <div style="font-size:11px;font-weight:800;color:white;">${activeKid.first_name ? escapeHtml(activeKid.first_name) : 'Vaiko'} registracija atmesta</div>
@@ -4714,13 +4714,13 @@ function akUpdateAge() {
   const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
   const birthDate = new Date(dateStr);
   if (isNaN(birthDate.getTime()) || birthDate.getDate() !== day) {
-    document.getElementById('ak-age-display').innerHTML = '<span style="color:var(--br);">⚠️ Ši data neegzistuoja</span>';
+    document.getElementById('ak-age-display').innerHTML = '<span style="color:var(--br);">'+ico('ispejimas')+' Ši data neegzistuoja</span>';
     return;
   }
   
   const age = calculateAge(dateStr);
   if (age < 4 || age > 25) {
-    document.getElementById('ak-age-display').innerHTML = '<span style="color:var(--br);">⚠️ Amžius turi būti 4-25 m.</span>';
+    document.getElementById('ak-age-display').innerHTML = '<span style="color:var(--br);">'+ico('ispejimas')+' Amžius turi būti 4-25 m.</span>';
     return;
   }
   
@@ -5061,7 +5061,7 @@ function akNext(currentScreen) {
     // 📜 BDAR 9 str.: jei pildyti sveikatos laukai — privalomas aiškus sutikimas
     const _akHealthAny = akData.health_allergies || akData.health_medications || akData.health_conditions || akData.health_injuries || akData.health_notes;
     if (_akHealthAny && !document.getElementById('ak-health-consent')?.checked){
-      showToast('❌ Įrašei sveikatos informaciją — pažymėk sutikimą, kad ją matytų treneris', 'error', 5000);
+      showToast(ico('klaida')+' Įrašei sveikatos informaciją — pažymėk sutikimą, kad ją matytų treneris', 'error', 5000);
       return;
     }
     
@@ -5199,7 +5199,7 @@ async function akSubmit() {
     const { error: ktError } = await sb.from('kid_trainers').insert(trainerInserts);
     if (ktError) {
       console.error('❌ kid_trainers insert KLAIDA:', ktError);
-      showToast('⚠️ Treneris(-iai) nesusieti su vaiku per M:N. Detalės Console.', 'error', 6000);
+      showToast(ico('ispejimas')+' Treneris(-iai) nesusieti su vaiku per M:N. Detalės Console.', 'error', 6000);
       // Nelūštam – assigned_trainer_id jau įrašytas, sistema veiks legacy režimu
     } else {
       console.log(`✅ Sukurta ${trainerInserts.length} kid_trainers įrašų (1 primary + ${trainerInserts.length - 1} assistant)`);
@@ -5273,7 +5273,7 @@ async function akSubmit() {
     
     let successHTML = `
       <div style="background:rgba(34,197,94,.1);border:.5px solid var(--grn);border-radius:10px;padding:12px;margin-bottom:12px;">
-        <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">✓ Vaikas pridėtas</div>
+        <div style="font-weight:900;color:var(--grn);margin-bottom:6px;">${ico('atlikta')} Vaikas pridėtas</div>
         <div style="font-size:12px;">${akData.fname} ${akData.lname}</div>
         <div style="font-size:11px;color:var(--mut);margin-top:4px;">Klubas: ${akData.club_name}</div>
         ${trainersList}
@@ -5344,7 +5344,7 @@ async function showKidDetail(kidId) {
   const { data: kid } = await sb.from('kids').select('*').eq('id', kidId).single();
   
   if (!kid) {
-    showToast('❌ Nepavyko užkrauti vaiko duomenų');
+    showToast(ico('klaida')+' Nepavyko užkrauti vaiko duomenų');
     return;
   }
   
@@ -5363,7 +5363,7 @@ async function showKidDetail(kidId) {
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;">VAIKO INFO</div>
-          <button onclick="showEditKidModal('${kidId}')" style="background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;">✏️ Redaguoti</button>
+          <button onclick="showEditKidModal('${kidId}')" style="background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;">${ico('redaguoti')} Redaguoti</button>
         </div>
         <div style="font-size:13px;line-height:1.7;">
           <div><strong>${fullName}</strong></div>
@@ -5372,10 +5372,10 @@ async function showKidDetail(kidId) {
           <div style="margin-top:6px;">EXP: <strong>${kid.total_exp || 0}</strong> · Lvl <strong>${kid.current_level || 1}</strong></div>
           ${kid.approval_status === 'rejected' ? `
           <div style="background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.4);border-radius:10px;padding:10px 12px;margin-top:8px;">
-            <div style="color:#EF4444;font-weight:800;font-size:13px;">❌ Anketa atmesta</div>
+            <div style="color:#EF4444;font-weight:800;font-size:13px;">${ico('klaida')} Anketa atmesta</div>
             <div style="color:var(--mut);font-size:12px;line-height:1.45;margin-top:4px;"><span style="color:#fff;font-weight:700;">Priežastis: </span>${kid.rejection_reason ? escapeHtml(kid.rejection_reason) : 'Susisiek su klubu.'}</div>
             <div style="color:var(--mut);font-size:11px;line-height:1.4;margin-top:6px;">Pataisyk anketą (vardą, gimimo datą, diržą, svorį…) ir siųsk iš naujo.</div>
-            <button onclick="showEditKidModal('${kidId}')" style="margin-top:9px;width:100%;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px;border-radius:8px;cursor:pointer;">🔄 Taisyti ir registruoti iš naujo</button>
+            <button onclick="showEditKidModal('${kidId}')" style="margin-top:9px;width:100%;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px;border-radius:8px;cursor:pointer;">${ico('atnaujinti')} Taisyti ir registruoti iš naujo</button>
           </div>` : `
           <div style="color:${kid.approval_status === 'approved' ? 'var(--grn)' : 'var(--br)'};margin-top:6px;font-weight:700;">
             ${kid.approval_status === 'approved' ? '✓ Patvirtinta' : '⏳ Laukia patvirtinimo'}
@@ -5420,7 +5420,7 @@ async function showKidDetail(kidId) {
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;">🏥 SVEIKATOS INFO</div>
-          <button onclick="parentToggleHealthEdit()" style="background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;">✏️ Redaguoti</button>
+          <button onclick="parentToggleHealthEdit()" style="background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;">${ico('redaguoti')} Redaguoti</button>
         </div>
         <div id="t-kid-health-display" style="font-size:13px;line-height:1.6;">
           ${renderHealthInfo(kid)}
@@ -5452,7 +5452,7 @@ async function showKidDetail(kidId) {
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;">📞 AVARINIS KONTAKTAS</div>
-          <button onclick="parentToggleEmergencyEdit()" style="background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;">✏️ Redaguoti</button>
+          <button onclick="parentToggleEmergencyEdit()" style="background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:4px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;">'+ico('redaguoti')+' Redaguoti</button>
         </div>
         <div id="t-kid-emergency-display" style="font-size:13px;line-height:1.6;">
           ${renderEmergencyInfo(kid)}
@@ -5653,12 +5653,12 @@ async function parentSaveHealth() {
   
   const { data, error } = await sb.from('kids').update(updates).eq('id', currentParentKid.id).select();
   
-  if (error) { showToast('❌ Klaida: ' + error.message, 'error', 5000); return; }
-  if (!data || data.length === 0) { showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000); return; }
+  if (error) { showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000); return; }
+  if (!data || data.length === 0) { showToast(ico('klaida')+' Negalima keisti - nepakanka teisių', 'error', 5000); return; }
   
   Object.assign(currentParentKid, updates);
   if (typeof syncParentKidCache === 'function') syncParentKidCache(currentParentKid.id, updates);
-  showToast('✅ Sveikatos info atnaujinta', 'success');
+  showToast(ico('patvirtinta')+' Sveikatos info atnaujinta', 'success');
   parentCancelHealthEdit();
   document.getElementById('t-kid-health-display').innerHTML = renderHealthInfo(currentParentKid);
 }
@@ -5692,12 +5692,12 @@ async function parentSaveEmergency() {
   
   const { data, error } = await sb.from('kids').update(updates).eq('id', currentParentKid.id).select();
   
-  if (error) { showToast('❌ Klaida: ' + error.message, 'error', 5000); return; }
-  if (!data || data.length === 0) { showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000); return; }
+  if (error) { showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000); return; }
+  if (!data || data.length === 0) { showToast(ico('klaida')+' Negalima keisti - nepakanka teisių', 'error', 5000); return; }
   
   Object.assign(currentParentKid, updates);
   if (typeof syncParentKidCache === 'function') syncParentKidCache(currentParentKid.id, updates);
-  showToast('✅ Avarinis kontaktas atnaujintas', 'success');
+  showToast(ico('patvirtinta')+' Avarinis kontaktas atnaujintas', 'success');
   parentCancelEmergencyEdit();
   document.getElementById('t-kid-emergency-display').innerHTML = renderEmergencyInfo(currentParentKid);
 }
@@ -5717,12 +5717,12 @@ async function parentToggleMediaConsent() {
   
   const { data, error } = await sb.from('kids').update({ media_consent: newConsent }).eq('id', currentParentKid.id).select();
   
-  if (error) { showToast('❌ Klaida: ' + error.message, 'error', 5000); return; }
-  if (!data || data.length === 0) { showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000); return; }
+  if (error) { showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000); return; }
+  if (!data || data.length === 0) { showToast(ico('klaida')+' Negalima keisti - nepakanka teisių', 'error', 5000); return; }
   
   currentParentKid.media_consent = newConsent;
   if (typeof syncParentKidCache === 'function') syncParentKidCache(currentParentKid.id, { media_consent: newConsent });
-  showToast(newConsent ? '✅ Media sutikimas: leidžiama' : '🚫 Media sutikimas: neleidžiama', 'success');
+  showToast(newConsent ? ico('patvirtinta')+' Media sutikimas: leidžiama' : ico('isjungta')+' Media sutikimas: neleidžiama', 'success');
   document.getElementById('t-kid-media-display').innerHTML = renderMediaConsent(currentParentKid, true);
 }
 
@@ -5733,7 +5733,7 @@ function showEditKidModal(kidId) {
   // Užkrauname dabartinius duomenis
   const kid = currentParentKid;
   if (!kid || kid.id !== kidId) {
-    showToast('❌ Klaida: vaiko duomenys neužkrauti');
+    showToast(ico('klaida')+' Klaida: vaiko duomenys neužkrauti');
     return;
   }
   
@@ -5780,7 +5780,7 @@ function showEditKidModal(kidId) {
     <div style="max-width:420px;margin:20px auto;background:var(--card);border-radius:20px;padding:24px;border:.5px solid var(--bdr);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">REDAGUOTI VAIKĄ</div>
-        <button onclick="closeEditKidModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+        <button onclick="closeEditKidModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">${ico('uzdaryti')}</button>
       </div>
       
       <!-- Vaiko info (read-only) -->
@@ -5864,7 +5864,7 @@ async function saveEditKid(kidId) {
     
     if (error) throw error;
     
-    showToast('✓ Duomenys atnaujinti');
+    showToast(ico('atlikta')+' Duomenys atnaujinti');
     closeEditKidModal();
 
     // Atnaujinam ekraną + tėvo cache (parentActiveKid/parentKids)
@@ -5891,7 +5891,7 @@ function showAddKidAccess(kidId) {
   
   const trimmedEmail = newEmail.trim().toLowerCase();
   if (!trimmedEmail || !trimmedEmail.includes('@')) {
-    showToast('❌ Neteisingas email\'as');
+    showToast(ico('klaida')+' Neteisingas email\'as');
     return;
   }
   
@@ -5902,7 +5902,7 @@ async function addKidEmailAccess(kidId, newEmail) {
   // Validuojam email
   const emailRegex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!emailRegex.test(newEmail)) {
-    showToast('❌ Email turi tik lotyniškas raides, skaičius, +-_.');
+    showToast(ico('klaida')+' Email turi tik lotyniškas raides, skaičius, +-_.');
     return;
   }
   
@@ -5930,7 +5930,7 @@ async function addKidEmailAccess(kidId, newEmail) {
     if (signUpError) {
       if (signUpError.message.includes('already')) {
         // Jei email jau egzistuoja - bandom rasti per email
-        showToast('⚠️ Email jau registruotas. Siunčiame slaptažodžio atstatymo nuorodą.', 'error', 5000);
+        showToast(ico('ispejimas')+' Email jau registruotas. Siunčiame slaptažodžio atstatymo nuorodą.', 'error', 5000);
         await sb.auth.resetPasswordForEmail(newEmail, {
           redirectTo: `${window.location.origin}/spobu/set-password.html`
         });
@@ -5962,7 +5962,7 @@ async function addKidEmailAccess(kidId, newEmail) {
       redirectTo: `${window.location.origin}/spobu/set-password.html`
     });
     
-    showToast('✅ Vaiko paskyra sukurta! Laiškas išsiųstas.', 'success', 6000);
+    showToast(ico('patvirtinta')+' Vaiko paskyra sukurta! Laiškas išsiųstas.', 'success', 6000);
     
     // Atnaujinam ekraną
     setTimeout(async () => {
@@ -5972,7 +5972,7 @@ async function addKidEmailAccess(kidId, newEmail) {
     
   } catch (error) {
     console.error('addKidEmailAccess error:', error);
-    showToast('❌ Klaida: ' + (error.message || 'nežinoma'));
+    showToast(ico('klaida')+' Klaida: ' + (error.message || 'nežinoma'));
   }
 }
 
@@ -6288,7 +6288,7 @@ async function openArchiveBadgesModal() {
           <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🗄️ SKILL BADGES · IKI 14 M.</div>
           <div style="font-size:9px;color:#4FC3F7;font-weight:800;letter-spacing:.5px;margin-top:1px;">📌 13 metų užšaldyta era${meta ? ` · LVL ${meta.level || 1}` : ''}</div>
         </div>
-        <button onclick="document.getElementById('prof-archive-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+        <button onclick="document.getElementById('prof-archive-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">${cards || '<div style="grid-column:span 3;text-align:center;padding:20px;color:var(--mut);font-size:11px;">Nėra archyvo</div>'}</div>
@@ -6755,21 +6755,21 @@ async function uploadKidAvatar(inputEl) {
   try {
     const file = inputEl?.files?.[0];
     if (!file) return;
-    if (!currentKid?.id) { showToast('❌ Nėra vaiko profilio', 'error'); return; }
-    if (!file.type.startsWith('image/')) { showToast('❌ Pasirink nuotrauką', 'error'); return; }
+    if (!currentKid?.id) { showToast(ico('klaida')+' Nėra vaiko profilio', 'error'); return; }
+    if (!file.type.startsWith('image/')) { showToast(ico('klaida')+' Pasirink nuotrauką', 'error'); return; }
 
     showToast('📷 Įkeliama nuotrauka...', 'info');
     const blob = await _compressImage(file);
     const path = `${currentKid.id}.jpg`;
     const { error: upErr } = await sb.storage.from(KID_AVATAR_BUCKET)
       .upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '3600' });
-    if (upErr) { console.error('[avatar] upload:', upErr); showToast('❌ Įkelti nepavyko: ' + upErr.message, 'error', 5000); return; }
+    if (upErr) { console.error('[avatar] upload:', upErr); showToast(ico('klaida')+' Įkelti nepavyko: ' + upErr.message, 'error', 5000); return; }
 
     const { data: pub } = sb.storage.from(KID_AVATAR_BUCKET).getPublicUrl(path);
     const cleanUrl = pub.publicUrl;
 
     const { error: dbErr } = await sb.from('kids').update({ avatar_url: cleanUrl }).eq('id', currentKid.id);
-    if (dbErr) { console.error('[avatar] db:', dbErr); showToast('❌ Išsaugoti nepavyko: ' + dbErr.message, 'error', 5000); return; }
+    if (dbErr) { console.error('[avatar] db:', dbErr); showToast(ico('klaida')+' Išsaugoti nepavyko: ' + dbErr.message, 'error', 5000); return; }
 
     currentKid.avatar_url = cleanUrl;
     const bust = cleanUrl + '?r=' + new Date().getTime();
@@ -6778,10 +6778,10 @@ async function uploadKidAvatar(inputEl) {
     const _rm = document.getElementById('kid-avatar-remove');
     if (_rm) _rm.style.display = 'block';
     if (typeof loadKidData === 'function') loadKidData();
-    showToast('✅ Nuotrauka atnaujinta!', 'success');
+    showToast(ico('patvirtinta')+' Nuotrauka atnaujinta!', 'success');
   } catch (e) {
     console.error('[avatar] klaida:', e);
-    showToast('❌ Klaida: ' + (e.message || ''), 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + (e.message || ''), 'error', 5000);
   }
 }
 
@@ -6796,9 +6796,9 @@ async function removeKidAvatar() {
     applyAvatarById('kid-settings-avatar-preview', null, currentProfile?.first_name?.[0]);
     const _rm = document.getElementById('kid-avatar-remove');
     if (_rm) _rm.style.display = 'none';
-    showToast('✅ Nuotrauka pašalinta', 'success');
+    showToast(ico('patvirtinta')+' Nuotrauka pašalinta', 'success');
   } catch (e) {
-    showToast('❌ Klaida: ' + (e.message || ''), 'error');
+    showToast(ico('klaida')+' Klaida: ' + (e.message || ''), 'error');
   }
 }
 
@@ -8115,7 +8115,7 @@ async function renderProfileExtras() {
       if (mates.length > SHOW) {
         html += `
           <div onclick="openTeammatesModal()" style="padding:6px;text-align:center;border-top:.5px solid var(--bdr);cursor:pointer;background:rgba(255,255,255,.02);">
-            <span style="font-size:10px;color:#FF8C00;font-weight:800;letter-spacing:.5px;">▼ VISI DRAUGAI (${mates.length})</span>
+            <span style="font-size:10px;color:#FF8C00;font-weight:800;letter-spacing:.5px;">${ico('isskleisti')} VISI DRAUGAI (${mates.length})</span>
           </div>
         `;
       }
@@ -8230,8 +8230,8 @@ async function renderMyDuels() {
         } else {
           statusBlock = `
             <div style="display:flex;gap:6px;margin-top:8px;">
-              <button onclick="respondToDuel('${d.id}','accept')" style="flex:1;padding:8px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:8px;color:white;font-size:11px;font-weight:800;cursor:pointer;">✅ PRIIMTI</button>
-              <button onclick="respondToDuel('${d.id}','decline')" style="flex:1;padding:8px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:8px;color:#EF4444;font-size:11px;font-weight:800;cursor:pointer;">✕ ATMESTI</button>
+              <button onclick="respondToDuel('${d.id}','accept')" style="flex:1;padding:8px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:8px;color:white;font-size:11px;font-weight:800;cursor:pointer;">${ico('patvirtinta')} PRIIMTI</button>
+              <button onclick="respondToDuel('${d.id}','decline')" style="flex:1;padding:8px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:8px;color:#EF4444;font-size:11px;font-weight:800;cursor:pointer;">${ico('uzdaryti')} ATMESTI</button>
             </div>
           `;
         }
@@ -8239,7 +8239,7 @@ async function renderMyDuels() {
         if (iSubmitted) {
           statusBlock = `
             <div style="background:rgba(34,197,94,.1);border-radius:8px;padding:7px;margin-top:6px;text-align:center;">
-              <div style="font-size:10px;color:#22C55E;font-weight:700;">✅ Tavo rezultatas: ${myValue} ${t.unit} · laukiam ${opponentName}</div>
+              <div style="font-size:10px;color:#22C55E;font-weight:700;">${ico('patvirtinta')} Tavo rezultatas: ${myValue} ${t.unit} · laukiam ${opponentName}</div>
             </div>
           `;
         } else {
@@ -8327,17 +8327,17 @@ async function respondToDuel(duelId, action) {
       .eq('id', duelId);
     
     if (error) {
-      showToast('❌ Klaida: ' + error.message, 'error');
+      showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
       return;
     }
-    showToast('✅ Dvikova priimta! Dabar atlik užduotį ir įvesk rezultatą.', 'success');
+    showToast(ico('patvirtinta')+' Dvikova priimta! Dabar atlik užduotį ir įvesk rezultatą.', 'success');
   } else {
     const { error } = await sb.from('duels')
       .update({ status: 'declined' })
       .eq('id', duelId);
     
     if (error) {
-      showToast('❌ Klaida: ' + error.message, 'error');
+      showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
       return;
     }
     showToast('Dvikova atmesta.', 'info');
@@ -8383,14 +8383,14 @@ async function submitDuelResult(duelId) {
   const value = parseFloat(valueEl?.value);
 
   if (isNaN(value) || value <= 0) {
-    showToast('❌ Įvesk teisingą skaičių (didesnį už 0)', 'error');
+    showToast(ico('klaida')+' Įvesk teisingą skaičių (didesnį už 0)', 'error');
     return;
   }
   
   // Gauti dvikovą
   const { data: duel } = await sb.from('duels').select('*').eq('id', duelId).single();
   if (!duel) {
-    showToast('❌ Dvikova nerasta', 'error');
+    showToast(ico('klaida')+' Dvikova nerasta', 'error');
     return;
   }
 
@@ -8401,7 +8401,7 @@ async function submitDuelResult(duelId) {
   }
   const _myVal = (duel.challenger_id === currentKid.id) ? duel.challenger_value : duel.opponent_value;
   if (_myVal !== null && _myVal !== undefined) {
-    showToast('✅ Savo rezultatą jau pateikei — laukiam draugo', 'info');
+    showToast(ico('patvirtinta')+' Savo rezultatą jau pateikei — laukiam draugo', 'info');
     return;
   }
 
@@ -8422,16 +8422,16 @@ async function submitDuelResult(duelId) {
   const { error } = await sb.from('duels').update(updateData).eq('id', duelId);
   
   if (error) {
-    showToast('❌ Klaida: ' + error.message, 'error');
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
     return;
   }
   
   document.getElementById('duel-result-modal')?.remove();
   
   if (updateData.status === 'submitted') {
-    showToast('✅ Rezultatas pateiktas! Laukiama trenerio patvirtinimo.', 'success');
+    showToast(ico('patvirtinta')+' Rezultatas pateiktas! Laukiama trenerio patvirtinimo.', 'success');
   } else {
-    showToast('✅ Tavo rezultatas išsaugotas! Laukiam draugo.', 'success');
+    showToast(ico('patvirtinta')+' Tavo rezultatas išsaugotas! Laukiam draugo.', 'success');
   }
   playSound('send');
   
@@ -8489,7 +8489,7 @@ function openTeammatesModal() {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🤝 KOMANDOS DRAUGAI</div>
-        <button onclick="document.getElementById('teammates-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+        <button onclick="document.getElementById('teammates-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:12px 16px;">
         <div style="padding:8px 10px;background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,77,0,.04));border-radius:10px;margin-bottom:10px;text-align:center;">
@@ -8609,7 +8609,7 @@ async function openFriendModal(friendJson) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">👤 KOMANDOS DRAUGAS</div>
-        <button onclick="document.getElementById('friend-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+        <button onclick="document.getElementById('friend-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;${stage.bgGradient ? `background:${stage.bgGradient};` : ''}" id="friend-modal-body">
         <!-- HERO su kanji + progreso žiedu -->
@@ -8772,7 +8772,7 @@ async function openDuelChallenge(friendJson) {
   // Užkrauti vaiko trenerius
   const myTrainers = await getMyTrainers();
   if (myTrainers.length === 0) {
-    showToast('❌ Neturi priskirto trenerio - negali kviesti dvikovos', 'error');
+    showToast(ico('klaida')+' Neturi priskirto trenerio - negali kviesti dvikovos', 'error');
     return;
   }
   
@@ -8801,7 +8801,7 @@ async function openDuelChallenge(friendJson) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🥊 DVIKOVA SU ${friendName.toUpperCase()}</div>
-        <button onclick="document.getElementById('duel-challenge-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">✕</button>
+        <button onclick="document.getElementById('duel-challenge-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;">
         <div style="font-size:10px;color:#EC407A;font-weight:800;letter-spacing:1px;margin-bottom:8px;">1️⃣ DVIKOVOS TIPAS</div>
@@ -8861,7 +8861,7 @@ async function sendDuelChallenge() {
   // Validacija - tipas
   const duelType = data.selectedType;
   if (!duelType || !DUEL_TYPES[duelType]) {
-    showToast('❌ Pasirink dvikovos tipą', 'error');
+    showToast(ico('klaida')+' Pasirink dvikovos tipą', 'error');
     return;
   }
   
@@ -8869,7 +8869,7 @@ async function sendDuelChallenge() {
   const trainerSelect = document.getElementById('duel-trainer-select');
   const chosenTrainerId = trainerSelect?.value;
   if (!chosenTrainerId) {
-    showToast('❌ Pasirink trenerį', 'error');
+    showToast(ico('klaida')+' Pasirink trenerį', 'error');
     return;
   }
   
@@ -8877,7 +8877,7 @@ async function sendDuelChallenge() {
   const noteInput = document.getElementById('duel-note-input');
   const note = (noteInput?.value || '').trim();
   if (!note) {
-    showToast('❌ Parašyk žinutę draugui', 'error');
+    showToast(ico('klaida')+' Parašyk žinutę draugui', 'error');
     return;
   }
   
@@ -8896,7 +8896,7 @@ async function sendDuelChallenge() {
     
     if (error) {
       console.error('sendDuelChallenge:', error);
-      showToast('❌ Klaida: ' + error.message, 'error');
+      showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
       return;
     }
     
@@ -8911,7 +8911,7 @@ async function sendDuelChallenge() {
     renderProfileExtras();
   } catch(e) {
     console.error('sendDuelChallenge:', e);
-    showToast('❌ Klaida siunčiant dvikovą', 'error');
+    showToast(ico('klaida')+' Klaida siunčiant dvikovą', 'error');
   }
 }
 
@@ -9020,7 +9020,7 @@ async function openTrophiesModal(kidId, kidName) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${titleText}</div>
-        <button onclick="document.getElementById('prof-trophies-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+        <button onclick="document.getElementById('prof-trophies-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;" id="prof-trophies-modal-body">
         <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
@@ -9185,7 +9185,7 @@ async function openBadgesModal(kidId, kidName) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${titleText}</div>
-        <button onclick="document.getElementById('prof-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+        <button onclick="document.getElementById('prof-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
@@ -9215,7 +9215,7 @@ async function openChallengeTypesModal(kidId, kidName) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${titleText}</div>
-        <button onclick="document.getElementById('prof-challenges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+        <button onclick="document.getElementById('prof-challenges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;" id="prof-challenges-modal-body">
         <div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Kraunama...</div>
@@ -9325,13 +9325,13 @@ function openBioEdit() {
     .eq('id', currentKid.id)
     .then(({ error }) => {
       if (error) {
-        showToast('❌ Klaida: ' + error.message, 'error');
+        showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
         console.error('bio update:', error);
       } else {
         currentKid.bio = newBio.trim() || null;
         const bioEl = document.getElementById('v-prof-bio');
         if (bioEl) bioEl.textContent = currentKid.bio || '"Karatė nėra kovos sportas - tai kelias į asmenybės ugdymą."';
-        showToast('✅ Motto atnaujintas!', 'success');
+        showToast(ico('patvirtinta')+' Motto atnaujintas!', 'success');
       }
     });
 }
@@ -9913,7 +9913,7 @@ function showChallengeApprovedPopup(challenge, submission) {
   `;
   
   popup.innerHTML = `
-    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">✓ TRENERIS PATVIRTINO</div>
+    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${ico('atlikta')} TRENERIS PATVIRTINO</div>
     
     <div style="font-size:13px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:14px;line-height:1.3;">${title}</div>
     
@@ -10186,7 +10186,7 @@ function showDuelChallengePopup(duel, challengerName) {
     <div style="height:1px;background:linear-gradient(90deg,transparent,#FF4D00,transparent);margin:14px 0;"></div>
     
     <div style="display:flex;gap:8px;">
-      <button onclick="respondToDuelFromPopup('${duel.id}','accept')" style="flex:2;padding:12px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:12px;color:white;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 12px #22C55E88;">✅ PRIIMTI</button>
+      <button onclick="respondToDuelFromPopup('${duel.id}','accept')" style="flex:2;padding:12px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:12px;color:white;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 12px #22C55E88;">${ico('patvirtinta')} PRIIMTI</button>
       <button onclick="respondToDuelFromPopup('${duel.id}','decline')" style="flex:1;padding:12px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:12px;color:#EF4444;font-size:12px;font-weight:800;cursor:pointer;">ATMESTI</button>
     </div>
   `;
@@ -10328,7 +10328,7 @@ function showStreakBonusPopup(bonus, submissionInfo, onClose) {
   
   popup.innerHTML = `
     <!-- ✅ TRENERIO PATVIRTINIMAS -->
-    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">✓ TRENERIS PATVIRTINO</div>
+    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${ico('atlikta')} TRENERIS PATVIRTINO</div>
     
     <!-- IŠŠŪKIO PAVADINIMAS -->
     <div style="font-size:13px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:14px;line-height:1.3;">${challengeTitle}</div>
@@ -10897,7 +10897,7 @@ async function loadChallenges() {
       // 📊 PARTIAL iššūkis - daug submissions galima
       if (isPartialFullyDone) {
         // Visiškai atliktas
-        statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">✅ Pilnai atlikta!</span>`;
+        statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">${ico('patvirtinta')} Pilnai atlikta!</span>`;
       } else if (pendingSub) {
         statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">⏳ Laukia patvirtinimo: ${pendingSub.value}</span>`;
         // Net laukiant - galima pateikti dar (jei netruks - susikaups)
@@ -10914,14 +10914,14 @@ async function loadChallenges() {
     } else {
       // Standartinis (be tarpinių) - sena logika
       if (approvedSub) {
-        statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">✅ Atlikta: ${approvedSub.value} ${ch.target_unit || ''}</span>`;
+        statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">${ico('patvirtinta')} Atlikta: ${approvedSub.value} ${ch.target_unit || ''}</span>`;
         if (ch.type === 'permanent' && !isCompletedTab) {
           actionButton = `<button style="margin-top:5px;padding:5px 10px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:8px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;float:right;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">PAKARTOTI</button>`;
         }
       } else if (pendingSub) {
         statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">⏳ Laukia patvirtinimo: ${pendingSub.value}</span>`;
       } else if (rejectedSub) {
-        statusBadge = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">❌ Atmesta</span>`;
+        statusBadge = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">${ico('klaida')} Atmesta</span>`;
         if (!isExpired && !isCompletedTab) {
           actionButton = `<button style="margin-top:5px;padding:5px 10px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:8px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;float:right;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">BANDYTI DAR KARTĄ</button>`;
         }
@@ -11051,7 +11051,7 @@ function openKidChallengesModal() {
       <!-- HEADER -->
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🎯 VISI IŠŠŪKIAI (${count})</div>
-        <button onclick="document.getElementById('kid-challenges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+        <button onclick="document.getElementById('kid-challenges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       
       <!-- TURINYS - scroll'inamas -->
@@ -11082,7 +11082,7 @@ async function openSubmitChallenge(challengeId) {
     .single();
   
   if (error || !challenge) {
-    showToast('❌ Iššūkis nerastas', 'error');
+    showToast(ico('klaida')+' Iššūkis nerastas', 'error');
     return;
   }
   
@@ -11115,11 +11115,11 @@ async function submitChallengeResult() {
   const numericValue = parseFloat(resultStr);
   
   if (!resultStr) {
-    showToast('❌ Įvesk rezultatą', 'error');
+    showToast(ico('klaida')+' Įvesk rezultatą', 'error');
     return;
   }
   if (isNaN(numericValue) || numericValue < 0) {
-    showToast('❌ Neteisingas skaičius', 'error');
+    showToast(ico('klaida')+' Neteisingas skaičius', 'error');
     return;
   }
   
@@ -11158,7 +11158,7 @@ function _chPickTrainer(trainerId){
   _doChallengeSubmit(trainerId, p.value, p.numeric);
 }
 async function _doChallengeSubmit(trainerId, resultStr, numericValue){
-  if (!trainerId){ showToast('❌ Nėra trenerio — susisiek su klubu','error',5000); return; }
+  if (!trainerId){ showToast(ico('klaida')+' Nėra trenerio — susisiek su klubu','error',5000); return; }
   const btn = document.getElementById('vsc-submit-btn'); if(btn){ btn.disabled=true; btn.textContent='SIUNČIAMA...'; }
   const { data, error } = await sb.from('challenge_submissions').insert({
     challenge_id: currentChallengeForSubmission.id,
@@ -11169,9 +11169,9 @@ async function _doChallengeSubmit(trainerId, resultStr, numericValue){
     status: 'pending'
   }).select();
   if(btn){ btn.disabled=false; btn.textContent='SIŲSTI'; }
-  if (error){ console.error('Challenge submission error:', error); showToast('❌ Klaida: ' + error.message, 'error', 5000); return; }
-  if (!data || data.length === 0){ showToast('❌ Nepavyko išsiųsti', 'error', 5000); return; }
-  showToast('✅ Rezultatas išsiųstas treneriui patvirtinimui!', 'success', 4000);
+  if (error){ console.error('Challenge submission error:', error); showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000); return; }
+  if (!data || data.length === 0){ showToast(ico('klaida')+' Nepavyko išsiųsti', 'error', 5000); return; }
+  showToast(ico('patvirtinta')+' Rezultatas išsiųstas treneriui patvirtinimui!', 'success', 4000);
   playSound('send');
   notifyTrainersNewSubmission('🎯 Naujas iššūkio pateikimas', 'pateikė iššūkį — laukia patvirtinimo');
   closeSubmitChallenge();
@@ -11291,7 +11291,7 @@ function generateBeltCertificateSvg(passed, newKyu, size = 80) {
       <rect x="13" y="18" width="54" height="54" rx="2" fill="none" stroke="#888" stroke-width="0.3"/>
       <text x="40" y="38" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="600" fill="#444">DIRŽO</text>
       <text x="40" y="50" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="600" fill="#444">TESTAS</text>
-      <text x="40" y="62" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="#16A34A">✓ IŠLAIKĖ</text>
+      <text x="40" y="62" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="#16A34A">${ico('atlikta')} IŠLAIKĖ</text>
       <rect x="8" y="75" width="64" height="8" fill="${config.color}" stroke="${config.stroke}" stroke-width="0.5"/>
       ${config.stripe ? `<rect x="60" y="75" width="3" height="8" fill="${config.stripe}"/>` : ''}
     </svg>`;
@@ -11482,7 +11482,7 @@ function openCreateCompetition(preType) {
     if (_typesRow) _typesRow.style.display = isBeltForm ? 'none' : '';
     if (_typesLbl && _typesLbl.classList && _typesLbl.classList.contains('lbl')) _typesLbl.style.display = isBeltForm ? 'none' : '';
     const visible = Array.from(document.querySelectorAll('#kcmo .chs .ch[data-type]')).filter(c => c.style.display !== 'none');
-    if (!visible.length) { showToast('⚠️ Klubas išjungė varžybas ir diržų laikymą', 'error', 4000); return; }
+    if (!visible.length) { showToast(ico('ispejimas')+' Klubas išjungė varžybas ir diržų laikymą', 'error', 4000); return; }
     const curChip = document.querySelector(`#kcmo [data-type="${document.getElementById('kc-type').value}"]`);
     if (!curChip || curChip.style.display === 'none') { selectCompType(visible[0], visible[0].getAttribute('data-type')); }
   } catch(e){}
@@ -11519,20 +11519,20 @@ async function submitNewCompetition() {
   const url = document.getElementById('kc-url').value.trim();
   const info = document.getElementById('kc-info').value.trim();
   
-  if (!title) { showToast('❌ Įvesk pavadinimą', 'error'); return; }
-  if (!date) { showToast('❌ Pasirink datą', 'error'); return; }
-  if (!location) { showToast('❌ Įvesk vietą', 'error'); return; }
+  if (!title) { showToast(ico('klaida')+' Įvesk pavadinimą', 'error'); return; }
+  if (!date) { showToast(ico('klaida')+' Pasirink datą', 'error'); return; }
+  if (!location) { showToast(ico('klaida')+' Įvesk vietą', 'error'); return; }
 
   // 🚩 Tipas turi būti klubo leistas (apsauga, jei kažkaip apeita forma)
   const _compFlag = (type === 'belt_test') ? 'belt_grading_enabled' : 'competitions_enabled';
   if (typeof flagOn === 'function' && !flagOn(_compFlag)) {
-    showToast(type === 'belt_test' ? '❌ Diržų laikymas klube išjungtas' : '❌ Varžybos klube išjungtos', 'error', 4000); return;
+    showToast(type === 'belt_test' ? ico('klaida')+' Diržų laikymas klube išjungtas' : ico('klaida')+' Varžybos klube išjungtos', 'error', 4000); return;
   }
 
   // Patikrinti klubo ID (admin)
   const clubId = currentClub?.id;
   if (!clubId) {
-    showToast('❌ Klubo info trūksta', 'error');
+    showToast(ico('klaida')+' Klubo info trūksta', 'error');
     return;
   }
   
@@ -11564,16 +11564,16 @@ async function submitNewCompetition() {
   
   if (error) {
     console.error('submitNewCompetition error:', error);
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
     return;
   }
   
   if (!data || data.length === 0) {
-    showToast('❌ Nepavyko sukurti', 'error', 5000);
+    showToast(ico('klaida')+' Nepavyko sukurti', 'error', 5000);
     return;
   }
   
-  showToast(`✅ Varžybos sukurtos!\n\n${title}`, 'success');
+  showToast(`${ico('patvirtinta')} Varžybos sukurtos!\n\n${title}`, 'success');
   closeCreateCompetition();
   
   // Perkrauti sąrašą
@@ -11727,7 +11727,7 @@ async function loadClubCompetitions() {
       </div>`:''}
       <div style="display:flex;gap:6px;">
         <button onclick="viewCompetitionParticipants('${c.id}', '${safe}')" style="flex:1;background:rgba(255,77,0,.06);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:9px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">👥 Dalyviai</button>
-        <button onclick="deleteCompetition('${c.id}', '${safe}')" style="flex-shrink:0;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:9px 14px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">🗑️</button>
+        <button onclick="deleteCompetition('${c.id}', '${safe}')" style="flex-shrink:0;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:9px 14px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">${ico('trinti')}</button>
       </div>
     </div>`;
   });
@@ -11879,12 +11879,12 @@ async function openEventPostCard(type, id){
   try {
     showToast('📣 Generuojama...');
     const d = await _buildEventCardData(type, id);
-    if (!d){ showToast('❌ Nepavyko surinkti duomenų','error'); return; }
+    if (!d){ showToast(ico('klaida')+' Nepavyko surinkti duomenų','error'); return; }
     _lastCardData = d;
     const cv = await _drawEventCard(d);
     _lastCardCanvas = cv;
     _showCardModal(cv);
-  } catch(e){ console.error('[event-card]', e); showToast('❌ '+(e.message||'Klaida'),'error'); }
+  } catch(e){ console.error('[event-card]', e); showToast(ico('klaida')+' '+(e.message||'Klaida'),'error'); }
 }
 
 function _showCardModal(canvas){
@@ -11897,7 +11897,7 @@ function _showCardModal(canvas){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:94vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">📣 RENGINIO POSTAS</div>
-      <button onclick="document.getElementById('event-card-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('event-card-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px 20px;">
       <img id="event-card-img" src="${url}" style="width:100%;border-radius:14px;border:.5px solid var(--bdr);margin-bottom:12px;" alt="postas">
@@ -11926,10 +11926,10 @@ async function _shareEventCard(){
 function _downloadEventCard(){
   if (!_lastCardCanvas) return;
   const a = document.createElement('a'); a.href = _lastCardCanvas.toDataURL('image/png'); a.download = 'spobu-postas.png'; a.click();
-  showToast('✓ Atsisiųsta');
+  showToast(ico('atlikta')+' Atsisiųsta');
 }
 async function _copyEventCard(){
-  try { const b = await _cardBlob(); if (!b) return; await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); showToast('✓ Nukopijuota'); }
+  try { const b = await _cardBlob(); if (!b) return; await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]); showToast(ico('atlikta')+' Nukopijuota'); }
   catch(e){ showToast('Kopijavimas nepalaikomas — naudok „Atsisiųsti"','error',4500); }
 }
 
@@ -11971,7 +11971,7 @@ function _drawEventCardWithPhoto(img, d){
   return cv;
 }
 function _pickEventPhoto(){
-  if (!_lastCardData){ showToast('❌ Pirma atidaryk postą','error'); return; }
+  if (!_lastCardData){ showToast(ico('klaida')+' Pirma atidaryk postą','error'); return; }
   const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
   inp.onchange = () => {
     const f = inp.files && inp.files[0]; if (!f) return;
@@ -11979,10 +11979,10 @@ function _pickEventPhoto(){
     img.onload = async () => {
       try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
       try { const cv = _drawEventCardWithPhoto(img, _lastCardData); _lastCardCanvas = cv; _updateCardPreview(cv); }
-      catch(e){ console.error('[photo-card]',e); showToast('❌ '+(e.message||''),'error'); }
+      catch(e){ console.error('[photo-card]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
       try { URL.revokeObjectURL(img.src); } catch(e){}
     };
-    img.onerror = () => showToast('❌ Nepavyko užkrauti nuotraukos','error');
+    img.onerror = () => showToast(ico('klaida')+' Nepavyko užkrauti nuotraukos','error');
     img.src = URL.createObjectURL(f);
   };
   inp.click();
@@ -12080,7 +12080,7 @@ async function loadClubBeltTests(){
       </div>`:''}
       <div style="display:flex;gap:6px;">
         <button onclick="viewCompetitionParticipants('${c.id}', '${safe}')" style="flex:1;background:rgba(255,77,0,.06);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:9px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">👥 Dalyviai</button>
-        <button onclick="deleteCompetition('${c.id}', '${safe}')" style="flex-shrink:0;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:9px 14px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">🗑️</button>
+        <button onclick="deleteCompetition('${c.id}', '${safe}')" style="flex-shrink:0;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:9px 14px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">${ico('trinti')}</button>
       </div>
     </div>`;
   });
@@ -12118,7 +12118,7 @@ function markAllClubNotifRead(){
   }
   _updateClubNotifCounts();
   renderClubNotifTab(clubNotifTab);
-  showToast('✓ Pažymėta','success');
+  showToast(ico('atlikta')+' Pažymėta','success');
 }
 
 // ════════════════════════════════════════
@@ -12245,7 +12245,7 @@ async function toggleClubPushPref(key){
   if (turningOn && localStorage.getItem('spobu_push_on')!=='1'){ const ok=(typeof enablePushNotifications==='function')?await enablePushNotifications():false; if(!ok){ _applyClubPushSwitch(key,false); return; } }
   _clubPushPrefs[key]=turningOn; _applyClubPushSwitch(key,turningOn);
   if (currentProfile) currentProfile.push_prefs={ ...(currentProfile.push_prefs||{}), ..._clubPushPrefs };
-  try { const {error}=await sb.from('profiles').update({ push_prefs: currentProfile.push_prefs }).eq('id',currentUser.id); if(error && typeof showToast==='function') showToast('⚠️ Neišsaugota (ar paleidai SQL push_prefs?)','error',7000); } catch(e){}
+  try { const {error}=await sb.from('profiles').update({ push_prefs: currentProfile.push_prefs }).eq('id',currentUser.id); if(error && typeof showToast==='function') showToast(ico('ispejimas')+' Neišsaugota (ar paleidai SQL push_prefs?)','error',7000); } catch(e){}
   if (typeof _updateClubNotifCounts==='function') _updateClubNotifCounts();
   const s=document.getElementById('kh-notif-section'); if(s && s.style.display!=='none' && typeof renderClubNotifTab==='function') renderClubNotifTab(clubNotifTab);
 }
@@ -12321,7 +12321,7 @@ function _renderClubMsgTab(list, items){
   const shown = _clubMsgSub==='unread' ? unreadItems : vis;
   const chip = on => on ? 'background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);' : 'background:transparent;color:var(--mut);border:.5px solid var(--bdr);';
   const toggle = `<div style="display:flex;gap:6px;margin-bottom:10px;">
-    <button onclick="_setClubMsgSub('unread')" style="flex:1;${chip(_clubMsgSub==='unread')}padding:8px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;">🔴 Neperskaityti${unreadItems.length?' ('+unreadItems.length+')':''}</button>
+    <button onclick="_setClubMsgSub('unread')" style="flex:1;${chip(_clubMsgSub==='unread')}padding:8px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;"><span class="dot dot-bad"></span> Neperskaityti${unreadItems.length?' ('+unreadItems.length+')':''}</button>
     <button onclick="_setClubMsgSub('all')" style="flex:1;${chip(_clubMsgSub==='all')}padding:8px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;">💬 Pokalbiai</button>
   </div>`;
   if (!shown.length){
@@ -12379,7 +12379,7 @@ function openClubNotifPrefs(){
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100006;align-items:flex-end;justify-content:center;';
   m.onclick=e=>{ if(e.target===m) m.remove(); };
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔔 PUSH PRANEŠIMAI</div><button onclick="document.getElementById('club-notif-prefs').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('pranesimai')} PUSH PRANEŠIMAI</div><button onclick="document.getElementById('club-notif-prefs').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div style="padding:14px 16px 22px;">
       <div style="font-size:11px;color:var(--mut);margin:0 2px 12px;">Įjunk, apie ką nori gauti pranešimus į telefoną — net kai programėlė uždaryta. Tas pats filtras galioja ir varpeliui.</div>
       ${rowP('📋','Klubas','Registracijos, neaktyvūs vaikai, ataskaitos','club_admin')}
@@ -12399,7 +12399,7 @@ function openClubRolesGuide(){
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100006;align-items:flex-end;justify-content:center;';
   m.onclick=e=>{ if(e.target===m) m.remove(); };
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">ℹ️ KAIP VEIKIA SPOBU</div><button onclick="document.getElementById('club-roles-guide').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">ℹ️ KAIP VEIKIA SPOBU</div><button onclick="document.getElementById('club-roles-guide').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div style="padding:14px 16px 24px;">
       <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Keturios paskyros, kiekviena su savo vaidmeniu. Kad viskas suktųsi — kiekvienas daro savo dalį:</div>
       ${role('🏢','KLUBAS — tu (administratorius)','#3B82F6',['Kuri grupes ir priskiri joms trenerius','Tvirtini arba atmeti naujų vaikų registracijas','Kuri varžybas, diržų laikymą, stovyklas, grupių iššūkius','Kvieti ir valdai trenerius','Matai analitiką, apyvartą, bonusą'])}
@@ -12430,7 +12430,7 @@ function openClubInfo(screen){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">${t[0]}</div>
-      <button onclick="document.getElementById('club-info-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('club-info-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:18px 20px;font-size:13px;color:var(--text);line-height:1.6;">${t[1]}</div>
   </div>`;
@@ -12486,8 +12486,8 @@ function openClubAccountMenu(){
   const rs = 'background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:13px;cursor:pointer;';
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">⚙️ NUSTATYMAI</div>
-      <button onclick="document.getElementById('club-acct-menu').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">${ico('nustatymai')} NUSTATYMAI</div>
+      <button onclick="document.getElementById('club-acct-menu').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:14px 20px;border-bottom:.5px solid var(--bdr);background:rgba(255,77,0,.05);">
       <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:800;margin-bottom:6px;">PRISIJUNGĘS KAIP</div>
@@ -12500,7 +12500,7 @@ function openClubAccountMenu(){
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Garsai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;" id="club-sound-status">Pranešimų garsai</div></div>
       </div>
       <div onclick="document.getElementById('club-acct-menu').remove();openClubNotifPrefs();" style="${rs}">
-        <div style="font-size:24px;flex-shrink:0;">🔔</div>
+        <div style="font-size:24px;flex-shrink:0;">${ico('pranesimai')}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Push pranešimai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">3 tipai: klubas, renginiai, žinutės — net su uždarytu appsu</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
@@ -12515,7 +12515,7 @@ function openClubAccountMenu(){
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>` : ''}
       ${!_clubManagerMode ? `<div onclick="document.getElementById('club-acct-menu').remove();openClubSettings();" style="${rs}">
-        <div style="font-size:24px;flex-shrink:0;">⚙️</div>
+        <div style="font-size:24px;flex-shrink:0;">${ico('nustatymai')}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Klubo funkcijos ir logotipas</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Įjunk/išjunk funkcijas, keisk logo ir info</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>` : ''}
@@ -12556,27 +12556,27 @@ function openClubChangePassword(){
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100005;align-items:flex-end;justify-content:center;';
   m.onclick=e=>{ if(e.target===m) m.remove(); };
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔒 KEISTI SLAPTAŽODĮ</div><button onclick="document.getElementById('club-pw-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔒 KEISTI SLAPTAŽODĮ</div><button onclick="document.getElementById('club-pw-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div style="padding:16px 20px 22px;">
       <label class="lbl">NAUJAS SLAPTAŽODIS</label>
       <input class="inp" id="club-pw-new" type="password" placeholder="min. 6 simboliai" autocomplete="new-password" style="margin-bottom:10px;">
       <label class="lbl">PAKARTOK</label>
       <input class="inp" id="club-pw-new2" type="password" placeholder="dar kartą" autocomplete="new-password" style="margin-bottom:14px;">
-      <button class="btn btng" style="width:100%;margin:0;" onclick="_clubChangePassword()">💾 IŠSAUGOTI</button>
+      <button class="btn btng" style="width:100%;margin:0;" onclick="_clubChangePassword()">${ico('issaugoti')} IŠSAUGOTI</button>
     </div>
   </div>`;
   document.body.appendChild(m);
 }
 async function _clubChangePassword(){
   const p1=document.getElementById('club-pw-new')?.value||''; const p2=document.getElementById('club-pw-new2')?.value||'';
-  if (p1.length<6){ showToast('❌ Min. 6 simboliai','error'); return; }
-  if (p1!==p2){ showToast('❌ Slaptažodžiai nesutampa','error'); return; }
+  if (p1.length<6){ showToast(ico('klaida')+' Min. 6 simboliai','error'); return; }
+  if (p1!==p2){ showToast(ico('klaida')+' Slaptažodžiai nesutampa','error'); return; }
   try {
     const { error } = await sb.auth.updateUser({ password:p1 });
     if (error) throw error;
-    showToast('✅ Slaptažodis pakeistas','success',3500);
+    showToast(ico('patvirtinta')+' Slaptažodis pakeistas','success',3500);
     document.getElementById('club-pw-modal')?.remove();
-  } catch(e){ showToast('❌ '+(e.message||'Nepavyko'),'error',5000); }
+  } catch(e){ showToast(ico('klaida')+' '+(e.message||'Nepavyko'),'error',5000); }
 }
 
 // Suskleidžiamos „grouped settings" sekcijos (accordion) — numatytai suskleista
@@ -12603,7 +12603,7 @@ function _renderClubSettingsHtml(s){
     if (key) {
       const open = !!_clubSecOpen[key];
       html += `<div onclick="toggleClubSettingsSection('${key}')" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:14px 2px 7px;padding:2px;">
-        <span id="cs-chev-${key}" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;transform:rotate(${open?'90':'0'}deg);">▶</span>
+        <span id="cs-chev-${key}" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;transform:rotate(${open?'90':'0'}deg);">${ico('leisti')}</span>
         <span style="flex:1;font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.5px;">${sec}</span>
         <span style="font-size:10px;font-weight:700;color:var(--mut);background:var(--card);border:.5px solid var(--bdr);border-radius:99px;padding:1px 8px;">${secOn}/${secTotal}</span>
       </div>
@@ -12631,22 +12631,22 @@ function _renderClubSettingsHtml(s){
   // 😴 Neaktyvumo slenksčiai (suskleidžiama sekcija, kaip kitos — numatytai uždaryta)
   const _inOpen = !!_clubSecOpen['inactive'];
   html += `<div onclick="toggleClubSettingsSection('inactive')" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:14px 2px 7px;padding:2px;">
-      <span id="cs-chev-inactive" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;transform:rotate(${_inOpen?'90':'0'}deg);">▶</span>
+      <span id="cs-chev-inactive" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;transform:rotate(${_inOpen?'90':'0'}deg);">${ico('leisti')}</span>
       <span style="flex:1;font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.5px;">😴 NEAKTYVUMO ŽYMĖJIMAS</span>
     </div>
     <div id="cs-rows-inactive" style="display:${_inOpen?'block':'none'};background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
       <div style="font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:11px;">Po kiek praleistų <b>treniruočių iš eilės</b> vaikas pažymimas „Mokiniai → Neaktyvūs" sąraše.</div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">
-        <span style="font-size:14px;">🟡</span><span style="flex:1;font-size:13px;font-weight:700;color:#fff;">Geltona po</span>
+        <span style="font-size:14px;"><span class="dot dot-warn"></span></span><span style="flex:1;font-size:13px;font-weight:700;color:#fff;">Geltona po</span>
         <input id="cs-inact-yellow" type="number" min="1" max="50" value="${s.inactive_yellow ?? 3}" style="width:56px;text-align:center;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;color:#fff;font-size:14px;font-weight:700;padding:6px;">
         <span style="font-size:12px;color:var(--mut);">praleistų</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px;">
-        <span style="font-size:14px;">🔴</span><span style="flex:1;font-size:13px;font-weight:700;color:#fff;">Raudona po</span>
+        <span style="font-size:14px;"><span class="dot dot-bad"></span></span><span style="flex:1;font-size:13px;font-weight:700;color:#fff;">Raudona po</span>
         <input id="cs-inact-red" type="number" min="2" max="50" value="${s.inactive_red ?? 5}" style="width:56px;text-align:center;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;color:#fff;font-size:14px;font-weight:700;padding:6px;">
         <span style="font-size:12px;color:var(--mut);">praleistų</span>
       </div>
-      <button onclick="saveClubInactiveThresholds()" style="width:100%;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">💾 Išsaugoti slenksčius</button>
+      <button onclick="saveClubInactiveThresholds()" style="width:100%;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px;border-radius:9px;cursor:pointer;">${ico('issaugoti')} Išsaugoti slenksčius</button>
     </div>`;
   // 🎟️ Klubo kodas — savarankiškai 14+ registracijai (server-paaugliai.sql)
   html += `<div style="margin-top:14px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
@@ -12680,14 +12680,14 @@ async function saveClubInactiveThresholds(){
   if (!currentClub?.id) return;
   const y = Math.max(1, parseInt(document.getElementById('cs-inact-yellow')?.value)||3);
   const r = Math.max(2, parseInt(document.getElementById('cs-inact-red')?.value)||5);
-  if (r <= y){ showToast('❌ „Raudona" turi būti didesnė už „Geltoną"','error'); return; }
+  if (r <= y){ showToast(ico('klaida')+' „Raudona" turi būti didesnė už „Geltoną"','error'); return; }
   try {
     const { error } = await sb.from('club_settings').upsert({ club_id: currentClub.id, inactive_yellow: y, inactive_red: r, updated_at: new Date().toISOString() }, { onConflict:'club_id' });
     if (error) throw error;
     clubFlags.inactive_yellow = y; clubFlags.inactive_red = r;
-    showToast('✅ Slenksčiai išsaugoti','success');
+    showToast(ico('patvirtinta')+' Slenksčiai išsaugoti','success');
     if (typeof loadClubInactiveKids === 'function' && document.getElementById('k-inactive-list')) loadClubInactiveKids();
-  } catch(e){ console.error('[inactive-thresholds]',e); showToast('❌ '+(e.message||''),'error'); }
+  } catch(e){ console.error('[inactive-thresholds]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 
 // ════════════════════════════════════════
@@ -12793,7 +12793,7 @@ async function loadClubAttendance(){
           return `<div style="display:flex;align-items:center;gap:9px;padding:9px 12px;border-top:.5px solid var(--bdr);"><span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;${red?'box-shadow:0 0 6px #EF4444;':''}"></span><div style="flex:1;min-width:0;font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.name}</div><div style="flex-shrink:0;text-align:right;"><div style="font-size:12px;font-weight:700;color:${col};">${x.streak} iš eilės</div><div style="font-size:9px;color:var(--mut);">${x.lastPresent?'paskutinį '+formatDateLT(x.lastPresent):'nė karto'}</div></div></div>`; }).join('')
       : '<div style="text-align:center;color:var(--grn);padding:14px;font-size:12px;">🎉 Visi lanko reguliariai</div>';
     const grpBars = groupRows.map(g=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;"><div style="flex:1;min-width:0;font-size:11px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div><div style="width:80px;height:8px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${g.pct}%;height:100%;background:${g.pct>=70?'#22C55E':g.pct>=50?'#EAB308':'#EF4444'};border-radius:5px;"></div></div><div style="width:32px;text-align:right;font-size:11px;color:#fff;">${g.pct}%</div></div>`).join('');
-    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">🚨 NELANKANTYS — VERTA SUSISIEKTI</span>${streaks.length?`<span style="font-size:11px;font-weight:700;">🔴 ${redN} 🟡 ${yelN}</span>`:''}</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${alertRows}</div><div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:12px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${overall>=70?'var(--grn)':overall>=50?'#EAB308':'#EF4444'};line-height:1;">${overall}%</div><div style="font-size:10px;color:var(--mut);">vidutinis lankomumas (60 d.)</div></div><div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:0 2px 6px;">PAGAL GRUPĘ</div>${grpBars}`;
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">🚨 NELANKANTYS — VERTA SUSISIEKTI</span>${streaks.length?`<span style="font-size:11px;font-weight:700;"><span class="dot dot-bad"></span> ${redN} 🟡 ${yelN}</span>`:''}</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${alertRows}</div><div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:12px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${overall>=70?'var(--grn)':overall>=50?'#EAB308':'#EF4444'};line-height:1;">${overall}%</div><div style="font-size:10px;color:var(--mut);">vidutinis lankomumas (60 d.)</div></div><div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:0 2px 6px;">PAGAL GRUPĘ</div>${grpBars}`;
   } catch(e){ console.error('[club-att]',e); el.innerHTML = _secErr(e.message); }
 }
 
@@ -13138,9 +13138,9 @@ function _renderClubChallengesHtml(d){
     <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">${typeRows}</div>
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">PATEIKIMAI</div>
     <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <div style="flex:1;background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#22C55E;line-height:1;">${d.approved30}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">✅ Patvirtinta 30d</div></div>
+      <div style="flex:1;background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#22C55E;line-height:1;">${d.approved30}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">${ico('patvirtinta')} Patvirtinta 30d</div></div>
       <div style="flex:1;background:rgba(255,140,0,.12);border:.5px solid rgba(255,140,0,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FF8C00;line-height:1;">${d.pendingAll}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">⏳ Laukia</div></div>
-      <div style="flex:1;background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EF4444;line-height:1;">${d.rejected30}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">❌ Atmesta 30d</div></div>
+      <div style="flex:1;background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EF4444;line-height:1;">${d.rejected30}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">${ico('klaida')} Atmesta 30d</div></div>
     </div>
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">AKTYVIAUSI TRENERIAI (sukurta 30d)</div>
     <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">${wRows}</div>
@@ -13155,9 +13155,9 @@ function openClubPendingByTrainer(){
   const old = document.getElementById('club-pending-modal'); if (old) old.remove();
   const m = document.createElement('div'); m.id = 'club-pending-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
-  const rows = list.length ? list.map(t => `<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:13px;color:#fff;">${t.name}</div><div style="font-size:12px;color:#FF8C00;font-weight:700;">${t.n} laukia</div></div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--grn);font-size:13px;">✓ Nėra laukiančių pateikimų</div>';
+  const rows = list.length ? list.map(t => `<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border-top:.5px solid var(--bdr);"><div style="font-size:13px;color:#fff;">${t.name}</div><div style="font-size:12px;color:#FF8C00;font-weight:700;">${t.n} laukia</div></div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--grn);font-size:13px;">'+ico('atlikta')+' Nėra laukiančių pateikimų</div>';
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">⏳ LAUKIA PATVIRTINIMO</div><button onclick="document.getElementById('club-pending-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">⏳ LAUKIA PATVIRTINIMO</div><button onclick="document.getElementById('club-pending-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div>${rows}</div>
     <div style="padding:10px 16px 16px;font-size:10px;color:var(--mut);text-align:center;line-height:1.5;">Pateikimus tvirtina pats treneris. Klubas mato, kam priminti.</div></div>`;
   document.body.appendChild(m);
@@ -13231,7 +13231,7 @@ function _renderClubTrainersHtml(d){
   const needAtt = d.red + d.yellow;
   const wlMax = Math.max(...d.workload.map(w=>w.n), 1);
   const wlRows = d.workload.length ? d.workload.map(w => `<div style="display:flex;align-items:center;gap:8px;"><div style="width:70px;font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${w.name}</div><div style="flex:1;height:16px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${Math.round(w.n/wlMax*100)}%;height:100%;background:#3B82F6;border-radius:5px;"></div></div><div style="width:22px;font-size:11px;color:white;text-align:right;">${w.n}</div></div>`).join('') : '<div style="font-size:11px;color:var(--mut);padding:4px 2px;">Nėra duomenų</div>';
-  const naRows = d.needsAttention.length ? d.needsAttention.map(t => `<div onclick="openTrainerManage('${t.id}','${t.name.replace(/'/g,"\\'")}','${(t.code||'').replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border-top:.5px solid var(--bdr);cursor:pointer;"><span style="width:9px;height:9px;border-radius:50%;background:${t.color};flex-shrink:0;${t.color==='#EF4444'?'box-shadow:0 0 6px #EF4444;':''}"></span><div style="flex:1;min-width:0;font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</div><div style="font-size:10px;color:var(--mut);">prieš ${t.days} d.</div><div style="font-size:14px;color:var(--mut);">›</div></div>`).join('') : '<div style="padding:10px 12px;font-size:11px;color:var(--grn);">✓ Visi treneriai aktyvūs</div>';
+  const naRows = d.needsAttention.length ? d.needsAttention.map(t => `<div onclick="openTrainerManage('${t.id}','${t.name.replace(/'/g,"\\'")}','${(t.code||'').replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:9px;padding:9px 12px;border-top:.5px solid var(--bdr);cursor:pointer;"><span style="width:9px;height:9px;border-radius:50%;background:${t.color};flex-shrink:0;${t.color==='#EF4444'?'box-shadow:0 0 6px #EF4444;':''}"></span><div style="flex:1;min-width:0;font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</div><div style="font-size:10px;color:var(--mut);">prieš ${t.days} d.</div><div style="font-size:14px;color:var(--mut);">›</div></div>`).join('') : '<div style="padding:10px 12px;font-size:11px;color:var(--grn);">'+ico('atlikta')+' Visi treneriai aktyvūs</div>';
   return `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
       ${kpi('Iš viso', d.totalTr)}
@@ -13241,16 +13241,16 @@ function _renderClubTrainersHtml(d){
     </div>
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">AKTYVUMAS</div>
     <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <div style="flex:1;background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#22C55E;line-height:1;">${d.green}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">🟢 Aktyvūs</div></div>
-      <div style="flex:1;background:rgba(234,179,8,.12);border:.5px solid rgba(234,179,8,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#EAB308;line-height:1;">${d.yellow}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">🟡 Mažai</div></div>
-      <div style="flex:1;background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#EF4444;line-height:1;">${d.red}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">🔴 Neaktyvūs</div></div>
+      <div style="flex:1;background:rgba(34,197,94,.12);border:.5px solid rgba(34,197,94,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#22C55E;line-height:1;">${d.green}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;"><span class="dot dot-ok"></span> Aktyvūs</div></div>
+      <div style="flex:1;background:rgba(234,179,8,.12);border:.5px solid rgba(234,179,8,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#EAB308;line-height:1;">${d.yellow}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;"><span class="dot dot-warn"></span> Mažai</div></div>
+      <div style="flex:1;background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);border-radius:10px;padding:9px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#EF4444;line-height:1;">${d.red}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;"><span class="dot dot-bad"></span> Neaktyvūs</div></div>
     </div>
-    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">⚠️ REIKIA DĖMESIO</div>
+    <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">${ico('ispejimas')} REIKIA DĖMESIO</div>
     <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${naRows}</div>
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;margin:0 2px 6px;">APKROVA (vaikų treneriui)</div>
     <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">${wlRows}</div>
     <div style="display:flex;gap:8px;">
-      <div onclick="openClubOrphanKids()" style="flex:1;background:${d.orphans?'rgba(239,68,68,.1)':'var(--card)'};border:.5px solid ${d.orphans?'rgba(239,68,68,.3)':'var(--bdr)'};border-radius:12px;padding:10px;text-align:center;cursor:pointer;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${d.orphans?'#EF4444':'white'};line-height:1;">${d.orphans}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">⚠️ Vaikai be trenerio ›</div></div>
+      <div onclick="openClubOrphanKids()" style="flex:1;background:${d.orphans?'rgba(239,68,68,.1)':'var(--card)'};border:.5px solid ${d.orphans?'rgba(239,68,68,.3)':'var(--bdr)'};border-radius:12px;padding:10px;text-align:center;cursor:pointer;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${d.orphans?'#EF4444':'white'};line-height:1;">${d.orphans}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">${ico('ispejimas')} Vaikai be trenerio ›</div></div>
       <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:white;line-height:1;">${d.grpTotal}</div><div style="font-size:9px;color:var(--mut);margin-top:3px;">Grupės${d.grpNoTrainer?' · '+d.grpNoTrainer+' be tren.':''}</div></div>
     </div>
     <button onclick="g('k','k-trainers')" style="width:100%;margin-top:12px;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:9px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;">Valdyti trenerius →</button>`;
@@ -13273,9 +13273,9 @@ async function openClubOrphanKids(){
   const old = document.getElementById('club-orphan-modal'); if(old) old.remove();
   const m = document.createElement('div'); m.id='club-orphan-modal';
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
-  const list = orphans.length ? orphans.map(k=>`<div onclick="document.getElementById('club-orphan-modal').remove();openClubKidManage('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-top:.5px solid var(--bdr);cursor:pointer;"><div style="flex:1;font-size:13px;color:#fff;">${k.first_name||'Vaikas'} ${k.last_name||''}</div><div style="font-size:11px;color:var(--blu);">Priskirti ›</div></div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--grn);font-size:13px;">✓ Visi vaikai turi trenerį</div>';
+  const list = orphans.length ? orphans.map(k=>`<div onclick="document.getElementById('club-orphan-modal').remove();openClubKidManage('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-top:.5px solid var(--bdr);cursor:pointer;"><div style="flex:1;font-size:13px;color:#fff;">${k.first_name||'Vaikas'} ${k.last_name||''}</div><div style="font-size:11px;color:var(--blu);">Priskirti ›</div></div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--grn);font-size:13px;">'+ico('atlikta')+' Visi vaikai turi trenerį</div>';
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">⚠️ BE TRENERIO (${orphans.length})</div><button onclick="document.getElementById('club-orphan-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('ispejimas')} BE TRENERIO (${orphans.length})</div><button onclick="document.getElementById('club-orphan-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div>${list}</div></div>`;
   document.body.appendChild(m);
 }
@@ -13389,7 +13389,7 @@ function showClubFlagInfo(k){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${f.t}</div>
-      <button onclick="document.getElementById('club-flaginfo-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('club-flaginfo-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:18px 20px;font-size:13px;color:var(--text);line-height:1.65;">${f.info || f.d}</div>
   </div>`;
@@ -13399,9 +13399,9 @@ function showClubFlagInfo(k){
 async function toggleClubFlag(flag, val){
   if (_ownerOnly()) return;
   const { error } = await sb.from('club_settings').upsert({ club_id: currentClub.id, [flag]: val, updated_at: new Date().toISOString() }, { onConflict:'club_id' });
-  if (error){ showToast('❌ '+error.message,'error'); return; }
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
   clubFlags[flag] = val;
-  showToast(val?'✅ Įjungta':'⏸️ Išjungta','success');
+  showToast(val?ico('patvirtinta')+' Įjungta':'⏸️ Išjungta','success');
   loadClubSettings();
   applyClubFlagGates();
 }
@@ -13409,9 +13409,9 @@ async function toggleClubFlag(flag, val){
 async function saveClubRevPct(v){
   const pct = Math.max(0, Math.min(100, parseFloat(v)||0));
   const { error } = await sb.from('club_settings').upsert({ club_id: currentClub.id, revenue_share_pct: pct, updated_at: new Date().toISOString() }, { onConflict:'club_id' });
-  if (error){ showToast('❌ '+error.message,'error'); return; }
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
   clubFlags.revenue_share_pct = pct;
-  showToast('✅ Išsaugota','success');
+  showToast(ico('patvirtinta')+' Išsaugota','success');
 }
 
 // 🚪 PASLĖPIMAS — kai vėliava išjungta, funkcija dingsta. Tik display:none, jokios logikos.
@@ -13525,8 +13525,8 @@ async function loadClubCamps(){
       ${isPast ? `<button onclick="openEventPostCard('camps','${c.id}')" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.45);padding:9px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:800;margin-bottom:6px;">📣 Sukurti soc. postą</button>` : ''}
       <button onclick="viewCampParticipants('${c.id}','${safe}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">👥 DALYVIAI</button>
       <div style="display:flex;gap:6px;">
-        <button onclick="openCreateCamp('${c.id}')" style="flex:1;background:rgba(255,255,255,.05);color:var(--text);border:.5px solid var(--bdr);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">✏️ Redaguoti</button>
-        <button onclick="deleteCamp('${c.id}','${safe}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+        <button onclick="openCreateCamp('${c.id}')" style="flex:1;background:rgba(255,255,255,.05);color:var(--text);border:.5px solid var(--bdr);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('redaguoti')} Redaguoti</button>
+        <button onclick="deleteCamp('${c.id}','${safe}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('trinti')} Ištrinti</button>
       </div>
     </div>`;
   }).join('');
@@ -13572,7 +13572,7 @@ async function openCreateCamp(editId){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">⛺ ${editId?'REDAGUOTI STOVYKLĄ':'NAUJA STOVYKLA'}</div>
-      <button onclick="document.getElementById('club-camp-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('club-camp-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px 20px;">
       <label class="lbl">PAVADINIMAS *</label>
@@ -13594,7 +13594,7 @@ async function openCreateCamp(editId){
       <div id="camp-exp-hint" style="font-size:11px;color:var(--mut);margin-bottom:12px;">Maks. ${_campType(c.event_type).cap} EXP šiam tipui — kad renginiai nesugriautų karjeros balanso.</div>
       <label class="lbl">APRAŠYMAS</label>
       <textarea class="inp" id="camp-desc" rows="3" placeholder="Programa, ką pasiimti, kt." style="margin-bottom:16px;resize:vertical;">${c.description||''}</textarea>
-      <button class="btn btng" style="width:100%;margin:0;" onclick="submitNewCamp('${editId||''}')">💾 ${editId?'IŠSAUGOTI':'SUKURTI STOVYKLĄ'}</button>
+      <button class="btn btng" style="width:100%;margin:0;" onclick="submitNewCamp('${editId||''}')">${ico('issaugoti')} ${editId?'IŠSAUGOTI':'SUKURTI STOVYKLĄ'}</button>
     </div>
   </div>`;
   document.body.appendChild(m);
@@ -13603,13 +13603,13 @@ async function openCreateCamp(editId){
 async function submitNewCamp(editId){
   const title = document.getElementById('camp-title').value.trim();
   const starts_on = document.getElementById('camp-start').value;
-  if (!title){ showToast('❌ Įvesk pavadinimą','error'); return; }
-  if (!starts_on){ showToast('❌ Įvesk pradžios datą','error'); return; }
+  if (!title){ showToast(ico('klaida')+' Įvesk pavadinimą','error'); return; }
+  if (!starts_on){ showToast(ico('klaida')+' Įvesk pradžios datą','error'); return; }
   if (typeof flagOn === 'function' && !flagOn('camps_enabled')) { showToast('⛺ Stovyklos klube išjungtos', 'error', 4000); return; }
   const event_type = document.getElementById('camp-type')?.value || 'camp';
   const _cap = _campType(event_type).cap;
   const _exp = Math.max(0, parseInt(document.getElementById('camp-exp').value, 10) || 0);
-  if (_exp > _cap){ showToast(`❌ ${_campType(event_type).label}: maks. ${_cap} EXP (įvedei ${_exp})`, 'error', 4500); return; }
+  if (_exp > _cap){ showToast(`${ico('klaida')} ${_campType(event_type).label}: maks. ${_cap} EXP (įvedei ${_exp})`, 'error', 4500); return; }
   const payload = {
     title,
     starts_on,
@@ -13627,8 +13627,8 @@ async function submitNewCamp(editId){
     payload.club_id = currentClub.id; payload.created_by = currentUser.id;
     res = await sb.from('club_events').insert(payload);
   }
-  if (res.error){ showToast('❌ '+res.error.message,'error'); return; }
-  showToast('✅ Išsaugota','success');
+  if (res.error){ showToast(ico('klaida')+' '+res.error.message,'error'); return; }
+  showToast(ico('patvirtinta')+' Išsaugota','success');
   if (!editId){ _pushClubKidsParents('⛺ Nauja stovykla!', (title||'Stovykla') + (starts_on?' · '+formatDateLT(starts_on):'')); }  // push (tik naujai)
   document.getElementById('club-camp-modal')?.remove();
   loadClubCamps();
@@ -13638,8 +13638,8 @@ async function deleteCamp(id, title){
   if (_ownerOnly()) return;
   if (!confirm(`Ištrinti stovyklą "${title}"?\n\nVisi dalyvių įrašai bus ištrinti.`)) return;
   const { error } = await sb.from('club_events').delete().eq('id', id);
-  if (error){ showToast('❌ '+error.message,'error'); return; }
-  showToast('✅ Ištrinta','success');
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
+  showToast(ico('patvirtinta')+' Ištrinta','success');
   loadClubCamps();
 }
 
@@ -13651,9 +13651,9 @@ async function viewCampParticipants(eventId, title){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">👥 ${title}</div>
-      <button onclick="document.getElementById('club-camp-part-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('club-camp-part-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
-    <div style="padding:12px 20px 0;"><button onclick="addCampParticipant('${eventId}')" style="width:100%;background:rgba(34,197,94,.12);color:var(--grn);border:.5px dashed rgba(34,197,94,.4);padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">➕ Pridėti dalyvį</button></div>
+    <div style="padding:12px 20px 0;"><button onclick="addCampParticipant('${eventId}')" style="width:100%;background:rgba(34,197,94,.12);color:var(--grn);border:.5px dashed rgba(34,197,94,.4);padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">${ico('prideti')} Pridėti dalyvį</button></div>
     <div id="camp-part-list" style="padding:12px 20px 20px;"><div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div></div>
   </div>`;
   document.body.appendChild(m);
@@ -13677,8 +13677,8 @@ async function _renderCampParticipants(eventId){
 
 async function toggleCampAttended(eventId, kidId, attended){
   const { error } = await sb.rpc('set_camp_attended', { p_event: eventId, p_kid: kidId, p_attended: attended });
-  if (error){ showToast('❌ '+error.message,'error'); return; }
-  showToast(attended?'✅ Pažymėta · EXP skirtas':'Pažymėjimas nuimtas','success');
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
+  showToast(attended?ico('patvirtinta')+' Pažymėta · EXP skirtas':'Pažymėjimas nuimtas','success');
   await _renderCampParticipants(eventId);
   loadClubCamps();
 }
@@ -13694,8 +13694,8 @@ async function addCampParticipant(eventId){
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100003;align-items:flex-end;justify-content:center;';
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">➕ PRIDĖTI DALYVĮ</div>
-      <button onclick="document.getElementById('club-camp-pick-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('prideti')} PRIDĖTI DALYVĮ</div>
+      <button onclick="document.getElementById('club-camp-pick-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:12px 20px;">
       ${avail.length ? avail.map(k=>`<div onclick="rsvpCampKid('${eventId}','${k.id}')" style="padding:10px 12px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:13px;font-weight:700;">${_pnm[k.id]||'Vaikas'}</div>`).join('') : '<div style="text-align:center;color:var(--mut);padding:20px;">Visi klubo vaikai jau pridėti (arba klube nėra vaikų).</div>'}
@@ -13706,8 +13706,8 @@ async function addCampParticipant(eventId){
 
 async function rsvpCampKid(eventId, kidId){
   const { error } = await sb.from('club_event_rsvp').upsert({ event_id: eventId, kid_id: kidId, status:'going', marked_by: currentUser.id }, { onConflict:'event_id,kid_id' });
-  if (error){ showToast('❌ '+error.message,'error'); return; }
-  showToast('✅ Pridėta','success');
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
+  showToast(ico('patvirtinta')+' Pridėta','success');
   document.getElementById('club-camp-pick-modal')?.remove();
   await _renderCampParticipants(eventId);
   loadClubCamps();
@@ -13780,7 +13780,7 @@ async function loadClubGroupChallenges(){
       <button onclick="viewChallengeStandings('${c.id}','${safe}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">📊 GRUPIŲ REZULTATAI</button>
       <div style="display:flex;gap:6px;">
         ${c.is_active?`<button onclick="finalizeClubChallengeUI('${c.id}','${safe}')" style="flex:1;background:rgba(34,197,94,.12);color:var(--grn);border:.5px solid rgba(34,197,94,.35);padding:8px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">🏁 Užbaigti + EXP</button>`:''}
-        <button onclick="deleteClubChallenge('${c.id}','${safe}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+        <button onclick="deleteClubChallenge('${c.id}','${safe}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">${ico('trinti')} Ištrinti</button>
       </div>
     </div>`;
   }).join('');
@@ -13800,7 +13800,7 @@ async function openCreateClubChallenge(){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">🏆 NAUJAS GRUPIŲ IŠŠŪKIS</div>
-      <button onclick="document.getElementById('club-gc-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('club-gc-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px 20px;">
       <label class="lbl">PAVADINIMAS *</label>
@@ -13835,12 +13835,12 @@ async function openCreateClubChallenge(){
 async function submitNewClubChallenge(){
   const title = document.getElementById('gc-title').value.trim();
   const metric = document.getElementById('gc-metric').value;
-  if (!title){ showToast('❌ Įvesk pavadinimą','error'); return; }
+  if (!title){ showToast(ico('klaida')+' Įvesk pavadinimą','error'); return; }
   if (typeof flagOn === 'function' && !flagOn('group_challenges_enabled')) { showToast('🏆 Grupių iššūkis klube išjungtas', 'error', 4000); return; }
   const groupIds = Array.from(document.querySelectorAll('.gc-grp-cb:checked')).map(cb=>cb.value);
-  if (!groupIds.length){ showToast('❌ Pasirink bent vieną dalyvaujančią grupę','error',4000); return; }
+  if (!groupIds.length){ showToast(ico('klaida')+' Pasirink bent vieną dalyvaujančią grupę','error',4000); return; }
   const _exp = Math.max(0, parseInt(document.getElementById('gc-exp').value, 10) || 0);
-  if (_exp > GROUP_CHALLENGE_EXP_CAP){ showToast(`❌ 1 vietos EXP: maks. ${GROUP_CHALLENGE_EXP_CAP} (įvedei ${_exp})`,'error',4500); return; }
+  if (_exp > GROUP_CHALLENGE_EXP_CAP){ showToast(`${ico('klaida')} 1 vietos EXP: maks. ${GROUP_CHALLENGE_EXP_CAP} (įvedei ${_exp})`,'error',4500); return; }
   const payload = {
     club_id: currentClub.id,
     title,
@@ -13853,11 +13853,11 @@ async function submitNewClubChallenge(){
     created_by: currentUser.id
   };
   const { data: created, error } = await sb.from('club_challenges').insert(payload).select('id').single();
-  if (error){ showToast('❌ '+error.message,'error'); return; }
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
   // Dalyvaujančios grupės
   const { error: gErr } = await sb.from('club_challenge_groups').insert(groupIds.map(gid=>({ challenge_id: created.id, group_id: gid })));
-  if (gErr){ showToast('⚠️ Iššūkis sukurtas, bet grupių priskyrimas nepavyko: '+gErr.message,'error',5500); }
-  else { showToast('✅ Iššūkis sukurtas','success'); _pushGroupsKids(groupIds, '🏆 Naujas grupių iššūkis!', (title||'Iššūkis') + ' — tavo grupė dalyvauja!'); }  // push dalyvaujančių grupių vaikams
+  if (gErr){ showToast(ico('ispejimas')+' Iššūkis sukurtas, bet grupių priskyrimas nepavyko: '+gErr.message,'error',5500); }
+  else { showToast(ico('patvirtinta')+' Iššūkis sukurtas','success'); _pushGroupsKids(groupIds, '🏆 Naujas grupių iššūkis!', (title||'Iššūkis') + ' — tavo grupė dalyvauja!'); }  // push dalyvaujančių grupių vaikams
   document.getElementById('club-gc-modal')?.remove();
   loadClubGroupChallenges();
 }
@@ -13870,7 +13870,7 @@ async function viewChallengeStandings(id, title){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">📊 ${title}</div>
-      <button onclick="document.getElementById('club-gc-stand-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('club-gc-stand-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div id="gc-stand-list" style="padding:16px 20px;"><div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div></div>
   </div>`;
@@ -13901,11 +13901,11 @@ async function viewChallengeEntries(id, title){
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">✏️ ${title}</div>
-      <button onclick="document.getElementById('club-gc-entry-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('redaguoti')} ${title}</div>
+      <button onclick="document.getElementById('club-gc-entry-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div id="gc-entry-list" style="padding:16px 20px;"><div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div></div>
-    <div style="padding:0 20px 20px;"><button class="btn btng" style="width:100%;margin:0;" onclick="saveChallengeEntries('${id}')">💾 IŠSAUGOTI REZULTATUS</button></div>
+    <div style="padding:0 20px 20px;"><button class="btn btng" style="width:100%;margin:0;" onclick="saveChallengeEntries('${id}')">${ico('issaugoti')} IŠSAUGOTI REZULTATUS</button></div>
   </div>`;
   document.body.appendChild(m);
   const kids = await _getClubKids();
@@ -13929,15 +13929,15 @@ async function saveChallengeEntries(id){
   });
   if (!rows.length){ showToast('Nieko nesuvesta','success'); return; }
   const { error } = await sb.from('club_challenge_entries').upsert(rows, { onConflict:'challenge_id,kid_id' });
-  if (error){ showToast('❌ '+error.message,'error'); return; }
-  showToast('✅ Rezultatai išsaugoti','success');
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
+  showToast(ico('patvirtinta')+' Rezultatai išsaugoti','success');
   document.getElementById('club-gc-entry-modal')?.remove();
 }
 
 async function finalizeClubChallengeUI(id, title){
   if (!confirm(`Užbaigti iššūkį "${title}"?\n\nVISOS dalyvavusios grupės gaus EXP pagal vietą (1v 100% / 2v 70% / 3v 50% / kitos 30%). Vaikai ir treneriai pamatys rezultatą.`)) return;
   const { error } = await sb.rpc('finalize_club_challenge', { challenge_uuid: id });
-  if (error){ showToast('❌ '+error.message,'error'); return; }
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
   showToast('🏁 Iššūkis užbaigtas','success');
   // 🔔 Push visiems dalyvavusių grupių vaikams, kad iššūkis baigėsi + EXP
   try { const { data: st } = await sb.rpc('club_challenge_standings', { challenge_uuid: id });
@@ -13949,8 +13949,8 @@ async function deleteClubChallenge(id, title){
   if (_ownerOnly()) return;
   if (!confirm(`Ištrinti iššūkį "${title}"?\n\nVisi rezultatai bus ištrinti.`)) return;
   const { error } = await sb.from('club_challenges').delete().eq('id', id);
-  if (error){ showToast('❌ '+error.message,'error'); return; }
-  showToast('✅ Ištrinta','success');
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
+  showToast(ico('patvirtinta')+' Ištrinta','success');
   loadClubGroupChallenges();
 }
 
@@ -14026,9 +14026,9 @@ async function deleteCompetition(id, title) {
   if (!confirm(`Ar tikrai ištrinti "${title}"?\n\nVisi pateikti rezultatai bus IŠTRINTI!`)) return;
   
   const { error } = await sb.from('competitions').delete().eq('id', id);
-  if (error) { showToast('❌ ' + error.message, 'error'); return; }
+  if (error) { showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   
-  showToast('✅ Varžybos ištrintos', 'success');
+  showToast(ico('patvirtinta')+' Varžybos ištrintos', 'success');
   await loadClubCompetitions();
 }
 
@@ -14133,7 +14133,7 @@ async function viewCompetitionParticipants(competitionId, title) {
           </div>
           <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:8px;text-align:center;">
             <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);">${placeOther.length}</div>
-            <div style="font-size:9px;color:var(--mut);">⚪</div>
+            <div style="font-size:9px;color:var(--mut);"><span class="dot dot"></span></div>
           </div>
         </div>
       `;
@@ -14235,7 +14235,7 @@ async function viewCompetitionParticipants(competitionId, title) {
       }
     }
     if (wontAttend.length > 0) {
-      html += '<div style="font-size:11px;color:#EF4444;font-weight:800;letter-spacing:1px;margin:14px 0 6px;">🚫 NEDALYVAUS</div>';
+      html += '<div style="font-size:11px;color:#EF4444;font-weight:800;letter-spacing:1px;margin:14px 0 6px;">'+ico('isjungta')+' NEDALYVAUS</div>';
       html += wontAttend.map(r => renderKidCard(r, 'wont', '#EF4444', 'rgba(239,68,68,.05)')).join('');
     }
     if (planning.length === 0 && wontAttend.length === 0) {
@@ -14254,7 +14254,7 @@ async function exportCompetitionCSV(competitionId, title) {
     .single();
   
   if (!comp) {
-    showToast('❌ Varžybos nerastos', 'error');
+    showToast(ico('klaida')+' Varžybos nerastos', 'error');
     return;
   }
   
@@ -14268,7 +14268,7 @@ async function exportCompetitionCSV(competitionId, title) {
   }
 
   if (!results || results.length === 0) {
-    showToast('❌ Nėra dalyvių', 'error');
+    showToast(ico('klaida')+' Nėra dalyvių', 'error');
     return;
   }
 
@@ -14279,7 +14279,7 @@ async function exportCompetitionCSV(competitionId, title) {
   
   if (kidsError) {
     console.error('exportCompetitionCSV - kids fetch error:', kidsError);
-    showToast('❌ Klaida gaunant vaikų info: ' + kidsError.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida gaunant vaikų info: ' + kidsError.message, 'error', 5000);
     return;
   }
   
@@ -14392,7 +14392,7 @@ async function exportCompetitionCSV(competitionId, title) {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   
-  showToast(`✅ CSV atsisiųstas: ${fileName}`, 'success', 4000);
+  showToast(`${ico('patvirtinta')} CSV atsisiųstas: ${fileName}`, 'success', 4000);
 }
 
 function closeCompetitionParticipants() {
@@ -14606,18 +14606,18 @@ function _kidCampCardHtml(c, rsvp){
   if (!isPast) {
     footer = `<div style="display:flex;gap:6px;margin-top:8px;">
       <button onclick="kidRsvpCamp('${c.id}','going')" style="flex:1;background:${going?'var(--grn)':'rgba(34,197,94,.1)'};color:${going?'#fff':'var(--grn)'};border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🙋 ${going?'Dalyvausiu ✓':'Dalyvausiu'}</button>
-      <button onclick="kidRsvpCamp('${c.id}','not_going')" style="flex:1;background:${notGoing?'#EF4444':'rgba(239,68,68,.1)'};color:${notGoing?'#fff':'#EF4444'};border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Ne</button>
+      <button onclick="kidRsvpCamp('${c.id}','not_going')" style="flex:1;background:${notGoing?'#EF4444':'rgba(239,68,68,.1)'};color:${notGoing?'#fff':'#EF4444'};border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('isjungta')} Ne</button>
     </div>`;
   } else if (attended) {
-    footer = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">✓ Dalyvavai${c.exp_reward>0?` (+${c.exp_reward} EXP)`:''}</span>`;
+    footer = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">${ico('atlikta')} Dalyvavai${c.exp_reward>0?` (+${c.exp_reward} EXP)`:''}</span>`;
   } else if (didnt) {
-    footer = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">🚫 Nebuvai</span>`;
+    footer = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">${ico('isjungta')} Nebuvai</span>`;
   } else if (confirmed) {
     footer = `<span class="bg or" style="padding:4px 10px;font-size:11px;">⏳ Laukia trenerio patvirtinimo</span>`;
   } else {
     footer = `<div style="display:flex;gap:6px;margin-top:8px;">
-      <button onclick="kidConfirmCamp('${c.id}','participated')" style="flex:1;background:var(--grn);color:#fff;border:none;padding:9px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">✅ Dalyvavau</button>
-      <button onclick="kidConfirmCamp('${c.id}','didnt_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:9px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Nebuvau</button>
+      <button onclick="kidConfirmCamp('${c.id}','participated')" style="flex:1;background:var(--grn);color:#fff;border:none;padding:9px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('patvirtinta')} Dalyvavau</button>
+      <button onclick="kidConfirmCamp('${c.id}','didnt_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:9px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('isjungta')} Nebuvau</button>
     </div>`;
   }
   return `<div class="kid-comp-card" style="background:rgba(34,197,94,.06);border:.5px solid rgba(34,197,94,.25);border-radius:10px;padding:8px 10px;margin-bottom:5px;border-left:3px solid #22C55E;${isPast?'opacity:.9;':''}">
@@ -14656,7 +14656,7 @@ async function kidRsvpCamp(eventId, status){
     if (error) throw error;
     showToast(status==='going'?'🙋 Pažymėta — dalyvausi!':'Pažymėta — nedalyvausi');
     if (typeof loadKidCompetitions === 'function') loadKidCompetitions();
-  } catch(e){ console.error('[kid-rsvp]',e); showToast('❌ '+(e.message||'Nepavyko pažymėti'),'error'); }
+  } catch(e){ console.error('[kid-rsvp]',e); showToast(ico('klaida')+' '+(e.message||'Nepavyko pažymėti'),'error'); }
 }
 // Po stovyklos: vaikas patvirtina „Dalyvavau" (→ pasirenka trenerį → laukia patvirtinimo) arba „Nebuvau"
 async function kidConfirmCamp(eventId, kind){
@@ -14691,9 +14691,9 @@ async function _doKidConfirmCamp(eventId, kind, trainerId){
     if (kind === 'participated') row.confirm_trainer_id = trainerId || null;
     const { error } = await sb.from('club_event_rsvp').upsert(row, { onConflict:'event_id,kid_id' });
     if (error) throw error;
-    showToast(kind==='participated'?'✅ Išsiųsta treneriui — laukia patvirtinimo':'Pažymėta — nedalyvavai');
+    showToast(kind==='participated'?ico('patvirtinta')+' Išsiųsta treneriui — laukia patvirtinimo':'Pažymėta — nedalyvavai');
     if (typeof loadKidCompetitions === 'function') loadKidCompetitions();
-  } catch(e){ console.error('[kid-confirm-camp]',e); showToast('❌ '+(e.message||'Nepavyko'),'error'); }
+  } catch(e){ console.error('[kid-confirm-camp]',e); showToast(ico('klaida')+' '+(e.message||'Nepavyko'),'error'); }
 }
 
 async function loadKidCompetitions() {
@@ -14817,10 +14817,10 @@ async function loadKidCompetitions() {
         statusBadge = '<span class="bg gn" style="padding:4px 10px;font-size:11px;margin-bottom:8px;display:inline-block;">🎯 Planuoju dalyvauti</span>';
         actionButtons = `
           <div style="display:flex;gap:6px;margin-top:8px;">
-            <button onclick="setKidIntent('${c.id}','wont_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Persigalvojau</button>
+            <button onclick="setKidIntent('${c.id}','wont_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('isjungta')} Persigalvojau</button>
           </div>`;
       } else if (myResult?.status === 'wont_attend') {
-        statusBadge = '<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;margin-bottom:8px;display:inline-block;">🚫 Nedalyvausiu</span>';
+        statusBadge = '<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;margin-bottom:8px;display:inline-block;">'+ico('isjungta')+' Nedalyvausiu</span>';
         actionButtons = `
           <div style="display:flex;gap:6px;margin-top:8px;">
             <button onclick="setKidIntent('${c.id}','planning')" style="flex:1;background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🎯 Persigalvojau</button>
@@ -14829,20 +14829,20 @@ async function loadKidCompetitions() {
         actionButtons = `
           <div style="display:flex;gap:6px;margin-top:8px;">
             <button onclick="setKidIntent('${c.id}','planning')" style="flex:1;background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🎯 Ketinu dalyvauti</button>
-            <button onclick="setKidIntent('${c.id}','wont_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Nedalyvausiu</button>
+            <button onclick="setKidIntent('${c.id}','wont_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('isjungta')} Nedalyvausiu</button>
           </div>`;
       }
     } else if (vcActiveTab === 'pending') {
       // Praėjo - rodom rezultato įvedimą
       actionButtons = `
         <div style="display:flex;gap:6px;margin-top:8px;">
-          <button onclick="openSubmitCompResult('${c.id}','participated')" style="flex:1;background:var(--grn);color:white;border:none;padding:10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">✅ Dalyvavau</button>
-          <button onclick="openSubmitCompResult('${c.id}','didnt_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Nebuvau</button>
+          <button onclick="openSubmitCompResult('${c.id}','participated')" style="flex:1;background:var(--grn);color:white;border:none;padding:10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('patvirtinta')} Dalyvavau</button>
+          <button onclick="openSubmitCompResult('${c.id}','didnt_attend')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('isjungta')} Nebuvau</button>
         </div>`;
     } else {
       // Completed - rodom rezultatą
       if (myResult?.status === 'didnt_attend') {
-        statusBadge = '<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">🚫 Nebuvau</span>';
+        statusBadge = '<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">'+ico('isjungta')+' Nebuvau</span>';
       } else if (myResult?.approval_status === 'pending') {
         const placeText = myResult.placement ? `${myResult.placement} vieta` : 'Dalyvavau';
         statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">⏳ Laukia patvirtinimo: ${placeText}</span>`;
@@ -14859,7 +14859,7 @@ async function loadKidCompetitions() {
         
         statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">${resultText}${myResult.exp_gained ? ' (+' + myResult.exp_gained + ' EXP)' : ''}</span>`;
       } else if (myResult?.approval_status === 'rejected') {
-        statusBadge = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">❌ Atmesta</span>`;
+        statusBadge = `<span class="bg" style="background:rgba(239,68,68,.15);color:#EF4444;padding:4px 10px;font-size:11px;">${ico('klaida')} Atmesta</span>`;
         // Pridėti priežastį jei yra
         if (myResult.rejection_reason) {
           statusBadge += `<div style="font-size:10px;color:var(--mut);margin-top:4px;font-style:italic;">"${myResult.rejection_reason}"</div>`;
@@ -14867,7 +14867,7 @@ async function loadKidCompetitions() {
         // Bandyti dar kartą mygtukas
         actionButtons = `
           <div style="display:flex;gap:6px;margin-top:8px;">
-            <button onclick="openSubmitCompResult('${c.id}','participated')" style="flex:1;background:var(--br);color:white;border:none;padding:10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🔄 BANDYTI DAR KARTĄ</button>
+            <button onclick="openSubmitCompResult('${c.id}','participated')" style="flex:1;background:var(--br);color:white;border:none;padding:10px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('atnaujinti')} BANDYTI DAR KARTĄ</button>
           </div>`;
       }
     }
@@ -14955,7 +14955,7 @@ function openKidCompModal() {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🏆 VISI RENGINIAI (${count})</div>
-        <button onclick="document.getElementById('kid-comp-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+        <button onclick="document.getElementById('kid-comp-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:12px 16px;">
         ${content}
@@ -14998,11 +14998,11 @@ async function setKidIntent(competitionId, intent) {
   
   if (result.error) {
     console.error('setKidIntent error:', result.error);
-    showToast('❌ Klaida: ' + result.error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + result.error.message, 'error', 5000);
     return;
   }
   
-  showToast(intent === 'planning' ? '🎯 Pažymėta!' : '🚫 Nedalyvausiu', 'success');
+  showToast(intent === 'planning' ? '🎯 Pažymėta!' : ico('isjungta')+' Nedalyvausiu', 'success');
   
   // 🎯 Uždaryt DAUGIAU varžybų modal'ą jei atidarytas (kad pakeitimai matytųsi)
   const modal = document.getElementById('kid-comp-modal');
@@ -15029,7 +15029,7 @@ async function openSubmitCompResult(competitionId, defaultStatus) {
     .single();
   
   if (!comp) {
-    showToast('❌ Varžybos nerastos', 'error');
+    showToast(ico('klaida')+' Varžybos nerastos', 'error');
     return;
   }
   
@@ -15222,12 +15222,12 @@ async function submitCompResult() {
   // Validacija
   // Trenerio reikia tik jei dalyvavo (didnt_attend - auto-approved, nereikia trenerio)
   if (status === 'participated' && !targetTrainerId) {
-    showToast('❌ Pasirink trenerį, kuriam siunti', 'error');
+    showToast(ico('klaida')+' Pasirink trenerį, kuriam siunti', 'error');
     return;
   }
   
   if (status === 'participated' && type === 'belt_test' && beltPassed && !newKyu) {
-    showToast('❌ Pasirink naują kyu', 'error');
+    showToast(ico('klaida')+' Pasirink naują kyu', 'error');
     return;
   }
   
@@ -15291,11 +15291,11 @@ async function submitCompResult() {
   
   if (result.error) {
     console.error('submitCompResult error:', result.error);
-    showToast('❌ Klaida: ' + result.error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + result.error.message, 'error', 5000);
     return;
   }
   
-  showToast('✅ Rezultatas išsiųstas treneriui!', 'success', 4000);
+  showToast(ico('patvirtinta')+' Rezultatas išsiųstas treneriui!', 'success', 4000);
   playSound('send');
   if (status === 'participated') notifyTrainersNewSubmission('🏆 Naujas varžybų rezultatas', 'pateikė varžybų rezultatą — laukia patvirtinimo');
   closeSubmitCompResult();
@@ -16035,7 +16035,7 @@ async function loadStreaks() {
 
 async function openClubChallengeLeaderboard() {
   if (!currentProfile?.club_id) {
-    showToast('❌ Klubas nepriskirtas', 'error');
+    showToast(ico('klaida')+' Klubas nepriskirtas', 'error');
     return;
   }
   
@@ -16414,7 +16414,7 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
     const nextDis = page >= totalPages;
     pagination = `
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px 4px;">
-        <button onclick="${pageFn}(${page - 1})" ${prevDis ? 'disabled' : ''} style="background:${prevDis ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDis ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDis ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:7px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDis ? 'default' : 'pointer'};opacity:${prevDis ? '.5' : '1'};">←</button>
+        <button onclick="${pageFn}(${page - 1})" ${prevDis ? 'disabled' : ''} style="background:${prevDis ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDis ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDis ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:7px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDis ? 'default' : 'pointer'};opacity:${prevDis ? '.5' : '1'};">${ico('atgal')}</button>
         <div style="font-size:12px;font-weight:800;color:var(--text);min-width:54px;text-align:center;">${page} / ${totalPages}</div>
         <button onclick="${pageFn}(${page + 1})" ${nextDis ? 'disabled' : ''} style="background:${nextDis ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${nextDis ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${nextDis ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:7px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${nextDis ? 'default' : 'pointer'};opacity:${nextDis ? '.5' : '1'};">→</button>
       </div>
@@ -17356,7 +17356,7 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
   
   const paginationHtml = totalPages > 1 ? `
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 0 4px;">
-      <button onclick="setTrainerStatPage(${currentPage - 1})" ${prevDisabled ? 'disabled' : ''} style="background:${prevDisabled ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDisabled ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDisabled ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:8px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDisabled ? 'not-allowed' : 'pointer'};opacity:${prevDisabled ? '.5' : '1'};">← Atgal</button>
+      <button onclick="setTrainerStatPage(${currentPage - 1})" ${prevDisabled ? 'disabled' : ''} style="background:${prevDisabled ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDisabled ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDisabled ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:8px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDisabled ? 'not-allowed' : 'pointer'};opacity:${prevDisabled ? '.5' : '1'};">${ico('atgal')} Atgal</button>
       <div style="font-size:13px;font-weight:800;color:var(--text);min-width:60px;text-align:center;">
         ${currentPage} / ${totalPages}
       </div>
@@ -17381,7 +17381,7 @@ window._trainerLastEntries = []; // saugom entries CSV'iui
 async function exportTrainerStatCSV(tabType) {
   const entries = window._trainerLastEntries || [];
   if (entries.length === 0) {
-    showToast('❌ Nėra duomenų eksportui', 'error');
+    showToast(ico('klaida')+' Nėra duomenų eksportui', 'error');
     return;
   }
   
@@ -17417,7 +17417,7 @@ async function exportTrainerStatCSV(tabType) {
   link.click();
   URL.revokeObjectURL(url);
   
-  showToast('✅ CSV eksportuotas', 'success');
+  showToast(ico('patvirtinta')+' CSV eksportuotas', 'success');
 }
 
 async function loadTrainerOverallStat() {
@@ -17642,7 +17642,7 @@ async function loadClubRevenue(){
   const chip = (id,lbl)=>`<button onclick="setClubRevenuePeriod('${id}')" style="flex:1;${chipStyle(clubRevenuePeriod===id)}">${lbl}</button>`;
   el.innerHTML = `
     <div style="display:flex;gap:6px;margin-bottom:12px;">${chip('month','Šis mėn.')}${chip('q','3 mėn.')}${chip('year','Metai')}${chip('all','Visi')}</div>
-    <div style="background:rgba(234,179,8,.08);border:.5px solid rgba(234,179,8,.25);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:10px;color:#EAB308;line-height:1.4;">⚠️ Apytikslė apyvarta — skaičiuota iš sugeneruotų AI ataskaitų (mokėjimų ledgerio nėra).</div>
+    <div style="background:rgba(234,179,8,.08);border:.5px solid rgba(234,179,8,.25);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:10px;color:#EAB308;line-height:1.4;">${ico('ispejimas')} Apytikslė apyvarta — skaičiuota iš sugeneruotų AI ataskaitų (mokėjimų ledgerio nėra).</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:14px;text-align:center;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--grn);">${gross.toFixed(2)}€</div>
@@ -17791,7 +17791,7 @@ async function renderClubLeaderboard(entries, scoreLabel) {
   
   const paginationHtml = totalPages > 1 ? `
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 0 4px;">
-      <button onclick="setClubStatPage(${currentPage - 1})" ${prevDisabled ? 'disabled' : ''} style="background:${prevDisabled ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDisabled ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDisabled ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:8px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDisabled ? 'not-allowed' : 'pointer'};opacity:${prevDisabled ? '.5' : '1'};">← Atgal</button>
+      <button onclick="setClubStatPage(${currentPage - 1})" ${prevDisabled ? 'disabled' : ''} style="background:${prevDisabled ? 'var(--bg)' : 'rgba(255,77,0,.15)'};color:${prevDisabled ? 'var(--mut)' : 'var(--br)'};border:.5px solid ${prevDisabled ? 'var(--bdr)' : 'rgba(255,77,0,.4)'};padding:8px 14px;border-radius:99px;font-size:14px;font-weight:800;cursor:${prevDisabled ? 'not-allowed' : 'pointer'};opacity:${prevDisabled ? '.5' : '1'};">${ico('atgal')} Atgal</button>
       <div style="font-size:13px;font-weight:800;color:var(--text);min-width:60px;text-align:center;">
         ${currentPage} / ${totalPages}
       </div>
@@ -17811,7 +17811,7 @@ window._clubLastEntries = [];
 async function exportClubStatCSV(tabType) {
   const entries = window._clubLastEntries || [];
   if (entries.length === 0) {
-    showToast('❌ Nėra duomenų eksportui', 'error');
+    showToast(ico('klaida')+' Nėra duomenų eksportui', 'error');
     return;
   }
   
@@ -17850,7 +17850,7 @@ async function exportClubStatCSV(tabType) {
   link.click();
   URL.revokeObjectURL(url);
   
-  showToast('✅ CSV eksportuotas', 'success');
+  showToast(ico('patvirtinta')+' CSV eksportuotas', 'success');
 }
 
 async function loadClubOverallStat() {
@@ -18151,7 +18151,7 @@ async function toggleKidAnonymity(kidId) {
   tg.style.pointerEvents = 'auto';
   
   if (error) {
-    showToast('❌ Klaida: ' + error.message, 'error');
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
     return;
   }
   
@@ -18311,7 +18311,7 @@ async function loadNewKids() {
           </div>
         </div>
         <div style="display:flex;gap:8px;">
-          <button class="btn btng" style="flex:1;font-size:12px;padding:8px;" onclick="approveKid('${k.id}')">✓ PATVIRTINTI</button>
+          <button class="btn btng" style="flex:1;font-size:12px;padding:8px;" onclick="approveKid('${k.id}')">${ico('atlikta')} PATVIRTINTI</button>
           <button class="btn" style="flex:1;font-size:12px;padding:8px;background:rgba(255,77,0,.1);color:var(--br);" onclick="rejectKid('${k.id}')">✗ ATMESTI</button>
         </div>
       </div>
@@ -18358,13 +18358,13 @@ async function approveKid(kidId) {
         .in('id', parentIds);
     }
     
-    showToast('✓ Vaikas ir tėvai patvirtinti!');
+    showToast(ico('atlikta')+' Vaikas ir tėvai patvirtinti!');
     await loadNewKids();
     if (typeof loadPendingKidForms === 'function') loadPendingKidForms();
     await loadTrainerMembers();
   } catch (error) {
     console.error('approveKid error:', error);
-    showToast('❌ Klaida: ' + error.message);
+    showToast(ico('klaida')+' Klaida: ' + error.message);
   }
 }
 
@@ -18401,7 +18401,7 @@ async function rejectKid(kidId) {
     if (typeof loadPendingKidForms === 'function') loadPendingKidForms();
   } catch (error) {
     console.error('rejectKid error:', error);
-    showToast('❌ Klaida: ' + error.message);
+    showToast(ico('klaida')+' Klaida: ' + error.message);
   }
 }
 
@@ -18476,7 +18476,7 @@ async function loadPendingSubmissions() {
       </div>
       ${s.comment?`<div style="font-size:11px;color:var(--mut);margin-bottom:10px;">💬 ${s.comment}</div>`:''}
       <div style="display:flex;gap:8px;">
-        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveSubmission('${s.id}')">✓ Patvirtinti</button>
+        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveSubmission('${s.id}')">${ico('atlikta')} Patvirtinti</button>
         <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="openRejectModal('${s.id}')">✗ Atmesti</button>
       </div>
     </div>`;
@@ -18492,9 +18492,9 @@ async function approveSubmission(subId) {
   });
   if (error) {
     if (el) { el.style.opacity = ''; el.style.pointerEvents = ''; delete el.dataset.busy; }
-    showToast('❌ Klaida: ' + error.message, 'error'); return;
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error'); return;
   }
-  showToast('✅ Patvirtinta! EXP priskaičiuota', 'success');
+  showToast(ico('patvirtinta')+' Patvirtinta! EXP priskaičiuota', 'success');
   loadPendingSubmissions();
 }
 
@@ -18696,7 +18696,7 @@ async function loadTrainerGroups() {
               <strong>${ungroupedKids.length}</strong> ${ungroupedKids.length === 1 ? 'vaikas' : 'vaikai'} laukia priskirimo
             </div>
           </div>
-          <div id="group-arrow-ungrouped" style="font-size:14px;color:var(--mut);transition:transform .2s;">▼</div>
+          <div id="group-arrow-ungrouped" style="font-size:14px;color:var(--mut);transition:transform .2s;">${ico('isskleisti')}</div>
         </div>
         <div id="group-kids-ungrouped" style="display:none;padding:0 14px 14px;border-top:.5px solid var(--bdr);">
           <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
@@ -18750,7 +18750,7 @@ let currentGroupViewId = null;
 
 async function openGroupView(groupId, silent) {
   const gObj = (trainerGroupsCache || []).find(x => x.id === groupId);
-  if (!gObj) { if (!silent) showToast('❌ Grupė nerasta', 'error'); return; }
+  if (!gObj) { if (!silent) showToast(ico('klaida')+' Grupė nerasta', 'error'); return; }
   currentGroupViewId = groupId;
   if (!silent) g('tr', 'tr-group-view');
 
@@ -18787,7 +18787,7 @@ async function openGroupView(groupId, silent) {
       </div>
       ${renderKidIcons(k)}
       ${pend[k.id] ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;box-shadow:0 0 8px rgba(255,77,0,.5);" title="Laukia patvirtinimo">${pend[k.id]}</div>` : ''}
-      <button onclick="event.stopPropagation();openAssignExp('${k.id}')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;" title="Skirti EXP">➕ EXP</button>
+      <button onclick="event.stopPropagation();openAssignExp('${k.id}')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;" title="Skirti EXP">${ico('prideti')} EXP</button>
       <div style="font-size:14px;color:var(--mut);flex-shrink:0;pointer-events:none;">›</div>
     </div>
   `).join('');
@@ -18862,7 +18862,7 @@ async function openAttendance(groupId){
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">📋 LANKOMUMAS</div>
-      <button onclick="document.getElementById('att-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+      <button onclick="document.getElementById('att-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px;">
       <div style="font-size:12px;color:var(--mut);margin-bottom:10px;"><b style="color:white;">${g.name}</b> · pažymėk atėjusius vaikus</div>
@@ -18870,11 +18870,11 @@ async function openAttendance(groupId){
       <input type="date" id="att-date" value="${_attState.date}" onchange="_attReload()" class="inp" style="width:100%;margin:4px 0 12px;font-family:inherit;">
       <div id="att-warn"></div>
       <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button onclick="_attSetAll(true)" style="flex:1;padding:9px;border-radius:10px;border:.5px solid rgba(34,197,94,.4);background:rgba(34,197,94,.12);color:var(--grn);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">✓ Visi atėjo</button>
+        <button onclick="_attSetAll(true)" style="flex:1;padding:9px;border-radius:10px;border:.5px solid rgba(34,197,94,.4);background:rgba(34,197,94,.12);color:var(--grn);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">${ico('atlikta')} Visi atėjo</button>
         <button onclick="_attSetAll(false)" style="flex:1;padding:9px;border-radius:10px;border:.5px solid var(--bdr);background:var(--card);color:var(--mut);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">Nieko</button>
       </div>
       <div id="att-list"></div>
-      <button id="att-confirm" onclick="_attConfirm()" style="width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Patvirtinti</button>
+      <button id="att-confirm" onclick="_attConfirm()" style="width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('patvirtinta')} Patvirtinti</button>
       <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Pilna savaitė → +15 EXP · pilnas mėnuo → +100 EXP.<br>Neįvykusios treniruotės nežymimos — jos neskaičiuojamos.</div>
     </div></div>`;
   m.onclick=(e)=>{ if(e.target===m) m.remove(); };
@@ -18891,7 +18891,7 @@ async function _attReload(){
   const warn=document.getElementById('att-warn');
   if(warn){
     if(_attIsScheduledDay(_attState.group,_attState.date)) warn.innerHTML='';
-    else warn.innerHTML=`<div style="background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.4);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:#EF4444;line-height:1.45;">⚠️ <b>${_attDayNameLT(_attState.date)}</b> nėra šios grupės treniruočių diena.<br>Tvarkaraštis: <b>${_attSchedLT(_attState.group)}</b>. Žymėk pagal grafiką.</div>`;
+    else warn.innerHTML=`<div style="background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.4);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:#EF4444;line-height:1.45;">${ico('ispejimas')} <b>${_attDayNameLT(_attState.date)}</b> nėra šios grupės treniruočių diena.<br>Tvarkaraštis: <b>${_attSchedLT(_attState.group)}</b>. Žymėk pagal grafiką.</div>`;
   }
   _attRenderList();
 }
@@ -18923,7 +18923,7 @@ async function _attConfirm(){
   if(!_attState) return;
   // Grafiko apsauga (KIETAS blokavimas): ne tvarkaraščio dieną žymėti NELEIDŽIAMA
   if(!_attIsScheduledDay(_attState.group, _attState.date)){
-    showToast(`❌ Žymėti galima tik pagal grafiką. ${_attDayNameLT(_attState.date)} nėra treniruočių diena.\nTvarkaraštis: ${_attSchedLT(_attState.group)}.`, 'error', 5500);
+    showToast(`${ico('klaida')} Žymėti galima tik pagal grafiką. ${_attDayNameLT(_attState.date)} nėra treniruočių diena.\nTvarkaraštis: ${_attSchedLT(_attState.group)}.`, 'error', 5500);
     return;
   }
   const btn=document.getElementById('att-confirm');
@@ -18933,14 +18933,14 @@ async function _attConfirm(){
     const rows=_attState.kids.map(k=>({ group_id:_attState.groupId, kid_id:k.id, session_date:_attState.date, present:_attState.present.has(k.id), marked_by:currentUser.id, updated_at:nowISO }));
     const { error }=await sb.from('attendance').upsert(rows,{ onConflict:'group_id,kid_id,session_date' });
     if(error) throw error;
-    showToast('✅ Lankomumas išsaugotas','success');
+    showToast(ico('patvirtinta')+' Lankomumas išsaugotas','success');
     await _attAwardBonuses(_attState.group, _attState.date);
     const em=document.getElementById('att-modal'); if(em) em.remove();
     if(typeof refreshGroupViewIfOpen==='function') refreshGroupViewIfOpen();
   }catch(e){
     if(btn){ btn.disabled=false; btn.dataset.busy=''; btn.style.opacity='1'; }
     _attRenderList();
-    showToast('❌ Nepavyko: '+(e.message||''),'error',6000);
+    showToast(ico('klaida')+' Nepavyko: '+(e.message||''),'error',6000);
   }
 }
 
@@ -19024,7 +19024,7 @@ async function openKidAttendance(){
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">📋 MANO LANKOMUMAS</div>
-      <button onclick="document.getElementById('kid-att-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+      <button onclick="document.getElementById('kid-att-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px;" id="kid-att-body"><div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
   </div>`;
@@ -19055,8 +19055,8 @@ function openAssignExp(kidId) {
   m.innerHTML = `
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">➕ SKIRTI EXP</div>
-        <button onclick="document.getElementById('assign-exp-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">${ico('prideti')} SKIRTI EXP</div>
+        <button onclick="document.getElementById('assign-exp-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div id="assign-exp-body" style="padding:16px;"></div>
     </div>`;
@@ -19140,7 +19140,7 @@ async function _assignExpDoChallenge(challengeId) {
     if (error) throw error;
     const { error: aerr } = await sb.from('challenge_submissions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', ins.id).eq('status', 'pending');
     if (aerr) throw aerr;
-    showToast('✅ Iššūkis pažymėtas — EXP priskirta!', 'success');
+    showToast(ico('patvirtinta')+' Iššūkis pažymėtas — EXP priskirta!', 'success');
     const em = document.getElementById('assign-exp-modal'); if (em) em.remove();
     if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
   } catch (e) { showToast('Nepavyko: ' + (e.message || ''), 'error', 6000); }
@@ -19153,7 +19153,7 @@ function _assignExpChallengePartial(challengeId, title, target, unit, cur) {
     <div style="font-size:14px;font-weight:800;color:white;margin-bottom:4px;">🎯 ${title}</div>
     <div style="font-size:11px;color:var(--mut);margin-bottom:14px;">Tarpinis pateikimas. Dabar: <b style="color:white;">${cur}/${target} ${unit}</b>. Kiek pridėti?</div>
     <input class="inp" id="aecp-amt" type="number" min="1" placeholder="pvz. 10 ${unit}" style="width:100%;margin:4px 0 16px;font-family:inherit;">
-    <button onclick="_assignExpDoChallengePartial('${challengeId}')" style="width:100%;padding:13px;background:linear-gradient(135deg,#BA68C8,#8E44AD);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">➕ Pridėti progresą</button>`;
+    <button onclick="_assignExpDoChallengePartial('${challengeId}')" style="width:100%;padding:13px;background:linear-gradient(135deg,#BA68C8,#8E44AD);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('prideti')} Pridėti progresą</button>`;
 }
 
 async function _assignExpDoChallengePartial(challengeId) {
@@ -19166,7 +19166,7 @@ async function _assignExpDoChallengePartial(challengeId) {
     if (error) throw error;
     const { error: aerr } = await sb.from('challenge_submissions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', ins.id).eq('status', 'pending');
     if (aerr) throw aerr;
-    showToast('✅ Progresas pridėtas! (EXP — kai pasieks tikslą)', 'success', 4000);
+    showToast(ico('patvirtinta')+' Progresas pridėtas! (EXP — kai pasieks tikslą)', 'success', 4000);
     const em = document.getElementById('assign-exp-modal'); if (em) em.remove();
     if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
   } catch (e) { showToast('Nepavyko: ' + (e.message || ''), 'error', 6000); }
@@ -19212,7 +19212,7 @@ function _assignExpCompForm(compId, title) {
       <input class="inp" id="aec-wins" type="number" min="0" placeholder="Laimėta (W)" style="flex:1;font-family:inherit;">
       <input class="inp" id="aec-losses" type="number" min="0" placeholder="Pralaimėta (L)" style="flex:1;font-family:inherit;">
     </div>
-    <button onclick="_assignExpDoCompetition('${compId}')" style="width:100%;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Skirti EXP</button>`;
+    <button onclick="_assignExpDoCompetition('${compId}')" style="width:100%;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('patvirtinta')} Skirti EXP</button>`;
 }
 
 async function _assignExpDoCompetition(compId) {
@@ -19236,7 +19236,7 @@ async function _assignExpDoCompetition(compId) {
     }
     const { error: aerr } = await sb.from('competition_results').update({ approval_status: 'approved', approved_by: currentUser.id, approved_at: new Date().toISOString() }).eq('id', resId).eq('approval_status', 'pending');
     if (aerr) throw aerr;
-    showToast('✅ Varžybų rezultatas įrašytas — EXP priskirta!', 'success');
+    showToast(ico('patvirtinta')+' Varžybų rezultatas įrašytas — EXP priskirta!', 'success');
     const em = document.getElementById('assign-exp-modal'); if (em) em.remove();
     if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
   } catch (e) { showToast('Nepavyko: ' + (e.message || ''), 'error', 6000); }
@@ -19369,7 +19369,7 @@ function _aecPickExercise(exId) {
     <div style="font-size:11px;color:var(--mut);margin-bottom:6px;">Dabartinis PR: <b style="color:white;">${ex.has_pr ? ex.current_pr + ' ' + (ex.unit || '') : '–'}</b></div>
     ${inputHtml}
     <div id="aec-exp" style="text-align:center;font-size:14px;font-weight:800;color:var(--mut);margin-bottom:14px;">+0 EXP</div>
-    <button id="aec-submit" onclick="_aecSubmit()" style="width:100%;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Skirti EXP</button>`;
+    <button id="aec-submit" onclick="_aecSubmit()" style="width:100%;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('patvirtinta')} Skirti EXP</button>`;
 }
 
 // Ordinalo lygio pasirinkimas (pvz. mawashi aukštis 1–4)
@@ -19419,11 +19419,11 @@ async function _aecSubmit() {
   const newVal = parseFloat(raw);
   const oldPr = ex.current_pr || 0;
   const lower = ex.lower_is_better;
-  if (raw === '' || isNaN(newVal)) { showToast('❌ Įvesk rezultatą', 'error'); return; }
-  if (!lower && newVal <= 0) { showToast('❌ Rezultatas turi būti didesnis už 0', 'error'); return; }
-  if (lower && newVal < 0) { showToast('❌ Rezultatas negali būti neigiamas', 'error'); return; }
+  if (raw === '' || isNaN(newVal)) { showToast(ico('klaida')+' Įvesk rezultatą', 'error'); return; }
+  if (!lower && newVal <= 0) { showToast(ico('klaida')+' Rezultatas turi būti didesnis už 0', 'error'); return; }
+  if (lower && newVal < 0) { showToast(ico('klaida')+' Rezultatas negali būti neigiamas', 'error'); return; }
   const isPR = lower ? (!ex.has_pr || newVal < oldPr) : (newVal > oldPr);
-  if (!isPR) { showToast(lower ? '❌ Turi būti mažesnis už dabartinį PR' : '❌ Turi būti didesnis už dabartinį PR', 'error', 4000); return; }
+  if (!isPR) { showToast(lower ? ico('klaida')+' Turi būti mažesnis už dabartinį PR' : ico('klaida')+' Turi būti didesnis už dabartinį PR', 'error', 4000); return; }
 
   // expGain — karjeros pratimo EXP, GARANTUOTAI 0–100 ribose (ta pati apsauga kaip vaiko)
   let expGain = Math.max(0, careerExpPct(ex, newVal) - (ex.has_pr ? careerExpPct(ex, oldPr) : 0));
@@ -19751,7 +19751,7 @@ function _trPatRenderTop(listId, tab, cardsArr, emptyHtml) {
     let mainHtml = cardsArr.slice(0, 3).join('');
     if (cardsArr.length > 3) {
       mainHtml += `<div style="text-align:center;padding:2px 0 14px;">
-        <button onclick="openTrPatAll('${tab}')" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 24px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▼ DAUGIAU (${cardsArr.length - 3})</button>
+        <button onclick="openTrPatAll('${tab}')" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 24px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">${ico('isskleisti')} DAUGIAU (${cardsArr.length - 3})</button>
       </div>`;
     }
     list.innerHTML = mainHtml || emptyHtml;
@@ -20184,7 +20184,7 @@ function openTrGroupsModal() {
   m.innerHTML = `<div style="background:var(--bg);width:100%;max-width:600px;max-height:85vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:.5px solid var(--bdr);">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">🏆 VISOS GRUPĖS · ${M.label.toUpperCase()}</div>
-        <button onclick="document.getElementById('tr-groups-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ✕</button>
+        <button onclick="document.getElementById('tr-groups-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:8px 16px 20px;">${listHtml}</div>
     </div>`;
@@ -20210,7 +20210,7 @@ async function openTrainerNormatyvai() {
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">💪 PRATIMŲ NORMATYVAI</div>
-        <button onclick="document.getElementById('tr-norm-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+        <button onclick="document.getElementById('tr-norm-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:12px 16px 6px;">
         <div style="display:flex;gap:6px;margin-bottom:6px;">
@@ -20343,7 +20343,7 @@ function openTrInfo(which) {
         row('🏅', 'Varžybos', 'Varžybų rezultatai ir medaliai.') +
         row('⚔️', 'Dvikovos', 'Dvikovų rezultatai.') +
         row('⛺', 'Stovyklos', 'Vaikų pažymėti stovyklų dalyvavimai — patvirtink, kad gautų EXP.') +
-        `<div style="margin-top:10px;background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.45);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6;color:#fff;">⚠️ <b>Tvirtink atsakingai!</b> Patvirtink tik tai, ką vaikas tikrai atliko. Nuo to priklauso visa statistika, lygiai ir reitingai — klaidingas patvirtinimas iškreipia duomenis visiems.</div>`;
+        `<div style="margin-top:10px;background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.45);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6;color:#fff;">${ico('ispejimas')} <b>Tvirtink atsakingai!</b> Patvirtink tik tai, ką vaikas tikrai atliko. Nuo to priklauso visa statistika, lygiai ir reitingai — klaidingas patvirtinimas iškreipia duomenis visiems.</div>`;
       break;
     case 'prof':
       title = '💡 PROFILIS';
@@ -20498,7 +20498,7 @@ function openCreateGroupModal() {
 // Redagavimo režimas — tas pats modalas, užpildytas grupės duomenimis
 function openEditGroupModal(groupId) {
   const g = (trainerGroupsCache || []).find(x => x.id === groupId);
-  if (!g) { showToast('❌ Grupė nerasta', 'error'); return; }
+  if (!g) { showToast(ico('klaida')+' Grupė nerasta', 'error'); return; }
 
   openCreateGroupModal(); // resetina visus laukus
   editingGroupId = groupId;
@@ -20570,10 +20570,10 @@ async function submitCreateGroup() {
         // DB dar neturi tvarkaraščio stulpelių — išsaugom be jų
         delete upd.training_days; delete upd.train_time;
         ({ error } = await sb.from('groups').update(upd).eq('id', editingGroupId));
-        if (!error) showToast('⚠️ Tvarkaraštis neišsaugotas — paleisk server-treneris-grafikas.sql', 'error', 6000);
+        if (!error) showToast(ico('ispejimas')+' Tvarkaraštis neišsaugotas — paleisk server-treneris-grafikas.sql', 'error', 6000);
       }
       if (error) throw error;
-      showToast('✓ Grupė atnaujinta');
+      showToast(ico('atlikta')+' Grupė atnaujinta');
     } else {
       // KŪRIMAS — trenerio klubo ID
       const { data: trainer } = await sb.from('trainers')
@@ -20601,10 +20601,10 @@ async function submitCreateGroup() {
         // DB dar neturi tvarkaraščio stulpelių — kuriam be jų
         delete ins.training_days; delete ins.train_time;
         ({ error } = await sb.from('groups').insert(ins));
-        if (!error) showToast('⚠️ Tvarkaraštis neišsaugotas — paleisk server-treneris-grafikas.sql', 'error', 6000);
+        if (!error) showToast(ico('ispejimas')+' Tvarkaraštis neišsaugotas — paleisk server-treneris-grafikas.sql', 'error', 6000);
       }
       if (error) throw error;
-      showToast('✓ Grupė sukurta');
+      showToast(ico('atlikta')+' Grupė sukurta');
     }
 
     closeCreateGroupModal();
@@ -20626,7 +20626,7 @@ function confirmDeleteGroup(groupId, groupName) {
   const row = (icon, txt) => `<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:9px;"><div style="font-size:15px;flex-shrink:0;line-height:1.35;">${icon}</div><div style="font-size:12px;color:var(--text);line-height:1.45;">${txt}</div></div>`;
   m.innerHTML = `<div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid rgba(239,68,68,.4);border-radius:18px;overflow:hidden;animation:slideUp .25s ease-out;">
     <div style="background:rgba(239,68,68,.1);padding:16px 18px;border-bottom:.5px solid rgba(239,68,68,.25);display:flex;align-items:center;gap:11px;">
-      <div style="font-size:24px;">🗑️</div>
+      <div style="font-size:24px;">${ico('trinti')}</div>
       <div style="min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1px;color:#EF4444;line-height:1;">IŠTRINTI GRUPĘ?</div><div style="font-size:12px;color:var(--mut);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${groupName}${kidCount ? ` · ${kidCount} ${kidCount === 1 ? 'vaikas' : 'vaikai'}` : ''}</div></div>
     </div>
     <div style="padding:16px 18px;">
@@ -20659,12 +20659,12 @@ async function deleteGroup(groupId) {
     
     if (error) throw error;
     
-    showToast('✓ Grupė ištrinta');
+    showToast(ico('atlikta')+' Grupė ištrinta');
     await loadTrainerGroups();
     
   } catch (error) {
     console.error('deleteGroup error:', error);
-    showToast('❌ Klaida: ' + error.message, 'error');
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
   }
 }
 
@@ -20675,12 +20675,12 @@ async function removeKidFromGroup(kidId) {
     const { error } = await sb.from('kids').update({ group_id: null }).eq('id', kidId);
     if (error) throw error;
     
-    showToast('✓ Vaikas pašalintas iš grupės');
+    showToast(ico('atlikta')+' Vaikas pašalintas iš grupės');
     await loadTrainerGroups();
     
   } catch (error) {
     console.error('removeKidFromGroup error:', error);
-    showToast('❌ Klaida: ' + error.message, 'error');
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
   }
 }
 
@@ -20707,7 +20707,7 @@ function openAssignKidsToGroup(groupId, groupName) {
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
           <div style="font-size:11px;color:var(--mut);">${k.kyu||'10 kyu'} · ${k.weight_range||'?'} kg</div>
-          ${inOtherGroup ? '<div style="font-size:10px;color:var(--br);margin-top:2px;">⚠️ Bus perkeltas iš kitos grupės</div>' : ''}
+          ${inOtherGroup ? '<div style="font-size:10px;color:var(--br);margin-top:2px;">'+ico('ispejimas')+' Bus perkeltas iš kitos grupės</div>' : ''}
         </div>
       </label>
     `;
@@ -20756,13 +20756,13 @@ async function submitAssignKids() {
         .in('id', unselectedKidIds);
     }
     
-    showToast('✓ Vaikai priskirti grupei');
+    showToast(ico('atlikta')+' Vaikai priskirti grupei');
     closeAssignKidsModal();
     await loadTrainerGroups();
     
   } catch (error) {
     console.error('submitAssignKids error:', error);
-    showToast('❌ Klaida: ' + error.message, 'error');
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
   }
 }
 
@@ -20863,7 +20863,7 @@ function loadTrainerToday() {
               <span>👥 ${kidsInGroup.length} ${kidsInGroup.length === 1 ? 'narys' : 'nariai'}</span>
             </div>
           </div>
-          <div id="today-arrow-${g.id}" style="font-size:14px;color:var(--mut);transition:transform .2s;flex-shrink:0;">▼</div>
+          <div id="today-arrow-${g.id}" style="font-size:14px;color:var(--mut);transition:transform .2s;flex-shrink:0;">${ico('isskleisti')}</div>
         </div>
         <div id="today-kids-${g.id}" style="display:none;padding:0 14px 14px;border-top:.5px solid var(--bdr);">
           <button onclick="event.stopPropagation(); openCreateChallenge({groupId:'${g.id}'})" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:10px;border-radius:10px;font-size:12px;cursor:pointer;font-weight:700;margin:10px 0 8px;">🎯 IŠŠŪKIS VISAI GRUPEI</button>
@@ -20966,7 +20966,7 @@ function _trhTodayGroupCardWide(gr) {
           <span style="color:#FFD700;font-weight:700;">✨ ${c.one_time}</span>
         </div>
       </div>
-      ${pendTotal > 0 ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;border-radius:99px;padding:2px 8px;flex-shrink:0;box-shadow:0 0 7px rgba(255,77,0,.5);">⏳ ${pendTotal}</div>` : '<div style="font-size:12px;color:var(--grn);flex-shrink:0;">✅</div>'}
+      ${pendTotal > 0 ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;border-radius:99px;padding:2px 8px;flex-shrink:0;box-shadow:0 0 7px rgba(255,77,0,.5);">⏳ ${pendTotal}</div>` : '<div style="font-size:12px;color:var(--grn);flex-shrink:0;">'+ico('patvirtinta')+'</div>'}
       <div style="font-size:13px;color:var(--mut);flex-shrink:0;">›</div>
     </div>`;
 }
@@ -20998,7 +20998,7 @@ function _renderTrhTodayStrip() {
   if (todayGroups.length > _TRH_TODAY_TOPN) {
     html += _trhTodayExpanded
       ? `<div style="text-align:center;padding:8px 0 4px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▲ MAŽIAU</button></div>`
-      : `<div style="text-align:center;padding:8px 0 4px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▼ DAUGIAU (${todayGroups.length - _TRH_TODAY_TOPN})</button></div>`;
+      : `<div style="text-align:center;padding:8px 0 4px;"><button onclick="toggleTrhToday()" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:9px 22px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">${ico('isskleisti')} DAUGIAU (${todayGroups.length - _TRH_TODAY_TOPN})</button></div>`;
   }
   strip.innerHTML = html;
 }
@@ -21543,7 +21543,7 @@ function openTrainerEditInfo() {
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
   m.innerHTML = `
     <div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:20px;max-height:90vh;overflow-y:auto;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:14px;">✏️ MANO INFORMACIJA</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:14px;">${ico('redaguoti')} MANO INFORMACIJA</div>
       <label style="font-size:11px;color:var(--mut);font-weight:700;">Vardas</label>
       <input class="inp" id="tei-fname" value="${esc(p.first_name)}" style="width:100%;margin:4px 0 12px;font-family:inherit;">
       <label style="font-size:11px;color:var(--mut);font-weight:700;">Pavardė</label>
@@ -21575,7 +21575,7 @@ async function saveTrainerInfo(btn) {
     const { error } = await sb.from('profiles').update({ first_name: fn, last_name: ln, karate_since: since, kyu: kyu }).eq('id', currentUser.id);
     if (error) throw error;
     if (currentProfile) { currentProfile.first_name = fn; currentProfile.last_name = ln; currentProfile.karate_since = since; currentProfile.kyu = kyu; }
-    showToast('✅ Išsaugota', 'success');
+    showToast(ico('patvirtinta')+' Išsaugota', 'success');
     const em = document.getElementById('tr-edit-info-modal'); if (em) em.remove();
     // Atnaujinti nustatymų rodinį
     const userEl = document.getElementById('trainer-settings-user'); if (userEl) userEl.textContent = `${fn} ${ln}`.trim();
@@ -21584,7 +21584,7 @@ async function saveTrainerInfo(btn) {
     // Atnaujinti pagrindinio lango hero (vardas pasveikinime)
     if (typeof _renderTrainerMainHero === 'function') { try { _renderTrainerMainHero(); } catch (_) {} }
   } catch (e) {
-    showToast('⚠️ Nepavyko išsaugoti (ar paleistas SQL „karate_since/kyu"?): ' + (e.message || ''), 'error', 8000);
+    showToast(ico('ispejimas')+' Nepavyko išsaugoti (ar paleistas SQL „karate_since/kyu"?): ' + (e.message || ''), 'error', 8000);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Išsaugoti'; }
   }
@@ -21614,15 +21614,15 @@ async function openTrainerSettings() {
     modal.innerHTML = `
       <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
         <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">⚙️ NUSTATYMAI</div>
-          <button onclick="document.getElementById('trainer-settings-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">${ico('nustatymai')} NUSTATYMAI</div>
+          <button onclick="document.getElementById('trainer-settings-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
         </div>
 
         <!-- Trenerio info -->
         <div style="padding:14px 20px;border-bottom:.5px solid var(--bdr);background:rgba(255,77,0,.05);">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
             <div style="font-size:9px;color:var(--mut);letter-spacing:1px;font-weight:800;">PRISIJUNGTAS KAIP</div>
-            <button onclick="openTrainerEditInfo()" style="background:rgba(255,77,0,.15);border:.5px solid rgba(255,77,0,.4);color:#FF8C00;border-radius:99px;padding:5px 11px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ Redaguoti</button>
+            <button onclick="openTrainerEditInfo()" style="background:rgba(255,77,0,.15);border:.5px solid rgba(255,77,0,.4);color:#FF8C00;border-radius:99px;padding:5px 11px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">${ico('redaguoti')} Redaguoti</button>
           </div>
           <div style="font-size:14px;font-weight:800;color:white;" id="trainer-settings-user">–</div>
           <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="trainer-settings-email">–</div>
@@ -21683,7 +21683,7 @@ async function openTrainerSettings() {
         <!-- 🔔 PRANEŠIMAI Į TELEFONĄ (3 tipai = ir įjungimas, ir filtras) -->
         <div style="padding:12px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
-            <div style="font-size:13px;font-weight:800;color:white;">🔔 Pranešimai į telefoną</div>
+            <div style="font-size:13px;font-weight:800;color:white;">${ico('pranesimai')} Pranešimai į telefoną</div>
             <div style="font-size:10px;color:var(--mut);margin:2px 0 8px;">Įjunk, apie ką nori gauti pranešimus į telefoną — net kai programėlė uždaryta</div>
             <div onclick="toggleTrainerPushPref('messages')" style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;border-top:.5px solid var(--bdr);">
               <div style="font-size:18px;">💬</div>
@@ -21696,7 +21696,7 @@ async function openTrainerSettings() {
               <div id="trpp-sw-announcements" style="width:38px;height:22px;border-radius:99px;background:#66BB6A;position:relative;transition:background .2s;flex-shrink:0;"><div id="trpp-knob-announcements" style="width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:3px;left:19px;transition:left .2s;"></div></div>
             </div>
             <div onclick="toggleTrainerPushPref('submissions')" style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;border-top:.5px solid var(--bdr);">
-              <div style="font-size:18px;">✅</div>
+              <div style="font-size:18px;">${ico('patvirtinta')}</div>
               <div style="flex:1;font-size:12px;font-weight:700;color:white;">Vaikų patvirtinimai</div>
               <div id="trpp-sw-submissions" style="width:38px;height:22px;border-radius:99px;background:#66BB6A;position:relative;transition:background .2s;flex-shrink:0;"><div id="trpp-knob-submissions" style="width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:3px;left:19px;transition:left .2s;"></div></div>
             </div>
@@ -21721,7 +21721,7 @@ async function openTrainerSettings() {
         <div style="padding:8px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
             <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
-              <div style="font-size:28px;">🔍</div>
+              <div style="font-size:28px;">${ico('paieska')}</div>
               <div style="flex:1;">
                 <div style="font-size:13px;font-weight:800;color:white;">Vaizdo dydis</div>
                 <div style="font-size:11px;color:var(--mut);margin-top:2px;">Padidink, jei sunku įžiūrėti</div>
@@ -21750,8 +21750,8 @@ async function openTrainerSettings() {
             <b>📅 Šiandien</b> — grupės pagal tvarkaraštį (nustatyk Grupės → ✏️). Spausk grupę → vaikai, iššūkis grupei.<br>
             <b>👥 Grupės</b> — spausk grupę → pilnas vaizdas su vaikais; oranžinis skaičius prie vaiko = laukia patvirtinimo.<br>
             <b>🎯 Iššūkiai</b> — kurk grupei, berniukams/mergaitėms ar vienam vaikui. Tipų spalvos kaip vaikų appse.<br>
-            <b>✅ Patvirtinimai</b> — karjera / iššūkiai / varžybos / dvikovos. Patvirtinus vaikas iškart gauna EXP.<br>
-            <b>🔔 Varpelis</b> — nauji pateikimai ir žinutės. Paspaudus nukelia tiesiai į patvirtinimą.<br>
+            <b>${ico('patvirtinta')} Patvirtinimai</b> — karjera / iššūkiai / varžybos / dvikovos. Patvirtinus vaikas iškart gauna EXP.<br>
+            <b>${ico('pranesimai')} Varpelis</b> — nauji pateikimai ir žinutės. Paspaudus nukelia tiesiai į patvirtinimą.<br>
             <b>🥋 Lygiai</b> — kiekvienas patvirtinimas ir sukurtas iššūkis = +1 taškas tavo kelyje iki Sensėjaus.
           </div>
 
@@ -21902,7 +21902,7 @@ async function toggleTrainerPushPref(key) {
   if (currentProfile) currentProfile.push_prefs = { ..._trPushPrefs };
   try {
     const { error } = await sb.from('profiles').update({ push_prefs: _trPushPrefs }).eq('id', currentUser.id);
-    if (error) { if (typeof showToast === 'function') showToast('⚠️ Neišsaugota serveryje (ar paleidai SQL „push_prefs"?): ' + (error.message || ''), 'error', 8000); }
+    if (error) { if (typeof showToast === 'function') showToast(ico('ispejimas')+' Neišsaugota serveryje (ar paleidai SQL „push_prefs"?): ' + (error.message || ''), 'error', 8000); }
   } catch (e) { console.warn('toggleTrainerPushPref', e); }
 }
 
@@ -21923,24 +21923,24 @@ async function uploadClubLogo(inputEl) {
   try {
     const file = inputEl?.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { showToast('❌ Pasirink nuotrauką', 'error'); return; }
-    if (!currentClub?.id) { showToast('❌ Klubo info trūksta', 'error'); return; }
+    if (!file.type.startsWith('image/')) { showToast(ico('klaida')+' Pasirink nuotrauką', 'error'); return; }
+    if (!currentClub?.id) { showToast(ico('klaida')+' Klubo info trūksta', 'error'); return; }
     showToast('📷 Įkeliama...', 'info');
     const blob = await _compressLogo(file);   // proporcinga + 512px + PNG (share kortelėms)
     const path = `club-logo-${currentClub.id}.png`;
     const { error: upErr } = await sb.storage.from(KID_AVATAR_BUCKET)
       .upload(path, blob, { upsert: true, contentType: 'image/png', cacheControl: '3600' });
-    if (upErr) { console.error('[club-logo] upload:', upErr); showToast('❌ Įkelti nepavyko: ' + upErr.message, 'error', 5000); return; }
+    if (upErr) { console.error('[club-logo] upload:', upErr); showToast(ico('klaida')+' Įkelti nepavyko: ' + upErr.message, 'error', 5000); return; }
     const { data: pub } = sb.storage.from(KID_AVATAR_BUCKET).getPublicUrl(path);
     const url = pub.publicUrl;
     const { error: dbErr } = await sb.from('clubs').update({ logo_url: url }).eq('id', currentClub.id);
-    if (dbErr) { console.error('[club-logo] db:', dbErr); showToast('❌ Išsaugoti nepavyko: ' + dbErr.message + ' — paleisk server-klubas-logo.sql', 'error', 6000); return; }
+    if (dbErr) { console.error('[club-logo] db:', dbErr); showToast(ico('klaida')+' Išsaugoti nepavyko: ' + dbErr.message + ' — paleisk server-klubas-logo.sql', 'error', 6000); return; }
     if (currentClub) currentClub.logo_url = url;
     _applyClubLogo(url + '?r=' + Date.now());
-    showToast('✅ Logo atnaujintas!', 'success');
+    showToast(ico('patvirtinta')+' Logo atnaujintas!', 'success');
   } catch (e) {
     console.error('[club-logo] klaida:', e);
-    showToast('❌ Klaida: ' + (e.message || ''), 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + (e.message || ''), 'error', 5000);
   }
 }
 
@@ -21948,20 +21948,20 @@ async function uploadTrainerAvatar(inputEl) {
   try {
     const file = inputEl?.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { showToast('❌ Pasirink nuotrauką', 'error'); return; }
+    if (!file.type.startsWith('image/')) { showToast(ico('klaida')+' Pasirink nuotrauką', 'error'); return; }
 
     showToast('📷 Įkeliama nuotrauka...', 'info');
     const blob = await _compressImage(file);
     const path = `trainer-${currentUser.id}.jpg`;
     const { error: upErr } = await sb.storage.from(KID_AVATAR_BUCKET)
       .upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '3600' });
-    if (upErr) { console.error('[tr-avatar] upload:', upErr); showToast('❌ Įkelti nepavyko: ' + upErr.message, 'error', 5000); return; }
+    if (upErr) { console.error('[tr-avatar] upload:', upErr); showToast(ico('klaida')+' Įkelti nepavyko: ' + upErr.message, 'error', 5000); return; }
 
     const { data: pub } = sb.storage.from(KID_AVATAR_BUCKET).getPublicUrl(path);
     const cleanUrl = pub.publicUrl;
 
     const { error: dbErr } = await sb.from('profiles').update({ avatar_url: cleanUrl }).eq('id', currentUser.id);
-    if (dbErr) { console.error('[tr-avatar] db:', dbErr); showToast('❌ Išsaugoti nepavyko: ' + dbErr.message + ' — paleisk server-treneris-profilis.sql', 'error', 6000); return; }
+    if (dbErr) { console.error('[tr-avatar] db:', dbErr); showToast(ico('klaida')+' Išsaugoti nepavyko: ' + dbErr.message + ' — paleisk server-treneris-profilis.sql', 'error', 6000); return; }
 
     currentProfile.avatar_url = cleanUrl;
     const bust = cleanUrl + '?r=' + Date.now();
@@ -21969,10 +21969,10 @@ async function uploadTrainerAvatar(inputEl) {
     applyAvatarById('trainer-settings-avatar-preview', bust, currentProfile?.first_name?.[0] || 'T');
     const rm = document.getElementById('trainer-avatar-remove');
     if (rm) rm.style.display = 'block';
-    showToast('✅ Nuotrauka atnaujinta!', 'success');
+    showToast(ico('patvirtinta')+' Nuotrauka atnaujinta!', 'success');
   } catch (e) {
     console.error('[tr-avatar] klaida:', e);
-    showToast('❌ Klaida: ' + (e.message || ''), 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + (e.message || ''), 'error', 5000);
   }
 }
 
@@ -21987,9 +21987,9 @@ async function removeTrainerAvatar() {
     applyAvatarById('trainer-settings-avatar-preview', null, currentProfile?.first_name?.[0] || 'T');
     const rm = document.getElementById('trainer-avatar-remove');
     if (rm) rm.style.display = 'none';
-    showToast('✅ Nuotrauka pašalinta', 'success');
+    showToast(ico('patvirtinta')+' Nuotrauka pašalinta', 'success');
   } catch (e) {
-    showToast('❌ Klaida: ' + (e.message || ''), 'error');
+    showToast(ico('klaida')+' Klaida: ' + (e.message || ''), 'error');
   }
 }
 
@@ -22214,7 +22214,7 @@ async function openKidDetailsModal(kidId) {
   const { data: fullKid, error: fkErr } = await sb.from('kids').select('*').eq('id', kidId).single();
   if (fkErr || !fullKid) {
     console.error('❌ [openKidDetailsModal] DB klaida:', fkErr);
-    showToast('❌ Klaida kraunant duomenis: ' + (fkErr?.message || 'nežinoma'), 'error', 5000);
+    showToast(ico('klaida')+' Klaida kraunant duomenis: ' + (fkErr?.message || 'nežinoma'), 'error', 5000);
     return;
   }
   console.log('✅ [openKidDetailsModal] Vaikas užkrautas:', fullKid.first_name);
@@ -22398,7 +22398,7 @@ async function loadKidPendingApprovals(kidId) {
   if (countEl) countEl.textContent = rows.length;
 
   if (!rows.length) {
-    box.innerHTML = '<div style="text-align:center;color:var(--grn);padding:8px;font-weight:700;">✅ Viskas patvirtinta</div>';
+    box.innerHTML = '<div style="text-align:center;color:var(--grn);padding:8px;font-weight:700;">'+ico('patvirtinta')+' Viskas patvirtinta</div>';
     return;
   }
 
@@ -22408,7 +22408,7 @@ async function loadKidPendingApprovals(kidId) {
         <div style="font-size:12px;font-weight:800;">${r.label}</div>
         <div style="font-size:11px;color:var(--mut);margin-top:1px;">${r.value}</div>
       </div>
-      <button class="bsm" style="background:var(--grn);color:white;padding:6px 10px;flex-shrink:0;" onclick="kdApprovePending('${r.kind}','${r.id}')">✓</button>
+      <button class="bsm" style="background:var(--grn);color:white;padding:6px 10px;flex-shrink:0;" onclick="kdApprovePending('${r.kind}','${r.id}')">${ico('atlikta')}</button>
       <button class="bsm" style="background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:6px 10px;flex-shrink:0;" onclick="kdRejectPending('${r.kind}','${r.id}')">✗</button>
     </div>
   `).join('');
@@ -22452,7 +22452,7 @@ async function kdRejectPending(kind, id) {
     if (!error) loadPendingCompetitionResults();
   }
 
-  if (error) { showToast('❌ Klaida: ' + error.message, 'error'); return; }
+  if (error) { showToast(ico('klaida')+' Klaida: ' + error.message, 'error'); return; }
   showToast('Atmesta', 'error');
   if (currentKidDetails?.id) await loadKidPendingApprovals(currentKidDetails.id);
   if (typeof updateTrainerPendingBadge === 'function') updateTrainerPendingBadge();
@@ -22507,7 +22507,7 @@ async function loadKidTrainers(kidId) {
       
       // Pavaduojančius klubas gali pašalinti
       const removeBtn = (isClubAdmin && !isPrimary) 
-        ? `<button onclick="kdRemoveTrainer('${t.id}', '${name.replace(/'/g, "\\'")}')" style="background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;flex-shrink:0;">✕ Pašalinti</button>` 
+        ? `<button onclick="kdRemoveTrainer('${t.id}', '${name.replace(/'/g, "\\'")}')" style="background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;flex-shrink:0;">${ico('uzdaryti')} Pašalinti</button>` 
         : '';
       
       return `
@@ -22543,7 +22543,7 @@ function kdShowAddTrainerForm() {
   
   // Užpildyti dropdown'ą klubo treneriais (be jau pridėtų)
   if (!currentClub?.id) {
-    showToast('❌ Klubas neidentifikuotas', 'error');
+    showToast(ico('klaida')+' Klubas neidentifikuotas', 'error');
     return;
   }
   
@@ -22582,11 +22582,11 @@ function kdHideAddTrainerForm() {
 async function kdSaveNewTrainer() {
   const trainerId = document.getElementById('kd-new-trainer-select').value;
   if (!trainerId) {
-    showToast('❌ Pasirink trenerį', 'error');
+    showToast(ico('klaida')+' Pasirink trenerį', 'error');
     return;
   }
   if (!currentKidDetails?.id) {
-    showToast('❌ Vaikas neidentifikuotas', 'error');
+    showToast(ico('klaida')+' Vaikas neidentifikuotas', 'error');
     return;
   }
   
@@ -22599,18 +22599,18 @@ async function kdSaveNewTrainer() {
   
   if (error) {
     console.error('Trenerio pridėjimo klaida:', error);
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
     return;
   }
   
   if (!data || data.length === 0) {
     console.error('❌ INSERT nepridėjo nieko! RLS policy galimai atmetė.');
-    showToast('❌ Negalima pridėti - nepakanka teisių.', 'error', 6000);
+    showToast(ico('klaida')+' Negalima pridėti - nepakanka teisių.', 'error', 6000);
     return;
   }
   
   console.log('✅ Pavaduojantis pridėtas:', data);
-  showToast('✅ Pavaduojantis treneris pridėtas', 'success');
+  showToast(ico('patvirtinta')+' Pavaduojantis treneris pridėtas', 'success');
   
   // Perkrauti trenerių sąrašą
   await loadKidTrainers(currentKidDetails.id);
@@ -22629,18 +22629,18 @@ async function kdRemoveTrainer(ktId, trainerName) {
   
   if (error) {
     console.error('Trenerio pašalinimo klaida:', error);
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
     return;
   }
   
   if (!data || data.length === 0) {
     console.error('❌ DELETE neištrynė nieko! RLS policy galimai atmetė.', { ktId });
-    showToast('❌ Negalima pašalinti - nepakanka teisių. Susisiek su admin.', 'error', 6000);
+    showToast(ico('klaida')+' Negalima pašalinti - nepakanka teisių. Susisiek su admin.', 'error', 6000);
     return;
   }
   
   console.log('✅ Pavaduojantis pašalintas iš DB:', data);
-  showToast('✅ Pavaduojantis pašalintas', 'success');
+  showToast(ico('patvirtinta')+' Pavaduojantis pašalintas', 'success');
   
   // Perkrauti trenerių sąrašą
   await loadKidTrainers(currentKidDetails.id);
@@ -22721,16 +22721,16 @@ async function kdSaveHealth() {
   
   if (error) {
     console.error('Sveikatos info klaida:', error);
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
     return;
   }
   if (!data || data.length === 0) {
-    showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000);
+    showToast(ico('klaida')+' Negalima keisti - nepakanka teisių', 'error', 5000);
     return;
   }
   
   Object.assign(currentKidDetails, updates);
-  showToast('✅ Sveikatos info atnaujinta', 'success');
+  showToast(ico('patvirtinta')+' Sveikatos info atnaujinta', 'success');
   kdCancelHealthEdit();
   await loadKidHealth(currentKidDetails);
 }
@@ -22793,16 +22793,16 @@ async function kdSaveEmergency() {
   const { data, error } = await sb.from('kids').update(updates).eq('id', currentKidDetails.id).select();
   
   if (error) {
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
     return;
   }
   if (!data || data.length === 0) {
-    showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000);
+    showToast(ico('klaida')+' Negalima keisti - nepakanka teisių', 'error', 5000);
     return;
   }
   
   Object.assign(currentKidDetails, updates);
-  showToast('✅ Avarinis kontaktas atnaujintas', 'success');
+  showToast(ico('patvirtinta')+' Avarinis kontaktas atnaujintas', 'success');
   kdCancelEmergencyEdit();
   await loadKidEmergency(currentKidDetails);
 }
@@ -22859,16 +22859,16 @@ async function kdToggleMediaConsent() {
   const { data, error } = await sb.from('kids').update({ media_consent: newConsent }).eq('id', currentKidDetails.id).select();
   
   if (error) {
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
     return;
   }
   if (!data || data.length === 0) {
-    showToast('❌ Negalima keisti - nepakanka teisių', 'error', 5000);
+    showToast(ico('klaida')+' Negalima keisti - nepakanka teisių', 'error', 5000);
     return;
   }
   
   currentKidDetails.media_consent = newConsent;
-  showToast(newConsent ? '✅ Media sutikimas: leidžiama' : '🚫 Media sutikimas: neleidžiama', 'success');
+  showToast(newConsent ? ico('patvirtinta')+' Media sutikimas: leidžiama' : ico('isjungta')+' Media sutikimas: neleidžiama', 'success');
   await loadKidMedia(currentKidDetails);
 }
 
@@ -22952,10 +22952,10 @@ function kdSelectBehavior(amount, shortReason, defaultText) {
 async function awardBehaviorExp() {
   const kid = currentKidDetails;
   if (!kid) return;
-  if (_kdBehaviorAmount === null) { showToast('❌ Pasirink taškus (mygtuką)', 'error'); return; }
+  if (_kdBehaviorAmount === null) { showToast(ico('klaida')+' Pasirink taškus (mygtuką)', 'error'); return; }
   const ta = document.getElementById('kd-be-reason');
   const reason = (ta?.value || '').trim();
-  if (reason.length < 3) { showToast('❌ Parašyk priežastį (min. 3 simboliai)', 'error'); return; }
+  if (reason.length < 3) { showToast(ico('klaida')+' Parašyk priežastį (min. 3 simboliai)', 'error'); return; }
   const amount = _kdBehaviorAmount;
   const btn = document.getElementById('kd-be-send');
   const reset = () => { if (btn) { btn.disabled = false; btn.dataset.busy = ''; btn.textContent = '⚡ Skirti EXP'; btn.style.opacity = '1'; } };
@@ -22972,7 +22972,7 @@ async function awardBehaviorExp() {
     kid.total_exp = newExp; kid.current_level = newLevel;
     const expEl = document.getElementById('kd-exp'); if (expEl) expEl.textContent = newExp.toLocaleString('lt-LT');
     const lvlEl = document.getElementById('kd-level'); if (lvlEl) lvlEl.textContent = newLevel;
-    showToast(amount > 0 ? `✅ Skirta +${amount} EXP! (matys vaikas ir tėvai)` : `✅ Įrašyta ${amount} EXP`, 'success', 3500);
+    showToast(amount > 0 ? `${ico('patvirtinta')} Skirta +${amount} EXP! (matys vaikas ir tėvai)` : `${ico('patvirtinta')} Įrašyta ${amount} EXP`, 'success', 3500);
     if (typeof playSound === 'function') playSound('send');
     // Reset pasirinkimą
     _kdBehaviorAmount = null;
@@ -22985,7 +22985,7 @@ async function awardBehaviorExp() {
     if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
   } catch (e) {
     reset();
-    showToast('❌ Nepavyko: ' + (e.message || e || ''), 'error', 6000);
+    showToast(ico('klaida')+' Nepavyko: ' + (e.message || e || ''), 'error', 6000);
   }
 }
 
@@ -23127,10 +23127,10 @@ async function loadAdminReports() {
         <div style="font-size:9px;color:var(--mut);margin-bottom:7px;">Užsakyta: ${when}${deadlineHtml ? ' · ' + deadlineHtml : ''}</div>
         ${(r.rating_tags || []).length ? `<div style="font-size:9px;color:#d9b970;margin:-3px 0 4px;">🏷️ ${esc(r.rating_tags.join(' · '))}</div>` : ''}
         ${r.rating_comment ? `<div style="font-size:9.5px;color:#d9b970;margin:-1px 0 7px;line-height:1.4;">💬 ${esc(r.rating_comment)}</div>` : ''}
-        ${r.status === 'error' && r.error_text ? `<div style="font-size:9.5px;color:#ff8a8a;margin:-1px 0 7px;line-height:1.4;">⚠️ ${esc(r.error_text)}</div>` : ''}
+        ${r.status === 'error' && r.error_text ? `<div style="font-size:9.5px;color:#ff8a8a;margin:-1px 0 7px;line-height:1.4;">${ico('ispejimas')} ${esc(r.error_text)}</div>` : ''}
         <div style="display:flex;gap:6px;">
           <button onclick="openAdminReport('${r.id}')" style="font-size:11px;font-weight:700;padding:6px 11px;border-radius:8px;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);cursor:pointer;">👁️ Peržiūrėti</button>
-          ${canReview ? `<button onclick="approveReport('${r.id}')" style="font-size:11px;font-weight:800;padding:6px 13px;border-radius:8px;background:linear-gradient(90deg,#16A34A,#22C55E);color:#fff;border:none;cursor:pointer;">✅ Patvirtinti tėvui</button>` : ''}
+          ${canReview ? `<button onclick="approveReport('${r.id}')" style="font-size:11px;font-weight:800;padding:6px 13px;border-radius:8px;background:linear-gradient(90deg,#16A34A,#22C55E);color:#fff;border:none;cursor:pointer;">${ico('patvirtinta')} Patvirtinti tėvui</button>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -23145,7 +23145,7 @@ async function loadAdminReports() {
 async function openAdminReport(id) {
   try {
     const { data, error } = await sb.from('reports').select('report_json, status, type').eq('id', id).single();
-    if (error || !data) { showToast('❌ Nepavyko užkrauti ataskaitos', 'error'); return; }
+    if (error || !data) { showToast(ico('klaida')+' Nepavyko užkrauti ataskaitos', 'error'); return; }
     const rj = data.report_json || {};
     const hasContent = !!(rj.summary || (Array.isArray(rj.skills) && rj.skills.length) || Array.isArray(rj.goals) || rj.intro);
     if (!hasContent) {
@@ -23155,7 +23155,7 @@ async function openAdminReport(id) {
       return;
     }
     openReportViewer(rj);
-  } catch (e) { showToast('❌ Klaida atidarant: ' + (e.message || ''), 'error'); }
+  } catch (e) { showToast(ico('klaida')+' Klaida atidarant: ' + (e.message || ''), 'error'); }
 }
 
 async function approveReport(id) {
@@ -23163,7 +23163,7 @@ async function approveReport(id) {
   try {
     const { error } = await sb.from('reports').update({ status: 'done', reviewed_at: new Date().toISOString(), reviewed_by: currentProfile?.id || null }).eq('id', id);
     if (error) throw error;
-    showToast('✅ Patvirtinta — tėvas gali matyti', 'success', 3000);
+    showToast(ico('patvirtinta')+' Patvirtinta — tėvas gali matyti', 'success', 3000);
     loadAdminReports();
     // 🔔 PUSH visiems vaiko tėvams (clever-processor user_id režimas) — kad sužinotų net su uždarytu appsu.
     // Fire-and-forget: push klaida netrukdo patvirtinimui (realtime + varpelis vis tiek veikia).
@@ -23203,7 +23203,7 @@ async function loadAdminClubs() {
         <div style="font-size:40px;margin-bottom:12px;">🏢</div>
         <div style="font-size:14px;font-weight:800;margin-bottom:6px;">Dar nėra klubų</div>
         <div style="font-size:12px;margin-bottom:16px;">Sukurk pirmą klubą, kad pradėtum</div>
-        <button class="btn" style="margin:0;" onclick="openCreateClub()">➕ Sukurti klubą</button>
+        <button class="btn" style="margin:0;" onclick="openCreateClub()">${ico('prideti')} Sukurti klubą</button>
       </div>`;
     return;
   }
@@ -23223,7 +23223,7 @@ async function loadAdminClubs() {
       </div>
       <div style="display:flex;gap:8px;font-size:11px;color:var(--mut);align-items:center;">
         <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📧 ${c.contact_email || '–'} · bonusas ${c.bonus_pct != null ? c.bonus_pct : 10}%+${c.bonus_extra_pct != null ? c.bonus_extra_pct : 5}% · krepšelis ${c.basket_target_eur != null ? c.basket_target_eur : 40} €</span>
-        <button class="aerr-tool" style="padding:4px 10px;flex-shrink:0;" onclick="openAdminClubEdit('${c.id}')">✏️ Redaguoti</button>
+        <button class="aerr-tool" style="padding:4px 10px;flex-shrink:0;" onclick="openAdminClubEdit('${c.id}')">${ico('redaguoti')} Redaguoti</button>
       </div>
     </div>`;
   }).join('');
@@ -23264,7 +23264,7 @@ function openAdminInfo(){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">👑 MISSION CONTROL</div>
-      <button onclick="document.getElementById('admin-info-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('admin-info-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:18px 20px;font-size:13px;color:var(--text);line-height:1.7;">
       Platformos valdymo centras.<br><br>
@@ -23311,7 +23311,7 @@ function markAllAdminNotifRead(){
   }
   _updateAdminNotifCounts();
   renderAdminNotifTab(adminNotifTab);
-  showToast('✓ Pažymėta','success');
+  showToast(ico('atlikta')+' Pažymėta','success');
 }
 
 async function _fetchAdminNotifications(force){
@@ -23595,11 +23595,11 @@ async function openAdminErrorGroup(hash){
         <div style="font-size:13.5px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🚨 ${escapeHtml(grp?.message||r0.message||'Klaida')}</div>
         <div class="aerr-meta">${grp?grp.count:(rows||[]).length}× · ${escapeHtml(r0.source||'?')}:${r0.lineno||'?'} · ${escapeHtml(r0.url||'')}</div>
       </div>
-      <button onclick="document.getElementById('admin-err-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;flex-shrink:0;">✕</button>
+      <button onclick="document.getElementById('admin-err-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;flex-shrink:0;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:12px 18px;display:flex;gap:6px;border-bottom:.5px solid var(--bdr);">
-      <button class="aerr-tool" onclick="setAdminErrStatus('${safeHash}','ack')">✓ Peržiūrėta</button>
-      <button class="aerr-tool" style="color:#4ade4a;border-color:rgba(12,163,12,.35);" onclick="setAdminErrStatus('${safeHash}','fixed')">✅ Sutvarkyta</button>
+      <button class="aerr-tool" onclick="setAdminErrStatus('${safeHash}','ack')">${ico('atlikta')} Peržiūrėta</button>
+      <button class="aerr-tool" style="color:#4ade4a;border-color:rgba(12,163,12,.35);" onclick="setAdminErrStatus('${safeHash}','fixed')">${ico('patvirtinta')} Sutvarkyta</button>
       <button class="aerr-tool" onclick="setAdminErrStatus('${safeHash}','new')">↩ Grąžinti į naujas</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:14px 18px;">
@@ -23618,8 +23618,8 @@ async function openAdminErrorGroup(hash){
 
 async function setAdminErrStatus(hash, status){
   const { error } = await sb.from('client_errors').update({ status }).eq('err_hash', hash);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  showToast(status === 'fixed' ? '✅ Pažymėta sutvarkyta' : (status === 'ack' ? '✓ Pažymėta peržiūrėta' : '↩ Grąžinta'), 'success');
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
+  showToast(status === 'fixed' ? ico('patvirtinta')+' Pažymėta sutvarkyta' : (status === 'ack' ? ico('atlikta')+' Pažymėta peržiūrėta' : '↩ Grąžinta'), 'success');
   document.getElementById('admin-err-modal')?.remove();
   loadAdminErrors();
 }
@@ -23631,14 +23631,14 @@ async function registerDeploy(){
   if (!ver) return;
   const notes = prompt('Pastabos (nebūtina):', '') || null;
   const { error } = await sb.from('app_versions').upsert({ version: ver.trim(), notes, deployed_at: new Date().toISOString() }, { onConflict: 'version' });
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   showToast('📌 Deploy užregistruotas: ' + ver.trim(), 'success');
 }
 
 async function pruneAdminErrors(){
   if (!confirm('Ištrinti visas senesnes nei 30 d. klaidas?')) return;
   const { data, error } = await sb.rpc('admin_prune_client_errors');
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   showToast('🧹 Ištrinta įrašų: ' + (data ?? 0), 'success');
   loadAdminErrors();
 }
@@ -23771,7 +23771,7 @@ async function loadAfinPayouts(){
       </div>
       <b style="color:#4ade4a;font-size:13px;flex-shrink:0;">${(+r.total || 0).toFixed(2)} €</b>
       <span class="aerr-st ${s[1]}" style="flex-shrink:0;">${s[0]}</span>
-      ${r.status === 'draft' ? `<button class="aerr-tool" style="flex-shrink:0;" title="Patvirtinti" onclick="setPayoutStatus('${r.id}','approved')">✅</button>` : ''}
+      ${r.status === 'draft' ? `<button class="aerr-tool" style="flex-shrink:0;" title="Patvirtinti" onclick="setPayoutStatus('${r.id}','approved')">${ico('patvirtinta')}</button>` : ''}
       ${r.status === 'approved' ? `<button class="aerr-tool" style="flex-shrink:0;" title="Pažymėti išmokėta" onclick="setPayoutStatus('${r.id}','paid')">💸</button>` : ''}
     </div>`;
   }).join('');
@@ -23781,8 +23781,8 @@ async function recalcPayouts(){
   const period = document.getElementById('afin-period')?.value;
   if (!period){ showToast('Pasirink mėnesį', 'error'); return; }
   const { data, error } = await sb.rpc('admin_recalc_payouts', { p_period: period });
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  showToast('🔄 Perskaičiuota klubų: ' + (data ?? 0), 'success');
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
+  showToast(ico('atnaujinti')+' Perskaičiuota klubų: ' + (data ?? 0), 'success');
   loadAfinPayouts();
 }
 
@@ -23790,8 +23790,8 @@ async function setPayoutStatus(id, status){
   const upd = { status };
   if (status === 'paid') upd.paid_at = new Date().toISOString();
   const { error } = await sb.from('club_payouts').update(upd).eq('id', id);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  showToast(status === 'paid' ? '💸 Pažymėta išmokėta' : '✅ Patvirtinta', 'success');
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
+  showToast(status === 'paid' ? '💸 Pažymėta išmokėta' : ico('patvirtinta')+' Patvirtinta', 'success');
   loadAfinPayouts();
 }
 
@@ -23824,7 +23824,7 @@ function openAfinAdjModal(){
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   m.innerHTML = `<div style="width:100%;max-width:420px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;padding:18px 20px;">
-    <div style="font-size:14px;font-weight:800;margin-bottom:12px;">➕ Apskaitos korekcija</div>
+    <div style="font-size:14px;font-weight:800;margin-bottom:12px;">${ico('prideti')} Apskaitos korekcija</div>
     <label class="lbl">KLUBAS</label>
     <select class="inp" id="adj-club" style="margin-bottom:10px;">${opts}</select>
     <label class="lbl">SUMA € (gali būti neigiama)</label>
@@ -23833,7 +23833,7 @@ function openAfinAdjModal(){
     <input class="inp" id="adj-reason" placeholder="pvz. grąžinimas tėvui" style="margin-bottom:14px;">
     <div style="display:flex;gap:8px;">
       <button class="aerr-tool" style="flex:1;" onclick="document.getElementById('afin-adj-modal').remove()">Atšaukti</button>
-      <button class="btn btng" style="flex:1;margin:0;" onclick="submitAfinAdj()">💾 Išsaugoti</button>
+      <button class="btn btng" style="flex:1;margin:0;" onclick="submitAfinAdj()">${ico('issaugoti')} Išsaugoti</button>
     </div></div>`;
   document.body.appendChild(m);
 }
@@ -23842,10 +23842,10 @@ async function submitAfinAdj(){
   const club = document.getElementById('adj-club').value;
   const amount = parseFloat(document.getElementById('adj-amount').value);
   const reason = document.getElementById('adj-reason').value.trim();
-  if (isNaN(amount) || !reason){ showToast('❌ Įvesk sumą ir priežastį', 'error'); return; }
+  if (isNaN(amount) || !reason){ showToast(ico('klaida')+' Įvesk sumą ir priežastį', 'error'); return; }
   const { error } = await sb.from('purchase_adjustments').insert({ club_id: club || null, amount_eur: amount, reason, created_by: currentUser?.id });
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  showToast('✅ Korekcija įrašyta', 'success');
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
+  showToast(ico('patvirtinta')+' Korekcija įrašyta', 'success');
   document.getElementById('afin-adj-modal')?.remove();
   loadAdminFinance();
 }
@@ -23857,23 +23857,23 @@ function renderAfinPrices(){
   el.innerHTML = rows.length ? rows.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:12px;">
     <span style="flex:1;min-width:0;">${p.label}</span>
     <input class="inp" id="price-${p.key}" type="number" step="0.01" value="${(+p.amount_eur).toFixed(2)}" style="width:84px;margin:0;padding:6px;text-align:right;">
-    <button class="aerr-tool" onclick="savePrice('${p.key}')">💾</button>
-  </div>`).join('') + '<div class="aerr-meta" style="padding-top:8px;white-space:normal;">⚠️ Vartotojų UI kainas iš DB perims bendro kodo etape — iki tol ten rodomos senos.</div>'
+    <button class="aerr-tool" onclick="savePrice('${p.key}')">${ico('issaugoti')}</button>
+  </div>`).join('') + '<div class="aerr-meta" style="padding-top:8px;white-space:normal;">'+ico('ispejimas')+' Vartotojų UI kainas iš DB perims bendro kodo etape — iki tol ten rodomos senos.</div>'
   : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:11px;">Paleisk server-admin-apskaita.sql</div>';
 }
 
 async function savePrice(key){
   const v = parseFloat(document.getElementById('price-' + key)?.value);
-  if (isNaN(v) || v < 0){ showToast('❌ Neteisinga suma', 'error'); return; }
+  if (isNaN(v) || v < 0){ showToast(ico('klaida')+' Neteisinga suma', 'error'); return; }
   const { error } = await sb.from('prices').update({ amount_eur: v, updated_at: new Date().toISOString() }).eq('key', key);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  showToast('💾 Kaina atnaujinta', 'success');
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
+  showToast(ico('issaugoti')+' Kaina atnaujinta', 'success');
 }
 
 async function backfillPurchases(){
   if (!confirm('Backfill: sukurti trūkstamus pirkimų įrašus iš senų AI ataskaitų?\n\nIdempotentiška — dublikatų nekurs.')) return;
   const { data, error } = await sb.rpc('admin_backfill_purchases');
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   showToast('🧩 Sukurta įrašų: ' + (data ?? 0), 'success');
   loadAdminFinance();
 }
@@ -24088,18 +24088,18 @@ function renderAaiQueue(){
     const hrs = (Date.now() - new Date(r.created_at).getTime()) / 36e5;
     let chip = '';
     if (r.status === 'pending_review') chip = hrs > 24 ? '<span class="aerr-st bad">⏰ VĖLUOJA</span>' : '<span class="aerr-st warn">⧗ LAUKIA</span>';
-    else if (r.status === 'error') chip = '<span class="aerr-st bad">❌ KLAIDA</span>';
-    else if (r.status === 'rejected') chip = '<span class="aerr-st bad">🚫 ATMESTA</span>';
-    else if (r.status === 'done') chip = `<span class="aerr-st ok">✅ ${r.rating_up === true ? '👍' : (r.rating_up === false ? '👎' : '')}</span>`;
-    else chip = '<span class="aerr-st warn">⚙️ GENERUOJAMA</span>';
+    else if (r.status === 'error') chip = '<span class="aerr-st bad">'+ico('klaida')+' KLAIDA</span>';
+    else if (r.status === 'rejected') chip = '<span class="aerr-st bad">'+ico('isjungta')+' ATMESTA</span>';
+    else if (r.status === 'done') chip = `<span class="aerr-st ok">${ico('patvirtinta')} ${r.rating_up === true ? '👍' : (r.rating_up === false ? '👎' : '')}</span>`;
+    else chip = '<span class="aerr-st warn">'+ico('nustatymai')+' GENERUOJAMA</span>';
     const btns = [];
     if (r.status !== 'error' && r.status !== 'pending' && r.status !== 'generating') btns.push(`<button class="aerr-tool" onclick="openAaiViewer('${r.id}')">👁️</button>`);
     if (r.status === 'pending_review'){
-      btns.push(`<button class="aerr-tool" onclick="openAaiEdit('${r.id}')">✏️</button>`);
-      btns.push(`<button class="aerr-tool" style="color:#4ade4a;border-color:rgba(12,163,12,.35);" onclick="approveReport('${r.id}');setTimeout(loadAdminAI,900)">✅</button>`);
-      btns.push(`<button class="aerr-tool" style="color:#ff9c9c;border-color:rgba(208,59,59,.35);" onclick="aaiReject('${r.id}')">🚫</button>`);
+      btns.push(`<button class="aerr-tool" onclick="openAaiEdit('${r.id}')">${ico('redaguoti')}</button>`);
+      btns.push(`<button class="aerr-tool" style="color:#4ade4a;border-color:rgba(12,163,12,.35);" onclick="approveReport('${r.id}');setTimeout(loadAdminAI,900)">${ico('patvirtinta')}</button>`);
+      btns.push(`<button class="aerr-tool" style="color:#ff9c9c;border-color:rgba(208,59,59,.35);" onclick="aaiReject('${r.id}')">${ico('isjungta')}</button>`);
     }
-    if (r.status === 'error') btns.push(`<button class="aerr-tool" onclick="aaiRetry('${r.id}')">🔄 Retry</button>`);
+    if (r.status === 'error') btns.push(`<button class="aerr-tool" onclick="aaiRetry('${r.id}')">${ico('atnaujinti')} Retry</button>`);
     if (r.status === 'rejected') btns.push(`<button class="aerr-tool" onclick="aaiUnreject('${r.id}')">↩️</button>`);
     return `<div class="cd" style="margin:0 0 8px;padding:11px 14px;">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -24118,14 +24118,14 @@ function renderAaiQueue(){
 
 async function openAaiViewer(id){
   const { data: r, error } = await sb.from('reports').select('*, kids(first_name, last_name)').eq('id', id).single();
-  if (error || !r){ showToast('❌ Nepavyko užkrauti', 'error'); return; }
+  if (error || !r){ showToast(ico('klaida')+' Nepavyko užkrauti', 'error'); return; }
   if (typeof openReportViewer === 'function') openReportViewer(r);
 }
 
 // ✏️ Redagavimas: per-key editorius (string → textarea; kita → JSON textarea)
 async function openAaiEdit(id){
   const { data: r, error } = await sb.from('reports').select('id, type, report_json, admin_note').eq('id', id).single();
-  if (error || !r || !r.report_json){ showToast('❌ Ataskaita neturi turinio', 'error'); return; }
+  if (error || !r || !r.report_json){ showToast(ico('klaida')+' Ataskaita neturi turinio', 'error'); return; }
   const old = document.getElementById('aai-edit-modal'); if (old) old.remove();
   const fields = Object.keys(r.report_json).map(k => {
     const v = r.report_json[k];
@@ -24138,8 +24138,8 @@ async function openAaiEdit(id){
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
   m.innerHTML = `<div style="width:100%;max-width:760px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
     <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-size:13.5px;font-weight:800;">✏️ Redaguoti ataskaitą (${_aaiTypeLbl[r.type] || r.type})</div>
-      <button onclick="document.getElementById('aai-edit-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <div style="font-size:13.5px;font-weight:800;">${ico('redaguoti')} Redaguoti ataskaitą (${_aaiTypeLbl[r.type] || r.type})</div>
+      <button onclick="document.getElementById('aai-edit-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:10px 18px;">${fields}
       <label class="lbl" style="margin-top:10px;">ADMIN PASTABA (vidinė)</label>
@@ -24147,7 +24147,7 @@ async function openAaiEdit(id){
     </div>
     <div style="padding:12px 18px;border-top:.5px solid var(--bdr);display:flex;gap:8px;">
       <button class="aerr-tool" style="flex:1;" onclick="document.getElementById('aai-edit-modal').remove()">Atšaukti</button>
-      <button class="btn btng" style="flex:1;margin:0;" onclick="submitAaiEdit('${r.id}')">💾 Išsaugoti pakeitimus</button>
+      <button class="btn btng" style="flex:1;margin:0;" onclick="submitAaiEdit('${r.id}')">${ico('issaugoti')} Išsaugoti pakeitimus</button>
     </div>
   </div>`;
   document.body.appendChild(m);
@@ -24159,13 +24159,13 @@ async function submitAaiEdit(id){
   for (const a of areas){
     const k = a.dataset.key;
     if (a.dataset.json === '1'){
-      try { obj[k] = JSON.parse(a.value); } catch(e){ showToast('❌ Blogas JSON lauke: ' + k, 'error'); return; }
+      try { obj[k] = JSON.parse(a.value); } catch(e){ showToast(ico('klaida')+' Blogas JSON lauke: ' + k, 'error'); return; }
     } else obj[k] = a.value;
   }
   const note = document.getElementById('aaie-note')?.value?.trim() || null;
   const { error } = await sb.from('reports').update({ report_json: obj, admin_note: note }).eq('id', id);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  showToast('💾 Ataskaita atnaujinta', 'success');
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
+  showToast(ico('issaugoti')+' Ataskaita atnaujinta', 'success');
   document.getElementById('aai-edit-modal')?.remove();
   loadAdminAI();
   if (typeof loadAdminReports === 'function') loadAdminReports();
@@ -24175,8 +24175,8 @@ async function aaiReject(id){
   const reason = prompt('Atmetimo priežastis (vidinė pastaba):');
   if (reason === null) return;
   const { error } = await sb.from('reports').update({ status: 'rejected', admin_note: reason || 'Atmesta', reviewed_at: new Date().toISOString(), reviewed_by: currentProfile?.id }).eq('id', id);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  showToast('🚫 Atmesta (tėvui liks „ruošiama")', 'success');
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
+  showToast(ico('isjungta')+' Atmesta (tėvui liks „ruošiama")', 'success');
   loadAdminAI();
   if (typeof loadAdminReports === 'function') loadAdminReports();
 }
@@ -24192,14 +24192,14 @@ async function aaiRetry(id){
       try { if (error.context && error.context.json) { const j = await error.context.json(); if (j?.error) detail = j.error; } } catch (_e) {}
       throw new Error(detail);
     }
-    showToast('🔄 Paleista: ' + (data?.status === 'pending_review' ? 'grįš į LAUKIA eilę (iki ~5 min.)' : 'baigta'), 'success', 5000);
-  } catch (e) { showToast('❌ Retry nepavyko: ' + (e?.message || e), 'error', 6000); }
+    showToast(ico('atnaujinti')+' Paleista: ' + (data?.status === 'pending_review' ? 'grįš į LAUKIA eilę (iki ~5 min.)' : 'baigta'), 'success', 5000);
+  } catch (e) { showToast(ico('klaida')+' Retry nepavyko: ' + (e?.message || e), 'error', 6000); }
   setTimeout(loadAdminAI, 1500);
 }
 
 async function aaiUnreject(id){
   const { error } = await sb.from('reports').update({ status: 'pending_review', admin_note: null }).eq('id', id);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   showToast('↩️ Grąžinta į peržiūros eilę', 'success');
   loadAdminAI();
 }
@@ -24255,8 +24255,8 @@ function renderAaiKb(){
         <div style="font-size:11.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">[${_aaiEsc(r.topic)}] ${_aaiEsc(r.title || '(be pavadinimo)')}</div>
         <div class="aerr-meta">${_aaiEsc((r.content || '').slice(0, 70))}…</div>
       </div>
-      <button class="aerr-tool" style="padding:4px 8px;" onclick="openAaiKbEdit('knowledge','${r.id}')">✏️</button>
-      <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" onclick="deleteAaiKb('knowledge','${r.id}')">🗑️</button>
+      <button class="aerr-tool" style="padding:4px 8px;" onclick="openAaiKbEdit('knowledge','${r.id}')">${ico('redaguoti')}</button>
+      <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" onclick="deleteAaiKb('knowledge','${r.id}')">${ico('trinti')}</button>
     </div>`).join('') : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:11px;">Tuščia</div>';
   } else {
     rows = ins.length ? ins.map(r => `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);">
@@ -24265,14 +24265,14 @@ function renderAaiKb(){
         <div style="font-size:11.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">[${_aaiEsc(r.kind)} #${r.seq}] ${_aaiEsc(r.title || '')}</div>
         <div class="aerr-meta">${_aaiEsc((r.content || '').slice(0, 70))}…</div>
       </div>
-      <button class="aerr-tool" style="padding:4px 8px;" onclick="openAaiKbEdit('inserts','${r.id}')">✏️</button>
-      <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" onclick="deleteAaiKb('inserts','${r.id}')">🗑️</button>
+      <button class="aerr-tool" style="padding:4px 8px;" onclick="openAaiKbEdit('inserts','${r.id}')">${ico('redaguoti')}</button>
+      <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" onclick="deleteAaiKb('inserts','${r.id}')">${ico('trinti')}</button>
     </div>`).join('') : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:11px;">Tuščia</div>';
   }
   el.innerHTML = `<div style="display:flex;gap:5px;align-items:center;margin-bottom:8px;">
     ${tab('knowledge', '📚 Žinios', kn.length)}${tab('inserts', '🧩 Priedai', ins.length)}
     <div style="flex:1;"></div>
-    <button class="aerr-tool" style="padding:4px 9px;" onclick="openAaiKbEdit('${_aaiKbTab}', null)">➕ Naujas</button>
+    <button class="aerr-tool" style="padding:4px 9px;" onclick="openAaiKbEdit('${_aaiKbTab}', null)">${ico('prideti')} Naujas</button>
   </div>
   <div style="max-height:340px;overflow-y:auto;">${rows}</div>
   <div class="aerr-meta" style="margin-top:6px;white-space:normal;">Pakeitimai galioja kitai generacijai iškart (EF skaito iš DB).</div>`;
@@ -24300,7 +24300,7 @@ function openAaiKbEdit(type, id){
   m.innerHTML = `<div style="width:100%;max-width:620px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
     <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
       <div style="font-size:13.5px;font-weight:800;">${id ? '✏️ Redaguoti' : '➕ Naujas'} · ${type === 'knowledge' ? '📚 Žinios' : '🧩 Priedas'}</div>
-      <button onclick="document.getElementById('aai-kb-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('aai-kb-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:12px 18px;">
       ${head}
@@ -24312,7 +24312,7 @@ function openAaiKbEdit(type, id){
     </div>
     <div style="padding:12px 18px;border-top:.5px solid var(--bdr);display:flex;gap:8px;">
       <button class="aerr-tool" style="flex:1;" onclick="document.getElementById('aai-kb-modal').remove()">Atšaukti</button>
-      <button class="btn btng" style="flex:1;margin:0;" onclick="submitAaiKb('${type}', ${id ? `'${id}'` : 'null'})">💾 Išsaugoti</button>
+      <button class="btn btng" style="flex:1;margin:0;" onclick="submitAaiKb('${type}', ${id ? `'${id}'` : 'null'})">${ico('issaugoti')} Išsaugoti</button>
     </div>
   </div>`;
   document.body.appendChild(m);
@@ -24320,7 +24320,7 @@ function openAaiKbEdit(type, id){
 
 async function submitAaiKb(type, id){
   const content = document.getElementById('kb-content')?.value?.trim();
-  if (!content){ showToast('❌ Turinys privalomas', 'error'); return; }
+  if (!content){ showToast(ico('klaida')+' Turinys privalomas', 'error'); return; }
   const title = document.getElementById('kb-title')?.value?.trim() || null;
   const active = !!document.getElementById('kb-active')?.checked;
   let payload;
@@ -24331,8 +24331,8 @@ async function submitAaiKb(type, id){
   }
   const tbl = type === 'knowledge' ? 'report_knowledge' : 'report_inserts';
   const res = id ? await sb.from(tbl).update(payload).eq('id', id) : await sb.from(tbl).insert(payload);
-  if (res.error){ showToast('❌ ' + res.error.message, 'error'); return; }
-  showToast('💾 Išsaugota', 'success');
+  if (res.error){ showToast(ico('klaida')+' ' + res.error.message, 'error'); return; }
+  showToast(ico('issaugoti')+' Išsaugota', 'success');
   document.getElementById('aai-kb-modal')?.remove();
   loadAdminAI();
 }
@@ -24341,8 +24341,8 @@ async function deleteAaiKb(type, id){
   if (!confirm('Ištrinti šį žinių bazės įrašą?')) return;
   const tbl = type === 'knowledge' ? 'report_knowledge' : 'report_inserts';
   const { error } = await sb.from(tbl).delete().eq('id', id);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  showToast('🗑️ Ištrinta', 'success');
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
+  showToast(ico('trinti')+' Ištrinta', 'success');
   loadAdminAI();
 }
 
@@ -24374,7 +24374,7 @@ function openAaiInsight(){
   m.innerHTML = `<div style="width:100%;max-width:640px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
     <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
       <div style="font-size:13.5px;font-weight:800;">🧠 Kokybės įžvalgos promptas</div>
-      <button onclick="document.getElementById('aai-insight-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('aai-insight-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:12px 18px;">
       <textarea id="aai-insight-txt" class="inp" rows="16" readonly style="margin:0;font-size:11.5px;font-family:ui-monospace,Consolas,monospace;resize:vertical;">${_aaiEsc(txt)}</textarea>
@@ -24452,7 +24452,7 @@ function renderAdminUsers(){
 // 🪪 Kliento kortelė
 async function openAdminUserCard(id){
   const p = (_auRows || []).find(x => x.id === id);
-  if (!p){ showToast('❌ Nerastas', 'error'); return; }
+  if (!p){ showToast(ico('klaida')+' Nerastas', 'error'); return; }
   const safe = q => Promise.resolve(q).then(r => r, () => ({ data: null }));
   let kids = [];
   if (p.role === 'parent'){
@@ -24486,7 +24486,7 @@ async function openAdminUserCard(id){
         <div style="font-size:14px;font-weight:800;">${escapeHtml((p.first_name || '') + ' ' + (p.last_name || ''))}</div>
         <div class="aerr-meta"><span style="color:${rl[1]};">${escapeHtml(rl[0])}</span> · ${escapeHtml(p.status || '?')} · reg. ${new Date(p.created_at).toLocaleDateString('lt-LT')} · aktyvumas: ${actDays ? actDays + ' d./14 d.' : '—'}</div>
       </div>
-      <button onclick="document.getElementById('au-card-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;flex-shrink:0;">✕</button>
+      <button onclick="document.getElementById('au-card-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;flex-shrink:0;">${ico('uzdaryti')}</button>
     </div>
     <div style="flex:1;overflow-y:auto;padding:12px 18px;">
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
@@ -24500,7 +24500,7 @@ async function openAdminUserCard(id){
         <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:12px;">
           <div style="flex:1;min-width:0;">${escapeHtml((k.first_name || '') + ' ' + (k.last_name || ''))} <span class="aerr-meta" style="display:inline;">· ${k.total_exp || 0} EXP · lvl ${k.current_level || 1} · ${escapeHtml(k.subscription_tier || 'free')}</span></div>
           <button class="aerr-tool" style="padding:4px 8px;" title="GDPR eksportas" onclick="exportKidData('${k.id}','${((k.first_name || '') + '-' + (k.last_name || '')).replace(/['"<>\\]/g, '')}')">📦</button>
-          <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" title="IŠTRINTI VISKĄ" onclick="deleteKidCascadeUI('${k.id}','${(k.first_name || '').replace(/['"<>\\]/g, '')}')">🗑️</button>
+          <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" title="IŠTRINTI VISKĄ" onclick="deleteKidCascadeUI('${k.id}','${(k.first_name || '').replace(/['"<>\\]/g, '')}')">${ico('trinti')}</button>
         </div>`).join('') : ''}
       <div class="aerr-meta" style="margin:12px 0 4px;">PIRKIMAI (${purch.length})</div>
       ${purch.length ? purch.map(x => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bdr);font-size:11.5px;"><span>${tLbl[x.item_type] || x.item_type}</span><span><b style="color:#4ade4a;">${(+x.amount_eur || 0).toFixed(2)} €</b> <span class="aerr-meta" style="display:inline;">${new Date(x.created_at).toLocaleDateString('lt-LT')}</span></span></div>`).join('') : '<div style="color:var(--mut);font-size:11px;padding:4px 0;">Nėra</div>'}
@@ -24514,7 +24514,7 @@ async function openAdminUserCard(id){
 async function setUserStatus(id, status){
   if (!confirm(status === 'suspended' ? 'Sustabdyti šį vartotoją? Jis nebegalės prisijungti.' : 'Aktyvuoti vartotoją?')) return;
   const { error } = await sb.from('profiles').update({ status }).eq('id', id);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   logAdminAction(status === 'suspended' ? 'suspend' : 'activate', 'profile', id);
   showToast(status === 'suspended' ? '⏸️ Sustabdytas' : '▶️ Aktyvuotas', 'success');
   document.getElementById('au-card-modal')?.remove();
@@ -24528,8 +24528,8 @@ async function changeUserRole(id){
   if (!confirm(`Keisti rolę: ${p.role} → ${role}?\n\nVartotojas po perkrovimo pateks į kitą portalą.`)) return;
   // Rolės keitimas per SECURITY DEFINER RPC — audito įrašas admin_actions daromas serveryje (#5)
   const { error } = await sb.rpc('admin_set_user_role', { p_user_id: id, p_role: role });
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
-  showToast('✅ Rolė pakeista', 'success');
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
+  showToast(ico('patvirtinta')+' Rolė pakeista', 'success');
   document.getElementById('au-card-modal')?.remove();
   loadAdminUsers();
 }
@@ -24538,7 +24538,7 @@ async function changeUserRole(id){
 async function exportKidData(kidId, fname){
   // PII eksportas per RPC-wrapper'į — audito įrašas admin_actions daromas serveryje (#5)
   const { data, error } = await sb.rpc('admin_export_kid', { p_kid: kidId });
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'spobu-gdpr-' + (fname || kidId) + '.json'; a.click();
@@ -24550,10 +24550,10 @@ async function exportKidData(kidId, fname){
 async function deleteKidCascadeUI(kidId, firstName){
   const typed = prompt(`⚠️ NEGRĮŽTAMA!\n\nBus ištrinti VISI šio vaiko duomenys (EXP, karjera, lankomumas, ataskaitos...).\nApskaitos pirkimai liks be asmens ryšio.\n\nPatvirtinimui įrašyk vaiko vardą: ${firstName}`);
   if (typed === null) return;
-  if ((typed || '').trim().toLowerCase() !== (firstName || '').trim().toLowerCase()){ showToast('❌ Vardas nesutampa — atšaukta', 'error'); return; }
+  if ((typed || '').trim().toLowerCase() !== (firstName || '').trim().toLowerCase()){ showToast(ico('klaida')+' Vardas nesutampa — atšaukta', 'error'); return; }
   if (!confirm('PASKUTINIS patvirtinimas: trinti negrįžtamai?')) return;
   const { data, error } = await sb.rpc('admin_delete_kid_cascade', { p_kid: kidId });
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   alert('✅ ' + (data || 'Ištrinta.'));
   document.getElementById('au-card-modal')?.remove();
   loadAdminUsers();
@@ -24588,7 +24588,7 @@ function renderAuFeedback(){
 
 async function setFbStatus(id, status){
   const { error } = await sb.from('feedback').update({ status }).eq('id', id);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   logAdminAction('feedback_status', 'feedback', id, { status });
   loadAdminUsers();
   if (typeof loadAdminFeedback === 'function') loadAdminFeedback();
@@ -24614,9 +24614,9 @@ function openFbReply(id){
 
 async function submitFbReply(id){
   const reply = document.getElementById('au-fb-reply')?.value?.trim();
-  if (!reply){ showToast('❌ Įrašyk atsakymą', 'error'); return; }
+  if (!reply){ showToast(ico('klaida')+' Įrašyk atsakymą', 'error'); return; }
   const { error } = await sb.from('feedback').update({ admin_reply: reply, replied_at: new Date().toISOString(), replied_by: currentUser?.id, status: 'answered' }).eq('id', id);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   logAdminAction('feedback_reply', 'feedback', id);
   showToast('📨 Atsakymas išsaugotas', 'success');
   document.getElementById('au-fb-modal')?.remove();
@@ -24667,7 +24667,7 @@ async function loadAdminNudges(){
   el.innerHTML = (items.length
     ? items.map(i => `<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:.5px solid var(--bdr);font-size:12px;line-height:1.45;">
         <div style="flex:1;min-width:0;">${i.html}</div>
-        ${i.alertId ? `<button class="aerr-tool" style="padding:2px 7px;font-size:10px;flex-shrink:0;" title="Pažymėti matytu" onclick="markAlertSeen('${i.alertId}')">✓</button>` : ''}
+        ${i.alertId ? `<button class="aerr-tool" style="padding:2px 7px;font-size:10px;flex-shrink:0;" title="Pažymėti matytu" onclick="markAlertSeen('${i.alertId}')">${ico('atlikta')}</button>` : ''}
       </div>`).join('')
     : '<div style="text-align:center;padding:12px;color:var(--mut);font-size:12px;">Viskas ramu 🧘</div>')
     + (dg ? `<div class="aerr-meta" style="margin-top:8px;white-space:normal;">📬 ${new Date(dg.created_at).toLocaleDateString('lt-LT')}: ${_aaiEsc(dg.body || '')}</div>` : '');
@@ -24710,7 +24710,7 @@ async function loadAdminPlatform(){
     <div style="display:flex;align-items:center;gap:8px;padding:10px 0 4px;border-top:.5px solid var(--bdr);">
       <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">📌 Min. programos versija</div><div class="aerr-meta" style="white-space:normal;">Senesni klientai gaus atnaujinimo juostą (po bendro kodo etapo)</div></div>
       <input class="inp" id="ap-minv" value="${_aaiEsc(minV)}" placeholder="v350" style="width:86px;margin:0;padding:6px;text-align:center;">
-      <button class="aerr-tool" onclick="saveMinAppVersion()">💾</button>
+      <button class="aerr-tool" onclick="saveMinAppVersion()">${ico('issaugoti')}</button>
     </div>
     <div style="display:flex;align-items:center;gap:12px;padding:10px 0 4px;border-top:.5px solid var(--bdr);">
       <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">🧍 Savarankiška 14+ registracija ${selfReg ? '<span class="aerr-st ok">ĮJUNGTA</span>' : ''}</div><div class="aerr-meta" style="white-space:normal;">Paaugliai nuo 14 m. gali registruotis patys su klubo kodu (klubas tvirtina). Klubai turi ir savo jungiklį.</div></div>
@@ -24729,7 +24729,7 @@ async function loadAdminPlatform(){
   if (annEl) annEl.innerHTML = `
     <select class="inp" id="ap-ann-type" style="margin:0 0 8px;width:150px;padding:7px;">
       <option value="info" ${(!ann || ann.type !== 'warning') ? 'selected' : ''}>ℹ️ Informacija</option>
-      <option value="warning" ${(ann && ann.type === 'warning') ? 'selected' : ''}>⚠️ Įspėjimas</option>
+      <option value="warning" ${(ann && ann.type === 'warning') ? 'selected' : ''}>${ico('ispejimas')} Įspėjimas</option>
     </select>
     <textarea class="inp" id="ap-ann-text" rows="2" placeholder="Skelbimo tekstas visoms rolėms..." style="margin:0 0 8px;resize:vertical;">${_aaiEsc(ann?.text || '')}</textarea>
     <div style="display:flex;gap:8px;">
@@ -24760,9 +24760,9 @@ async function loadAdminPlatform(){
 
 async function savePlatformSetting(key, val){
   const { error } = await sb.from('platform_settings').upsert({ key, value: val, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   logAdminAction('platform_setting', 'platform', key, { value: val });
-  showToast('💾 Išsaugota', 'success');
+  showToast(ico('issaugoti')+' Išsaugota', 'success');
   loadAdminPlatform();
 }
 
@@ -24779,7 +24779,7 @@ function saveGlobalAnnouncement(){
 
 // 🏢 Klubo redagavimas (kūrimo srauto NELIEČIAM — tik update)
 function openAdminClubEdit(id){
-  const c = _admClubsCache[id]; if (!c){ showToast('❌ Klubas nerastas', 'error'); return; }
+  const c = _admClubsCache[id]; if (!c){ showToast(ico('klaida')+' Klubas nerastas', 'error'); return; }
   const old = document.getElementById('adm-club-edit'); if (old) old.remove();
   const m = document.createElement('div'); m.id = 'adm-club-edit';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
@@ -24787,8 +24787,8 @@ function openAdminClubEdit(id){
   const num = (id2, lbl, val) => `<div style="flex:1;min-width:100px;"><label class="lbl">${lbl}</label><input class="inp" id="${id2}" type="number" step="0.5" value="${val}" style="margin:0;padding:7px;"></div>`;
   m.innerHTML = `<div style="width:100%;max-width:520px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:90vh;overflow-y:auto;padding:18px 20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div style="font-size:14px;font-weight:800;">✏️ ${_aaiEsc(c.name || 'Klubas')}</div>
-      <button onclick="document.getElementById('adm-club-edit').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <div style="font-size:14px;font-weight:800;">${ico('redaguoti')} ${_aaiEsc(c.name || 'Klubas')}</div>
+      <button onclick="document.getElementById('adm-club-edit').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <label class="lbl">PAVADINIMAS</label>
     <input class="inp" id="ace-name" value="${_aaiEsc(c.name || '')}" style="margin-bottom:8px;">
@@ -24806,7 +24806,7 @@ function openAdminClubEdit(id){
     </div>
     <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;margin-bottom:14px;"><input type="checkbox" id="ace-active" ${c.is_active ? 'checked' : ''}> Klubas aktyvus</label>
     <div class="aerr-meta" style="white-space:normal;margin-bottom:10px;">Bonusų % pakeitimai matysis klubo „Verslas" sekcijoje ir kito mėnesio perskaičiavime.</div>
-    <button class="btn btng" style="width:100%;margin:0;" onclick="saveAdminClubEdit('${id}')">💾 Išsaugoti</button>
+    <button class="btn btng" style="width:100%;margin:0;" onclick="saveAdminClubEdit('${id}')">${ico('issaugoti')} Išsaugoti</button>
   </div>`;
   document.body.appendChild(m);
 }
@@ -24824,11 +24824,11 @@ async function saveAdminClubEdit(id){
     basket_target_eur: parseFloat(val('ace-basket')) || 0,
     is_active: !!document.getElementById('ace-active')?.checked
   };
-  if (!payload.name){ showToast('❌ Pavadinimas privalomas', 'error'); return; }
+  if (!payload.name){ showToast(ico('klaida')+' Pavadinimas privalomas', 'error'); return; }
   const { error } = await sb.from('clubs').update(payload).eq('id', id);
-  if (error){ showToast('❌ ' + error.message, 'error'); return; }
+  if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   logAdminAction('club_edit', 'club', id, { name: payload.name });
-  showToast('💾 Klubas atnaujintas', 'success');
+  showToast(ico('issaugoti')+' Klubas atnaujintas', 'success');
   document.getElementById('adm-club-edit')?.remove();
   loadAdminClubs();
 }
@@ -24875,11 +24875,11 @@ async function submitNewClub() {
   const bonusExtraPct = parseFloat(document.getElementById('cclub-bonus-extra').value) || 0;
   const basketTarget = parseFloat(document.getElementById('cclub-basket').value) || 0;
 
-  if (!name) { showToast('❌ Įvesk klubo pavadinimą', 'error'); return; }
-  if (!city) { showToast('❌ Įvesk miestą', 'error'); return; }
-  if (!sportId) { showToast('❌ Pasirink sporto šaką', 'error'); return; }
-  if (!adminEmail) { showToast('❌ Įvesk admin email', 'error'); return; }
-  if (!adminEmail.includes('@')) { showToast('❌ Neteisingas email', 'error'); return; }
+  if (!name) { showToast(ico('klaida')+' Įvesk klubo pavadinimą', 'error'); return; }
+  if (!city) { showToast(ico('klaida')+' Įvesk miestą', 'error'); return; }
+  if (!sportId) { showToast(ico('klaida')+' Pasirink sporto šaką', 'error'); return; }
+  if (!adminEmail) { showToast(ico('klaida')+' Įvesk admin email', 'error'); return; }
+  if (!adminEmail.includes('@')) { showToast(ico('klaida')+' Neteisingas email', 'error'); return; }
 
   const btn = document.getElementById('cclub-submit');
   btn.disabled = true;
@@ -24948,7 +24948,7 @@ async function submitNewClub() {
         await sb.auth.resetPasswordForEmail(adminEmail, {
           redirectTo: `${window.location.origin}/spobu/set-password.html`
         });
-        showToast('✅ Klubas sukurtas!\n\nVartotojas jau egzistuoja, jam išsiųstas slaptažodžio nustatymo email\'as.', 'success');
+        showToast(ico('patvirtinta')+' Klubas sukurtas!\n\nVartotojas jau egzistuoja, jam išsiųstas slaptažodžio nustatymo email\'as.', 'success');
       } else {
         throw signUpError;
       }
@@ -24958,7 +24958,7 @@ async function submitNewClub() {
         redirectTo: `${window.location.origin}/spobu/set-password.html`
       });
       
-      showToast(`✅ Klubas sukurtas!\n\n📧 ${adminEmail}\nIšsiųstas aktyvavimo email'as`, 'success');
+      showToast(`${ico('patvirtinta')} Klubas sukurtas!\n\n📧 ${adminEmail}\nIšsiųstas aktyvavimo email'as`, 'success');
     }
 
     // 🔑 Atkuriam admino sesiją PRIEŠ perkraunant admino duomenis
@@ -24971,7 +24971,7 @@ async function submitNewClub() {
 
   } catch (error) {
     console.error('submitNewClub error:', error);
-    showToast('❌ Klaida: ' + (error.message || JSON.stringify(error)), 'error', 6000);
+    showToast(ico('klaida')+' Klaida: ' + (error.message || JSON.stringify(error)), 'error', 6000);
   } finally {
     // Jei signUp metė klaidą — vis tiek atkuriam sesiją ir leidžiam auth-change
     if (window._admSess){ try { await sb.auth.setSession({ access_token: window._admSess.access_token, refresh_token: window._admSess.refresh_token }); } catch(e){} window._admSess = null; }
@@ -25029,7 +25029,7 @@ function _showClubManagerBar(){
   document.getElementById('club-mgr-bar')?.remove();
   const b = document.createElement('div'); b.id='club-mgr-bar';
   b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:100010;background:#1D4ED8;color:#fff;font-size:12px;font-weight:800;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.4);';
-  b.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🔑 Administruoji: ${_managedClub?.name||'Klubas'}</span><button onclick="exitClubManagerMode()" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;margin-left:8px;">← Grįžti į trenerį</button>`;
+  b.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🔑 Administruoji: ${_managedClub?.name||'Klubas'}</span><button onclick="exitClubManagerMode()" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;margin-left:8px;">${ico('atgal')} Grįžti į trenerį</button>`;
   document.body.appendChild(b);
 }
 
@@ -25041,7 +25041,7 @@ async function openClubManagers(){
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100006;align-items:flex-end;justify-content:center;';
   m.onclick=e=>{ if(e.target===m) m.remove(); };
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔑 TRENERIŲ PRIEIGA</div><button onclick="document.getElementById('club-mgr-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🔑 TRENERIŲ PRIEIGA</div><button onclick="document.getElementById('club-mgr-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div style="padding:14px 16px 22px;">
       <div style="font-size:11px;color:var(--mut);line-height:1.5;margin:0 2px 12px;">Treneris su prieiga gali su SAVO prisijungimu įeiti į klubo administravimą (pilna prieiga). Duok tik patikimiems.</div>
       <div id="club-mgr-list"><div style="text-align:center;color:var(--mut);padding:14px;font-size:12px;">Kraunama...</div></div>
@@ -25076,14 +25076,14 @@ async function _clubToggleManager(profileId, grant){
     if (grant===true || grant==='true'){
       const { error } = await sb.from('club_managers').insert({ club_id: currentClub.id, profile_id: profileId });
       if (error) throw error;
-      showToast('✅ Prieiga suteikta','success');
+      showToast(ico('patvirtinta')+' Prieiga suteikta','success');
     } else {
       const { error } = await sb.from('club_managers').delete().eq('club_id', currentClub.id).eq('profile_id', profileId);
       if (error) throw error;
       showToast('Prieiga atimta');
     }
     _loadClubManagers();
-  } catch(e){ showToast('❌ '+(e.message||'Nepavyko')+' (ar paleidai server-klubas-vadybininkai.sql?)','error',6000); }
+  } catch(e){ showToast(ico('klaida')+' '+(e.message||'Nepavyko')+' (ar paleidai server-klubas-vadybininkai.sql?)','error',6000); }
 }
 
 async function loadClubData(clubIdOverride) {
@@ -25097,7 +25097,7 @@ async function loadClubData(clubIdOverride) {
 
   if (error || !club) {
     console.error('❌ [loadClubData] Klubas nerastas!', error);
-    showToast('❌ Šis klubas dar nepriskirtas. Susisiek su admin.', 'error', 5000);
+    showToast(ico('klaida')+' Šis klubas dar nepriskirtas. Susisiek su admin.', 'error', 5000);
     return;
   }
 
@@ -25151,7 +25151,7 @@ async function openClubOnboarding(){
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100007;align-items:flex-end;justify-content:center;';
   m.onclick=e=>{ if(e.target===m){ _clubOnboardSeen(); m.remove(); } };
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🚀 PRADŽIA · ${doneN}/3</div><button onclick="_clubOnboardSeen();document.getElementById('club-onboard').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🚀 PRADŽIA · ${doneN}/3</div><button onclick="_clubOnboardSeen();document.getElementById('club-onboard').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div style="padding:14px 16px 22px;">
       <div style="font-size:11px;color:var(--mut);line-height:1.5;margin:0 2px 12px;">Keli žingsniai — ir klubas pasiruošęs. Kiekvienas nuveda kur reikia:</div>
       ${step(hasGroup,'1','📅','Sukurk pirmą grupę','Grupė + treniruočių laikai',"nv('k',null,'k-trainers');if(typeof switchClubTeamTab==='function')switchClubTeamTab('groups');if(typeof openClubGroupModal==='function')openClubGroupModal()")}
@@ -25411,13 +25411,13 @@ function _cgmTrainerOpts(sel){ return '<option value="">— pasirink —</option
 function _cgmAddAssistant(sel){
   const c = document.getElementById('cgm-assistants'); if(!c) return;
   const row = document.createElement('div'); row.style.cssText='display:flex;gap:8px;margin-top:6px;';
-  row.innerHTML = `<select class="cgm-asst" style="flex:1;${_CGM_CSS}">${_cgmTrainerOpts(sel||'')}</select><button onclick="this.parentElement.remove()" style="background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.3);color:#EF4444;width:38px;border-radius:10px;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>`;
+  row.innerHTML = `<select class="cgm-asst" style="flex:1;${_CGM_CSS}">${_cgmTrainerOpts(sel||'')}</select><button onclick="this.parentElement.remove()" style="background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.3);color:#EF4444;width:38px;border-radius:10px;cursor:pointer;font-size:14px;flex-shrink:0;">${ico('uzdaryti')}</button>`;
   c.appendChild(row);
 }
 function _cgmAddDay(day, time){
   const c = document.getElementById('cgm-schedule'); if(!c) return;
   const row = document.createElement('div'); row.style.cssText='display:flex;gap:8px;margin-top:6px;align-items:center;';
-  row.innerHTML = `<select class="cgm-day" style="flex:1;${_CGM_CSS}">${CLUB_DAYS.map(d=>`<option value="${d}" ${day===d?'selected':''}>${d}</option>`).join('')}</select><input class="cgm-time" type="time" value="${time||''}" style="width:118px;${_CGM_CSS}"><button onclick="this.parentElement.remove()" style="background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.3);color:#EF4444;width:38px;border-radius:10px;cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>`;
+  row.innerHTML = `<select class="cgm-day" style="flex:1;${_CGM_CSS}">${CLUB_DAYS.map(d=>`<option value="${d}" ${day===d?'selected':''}>${d}</option>`).join('')}</select><input class="cgm-time" type="time" value="${time||''}" style="width:118px;${_CGM_CSS}"><button onclick="this.parentElement.remove()" style="background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.3);color:#EF4444;width:38px;border-radius:10px;cursor:pointer;font-size:14px;flex-shrink:0;">${ico('uzdaryti')}</button>`;
   c.appendChild(row);
 }
 
@@ -25433,7 +25433,7 @@ async function _loadGroupKids(groupId){
   const kids = data||[];
   const cnt = document.getElementById('cgm-kids-count'); if(cnt) cnt.textContent = kids.length;
   if(!kids.length){ el.innerHTML='<div style="color:var(--mut);font-size:12px;padding:8px 0;">Grupėje vaikų nėra. Pridėk →</div>'; return; }
-  el.innerHTML = kids.map(k=>`<div onclick="var _gm=document.getElementById('club-group-modal');if(_gm)_gm.remove();openKidDetailsModal('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 2px;border-top:.5px solid var(--bdr);cursor:pointer;"><div style="width:30px;height:30px;border-radius:50%;background:var(--bdr);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--mut);flex-shrink:0;">${(k.first_name||'?').charAt(0)}</div><span style="flex:1;min-width:0;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</span><button onclick="event.stopPropagation();_clubRemoveKidFromGroup('${k.id}','${groupId}')" style="background:transparent;border:.5px solid rgba(239,68,68,.3);color:#EF4444;border-radius:7px;width:28px;height:28px;cursor:pointer;flex-shrink:0;">✕</button><span style="font-size:14px;color:var(--mut);flex-shrink:0;">›</span></div>`).join('');
+  el.innerHTML = kids.map(k=>`<div onclick="var _gm=document.getElementById('club-group-modal');if(_gm)_gm.remove();openKidDetailsModal('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 2px;border-top:.5px solid var(--bdr);cursor:pointer;"><div style="width:30px;height:30px;border-radius:50%;background:var(--bdr);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--mut);flex-shrink:0;">${(k.first_name||'?').charAt(0)}</div><span style="flex:1;min-width:0;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}</span><button onclick="event.stopPropagation();_clubRemoveKidFromGroup('${k.id}','${groupId}')" style="background:transparent;border:.5px solid rgba(239,68,68,.3);color:#EF4444;border-radius:7px;width:28px;height:28px;cursor:pointer;flex-shrink:0;">${ico('uzdaryti')}</button><span style="font-size:14px;color:var(--mut);flex-shrink:0;">›</span></div>`).join('');
 }
 async function openAddKidToGroup(groupId){
   const all = await _getClubKids(true);
@@ -25444,7 +25444,7 @@ async function openAddKidToGroup(groupId){
   m.onclick=(e)=>{ if(e.target===m) m.remove(); };
   const rows = avail.length ? avail.map(k=>`<div onclick="_pickKidToGroup('${k.id}','${groupId}')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:.5px solid var(--bdr);cursor:pointer;"><span style="font-size:13px;color:#fff;">${k.first_name||'Vaikas'} ${k.last_name||''}</span><span style="font-size:11px;color:${k.group_id?'#EAB308':'var(--blu)'};">${k.group_id?'kitoje grupėje →':'priskirti →'}</span></div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--mut);font-size:13px;">Nėra laisvų vaikų. Nauji/laukiantys — per anketų tvirtinimą (netrukus).</div>';
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">PRIDĖTI VAIKĄ</div><button onclick="document.getElementById('cgm-addkid-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">PRIDĖTI VAIKĄ</div><button onclick="document.getElementById('cgm-addkid-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div>${rows}</div></div>`;
   document.body.appendChild(m);
 }
@@ -25454,9 +25454,9 @@ async function _pickKidToGroup(kidId, groupId){
     if (error) throw error;
     _clubKidsCache = null;
     const mm = document.getElementById('cgm-addkid-modal'); if(mm) mm.remove();
-    showToast('✓ Vaikas pridėtas','success');
+    showToast(ico('atlikta')+' Vaikas pridėtas','success');
     _loadGroupKids(groupId); loadClubGroups();
-  } catch(e){ console.error('[add-kid-group]',e); showToast('❌ '+(e.message||''),'error'); }
+  } catch(e){ console.error('[add-kid-group]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 async function _clubRemoveKidFromGroup(kidId, groupId){
   if(!confirm('Pašalinti vaiką iš grupės? Liks be trenerio, kol priskirsi iš naujo.')) return;
@@ -25464,9 +25464,9 @@ async function _clubRemoveKidFromGroup(kidId, groupId){
     const { error } = await sb.rpc('remove_kid_from_group', { p_kid: kidId });
     if (error) throw error;
     _clubKidsCache = null;
-    showToast('✓ Pašalintas','success');
+    showToast(ico('atlikta')+' Pašalintas','success');
     _loadGroupKids(groupId); loadClubGroups();
-  } catch(e){ console.error('[rm-kid-group]',e); showToast('❌ '+(e.message||''),'error'); }
+  } catch(e){ console.error('[rm-kid-group]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 
 async function openClubGroupModal(groupId){
@@ -25486,7 +25486,7 @@ async function openClubGroupModal(groupId){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${groupId?'REDAGUOTI GRUPĘ':'NAUJA GRUPĖ'}</div>
-      <button onclick="document.getElementById('club-group-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('club-group-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
       <div><label style="font-size:11px;color:var(--mut);font-weight:700;">Pavadinimas</label><input id="cgm-name" value="${esc(g.name)}" placeholder="pvz. Saulėtekis" style="width:100%;${_CGM_CSS}margin-top:4px;font-size:14px;padding:11px;"></div>
@@ -25506,7 +25506,7 @@ async function openClubGroupModal(groupId){
       </div>`:''}
       <div id="cgm-err" style="display:none;color:#EF4444;font-size:12px;"></div>
       <button onclick="submitClubGroup('${groupId||''}')" style="width:100%;background:var(--grn);border:none;color:#fff;font-size:14px;font-weight:800;padding:13px;border-radius:12px;cursor:pointer;">${groupId?'IŠSAUGOTI':'SUKURTI'}</button>
-      ${groupId?`<button onclick="deleteClubGroup('${groupId}')" style="width:100%;background:transparent;border:.5px solid rgba(239,68,68,.4);color:#EF4444;font-size:12px;font-weight:700;padding:10px;border-radius:12px;cursor:pointer;">🗑 Ištrinti grupę</button>`:''}
+      ${groupId?`<button onclick="deleteClubGroup('${groupId}')" style="width:100%;background:transparent;border:.5px solid rgba(239,68,68,.4);color:#EF4444;font-size:12px;font-weight:700;padding:10px;border-radius:12px;cursor:pointer;">${ico('trinti')} Ištrinti grupę</button>`:''}
     </div>
   </div>`;
   document.body.appendChild(m);
@@ -25537,14 +25537,14 @@ async function submitClubGroup(groupId){
       await sb.from('groups').update({ name, color: window._cgmColor||'#FF4D00', schedule: scheduleJson, training_days: trainingDays, train_time: trainTime }).eq('id', groupId);
       const { error } = await sb.rpc('set_group_trainer', { p_group: groupId, p_trainer: trainerId, p_assistants: assistants });
       if (error) throw error;
-      showToast('✓ Grupė atnaujinta','success');
+      showToast(ico('atlikta')+' Grupė atnaujinta','success');
     } else {
       const { error } = await sb.from('groups').insert({
         club_id: currentClub.id, trainer_id: trainerId, assistant_trainer_ids: assistants,
         name, schedule: scheduleJson, training_days: trainingDays, train_time: trainTime, color: window._cgmColor||'#FF4D00', is_active:true
       });
       if (error) throw error;
-      showToast('✓ Grupė sukurta','success');
+      showToast(ico('atlikta')+' Grupė sukurta','success');
     }
     const mm = document.getElementById('club-group-modal'); if (mm) mm.remove();
     loadClubGroups();
@@ -25560,10 +25560,10 @@ async function deleteClubGroup(groupId){
     for (const _k of (_gk||[])) { try { await sb.rpc('remove_kid_from_group', { p_kid: _k.id }); } catch(_){} }
     const { error } = await sb.from('groups').update({ is_active:false }).eq('id', groupId);
     if (error) throw error;
-    showToast('✓ Grupė ištrinta','success');
+    showToast(ico('atlikta')+' Grupė ištrinta','success');
     const mm = document.getElementById('club-group-modal'); if (mm) mm.remove();
     loadClubGroups();
-  } catch(e){ console.error('[club-group-del]',e); showToast('❌ '+(e.message||''),'error'); }
+  } catch(e){ console.error('[club-group-del]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 
 // 🗂 Klubo „KLUBAS" ekrano sub-tabai: Grupės / Treneriai / Mokiniai
@@ -25625,7 +25625,7 @@ async function loadClubInactiveKids(){
     const { data: kd } = await sb.from('kids').select('id, first_name, last_name').in('id', ids);
     const nameMap = {}; (kd||[]).forEach(k=>{ nameMap[k.id]=`${k.first_name||'Vaikas'} ${k.last_name||''}`.trim(); });
     const redN = streaks.filter(x=>x.streak>=RED).length, yelN = streaks.length-redN;
-    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">NELANKO IŠ EILĖS — VERTA SUSISIEKTI</span><span style="font-size:11px;font-weight:700;">🔴 ${redN} 🟡 ${yelN}</span></div>` + streaks.map(x=>{
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">NELANKO IŠ EILĖS — VERTA SUSISIEKTI</span><span style="font-size:11px;font-weight:700;"><span class="dot dot-bad"></span> ${redN} 🟡 ${yelN}</span></div>` + streaks.map(x=>{
       const red = x.streak>=RED, col = red?'#EF4444':'#EAB308'; const nm = nameMap[x.kid]||'Vaikas';
       return `<div onclick="openKidDetailsModal('${x.kid}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;margin-bottom:8px;cursor:pointer;"><span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;${red?'box-shadow:0 0 6px #EF4444;':''}"></span><div style="flex:1;min-width:0;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nm}</div><div style="text-align:right;flex-shrink:0;"><div style="font-size:13px;font-weight:700;color:${col};">${x.streak} iš eilės</div><div style="font-size:9px;color:var(--mut);">${x.lastPresent?'paskutinį '+formatDateLT(x.lastPresent):'nė karto'}</div></div><span style="font-size:14px;color:var(--mut);flex-shrink:0;">›</span></div>`;
     }).join('');
@@ -25635,13 +25635,13 @@ async function loadClubInactiveKids(){
 async function _clubRejectKid(kidId){
   const note = prompt('Kodėl atmetama anketa? (tėvas matys ir galės pataisyti, pvz. „neteisingas diržas")');
   if (note === null) return; // atšaukta
-  if (!note.trim()){ showToast('❌ Parašyk priežastį','error'); return; }
+  if (!note.trim()){ showToast(ico('klaida')+' Parašyk priežastį','error'); return; }
   try {
     const { error } = await sb.rpc('club_reject_kid', { p_kid: kidId, p_reason: note.trim() });
     if (error) throw error;
-    showToast('✓ Atmesta — tėvas gaus priežastį ir galės registruoti iš naujo','success', 4500);
+    showToast(ico('atlikta')+' Atmesta — tėvas gaus priežastį ir galės registruoti iš naujo','success', 4500);
     loadClubStudents();
-  } catch(e){ console.error('[reject-kid]',e); showToast('❌ '+(e.message||''),'error'); }
+  } catch(e){ console.error('[reject-kid]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 
 async function loadClubStudents(){
@@ -25673,7 +25673,7 @@ async function loadClubStudents(){
     const row = (k, pend) => `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:.5px solid var(--bdr);">
         <div onclick="openKidDetailsModal('${k.id}')" style="flex:1;min-width:0;cursor:pointer;"><div style="font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.first_name||'Vaikas'} ${k.last_name||''}${k.self_registered?' <span style="font-size:9px;background:rgba(79,195,247,.15);color:#4FC3F7;padding:1px 6px;border-radius:99px;font-weight:800;">🧍 14+ PATS</span>':''}${pend?' <span style="color:var(--blu);font-size:11px;">› anketa</span>':''}</div><div style="font-size:10px;color:var(--mut);">${ageOf(k)!=null?ageOf(k)+' m.':''}${pend?(k.self_registered?' · ⏳ registravosi PATS — tvirtink tik pažinodamas iš salės':' · ⏳ peržiūrėk anketą'):''}</div></div>
         <button onclick="event.stopPropagation();openAssignKidGroup('${k.id}',${pend?'true':'false'})" style="background:var(--grn);border:none;color:#fff;font-size:11px;font-weight:700;padding:7px 11px;border-radius:8px;cursor:pointer;flex-shrink:0;">${pend?'✓ Tvirtinti':'Priskirti →'}</button>
-        ${pend?`<button onclick="event.stopPropagation();_clubRejectKid('${k.id}')" title="Atmesti su priežastimi" style="background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);color:#EF4444;font-size:13px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;flex-shrink:0;">✕</button>`:''}
+        ${pend?`<button onclick="event.stopPropagation();_clubRejectKid('${k.id}')" title="Atmesti su priežastimi" style="background:rgba(239,68,68,.12);border:.5px solid rgba(239,68,68,.35);color:#EF4444;font-size:13px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;flex-shrink:0;">${ico('uzdaryti')}</button>`:''}
       </div>`;
     let html = `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.4px;padding:6px 4px;">⏳ LAUKIA PATVIRTINIMO (${pending.length})</div>`;
     html += pending.length ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${pending.map(k=>row(k,true)).join('')}</div>` : '<div style="color:var(--mut);font-size:12px;padding:4px 4px 14px;">Nėra laukiančių.</div>';
@@ -25693,7 +25693,7 @@ async function openAssignKidGroup(kidId, isPending){
   m.onclick=(e)=>{ if(e.target===m) m.remove(); };
   const rows = gs.length ? gs.map(g=>`<div onclick="_assignKidToGroup('${kidId}','${g.id}',${isPending?'true':'false'})" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:.5px solid var(--bdr);cursor:pointer;"><div style="width:6px;height:24px;border-radius:3px;background:${g.color||'var(--br)'};"></div><span style="font-size:13px;color:#fff;">${g.name||'Grupė'}</span></div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--mut);font-size:13px;">Nėra grupių. Pirma sukurk grupę skiltyje „Grupės".</div>';
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${isPending?'PATVIRTINTI Į GRUPĘ':'PRISKIRTI GRUPĘ'}</div><button onclick="document.getElementById('assign-group-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${isPending?'PATVIRTINTI Į GRUPĘ':'PRISKIRTI GRUPĘ'}</div><button onclick="document.getElementById('assign-group-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div>${rows}</div>
     ${isPending?`<div style="padding:12px 16px 16px;"><button onclick="_approveKidOnly('${kidId}')" style="width:100%;background:transparent;border:.5px solid var(--bdr);color:var(--mut);font-size:12px;font-weight:700;padding:10px;border-radius:10px;cursor:pointer;">Tik patvirtinti (be grupės)</button></div>`:''}
   </div>`;
@@ -25706,18 +25706,18 @@ async function _assignKidToGroup(kidId, groupId, isPending){
     if (error) throw error;
     _clubKidsCache = null;
     const mm = document.getElementById('assign-group-modal'); if(mm) mm.remove();
-    showToast('✓ Priskirta','success');
+    showToast(ico('atlikta')+' Priskirta','success');
     loadClubStudents(); loadClubGroups();
-  } catch(e){ console.error('[assign-kid]',e); showToast('❌ '+(e.message||''),'error'); }
+  } catch(e){ console.error('[assign-kid]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 async function _approveKidOnly(kidId){
   try {
     const { error } = await sb.rpc('club_approve_kid', { p_kid: kidId }); if (error) throw error;
     _clubKidsCache = null;
     const mm = document.getElementById('assign-group-modal'); if(mm) mm.remove();
-    showToast('✓ Patvirtinta','success');
+    showToast(ico('atlikta')+' Patvirtinta','success');
     loadClubStudents();
-  } catch(e){ console.error('[approve-kid]',e); showToast('❌ '+(e.message||''),'error'); }
+  } catch(e){ console.error('[approve-kid]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 
 async function loadClubTrainers() {
@@ -25738,7 +25738,7 @@ async function loadClubTrainers() {
         <div style="font-size:40px;margin-bottom:12px;">🥋</div>
         <div style="font-size:14px;font-weight:800;margin-bottom:6px;">Dar nėra trenerių</div>
         <div style="font-size:12px;margin-bottom:16px;">Pakviesk pirmą trenerį</div>
-        <button class="btn" style="margin:0;" onclick="openInviteTrainer()">➕ Pakviesti trenerį</button>
+        <button class="btn" style="margin:0;" onclick="openInviteTrainer()">${ico('prideti')} Pakviesti trenerį</button>
       </div>`;
     return;
   }
@@ -25778,7 +25778,7 @@ async function loadClubTrainers() {
         ${isActive
           ? `<div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--br);line-height:1;">${_p.toLocaleString()}</div><div style="font-size:9px;color:var(--mut);white-space:nowrap;">${_lv.stageEmoji} LVL ${_lv.globalLevel}</div></div>`
           : `<div class="bg or" style="flex-shrink:0;">Laukia</div>`}
-        <div onclick="event.stopPropagation();openTrainerManage('${trainerProfileId}','${safeName}','${safeCode}')" title="Valdyti trenerį" style="flex-shrink:0;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">⚙️</div>
+        <div onclick="event.stopPropagation();openTrainerManage('${trainerProfileId}','${safeName}','${safeCode}')" title="Valdyti trenerį" style="flex-shrink:0;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;">${ico('nustatymai')}</div>
       </div>
     </div>`;
   }).join('');
@@ -25906,12 +25906,12 @@ function openTrainerManage(tid, name, code){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">🥋 ${name}</div>
-      <button onclick="document.getElementById('club-trmanage-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('club-trmanage-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px 20px;">
       <div style="font-size:12px;color:var(--mut);margin-bottom:16px;">🆔 Trenerio kodas: <span style="color:#fff;font-weight:700;">${code||'–'}</span></div>
       <button class="btn owner-only" style="width:100%;margin:0 0 8px;background:rgba(234,179,8,.15);color:#EAB308;border:.5px solid rgba(234,179,8,.4);" onclick="suspendTrainer('${tid}','${name.replace(/'/g,"\\'")}')">⏸️ SUSTABDYTI TRENERĮ</button>
-      <button class="btn owner-only" style="width:100%;margin:0;background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.35);" onclick="openTrainerRemove('${tid}','${name.replace(/'/g,"\\'")}')">🗑️ PAŠALINTI TRENERĮ</button>
+      <button class="btn owner-only" style="width:100%;margin:0;background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.35);" onclick="openTrainerRemove('${tid}','${name.replace(/'/g,"\\'")}')">${ico('trinti')} PAŠALINTI TRENERĮ</button>
       <div style="font-size:11px;color:var(--mut);margin-top:10px;line-height:1.5;">⏸️ Sustabdytas treneris nebegali prisijungti, bet vaikai lieka jam priskirti. 🗑️ Šalinant — privalai perskirti visus jo vaikus kitam treneriui.</div>
     </div>
   </div>`;
@@ -25921,8 +25921,8 @@ function openTrainerManage(tid, name, code){
 async function saveTrainerEdit(tid){
   const code = document.getElementById('trm-code').value.trim();
   const { error } = await sb.from('trainers').update({ trainer_code: code }).eq('id', tid);
-  if (error){ showToast('❌ '+error.message,'error'); return; }
-  showToast('✅ Išsaugota','success');
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
+  showToast(ico('patvirtinta')+' Išsaugota','success');
   document.getElementById('club-trmanage-modal')?.remove();
   loadClubTrainers();
 }
@@ -25931,8 +25931,8 @@ async function suspendTrainer(tid, name){
   if (_ownerOnly()) return;
   if (!confirm(`Sustabdyti trenerį "${name}"?\n\nJis nebegalės prisijungti. Vaikai liks priskirti — gali juos perskirti vėliau.`)) return;
   const { error } = await sb.from('profiles').update({ status:'suspended' }).eq('id', tid);
-  if (error){ showToast('❌ '+error.message,'error'); return; }
-  showToast('✅ Treneris sustabdytas','success');
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
+  showToast(ico('patvirtinta')+' Treneris sustabdytas','success');
   document.getElementById('club-trmanage-modal')?.remove();
   loadClubTrainers(); loadClubData();
 }
@@ -25957,7 +25957,7 @@ async function openTrainerRemove(tid, name){
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
   if (kids.length && !otherTrainers.length){
     m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;padding:24px 20px;">
-      <div style="font-size:15px;font-weight:800;margin-bottom:10px;">⚠️ Negalima pašalinti</div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:10px;">${ico('ispejimas')} Negalima pašalinti</div>
       <div style="font-size:13px;color:var(--mut);line-height:1.5;margin-bottom:16px;">Šis treneris turi ${kids.length} vaiką(-ų), bet klube nėra kito AKTYVAUS trenerio, kuriam juos perskirti. Pirma pakviesk arba aktyvuok kitą trenerį.</div>
       <button class="btn btnd" style="width:100%;margin:0;" onclick="document.getElementById('club-trmanage-modal').remove()">Uždaryti</button></div>`;
     document.body.appendChild(m); return;
@@ -25969,8 +25969,8 @@ async function openTrainerRemove(tid, name){
   </div>`).join('');
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🗑️ PAŠALINTI: ${name}</div>
-      <button onclick="document.getElementById('club-trmanage-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('trinti')} PAŠALINTI: ${name}</div>
+      <button onclick="document.getElementById('club-trmanage-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px 20px;">
       ${kids.length ? `<div style="font-size:12px;color:var(--mut);margin-bottom:12px;">Perskirk visus ${kids.length} vaiką(-ų) kitam treneriui:</div>${kidsHtml}` : '<div style="font-size:13px;color:var(--mut);margin-bottom:16px;">Šis treneris neturi priskirtų vaikų — galima šalinti iškart.</div>'}
@@ -25981,7 +25981,7 @@ async function openTrainerRemove(tid, name){
 
 async function confirmTrainerRemove(tid){
   const sels = Array.from(document.querySelectorAll('.trm-reassign'));
-  for (const s of sels){ if (!s.value){ showToast('❌ Priskirk visiems vaikams trenerį','error'); return; } }
+  for (const s of sels){ if (!s.value){ showToast(ico('klaida')+' Priskirk visiems vaikams trenerį','error'); return; } }
   for (const s of sels){
     const kid = s.dataset.kid, newT = s.value;
     await sb.from('kids').update({ assigned_trainer_id: newT }).eq('id', kid);
@@ -25991,7 +25991,7 @@ async function confirmTrainerRemove(tid){
   await sb.from('kid_trainers').delete().eq('trainer_id', tid);
   await sb.from('trainers').delete().eq('id', tid);
   await sb.from('profiles').update({ status: 'suspended' }).eq('id', tid);
-  showToast('✅ Treneris pašalintas, vaikai perskirti','success');
+  showToast(ico('patvirtinta')+' Treneris pašalintas, vaikai perskirti','success');
   document.getElementById('club-trmanage-modal')?.remove();
   loadClubTrainers(); loadClubData();
 }
@@ -26004,7 +26004,7 @@ async function openClubKidManage(kidId){
     sb.from('trainers').select('id, profiles!inner(first_name,last_name,status)').eq('invited_by_club_id', currentClub.id)
   ]);
   const kid = kidRes.data;
-  if (!kid){ showToast('❌ Vaikas nerastas','error'); return; }
+  if (!kid){ showToast(ico('klaida')+' Vaikas nerastas','error'); return; }
   const actTrainers = (trRes.data||[]).filter(t => t.profiles?.status === 'active');
   const grpOpts = `<option value="">— Be grupės —</option>` + (grpRes.data||[]).map(g => `<option value="${g.id}" ${g.id===kid.group_id?'selected':''}>${g.name}</option>`).join('');
   const trOpts = `<option value="">— Nepriskirta —</option>` + actTrainers.map(t => `<option value="${t.id}" ${t.id===kid.assigned_trainer_id?'selected':''}>${((t.profiles.first_name||'')+' '+(t.profiles.last_name||'')).trim()}</option>`).join('');
@@ -26018,7 +26018,7 @@ async function openClubKidManage(kidId){
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">🏛️ ${kid.first_name||'Vaikas'} ${kid.last_name||''}</div>
-      <button onclick="document.getElementById('club-kidmanage-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('club-kidmanage-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px 20px;">
       <div style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.5;">Klubo administravimas nestandartiniams atvejams. EXP koreguok per vaiko kortelę („EXP už elgesį").</div>
@@ -26029,7 +26029,7 @@ async function openClubKidManage(kidId){
       <label class="lbl">KYU (DIRŽAS)</label>
       <select class="inp" id="ckm-kyu" style="margin-bottom:6px;">${kyuOpts}</select>
       <div style="font-size:10px;color:var(--mut);margin-bottom:16px;line-height:1.4;">💡 Diržas paprastai kyla per egzaminus — čia tik rankinis taisymas (pvz. perėjus iš kito klubo).</div>
-      <button class="btn btng" style="width:100%;margin:0;" onclick="saveClubKidManage('${kidId}')">💾 IŠSAUGOTI</button>
+      <button class="btn btng" style="width:100%;margin:0;" onclick="saveClubKidManage('${kidId}')">${ico('issaugoti')} IŠSAUGOTI</button>
     </div></div>`;
   document.body.appendChild(m);
 }
@@ -26039,11 +26039,11 @@ async function saveClubKidManage(kidId){
   const group = document.getElementById('ckm-group').value || null;
   const kyu = document.getElementById('ckm-kyu').value.trim() || null;
   const { error } = await sb.from('kids').update({ assigned_trainer_id: trainer, group_id: group, kyu }).eq('id', kidId);
-  if (error){ showToast('❌ '+error.message,'error'); return; }
+  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
   if (trainer){
     try { await sb.from('kid_trainers').upsert({ kid_id: kidId, trainer_id: trainer, role:'primary' }, { onConflict:'kid_id,trainer_id' }); } catch(e){}
   }
-  showToast('✅ Atnaujinta','success');
+  showToast(ico('patvirtinta')+' Atnaujinta','success');
   document.getElementById('club-kidmanage-modal')?.remove();
 }
 
@@ -26066,10 +26066,10 @@ async function submitInviteTrainer() {
   const lname = document.getElementById('invtr-lname').value.trim();
   const email = document.getElementById('invtr-email').value.trim().toLowerCase();
 
-  if (!fname || !lname) { showToast('❌ Įvesk vardą ir pavardę', 'error'); return; }
-  if (!email) { showToast('❌ Įvesk email', 'error'); return; }
-  if (!email.includes('@')) { showToast('❌ Neteisingas email', 'error'); return; }
-  if (!currentClub) { showToast('❌ Klubas neidentifikuotas', 'error'); return; }
+  if (!fname || !lname) { showToast(ico('klaida')+' Įvesk vardą ir pavardę', 'error'); return; }
+  if (!email) { showToast(ico('klaida')+' Įvesk email', 'error'); return; }
+  if (!email.includes('@')) { showToast(ico('klaida')+' Neteisingas email', 'error'); return; }
+  if (!currentClub) { showToast(ico('klaida')+' Klubas neidentifikuotas', 'error'); return; }
 
   const btn = document.getElementById('invtr-submit');
   btn.disabled = true;
@@ -26100,17 +26100,17 @@ async function submitInviteTrainer() {
     if (signUpError) {
       if (signUpError.message.includes('already') || signUpError.message.includes('exists')) {
         await sb.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/spobu/set-password.html` });
-        showToast(`✅ Kvietimas išsiųstas!\n\n${fname} ${lname} jau yra sistemoje — išsiųsta nauja prisijungimo nuoroda.`, 'success');
+        showToast(`${ico('patvirtinta')} Kvietimas išsiųstas!\n\n${fname} ${lname} jau yra sistemoje — išsiųsta nauja prisijungimo nuoroda.`, 'success');
       } else { throw signUpError; }
     } else {
       await sb.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/spobu/set-password.html` });
-      showToast(`✅ Kvietimas išsiųstas!\n\n📧 ${email}\nTreneris gaus aktyvavimo email'ą`, 'success');
+      showToast(`${ico('patvirtinta')} Kvietimas išsiųstas!\n\n📧 ${email}\nTreneris gaus aktyvavimo email'ą`, 'success');
     }
     _ok = true;
 
   } catch (error) {
     console.error('submitInviteTrainer error:', error);
-    showToast('❌ Klaida: ' + (error.message || JSON.stringify(error)), 'error', 6000);
+    showToast(ico('klaida')+' Klaida: ' + (error.message || JSON.stringify(error)), 'error', 6000);
   } finally {
     // 🔑 ATKURIAM klubo sesiją (signUp ją pakeitė) PRIEŠ bet kokias klubo užklausas
     if (_savedSession) {
@@ -26270,8 +26270,8 @@ async function loadPendingDuels() {
         </div>
         ${isDraw ? '<div style="text-align:center;font-size:10px;color:#FF8C00;font-weight:800;margin-bottom:8px;">🤝 LYGIOSIOS</div>' : ''}
         <div style="display:flex;gap:6px;">
-          <button onclick="approveDuel('${d.id}')" style="flex:2;padding:10px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:8px;color:white;font-size:12px;font-weight:800;cursor:pointer;">✅ PATVIRTINTI</button>
-          <button onclick="rejectDuel('${d.id}')" style="flex:1;padding:10px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:8px;color:#EF4444;font-size:12px;font-weight:800;cursor:pointer;">✕</button>
+          <button onclick="approveDuel('${d.id}')" style="flex:2;padding:10px;background:linear-gradient(135deg,#22C55E,#16A34A);border:none;border-radius:8px;color:white;font-size:12px;font-weight:800;cursor:pointer;">${ico('patvirtinta')} PATVIRTINTI</button>
+          <button onclick="rejectDuel('${d.id}')" style="flex:1;padding:10px;background:rgba(239,68,68,.15);border:.5px solid rgba(239,68,68,.4);border-radius:8px;color:#EF4444;font-size:12px;font-weight:800;cursor:pointer;">${ico('uzdaryti')}</button>
         </div>
       </div>
     `;
@@ -26286,7 +26286,7 @@ async function approveDuel(duelId) {
   _approvingDuels.add(duelId);
   try {
     const { data: duel } = await sb.from('duels').select('*').eq('id', duelId).single();
-    if (!duel) { showToast('❌ Dvikova nerasta', 'error'); return; }
+    if (!duel) { showToast(ico('klaida')+' Dvikova nerasta', 'error'); return; }
     if (duel.status === 'completed') { showToast('Dvikova jau patvirtinta'); loadPendingDuels(); return; }
 
     const t = DUEL_TYPES[duel.duel_type] || { moreIsBetter: true };
@@ -26314,7 +26314,7 @@ async function approveDuel(duelId) {
       .neq('status', 'completed')
       .select();
 
-    if (error) { showToast('❌ Klaida: ' + error.message, 'error'); return; }
+    if (error) { showToast(ico('klaida')+' Klaida: ' + error.message, 'error'); return; }
     if (!upd || !upd.length) { showToast('Dvikova jau patvirtinta'); loadPendingDuels(); return; } // kažkas spėjo anksčiau — EXP nepridedam
 
     // 🎯 EXP paskirstymas (tik kai TIKRAI užbaigėme šiuo paspaudimu)
@@ -26337,7 +26337,7 @@ async function approveDuel(duelId) {
       console.error('[approveDuel] EXP klaida:', e);
     }
 
-    showToast('✅ Dvikova patvirtinta! EXP paskirta abiem vaikams.', 'success');
+    showToast(ico('patvirtinta')+' Dvikova patvirtinta! EXP paskirta abiem vaikams.', 'success');
     loadPendingDuels();
   } finally {
     _approvingDuels.delete(duelId);
@@ -26362,7 +26362,7 @@ async function rejectDuel(duelId) {
     .eq('status', 'submitted');  // #46: TIK submitted → jau patvirtintos (completed) NEresetinam (kad EXP nebūtų skiriamas 2×)
 
   if (error) {
-    showToast('❌ Klaida: ' + error.message, 'error');
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
     return;
   }
 
@@ -26479,7 +26479,7 @@ async function openCreateChallenge(prefill) {
       if (chip) chip.style.display = (typeof flagOn === 'function' && !flagOn(_typeFlag[tp])) ? 'none' : '';
     });
     const visible = Array.from(document.querySelectorAll('#ccmo .chs .ch[data-type]')).filter(c => c.style.display !== 'none');
-    if (!visible.length) { showToast('⚠️ Klubas išjungė visus iššūkių tipus — sukurti negalima', 'error', 4000); return; }
+    if (!visible.length) { showToast(ico('ispejimas')+' Klubas išjungė visus iššūkių tipus — sukurti negalima', 'error', 4000); return; }
     const curChip = document.querySelector(`#ccmo [data-type="${document.getElementById('cc-type').value}"]`);
     if ((!curChip || curChip.style.display === 'none') && typeof selectChallengeType === 'function') {
       selectChallengeType(visible[0], visible[0].getAttribute('data-type'));
@@ -26661,14 +26661,14 @@ async function submitNewChallenge() {
   const audience = document.getElementById('cc-audience').value;
   const allowPartial = document.getElementById('cc-allow-partial')?.value === 'true';
   
-  if (!title) { showToast('❌ Įvesk pavadinimą', 'error'); return; }
-  if (!targetValue || targetValue <= 0) { showToast('❌ Įvesk tikslą (skaičių)', 'error'); return; }
-  if (!exp || exp < 1) { showToast('❌ Įvesk EXP atlygį', 'error'); return; }
+  if (!title) { showToast(ico('klaida')+' Įvesk pavadinimą', 'error'); return; }
+  if (!targetValue || targetValue <= 0) { showToast(ico('klaida')+' Įvesk tikslą (skaičių)', 'error'); return; }
+  if (!exp || exp < 1) { showToast(ico('klaida')+' Įvesk EXP atlygį', 'error'); return; }
 
   // 🚩 Iššūkio tipas turi būti klubo leistas (apsauga, jei kažkaip apeita forma)
   const _chTypeFlag = { training:'challenge_training_enabled', weekly:'challenge_weekly_enabled', monthly:'challenge_monthly_enabled', one_time:'challenge_once_enabled', permanent:'challenge_permanent_enabled' };
   if (_chTypeFlag[type] && typeof flagOn === 'function' && !flagOn(_chTypeFlag[type])) {
-    showToast('❌ Šis iššūkio tipas klube išjungtas', 'error', 4000); return;
+    showToast(ico('klaida')+' Šis iššūkio tipas klube išjungtas', 'error', 4000); return;
   }
 
   // Gavėjų validacija
@@ -26677,14 +26677,14 @@ async function submitNewChallenge() {
   
   if (audience === 'specific_kid') {
     targetKidId = document.getElementById('cc-kid-select').value;
-    if (!targetKidId) { showToast('❌ Pasirink vaiką', 'error'); return; }
+    if (!targetKidId) { showToast(ico('klaida')+' Pasirink vaiką', 'error'); return; }
   } else {
     groupId = document.getElementById('cc-group-select').value;
-    if (!groupId) { showToast('❌ Pasirink grupę', 'error'); return; }
+    if (!groupId) { showToast(ico('klaida')+' Pasirink grupę', 'error'); return; }
   }
   
   const max = CHALLENGE_EXP_LIMITS[type];
-  if (exp > max) { showToast(`❌ Max EXP: ${max}`, 'error'); return; }
+  if (exp > max) { showToast(`${ico('klaida')} Max EXP: ${max}`, 'error'); return; }
   
   // Apskaičiuoti expires_at
   const expiryDays = CHALLENGE_EXPIRY_DAYS[type];
@@ -26709,7 +26709,7 @@ async function submitNewChallenge() {
       if (hasActive) {
         btn.disabled = false;
         btn.textContent = 'SUKURTI IŠŠŪKĮ';
-        showToast(`⚠️ Šis vaikas jau turi aktyvų ${getTypeLabel(type)} iššūkį: "${hasActive.title}"`, 'error', 6000);
+        showToast(`${ico('ispejimas')} Šis vaikas jau turi aktyvų ${getTypeLabel(type)} iššūkį: "${hasActive.title}"`, 'error', 6000);
         return;
       }
     }
@@ -26733,12 +26733,12 @@ async function submitNewChallenge() {
     btn.textContent = 'SUKURTI IŠŠŪKĮ';
     
     if (error) {
-      showToast('❌ Klaida: ' + error.message, 'error', 5000);
+      showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
       console.error(error);
       return;
     }
     
-    showToast(`✅ Iššūkis sukurtas vaikui!`, 'success');
+    showToast(`${ico('patvirtinta')} Iššūkis sukurtas vaikui!`, 'success');
     closeCreateChallenge();
     if (typeof loadTrainerOwnChallenges === 'function') await loadTrainerOwnChallenges();
     return;
@@ -26762,7 +26762,7 @@ async function submitNewChallenge() {
       console.error('[challenge] Klaida kraunant klubą:', profErr);
       btn.disabled = false;
       btn.textContent = 'SUKURTI IŠŠŪKĮ';
-      showToast('❌ Klaida: ' + profErr.message, 'error');
+      showToast(ico('klaida')+' Klaida: ' + profErr.message, 'error');
       return;
     }
     
@@ -26800,7 +26800,7 @@ async function submitNewChallenge() {
       console.error('[challenge] Klaida kraunant grupes vaikus:', kidsErr);
       btn.disabled = false;
       btn.textContent = 'SUKURTI IŠŠŪKĮ';
-      showToast('❌ Klaida kraunant grupę: ' + kidsErr.message, 'error', 5000);
+      showToast(ico('klaida')+' Klaida kraunant grupę: ' + kidsErr.message, 'error', 5000);
       return;
     }
     
@@ -26836,7 +26836,7 @@ async function submitNewChallenge() {
   if (eligibleKids.length === 0) {
     btn.disabled = false;
     btn.textContent = 'SUKURTI IŠŠŪKĮ';
-    showToast('⚠️ Pasirinktoje grupėje/audience nėra vaikų', 'error');
+    showToast(ico('ispejimas')+' Pasirinktoje grupėje/audience nėra vaikų', 'error');
     return;
   }
   
@@ -26865,7 +26865,7 @@ async function submitNewChallenge() {
   if (createdFor.length === 0) {
     btn.disabled = false;
     btn.textContent = 'SUKURTI IŠŠŪKĮ';
-    showToast(`⚠️ Visi ${eligibleKids.length} vaikai jau turi aktyvų ${getTypeLabel(type)} iššūkį`, 'error', 6000);
+    showToast(`${ico('ispejimas')} Visi ${eligibleKids.length} vaikai jau turi aktyvų ${getTypeLabel(type)} iššūkį`, 'error', 6000);
     return;
   }
   
@@ -26896,7 +26896,7 @@ async function submitNewChallenge() {
   if (parentError || !parentData) {
     btn.disabled = false;
     btn.textContent = 'SUKURTI IŠŠŪKĮ';
-    showToast('❌ Klaida (parent): ' + (parentError?.message || 'unknown'), 'error');
+    showToast(ico('klaida')+' Klaida (parent): ' + (parentError?.message || 'unknown'), 'error');
     return;
   }
   
@@ -26988,7 +26988,7 @@ function showChallengeDistributionResult(info) {
         <!-- SUKURTA -->
         <div style="margin-bottom:${info.skipped.length > 0 ? '16px' : '0'};">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-            <div style="font-size:16px;">✅</div>
+            <div style="font-size:16px;">${ico('patvirtinta')}</div>
             <div style="font-size:12px;font-weight:800;color:var(--grn);letter-spacing:1px;">SUKURTA (${info.createdFor.length})</div>
           </div>
           ${info.createdFor.length === 0 
@@ -27189,7 +27189,7 @@ async function _trainerGroupChallenges(){
     if (arr.length>SHOW){
       wrap.innerHTML = hdr + arr.slice(0,SHOW).join('')
         + `<div id="trgc-more" style="display:none;">${arr.slice(SHOW).join('')}</div>`
-        + `<button onclick="_trGcToggleMore(this)" style="width:100%;padding:8px;background:transparent;border:.5px dashed rgba(107,114,128,.5);color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;border-radius:10px;margin-bottom:10px;">▼ DAUGIAU (${arr.length-SHOW})</button>`;
+        + `<button onclick="_trGcToggleMore(this)" style="width:100%;padding:8px;background:transparent;border:.5px dashed rgba(107,114,128,.5);color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;border-radius:10px;margin-bottom:10px;">${ico('isskleisti')} DAUGIAU (${arr.length-SHOW})</button>`;
     } else {
       wrap.innerHTML = hdr + arr.join('');
     }
@@ -27224,7 +27224,7 @@ async function _trainerGroupChallenges(){
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
         <input type="date" class="inp" id="trgc-${ch.id}-date" value="${today}" ${minA} ${maxA} onchange="_trGcDateChange('${ch.id}')" style="flex:1;margin:0;padding:7px;font-size:12px;">
         <input type="number" class="inp" id="trgc-${ch.id}-val" min="0" step="any" value="${todayRow?(+todayRow.value||0):''}" placeholder="tos dienos sk." style="width:110px;margin:0;padding:7px;font-size:12px;text-align:center;">
-        <button onclick="_trGcMark('${ch.id}')" style="background:var(--grn);color:#fff;border:none;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0;">💾</button>
+        <button onclick="_trGcMark('${ch.id}')" style="background:var(--grn);color:#fff;border:none;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0;">${ico('issaugoti')}</button>
       </div>
       <div style="font-size:9px;color:var(--mut);margin-bottom:6px;">Įvesk TOS DIENOS rezultatą — bendras kaupiasi automatiškai. Ta pati data = perrašo (ne prideda).</div>
       <div id="trgc-${ch.id}-recent" style="display:flex;flex-wrap:wrap;gap:4px;">${_trGcRecentHtml((dailyByGid[first.id]||[]).slice(0,5))}</div>
@@ -27236,7 +27236,7 @@ async function _trainerGroupChallenges(){
   if (cardArr.length > SHOW){
     body = cardArr.slice(0,SHOW).join('')
       + `<div id="trgc-more" style="display:none;">${cardArr.slice(SHOW).join('')}</div>`
-      + `<button onclick="_trGcToggleMore(this)" style="width:100%;padding:8px;background:transparent;border:.5px dashed rgba(234,179,8,.5);color:#EAB308;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;border-radius:10px;margin-bottom:10px;">▼ DAUGIAU (${cardArr.length-SHOW})</button>`;
+      + `<button onclick="_trGcToggleMore(this)" style="width:100%;padding:8px;background:transparent;border:.5px dashed rgba(234,179,8,.5);color:#EAB308;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;border-radius:10px;margin-bottom:10px;">${ico('isskleisti')} DAUGIAU (${cardArr.length-SHOW})</button>`;
   } else {
     body = cardArr.join('');
   }
@@ -27273,14 +27273,14 @@ async function _trGcMark(chId){
   const gid = _trGcSelGroup(chId);
   const session_date = document.getElementById(`trgc-${chId}-date`)?.value;
   const value = parseFloat(document.getElementById(`trgc-${chId}-val`)?.value);
-  if (!gid){ showToast('❌ Pasirink grupę','error'); return; }
-  if (!session_date){ showToast('❌ Pasirink datą','error'); return; }
-  if (isNaN(value) || value < 0){ showToast('❌ Įvesk skaičių','error'); return; }
+  if (!gid){ showToast(ico('klaida')+' Pasirink grupę','error'); return; }
+  if (!session_date){ showToast(ico('klaida')+' Pasirink datą','error'); return; }
+  if (isNaN(value) || value < 0){ showToast(ico('klaida')+' Įvesk skaičių','error'); return; }
   const { error } = await sb.from('club_challenge_daily').upsert(
     { challenge_id: chId, group_id: gid, session_date, value, marked_by: currentUser.id },
     { onConflict:'challenge_id,group_id,session_date' });
-  if (error){ showToast('❌ '+error.message,'error',5000); return; }
-  showToast('✅ Pažymėta','success');
+  if (error){ showToast(ico('klaida')+' '+error.message,'error',5000); return; }
+  showToast(ico('patvirtinta')+' Pažymėta','success');
   _trainerGroupChallenges();
 }
 
@@ -27454,14 +27454,14 @@ async function loadTrainerOwnChallenges() {
     if (ch._is_completed) {
       // Patikslintas pasibaigimo statusas (prioritetas: užšaldytas > visi atliko > laikas)
       if (ch._frozen) {
-        statusBadge = '<span class="bg" style="background:rgba(255,255,255,.1);color:var(--mut);">🚫 Užšaldytas</span>';
+        statusBadge = '<span class="bg" style="background:rgba(255,255,255,.1);color:var(--mut);">'+ico('isjungta')+' Užšaldytas</span>';
       } else if (ch._eligible_count > 0 && stats.approved >= ch._eligible_count) {
         statusBadge = '<span class="bg" style="background:rgba(34,197,94,.15);color:var(--grn);">🎉 Visi atliko</span>';
       } else {
         statusBadge = '<span class="bg" style="background:rgba(255,255,255,.1);color:var(--mut);">⏰ Pasibaigė laikas</span>';
       }
     } else {
-      statusBadge = '<span class="bg gn">✅ Aktyvus</span>';
+      statusBadge = '<span class="bg gn">'+ico('patvirtinta')+' Aktyvus</span>';
     }
     
     // Countdown
@@ -27508,20 +27508,20 @@ async function loadTrainerOwnChallenges() {
         actionButtons = _shareBtn + `
           <div style="display:flex;gap:6px;">
             <button onclick="unfreezeChallenge('${ch.id}')" style="flex:1;background:rgba(34,197,94,.1);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">▶️ Aktyvuoti</button>
-            <button onclick="deleteChallenge('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+            <button onclick="deleteChallenge('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('trinti')} Ištrinti</button>
           </div>
         `;
       } else {
         // Tikrai pasibaigęs (laikas/visi atliko) - tik ištrinti
         actionButtons = _shareBtn + `
-          <button onclick="deleteChallenge('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="width:100%;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+          <button onclick="deleteChallenge('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="width:100%;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('trinti')} Ištrinti</button>
         `;
       }
     } else {
       actionButtons = `
         <div style="display:flex;gap:6px;">
-          <button onclick="freezeChallenge('${ch.id}')" style="flex:1;background:rgba(255,255,255,.05);color:var(--mut);border:.5px solid var(--bdr);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🚫 Užšaldyti</button>
-          <button onclick="deleteChallenge('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">🗑️ Ištrinti</button>
+          <button onclick="freezeChallenge('${ch.id}')" style="flex:1;background:rgba(255,255,255,.05);color:var(--mut);border:.5px solid var(--bdr);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('isjungta')} Užšaldyti</button>
+          <button onclick="deleteChallenge('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;">${ico('trinti')} Ištrinti</button>
         </div>
       `;
     }
@@ -27546,7 +27546,7 @@ async function loadTrainerOwnChallenges() {
         <span style="flex-shrink:0;">${timeInfo}</span>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:10px;">
-        <span style="color:var(--mut);">✅ ATLIKO <b style="color:white;font-size:12px;">${stats.approved}/${ch._eligible_count || '?'}</b></span>
+        <span style="color:var(--mut);">${ico('patvirtinta')} ATLIKO <b style="color:white;font-size:12px;">${stats.approved}/${ch._eligible_count || '?'}</b></span>
         <span style="color:var(--mut);">⏳ LAUKIA <b style="color:var(--br);font-size:12px;">${stats.pending}</b></span>
         <button onclick="viewChallengeParticipants('${ch.id}', '${(ch.title || '').replace(/'/g, "\\'")}')" style="background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:5px 10px;border-radius:8px;font-size:10px;cursor:pointer;font-weight:700;flex-shrink:0;">👥 DALYVIAI</button>
       </div>
@@ -27561,7 +27561,7 @@ async function loadTrainerOwnChallenges() {
     let mainHtml = cards.slice(0, TOPN).join('');
     if (cards.length > TOPN) {
       mainHtml += `<div style="text-align:center;padding:2px 0 14px;">
-        <button onclick="openTrChallengesAll()" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 24px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">▼ DAUGIAU (${cards.length - TOPN})</button>
+        <button onclick="openTrChallengesAll()" style="background:transparent;color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 24px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;">${ico('isskleisti')} DAUGIAU (${cards.length - TOPN})</button>
       </div>`;
     }
     mainEl.innerHTML = mainHtml;
@@ -27582,9 +27582,9 @@ async function freezeChallenge(challengeId) {
   const { error } = await sb.from('challenges').update({ is_active: false })
     .eq('trainer_id', currentUser.id)
     .or(`id.eq.${challengeId},parent_challenge_id.eq.${challengeId}`);
-  if (error) { showToast('❌ ' + error.message, 'error'); return; }
+  if (error) { showToast(ico('klaida')+' ' + error.message, 'error'); return; }
 
-  showToast('✅ Iššūkis užšaldytas', 'success');
+  showToast(ico('patvirtinta')+' Iššūkis užšaldytas', 'success');
   await loadTrainerOwnChallenges();
   if (typeof loadTrainerHome === 'function') loadTrainerHome();
 }
@@ -27600,9 +27600,9 @@ async function unfreezeChallenge(challengeId) {
     // Atskiras iššūkis — aktyvuojam jį patį
     ({ error } = await sb.from('challenges').update({ is_active: true }).eq('trainer_id', currentUser.id).eq('id', challengeId));
   }
-  if (error) { showToast('❌ ' + error.message, 'error'); return; }
+  if (error) { showToast(ico('klaida')+' ' + error.message, 'error'); return; }
 
-  showToast('✅ Iššūkis aktyvuotas', 'success');
+  showToast(ico('patvirtinta')+' Iššūkis aktyvuotas', 'success');
   await loadTrainerOwnChallenges();
   if (typeof loadTrainerHome === 'function') loadTrainerHome();
 }
@@ -27614,13 +27614,13 @@ async function deleteChallenge(challengeId, title) {
   const { data, error } = await sb.from('challenges').delete()
     .eq('trainer_id', currentUser.id)
     .or(`id.eq.${challengeId},parent_challenge_id.eq.${challengeId}`).select();
-  if (error) { showToast('❌ ' + error.message, 'error'); return; }
+  if (error) { showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   if (!data || data.length === 0) {
-    showToast('❌ Negalima ištrinti', 'error');
+    showToast(ico('klaida')+' Negalima ištrinti', 'error');
     return;
   }
 
-  showToast('✅ Iššūkis ištrintas', 'success');
+  showToast(ico('patvirtinta')+' Iššūkis ištrintas', 'success');
   await loadTrainerOwnChallenges();
   if (typeof loadTrainerHome === 'function') loadTrainerHome();
 }
@@ -27701,7 +27701,7 @@ async function viewChallengeParticipants(challengeId, title) {
     
     let statusBadge, bgColor, borderColor;
     if (sub?.status === 'approved') {
-      statusBadge = `<span style="font-size:10px;background:rgba(34,197,94,.15);color:var(--grn);padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:1px;">✅ ATLIKO: ${sub.value || sub.numeric_value} ${ch.target_unit || ''}</span>`;
+      statusBadge = `<span style="font-size:10px;background:rgba(34,197,94,.15);color:var(--grn);padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:1px;">${ico('patvirtinta')} ATLIKO: ${sub.value || sub.numeric_value} ${ch.target_unit || ''}</span>`;
       bgColor = 'rgba(34,197,94,.05)';
       borderColor = 'rgba(34,197,94,.3)';
     } else if (sub?.status === 'pending') {
@@ -27709,11 +27709,11 @@ async function viewChallengeParticipants(challengeId, title) {
       bgColor = 'rgba(255,77,0,.05)';
       borderColor = 'rgba(255,77,0,.3)';
     } else if (sub?.status === 'rejected') {
-      statusBadge = `<span style="font-size:10px;background:rgba(239,68,68,.15);color:#EF4444;padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:1px;">❌ ATMESTA</span>`;
+      statusBadge = `<span style="font-size:10px;background:rgba(239,68,68,.15);color:#EF4444;padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:1px;">${ico('klaida')} ATMESTA</span>`;
       bgColor = 'rgba(239,68,68,.05)';
       borderColor = 'rgba(239,68,68,.3)';
     } else {
-      statusBadge = `<span style="font-size:10px;background:rgba(255,255,255,.05);color:var(--mut);padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:1px;">⚪ NEDALYVAVO</span>`;
+      statusBadge = `<span style="font-size:10px;background:rgba(255,255,255,.05);color:var(--mut);padding:3px 8px;border-radius:6px;font-weight:700;letter-spacing:1px;"><span class="dot dot"></span> NEDALYVAVO</span>`;
       bgColor = 'rgba(255,255,255,.02)';
       borderColor = 'var(--bdr)';
     }
@@ -27873,7 +27873,7 @@ async function loadPendingChallengeSubmissions() {
       infoRow = `<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:9px;padding:8px 11px;margin-bottom:8px;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:8.5px;color:var(--mut);letter-spacing:.5px;text-transform:uppercase;">Pateikė${ch?.target_value ? ` · tikslas ${ch.target_value}` : ''}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:21px;line-height:1.05;color:${meetsTarget ? 'var(--grn)' : 'white'};">${s.value || '?'} <span style="font-size:11px;color:var(--mut);">${ch?.target_unit || ''}</span>${meetsTarget ? ' <span style="font-size:11px;color:var(--grn);">✓</span>' : ''}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:21px;line-height:1.05;color:${meetsTarget ? 'var(--grn)' : 'white'};">${s.value || '?'} <span style="font-size:11px;color:var(--mut);">${ch?.target_unit || ''}</span>${meetsTarget ? ' <span style="font-size:11px;color:var(--grn);">'+ico('atlikta')+'</span>' : ''}</div>
         </div>
         <div style="text-align:center;background:${tColor}1a;border-radius:9px;padding:5px 12px;flex-shrink:0;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:${tColor};">+${ch?.exp_reward || 0}</div>
@@ -27892,7 +27892,7 @@ async function loadPendingChallengeSubmissions() {
       </div>
       ${infoRow}
       <div style="display:flex;gap:7px;">
-        <button class="bsm" style="flex:1;background:var(--grn);color:white;padding:8px;" onclick="approveChallengeSubmission('${s.id}')">✓ Patvirtinti</button>
+        <button class="bsm" style="flex:1;background:var(--grn);color:white;padding:8px;" onclick="approveChallengeSubmission('${s.id}')">${ico('atlikta')} Patvirtinti</button>
         <button class="bsm" style="flex:none;width:46px;background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;" onclick="rejectChallengeSubmission('${s.id}')">✗</button>
       </div>
     </div>`;
@@ -27914,10 +27914,10 @@ async function approveChallengeSubmission(subId) {
 
   if (error) {
     if (el) { el.style.opacity = ''; el.style.pointerEvents = ''; delete el.dataset.busy; }
-    showToast('❌ Klaida: ' + error.message, 'error');
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
     return;
   }
-  showToast('✅ Patvirtinta! EXP priskaičiuota', 'success');
+  showToast(ico('patvirtinta')+' Patvirtinta! EXP priskaičiuota', 'success');
   loadPendingChallengeSubmissions();
 }
 
@@ -27933,7 +27933,7 @@ async function rejectChallengeSubmission(subId) {
     .eq('id', subId);
   
   if (error) {
-    showToast('❌ Klaida: ' + error.message, 'error');
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
     return;
   }
   
@@ -27967,7 +27967,7 @@ async function _trainerPendingCampCards(){
         <div style="font-size:13px;color:var(--text);padding-top:6px;border-top:.5px solid var(--bdr);margin-top:6px;">Vaikas pažymėjo, kad dalyvavo</div>
       </div>
       <div style="display:flex;gap:6px;">
-        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveCampConf('${x.event_id}','${x.kid_id}')">✓ Patvirtinti</button>
+        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveCampConf('${x.event_id}','${x.kid_id}')">${ico('atlikta')} Patvirtinti</button>
       </div>
     </div>`);
   } catch(e){ console.error('[trainer-camps]',e); return []; }
@@ -27976,8 +27976,8 @@ async function approveCampConf(eventId, kidId){
   const el = document.getElementById(`camp-conf-${eventId}-${kidId}`);
   if (el){ if(el.dataset.busy) return; el.dataset.busy='1'; el.style.opacity='.3'; el.style.pointerEvents='none'; }
   const { error } = await sb.rpc('approve_camp_attendance', { p_event: eventId, p_kid: kidId });
-  if (error){ if(el){el.style.opacity='';el.style.pointerEvents='';delete el.dataset.busy;} showToast('❌ '+error.message,'error',5000); return; }
-  showToast('✅ Patvirtinta! EXP pridėtas vaikui.','success',4000);
+  if (error){ if(el){el.style.opacity='';el.style.pointerEvents='';delete el.dataset.busy;} showToast(ico('klaida')+' '+error.message,'error',5000); return; }
+  showToast(ico('patvirtinta')+' Patvirtinta! EXP pridėtas vaikui.','success',4000);
   // 🔔 Push vaikui, kad gavo EXP (net su uždarytu appsu)
   sb.from('kids').select('user_id').eq('id', kidId).maybeSingle()
     .then(({data})=>{ if(data?.user_id) _pushToUser(data.user_id, '✅ Stovykla patvirtinta!', 'Treneris patvirtino tavo dalyvavimą — gavai EXP! 🎉', '/'); }).catch(()=>{});
@@ -28085,7 +28085,7 @@ async function loadPendingCompetitionResults() {
       </div>
       
       <div style="display:flex;gap:6px;">
-        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveCompetitionResult('${r.id}')">✓ Patvirtinti</button>
+        <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveCompetitionResult('${r.id}')">${ico('atlikta')} Patvirtinti</button>
         <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="rejectCompetitionResult('${r.id}')">✗ Atmesti</button>
       </div>
     </div>`;
@@ -28109,10 +28109,10 @@ async function approveCompetitionResult(resultId) {
   if (error) {
     if (el) { el.style.opacity = ''; el.style.pointerEvents = ''; delete el.dataset.busy; }
     console.error('approveCompetitionResult:', error);
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
     return;
   }
-  showToast('✅ Patvirtinta! EXP pridėtas vaikui.', 'success', 4000);
+  showToast(ico('patvirtinta')+' Patvirtinta! EXP pridėtas vaikui.', 'success', 4000);
   loadPendingCompetitionResults();
 }
 
@@ -28130,7 +28130,7 @@ async function rejectCompetitionResult(resultId) {
   
   if (error) {
     console.error('rejectCompetitionResult:', error);
-    showToast('❌ Klaida: ' + error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
     return;
   }
   
@@ -28232,11 +28232,11 @@ function subscribeKidNotifications() {
       if (sub.status === 'approved') {
         if (_isSeen('ex', sub.id)) return; // jau parodyta (gyvai ar kaip praleista)
         _addSeen('ex', sub.id);
-        showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
+        showToast(`${ico('patvirtinta')} TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
         await loadKidData();
       } else if (sub.status === 'rejected') {
         const reason = sub.rejection_reason || 'be priežasties';
-        showToast(`❌ ATMESTA\n\n${exName}\n${reason}`, 'error');
+        showToast(`${ico('klaida')} ATMESTA\n\n${exName}\n${reason}`, 'error');
         await loadKidPendingSubmissions();
       }
     })
@@ -28316,7 +28316,7 @@ function subscribeKidNotifications() {
         if (_isSeen('chRej', sub.id)) return;
         _addSeen('chRej', sub.id);
         const reason = sub.rejection_reason || 'be priežasties';
-        showToast(`❌ IŠŠŪKIS ATMESTAS\n\n${reason}`, 'error', null, { sound: 'send' });
+        showToast(`${ico('klaida')} IŠŠŪKIS ATMESTAS\n\n${reason}`, 'error', null, { sound: 'send' });
         await loadKidData();
         return;
       }
@@ -28340,7 +28340,7 @@ function subscribeKidNotifications() {
         if (_isSeen('cpRej', res.id)) return;
         _addSeen('cpRej', res.id);
         const reason = res.rejection_reason || 'be priežasties';
-        showToast(`❌ VARŽYBŲ REZULTATAS ATMESTAS\n\n${reason}`, 'error', null, { sound: 'send' });
+        showToast(`${ico('klaida')} VARŽYBŲ REZULTATAS ATMESTAS\n\n${reason}`, 'error', null, { sound: 'send' });
         await loadKidData();
         return;
       }
@@ -28364,7 +28364,7 @@ function subscribeKidNotifications() {
       if (amt >= 0) {
         showToast(`⭐ TRENERIO ĮVERTINIMAS\n\n${adj.reason || ''}\n+${amt} EXP`, 'success', null, { confetti: 15, sound: 'exp' });
       } else {
-        showToast(`⚠️ TRENERIO PASTABA\n\n${adj.reason || ''}\n${amt} EXP`, 'error', null, { sound: 'send' });
+        showToast(`${ico('ispejimas')} TRENERIO PASTABA\n\n${adj.reason || ''}\n${amt} EXP`, 'error', null, { sound: 'send' });
       }
       await loadKidData();
     })
@@ -28511,7 +28511,7 @@ function subscribeParentNotifications() {
       const tLabel = rep.type === 'plan' ? '🏋️ Veiksmų planas' : (rep.type === 'summer' ? '☀️ Vasaros programa' : '📄 Progreso ataskaita');
       const pk = (parentKids || []).find(k => k.id === rep.kid_id);
       const kidName = pk ? (pk.first_name || '') : '';
-      showToast('✅ ' + tLabel + (kidName ? ' (' + kidName + ')' : '') + ' paruošta! Rasi Parduotuvėje.', 'success', 7000);
+      showToast(ico('patvirtinta')+' ' + tLabel + (kidName ? ' (' + kidName + ')' : '') + ' paruošta! Rasi Parduotuvėje.', 'success', 7000);
       if (typeof loadMyReports === 'function') loadMyReports();  // jei atidarytas ataskaitų sąrašas — atsinaujina
     })
     .subscribe();
@@ -28554,7 +28554,7 @@ async function cr() {
     status:'rejected', rejection_reason:reason,
     rejection_comment:comment, reviewed_at:new Date().toISOString()
   }).eq('id', rejectTargetId).eq('status', 'pending');
-  if (error) { showToast('❌ Klaida: ' + error.message, 'error'); return; } // anksčiau klaida buvo nutylima
+  if (error) { showToast(ico('klaida')+' Klaida: ' + error.message, 'error'); return; } // anksčiau klaida buvo nutylima
   cm();
   showToast('Atmesta su priežastimi', 'error');
   loadPendingSubmissions();
@@ -28698,7 +28698,7 @@ function renderExoList() {
   const html = currentExerciseList.map(ex => {
     const icon = (typeof CAREER_ICONS !== 'undefined' && CAREER_ICONS[ex.name]) || `<span style="font-size:18px;">🥋</span>`;
     if (!ex.target) {
-      return `<div class="ri" style="opacity:.4;"><div style="flex:1;"><span style="font-size:13px;font-weight:800;">${ex.name}</span><div style="font-size:10px;color:var(--mut);margin-top:3px;">⚠️ Ribos dar nenustatytos</div></div></div>`;
+      return `<div class="ri" style="opacity:.4;"><div style="flex:1;"><span style="font-size:13px;font-weight:800;">${ex.name}</span><div style="font-size:10px;color:var(--mut);margin-top:3px;">${ico('ispejimas')} Ribos dar nenustatytos</div></div></div>`;
     }
     const { pct, exp } = exoExpOf(ex);
     const open = exoOpenSet[ex.id];
@@ -28724,7 +28724,7 @@ function renderExoList() {
       const tierHtml = tiers.map((t, i) => {
         const got = exoReached(ex, t[1]);
         const c = tierCols[i];
-        return `<div style="flex:1;text-align:center;border:1px solid ${c[1]};background:${c[2]};border-radius:9px;padding:5px 2px;position:relative;color:${c[0]};${got ? '' : 'opacity:.45;'}">${got ? `<span style='position:absolute;top:-6px;right:-3px;font-size:9px;'>✅</span>` : ''}<div style="font-size:10px;">${t[0]}</div><div style="font-size:11.5px;font-weight:800;">${t[1]}</div></div>`;
+        return `<div style="flex:1;text-align:center;border:1px solid ${c[1]};background:${c[2]};border-radius:9px;padding:5px 2px;position:relative;color:${c[0]};${got ? '' : 'opacity:.45;'}">${got ? `<span style='position:absolute;top:-6px;right:-3px;font-size:9px;'>${ico('patvirtinta')}</span>` : ''}<div style="font-size:10px;">${t[0]}</div><div style="font-size:11.5px;font-weight:800;">${t[1]}</div></div>`;
       }).join('');
       let nxt = '';
       for (const t of tiers) { if (!exoReached(ex, t[1])) { nxt = `Kitas tikslas: <b style="color:#ffd24a;">${t[0]} ${t[1]} ${ex.unit}</b>`; break; } }
@@ -28876,15 +28876,15 @@ async function submitExerciseResult() {
   const lower = currentExercise.lower_is_better;
 
   if (_raw === '' || isNaN(newVal)) {
-    showToast('❌ Įvesk rezultatą', 'error');
+    showToast(ico('klaida')+' Įvesk rezultatą', 'error');
     return;
   }
   if (!lower && newVal <= 0) {
-    showToast('❌ Rezultatas turi būti didesnis už 0', 'error');
+    showToast(ico('klaida')+' Rezultatas turi būti didesnis už 0', 'error');
     return;
   }
   if (lower && newVal < 0) {
-    showToast('❌ Rezultatas negali būti neigiamas', 'error');
+    showToast(ico('klaida')+' Rezultatas negali būti neigiamas', 'error');
     return;
   }
   
@@ -28897,7 +28897,7 @@ async function submitExerciseResult() {
   }
   
   if (!isPR) {
-    showToast(lower ? '❌ Rezultatas turi būti mažesnis už PR' : '❌ Rezultatas turi būti didesnis už PR', 'error');
+    showToast(lower ? ico('klaida')+' Rezultatas turi būti mažesnis už PR' : ico('klaida')+' Rezultatas turi būti didesnis už PR', 'error');
     return;
   }
 
@@ -28935,7 +28935,7 @@ async function submitExerciseResult() {
   }
   
   if (trainersList.length === 0) {
-    showToast('❌ Treneris dar nepriskirtas. Susisiek su klubu.', 'error', 4000);
+    showToast(ico('klaida')+' Treneris dar nepriskirtas. Susisiek su klubu.', 'error', 4000);
     return;
   }
   
@@ -29037,12 +29037,12 @@ async function sendSubmissionToTrainer(trainerId, newVal, oldPr, comment, lower)
   btn.style.opacity = '1';
 
   if (error) {
-    showToast('❌ Klaida: ' + error.message, 'error', 4000);
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 4000);
     console.error('Submit error:', error);
     return;
   }
 
-  showToast('✅ Išsiųsta treneriui patvirtinti!', 'success', 3000);
+  showToast(ico('patvirtinta')+' Išsiųsta treneriui patvirtinti!', 'success', 3000);
   playSound('send');
   notifyTrainersNewSubmission('🏋️ Naujas karjeros rezultatas', 'pateikė rezultatą — laukia patvirtinimo');
   closeExercises();
@@ -29341,7 +29341,7 @@ async function handleAppResume() {
 
   } catch (e) {
     console.error('[resume] klaida — perkraunam:', e);
-    try { showToast('🔄 Atnaujinama...', 'info', 1400); } catch(_){}
+    try { showToast(ico('atnaujinti')+' Atnaujinama...', 'info', 1400); } catch(_){}
     setTimeout(() => location.reload(), 1500);
   }
 }
@@ -29468,7 +29468,7 @@ async function showMissedEvents() {
         // ⛔ Žalio NEBERODOM — varžybų medalio/dalyvavimo šventę parodo detectNewMedals (žemiau, atsibudus)
       } else if (ev.type === 'exercise') {
         const exName = _exNameMap[ev.data.exercise_id] || 'Pratimas';
-        showToast(`✅ TRENERIS PATVIRTINO\n\n${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
+        showToast(`${ico('patvirtinta')} TRENERIS PATVIRTINO\n\n${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
       } else if (ev.type === 'duel') {
         const won = ev.data.winner_id === kidId;
         const drew = !ev.data.winner_id;
@@ -29537,7 +29537,7 @@ async function showParentMissedEvents() {
           if (firstRun && rep.reviewed_at && (Date.now() - new Date(rep.reviewed_at).getTime()) > 180000) return;
           const tLabel = rep.type === 'plan' ? '🏋️ Veiksmų planas' : (rep.type === 'summer' ? '☀️ Vasaros programa' : '📄 Progreso ataskaita');
           const pk = (parentKids || []).find(k => k.id === rep.kid_id);
-          showToast('✅ ' + tLabel + (pk ? ' (' + (pk.first_name || '') + ')' : '') + ' paruošta! Rasi Parduotuvėje.', 'success', 6500);
+          showToast(ico('patvirtinta')+' ' + tLabel + (pk ? ' (' + (pk.first_name || '') + ')' : '') + ' paruošta! Rasi Parduotuvėje.', 'success', 6500);
         });
       }
     } catch (e) { /* tylu — nekritinis */ }
@@ -30128,7 +30128,7 @@ function _showUpdateBanner(latest) {
   const b = document.createElement('div');
   b.id = 'spobu-update-banner';
   b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:200000;background:linear-gradient(90deg,#FF4D00,#FF8C00);color:#fff;padding:calc(11px + env(safe-area-inset-bottom,0px)) 16px 11px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -2px 14px rgba(0,0,0,.45);font-family:inherit;';
-  b.innerHTML = `<div style="font-size:13px;font-weight:800;">🔄 Yra nauja versija (v${latest})</div>
+  b.innerHTML = `<div style="font-size:13px;font-weight:800;">${ico('atnaujinti')} Yra nauja versija (v${latest})</div>
     <button onclick="_applyUpdate('${latest}')" style="background:#fff;color:#FF4D00;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;">Atnaujinti</button>`;
   document.body.appendChild(b);
 }
@@ -30162,7 +30162,7 @@ async function enablePushNotifications() {
   // Tėvas IR treneris registruojasi be kid_id (user_id režimas)
   const isParent = currentProfile?.role === 'parent' || currentProfile?.role === 'trainer';
   if (!isParent && !currentKid?.id) {
-    showToast('❌ Pirma prisijunk', 'error');
+    showToast(ico('klaida')+' Pirma prisijunk', 'error');
     return false;
   }
 
@@ -30194,7 +30194,7 @@ async function enablePushNotifications() {
       }
     } catch (e) {
       console.error('SW registracijos klaida:', e);
-      showToast('❌ Service Worker neužsikrovė.\n' + (e.message || e), 'error', 5000);
+      showToast(ico('klaida')+' Service Worker neužsikrovė.\n' + (e.message || e), 'error', 5000);
       return false;
     }
     
@@ -30220,16 +30220,16 @@ async function enablePushNotifications() {
     
     if (error) {
       console.error('Push subscription saugojimo klaida:', error);
-      showToast('❌ Klaida išsaugant', 'error', 4000);
+      showToast(ico('klaida')+' Klaida išsaugant', 'error', 4000);
       return false;
     }
     
     localStorage.setItem('spobu_push_on', '1');
-    showToast('🔔 Pranešimai įjungti!', 'success', 3000);
+    showToast(ico('pranesimai')+' Pranešimai įjungti!', 'success', 3000);
     return true;
   } catch (e) {
     console.error('enablePushNotifications klaida:', e);
-    showToast('❌ Nepavyko įjungti pranešimų', 'error', 4000);
+    showToast(ico('klaida')+' Nepavyko įjungti pranešimų', 'error', 4000);
     return false;
   }
 }
@@ -30251,7 +30251,7 @@ async function disablePushNotifications() {
     return true;
   } catch (e) {
     console.error('disablePushNotifications klaida:', e);
-    showToast('❌ Nepavyko išjungti', 'error', 3000);
+    showToast(ico('klaida')+' Nepavyko išjungti', 'error', 3000);
     return false;
   }
 }
@@ -30969,7 +30969,7 @@ async function sendMessage() {
   
   if (!body) return;
   if (!currentConversationId) {
-    showToast('❌ Nėra pokalbio', 'error');
+    showToast(ico('klaida')+' Nėra pokalbio', 'error');
     return;
   }
   
@@ -30986,7 +30986,7 @@ async function sendMessage() {
   input.disabled = false;
   
   if (error) {
-    showToast('❌ Nepavyko siųsti: ' + error.message, 'error');
+    showToast(ico('klaida')+' Nepavyko siųsti: ' + error.message, 'error');
     return;
   }
   
@@ -31301,7 +31301,7 @@ async function composeMessageToKidParents(kidId) {
     .single();
   
   if (!kid) {
-    showToast('❌ Vaikas nerastas', 'error');
+    showToast(ico('klaida')+' Vaikas nerastas', 'error');
     return;
   }
   
@@ -31313,7 +31313,7 @@ async function composeMessageToKidParents(kidId) {
   const parentIds = (links || []).map(l => l.parent_id);
   
   if (parentIds.length === 0) {
-    showToast('❌ Šis vaikas neturi tėvų paskyrų', 'error');
+    showToast(ico('klaida')+' Šis vaikas neturi tėvų paskyrų', 'error');
     return;
   }
   
@@ -31348,7 +31348,7 @@ async function composeMessageToGroup(groupId, groupName) {
 // Klubas spaudžia "Pranešimas visiems"
 async function composeMessageToClub() {
   if (currentProfile?.role !== 'club_admin') {
-    showToast('❌ Tik klubo admin gali siųsti broadcast', 'error');
+    showToast(ico('klaida')+' Tik klubo admin gali siųsti broadcast', 'error');
     return;
   }
   
@@ -31365,7 +31365,7 @@ async function composeMessageToClub() {
 async function submitComposeMessage() {
   const body = document.getElementById('msg-compose-body').value.trim();
   if (!body) {
-    showToast('❌ Įvesk žinutę', 'error');
+    showToast(ico('klaida')+' Įvesk žinutę', 'error');
     return;
   }
   
@@ -31388,7 +31388,7 @@ async function submitComposeMessage() {
     // Patikrinti pavadinimą jei announcement
     const titleInput = document.getElementById('msg-compose-title-input').value.trim();
     if ((composeContext.type === 'group' || composeContext.type === 'broadcast') && !titleInput) {
-      showToast('❌ Įveskite pavadinimą', 'error');
+      showToast(ico('klaida')+' Įveskite pavadinimą', 'error');
       submitBtn.disabled = false;
       submitBtn.textContent = 'SIŲSTI ŽINUTĘ';
       return;
@@ -31557,7 +31557,7 @@ async function submitComposeMessage() {
       showToast('📣 Pranešimas išsiųstas!', 'success');
       // Announcement - nepatenka į pokalbį, lieka kur buvo
     } else {
-      showToast('✅ Žinutė išsiųsta!', 'success');
+      showToast(ico('patvirtinta')+' Žinutė išsiųsta!', 'success');
       // Pokalbis - pereiti į pokalbį
       setTimeout(() => {
         openMessages();
@@ -31567,7 +31567,7 @@ async function submitComposeMessage() {
     
   } catch (e) {
     console.error('submitComposeMessage error:', e);
-    showToast('❌ Klaida: ' + (e.message || 'Nežinoma'), 'error');
+    showToast(ico('klaida')+' Klaida: ' + (e.message || 'Nežinoma'), 'error');
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'SIŲSTI ŽINUTĘ';
@@ -31729,7 +31729,7 @@ async function openAnnouncement(convId) {
     .single();
   
   if (!conv) {
-    showToast('❌ Pranešimas nerastas', 'error');
+    showToast(ico('klaida')+' Pranešimas nerastas', 'error');
     return;
   }
   
@@ -32347,7 +32347,7 @@ function openKidShareCard(ex, val, exp) {
   m.innerHTML = `<div style="width:100%;max-width:440px;background:var(--bg);border-radius:24px 24px 0 0;max-height:94vh;overflow-y:auto;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">📲 PASIDALINK PASIEKIMU</div>
-        <button onclick="document.getElementById('kidshare-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+        <button onclick="document.getElementById('kidshare-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:16px;">
         <div id="kidshare-card" style="position:relative;width:100%;aspect-ratio:4/5;border-radius:16px;overflow:hidden;background:#0f1115;">${_kidShareCardInner(_kidShareData, null)}</div>
@@ -32355,7 +32355,7 @@ function openKidShareCard(ex, val, exp) {
         <div style="display:flex;gap:8px;margin-top:14px;">
           <button onclick="document.getElementById('kidshare-photo-input').click()" style="flex:1;padding:11px;border-radius:12px;border:.5px solid var(--bdr);background:var(--card);color:white;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">📷 Nuotrauka</button>
           <button onclick="_kidShareAction('copy')" style="flex:1;padding:11px;border-radius:12px;border:none;background:rgba(255,255,255,.1);color:white;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">📋 Kopijuoti</button>
-          <button onclick="_kidShareAction('save')" style="flex:1;padding:11px;border-radius:12px;border:none;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">💾 Išsaugoti</button>
+          <button onclick="_kidShareAction('save')" style="flex:1;padding:11px;border-radius:12px;border:none;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">${ico('issaugoti')} Išsaugoti</button>
         </div>
         <button onclick="_kidShareAction('share')" id="kidshare-share-btn" style="width:100%;margin-top:8px;padding:11px;border-radius:12px;border:none;background:#1DA1F2;color:white;font-weight:800;font-size:12px;cursor:pointer;display:none;font-family:inherit;">📲 Dalintis</button>
         <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.5;">Pridėk savo nuotrauką, tada kopijuok arba išsaugok — ir dėk į Instagram / TikTok! 🔥</div>
@@ -32386,7 +32386,7 @@ function _kidDLBlob(blob, name) {
 
 async function _kidShareAction(kind) {
   const card = document.getElementById('kidshare-card');
-  if (!card || typeof html2canvas !== 'function') { showToast('❌ Nepavyko paruošti kortelės', 'error'); return; }
+  if (!card || typeof html2canvas !== 'function') { showToast(ico('klaida')+' Nepavyko paruošti kortelės', 'error'); return; }
   showToast('⏳ Ruošiama...', 'info', 1500);
   try {
     const canvas = await html2canvas(card, { useCORS: true, scale: 3, backgroundColor: null, logging: false });
@@ -32399,23 +32399,23 @@ async function _kidShareAction(kind) {
         showToast('📋 Nukopijuota! Įklijuok į Instagram ar žinutę', 'success', 3500);
       } else {
         _kidDLBlob(blob, fileName);
-        showToast('💾 Išsaugota (kopijavimas nepalaikomas šiame įrenginyje)', 'success', 3500);
+        showToast(ico('issaugoti')+' Išsaugota (kopijavimas nepalaikomas šiame įrenginyje)', 'success', 3500);
       }
     } else if (kind === 'save') {
       _kidDLBlob(blob, fileName);
-      showToast('💾 Išsaugota į atsisiuntimus / galeriją', 'success', 3500);
+      showToast(ico('issaugoti')+' Išsaugota į atsisiuntimus / galeriją', 'success', 3500);
     } else if (kind === 'share') {
       const file = new File([blob], fileName, { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Mano pasiekimas — SPOBU' });
       } else {
         _kidDLBlob(blob, fileName);
-        showToast('💾 Išsaugota (dalinimasis nepalaikomas)', 'success', 3500);
+        showToast(ico('issaugoti')+' Išsaugota (dalinimasis nepalaikomas)', 'success', 3500);
       }
     }
   } catch (e) {
     console.error('kidShare:', e);
-    showToast('❌ Nepavyko: ' + (e.message || 'klaida'), 'error', 4000);
+    showToast(ico('klaida')+' Nepavyko: ' + (e.message || 'klaida'), 'error', 4000);
   }
 }
 
@@ -32505,8 +32505,8 @@ async function openKidSettings() {
       <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
         <!-- Header -->
         <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">⚙️ NUSTATYMAI</div>
-          <button onclick="document.getElementById('kid-settings-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">✕</button>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">${ico('nustatymai')} NUSTATYMAI</div>
+          <button onclick="document.getElementById('kid-settings-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
         </div>
         
         <!-- Vartotojas info -->
@@ -32554,7 +32554,7 @@ async function openKidSettings() {
         <!-- 🔔 PRANEŠIMŲ JUNGIKLIS -->
         <div style="padding:8px 16px 0;">
           <div onclick="toggleAppPush()" id="kid-push-toggle" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-            <div style="font-size:28px;" id="kid-push-icon">🔔</div>
+            <div style="font-size:28px;" id="kid-push-icon">${ico('pranesimai')}</div>
             <div style="flex:1;">
               <div style="font-size:13px;font-weight:800;color:white;">Pranešimai</div>
               <div style="font-size:11px;color:var(--mut);margin-top:2px;" id="kid-push-status">Pranešimai apie pasiekimus</div>
@@ -32569,7 +32569,7 @@ async function openKidSettings() {
         <div style="padding:8px 16px 0;">
           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;">
             <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
-              <div style="font-size:28px;">🔍</div>
+              <div style="font-size:28px;">${ico('paieska')}</div>
               <div style="flex:1;">
                 <div style="font-size:13px;font-weight:800;color:white;">Vaizdo dydis</div>
                 <div style="font-size:11px;color:var(--mut);margin-top:2px;">Padidink, jei sunku įžiūrėti</div>
@@ -32807,7 +32807,7 @@ function openInfoSubmodal(title, contentHtml) {
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:12px;background:var(--bg);">
         <button onclick="document.getElementById('settings-submodal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:white;padding:0;line-height:1;">‹</button>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;flex:1;">${title}</div>
-        <button onclick="document.getElementById('settings-submodal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--mut);padding:0;">✕</button>
+        <button onclick="document.getElementById('settings-submodal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--mut);padding:0;">${ico('uzdaryti')}</button>
       </div>
       <!-- Content -->
       <div style="flex:1;overflow-y:auto;padding:16px 20px;">
@@ -33172,8 +33172,8 @@ function openAllAnnouncements() {
     modal.innerHTML = `
       <div style="max-width:480px;margin:0 auto;background:var(--bg);min-height:100vh;">
         <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);border-bottom:.5px solid var(--bdr);position:sticky;top:0;z-index:1;">
-          <button onclick="closeAllAnnouncements()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">←</button>
-          <div style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">🔔 VISI PRANEŠIMAI</div>
+          <button onclick="closeAllAnnouncements()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('atgal')}</button>
+          <div style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">${ico('pranesimai')} VISI PRANEŠIMAI</div>
         </div>
         <div id="all-announcements-list" style="padding:14px;">
           <div style="text-align:center;padding:30px;color:var(--mut);">Kraunama...</div>
@@ -33287,12 +33287,12 @@ async function markAnnouncementRead(convId) {
   
   if (error) {
     console.error('markAnnouncementRead:', error);
-    showToast('❌ Klaida: ' + error.message, 'error');
+    showToast(ico('klaida')+' Klaida: ' + error.message, 'error');
     return;
   }
   
   closeAnnouncement();
-  showToast('✓ Perskaityta', 'success');
+  showToast(ico('atlikta')+' Perskaityta', 'success');
   
   // Atnaujinti sąrašą po 300ms
   setTimeout(() => {
