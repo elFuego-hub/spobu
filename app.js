@@ -2736,11 +2736,11 @@ async function loadParentKidFeed() {
 
     // Spalvos + ikonos pagal iššūkio TIPĄ (kaip vaiko kode: training/weekly/monthly/one_time/permanent)
     const CH_TYPE = {
-      training:  { color: '#FF4D00', icon: '🏋️', label: 'Treniruotės iššūkis' },
-      weekly:    { color: '#4FC3F7', icon: '⚡', label: 'Savaitinis iššūkis' },
-      monthly:   { color: '#BA68C8', icon: '🌙', label: 'Mėnesinis iššūkis' },
-      one_time:  { color: '#FFD700', icon: '✨', label: 'Vienkartinis iššūkis' },
-      permanent: { color: '#66BB6A', icon: '♾️', label: 'Nuolatinis iššūkis' }
+      training:  { color: '#FF4D00', icon: ico('treniruote'), label: 'Treniruotės iššūkis' },
+      weekly:    { color: '#4FC3F7', icon: ico('savaitinis'), label: 'Savaitinis iššūkis' },
+      monthly:   { color: '#BA68C8', icon: ico('menesinis'), label: 'Mėnesinis iššūkis' },
+      one_time:  { color: '#FFD700', icon: ico('vienkartinis'), label: 'Vienkartinis iššūkis' },
+      permanent: { color: '#66BB6A', icon: ico('nuolatinis'), label: 'Nuolatinis iššūkis' }
     };
 
     // ⚡ NAŠUMAS: 5 nepriklausomos užklausos LYGIAGREČIAI (vietoj 5 serijinių round-trip'ų)
@@ -9562,11 +9562,11 @@ async function checkForNewChallenges() {
 
 function showChallengePopup(challenge, onClose) {
   const typeConfig = {
-    training: { icon: '🏋️', label: 'TRENIRUOTĖS', color: '#FF4D00', gradient: 'linear-gradient(135deg, #FF4D00, #FF8000)' },
-    weekly: { icon: '⚡', label: 'SAVAITINIS', color: '#4FC3F7', gradient: 'linear-gradient(135deg, #4FC3F7, #29B6F6)' },
-    monthly: { icon: '🌙', label: 'MĖNESINIS', color: '#BA68C8', gradient: 'linear-gradient(135deg, #BA68C8, #8E24AA)' },
+    training: { icon: ico('treniruote'), label: 'TRENIRUOTĖS', color: '#FF4D00', gradient: 'linear-gradient(135deg, #FF4D00, #FF8000)' },
+    weekly: { icon: ico('savaitinis'), label: 'SAVAITINIS', color: '#4FC3F7', gradient: 'linear-gradient(135deg, #4FC3F7, #29B6F6)' },
+    monthly: { icon: ico('menesinis'), label: 'MĖNESINIS', color: '#BA68C8', gradient: 'linear-gradient(135deg, #BA68C8, #8E24AA)' },
     oneoff: { icon: '✨', label: 'VIENKARTINIS', color: '#FFD700', gradient: 'linear-gradient(135deg, #FFD700, #FFA500)' },
-    permanent: { icon: '🔁', label: 'NUOLATINIS', color: '#22C55E', gradient: 'linear-gradient(135deg, #22C55E, #16A34A)' }
+    permanent: { icon: ico('nuolatinis'), label: 'NUOLATINIS', color: '#22C55E', gradient: 'linear-gradient(135deg, #22C55E, #16A34A)' }
   };
   
   const cfg = typeConfig[challenge.type] || typeConfig.training;
@@ -9878,11 +9878,11 @@ async function checkForNewApprovedSubmissions() {
 // ════════════════════════════════════════
 function showChallengeApprovedPopup(challenge, submission) {
   const typeConfig = {
-    training:  { icon: '🏋️', label: 'TRENIRUOTĖS IŠŠŪKIS', color: '#FF4D00', gradient: 'linear-gradient(135deg, #FF4D00, #FF8000)' },
-    weekly:    { icon: '⚡', label: 'SAVAITINIS IŠŠŪKIS',  color: '#4FC3F7', gradient: 'linear-gradient(135deg, #4FC3F7, #29B6F6)' },
-    monthly:   { icon: '🌙', label: 'MĖNESINIS IŠŠŪKIS',   color: '#BA68C8', gradient: 'linear-gradient(135deg, #BA68C8, #8E24AA)' },
-    one_time:  { icon: '✨', label: 'VIENKARTINIS IŠŠŪKIS', color: '#FFD700', gradient: 'linear-gradient(135deg, #FFD700, #FFA500)' },
-    permanent: { icon: '♾️', label: 'NUOLATINIS IŠŠŪKIS',  color: '#66BB6A', gradient: 'linear-gradient(135deg, #66BB6A, #43A047)' }
+    training:  { icon: ico('treniruote'), label: 'TRENIRUOTĖS IŠŠŪKIS', color: '#FF4D00', gradient: 'linear-gradient(135deg, #FF4D00, #FF8000)' },
+    weekly:    { icon: ico('savaitinis'), label: 'SAVAITINIS IŠŠŪKIS',  color: '#4FC3F7', gradient: 'linear-gradient(135deg, #4FC3F7, #29B6F6)' },
+    monthly:   { icon: ico('menesinis'), label: 'MĖNESINIS IŠŠŪKIS',   color: '#BA68C8', gradient: 'linear-gradient(135deg, #BA68C8, #8E24AA)' },
+    one_time:  { icon: ico('vienkartinis'), label: 'VIENKARTINIS IŠŠŪKIS', color: '#FFD700', gradient: 'linear-gradient(135deg, #FFD700, #FFA500)' },
+    permanent: { icon: ico('nuolatinis'), label: 'NUOLATINIS IŠŠŪKIS',  color: '#66BB6A', gradient: 'linear-gradient(135deg, #66BB6A, #43A047)' }
   };
   
   const cfg = typeConfig[challenge?.type] || typeConfig.one_time;
@@ -10294,9 +10294,9 @@ async function checkForNewStreakBonuses() {
 
 function showStreakBonusPopup(bonus, submissionInfo, onClose) {
   const typeConfig = {
-    training: { icon: '🔥', label: 'TRENIRUOČIŲ', color: '#FF4D00', gradient: 'linear-gradient(135deg, #FF4D00, #FF8000)' },
-    weekly: { icon: '📅', label: 'SAVAITINIS', color: '#4FC3F7', gradient: 'linear-gradient(135deg, #4FC3F7, #29B6F6)' },
-    monthly: { icon: '🏆', label: 'MĖNESINIS', color: '#FFD700', gradient: 'linear-gradient(135deg, #FFD700, #FFA500)' }
+    training: { icon: ico('treniruote'), label: 'TRENIRUOČIŲ', color: '#FF4D00', gradient: 'linear-gradient(135deg, #FF4D00, #FF8000)' },
+    weekly: { icon: ico('savaitinis'), label: 'SAVAITINIS', color: '#4FC3F7', gradient: 'linear-gradient(135deg, #4FC3F7, #29B6F6)' },
+    monthly: { icon: ico('menesinis'), label: 'MĖNESINIS', color: '#FFD700', gradient: 'linear-gradient(135deg, #FFD700, #FFA500)' }
   };
   
   const cfg = typeConfig[bonus.streak_type] || typeConfig.training;
@@ -14878,7 +14878,7 @@ async function loadKidCompetitions() {
     const typeColors = {
       kumite:    { color: '#EF4444', bg: 'rgba(239,68,68,.08)',   border: 'rgba(239,68,68,.3)',   icon: '🥊' },
       kata:      { color: '#4FC3F7', bg: 'rgba(79,195,247,.08)',  border: 'rgba(79,195,247,.3)',  icon: '🎭' },
-      belt_test: { color: '#FFD700', bg: 'rgba(255,215,0,.08)',   border: 'rgba(255,215,0,.3)',   icon: '🥋' }
+      belt_test: { color: '#FFD700', bg: 'rgba(255,215,0,.08)',   border: 'rgba(255,215,0,.3)',   icon: ico('dirzas') }
     };
     const tCol = typeColors[c.competition_type] || typeColors.kumite;
     
@@ -32032,9 +32032,9 @@ async function loadAllNotifications(force) {
   
   // 🔥 STREAK BONUSAI - su tipo info
   const streakTypeConfig = {
-    training: { icon: '🔥', label: 'Treniruočių' },
-    weekly: { icon: '📅', label: 'Savaitinis' },
-    monthly: { icon: '🏆', label: 'Mėnesinis' }
+    training: { icon: ico('treniruote'), label: 'Treniruočių' },
+    weekly: { icon: ico('savaitinis'), label: 'Savaitinis' },
+    monthly: { icon: ico('menesinis'), label: 'Mėnesinis' }
   };
   (streakRes.data || []).forEach(s => {
     const cfg = streakTypeConfig[s.streak_type] || { icon: '🔥', label: s.streak_type };

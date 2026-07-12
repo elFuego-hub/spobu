@@ -1326,8 +1326,8 @@ window.addEventListener('unhandledrejection', function(e) {
     
     <!-- Tabai -->
     <div style="display:flex;gap:4px;margin:0 16px 6px;">
-      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">🔥 AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
-      <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">📜 ARCHYVAS <span id="v-completed-count" style="opacity:.7;">0</span></button>
+      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-streak"></use></svg> AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
+      <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dokumentas"></use></svg> ARCHYVAS <span id="v-completed-count" style="opacity:.7;">0</span></button>
     </div>
     
     <div id="v-ish-duels" style="padding:0 16px;">
@@ -1414,7 +1414,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- Tabai -->
     <div style="display:flex;gap:4px;margin:0 16px 6px;">
-      <button class="vc-tab on" data-tab="upcoming" onclick="switchVcTab(this,'upcoming')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">📅 ARTĖJA <span id="vc-upcoming-count" style="opacity:.7;">0</span></button>
+      <button class="vc-tab on" data-tab="upcoming" onclick="switchVcTab(this,'upcoming')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-kalendorius"></use></svg> ARTĖJA <span id="vc-upcoming-count" style="opacity:.7;">0</span></button>
       <button class="vc-tab" data-tab="pending" onclick="switchVcTab(this,'pending')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">⏳ LAUKIA <span id="vc-pending-count" style="opacity:.7;">0</span></button>
       <button class="vc-tab" data-tab="completed" onclick="switchVcTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> ATLIKTOS <span id="vc-completed-count" style="opacity:.7;">0</span></button>
     </div>
@@ -1445,10 +1445,10 @@ window.addEventListener('unhandledrejection', function(e) {
     
     <!-- Tab nav - kompaktiškas -->
     <div style="display:flex;gap:4px;margin:0 16px 8px;overflow-x:auto;padding-bottom:2px;">
-      <button class="stat-tab on" data-tab="overall" onclick="switchStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">📈 LVL</button>
-      <button class="stat-tab" data-tab="skills" onclick="switchStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
-      <button class="stat-tab" data-tab="challenges" onclick="switchStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
-      <button class="stat-tab" data-tab="competitions" onclick="switchStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
+      <button class="stat-tab on" data-tab="overall" onclick="switchStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-grafikas"></use></svg> LVL</button>
+      <button class="stat-tab" data-tab="skills" onclick="switchStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> SKILL'AI</button>
+      <button class="stat-tab" data-tab="challenges" onclick="switchStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-issukiai"></use></svg> IŠŠŪKIAI</button>
+      <button class="stat-tab" data-tab="competitions" onclick="switchStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> VARŽYBOS</button>
     </div>
     
     <!-- TAB: BENDRAS LVL (leaderboard) -->
@@ -1839,8 +1839,8 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- Tabai (kaip vaiko v-ish) -->
     <div style="display:flex;gap:4px;margin:0 16px 6px;">
-      <button class="tab on" onclick="switchMyChallengesTab(this,'active')" style="flex:1;font-size:10px;font-weight:800;letter-spacing:.5px;">🔥 AKTYVŪS <span id="tr-active-count" style="opacity:.7;">0</span></button>
-      <button class="tab" onclick="switchMyChallengesTab(this,'completed')" style="flex:1;font-size:10px;font-weight:800;letter-spacing:.5px;">📜 PASIBAIGĘ <span id="tr-completed-count" style="opacity:.6;">0</span></button>
+      <button class="tab on" onclick="switchMyChallengesTab(this,'active')" style="flex:1;font-size:10px;font-weight:800;letter-spacing:.5px;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-streak"></use></svg> AKTYVŪS <span id="tr-active-count" style="opacity:.7;">0</span></button>
+      <button class="tab" onclick="switchMyChallengesTab(this,'completed')" style="flex:1;font-size:10px;font-weight:800;letter-spacing:.5px;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dokumentas"></use></svg> PASIBAIGĘ <span id="tr-completed-count" style="opacity:.6;">0</span></button>
     </div>
 
     <button onclick="openCreateChallenge()" id="tr-new-challenge-btn" style="width:calc(100% - 32px);margin:0 16px 12px;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;">+ NAUJAS IŠŠŪKIS</button>
@@ -1894,11 +1894,11 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- Tabai -->
     <div class="tabs no-scrollbar" style="padding:0 16px 10px;">
-      <div class="tab on" onclick="switchTrTab(this,'career')">🏋️ Karjera <span id="tr-career-count" style="opacity:.6;">0</span></div>
-      <div class="tab" onclick="switchTrTab(this,'challenges')">🎯 Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
-      <div class="tab" onclick="switchTrTab(this,'competitions')">🥇 Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
-      <div class="tab" onclick="switchTrTab(this,'duels')">🥊 Dvikovos <span id="tr-duels-count" style="opacity:.6;">0</span></div>
-      <div class="tab" onclick="switchTrTab(this,'forms')">⛺ Stovyklos <span id="tr-forms-count" style="opacity:.6;">0</span></div>
+      <div class="tab on" onclick="switchTrTab(this,'career')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-augimas"></use></svg> Karjera <span id="tr-career-count" style="opacity:.6;">0</span></div>
+      <div class="tab" onclick="switchTrTab(this,'challenges')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-issukiai"></use></svg> Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
+      <div class="tab" onclick="switchTrTab(this,'competitions')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
+      <div class="tab" onclick="switchTrTab(this,'duels')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dvikova"></use></svg> Dvikovos <span id="tr-duels-count" style="opacity:.6;">0</span></div>
+      <div class="tab" onclick="switchTrTab(this,'forms')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-stovykla"></use></svg> Stovyklos <span id="tr-forms-count" style="opacity:.6;">0</span></div>
     </div>
     <!-- Karjeros pateikimai -->
     <div id="tr-submissions-list">
@@ -2208,10 +2208,10 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- Tab nav (4 leaderboard'ai) -->
     <div class="no-scrollbar" style="display:flex;gap:6px;margin:0 16px 12px;overflow-x:auto;padding-bottom:4px;">
-      <button class="trainer-stat-tab on" data-tab="overall" onclick="switchTrainerStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
-      <button class="trainer-stat-tab" data-tab="skills" onclick="switchTrainerStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
-      <button class="trainer-stat-tab" data-tab="challenges" onclick="switchTrainerStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
-      <button class="trainer-stat-tab" data-tab="competitions" onclick="switchTrainerStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
+      <button class="trainer-stat-tab on" data-tab="overall" onclick="switchTrainerStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-grafikas"></use></svg> BENDRAS LVL</button>
+      <button class="trainer-stat-tab" data-tab="skills" onclick="switchTrainerStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> SKILL'AI</button>
+      <button class="trainer-stat-tab" data-tab="challenges" onclick="switchTrainerStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-issukiai"></use></svg> IŠŠŪKIAI</button>
+      <button class="trainer-stat-tab" data-tab="competitions" onclick="switchTrainerStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> VARŽYBOS</button>
     </div>
     
     <!-- Tab content -->
@@ -3248,7 +3248,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       <div style="padding:12px 16px 0;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">
         <button class="notif-tab" data-tab="system" onclick="switchClubNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></span><span>Klubas <span id="kh-notif-count-system" style="opacity:.7;"></span></span></button>
-        <button class="notif-tab" data-tab="events" onclick="switchClubNotifTab('events')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🥇</span><span>Renginiai <span id="kh-notif-count-events" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="events" onclick="switchClubNotifTab('events')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg></span><span>Renginiai <span id="kh-notif-count-events" style="opacity:.7;"></span></span></button>
         <button class="notif-tab" data-tab="messages" onclick="switchClubNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true"><use href="#i-zinutes"></use></svg></span><span>Žinutės <span id="kh-notif-count-messages" style="opacity:.7;"></span></span></button>
       </div>
       <div id="kh-notif-list" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
@@ -3339,9 +3339,9 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
   </div>
   <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
-    <button class="k-team-tab on" data-tab="groups" onclick="switchClubTeamTab('groups')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">📅 Grupės</button>
-    <button class="k-team-tab" data-tab="trainers" onclick="switchClubTeamTab('trainers')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥋 Treneriai</button>
-    <button class="k-team-tab" data-tab="students" onclick="switchClubTeamTab('students')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🎒 Mokiniai</button>
+    <button class="k-team-tab on" data-tab="groups" onclick="switchClubTeamTab('groups')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-kalendorius"></use></svg> Grupės</button>
+    <button class="k-team-tab" data-tab="trainers" onclick="switchClubTeamTab('trainers')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-treneris"></use></svg> Treneriai</button>
+    <button class="k-team-tab" data-tab="students" onclick="switchClubTeamTab('students')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-mokiniai"></use></svg> Mokiniai</button>
   </div>
   <div class="sa">
     <!-- GRUPĖS -->
@@ -3365,7 +3365,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- MOKINIAI -->
     <div id="k-team-students" class="k-team-pane" style="display:none;">
       <div style="display:flex;gap:6px;padding:0 16px 8px;">
-        <button class="k-stud-tab" data-stab="reg" onclick="switchClubStudentsTab('reg')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:7px 10px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;">📋 Registracijos</button>
+        <button class="k-stud-tab" data-stab="reg" onclick="switchClubStudentsTab('reg')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:7px 10px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dokumentas"></use></svg> Registracijos</button>
         <button class="k-stud-tab" data-stab="inactive" onclick="switchClubStudentsTab('inactive')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:7px 10px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;">😴 Neaktyvūs</button>
       </div>
       <div id="k-students-list" style="padding:0 16px;"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
@@ -3394,17 +3394,17 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <!-- Sub-tabai -->
   <div style="display:flex;gap:6px;padding:8px 12px 4px;overflow-x:auto;">
-    <button class="k-ev-tab on" data-tab="comp" onclick="switchClubEventsTab('comp')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥇 Varžybos</button>
-    <button class="k-ev-tab" data-tab="belt" onclick="switchClubEventsTab('belt')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🥋 Diržų laikymas</button>
-    <button class="k-ev-tab" data-tab="camps" onclick="switchClubEventsTab('camps')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">⛺ Stovyklos</button>
-    <button class="k-ev-tab" data-tab="gc" onclick="switchClubEventsTab('gc')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🏆 Grupių iššūkis</button>
+    <button class="k-ev-tab on" data-tab="comp" onclick="switchClubEventsTab('comp')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> Varžybos</button>
+    <button class="k-ev-tab" data-tab="belt" onclick="switchClubEventsTab('belt')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dirzas"></use></svg> Diržų laikymas</button>
+    <button class="k-ev-tab" data-tab="camps" onclick="switchClubEventsTab('camps')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-stovykla"></use></svg> Stovyklos</button>
+    <button class="k-ev-tab" data-tab="gc" onclick="switchClubEventsTab('gc')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> Grupių iššūkis</button>
   </div>
   <div class="sa">
     <!-- VARŽYBOS (kumite/kata) -->
     <div id="k-ev-comp" class="k-ev-pane">
       <div class="tabs" style="margin-bottom:10px;">
-        <div class="tab on" onclick="switchKcTab(this,'upcoming')">🔜 Artėjančios <span id="k-comp-upcoming-count" style="opacity:.6;">0</span></div>
-        <div class="tab" onclick="switchKcTab(this,'past')">📦 Pasibaigusios <span id="k-comp-past-count" style="opacity:.6;">0</span></div>
+        <div class="tab on" onclick="switchKcTab(this,'upcoming')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-laikas"></use></svg> Artėjančios <span id="k-comp-upcoming-count" style="opacity:.6;">0</span></div>
+        <div class="tab" onclick="switchKcTab(this,'past')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-archyvas"></use></svg> Pasibaigusios <span id="k-comp-past-count" style="opacity:.6;">0</span></div>
       </div>
       <button onclick="openCreateCompetition()" id="k-new-comp-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJOS VARŽYBOS</button>
       <div id="k-comp-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
@@ -3412,8 +3412,8 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- DIRŽŲ LAIKYMAS (belt_test) -->
     <div id="k-ev-belt" class="k-ev-pane" style="display:none;">
       <div class="tabs" style="margin-bottom:10px;">
-        <div class="tab on" onclick="switchEvSub(this,'belt','upcoming')">🔜 Artėjantys <span id="k-belt-upcoming-count" style="opacity:.6;">0</span></div>
-        <div class="tab" onclick="switchEvSub(this,'belt','past')">📦 Pasibaigę <span id="k-belt-past-count" style="opacity:.6;">0</span></div>
+        <div class="tab on" onclick="switchEvSub(this,'belt','upcoming')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-laikas"></use></svg> Artėjantys <span id="k-belt-upcoming-count" style="opacity:.6;">0</span></div>
+        <div class="tab" onclick="switchEvSub(this,'belt','past')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-archyvas"></use></svg> Pasibaigę <span id="k-belt-past-count" style="opacity:.6;">0</span></div>
       </div>
       <button onclick="openCreateCompetition('belt_test')" id="k-new-belt-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJAS DIRŽŲ LAIKYMAS</button>
       <div id="k-belt-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
@@ -3421,8 +3421,8 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- STOVYKLOS (Blokas 4) -->
     <div id="k-ev-camps" class="k-ev-pane" style="display:none;">
       <div class="tabs" style="margin-bottom:10px;">
-        <div class="tab on" onclick="switchEvSub(this,'camps','upcoming')">🔜 Artėjančios <span id="k-camps-upcoming-count" style="opacity:.6;">0</span></div>
-        <div class="tab" onclick="switchEvSub(this,'camps','past')">📦 Pasibaigusios <span id="k-camps-past-count" style="opacity:.6;">0</span></div>
+        <div class="tab on" onclick="switchEvSub(this,'camps','upcoming')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-laikas"></use></svg> Artėjančios <span id="k-camps-upcoming-count" style="opacity:.6;">0</span></div>
+        <div class="tab" onclick="switchEvSub(this,'camps','past')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-archyvas"></use></svg> Pasibaigusios <span id="k-camps-past-count" style="opacity:.6;">0</span></div>
       </div>
       <button onclick="openCreateCamp()" id="k-new-camp-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJA STOVYKLA</button>
       <div id="k-camps-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
@@ -3431,7 +3431,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="k-ev-gc" class="k-ev-pane" style="display:none;">
       <div class="tabs" style="margin-bottom:10px;">
         <div class="tab on" onclick="switchEvSub(this,'gc','upcoming')"><span class="dot dot-ok"></span> Aktyvūs <span id="k-gc-upcoming-count" style="opacity:.6;">0</span></div>
-        <div class="tab" onclick="switchEvSub(this,'gc','past')">🏁 Užbaigti <span id="k-gc-past-count" style="opacity:.6;">0</span></div>
+        <div class="tab" onclick="switchEvSub(this,'gc','past')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-finisas"></use></svg> Užbaigti <span id="k-gc-past-count" style="opacity:.6;">0</span></div>
       </div>
       <button onclick="openCreateClubChallenge()" id="k-new-gc-btn" style="width:100%;background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);padding:12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;margin-bottom:14px;">+ NAUJAS GRUPIŲ IŠŠŪKIS</button>
       <div id="k-gc-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
@@ -3500,10 +3500,10 @@ window.addEventListener('unhandledrejection', function(e) {
     
     <!-- Tab nav (4 leaderboard'ai) -->
     <div style="display:flex;gap:6px;margin:0 0 14px;overflow-x:auto;padding-bottom:4px;">
-      <button class="club-stat-tab on" data-tab="overall" onclick="switchClubStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">📈 BENDRAS LVL</button>
-      <button class="club-stat-tab" data-tab="skills" onclick="switchClubStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🏆 SKILL'AI</button>
-      <button class="club-stat-tab" data-tab="challenges" onclick="switchClubStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🎯 IŠŠŪKIAI</button>
-      <button class="club-stat-tab" data-tab="competitions" onclick="switchClubStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;">🥇 VARŽYBOS</button>
+      <button class="club-stat-tab on" data-tab="overall" onclick="switchClubStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-grafikas"></use></svg> BENDRAS LVL</button>
+      <button class="club-stat-tab" data-tab="skills" onclick="switchClubStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> SKILL'AI</button>
+      <button class="club-stat-tab" data-tab="challenges" onclick="switchClubStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-issukiai"></use></svg> IŠŠŪKIAI</button>
+      <button class="club-stat-tab" data-tab="competitions" onclick="switchClubStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> VARŽYBOS</button>
     </div>
     
     <!-- Tab content -->
@@ -3542,9 +3542,9 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
   </div>
   <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
-    <button class="k-anal-tab on" data-tab="people" onclick="switchClubAnalyticsTab('people')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">👥 Žmonės</button>
-    <button class="k-anal-tab" data-tab="activity" onclick="switchClubAnalyticsTab('activity')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">🔥 Veikla</button>
-    <button class="k-anal-tab owner-only" data-tab="business" onclick="switchClubAnalyticsTab('business')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">💼 Verslas</button>
+    <button class="k-anal-tab on" data-tab="people" onclick="switchClubAnalyticsTab('people')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-grupe"></use></svg> Žmonės</button>
+    <button class="k-anal-tab" data-tab="activity" onclick="switchClubAnalyticsTab('activity')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-streak"></use></svg> Veikla</button>
+    <button class="k-anal-tab owner-only" data-tab="business" onclick="switchClubAnalyticsTab('business')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-verslas"></use></svg> Verslas</button>
   </div>
   <div class="sa">
     <!-- 👥 ŽMONĖS -->
@@ -3692,10 +3692,10 @@ window.addEventListener('unhandledrejection', function(e) {
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 16px 4px;">
-        <button class="notif-tab" data-tab="errors" onclick="switchAdminNotifTab('errors')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🚨</span><span>Klaidos <span id="ah-notif-count-errors" style="opacity:.7;"></span></span></button>
-        <button class="notif-tab" data-tab="purchases" onclick="switchAdminNotifTab('purchases')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>💶</span><span>Pirkimai <span id="ah-notif-count-purchases" style="opacity:.7;"></span></span></button>
-        <button class="notif-tab" data-tab="feedback" onclick="switchAdminNotifTab('feedback')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>📨</span><span>Atsiliep. <span id="ah-notif-count-feedback" style="opacity:.7;"></span></span></button>
-        <button class="notif-tab" data-tab="reports" onclick="switchAdminNotifTab('reports')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span>🤖</span><span>Ataskaitos <span id="ah-notif-count-reports" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="errors" onclick="switchAdminNotifTab('errors')" style="background:rgba(255,77,0,.15);color:#FF8C00;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-signalas"></use></svg></span><span>Klaidos <span id="ah-notif-count-errors" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="purchases" onclick="switchAdminNotifTab('purchases')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-pinigai"></use></svg></span><span>Pirkimai <span id="ah-notif-count-purchases" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="feedback" onclick="switchAdminNotifTab('feedback')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-gauta"></use></svg></span><span>Atsiliep. <span id="ah-notif-count-feedback" style="opacity:.7;"></span></span></button>
+        <button class="notif-tab" data-tab="reports" onclick="switchAdminNotifTab('reports')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-ai"></use></svg></span><span>Ataskaitos <span id="ah-notif-count-reports" style="opacity:.7;"></span></span></button>
       </div>
       <div id="ah-notif-list" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
     </div>
