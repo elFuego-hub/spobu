@@ -6527,7 +6527,7 @@ async function loadKidData() {
   const anonStatus = document.getElementById('v-anon-status');
   if (anonIcon && anonStatus) {
     if (currentKid.is_anonymous) {
-      anonIcon.textContent = '🥷';
+      anonIcon.innerHTML = ico('anonimas');
       anonStatus.textContent = 'Statistikoje rodomas kaip „Anonimas"';
     } else {
       anonIcon.textContent = '👤';
@@ -6946,7 +6946,7 @@ const LEVEL_REWARDS = {
   8:  { title: 'TECHNIKA ŠLIFUOJASI!', icon: ''+ico('dvikova')+'', message: 'Tu jau ne tik mokaisi judesių – tu juos jauti.' },
   9:  { title: 'ARTI MEISTRO STATUS!', icon: ''+ico('trofejai')+'', message: 'Pažiūrėk, kiek toli jau atėjai. Kiek pradedančiųjų norėtų būti tavo vietoje.' },
   10: { title: 'VETERANAS!', icon: ''+ico('zenkliukai')+'', message: 'Tu pasiekei lygį, kurį pasiekia ne kiekvienas. Stiprus, ryžtingas, atkaklus – štai kas tu esi.' },
-  11: { title: 'TIKRAS KARATEKAS!', icon: '🥷', message: 'Karatė jau yra tavo gyvenimo dalis. Tu mąstai kaip karatietis, judi kaip karatietis.' },
+  11: { title: 'TIKRAS KARATEKAS!', icon: ''+ico('ninja')+'', message: 'Karatė jau yra tavo gyvenimo dalis. Tu mąstai kaip karatietis, judi kaip karatietis.' },
   15: { title: 'ELITAS!', icon: ''+ico('premium')+'', message: 'Tik nedaugelis pasiekia tokį lygį. Tu – pavyzdys jaunesniems.' },
   20: { title: 'MEISTRO LYGIS!', icon: ''+ico('zvaigzde')+'', message: 'Tu pasiekei tai, kas iš pradžių atrodė neįmanoma. Tu esi įkvėpimas kitiems.' },
   30: { title: 'SENSEI!', icon: '🐉', message: 'Tu pasiekei aukščiausią lygį. Nuo dabar tavo užduotis – mokyti kitus.' }
@@ -12574,7 +12574,7 @@ function _renderClubSettingsHtml(s){
   const _inOpen = !!_clubSecOpen['inactive'];
   html += `<div onclick="toggleClubSettingsSection('inactive')" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;margin:14px 2px 7px;padding:2px;">
       <span id="cs-chev-inactive" style="display:inline-block;font-size:9px;color:var(--mut);transition:transform .2s;transform:rotate(${_inOpen?'90':'0'}deg);">${ico('leisti')}</span>
-      <span style="flex:1;font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.5px;">😴 NEAKTYVUMO ŽYMĖJIMAS</span>
+      <span style="flex:1;font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.5px;">${ico('neaktyvus')} NEAKTYVUMO ŽYMĖJIMAS</span>
     </div>
     <div id="cs-rows-inactive" style="display:${_inOpen?'block':'none'};background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
       <div style="font-size:11px;color:var(--mut);line-height:1.45;margin-bottom:11px;">Po kiek praleistų <b>treniruočių iš eilės</b> vaikas pažymimas „Mokiniai → Neaktyvūs" sąraše.</div>
@@ -18039,7 +18039,7 @@ async function loadKidPendingSubmissions() {
       // VARŽYBA → nukela į v-comp
       const compTitle = s.competitions?.title || 'Varžybos';
       const compType = s.competitions?.competition_type || '';
-      const compTypeIcon = compType === 'kumite' ? ''+ico('dvikova')+'' : compType === 'kata' ? '🎌' : compType === 'belt_test' ? ''+ico('dirzas')+'' : ''+ico('trofejai')+'';
+      const compTypeIcon = compType === 'kumite' ? ''+ico('dvikova')+'' : compType === 'kata' ? ''+ico('kata')+'' : compType === 'belt_test' ? ''+ico('dirzas')+'' : ''+ico('trofejai')+'';
       const placement = s.placement ? `${s.placement} v.` : '';
       const score = s.wins ? `${s.wins}W-${s.losses || 0}L` : '';
       const detailsText = placement || score || 'Pateikta';
@@ -18114,7 +18114,7 @@ async function toggleKidAnonymity(kidId) {
     STAT_CACHE.clear();
   }
   
-  showToast(newVal ? '🥷 Vaiko statistika anoniminė' : ''+ico('profilis')+' Vaiko vardas matomas', 'success');
+  showToast(newVal ? ico('anonimas')+' Vaiko statistika anoniminė' : ''+ico('profilis')+' Vaiko vardas matomas', 'success');
 }
 
 // ════════════════════════════════════════
@@ -18845,7 +18845,7 @@ function _attRenderList(){
     return `<div onclick="_attToggle('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:6px;border-radius:10px;cursor:pointer;background:${on?'rgba(34,197,94,.1)':'var(--card)'};border:.5px solid ${on?'rgba(34,197,94,.4)':'var(--bdr)'};">
       <div style="width:30px;height:30px;border-radius:50%;${k.avatar_url?`background-image:url('${k.avatar_url}');background-size:cover;background-position:center;`:`background:${_attState.group.color||'#FF4D00'};`}display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:800;flex-shrink:0;">${k.avatar_url?'':(k.first_name?.[0]||'?')}</div>
       <div style="flex:1;min-width:0;font-size:13px;font-weight:700;">${k.first_name||'Vaikas'} ${k.last_name||''}</div>
-      <div style="font-size:18px;flex-shrink:0;">${on?''+ico('patvirtinta')+'':'⬜'}</div>
+      <div style="font-size:18px;flex-shrink:0;">${on?''+ico('patvirtinta')+'':''+ico('nepazymeta')+''}</div>
     </div>`;
   }).join('');
   const btn=document.getElementById('att-confirm');
