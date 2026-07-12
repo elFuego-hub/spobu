@@ -1998,7 +1998,7 @@ async function loadParentKidMain() {
 
   const info = getStageInfo(k.total_exp || 0);
   const stageObj = STAGES.find(s => s.name === info.stage) || STAGES[0];
-  const hero = document.getElementById('tk-hero'); if (hero) hero.style.background = stageObj.bgGradient;
+  const hero = document.getElementById('tk-hero'); if (hero) { hero.style.background = stageObj.bgGradient; hero.style.setProperty('--acc', stageObj.color); }
   const kbg = document.getElementById('tk-hero-kanji-bg'); if (kbg) { kbg.textContent = stageObj.kanji; kbg.style.color = stageObj.color; }
   const av = document.getElementById('tk-hero-avatar');
   if (av) { if (k.avatar_url) { av.style.backgroundImage = `url('${k.avatar_url}')`; av.textContent = ''; } else { av.style.backgroundImage = ''; av.textContent = parentKidInitials(k); } }
@@ -22032,7 +22032,8 @@ function _renderTrainerMainHero() {
   const st = info.stageObj;
 
   hero.style.background = st.bgGradient;
-  // 💾 Įsimenam stage foną — kitą kartą perkraunant pritaikysim iškart (be oranžinio mirgėjimo)
+  hero.style.setProperty('--acc', st.color || 'var(--br)');
+  // Įsimenam stage foną — kitą kartą perkraunant pritaikysim iškart
   try { localStorage.setItem('spobu_tr_bg', st.bgGradient); } catch (e) {}
   // 🎨 Iššūkių + Patvirtinimų hero — toks pat stage fonas (sutampa su main/profiliu, keičiasi pagal lygį)
   ['trch-stagehero', 'trpat-stagehero'].forEach(id => {

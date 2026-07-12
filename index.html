@@ -1661,7 +1661,8 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- TRENERIO HERO — kompaktiškas (v124): žiedas+taškai+KPI, be greeting eilutės.
          Default fonas NEUTRALUS-tamsus (ne oranžinis), kad perkraunant nemirgėtų;
          tikras stage fonas pritaikomas iš localStorage cache iškart + po loadTrainerLevel. -->
-    <div class="hero" id="trh-hero" onclick="nv('tr',document.querySelector('#tr-main .bn2 .ni:nth-child(5)'),'tr-prof')" style="background:linear-gradient(135deg,#1a1c22,#121419);position:relative;overflow:hidden;transition:background .4s ease;cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.1);padding:12px 14px;margin:8px 16px 0;">
+    <div class="hero" id="trh-hero" onclick="nv('tr',document.querySelector('#tr-main .bn2 .ni:nth-child(5)'),'tr-prof')" style="--acc:var(--br);background:linear-gradient(135deg,#1a1c22,#121419);position:relative;overflow:hidden;transition:background .4s ease;cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,.1);padding:15px 16px;margin:8px 16px 0;border:.5px solid rgba(255,255,255,.12);box-shadow:0 14px 36px rgba(0,0,0,.4);">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--acc);z-index:2;"></div>
       <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
         <div id="trh-hero-kanji-bg" style="position:absolute;font-family:'Noto Serif JP',serif;font-size:120px;right:-15px;top:-24px;opacity:.08;color:white;line-height:1;font-weight:900;transition:opacity .4s, color .4s;">道</div>
         <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:30%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
@@ -1669,10 +1670,10 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="position:relative;z-index:1;">
         <!-- Pasveikinimas + trenerio vardas + avataras (be kanji ženklo) -->
         <div style="display:flex;align-items:center;gap:12px;">
-          <div onclick="event.stopPropagation();openTrainerSettings()" id="trh-avatar" style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;flex-shrink:0;cursor:pointer;background-size:cover;background-position:center;"></div>
+          <div style="position:relative;width:52px;height:52px;flex-shrink:0;"><div style="position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,var(--acc),rgba(255,255,255,.28),var(--acc));-webkit-mask:radial-gradient(closest-side,transparent 74%,#000 76%);mask:radial-gradient(closest-side,transparent 74%,#000 76%);"></div><div onclick="event.stopPropagation();openTrainerSettings()" id="trh-avatar" style="position:absolute;inset:2px;border-radius:50%;background:rgba(0,0,0,.28);border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:white;cursor:pointer;background-size:cover;background-position:center;"></div></div>
           <div style="flex:1;min-width:0;">
             <div id="trh-name" style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;line-height:1.05;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">SVEIKI, TRENERI! <svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg></div>
-            <div id="trh-stage-name" style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;color:rgba(255,255,255,.9);line-height:1;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg> NAUJOKAS · LVL 1</div>
+            <div id="trh-stage-name" style="display:inline-flex;align-items:center;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1px;color:var(--acc);line-height:1;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(0,0,0,.25);padding:4px 9px;border-radius:99px;"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg> NAUJOKAS · LVL 1</div>
           </div>
         </div>
         <!-- Taškai -->
@@ -1684,7 +1685,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <!-- Lygio progreso baras (iki kito LVL — kaip vaiko) -->
         <div style="display:flex;align-items:center;gap:7px;margin-top:7px;">
           <div style="flex:1;height:6px;background:rgba(0,0,0,.3);border-radius:99px;overflow:hidden;">
-            <div id="trh-lvl-bar" style="height:100%;width:0%;background:rgba(255,255,255,.9);border-radius:99px;transition:width .5s;"></div>
+            <div id="trh-lvl-bar" style="height:100%;width:0%;background:var(--acc);border-radius:99px;transition:width .5s;box-shadow:0 0 10px var(--acc);"></div>
           </div>
           <span id="trh-lvl-frac" style="font-size:8px;color:rgba(255,255,255,.85);font-weight:700;white-space:nowrap;">0/0</span>
         </div>
@@ -2267,7 +2268,8 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="sa">
 
     <!-- ORANGE HERO (vaiko stadijos gradientas) -->
-    <div class="hero" id="tk-hero" onclick="nv('t',null,'t-prof')" style="background:linear-gradient(135deg,var(--br),var(--br2));position:relative;overflow:hidden;cursor:pointer;padding:12px 14px;margin:0 16px;transition:background .6s ease;">
+    <div class="hero" id="tk-hero" onclick="nv('t',null,'t-prof')" style="--acc:var(--br);background:linear-gradient(135deg,var(--br),var(--br2));position:relative;overflow:hidden;cursor:pointer;padding:15px 16px;margin:0 16px;transition:background .6s ease;border:.5px solid rgba(255,255,255,.14);box-shadow:0 14px 36px rgba(0,0,0,.4);">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--acc);z-index:2;"></div>
       <div id="tk-hero-anim" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;">
         <div id="tk-hero-kanji-bg" style="position:absolute;font-family:'Noto Serif JP',serif;font-size:130px;right:-15px;top:-30px;opacity:.08;color:white;line-height:1;font-weight:900;">武</div>
         <div style="position:absolute;font-size:40px;left:-10px;bottom:-15px;opacity:.06;transform:rotate(-15deg);"><svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg></div>
@@ -2277,17 +2279,17 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       <div style="position:relative;z-index:1;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
-          <div id="tk-hero-avatar" style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;flex-shrink:0;background-size:cover;background-position:center;"></div>
+          <div style="position:relative;width:52px;height:52px;flex-shrink:0;"><div style="position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,var(--acc),rgba(255,255,255,.28),var(--acc));-webkit-mask:radial-gradient(closest-side,transparent 74%,#000 76%);mask:radial-gradient(closest-side,transparent 74%,#000 76%);"></div><div id="tk-hero-avatar" style="position:absolute;inset:2px;border-radius:50%;background:rgba(0,0,0,.28);border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:white;background-size:cover;background-position:center;"></div></div>
           <div style="flex:1;min-width:0;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="tk-greet">SVEIKI! 👋</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;color:rgba(255,255,255,.9);line-height:1;margin-top:3px;" id="tk-hero-sub">–</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:21px;letter-spacing:1px;color:white;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="tk-greet">SVEIKI! 👋</div>
+            <div style="display:inline-flex;align-items:center;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1px;color:var(--acc);line-height:1;margin-top:6px;background:rgba(0,0,0,.22);padding:4px 9px;border-radius:99px;" id="tk-hero-sub">–</div>
           </div>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:3px;align-items:center;">
           <span style="font-size:9px;color:rgba(255,255,255,.7);font-weight:700;letter-spacing:1px;">EXP</span>
           <span style="font-size:10px;font-weight:800;color:white;" id="tk-exp-txt">0 / 100</span>
         </div>
-        <div class="ebt" style="height:5px;"><div class="ebf" id="tk-exp-bar" style="width:0%;"></div></div>
+        <div class="ebt" style="height:7px;background:rgba(0,0,0,.32);border-radius:99px;"><div class="ebf" id="tk-exp-bar" style="width:0%;background:var(--acc);border-radius:99px;box-shadow:0 0 10px var(--acc);"></div></div>
         <div style="text-align:right;font-size:9px;color:rgba(255,255,255,.8);font-weight:700;margin-top:3px;" id="tk-next-txt"></div>
       </div>
     </div>
