@@ -1716,7 +1716,7 @@ async function loadParentKids() {
   
   const html = kids.map(k => {
     const age = k.birth_date ? calculateAge(k.birth_date) : (new Date().getFullYear() - k.birth_year);
-    const genderIcon = k.gender === 'male' ? ''+ico('vaikas')+'' : ''+ico('vaikas')+'';
+    const genderIcon = k.gender === 'male' ? '👦' : '👧';
     const isApproved = k.approval_status === 'approved';
     const hasAccount = !!k.user_id;
     
@@ -6600,14 +6600,14 @@ async function loadKidData() {
 // STADIJŲ SISTEMA - 99 lvl iki Hall of Fame
 // ════════════════════════════════════════
 const STAGES = [
-  { name: 'Naujokas',     emoji: ''+ico('augimas')+'', kanji: '始', meaning: 'PRADŽIA · KELIO RADIMAS',     color: '#FFFFFF', bgGradient: 'linear-gradient(135deg, #2C3E50, #4A6172)', beltGradient: 'linear-gradient(90deg,#fff,#e0e0e0)',          minExp: 0,     maxExp: 999    },
-  { name: 'Pažengęs',     emoji: ''+ico('jega')+'', kanji: '力', meaning: 'JĖGA · POTENCIALAS',          color: '#FF8C00', bgGradient: 'linear-gradient(135deg, #5C2E00, #8B4500)', beltGradient: 'linear-gradient(90deg,#FF8C00,#FF6B00)',      minExp: 1000,  maxExp: 2499   },
-  { name: 'Patyręs',      emoji: ''+ico('dirzas')+'', kanji: '武', meaning: 'KARYS · TECHNIKA',            color: '#4FC3F7', bgGradient: 'linear-gradient(135deg, #1E3A5F, #2E5C8A)', beltGradient: 'linear-gradient(90deg,#4A90E2,#2E5C8A)',      minExp: 2500,  maxExp: 4999   },
-  { name: 'Ekspertas',    emoji: ''+ico('dvikova')+'', kanji: '戦', meaning: 'KOVA · MEISTRIŠKUMAS',        color: '#66BB6A', bgGradient: 'linear-gradient(135deg, #1E4D1E, #2E7D32)', beltGradient: 'linear-gradient(90deg,#4CAF50,#2E7D32)',      minExp: 5000,  maxExp: 8999   },
-  { name: 'Čempionas',    emoji: ''+ico('trofejai')+'', kanji: '勝', meaning: 'PERGALĖ · TURNYRŲ KARYS',     color: '#D4A056', bgGradient: 'linear-gradient(135deg, #4A2C00, #6B3C00)', beltGradient: 'linear-gradient(90deg,#8B4513,#5D2906)',      minExp: 9000,  maxExp: 14499  },
-  { name: 'Legenda',      emoji: ''+ico('premium')+'', kanji: '王', meaning: 'KARALIUS · ŠVENTAS KELIAS',   color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',         minExp: 14500, maxExp: 20999  },
+  { name: 'Naujokas',     emoji: '🌱', kanji: '始', meaning: 'PRADŽIA · KELIO RADIMAS',     color: '#FFFFFF', bgGradient: 'linear-gradient(135deg, #2C3E50, #4A6172)', beltGradient: 'linear-gradient(90deg,#fff,#e0e0e0)',          minExp: 0,     maxExp: 999    },
+  { name: 'Pažengęs',     emoji: '💪', kanji: '力', meaning: 'JĖGA · POTENCIALAS',          color: '#FF8C00', bgGradient: 'linear-gradient(135deg, #5C2E00, #8B4500)', beltGradient: 'linear-gradient(90deg,#FF8C00,#FF6B00)',      minExp: 1000,  maxExp: 2499   },
+  { name: 'Patyręs',      emoji: '🥋', kanji: '武', meaning: 'KARYS · TECHNIKA',            color: '#4FC3F7', bgGradient: 'linear-gradient(135deg, #1E3A5F, #2E5C8A)', beltGradient: 'linear-gradient(90deg,#4A90E2,#2E5C8A)',      minExp: 2500,  maxExp: 4999   },
+  { name: 'Ekspertas',    emoji: '⚔️', kanji: '戦', meaning: 'KOVA · MEISTRIŠKUMAS',        color: '#66BB6A', bgGradient: 'linear-gradient(135deg, #1E4D1E, #2E7D32)', beltGradient: 'linear-gradient(90deg,#4CAF50,#2E7D32)',      minExp: 5000,  maxExp: 8999   },
+  { name: 'Čempionas',    emoji: '🏆', kanji: '勝', meaning: 'PERGALĖ · TURNYRŲ KARYS',     color: '#D4A056', bgGradient: 'linear-gradient(135deg, #4A2C00, #6B3C00)', beltGradient: 'linear-gradient(90deg,#8B4513,#5D2906)',      minExp: 9000,  maxExp: 14499  },
+  { name: 'Legenda',      emoji: '👑', kanji: '王', meaning: 'KARALIUS · ŠVENTAS KELIAS',   color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',         minExp: 14500, maxExp: 20999  },
   { name: 'Drakonas',     emoji: '🐉', kanji: '龍', meaning: 'ŽVĖRIES DVASIA · UGNIS',       color: '#FF4500', bgGradient: 'linear-gradient(135deg, #2D0000, #5D0000)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',         minExp: 21000, maxExp: 29999  },
-  { name: 'Hall of Fame', emoji: ''+ico('zvaigzde')+'', kanji: '聖', meaning: 'ŠVENTAS · AMŽINOJI ŠLOVĖ',     color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#FFD700,#FFA500)',      minExp: 30000, maxExp: Infinity }
+  { name: 'Hall of Fame', emoji: '⭐', kanji: '聖', meaning: 'ŠVENTAS · AMŽINOJI ŠLOVĖ',     color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#FFD700,#FFA500)',      minExp: 30000, maxExp: Infinity }
 ];
 
 // EXP slenksčiai kiekvienam lvl (atitinka DB level_thresholds)
@@ -15861,7 +15861,7 @@ async function loadNextEvent() {
 
   if (isCamp) {
     const t = _campType(camp.event_type);
-    if (iconEl) iconEl.textContent = t.icon;
+    if (iconEl) iconEl.innerHTML = t.icon;
     if (nameEl) nameEl.textContent = camp.title || t.label;
     if (metaEl) metaEl.textContent = `📅 ${new Date(camp.starts_on).toLocaleDateString('lt-LT')} · ${t.label}${camp.exp_reward > 0 ? ' · ⭐ +' + camp.exp_reward + ' EXP' : ''}`;
   } else {
@@ -18294,7 +18294,7 @@ async function loadNewKids() {
   list.innerHTML = kids.map(k => {
     const name = `${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim();
     const age = k.birth_date ? calculateAge(k.birth_date) : (new Date().getFullYear() - k.birth_year);
-    const genderIcon = k.gender === 'male' ? ''+ico('vaikas')+'' : ''+ico('vaikas')+'';
+    const genderIcon = k.gender === 'male' ? '👦' : '👧';
     const hasAccount = !!k.user_id;
     
     return `
@@ -19407,7 +19407,7 @@ function _aecRecalc() {
   const rch = x => lower ? newVal <= parseFloat(x) : newVal >= parseFloat(x);
   let medal = '';
   if (rch(t.completed)) medal = ' '+ico('trofejai')+''; else if (rch(t.gold)) medal = ' '+ico('medalis')+''; else if (rch(t.silver)) medal = ' '+ico('medalis')+''; else if (rch(t.bronze)) medal = ' '+ico('medalis')+'';
-  expEl.textContent = `+${delta} EXP${medal}`;
+  expEl.innerHTML = `+${delta} EXP${medal}`;
   expEl.style.color = delta > 0 ? 'var(--grn)' : 'var(--mut)';
 }
 
@@ -22001,12 +22001,12 @@ async function removeTrainerAvatar() {
 // ════════════════════════════════════════
 
 const TRAINER_STAGES = [
-  { name: 'Naujokas',      emoji: ''+ico('augimas')+'', kanji: '始', meaning: 'KELIO PRADŽIA',          color: '#FFFFFF', bgGradient: 'linear-gradient(135deg, #2C3E50, #4A6172)', beltGradient: 'linear-gradient(90deg,#fff,#e0e0e0)',     minExp: 0,     maxExp: 999 },
-  { name: 'Padėjėjas',     emoji: ''+ico('bendradarbiavimas')+'', kanji: '助', meaning: 'PAGALBA · PARAMA',        color: '#FF8C00', bgGradient: 'linear-gradient(135deg, #5C2E00, #8B4500)', beltGradient: 'linear-gradient(90deg,#FF8C00,#FF6B00)', minExp: 1000,  maxExp: 2499 },
-  { name: 'Asistentas',    emoji: ''+ico('jega')+'', kanji: '力', meaning: 'JĖGA · AUGIMAS',          color: '#4FC3F7', bgGradient: 'linear-gradient(135deg, #1E3A5F, #2E5C8A)', beltGradient: 'linear-gradient(90deg,#4A90E2,#2E5C8A)', minExp: 2500,  maxExp: 4999 },
-  { name: 'Instruktorius', emoji: ''+ico('dirzas')+'', kanji: '指', meaning: 'KRYPTIS · TECHNIKA',      color: '#66BB6A', bgGradient: 'linear-gradient(135deg, #1E4D1E, #2E7D32)', beltGradient: 'linear-gradient(90deg,#4CAF50,#2E7D32)', minExp: 5000,  maxExp: 8999 },
-  { name: 'Senpajus',      emoji: ''+ico('dvikova')+'', kanji: '先', meaning: 'VYRESNYSIS · PAVYZDYS',   color: '#D4A056', bgGradient: 'linear-gradient(135deg, #4A2C00, #6B3C00)', beltGradient: 'linear-gradient(90deg,#8B4513,#5D2906)', minExp: 9000,  maxExp: 14499 },
-  { name: 'Mokytojas',     emoji: ''+ico('taisykles')+'', kanji: '師', meaning: 'IŠMINTIS · PERDAVIMAS',   color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',    minExp: 14500, maxExp: 20999 },
+  { name: 'Naujokas',      emoji: '🌱', kanji: '始', meaning: 'KELIO PRADŽIA',          color: '#FFFFFF', bgGradient: 'linear-gradient(135deg, #2C3E50, #4A6172)', beltGradient: 'linear-gradient(90deg,#fff,#e0e0e0)',     minExp: 0,     maxExp: 999 },
+  { name: 'Padėjėjas',     emoji: '🤝', kanji: '助', meaning: 'PAGALBA · PARAMA',        color: '#FF8C00', bgGradient: 'linear-gradient(135deg, #5C2E00, #8B4500)', beltGradient: 'linear-gradient(90deg,#FF8C00,#FF6B00)', minExp: 1000,  maxExp: 2499 },
+  { name: 'Asistentas',    emoji: '💪', kanji: '力', meaning: 'JĖGA · AUGIMAS',          color: '#4FC3F7', bgGradient: 'linear-gradient(135deg, #1E3A5F, #2E5C8A)', beltGradient: 'linear-gradient(90deg,#4A90E2,#2E5C8A)', minExp: 2500,  maxExp: 4999 },
+  { name: 'Instruktorius', emoji: '🥋', kanji: '指', meaning: 'KRYPTIS · TECHNIKA',      color: '#66BB6A', bgGradient: 'linear-gradient(135deg, #1E4D1E, #2E7D32)', beltGradient: 'linear-gradient(90deg,#4CAF50,#2E7D32)', minExp: 5000,  maxExp: 8999 },
+  { name: 'Senpajus',      emoji: '⚔️', kanji: '先', meaning: 'VYRESNYSIS · PAVYZDYS',   color: '#D4A056', bgGradient: 'linear-gradient(135deg, #4A2C00, #6B3C00)', beltGradient: 'linear-gradient(90deg,#8B4513,#5D2906)', minExp: 9000,  maxExp: 14499 },
+  { name: 'Mokytojas',     emoji: '📜', kanji: '師', meaning: 'IŠMINTIS · PERDAVIMAS',   color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',    minExp: 14500, maxExp: 20999 },
   { name: 'Meistras',      emoji: '🐉', kanji: '匠', meaning: 'MEISTRIŠKUMAS · UGNIS',   color: '#FF4500', bgGradient: 'linear-gradient(135deg, #2D0000, #5D0000)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',    minExp: 21000, maxExp: 29999 },
   { name: 'Sensėjus',      emoji: '🏔️', kanji: '道', meaning: 'KELIAS · AMŽINA IŠMINTIS', color: '#FFD700', bgGradient: 'linear-gradient(135deg, #1a1a1a, #3a2f00)', beltGradient: 'linear-gradient(90deg,#FFD700,#FFA500)', minExp: 30000, maxExp: Infinity }
 ];
@@ -22232,7 +22232,7 @@ async function openKidDetailsModal(kidId) {
   const age = fullKid.birth_date ? calculateAge(fullKid.birth_date) : (new Date().getFullYear() - fullKid.birth_year);
   const isUnder13 = age <= 12;
   const genderName = fullKid.gender === 'male' ? 'Vaikinas' : 'Mergina';
-  const genderIcon = fullKid.gender === 'male' ? ''+ico('vaikas')+'' : ''+ico('vaikas')+'';
+  const genderIcon = fullKid.gender === 'male' ? '👦' : '👧';
   const groupName = isUnder13 ? `${fullKid.gender === 'male' ? 'Vaikinai' : 'Merginos'} 6-12m.` : `${fullKid.gender === 'male' ? 'Vaikinai' : 'Merginos'} 13+m.`;
   
   // Atnaujinam header
@@ -25764,7 +25764,7 @@ async function loadClubTrainers() {
     const safeCode = (t.trainer_code || '').replace(/'/g, "\\'");
     const lightHtml = isActive ? _trainerActivityHtml(actMap[trainerProfileId]) : '';
     const _p = tPts[t.id] || 0;
-    const _lv = (typeof getTrainerStageInfo === 'function') ? getTrainerStageInfo(_p) : { globalLevel:1, stageEmoji:''+ico('dirzas')+'' };
+    const _lv = (typeof getTrainerStageInfo === 'function') ? getTrainerStageInfo(_p) : { globalLevel:1, stageEmoji: '🥋' };
     const rankColor = i===0?'#FFD700':i===1?'#C0C0C0':i===2?'#CD7F32':'var(--mut)';
     return `<div class="cd" style="margin-bottom:10px;padding:12px 13px;">
       <div style="display:flex;align-items:center;gap:11px;">
@@ -26995,7 +26995,7 @@ function showChallengeDistributionResult(info) {
             ? '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;background:var(--card);border-radius:10px;">Nė vienam vaikui nesukurta</div>'
             : `<div style="display:flex;flex-wrap:wrap;gap:6px;">${info.createdFor.map(k => {
                 const name = `${k.first_name} ${k.last_name}`.trim() || 'Vaikas';
-                const genderIcon = k.gender === 'male' ? ''+ico('vaikas')+'' : k.gender === 'female' ? ''+ico('vaikas')+'' : ''+ico('profilis')+'';
+                const genderIcon = k.gender === 'male' ? '👦' : k.gender === 'female' ? '👧' : '🧑';
                 return `<div style="background:rgba(34,197,94,.1);border:.5px solid rgba(34,197,94,.3);border-radius:99px;padding:5px 10px;font-size:11px;display:flex;align-items:center;gap:5px;">
                   <span>${genderIcon}</span>
                   <span style="color:white;font-weight:700;">${name}</span>
@@ -27020,7 +27020,7 @@ function showChallengeDistributionResult(info) {
             <div style="display:flex;flex-direction:column;gap:6px;">
               ${info.skipped.map(k => {
                 const name = `${k.first_name} ${k.last_name}`.trim() || 'Vaikas';
-                const genderIcon = k.gender === 'male' ? ''+ico('vaikas')+'' : k.gender === 'female' ? ''+ico('vaikas')+'' : ''+ico('profilis')+'';
+                const genderIcon = k.gender === 'male' ? '👦' : k.gender === 'female' ? '👧' : '🧑';
                 return `<div style="background:var(--card);border:.5px solid rgba(255,140,0,.25);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
                   <div style="font-size:18px;flex-shrink:0;">${genderIcon}</div>
                   <div style="flex:1;min-width:0;">
@@ -27718,7 +27718,7 @@ async function viewChallengeParticipants(challengeId, title) {
       borderColor = 'var(--bdr)';
     }
     
-    const genderIcon = k.gender === 'male' ? ''+ico('vaikas')+'' : ''+ico('vaikas')+'';
+    const genderIcon = k.gender === 'male' ? '👦' : '👧';
     
     return `
       <div style="background:${bgColor};border:.5px solid ${borderColor};border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px;">
@@ -28039,7 +28039,7 @@ async function loadPendingCompetitionResults() {
 
     // (v146) vardas 2 žingsnių per profiles
     const kidName = kidNameMap[r.kid_id] || 'Vaikas';
-    const genderIcon = kid.gender === 'female' ? ''+ico('vaikas')+'' : ''+ico('vaikas')+'';
+    const genderIcon = kid.gender === 'female' ? '👦' : '👧';
     const typeLabel = COMP_TYPE_LABELS[comp.competition_type] || comp.competition_type;
     const levelLabel = comp.level ? COMP_LEVEL_LABELS[comp.level] : '';
     
@@ -28857,7 +28857,7 @@ function recalcExpGain() {
   else if (rch(t.silver)) medal = ' '+ico('medalis')+' Silver!';
   else if (rch(t.bronze)) medal = ' '+ico('medalis')+' Bronze!';
   
-  document.getElementById('exo-form-exp').textContent = `+${delta} EXP${medal}`;
+  document.getElementById('exo-form-exp').innerHTML = `+${delta} EXP${medal}`;
   document.getElementById('exo-form-exp').style.color = delta > 0 ? 'var(--grn)' : 'var(--mut)';
 }
 
@@ -29792,7 +29792,7 @@ function growEffect() {
   for (let i = 0; i < 10; i++) {
     const el = document.createElement('div');
     el.className = 'grow-arrow';
-    el.textContent = icons[Math.floor(Math.random() * icons.length)];
+    el.innerHTML = icons[Math.floor(Math.random() * icons.length)];
     el.style.left = (10 + Math.random() * 80) + 'vw';
     el.style.animationDelay = (Math.random() * 0.6) + 's';
     el.style.fontSize = (16 + Math.random() * 14) + 'px';
