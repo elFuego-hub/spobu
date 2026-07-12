@@ -537,3 +537,6 @@ body.portal-v{--ico-accent:var(--br);}
 .dot-ok{background:var(--grn);} .dot-warn{background:#EAB308;} .dot-bad{background:#EF4444;} .dot-info{background:var(--blu);}
 .dot-live{background:#EF4444;animation:dotPulse 1.4s ease-in-out infinite;}
 @keyframes dotPulse{50%{opacity:.35;}}
+/* Mobilios nav ikonos: neaktyvus = muted, aktyvus = akcentinė (label spalvą atkartoja) */
+.ni .ic{color:var(--mut);}
+.ni.on .ic{color:var(--br);}
