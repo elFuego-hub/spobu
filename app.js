@@ -2706,7 +2706,7 @@ async function shareMonthCard() {
       if (!blob) { showToast('Nepavyko sukurti paveikslėlio', 'error'); return; }
       const file = new File([blob], 'spobu-menesio-kortele.png', { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: 'SPOBU', text: 'Mūsų vaiko mėnuo SPOBU! '+ico('dirzas')+''+ico('streak')+'' }); }
+        try { await navigator.share({ files: [file], title: 'SPOBU', text: 'Mūsų vaiko mėnuo SPOBU! 🥋🔥' }); }
         catch (e) { /* vartotojas atšaukė — nieko nedarom */ }
       } else {
         const url = URL.createObjectURL(blob);
@@ -4170,7 +4170,7 @@ async function parentTestPush(btn) {
     if (!ok) { showToast(''+ico('bug')+' Push neįsiregistravo — leidimas atmestas ARBA klaida saugant DB', 'error', 9000); reset(); return; }
     // 2) Iškviesti funkciją — siųsti SAU (user_id režimas)
     const { data, error } = await sb.functions.invoke('clever-processor', {
-      body: { user_id: currentUser.id, title: 'SPOBU testas '+ico('pranesimai')+'', body: 'Jei matai šitą — push VEIKIA! '+ico('gimtadienis')+'', url: '/' }
+      body: { user_id: currentUser.id, title: 'SPOBU testas 🔔', body: 'Jei matai šitą — push VEIKIA! 🎉', url: '/' }
     });
     if (error) {
       let detail = error.message || String(error);
@@ -6316,7 +6316,7 @@ async function loadKidData() {
 
   // Vardas hero kortelėje (tik pirmasis vardas + jaustukas)
   const firstName = (currentProfile.first_name || 'SPORTUOTOJA').toUpperCase();
-  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) { if (typeof val === 'string' && val.indexOf('<svg') !== -1) el.innerHTML = val; else el.textContent = val; } };
 
   // Pasveikinimas pagal lytį: vaikinui „SVEIKAS", merginai „SVEIKA"
   const isMale = currentKid?.gender === 'male';
@@ -10500,7 +10500,7 @@ function switchKidChallengesTab(el, tabName) {
 // Kviečiama iš loadChallenges su jau apdorotais duomenimis
 // ════════════════════════════════════════
 function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleChallenges, subsByChallenge, myProgress) {
-  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) { if (typeof val === 'string' && val.indexOf('<svg') !== -1) el.innerHTML = val; else el.textContent = val; } };
   
   const activeCount = activeChallenges.length;
   const totalCompleted = completedChallenges.length;
@@ -14508,7 +14508,7 @@ function updateCompStatsUI(completed, resultsByComp, pending) {
     : 0;
   
   // Update UI
-  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) { if (typeof val === 'string' && val.indexOf('<svg') !== -1) el.innerHTML = val; else el.textContent = val; } };
   
   // 🥊 Kumite
   setText('v-comp-record', `${totalKumiteWins} - ${totalKumiteLosses}`);
@@ -19642,7 +19642,7 @@ async function shareChallengeCardImg() {
   // Paveikslėlis sugeneruotas IŠ ANKSTO → navigator.share kviečiamas IŠKART (per gyvą user-gesture)
   if (_chShareFile && navigator.canShare && navigator.canShare({ files: [_chShareFile] })) {
     try {
-      await navigator.share({ files: [_chShareFile], title: 'SPOBU', text: 'Mūsų grupės iššūkio rezultatas! '+ico('dirzas')+''+ico('streak')+'' });
+      await navigator.share({ files: [_chShareFile], title: 'SPOBU', text: 'Mūsų grupės iššūkio rezultatas! 🥋🔥' });
     } catch (e) {
       console.warn('[ch-share] navigator.share klaida:', e && e.name, e);
       if (e && e.name === 'AbortError') return; // vartotojas pats atšaukė
@@ -23177,7 +23177,7 @@ async function approveReport(id) {
         ]);
         (links || []).forEach(l => {
           sb.functions.invoke('clever-processor', {
-            body: { user_id: l.parent_id, title: ''+ico('dokumentas')+' ' + tLabel + ' paruošta!', body: (kid?.first_name ? kid.first_name + ' — ' : '') + 'dokumentas jau laukia SPOBU programėlėje. Atsidaryk ir peržiūrėk!', url: '/' }
+            body: { user_id: l.parent_id, title: '📄 ' + tLabel + ' paruošta!', body: (kid?.first_name ? kid.first_name + ' — ' : '') + 'dokumentas jau laukia SPOBU programėlėje. Atsidaryk ir peržiūrėk!', url: '/' }
           }).catch(() => {});
         });
       }
@@ -25210,7 +25210,7 @@ async function loadClubMainPreview(){
 async function loadClubMainDashboard(){
   if (!currentClub?.id) return;
   const cid = currentClub.id;
-  const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el){ if(typeof v==='string' && v.indexOf('<svg')!==-1) el.innerHTML=v; else el.textContent=v; } };
   const clubKids = (typeof _getClubKids==='function') ? (await _getClubKids().catch(()=>[])) : [];
   const kidsCount = (clubKids||[]).length;
 
