@@ -15754,7 +15754,7 @@ async function loadRankings() {
       else if (topExp >= 500) tier = ''+ico('medalis')+' GOLD';
       else if (topExp >= 300) tier = ''+ico('medalis')+' SILVER';
       else if (topExp >= 100) tier = ''+ico('medalis')+' BRONZE';
-      topSkillEl.textContent = `${catName.toUpperCase()} · ${tier}`;
+      topSkillEl.innerHTML = `${escapeHtml(catName.toUpperCase())} · ${tier}`;
       
       // Atnaujint kortelės onclick - nukels su konkrečiu skillId
       const cardEl = document.getElementById('v-top-skill-card');
