@@ -9,6 +9,13 @@ function ico(name, cls = '', label = ''){
   return '<svg class="ico' + (cls ? ' ' + cls : '') + '" ' + a + '>' + duo + '<use href="#i-' + name + '"/></svg>';
 }
 
+// Emoji→ikona (DB įrašytos kategorijų/pratimų emoji) + pakopos ikona
+const EMOJI_ICO = {'💪':'jega','🏃':'istverme','🥋':'kata','🤸':'lankstumas','⚡':'greitis','🎓':'mokslas','🧘':'teisingumas','🎯':'tikslas','🏆':'trofejai','🥇':'medalis','🥈':'medalis','🥉':'medalis','🔥':'streak','📊':'statistika','⭐':'zvaigzde','👑':'premium','⚔️':'dvikova','🌱':'augimas','🐉':'ninja','📅':'kalendorius'};
+function emojiToIco(v){ if(!v) return ico('tikslas'); if(typeof v==='string' && v.indexOf('<svg')!==-1) return v; const k=(v+'').trim(); if(EMOJI_ICO[k]) return ico(EMOJI_ICO[k]); return v; }
+const STAGE_ICO = {'Naujokas':'augimas','Pažengęs':'jega','Patyręs':'kata','Ekspertas':'dvikova','Čempionas':'trofejai','Legenda':'premium','Drakonas':'ninja','Hall of Fame':'zvaigzde'};
+function stageIco(stageName){ return ico(STAGE_ICO[stageName] || 'augimas'); }
+
+
 // ════════════════════════════════════════════════════════
 // SUPABASE KONFIGŪRACIJA
 // SVARBU: pakeisk šiuos raktus savo Supabase projekto raktais!
@@ -6924,9 +6931,9 @@ function updateExpBar(totalExp, level) {
   }
   
   if (lvlTxt) {
-    lvlTxt.textContent = info.isHallOfFame
-      ? `${info.stageEmoji} ${info.stage.toUpperCase()}`
-      : `${info.stageEmoji} ${info.stage.toUpperCase()} · LVL ${info.globalLevel}`;
+    lvlTxt.innerHTML = info.isHallOfFame
+      ? `${stageIco(info.stage)} ${escapeHtml(info.stage.toUpperCase())}`
+      : `${stageIco(info.stage)} ${escapeHtml(info.stage.toUpperCase())} · LVL ${info.globalLevel}`;
   }
   
   if (nextTxt) {
@@ -15794,7 +15801,7 @@ async function loadNextEvent() {
     if (nameEl) nameEl.textContent = 'Nėra suplanuotų renginių';
     if (metaEl) metaEl.textContent = 'Treneris pridės kai bus žinoma';
     if (countdownEl) countdownEl.style.display = 'none';
-    if (iconEl) iconEl.textContent = '🏆';
+    if (iconEl) iconEl.innerHTML = ico('kalendorius');
     return;
   }
 
@@ -15810,7 +15817,7 @@ async function loadNextEvent() {
   } else {
     const levelLabels = { local: ''+ico('miestas')+' Vietinė', medium: ''+ico('miestas')+' Vidutinė', european: ''+ico('svetaine')+' Europos' };
     const levelLabel = levelLabels[comp.level] || comp.level || '';
-    if (iconEl) iconEl.textContent = '🏆';
+    if (iconEl) iconEl.innerHTML = ico('kalendorius');
     if (nameEl) nameEl.textContent = comp.title || 'Varžybos';
     if (metaEl) metaEl.textContent = `📅 ${new Date(comp.event_date).toLocaleDateString('lt-LT')}${levelLabel ? ' · ' + levelLabel : ''}`;
   }
@@ -18011,7 +18018,7 @@ async function loadKidPendingSubmissions() {
     if (s._type === 'pr') {
       // PR PRATIMAS → nukela į v-kar (karjera)
       const exName = s.exercises?.name || 'Pratimas';
-      const catIcon = s.exercises?.career_categories?.icon || ''+ico('jega')+'';
+      const catIcon = emojiToIco(s.exercises?.career_categories?.icon) || ''+ico('jega')+'';
       
       html += `<div onclick="nv('v',document.querySelector('.bn2 .ni:nth-child(2)'),'v-kar')" style="background:var(--card);border-radius:8px;padding:6px 4px;border:.5px solid rgba(255,77,0,.3);cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);text-align:center;min-width:0;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:2px;">
