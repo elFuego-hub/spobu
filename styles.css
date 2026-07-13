@@ -533,10 +533,7 @@ body.portal-v{--ico-accent:var(--br);}
 /* Custom spalvos */
 .ico-gold{color:var(--gld);} .ico-silver{color:#C0C0C0;} .ico-bronze{color:#CD7F32;} .ico-master{color:var(--br);}
 /* Statuso taškai vietoj 🔴🟢🟡⚪⚫🔵 */
-.dot{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:var(--mut);vertical-align:baseline;margin-right:.35em;}
+.dot,.dot-ok,.dot-warn,.dot-bad,.dot-info,.dot-live{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:var(--mut);vertical-align:baseline;margin-right:.35em;}
 .dot-ok{background:var(--grn);} .dot-warn{background:#EAB308;} .dot-bad{background:#EF4444;} .dot-info{background:var(--blu);}
 .dot-live{background:#EF4444;animation:dotPulse 1.4s ease-in-out infinite;}
 @keyframes dotPulse{50%{opacity:.35;}}
-/* Mobilios nav ikonos: neaktyvus = muted, aktyvus = akcentinė (label spalvą atkartoja) */
-.ni .ic{color:var(--mut);}
-.ni.on .ic{color:var(--br);}
