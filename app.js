@@ -10,7 +10,7 @@ function ico(name, cls = '', label = ''){
 }
 
 // Emoji→ikona (DB įrašytos kategorijų/pratimų emoji) + pakopos ikona
-const EMOJI_ICO = {'💪':'jega','🏃':'istverme','🥋':'kata','🤸':'lankstumas','⚡':'greitis','🎓':'mokslas','🧘':'teisingumas','🎯':'tikslas','🏆':'trofejai','🥇':'medalis','🥈':'medalis','🥉':'medalis','🔥':'streak','📊':'statistika','⭐':'zvaigzde','👑':'premium','⚔️':'dvikova','🌱':'augimas','🐉':'ninja','📅':'kalendorius'};
+const EMOJI_ICO = {'💪':'jega','🏃':'istverme','🥋':'kata','🤸':'aukstasspyris','⚡':'sprintas','🎓':'mokslas','🧘':'seiza','⚖️':'seiza','🎭':'spyris','🔬':'dirzomazgas','🎯':'tikslas','🏆':'trofejai','🥇':'medalis','🥈':'medalis','🥉':'medalis','🔥':'streak','📊':'statistika','⭐':'zvaigzde','👑':'premium','⚔️':'dvikova','🌱':'augimas','🐉':'ninja','📅':'kalendorius'};
 function emojiToIco(v){ if(!v) return ico('tikslas'); if(typeof v==='string' && v.indexOf('<svg')!==-1) return v; const k=(v+'').trim(); if(EMOJI_ICO[k]) return ico(EMOJI_ICO[k]); return v; }
 const STAGE_ICO = {'Naujokas':'augimas','Pažengęs':'jega','Patyręs':'kata','Ekspertas':'dvikova','Čempionas':'trofejai','Legenda':'premium','Drakonas':'ninja','Hall of Fame':'zvaigzde'};
 function stageIco(stageName){ return ico(STAGE_ICO[stageName] || 'augimas'); }
@@ -6437,7 +6437,7 @@ async function loadKidData() {
   const stageMeaningEl = document.getElementById('v-prof-stage-meaning');
   const stageNextEl = document.getElementById('v-prof-stage-next');
   if (stageTitleEl) {
-    stageTitleEl.textContent = `${stage.emoji} ${stage.name.toUpperCase()}`;
+    stageTitleEl.innerHTML = `${stageIco(stage.name)} ${escapeHtml(stage.name.toUpperCase())}`;
     stageTitleEl.style.color = stageIdx >= 5 ? stage.color : 'white';
     if (stageIdx >= 5) stageTitleEl.style.textShadow = `0 0 12px ${stage.color}`;
   }
@@ -9243,7 +9243,7 @@ async function openChallengeTypesModal(kidId, kidName) {
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
         ${cards.map(c => `
           <div style="background:linear-gradient(135deg,${c.color}1f,${c.color}08);border:.5px solid ${c.color}55;border-radius:12px;padding:12px 8px;text-align:center;">
-            <div style="font-size:26px;line-height:1;margin-bottom:4px;">${c.icon}</div>
+            <div style="font-size:26px;line-height:1;margin-bottom:4px;">${emojiToIco(c.icon)}</div>
             <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${c.color};line-height:1;">${c.count}</div>
             <div style="font-size:8px;color:var(--mut);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-top:3px;">${c.label}</div>
             <div style="font-size:9px;color:${c.color};opacity:.8;font-weight:700;margin-top:3px;">+${c.exp.toLocaleString('lt-LT')} EXP</div>
@@ -9290,14 +9290,14 @@ const CATEGORY_ICONS = {
   'Jėga': ico('jega'),
   'Jėga ir korpusas': ico('jega'),
   'Ištvermė': ico('istverme'),
-  'Technika': ico('kata'),
-  'Lankstumas': ico('lankstumas'),
-  'Greitis': ico('greitis'),
-  'Greitis ir vikrumas': ico('greitis'),
-  'Karate atributika': ico('mokslas'),
-  'Atributika': ico('mokslas'),
-  'Karate Atributika': ico('mokslas'),
-  'Drausmė': ico('teisingumas')
+  'Technika': ico('spyris'),
+  'Lankstumas': ico('aukstasspyris'),
+  'Greitis': ico('sprintas'),
+  'Greitis ir vikrumas': ico('sprintas'),
+  'Karate atributika': ico('dirzomazgas'),
+  'Atributika': ico('dirzomazgas'),
+  'Karate Atributika': ico('dirzomazgas'),
+  'Drausmė': ico('seiza')
 };
 
 // 🥋 Karjeros pratimų piktogramos (stick-karateka su juodu diržu). Raktas = pratimo pavadinimas DB.
@@ -10916,7 +10916,7 @@ async function loadChallenges() {
     const cardHtml = `<div class="kid-ch-card" style="background:linear-gradient(135deg,${tCol.bg},${tCol.bg.replace(/[\d.]+\)$/,'.03)')});border:1px solid ${tCol.border};border-left:3px solid ${tCol.color};border-radius:10px;padding:8px 9px;margin-bottom:4px;${cardOpacity}">
       <div style="font-size:7px;color:${tCol.color};font-weight:800;letter-spacing:1.2px;margin-bottom:4px;">${typeIcons[ch.type] || ''+ico('greitis')+''} ${tCol.label}</div>
       <div style="display:flex;align-items:center;gap:7px;">
-        <div style="font-size:20px;">${ch.icon || ''+ico('tikslas')+''}</div>
+        <div style="font-size:20px;">${emojiToIco(ch.icon) || ''+ico('tikslas')+''}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:800;color:white;line-height:1.2;">${ch.title}</div>
           <div style="font-size:9px;color:var(--mut);margin-top:1px;">${timeInfo}${target ? ' · ' + target : ''}</div>
@@ -15947,7 +15947,7 @@ async function loadStreaks() {
       <div style="background:${sc.bgColor};border:.5px solid ${sc.borderColor};border-radius:10px;padding:10px;margin-bottom:8px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
           <div style="display:flex;align-items:center;gap:8px;">
-            <div style="font-size:20px;">${sc.icon}</div>
+            <div style="font-size:20px;">${emojiToIco(sc.icon)}</div>
             <div>
               <div style="font-size:12px;font-weight:800;color:${sc.color};letter-spacing:.5px;">${sc.name.toUpperCase()}</div>
               <div style="font-size:9px;color:var(--mut);">${sc.description}</div>
@@ -19073,7 +19073,7 @@ async function _assignExpChallengeList() {
       ? `_assignExpChallengePartial('${c.id}','${tname}', ${c.target_value || 0}, '${tunit}', ${prog?.total_progress || 0})`
       : `_assignExpDoChallenge('${c.id}')`;
     return `<div onclick="${onclick}" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
-      <span style="font-size:20px;">${c.icon || ''+ico('tikslas')+''}</span>
+      <span style="font-size:20px;">${emojiToIco(c.icon) || ''+ico('tikslas')+''}</span>
       <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${c.title || 'Iššūkis'}${c.allow_partial ? ' <span style="font-size:8px;color:#BA68C8;font-weight:800;">'+ico('laukia')+' TARPINIS</span>' : ''}</div><div style="font-size:10px;color:var(--mut);">+${c.exp_reward || 0} EXP${partLabel}</div></div>
       <div style="color:var(--br);font-size:14px;">›</div>
     </div>`;
@@ -27487,7 +27487,7 @@ async function loadTrainerOwnChallenges() {
     return `<div class="cd" style="margin-bottom:8px;padding:10px 12px;background:linear-gradient(135deg,${tColor}12,var(--card));border-color:${tColor}40;border-left:4px solid ${tColor};${cardOpacity}" id="own-ch-${ch.id}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:900;line-height:1.2;">${ch.icon || ''+ico('tikslas')+''} ${ch.title}</div>
+          <div style="font-size:13px;font-weight:900;line-height:1.2;">${emojiToIco(ch.icon) || ''+ico('tikslas')+''} ${ch.title}</div>
           <div style="font-size:10px;color:var(--mut);margin-top:3px;">${typeLabels[ch.type] || ch.type} · ${ico('tikslas')} ${ch.target_value || '?'} ${ch.target_unit || ''} · +${ch.exp_reward} EXP</div>
         </div>
         ${statusBadge}
