@@ -111,7 +111,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Nunito',sans-serif;font-
 .d-mut{color:var(--d-mut);}
 .d-ttl{font-family:'Bebas Neue',sans-serif;letter-spacing:2px;font-size:18px;}
 
-/* Karjeros progreso juosta */
+/* Sporto kelio progreso juosta */
 .prog-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800;margin-bottom:7px;}
 .prog{height:12px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden;}
 .prog-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--br),var(--br2));transition:width 1.2s cubic-bezier(.2,.8,.2,1);}
