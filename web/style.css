@@ -39,10 +39,12 @@ body{background:var(--bg);color:var(--ink);font-family:'Nunito',sans-serif;font-
 .sec-head{max-width:640px;margin-bottom:40px;}
 .sec-head .h2{margin:10px 0 12px;}
 
-/* ---------- Logo ---------- */
-.logo{font-family:'Bebas Neue',sans-serif;letter-spacing:5px;font-size:28px;color:var(--ink);text-decoration:none;line-height:1;}
-.logo b{font-weight:400;}
-.logo .dot{color:var(--br);}
+/* ---------- Logo (AKRO) ---------- */
+.logo{display:inline-flex;align-items:center;gap:10px;font-family:'Archivo Black','Nunito',sans-serif;letter-spacing:1.5px;font-size:22px;color:var(--ink);text-decoration:none;line-height:1;}
+.logo-ico{width:34px;height:34px;display:block;border-radius:8px;}
+.logo.logo-lg{font-size:30px;gap:12px;}
+.logo.logo-lg .logo-ico{width:46px;height:46px;border-radius:11px;}
+.tagline{font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--br);}
 
 /* ---------- Nav ---------- */
 .nav{position:sticky;top:0;z-index:100;background:rgba(250,248,245,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr2);}
@@ -143,12 +145,12 @@ body{background:var(--bg);color:var(--ink);font-family:'Nunito',sans-serif;font-
 .phone{width:min(320px,86vw);background:#0D0D0D;border-radius:44px;padding:11px;box-shadow:0 40px 80px rgba(26,26,26,.35),0 0 0 1px rgba(255,255,255,.06);margin:0 auto;}
 .phone-scr{background:var(--d-bg);border-radius:34px;overflow:hidden;min-height:420px;display:flex;flex-direction:column;gap:12px;padding:22px 16px;}
 .phone-notch{width:110px;height:22px;background:#0D0D0D;border-radius:0 0 14px 14px;margin:-22px auto 0;}
-.phone .logo{color:var(--d-txt);font-size:22px;letter-spacing:4px;text-align:center;display:block;}
+.phone .logo{color:var(--d-txt);font-size:18px;justify-content:center;display:flex;}
+.phone .logo .logo-ico{width:26px;height:26px;border-radius:6px;}
 
-/* Kanji vandenženklis (dekoras) */
-.kanji-bg{position:relative;overflow:hidden;}
-.kanji-bg::after{content:attr(data-kanji);position:absolute;right:-10px;bottom:-30px;font-size:170px;line-height:1;color:var(--ink);opacity:.04;pointer-events:none;font-family:sans-serif;}
-.dark.kanji-bg::after,.dark .kanji-bg::after{color:#fff;opacity:.05;}
+/* Promo video */
+.video-wrap{max-width:860px;margin:0 auto;}
+.video-wrap video{width:100%;display:block;border-radius:var(--r);box-shadow:var(--shadow-lg);background:#000;}
 
 /* ---------- Hero ---------- */
 .hero{padding:64px 0 76px;}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- AKRO programos ikona: oranžinis kvadratas, juodas kalnas-A, auksinė žvaigždė -->
+  <rect width="512" height="512" rx="115" fill="#FF4D00"/>
+  <path d="M256 110 L425 420 L87 420 Z" fill="#171B22"/>
+  <path d="M256 225 L340 378 L172 378 Z" fill="#FF4D00"/>
+  <rect x="216" y="392" width="80" height="12" fill="#FF4D00"/>
+  <path d="M256 48 l14 34 34 14 -34 14 -14 34 -14 -34 -34 -14 34 -14 Z" fill="#F5C542"/>
+</svg>
