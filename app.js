@@ -126,11 +126,18 @@ async function init() {
 
   // Realaus laiko prisijungimas
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (window._suppressAuthChange) return;  // ${ico('raktas')} kviečiant trenerį (signUp auto-loginina) — nekeisti klubo sesijos
+    if (window._suppressAuthChange) return;  // 🔑 kviečiant trenerį (signUp auto-loginina) — nekeisti klubo sesijos
     if (event === 'SIGNED_IN' && session) {
+      // ⚡ W1-2 auth storm: Supabase re-emit'ina SIGNED_IN per tab focus/token refresh —
+      // pilnas afterLogin() TIK kai keičiasi vartotojas arba app dar neinicijuotas
+      if (window._appInitedUserId && session.user?.id === window._appInitedUserId) {
+        currentUser = session.user; // atnaujinta sesija — be re-init
+        return;
+      }
       currentUser = session.user;
       await afterLogin();
     } else if (event === 'SIGNED_OUT') {
+      window._appInitedUserId = null;
       // #11: account-switch be reload — išvalom realtime kanalus + flag'us + būseną
       try { if (sb && sb.removeAllChannels) sb.removeAllChannels(); } catch (e) {}
       _kidChannelsSubscribed = false;
@@ -139,6 +146,7 @@ async function init() {
       currentUser = null;
       currentProfile = null;
       currentKid = null;
+      _kidTier = null; // ⚡ W1-5: kito vaiko tier nepersineša per account-switch
       showLogin();
     }
   });
@@ -656,7 +664,7 @@ async function openInviteParentModal(){
     <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin:8px 0 4px;">TAVO KODAS TĖVAMS</div>
     <div style="font-family:ui-monospace,Consolas,monospace;font-size:34px;font-weight:800;letter-spacing:6px;color:#4FC3F7;margin:10px 0;">${code}</div>
     <div style="font-size:11px;color:var(--mut);line-height:1.55;margin-bottom:14px;">Padiktuok šį kodą tėvams. Jie savo SPOBU paskyroje spaudžia<br><b>„${ico('pazymejimas')} Su kodu"</b> ir įveda jį. Kodas vienkartinis.</div>
-    <button class="btn btng" style="width:100%;margin:0;" onclick="(navigator.clipboard?navigator.clipboard.writeText('${code}').then(()=>showToast('${ico('dokumentas')} Nukopijuota','success')):null);">${ico('dokumentas')} Kopijuoti kodą</button>
+    <button class="btn btng" style="width:100%;margin:0;" onclick="(navigator.clipboard?navigator.clipboard.writeText('${code}').then(()=>showToast('Nukopijuota','success')):null);">${ico('dokumentas')} Kopijuoti kodą</button>
   </div>`;
   document.body.appendChild(m);
 }
@@ -769,15 +777,40 @@ async function generateClubInviteCode(){
   } catch(e){ showToast(ico('klaida')+' ' + (e.message || ''), 'error'); }
 }
 
+// ═══════════════════════════════════════════
+// ⚡ W1-6 (F1-01 + F4-03): VIENAS klubo ID tiesos šaltinis pagal rolę.
+// Problema: trys šaltiniai (kids.club_id / profiles.club_id / currentClub.id) —
+// vaikui profiles.club_id dažnai NULL, klubo adminui — visada NULL.
+// kid → kids.club_id; club_admin → currentClub.id; trainer → trainers.invited_by_club_id
+// (kešuojama loadTrainerData); parent → aktyvaus vaiko kids.club_id. Fallback — profiles.
+// ═══════════════════════════════════════════
+function resolveMyClubId() {
+  const role = currentProfile?.role;
+  if (role === 'kid')        return currentKid?.club_id || currentProfile?.club_id || null;
+  if (role === 'club_admin') return (typeof currentClub !== 'undefined' && currentClub?.id) || currentProfile?.club_id || null;
+  if (role === 'trainer')    return window._trainerClubId || currentProfile?.club_id || null;
+  if (role === 'parent')     return (typeof parentActiveKid !== 'undefined' && parentActiveKid?.club_id) || currentProfile?.club_id || null;
+  return currentProfile?.club_id || null;
+}
+
 async function afterLogin() {
+  // ⚡ W1-2 auth storm: lygiagretūs SIGNED_IN eventai nebeleidžia dviejų init'ų vienu metu
+  if (window._afterLoginRunning) { console.log('⏭️ [afterLogin] jau vyksta — praleidžiam'); return; }
+  window._afterLoginRunning = true;
+  try {
   console.log('🚀 [afterLogin] STARTAS, user:', currentUser?.email);
-  
+
   // Gauti profilį (BE clubs JOIN, kad neluštų jei nėra klubo)
+  // ⚡ W1-2: transient klaida (tinklas/pooler) → retry ×2 su backoff, NE iškart signOut į negyvą ekraną
   console.log('🔍 [afterLogin] 1. Kraunam profile...');
-  let { data: profile, error: profileErr } = await sb.from('profiles')
-    .select('*')
-    .eq('id', currentUser.id)
-    .single();
+  let profile = null, profileErr = null;
+  for (let _try = 0; _try < 3; _try++) {
+    const _r = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    profile = _r.data; profileErr = _r.error;
+    if (profile) break;
+    if (profileErr && profileErr.code === 'PGRST116') break; // eilutės tikrai nėra — retry nepadės
+    if (_try < 2) await new Promise(res => setTimeout(res, 500 * (_try + 1)));
+  }
   console.log('📦 [afterLogin] profile:', profile, 'error:', profileErr);
 
   // Jei profile nėra - pabandykim sukurti (vaikams kurie turi auth.users bet ne profile)
@@ -804,6 +837,7 @@ async function afterLogin() {
     console.error('❌ [afterLogin] Profile error:', profileErr);
     showToast(ico('klaida')+' Paskyra nėra sukurta. Kreipkis į administratorių.', 'error', 6000);
     await sb.auth.signOut();
+    showLogin(); // ⚡ W1-2: priverstinai — kad neliktų negyvo ekrano jei SIGNED_OUT eventas nesuveiks
     return;
   }
 
@@ -849,6 +883,7 @@ async function afterLogin() {
     console.log('🚫 [afterLogin] Suspended');
     showToast(ico('klaida')+' Tavo paskyra buvo atmesta. Kreipkis į trenerį.', 'error', 8000);
     await sb.auth.signOut();
+    showLogin(); // ⚡ W1-2
     return;
   }
   
@@ -916,10 +951,23 @@ async function afterLogin() {
       if (!kidData) {
         showToast(ico('klaida')+' Vaiko duomenys nerasti DB. Kreipkis į administratorių.', 'error', 8000);
         await sb.auth.signOut();
+        showLogin(); // ⚡ W1-2
         return;
       }
       
       currentKid = kidData;
+
+      // ⚡ W1-6 (F1-01): vaikui profiles.club_id dažnai NULL — autoritetas kids.club_id.
+      // Užpildom ATMINTYJE (ne DB), kad senos vietos, skaitančios currentProfile.club_id
+      // (reitingų chip'ai, nustatymų KLUBAS, komanda, scope), veiktų teisingai.
+      if (!currentProfile.club_id && kidData.club_id) {
+        currentProfile.club_id = kidData.club_id;
+        try {
+          const { data: kclub } = await sb.from('clubs').select('id, name, city').eq('id', kidData.club_id).maybeSingle();
+          if (kclub) currentProfile.clubs = kclub;
+        } catch (e) {}
+      }
+
       subscribeKidNotifications();
       await loadKidData();
       op('v');
@@ -939,6 +987,7 @@ async function afterLogin() {
       }
     }
     applyClubFlagGates(); // ${ico('atsijungti')} paslėpti išjungtas funkcijas (visi portalai)
+    window._appInitedUserId = currentUser?.id || null; // ⚡ W1-2: pilnas init baigtas — kiti SIGNED_IN re-fire ignoruojami
     console.log('🎉 [afterLogin] BAIGTA SĖKMINGAI');
     _flushEarlyErrors(); // 📡 B1: iki-login sukauptos klaidos → client_errors
   } catch (e) {
@@ -946,6 +995,10 @@ async function afterLogin() {
     showToast(ico('klaida')+' Klaida kraunant duomenis: ' + e.message, 'error', 8000);
     // 🛡️ 3.1 #2: vis tiek parodom portalą — dalinis vaizdas geriau nei užstrigęs login ekranas
     try { op(portal); } catch(_){}
+    window._appInitedUserId = currentUser?.id || null; // ⚡ W1-2: dalinis vaizdas parodytas — storm re-init jo nepagerins
+  }
+  } finally {
+    window._afterLoginRunning = false; // ⚡ W1-2 re-entrancy guard nuimamas visais keliais
   }
 }
 
@@ -967,8 +1020,10 @@ async function loadParentData() {
   if (!currentProfile) return;
   // Užkrauti tėvo vaikus (kid_parent_links → kids); klaida nenulaužia viso portalo (3.1 #2)
   try { await loadParentKidsList(); } catch(e) { console.error('loadParentKidsList:', e); }
-  // Pasirinkti aktyvų vaiką (pirmą pagal EXP) ir atvaizduoti
-  parentActiveKid = parentKids.length > 0 ? parentKids[0] : null;
+  // Pasirinkti aktyvų vaiką ir atvaizduoti
+  // ⚡ W1-2 (F3-02): jei tėvas JAU pasirinkęs vaiką ir tas vaikas tebėra sąraše — NEresetinam į pirmą
+  const _keptKid = parentActiveKid && parentKids.find(k => k.id === parentActiveKid.id);
+  parentActiveKid = _keptKid || (parentKids.length > 0 ? parentKids[0] : null);
   renderParentKidPill();
   loadParentKidMain();
   if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
@@ -1004,7 +1059,7 @@ async function parentToggleMarketing() {
     ? 'Ar sutinkate gauti pasiūlymus, akcijas ir naujienas iš Spobu?'
     : 'Ar atsisakote gauti pasiūlymus iš Spobu?';
   
-  if (!confirm(confirmText)) return;
+  if (!(await appConfirm(confirmText))) return;
   
   const { data, error } = await sb.from('profiles')
     .update({ marketing_consent: newConsent })
@@ -1135,7 +1190,7 @@ async function openParentSettings() {
           </div>
         </div>
         <div style="padding:6px 16px 20px;">
-          <button onclick="if(confirm('Ar tikrai atsijungti?')){document.getElementById('parent-settings-modal').remove();doLogout();}" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#8B5CF6);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(99,102,241,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
+          <button onclick="appConfirm('Ar tikrai atsijungti?').then(function(ok){if(ok){document.getElementById('parent-settings-modal').remove();doLogout();}})" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#8B5CF6);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(99,102,241,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
         </div>
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
           SPOBU v1.0 · © 2026
@@ -1597,7 +1652,7 @@ async function _parentFixAndReregister(kidId){
   const birth = val('edit-birth'); // 'YYYY-MM-DD' arba ''
   if (!fname){ if(errEl) showErr(errEl,'Įrašyk vaiko vardą'); return; }
   if (!weight){ if(errEl) showErr(errEl,'Pasirink svorį'); return; }
-  if (!confirm('Siųsti pataisytą anketą klubui iš naujo?')) return;
+  if (!(await appConfirm('Siųsti pataisytą anketą klubui iš naujo?'))) return;
   try {
     const { error } = await sb.rpc('parent_reregister_kid', { p_kid: kidId, p_kyu: kyu||null, p_weight: weight||null, p_first: fname||null, p_last: lname||null, p_gender: gender||null, p_birth: birth||null });
     if (error) throw error;
@@ -2967,7 +3022,7 @@ function openHomePlanInfoModal(){
           <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gld);margin-top:4px;letter-spacing:1px;">SPOBU — TIK 19,99€</div>
         </div>
         <div style="background:rgba(255,140,0,.1);border:.5px solid rgba(255,140,0,.3);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#d6d6dd;line-height:1.5;">${ico('kartoti')} <b style="color:#fff;">Kas 2 mėn. užduotys keičiasi pagal vaiko progresą</b> (reaguojant į naują ataskaitą). ${ico('premium')} Įskaičiuota į <b style="color:var(--gld);">Premium+</b>.</div>
-        <button onclick="showToast('${ico('laikas')} Namų planai — netrukus','success',4000)" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">${ico('laikas')} Netrukus</button>
+        <button onclick="showToast('Namų planai — netrukus','success',4000)" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">${ico('laikas')} Netrukus</button>
       </div>
     </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
@@ -3002,7 +3057,7 @@ function openSummerInfoModal(){
           <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gld);margin-top:4px;letter-spacing:1px;">SPOBU — TIK 29,99€</div>
         </div>
         <div style="background:rgba(255,140,0,.1);border:.5px solid rgba(255,140,0,.3);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#d6d6dd;line-height:1.5;">${ico('kalendorius')} <b style="color:#fff;">Prieinama nuo gegužės vidurio</b> (sezoninė). ${ico('premium')} Įskaičiuota į <b style="color:var(--gld);">Premium+</b>.</div>
-        <button onclick="showToast('${ico('laikas')} Vasaros programa — netrukus','success',4000)" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">${ico('laikas')} Netrukus</button>
+        <button onclick="showToast('Vasaros programa — netrukus','success',4000)" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">${ico('laikas')} Netrukus</button>
       </div>
     </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
@@ -3272,11 +3327,20 @@ async function loadKidTierGate(){
   if (!currentKid || !currentKid.id) return;
   if (_kidTier === null) {
     try {
-      const { data, error } = await sb.from('kid_entitlements').select('tier').eq('kid_id', currentKid.id).maybeSingle();
+      // ⚡ W1-5 (F1-09): vaiko RLS nemato savo kid_entitlements → tier per get_my_tier() RPC
+      // (SECURITY DEFINER, server-w15-tier-gate-rpc.sql). Kol RPC nedeployintas — fallback žemiau.
+      const { data, error } = await sb.rpc('get_my_tier');
       if (error) throw error;
-      _kidTier = (data && data.tier) || 'free';
+      _kidTier = data || 'free';
       try { localStorage.setItem(_kidTierKey(currentKid.id), _kidTier); } catch (e) {}
-    } catch (e) { console.warn('loadKidTierGate', e); _kidTier = getKidTierLocal(currentKid.id); }
+    } catch (e) {
+      console.warn('loadKidTierGate: get_my_tier RPC nepasiekiamas, fallback', e);
+      try {
+        const r2 = await sb.from('kid_entitlements').select('tier').eq('kid_id', currentKid.id).maybeSingle();
+        _kidTier = (r2.data && r2.data.tier) || getKidTierLocal(currentKid.id);
+        try { localStorage.setItem(_kidTierKey(currentKid.id), _kidTier); } catch (e2) {}
+      } catch (e2) { _kidTier = getKidTierLocal(currentKid.id); }
+    }
   }
   gateScreen('v-stat', _kidTier === 'free', _PG_KID);
 }
@@ -5720,7 +5784,7 @@ async function parentToggleMediaConsent() {
     ? 'Ar tikrai leidžiate Spobu naudoti vaiko medžiagą savo platformoje, marketinge ir socialiniuose kanaluose?'
     : 'Ar tikrai uždraudžiate Spobu naudoti vaiko medžiagą?';
   
-  if (!confirm(confirmText)) return;
+  if (!(await appConfirm(confirmText))) return;
   
   const { data, error } = await sb.from('kids').update({ media_consent: newConsent }).eq('id', currentParentKid.id).select();
   
@@ -5884,7 +5948,7 @@ async function saveEditKid(kidId) {
   }
 }
 
-function showAddKidAccess(kidId) {
+async function showAddKidAccess(kidId) {
   // Patikrinkim ar yra pending_email
   const kid = currentParentKid;
   const defaultEmail = (kid && kid.pending_email) || '';
@@ -5893,7 +5957,7 @@ function showAddKidAccess(kidId) {
     ? `Vaiko email: ${defaultEmail}\n\nAr siųsti laišką šiuo adresu? Jei ne - nutrauk ir įvesk kitą.`
     : 'Įvesk vaiko email\'ą:\n\n'+ico('pagalba')+' Vaikas gaus laišką su slaptažodžio nustatymo nuoroda. Po to galės prisijungti su SAVO paskyra.';
   
-  const newEmail = prompt(promptText, defaultEmail);
+  const newEmail = await appPrompt(promptText, defaultEmail);
   if (newEmail === null) return; // Cancel
   
   const trimmedEmail = newEmail.trim().toLowerCase();
@@ -6493,9 +6557,15 @@ async function loadKidData() {
   console.log('🔵 [celebrations] Level - lastKnown:', lastKnownLevel, 'new:', newLevel);
   if (lastKnownLevel > 0 && newLevel > lastKnownLevel) {
     console.log('🎉 LEVEL UP detected!');
-    setTimeout(() => showLevelUpCelebration(newLevel, lastKnownLevel), 800);
+    // ⚡ W1-2 (F5-02): lastLevel žymim TIK parodžius šventimą — jei reload/storm nužudo setTimeout,
+    // praleistas šventimas parodomas kitą prisijungimą (nebe prarandamas)
+    setTimeout(() => {
+      try { showLevelUpCelebration(newLevel, lastKnownLevel); }
+      finally { localStorage.setItem(lsKey('lastLevel'), newLevel); }
+    }, 800);
+  } else {
+    localStorage.setItem(lsKey('lastLevel'), newLevel);
   }
-  localStorage.setItem(lsKey('lastLevel'), newLevel);
   
   // Detektuoti DIRŽO PAKEITIMĄ (kyu)
   const newKyu = currentKid.kyu || '10 kyu';
@@ -6503,25 +6573,34 @@ async function loadKidData() {
   console.log('🔵 [celebrations] Kyu - lastKnown:', lastKnownKyu, 'new:', newKyu);
   if (lastKnownKyu && lastKnownKyu !== newKyu) {
     console.log('🥋 BELT CHANGE detected!');
-    setTimeout(() => showBeltCelebration(newKyu, lastKnownKyu), 1200);
+    setTimeout(() => {
+      try { showBeltCelebration(newKyu, lastKnownKyu); }
+      finally { localStorage.setItem(lsKey('lastKyu'), newKyu); } // ⚡ W1-2: žymim tik parodžius
+    }, 1200);
+  } else {
+    localStorage.setItem(lsKey('lastKyu'), newKyu);
   }
-  localStorage.setItem(lsKey('lastKyu'), newKyu);
   
   // 🌟 Detektuoti STAGE PERĖJIMĄ (Naujokas → Mokinys → Pažengęs → ...)
   const stageInfoNow = getStageInfo(currentKid.total_exp || 0);
   const newStage = stageInfoNow.stage;
   const lastKnownStage = localStorage.getItem(lsKey('lastStage'));
   console.log('🔵 [celebrations] Stage - lastKnown:', lastKnownStage, 'new:', newStage);
+  let _stageMarkDeferred = false;
   if (lastKnownStage && lastKnownStage !== newStage) {
     // Tikrinam ar pakilo (ne nukrito) - pagal STAGES indeksą
     const oldIdx = STAGES.findIndex(s => s.name === lastKnownStage);
     const newIdx = STAGES.findIndex(s => s.name === newStage);
     if (newIdx > oldIdx) {
       console.log('🌟 STAGE UP detected!', lastKnownStage, '→', newStage);
-      setTimeout(() => showStageUpCelebration(newStage, lastKnownStage), 1600);
+      setTimeout(() => {
+        try { showStageUpCelebration(newStage, lastKnownStage); }
+        finally { localStorage.setItem(lsKey('lastStage'), newStage); } // ⚡ W1-2: žymim tik parodžius
+      }, 1600);
+      _stageMarkDeferred = true;
     }
   }
-  localStorage.setItem(lsKey('lastStage'), newStage);
+  if (!_stageMarkDeferred) localStorage.setItem(lsKey('lastStage'), newStage);
   
   // Detektuoti naujus medalius (1, 2, 3 vieta)
   detectNewMedals();
@@ -6794,7 +6873,7 @@ async function uploadKidAvatar(inputEl) {
 
 async function removeKidAvatar() {
   if (!currentKid?.id) return;
-  if (!confirm('Pašalinti profilio nuotrauką?')) return;
+  if (!(await appConfirm('Pašalinti profilio nuotrauką?'))) return;
   try {
     await sb.storage.from(KID_AVATAR_BUCKET).remove([`${currentKid.id}.jpg`]).catch(()=>{});
     await sb.from('kids').update({ avatar_url: null }).eq('id', currentKid.id);
@@ -7898,7 +7977,7 @@ async function renderProfileExtras() {
       // RLS-friendly: pirma profiles, tada kids per user_id
       const { data: clubProfiles } = await sb.from('profiles')
         .select('id')
-        .eq('club_id', currentProfile?.club_id)
+        .eq('club_id', resolveMyClubId()) // ⚡ W1-6 (F1-01)
         .eq('role', 'kid');
       
       const profileIds = (clubProfiles || []).map(p => p.id);
@@ -9265,9 +9344,9 @@ async function openChallengeTypesModal(kidId, kidName) {
 }
 
 // Biografijos redagavimas (modal)
-function openBioEdit() {
+async function openBioEdit() {
   const current = currentKid?.bio || '';
-  const newBio = prompt('Įvesk savo motto/biografiją:', current);
+  const newBio = await appPrompt('Įvesk savo motto/biografiją:', current);
   if (newBio === null) return;
   
   sb.from('kids')
@@ -9699,7 +9778,7 @@ async function checkForNewCompetitions() {
   if (!currentKid?.id) return;
 
   // Klubo ID (kaip loadKidCompetitions — per profilį arba per trenerį)
-  let clubId = currentProfile?.club_id;
+  let clubId = resolveMyClubId(); // ⚡ W1-6
   if (!clubId && currentKid.assigned_trainer_id) {
     const { data: trainer } = await sb.from('profiles')
       .select('club_id').eq('id', currentKid.assigned_trainer_id).maybeSingle();
@@ -10630,7 +10709,7 @@ async function loadChallenges() {
   if (typeof _kidGroupChallengesScreen === 'function') _kidGroupChallengesScreen();  // ${ico('trofejai')} grupių iššūkis (Iššūkių ekranas)
 
   // BUG FIX: Klubą gauname per vaiko trenerį (assigned_trainer_id arba kid_trainers)
-  let clubId = currentProfile?.club_id;
+  let clubId = resolveMyClubId(); // ⚡ W1-6
   
   if (!clubId) {
     if (currentKid.assigned_trainer_id) {
@@ -11075,7 +11154,7 @@ async function submitChallengeResult() {
   
   // Įsitikinti, kad pasiektas tikslas (jei yra)
   if (currentChallengeForSubmission.target_value && numericValue < currentChallengeForSubmission.target_value) {
-    if (!confirm(`Tikslas - ${currentChallengeForSubmission.target_value} ${currentChallengeForSubmission.target_unit || ''}, o tu pateiki ${numericValue}. Vis tiek siusti?`)) {
+    if (!(await appConfirm(`Tikslas - ${currentChallengeForSubmission.target_value} ${currentChallengeForSubmission.target_unit || ''}, o tu pateiki ${numericValue}. Vis tiek siusti?`))) {
       return;
     }
   }
@@ -11123,7 +11202,7 @@ async function _doChallengeSubmit(trainerId, resultStr, numericValue){
   if (!data || data.length === 0){ showToast(ico('klaida')+' Nepavyko išsiųsti', 'error', 5000); return; }
   showToast(ico('patvirtinta')+' Rezultatas išsiųstas treneriui patvirtinimui!', 'success', 4000);
   playSound('send');
-  notifyTrainersNewSubmission(''+ico('tikslas')+' Naujas iššūkio pateikimas', 'pateikė iššūkį — laukia patvirtinimo');
+  notifyTrainersNewSubmission('🎯 Naujas iššūkio pateikimas', 'pateikė iššūkį — laukia patvirtinimo');
   closeSubmitChallenge();
   await loadChallenges();
 }
@@ -12491,7 +12570,7 @@ function openClubAccountMenu(){
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div></a>
       <div style="text-align:center;font-size:10px;color:var(--mut);margin:12px 0 14px;">SPOBU · ${appV}</div>
-      <button onclick="document.getElementById('club-acct-menu').remove();if(confirm('Atsijungti iš klubo paskyros?'))doLogout()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);color:#EF4444;padding:14px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;"><span style="font-size:17px;">🚪</span> Atsijungti</button>
+      <button onclick="document.getElementById('club-acct-menu').remove();appConfirm('Atsijungti iš klubo paskyros?').then(function(ok){if(ok)doLogout();})" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);color:#EF4444;padding:14px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;"><span style="font-size:17px;">🚪</span> Atsijungti</button>
     </div>
   </div>`;
   document.body.appendChild(m);
@@ -13537,7 +13616,7 @@ async function openCreateCamp(editId){
       <input class="inp" id="camp-price" value="${(c.price_info||'').replace(/"/g,'&quot;')}" placeholder="pvz. 150 € / 5 dienos" style="margin-bottom:12px;">
       <label class="lbl">TIPAS</label>
       <select class="inp" id="camp-type" onchange="_updateCampExpCap()" style="margin-bottom:12px;">
-        ${Object.entries(CAMP_TYPES).map(([k,t])=>`<option value="${k}" ${(c.event_type||'camp')===k?'selected':''}>${t.icon} ${t.label} (maks. ${t.cap} EXP)</option>`).join('')}
+        ${Object.entries(CAMP_TYPES).map(([k,t])=>`<option value="${k}" ${(c.event_type||'camp')===k?'selected':''}>${t.label} (maks. ${t.cap} EXP)</option>`).join('')}
       </select>
       <label class="lbl">EXP UŽ DALYVAVIMĄ <span style="color:var(--mut);font-weight:600;">(0–<span id="camp-exp-cap">${_campType(c.event_type).cap}</span>)</span></label>
       <input class="inp" id="camp-exp" type="number" min="0" max="${_campType(c.event_type).cap}" value="${Math.min(_campType(c.event_type).cap, c.exp_reward||0)}" style="margin-bottom:4px;">
@@ -13579,14 +13658,14 @@ async function submitNewCamp(editId){
   }
   if (res.error){ showToast(ico('klaida')+' '+res.error.message,'error'); return; }
   showToast(ico('patvirtinta')+' Išsaugota','success');
-  if (!editId){ _pushClubKidsParents(''+ico('stovykla')+' Nauja stovykla!', (title||'Stovykla') + (starts_on?' · '+formatDateLT(starts_on):'')); }  // push (tik naujai)
+  if (!editId){ _pushClubKidsParents('⛺ Nauja stovykla!', (title||'Stovykla') + (starts_on?' · '+formatDateLT(starts_on):'')); }  // push (tik naujai)
   document.getElementById('club-camp-modal')?.remove();
   loadClubCamps();
 }
 
 async function deleteCamp(id, title){
   if (_ownerOnly()) return;
-  if (!confirm(`Ištrinti stovyklą "${title}"?\n\nVisi dalyvių įrašai bus ištrinti.`)) return;
+  if (!(await appConfirm(`Ištrinti stovyklą "${title}"?\n\nVisi dalyvių įrašai bus ištrinti.`))) return;
   const { error } = await sb.from('club_events').delete().eq('id', id);
   if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
   showToast(ico('patvirtinta')+' Ištrinta','success');
@@ -13885,7 +13964,7 @@ async function saveChallengeEntries(id){
 }
 
 async function finalizeClubChallengeUI(id, title){
-  if (!confirm(`Užbaigti iššūkį "${title}"?\n\nVISOS dalyvavusios grupės gaus EXP pagal vietą (1v 100% / 2v 70% / 3v 50% / kitos 30%). Vaikai ir treneriai pamatys rezultatą.`)) return;
+  if (!(await appConfirm(`Užbaigti iššūkį "${title}"?\n\nVISOS dalyvavusios grupės gaus EXP pagal vietą (1v 100% / 2v 70% / 3v 50% / kitos 30%). Vaikai ir treneriai pamatys rezultatą.`))) return;
   const { error } = await sb.rpc('finalize_club_challenge', { challenge_uuid: id });
   if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
   showToast(''+ico('finisas')+' Iššūkis užbaigtas','success');
@@ -13897,7 +13976,7 @@ async function finalizeClubChallengeUI(id, title){
 
 async function deleteClubChallenge(id, title){
   if (_ownerOnly()) return;
-  if (!confirm(`Ištrinti iššūkį "${title}"?\n\nVisi rezultatai bus ištrinti.`)) return;
+  if (!(await appConfirm(`Ištrinti iššūkį "${title}"?\n\nVisi rezultatai bus ištrinti.`))) return;
   const { error } = await sb.from('club_challenges').delete().eq('id', id);
   if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
   showToast(ico('patvirtinta')+' Ištrinta','success');
@@ -13973,7 +14052,7 @@ async function _checkClubChallengeResultsTrainer(){
 
 async function deleteCompetition(id, title) {
   if (_ownerOnly()) return;
-  if (!confirm(`Ar tikrai ištrinti "${title}"?\n\nVisi pateikti rezultatai bus IŠTRINTI!`)) return;
+  if (!(await appConfirm(`Ar tikrai ištrinti "${title}"?\n\nVisi pateikti rezultatai bus IŠTRINTI!`))) return;
   
   const { error } = await sb.from('competitions').delete().eq('id', id);
   if (error) { showToast(ico('klaida')+' ' + error.message, 'error'); return; }
@@ -14650,7 +14729,7 @@ async function loadKidCompetitions() {
   if (!currentKid?.id) return;
   
   // Klubo ID per trenerį (kaip ir iššūkiams)
-  let clubId = currentProfile?.club_id;
+  let clubId = resolveMyClubId(); // ⚡ W1-6
   if (!clubId && currentKid.assigned_trainer_id) {
     const { data: trainer } = await sb.from('profiles')
       .select('club_id')
@@ -15247,7 +15326,7 @@ async function submitCompResult() {
   
   showToast(ico('patvirtinta')+' Rezultatas išsiųstas treneriui!', 'success', 4000);
   playSound('send');
-  if (status === 'participated') notifyTrainersNewSubmission(''+ico('trofejai')+' Naujas varžybų rezultatas', 'pateikė varžybų rezultatą — laukia patvirtinimo');
+  if (status === 'participated') notifyTrainersNewSubmission('🏆 Naujas varžybų rezultatas', 'pateikė varžybų rezultatą — laukia patvirtinimo');
   closeSubmitCompResult();
   await loadKidCompetitions();
 }
@@ -15364,7 +15443,7 @@ async function loadGoals() {
   // 1. Surasti ALL aktyvius weekly/monthly iššūkius klubo
   const { data: allChallenges } = await sb.from('challenges')
     .select('id, title, type, target_value, target_unit, exp_reward, expires_at, allow_partial, target_audience, target_kid_id, group_id, created_at')
-    .eq('club_id', currentProfile?.club_id)
+    .eq('club_id', resolveMyClubId()) // ⚡ W1-6
     .eq('is_active', true)
     .in('type', ['weekly', 'monthly'])
     .or(`expires_at.is.null,expires_at.gt.${nowISO}`);
@@ -15600,13 +15679,14 @@ function openActiveMonthlyChallenge() {
 }
 
 async function loadRankings() {
-  if (!currentKid?.id || !currentProfile?.club_id) return;
-  console.log('[loadRankings] start, club_id:', currentProfile.club_id);
-  
+  const _rkClubId = resolveMyClubId(); // ⚡ W1-6 (F1-01): kids.club_id, ne tik profiles
+  if (!currentKid?.id || !_rkClubId) return;
+  console.log('[loadRankings] start, club_id:', _rkClubId);
+
   // 1) Surasti VISUS vaikus klube (per profiles lentelę)
   const { data: clubProfiles } = await sb.from('profiles')
     .select('id')
-    .eq('club_id', currentProfile.club_id)
+    .eq('club_id', _rkClubId)
     .eq('role', 'kid');
   
   if (!clubProfiles || clubProfiles.length === 0) {
@@ -15984,7 +16064,8 @@ async function loadStreaks() {
 }
 
 async function openClubChallengeLeaderboard() {
-  if (!currentProfile?.club_id) {
+  const _lbClubId = resolveMyClubId(); // ⚡ W1-6
+  if (!_lbClubId) {
     showToast(ico('klaida')+' Klubas nepriskirtas', 'error');
     return;
   }
@@ -15995,7 +16076,7 @@ async function openClubChallengeLeaderboard() {
   
   const { data: leaderboard, error } = await sb.from('club_challenge_leaderboard')
     .select('*')
-    .eq('club_id', currentProfile.club_id)
+    .eq('club_id', _lbClubId) // ⚡ W1-6
     .order('club_rank')
     .limit(20);
   
@@ -16148,15 +16229,16 @@ function openStatWithFilter(tabName, skillId) {
     }
     
     statFilters.scope = 'club';
-    
+
     // Jei perduotas konkretus skillId - nustatyt
     if (skillId) {
       statFilters.skillId = skillId;
     }
   }
-  
+
   // Nukelia į statistikos page
   g('v', 'v-stat');
+  if (typeof loadKidTierGate === 'function') loadKidTierGate(); // ⚡ W1-5 (F1-09): gate ir šiuo keliu (ne tik nv())
   
   // Po 100ms aktyvuoja tabą (kad UI spėtų užkrauti)
   setTimeout(() => {
@@ -16176,10 +16258,11 @@ function openMainStat() {
   statFilters.scope = 'club';
   statFilters.skillId = null;
   statFilters.weight = 'all';
-  
+
   // Nukelia į statistikos page
   g('v', 'v-stat');
-  
+  if (typeof loadKidTierGate === 'function') loadKidTierGate(); // ⚡ W1-5 (F1-09): gate ir šiuo keliu (ne tik nv())
+
   // Aktyvuoja pirmąjį tabą (overall - bendra statistika)
   setTimeout(() => {
     if (typeof switchStatTab === 'function') {
@@ -16442,7 +16525,7 @@ async function getFilteredKidEntries(scoreSource, scoreField) {
       ageGroup: statFilters.ageGroup,
       skillId: statFilters.skillId,
       weight: statFilters.weight,
-      clubId: currentProfile?.club_id || 'all'
+      clubId: resolveMyClubId() || 'all' // ⚡ W1-6: kešo raktas su tikru klubo ID
     }
   );
   
@@ -16457,7 +16540,13 @@ async function _getFilteredKidEntriesUncached(scoreSource, scoreField) {
   //    Anksčiau traukdavo VISŲ vaikų PII (last_name, birth_date, weight_range) į klientą ir
   //    filtruodavo JS'e → K-61 GDPR nutekėjimas + 4× pilni kids skenai. Dabar 1 saugus kvietimas.
   const g = AGE_GROUPS.find(x => x.id === statFilters.ageGroup) || AGE_GROUPS[0];
-  const clubId = (statFilters.scope === 'club' && currentProfile?.club_id) ? currentProfile.club_id : null;
+  // ⚡ W1-6: klubo ID per resolveMyClubId (vaikui/adminui profiles.club_id NULL → anksčiau
+  // 'club' scope tyliai virsdavo GLOBALIU leaderboard'u su svetimų vaikų vardais)
+  const clubId = (statFilters.scope === 'club') ? resolveMyClubId() : null;
+  if (statFilters.scope === 'club' && !clubId) {
+    console.warn('[leaderboard] club scope be klubo ID — grąžinam tuščią (ne globalų!)');
+    return [];
+  }
   const seasonFrom = (statSeasonFilter === 'season' && scoreSource !== 'total_exp')
     ? getCurrentSeason().start.toISOString() : null;
 
@@ -18162,6 +18251,10 @@ async function getMyKidIds(onlyPrimary = false) {
 async function loadTrainerData() {
   if (!currentProfile) return;
   _myKidIdsMemo = {}; // ${ico('greitis')} šviežias getMyKidIds skaičiavimas šiam užkrovimui
+  // ⚡ W1-6: trenerio klubo ID kešas resolveMyClubId()-ui (fone, neblokuoja starto)
+  sb.from('trainers').select('invited_by_club_id').eq('id', currentUser.id).maybeSingle()
+    .then(({ data }) => { window._trainerClubId = data?.invited_by_club_id || null; })
+    .catch(() => {});
   // 🎨 Pritaikom cache'intą stage foną IŠKART (prieš async užklausas), kad perkraunant
   // hero nemirgėtų oranžine spalva, kol užsikraus tikras lygis.
   try {
@@ -18277,7 +18370,7 @@ async function loadPendingKidForms() {
 }
 
 async function approveKid(kidId) {
-  if (!confirm('Patvirtinti vaiko paskyrą? Tėvai ir vaikas bus aktyvuoti.')) return;
+  if (!(await appConfirm('Patvirtinti vaiko paskyrą? Tėvai ir vaikas bus aktyvuoti.'))) return;
   
   try {
     // 1. Patvirtinam vaiką
@@ -18319,7 +18412,7 @@ async function approveKid(kidId) {
 }
 
 async function rejectKid(kidId) {
-  if (!confirm('Tikrai atmesti vaiko paskyrą? Vaikas ir tėvai negalės naudotis platforma.')) return;
+  if (!(await appConfirm('Tikrai atmesti vaiko paskyrą? Vaikas ir tėvai negalės naudotis platforma.'))) return;
   
   try {
     await sb.from('kids')
@@ -19082,7 +19175,7 @@ async function _assignExpChallengeList() {
 
 // Pilnas (non-partial) — pažymi atliktą → DB trigeris prideda exp_reward
 async function _assignExpDoChallenge(challengeId) {
-  if (!confirm('Pažymėti šį iššūkį kaip atliktą? Vaikas gaus EXP.')) return;
+  if (!(await appConfirm('Pažymėti šį iššūkį kaip atliktą? Vaikas gaus EXP.'))) return;
   try {
     const { data: ins, error } = await sb.from('challenge_submissions')
       .insert({ challenge_id: challengeId, kid_id: _assignExpKid.id, trainer_id: currentUser.id, value: 'Trenerio pažymėta', status: 'pending' })
@@ -20619,7 +20712,7 @@ async function deleteGroup(groupId) {
 }
 
 async function removeKidFromGroup(kidId) {
-  if (!confirm('Pašalinti vaiką iš grupės?')) return;
+  if (!(await appConfirm('Pašalinti vaiką iš grupės?'))) return;
   
   try {
     const { error } = await sb.from('kids').update({ group_id: null }).eq('id', kidId);
@@ -21757,7 +21850,7 @@ async function openTrainerSettings() {
 
         <!-- ATSIJUNGTI -->
         <div style="padding:6px 16px 20px;">
-          <button onclick="if(confirm('Ar tikrai atsijungti?')){document.getElementById('trainer-settings-modal').remove();doLogout();}" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(255,77,0,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
+          <button onclick="appConfirm('Ar tikrai atsijungti?').then(function(ok){if(ok){document.getElementById('trainer-settings-modal').remove();doLogout();}})" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(255,77,0,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
         </div>
 
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
@@ -21928,7 +22021,7 @@ async function uploadTrainerAvatar(inputEl) {
 
 async function removeTrainerAvatar() {
   if (!currentUser?.id) return;
-  if (!confirm('Pašalinti profilio nuotrauką?')) return;
+  if (!(await appConfirm('Pašalinti profilio nuotrauką?'))) return;
   try {
     await sb.storage.from(KID_AVATAR_BUCKET).remove([`trainer-${currentUser.id}.jpg`]).catch(() => {});
     await sb.from('profiles').update({ avatar_url: null }).eq('id', currentUser.id);
@@ -22381,7 +22474,7 @@ async function kdApprovePending(kind, id) {
 }
 
 async function kdRejectPending(kind, id) {
-  const reason = prompt('Atmetimo priežastis (neprivaloma):') || 'Be priežasties';
+  const reason = await appPrompt('Atmetimo priežastis (neprivaloma):') || 'Be priežasties';
 
   // Atmetimo laukai identiški tr-pat srautams (cr / rejectChallengeSubmission / rejectCompetitionResult)
   let error = null;
@@ -22568,7 +22661,7 @@ async function kdSaveNewTrainer() {
 }
 
 async function kdRemoveTrainer(ktId, trainerName) {
-  if (!confirm(`Ar tikrai pašalinti pavaduojantį trenerį "${trainerName}"?`)) {
+  if (!(await appConfirm(`Ar tikrai pašalinti pavaduojantį trenerį "${trainerName}"?`))) {
     return;
   }
   
@@ -22805,7 +22898,7 @@ async function kdToggleMediaConsent() {
     ? 'Ar tikrai leidžiate Spobu naudoti vaiko medžiagą savo platformoje, marketinge ir socialiniuose kanaluose?'
     : 'Ar tikrai uždraudžiate Spobu naudoti vaiko medžiagą?';
   
-  if (!confirm(confirmText)) return;
+  if (!(await appConfirm(confirmText))) return;
   
   const { data, error } = await sb.from('kids').update({ media_consent: newConsent }).eq('id', currentKidDetails.id).select();
   
@@ -23110,7 +23203,7 @@ async function openAdminReport(id) {
 }
 
 async function approveReport(id) {
-  if (!confirm('Patvirtinti šią ataskaitą? Tėvas galės ją matyti.')) return;
+  if (!(await appConfirm('Patvirtinti šią ataskaitą? Tėvas galės ją matyti.'))) return;
   try {
     const { error } = await sb.from('reports').update({ status: 'done', reviewed_at: new Date().toISOString(), reviewed_by: currentProfile?.id || null }).eq('id', id);
     if (error) throw error;
@@ -23578,16 +23671,16 @@ async function setAdminErrStatus(hash, status){
 // 📌 Deploy žurnalas — „kurioje versijoje atsirado" pagrindas
 async function registerDeploy(){
   const cur = document.getElementById('app-version')?.textContent?.trim() || '';
-  const ver = prompt('Deploy versija:', cur);
+  const ver = await appPrompt('Deploy versija:', cur);
   if (!ver) return;
-  const notes = prompt('Pastabos (nebūtina):', '') || null;
+  const notes = await appPrompt('Pastabos (nebūtina):', '') || null;
   const { error } = await sb.from('app_versions').upsert({ version: ver.trim(), notes, deployed_at: new Date().toISOString() }, { onConflict: 'version' });
   if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   showToast(''+ico('zyma')+' Deploy užregistruotas: ' + ver.trim(), 'success');
 }
 
 async function pruneAdminErrors(){
-  if (!confirm('Ištrinti visas senesnes nei 30 d. klaidas?')) return;
+  if (!(await appConfirm('Ištrinti visas senesnes nei 30 d. klaidas?'))) return;
   const { data, error } = await sb.rpc('admin_prune_client_errors');
   if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   showToast(''+ico('valyti')+' Ištrinta įrašų: ' + (data ?? 0), 'success');
@@ -23822,7 +23915,7 @@ async function savePrice(key){
 }
 
 async function backfillPurchases(){
-  if (!confirm('Backfill: sukurti trūkstamus pirkimų įrašus iš senų AI ataskaitų?\n\nIdempotentiška — dublikatų nekurs.')) return;
+  if (!(await appConfirm('Backfill: sukurti trūkstamus pirkimų įrašus iš senų AI ataskaitų?\n\nIdempotentiška — dublikatų nekurs.'))) return;
   const { data, error } = await sb.rpc('admin_backfill_purchases');
   if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   showToast(''+ico('kodas')+' Sukurta įrašų: ' + (data ?? 0), 'success');
@@ -24123,7 +24216,7 @@ async function submitAaiEdit(id){
 }
 
 async function aaiReject(id){
-  const reason = prompt('Atmetimo priežastis (vidinė pastaba):');
+  const reason = await appPrompt('Atmetimo priežastis (vidinė pastaba):');
   if (reason === null) return;
   const { error } = await sb.from('reports').update({ status: 'rejected', admin_note: reason || 'Atmesta', reviewed_at: new Date().toISOString(), reviewed_by: currentProfile?.id }).eq('id', id);
   if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
@@ -24134,7 +24227,7 @@ async function aaiReject(id){
 
 // 🔄 RETRY — EF pergeneruoja ESAMĄ eilutę (body.report_id; kredito nevartoja antrą kartą)
 async function aaiRetry(id){
-  if (!confirm('Pergeneruoti šią ataskaitą?\n\nEF paleis AI iš naujo su ta pačia eilute (kreditas nebus nurašytas antrą kartą).')) return;
+  if (!(await appConfirm('Pergeneruoti šią ataskaitą?\n\nEF paleis AI iš naujo su ta pačia eilute (kreditas nebus nurašytas antrą kartą).'))) return;
   showToast(''+ico('laukia')+' Pergeneruojama — rezultatas grįš į peržiūros eilę...', 'success', 4000);
   try {
     const { data, error } = await sb.functions.invoke('generate-report', { body: { report_id: id } });
@@ -24289,7 +24382,7 @@ async function submitAaiKb(type, id){
 }
 
 async function deleteAaiKb(type, id){
-  if (!confirm('Ištrinti šį žinių bazės įrašą?')) return;
+  if (!(await appConfirm('Ištrinti šį žinių bazės įrašą?'))) return;
   const tbl = type === 'knowledge' ? 'report_knowledge' : 'report_inserts';
   const { error } = await sb.from(tbl).delete().eq('id', id);
   if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
@@ -24332,7 +24425,7 @@ function openAaiInsight(){
       <div class="aerr-meta" style="margin-top:6px;white-space:normal;">Nukopijuok į Claude — gausi žinių bazės papildymo pasiūlymus. Patvirtintus įrašus pridėk per „Žinių bazė → ➕ Naujas".</div>
     </div>
     <div style="padding:12px 18px;border-top:.5px solid var(--bdr);">
-      <button class="btn btng" style="width:100%;margin:0;" onclick="(navigator.clipboard?navigator.clipboard.writeText(document.getElementById('aai-insight-txt').value).then(()=>showToast('${ico('dokumentas')} Nukopijuota','success')):showToast('Pažymėk ir kopijuok ranka','error'))">${ico('dokumentas')} Kopijuoti</button>
+      <button class="btn btng" style="width:100%;margin:0;" onclick="(navigator.clipboard?navigator.clipboard.writeText(document.getElementById('aai-insight-txt').value).then(()=>showToast('Nukopijuota','success')):showToast('Pažymėk ir kopijuok ranka','error'))">${ico('dokumentas')} Kopijuoti</button>
     </div>
   </div>`;
   document.body.appendChild(m);
@@ -24463,7 +24556,7 @@ async function openAdminUserCard(id){
 }
 
 async function setUserStatus(id, status){
-  if (!confirm(status === 'suspended' ? 'Sustabdyti šį vartotoją? Jis nebegalės prisijungti.' : 'Aktyvuoti vartotoją?')) return;
+  if (!(await appConfirm(status === 'suspended' ? 'Sustabdyti šį vartotoją? Jis nebegalės prisijungti.' : 'Aktyvuoti vartotoją?'))) return;
   const { error } = await sb.from('profiles').update({ status }).eq('id', id);
   if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   logAdminAction(status === 'suspended' ? 'suspend' : 'activate', 'profile', id);
@@ -24476,7 +24569,7 @@ async function changeUserRole(id){
   const role = document.getElementById('au-role-sel')?.value;
   const p = (_auRows || []).find(x => x.id === id);
   if (!role || !p || role === p.role) return;
-  if (!confirm(`Keisti rolę: ${p.role} → ${role}?\n\nVartotojas po perkrovimo pateks į kitą portalą.`)) return;
+  if (!(await appConfirm(`Keisti rolę: ${p.role} → ${role}?\n\nVartotojas po perkrovimo pateks į kitą portalą.`))) return;
   // Rolės keitimas per SECURITY DEFINER RPC — audito įrašas admin_actions daromas serveryje (#5)
   const { error } = await sb.rpc('admin_set_user_role', { p_user_id: id, p_role: role });
   if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
@@ -24499,10 +24592,10 @@ async function exportKidData(kidId, fname){
 
 // 🗑️ GDPR kaskadinis trynimas (dvigubas patvirtinimas su vardu)
 async function deleteKidCascadeUI(kidId, firstName){
-  const typed = prompt(`⚠️ NEGRĮŽTAMA!\n\nBus ištrinti VISI šio vaiko duomenys (EXP, karjera, lankomumas, ataskaitos...).\nApskaitos pirkimai liks be asmens ryšio.\n\nPatvirtinimui įrašyk vaiko vardą: ${firstName}`);
+  const typed = await appPrompt(`⚠️ NEGRĮŽTAMA!\n\nBus ištrinti VISI šio vaiko duomenys (EXP, karjera, lankomumas, ataskaitos...).\nApskaitos pirkimai liks be asmens ryšio.\n\nPatvirtinimui įrašyk vaiko vardą: ${firstName}`);
   if (typed === null) return;
   if ((typed || '').trim().toLowerCase() !== (firstName || '').trim().toLowerCase()){ showToast(ico('klaida')+' Vardas nesutampa — atšaukta', 'error'); return; }
-  if (!confirm('PASKUTINIS patvirtinimas: trinti negrįžtamai?')) return;
+  if (!(await appConfirm('PASKUTINIS patvirtinimas: trinti negrįžtamai?'))) return;
   const { data, error } = await sb.rpc('admin_delete_kid_cascade', { p_kid: kidId });
   if (error){ showToast(ico('klaida')+' ' + error.message, 'error'); return; }
   alert('✅ ' + (data || 'Ištrinta.'));
@@ -24680,7 +24773,7 @@ async function loadAdminPlatform(){
   if (annEl) annEl.innerHTML = `
     <select class="inp" id="ap-ann-type" style="margin:0 0 8px;width:150px;padding:7px;">
       <option value="info" ${(!ann || ann.type !== 'warning') ? 'selected' : ''}>ℹ️ Informacija</option>
-      <option value="warning" ${(ann && ann.type === 'warning') ? 'selected' : ''}>${ico('ispejimas')} Įspėjimas</option>
+      <option value="warning" ${(ann && ann.type === 'warning') ? 'selected' : ''}>⚠️ Įspėjimas</option>
     </select>
     <textarea class="inp" id="ap-ann-text" rows="2" placeholder="Skelbimo tekstas visoms rolėms..." style="margin:0 0 8px;resize:vertical;">${_aaiEsc(ann?.text || '')}</textarea>
     <div style="display:flex;gap:8px;">
@@ -25410,7 +25503,7 @@ async function _pickKidToGroup(kidId, groupId){
   } catch(e){ console.error('[add-kid-group]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 async function _clubRemoveKidFromGroup(kidId, groupId){
-  if(!confirm('Pašalinti vaiką iš grupės? Liks be trenerio, kol priskirsi iš naujo.')) return;
+  if(!(await appConfirm('Pašalinti vaiką iš grupės? Liks be trenerio, kol priskirsi iš naujo.'))) return;
   try {
     const { error } = await sb.rpc('remove_kid_from_group', { p_kid: kidId });
     if (error) throw error;
@@ -25504,7 +25597,7 @@ async function submitClubGroup(groupId){
 
 async function deleteClubGroup(groupId){
   if (_ownerOnly()) return;
-  if (!confirm('Ištrinti grupę? Vaikai liks be grupės — reikės priskirti iš naujo.')) return;
+  if (!(await appConfirm('Ištrinti grupę? Vaikai liks be grupės — reikės priskirti iš naujo.'))) return;
   try {
     // Švariai atkabinam kiekvieną vaiką (valo group_id + assigned_trainer_id + kid_trainers per RPC)
     const { data: _gk } = await sb.from('kids').select('id').eq('group_id', groupId);
@@ -25584,7 +25677,7 @@ async function loadClubInactiveKids(){
 }
 
 async function _clubRejectKid(kidId){
-  const note = prompt('Kodėl atmetama anketa? (tėvas matys ir galės pataisyti, pvz. „neteisingas diržas")');
+  const note = await appPrompt('Kodėl atmetama anketa? (tėvas matys ir galės pataisyti, pvz. „neteisingas diržas")');
   if (note === null) return; // atšaukta
   if (!note.trim()){ showToast(ico('klaida')+' Parašyk priežastį','error'); return; }
   try {
@@ -25880,7 +25973,7 @@ async function saveTrainerEdit(tid){
 
 async function suspendTrainer(tid, name){
   if (_ownerOnly()) return;
-  if (!confirm(`Sustabdyti trenerį "${name}"?\n\nJis nebegalės prisijungti. Vaikai liks priskirti — gali juos perskirti vėliau.`)) return;
+  if (!(await appConfirm(`Sustabdyti trenerį "${name}"?\n\nJis nebegalės prisijungti. Vaikai liks priskirti — gali juos perskirti vėliau.`))) return;
   const { error } = await sb.from('profiles').update({ status:'suspended' }).eq('id', tid);
   if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
   showToast(ico('patvirtinta')+' Treneris sustabdytas','success');
@@ -26305,7 +26398,7 @@ async function addExpToKid(kidId, expAmount) {
 
 // Treneris atmeta dvikovą
 async function rejectDuel(duelId) {
-  if (!confirm('Atmesti šią dvikovą? Vaikai turės įvesti rezultatus iš naujo.')) return;
+  if (!(await appConfirm('Atmesti šią dvikovą? Vaikai turės įvesti rezultatus iš naujo.'))) return;
   
   const { error } = await sb.from('duels')
     .update({ status: 'active', challenger_value: null, opponent_value: null })
@@ -26384,7 +26477,7 @@ async function openCreateChallenge(prefill) {
   document.querySelector('#cc-icons .ch').classList.add('on');
   
   // Pradinė help žinutė
-  document.getElementById('cc-content-help').textContent = CHALLENGE_CONTENT_CONFIG.achievement.label;
+  document.getElementById('cc-content-help').innerHTML = CHALLENGE_CONTENT_CONFIG.achievement.label; // innerHTML — label turi SVG ikoną
   document.getElementById('cc-target-value').placeholder = CHALLENGE_CONTENT_CONFIG.achievement.placeholder;
   
   // Užkrauti grupes ir vaikus
@@ -26570,7 +26663,7 @@ function selectChallengeContentType(el, contentType) {
   document.getElementById('cc-content-type').value = contentType;
   
   const config = CHALLENGE_CONTENT_CONFIG[contentType];
-  document.getElementById('cc-content-help').textContent = config.label;
+  document.getElementById('cc-content-help').innerHTML = config.label; // innerHTML — label turi SVG ikoną
   document.getElementById('cc-target-unit').value = config.unit;
   document.getElementById('cc-target-value').placeholder = config.placeholder;
   
@@ -27528,7 +27621,7 @@ function openTrChallengesAll() {
 }
 
 async function freezeChallenge(challengeId) {
-  if (!confirm('Užšaldyti šį iššūkį? Vaikai nebegalės dalyvauti.')) return;
+  if (!(await appConfirm('Užšaldyti šį iššūkį? Vaikai nebegalės dalyvauti.'))) return;
   // Užšaldom ir patį iššūkį, ir visas vaikų kopijas (grupės iššūkis). trainer_id — apsauga (gynyba sluoksniais).
   const { error } = await sb.from('challenges').update({ is_active: false })
     .eq('trainer_id', currentUser.id)
@@ -27559,7 +27652,7 @@ async function unfreezeChallenge(challengeId) {
 }
 
 async function deleteChallenge(challengeId, title) {
-  if (!confirm(`Ar tikrai ištrinti iššūkį "${title}"?\n\nVisi pateikimai (laukiantys ir patvirtinti) bus IŠTRINTI!\n\nVaikams jau priskirti EXP NEBUS atimti.`)) return;
+  if (!(await appConfirm(`Ar tikrai ištrinti iššūkį "${title}"?\n\nVisi pateikimai (laukiantys ir patvirtinti) bus IŠTRINTI!\n\nVaikams jau priskirti EXP NEBUS atimti.`))) return;
 
   // Triname ir patį iššūkį, ir visas vaikų kopijas (kad vaikams dingtų). trainer_id — apsauga.
   const { data, error } = await sb.from('challenges').delete()
@@ -27873,7 +27966,7 @@ async function approveChallengeSubmission(subId) {
 }
 
 async function rejectChallengeSubmission(subId) {
-  const reason = prompt('Atmetimo priežastis (neprivaloma):') || 'Be priežasties';
+  const reason = await appPrompt('Atmetimo priežastis (neprivaloma):') || 'Be priežasties';
   
   const { error } = await sb.from('challenge_submissions')
     .update({ 
@@ -27931,7 +28024,7 @@ async function approveCampConf(eventId, kidId){
   showToast(ico('patvirtinta')+' Patvirtinta! EXP pridėtas vaikui.','success',4000);
   // 🔔 Push vaikui, kad gavo EXP (net su uždarytu appsu)
   sb.from('kids').select('user_id').eq('id', kidId).maybeSingle()
-    .then(({data})=>{ if(data?.user_id) _pushToUser(data.user_id, ''+ico('patvirtinta')+' Stovykla patvirtinta!', 'Treneris patvirtino tavo dalyvavimą — gavai EXP! '+ico('gimtadienis')+'', '/'); }).catch(()=>{});
+    .then(({data})=>{ if(data?.user_id) _pushToUser(data.user_id, '✅ Stovykla patvirtinta!', 'Treneris patvirtino tavo dalyvavimą — gavai EXP! 🎉', '/'); }).catch(()=>{});
   loadPendingKidForms();  // stovyklų kortelės gyvena „${ico('stovykla')} Stovyklos" (forms) tabe
 }
 
@@ -28068,7 +28161,7 @@ async function approveCompetitionResult(resultId) {
 }
 
 async function rejectCompetitionResult(resultId) {
-  const reason = prompt('Atmetimo priežastis (neprivaloma):') || 'Neteisingas rezultatas';
+  const reason = await appPrompt('Atmetimo priežastis (neprivaloma):') || 'Neteisingas rezultatas';
   
   const { error } = await sb.from('competition_results')
     .update({ 
@@ -28820,6 +28913,12 @@ function closeExercises() {
 
 async function submitExerciseResult() {
   if (!currentExercise || !currentExercise.target) return;
+
+  // ⚡ W1-4 (F1-07): mygtuko busy guard — dedup patikra async, dvigubas paspaudimas spėdavo praeiti
+  const _sbtn = document.getElementById('exo-form-submit');
+  if (_sbtn) { if (_sbtn.dataset.busy) return; _sbtn.dataset.busy = '1'; _sbtn.disabled = true; _sbtn.style.opacity = '.6'; }
+  const _sfree = () => { if (_sbtn) { _sbtn.dataset.busy = ''; _sbtn.disabled = false; _sbtn.style.opacity = '1'; } };
+
   const _raw = (document.getElementById('exo-form-new').value || '').trim().replace(',', '.');
   const newVal = parseFloat(_raw);
   const comment = document.getElementById('exo-form-comment').value.trim();
@@ -28828,17 +28927,24 @@ async function submitExerciseResult() {
 
   if (_raw === '' || isNaN(newVal)) {
     showToast(ico('klaida')+' Įvesk rezultatą', 'error');
-    return;
+    _sfree(); return;
   }
   if (!lower && newVal <= 0) {
     showToast(ico('klaida')+' Rezultatas turi būti didesnis už 0', 'error');
-    return;
+    _sfree(); return;
   }
   if (lower && newVal < 0) {
     showToast(ico('klaida')+' Rezultatas negali būti neigiamas', 'error');
-    return;
+    _sfree(); return;
   }
-  
+
+  // ⚡ W1-4 (F1-03): viršutinė riba — 99999-tipo reikšmės neteršia trenerio eilės ir negali farm'inti EXP
+  const _cTop = parseFloat(currentExercise.target?.completed);
+  if (!lower && isFinite(_cTop) && _cTop > 0 && newVal > _cTop * 3) {
+    showToast(ico('klaida')+` Reikšmė įtartinai didelė (maks. priimama ${_cTop * 3} — 3× virš aukščiausio tikslo). Patikrink įvestį.`, 'error', 5000);
+    _sfree(); return;
+  }
+
   // Validuojam PR
   let isPR = false;
   if (lower) {
@@ -28846,10 +28952,10 @@ async function submitExerciseResult() {
   } else {
     isPR = newVal > oldPr;
   }
-  
+
   if (!isPR) {
     showToast(lower ? ico('klaida')+' Rezultatas turi būti mažesnis už PR' : ico('klaida')+' Rezultatas turi būti didesnis už PR', 'error');
-    return;
+    _sfree(); return;
   }
 
   // M:N: surasti VISUS vaiko trenerius
@@ -28862,20 +28968,20 @@ async function submitExerciseResult() {
     .eq('status', 'pending');
   if ((pendSubs || []).some(p => p.exercise_id === currentExercise.id)) {
     showToast(''+ico('laukia')+' Šio pratimo rezultatas jau laukia trenerio patvirtinimo', 'error', 4000);
-    return;
+    _sfree(); return;
   }
   if ((pendSubs || []).length >= 5) {
     showToast(`${ico('patinka')} Jau laukia ${pendSubs.length} pateikimai — palauk, kol treneris patvirtins`, 'error', 4500);
-    return;
+    _sfree(); return;
   }
-  
+
   const { data: trainers } = await sb.from('kid_trainers')
     .select('trainer_id, role, profiles!kid_trainers_trainer_id_fkey(first_name, last_name)')
     .eq('kid_id', kidId)
     .order('role'); // primary first
-  
+
   let trainersList = trainers || [];
-  
+
   // Fallback į legacy jei kid_trainers tuščia
   if (trainersList.length === 0 && currentKid?.assigned_trainer_id) {
     trainersList = [{
@@ -28884,19 +28990,20 @@ async function submitExerciseResult() {
       profiles: null
     }];
   }
-  
+
   if (trainersList.length === 0) {
     showToast(ico('klaida')+' Treneris dar nepriskirtas. Susisiek su klubu.', 'error', 4000);
-    return;
+    _sfree(); return;
   }
-  
+
   // Jei tik 1 treneris - siunčiam tiesiai
   if (trainersList.length === 1) {
     await sendSubmissionToTrainer(trainersList[0].trainer_id, newVal, oldPr, comment, lower);
-    return;
+    _sfree(); return;
   }
-  
-  // Daugiau nei 1 treneris - rodom modal'ą su pasirinkimu
+
+  // Daugiau nei 1 treneris - rodom modal'ą su pasirinkimu (mygtuką atlaisvinam — modalas perima)
+  _sfree();
   showTrainerSelectModal(trainersList, newVal, oldPr, comment, lower);
 }
 
@@ -28952,7 +29059,11 @@ async function selectTrainerAndSubmit(trainerId) {
   await sendSubmissionToTrainer(trainerId, newVal, oldPr, comment, lower);
 }
 
+let _subSending = false; // ⚡ W1-4: insert race guard — vienas pateikimas vienu metu
 async function sendSubmissionToTrainer(trainerId, newVal, oldPr, comment, lower) {
+  if (_subSending) return;
+  _subSending = true;
+  try {
   const kidId = currentKid?.id || currentUser.id;
   const t = currentExercise.target;
 
@@ -28995,9 +29106,12 @@ async function sendSubmissionToTrainer(trainerId, newVal, oldPr, comment, lower)
 
   showToast(ico('patvirtinta')+' Išsiųsta treneriui patvirtinti!', 'success', 3000);
   playSound('send');
-  notifyTrainersNewSubmission(''+ico('treniruote')+' Naujas karjeros rezultatas', 'pateikė rezultatą — laukia patvirtinimo');
+  notifyTrainersNewSubmission('🏋️ Naujas karjeros rezultatas', 'pateikė rezultatą — laukia patvirtinimo');
   closeExercises();
   await loadKidPendingSubmissions();
+  } finally {
+    _subSending = false; // ⚡ W1-4
+  }
 }
 
 // ════════════════════════════════════════
@@ -30275,6 +30389,42 @@ async function isPushEnabled() {
 // — efektai paleidžiami sinchroniškai su pranešimo pasirodymu (ne visi iškart).
 let _toastQueue = [];
 let _toastShowing = false;
+
+// ═══════════════════════════════════════════
+// ⚡ W1-3 (F5-01): App-stiliaus confirm/prompt.
+// Natyvūs confirm()/prompt() PWA/webview aplinkose užšaldo renderer'į — NENAUDOTI.
+// appConfirm(msg) → Promise<boolean>; appPrompt(msg, pradinė) → Promise<string|null>
+// ═══════════════════════════════════════════
+function _appDialog(cfg){
+  const { message, withInput = false, inputValue = '', placeholder = '', okText = 'GERAI', cancelText = 'Atšaukti' } = cfg || {};
+  return new Promise(resolve => {
+    const old = document.getElementById('app-dialog-overlay');
+    if (old) old.remove();
+    const wrap = document.createElement('div');
+    wrap.id = 'app-dialog-overlay';
+    wrap.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px;';
+    const msgHtml = escapeHtml(String(message == null ? '' : message)).replace(/\n/g, '<br>');
+    wrap.innerHTML = `
+      <div style="max-width:340px;width:100%;background:var(--card,#17171c);border:.5px solid var(--bdr,rgba(255,255,255,.12));border-radius:18px;padding:20px 18px;box-shadow:0 24px 60px rgba(0,0,0,.6);">
+        <div style="font-size:13.5px;color:#fff;line-height:1.55;margin-bottom:14px;">${msgHtml}</div>
+        ${withInput ? `<input id="app-dialog-inp" class="inp" style="width:100%;margin:0 0 14px;" value="${escapeHtml(inputValue == null ? '' : String(inputValue))}" placeholder="${escapeHtml(placeholder || '')}">` : ''}
+        <div style="display:flex;gap:8px;">
+          <button id="app-dialog-cancel" style="flex:1;background:transparent;border:.5px solid var(--bdr,rgba(255,255,255,.15));color:var(--mut,#9a9aa5);padding:12px;border-radius:12px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">${escapeHtml(cancelText)}</button>
+          <button id="app-dialog-ok" style="flex:1;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:#fff;padding:12px;border-radius:12px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">${escapeHtml(okText)}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+    const inp = document.getElementById('app-dialog-inp');
+    if (inp) { try { inp.focus(); inp.select(); } catch(e){} }
+    const done = (val) => { wrap.remove(); resolve(val); };
+    document.getElementById('app-dialog-ok').onclick = () => done(withInput ? (inp ? inp.value : '') : true);
+    document.getElementById('app-dialog-cancel').onclick = () => done(withInput ? null : false);
+    wrap.onclick = (e) => { if (e.target === wrap) done(withInput ? null : false); };
+    if (inp) inp.onkeydown = (e) => { if (e.key === 'Enter') done(inp.value); };
+  });
+}
+function appConfirm(message, opts){ return _appDialog(Object.assign({ message }, opts || {})); }
+function appPrompt(message, inputValue, opts){ return _appDialog(Object.assign({ message, withInput: true, inputValue: inputValue || '' }, opts || {})); }
 
 function showToast(msg, type='', duration=null, opts=null){
   // 🔒 RLS klaidas (serverio „nėra prieigos") paverčiam draugišku pranešimu — nesvarbu kur atsirado
@@ -31905,14 +32055,25 @@ async function loadAllNotifications(force) {
   }
 
   // ✅ PATVIRTINTI IŠŠŪKIAI → 🎯 Iššūkiai
-  const challengeTypeLabels = {
-    training: ''+ico('treniruote')+' Treniruotės', 
-    weekly: ''+ico('greitis')+' Savaitinis', 
-    monthly: ''+ico('menesinis')+' Mėnesinis', 
-    oneoff: ''+ico('zvaigzde')+' Vienkartinis',
-    one_time: ''+ico('zvaigzde')+' Vienkartinis',
-    permanent: ''+ico('kartoti')+' Nuolatinis'
+  // Ikona ir žodis laikomi ATSKIRAI — SVG markup negalima split'inti ar dėti į title tekstą
+  const challengeTypeWords = {
+    training: 'Treniruotės',
+    weekly: 'Savaitinis',
+    monthly: 'Mėnesinis',
+    oneoff: 'Vienkartinis',
+    one_time: 'Vienkartinis',
+    permanent: 'Nuolatinis'
   };
+  const challengeTypeIcons = {
+    training: ico('treniruote'),
+    weekly: ico('greitis'),
+    monthly: ico('menesinis'),
+    oneoff: ico('zvaigzde'),
+    one_time: ico('zvaigzde'),
+    permanent: ico('kartoti')
+  };
+  const challengeTypeLabels = {};
+  Object.keys(challengeTypeWords).forEach(k => { challengeTypeLabels[k] = challengeTypeIcons[k] + ' ' + challengeTypeWords[k]; });
   
   (approvedChRes.data || []).forEach(s => {
     const typeLabel = challengeTypeLabels[s.challenges?.type] || ''+ico('tikslas')+' Iššūkis';
@@ -32016,12 +32177,11 @@ async function loadAllNotifications(force) {
     }
     
     if (eligible) {
-      const typeLabel = challengeTypeLabels[ch.type] || ''+ico('tikslas')+' Iššūkis';
-      const typeIcon = (challengeTypeLabels[ch.type] || ''+ico('tikslas')+'').split(' ')[0]; // tik emoji
+      const typeIcon = challengeTypeIcons[ch.type] || ico('tikslas'); // tik ikona (be split — SVG markup)
       issukiai.push({
         id: `newCh-${ch.id}`,
         icon: typeIcon,
-        title: `Naujas ${challengeTypeLabels[ch.type]?.split(' ')[1]?.toLowerCase() || ''} iššūkis`,
+        title: `Naujas ${challengeTypeWords[ch.type]?.toLowerCase() || ''} iššūkis`,
         body: `${ch.title || 'Iššūkis'}${ch.exp_reward ? ' · +' + ch.exp_reward + ' EXP' : ''}`,
         time: ch.created_at,
         link: 'v-ish'
@@ -32607,7 +32767,7 @@ async function openKidSettings() {
 
         <!-- ATSIJUNGTI -->
         <div style="padding:6px 16px 20px;">
-          <button onclick="if(confirm('Ar tikrai atsijungti?')){document.getElementById('kid-settings-modal').remove();doLogout();}" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(255,77,0,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
+          <button onclick="appConfirm('Ar tikrai atsijungti?').then(function(ok){if(ok){document.getElementById('kid-settings-modal').remove();doLogout();}})" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(255,77,0,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
         </div>
         
         <!-- App info -->

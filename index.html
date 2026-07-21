@@ -80,7 +80,7 @@ window.addEventListener('unhandledrejection', function(e) {
       script.src = cdn.url;
       script.onload = () => {
         if (window.supabase && window.supabase.createClient) {
-          console.log('<svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> Supabase užkrautas iš:', cdn.name);
+          console.log('✅ Supabase užkrautas iš:', cdn.name);
           resolve();
         } else {
           console.warn('<svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> Script užkrautas iš ' + cdn.name + ' bet supabase global nerastas, bandom toliau');
@@ -97,7 +97,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=370">
+<link rel="stylesheet" href="styles.css?v=371">
 </head>
 <body>
 
@@ -263,7 +263,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v370</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v371</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg> PILNAS MOBILE</button>
@@ -3989,7 +3989,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="sa">
     <div id="a-users-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
-        <input class="inp" id="au-search" placeholder="<svg class="ico" aria-hidden="true"><use href="#i-paieska"></use></svg> Vardas..." style="margin:0;flex:1;min-width:150px;max-width:260px;padding:8px 11px;" oninput="renderAdminUsers()">
+        <input class="inp" id="au-search" placeholder="🔍 Vardas..." style="margin:0;flex:1;min-width:150px;max-width:260px;padding:8px 11px;" oninput="renderAdminUsers()">
         <button class="aerr-f au-f on" data-f="all" onclick="setAuFilter('all')">Visi</button>
         <button class="aerr-f au-f" data-f="parent" onclick="setAuFilter('parent')">Tėvai</button>
         <button class="aerr-f au-f" data-f="trainer" onclick="setAuFilter('trainer')">Treneriai</button>
@@ -4231,10 +4231,10 @@ window.addEventListener('unhandledrejection', function(e) {
           Fiksuoti taškai už elgesį / aktyvumą / pasiekimą treniruotėje. Trackinama kaip <b style="color:rgba(255,255,255,.75);">EXP gavimas</b> — matosi vaiko ir tėvų sraute su priežastimi. Sumos fiksuotos, kad būtų sąžininga.
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
-          <button class="kdbe-btn" data-amt="25" onclick="kdSelectBehavior(25,'Geras elgesys','Geras elgesys treniruotėje <svg class="ico" aria-hidden="true"><use href="#i-patinka"></use></svg>')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-patinka"></use></svg> +25 Geras elgesys</button>
-          <button class="kdbe-btn" data-amt="10" onclick="kdSelectBehavior(10,'Aktyvus dalyvavimas','Labai aktyviai dirbo treniruotėje <svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg>')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> +10 Aktyvumas</button>
-          <button class="kdbe-btn" data-amt="50" onclick="kdSelectBehavior(50,'Pasiekimas treniruotėje','Šaunus pasiekimas treniruotėje <svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg>')" style="background:rgba(34,197,94,.2);color:var(--grn);border:.5px solid rgba(34,197,94,.4);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg> +50 Pasiekimas</button>
-          <button class="kdbe-btn" data-amt="-10" onclick="kdSelectBehavior(-10,'Drausmės pažeidimas','Drausmės pastaba — verta pakalbėti <svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg>')" style="background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> -10 Drausmė</button>
+          <button class="kdbe-btn" data-amt="25" onclick="kdSelectBehavior(25,'Geras elgesys','Geras elgesys treniruotėje 👏')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-patinka"></use></svg> +25 Geras elgesys</button>
+          <button class="kdbe-btn" data-amt="10" onclick="kdSelectBehavior(10,'Aktyvus dalyvavimas','Labai aktyviai dirbo treniruotėje 🔥')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> +10 Aktyvumas</button>
+          <button class="kdbe-btn" data-amt="50" onclick="kdSelectBehavior(50,'Pasiekimas treniruotėje','Šaunus pasiekimas treniruotėje ⭐')" style="background:rgba(34,197,94,.2);color:var(--grn);border:.5px solid rgba(34,197,94,.4);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg> +50 Pasiekimas</button>
+          <button class="kdbe-btn" data-amt="-10" onclick="kdSelectBehavior(-10,'Drausmės pažeidimas','Drausmės pastaba — verta pakalbėti ⚠️')" style="background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> -10 Drausmė</button>
         </div>
         <textarea class="inp" id="kd-be-reason" rows="2" placeholder="Priežastis (matys vaikas ir tėvai)..." style="width:100%;resize:vertical;font-family:inherit;font-size:13px;margin:0 0 8px;"></textarea>
         <div id="kd-be-selected" style="font-size:11px;color:var(--mut);text-align:center;margin-bottom:8px;">↑ Pasirink taškus</div>
@@ -4388,7 +4388,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=370"></script>
+<script src="app.js?v=371"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
