@@ -147,6 +147,18 @@ async function init() {
       currentProfile = null;
       currentKid = null;
       _kidTier = null; // ⚡ W1-5: kito vaiko tier nepersineša per account-switch
+      // ⚡ W2-9 (F4-01): uždaryti visus atidarytus modalus/overlay — kito vartotojo PII
+      // negali likti ekrane po atsijungimo. Statiniai modalai TIK paslepiami (bus perpanaudoti).
+      try {
+        document.querySelectorAll('[id$="-modal"], .modal-overlay').forEach(m => {
+          if (m.id === 'toast') return;
+          m.style.display = 'none';
+        });
+        ['app-dialog-overlay', 'ch-trainer-pick', 'camp-trainer-pick', 'club-acct-menu'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.remove(); // dinaminiai — kūrėjai juos atkuria iš naujo
+        });
+      } catch (e) {}
       showLogin();
     }
   });
@@ -7975,18 +7987,11 @@ async function renderProfileExtras() {
   console.log('[teammates] el:', !!teammatesEl, 'group_id:', currentKid.group_id);
   if (teammatesEl && currentKid.group_id) {
     try {
-      // RLS-friendly: pirma profiles, tada kids per user_id
-      const { data: clubProfiles } = await sb.from('profiles')
-        .select('id')
-        .eq('club_id', resolveMyClubId()) // ⚡ W1-6 (F1-01)
-        .eq('role', 'kid');
-      
-      const profileIds = (clubProfiles || []).map(p => p.id);
-      
-      // VISI klubo vaikai su group_id
+      // ⚡ W2-1 (F1-13): kids-first — be-login vaikai (user_id NULL) anksčiau iškrisdavo,
+      // nes ėjom profiles→kids. RLS tiesioginę kids užklausą klubo/grupės scope LEIDŽIA (patikrinta E2E).
       const { data: clubKids } = await sb.from('kids')
-        .select('id, user_id, total_exp, kyu, is_anonymous, group_id, created_at, bio, karate_since, avatar_url')
-        .in('user_id', profileIds)
+        .select('id, user_id, first_name, last_name, total_exp, kyu, is_anonymous, group_id, created_at, bio, karate_since, avatar_url')
+        .eq('club_id', resolveMyClubId())
         .eq('approval_status', 'approved');
       
       // Filtruoti tik tos pačios grupės
@@ -8053,19 +8058,22 @@ async function renderProfileExtras() {
         console.error('[group info]', e);
       }
       
-      // Užkrauti vardus per profiles
-      const groupProfileIds = groupKids.map(k => k.user_id);
-      const { data: names } = await sb.from('profiles')
-        .select('id, first_name, last_name')
-        .in('id', groupProfileIds);
-      
+      // ⚡ W2-1: vardai kids-first; profiles tik fallback senoms paskyroms be kids.first_name
+      const needProfIds = groupKids.filter(k => !k.first_name && k.user_id).map(k => k.user_id);
       const namesMap = {};
-      (names || []).forEach(n => { namesMap[n.id] = n; });
-      
-      // Sujungti + rikiuoti pagal EXP
+      if (needProfIds.length > 0) {
+        const { data: names } = await sb.from('profiles')
+          .select('id, first_name, last_name')
+          .in('id', needProfIds);
+        (names || []).forEach(n => { namesMap[n.id] = n; });
+      }
+
+      // Sujungti + rikiuoti pagal EXP (paliekam .profiles formą — renderis jos tikisi)
       const allKids = groupKids.map(k => ({
         ...k,
-        profiles: namesMap[k.user_id] || null
+        profiles: (k.first_name || k.last_name)
+          ? { first_name: k.first_name, last_name: k.last_name }
+          : (namesMap[k.user_id] || null)
       })).sort((a, b) => (b.total_exp || 0) - (a.total_exp || 0));
       
       console.log('[teammates] allKids:', allKids.length);
@@ -13483,14 +13491,19 @@ function applyClubFlagGates(){
 let _clubKidsCache = null;
 async function _getClubKids(force){
   if (_clubKidsCache && !force) return _clubKidsCache;
-  if (!currentClub?.id) return [];
-  const [trRes, grpRes] = await Promise.all([
+  if (!currentClub?.id) return []; // NEkešuojam — currentClub dar neužsikrovęs (boot race)
+  const [trRes, grpRes, dirRes] = await Promise.all([
     sb.from('trainers').select('id').eq('invited_by_club_id', currentClub.id),
-    sb.from('groups').select('id').eq('club_id', currentClub.id)
+    sb.from('groups').select('id').eq('club_id', currentClub.id),
+    sb.from('kids').select('id').eq('club_id', currentClub.id) // ⚡ W2-5: tiesioginis kids.club_id kelias (struktūros modelio autoritetas)
   ]);
+  // ⚡ W2-5 (F4-02): bazinei užklausai grįžus su klaida NEkešuojam tuščio rezultato —
+  // kitaip visa sesija rodo „VAIKAI: 0" iki reload
+  const hadErr = !!(trRes.error || grpRes.error || dirRes.error);
   const trIds = (trRes.data||[]).map(t=>t.id);
   const grpIds = (grpRes.data||[]).map(g=>g.id);
   const kidIds = new Set();
+  (dirRes.data||[]).forEach(k=>kidIds.add(k.id));
   if (trIds.length){
     const [a, b] = await Promise.all([
       sb.from('kids').select('id').in('assigned_trainer_id', trIds),
@@ -13504,8 +13517,9 @@ async function _getClubKids(force){
     (data||[]).forEach(k=>kidIds.add(k.id));
   }
   const ids = [...kidIds];
-  if (!ids.length){ _clubKidsCache = []; return []; }
-  const { data: kids } = await sb.from('kids').select('id, first_name, last_name, group_id').in('id', ids).order('first_name');
+  if (!ids.length){ if (!hadErr) _clubKidsCache = []; return []; }
+  const { data: kids, error: kidsErr } = await sb.from('kids').select('id, first_name, last_name, group_id').in('id', ids).order('first_name');
+  if (kidsErr) return kids || []; // klaida — grąžinam ką turim, bet NEkešuojam
   _clubKidsCache = kids || [];
   return _clubKidsCache;
 }
@@ -16516,50 +16530,55 @@ function buildCacheKey(prefix, scope, season, filters) {
   return `${prefix}::${scope}::${season}::${JSON.stringify(filters)}`;
 }
 
-async function getFilteredKidEntries(scoreSource, scoreField) {
-  // CACHE - tas pats užklausos derinys saugomas 30s
+async function getFilteredKidEntries(scoreSource, scoreField, fl, season, clubIdOverride) {
+  // ⚡ W2-4 (F2-06): filtrai gali ateiti PARAMETRU (treneris/klubas/tėvas) — nebe globalaus
+  // statFilters swap, kuris lygiagrečiuose kvietimuose lenktyniaudavo ir statistika neužsikraudavo.
+  fl = fl || statFilters;
+  season = season || statSeasonFilter;
   const cacheKey = buildCacheKey(
-    `entries:${scoreSource}`, 
-    statFilters.scope,
-    statSeasonFilter,
+    `entries:${scoreSource}`,
+    fl.scope,
+    season,
     {
-      gender: statFilters.gender,
-      ageGroup: statFilters.ageGroup,
-      skillId: statFilters.skillId,
-      weight: statFilters.weight,
-      clubId: resolveMyClubId() || 'all' // ⚡ W1-6: kešo raktas su tikru klubo ID
+      gender: fl.gender,
+      ageGroup: fl.ageGroup,
+      skillId: fl.skillId,
+      weight: fl.weight,
+      clubId: clubIdOverride || resolveMyClubId() || 'all' // ⚡ W1-6: kešo raktas su tikru klubo ID
     }
   );
-  
+
   return statCacheGet(cacheKey, async () => {
-    return await _getFilteredKidEntriesUncached(scoreSource, scoreField);
+    return await _getFilteredKidEntriesUncached(scoreSource, scoreField, fl, season, clubIdOverride);
   });
 }
 
-async function _getFilteredKidEntriesUncached(scoreSource, scoreField) {
+async function _getFilteredKidEntriesUncached(scoreSource, scoreField, fl, season, clubIdOverride) {
   // scoreSource: 'total_exp' | 'kid_records' | 'challenge_submissions' | 'competition_results'
   // 🚀 Serverio RPC leaderboard_entries: filtruoja + sumuoja + ANONIMIZUOJA serveryje.
   //    Anksčiau traukdavo VISŲ vaikų PII (last_name, birth_date, weight_range) į klientą ir
   //    filtruodavo JS'e → K-61 GDPR nutekėjimas + 4× pilni kids skenai. Dabar 1 saugus kvietimas.
-  const g = AGE_GROUPS.find(x => x.id === statFilters.ageGroup) || AGE_GROUPS[0];
+  fl = fl || statFilters;         // ⚡ W2-4: filtrai parametru
+  season = season || statSeasonFilter;
+  const g = AGE_GROUPS.find(x => x.id === fl.ageGroup) || AGE_GROUPS[0];
   // ⚡ W1-6: klubo ID per resolveMyClubId (vaikui/adminui profiles.club_id NULL → anksčiau
   // 'club' scope tyliai virsdavo GLOBALIU leaderboard'u su svetimų vaikų vardais)
-  const clubId = (statFilters.scope === 'club') ? resolveMyClubId() : null;
-  if (statFilters.scope === 'club' && !clubId) {
+  const clubId = (fl.scope === 'club') ? (clubIdOverride || resolveMyClubId()) : null;
+  if (fl.scope === 'club' && !clubId) {
     console.warn('[leaderboard] club scope be klubo ID — grąžinam tuščią (ne globalų!)');
     return [];
   }
-  const seasonFrom = (statSeasonFilter === 'season' && scoreSource !== 'total_exp')
+  const seasonFrom = (season === 'season' && scoreSource !== 'total_exp')
     ? getCurrentSeason().start.toISOString() : null;
 
   const { data, error } = await sb.rpc('leaderboard_entries', {
     p_scope_club_id: clubId,
     p_score_source: scoreSource,
-    p_gender: statFilters.gender || 'all',
+    p_gender: fl.gender || 'all',
     p_age_min: g.min,
     p_age_max: g.max,
-    p_weight: statFilters.weight || 'all',
-    p_skill: statFilters.skillId || null,
+    p_weight: fl.weight || 'all',
+    p_skill: fl.skillId || null,
     p_season_from: seasonFrom
   });
 
@@ -16912,38 +16931,19 @@ function switchParentStatTab(tabName, keepPage) {
 // Helper: gauti vaikų entries naudojant tėvų state'ą + vaiko klubą
 async function getParentFilteredKidEntries(scoreSource) {
   if (!currentParentKid?.id) return [];
-  
-  // Gauti vaiko klubo ID per user_id -> profiles
-  let kidClubId = null;
-  if (currentParentKid.user_id) {
+
+  // ⚡ W2-4 + W2-1: vaiko klubas PIRMIAUSIA iš kids.club_id (be-login vaikai turi tik jį);
+  // profiles — tik fallback. Ir viskas PARAMETRU — nebe currentProfile/statFilters swap.
+  let kidClubId = currentParentKid.club_id || null;
+  if (!kidClubId && currentParentKid.user_id) {
     const { data: kidProfile } = await sb.from('profiles')
       .select('club_id')
       .eq('id', currentParentKid.user_id)
       .maybeSingle();
     kidClubId = kidProfile?.club_id || null;
   }
-  
-  // Saugom dabartinius filtrus, perrašom su parent + kid club
-  const savedSeason = statSeasonFilter;
-  const savedFilters = { ...statFilters };
-  const savedProfile = currentProfile;
-  
-  statSeasonFilter = parentStatSeasonFilter;
-  Object.assign(statFilters, parentStatFilters);
 
-  // Laikinai pakeičiam currentProfile.club_id į vaiko klubą
-  if (kidClubId) {
-    currentProfile = { ...currentProfile, club_id: kidClubId };
-  }
-
-  try {
-    return await getFilteredKidEntries(scoreSource);
-  } finally {
-    // Atkurti VISADA — net jei getFilteredKidEntries meta klaidą (kitaip currentProfile liktų sugadintas → klubo painiava visur)
-    statSeasonFilter = savedSeason;
-    Object.assign(statFilters, savedFilters);
-    currentProfile = savedProfile;
-  }
+  return getFilteredKidEntries(scoreSource, undefined, { ...parentStatFilters }, parentStatSeasonFilter, kidClubId || undefined);
 }
 
 // Filtrų UI render (tėvų versija)
@@ -17268,18 +17268,9 @@ function switchTrainerStatTab(tabName) {
 
 // Helper - getEntries naudojant trainer state'ą
 async function getTrainerFilteredEntries(scoreSource) {
-  const savedSeason = statSeasonFilter;
-  const savedFilters = { ...statFilters };
-  
-  statSeasonFilter = trainerStatSeasonFilter;
-  Object.assign(statFilters, trainerStatFilters);
-  
-  const result = await getFilteredKidEntries(scoreSource);
-  
-  statSeasonFilter = savedSeason;
-  Object.assign(statFilters, savedFilters);
-  
-  return result;
+  // ⚡ W2-4 (F2-06): filtrai PARAMETRU — senasis globalus swap lygiagrečiuose Promise.all
+  // kvietimuose lenktyniaudavo ir trenerio statistika neužsikraudavo NIEKADA
+  return getFilteredKidEntries(scoreSource, undefined, { ...trainerStatFilters }, trainerStatSeasonFilter);
 }
 
 // Render filtrus + savi vaikai paryškinti + CSV mygtukas
@@ -17723,18 +17714,8 @@ function exportClubRevenueCSV(){
 }
 
 async function getClubFilteredEntries(scoreSource) {
-  const savedSeason = statSeasonFilter;
-  const savedFilters = { ...statFilters };
-  
-  statSeasonFilter = clubStatSeasonFilter;
-  Object.assign(statFilters, clubStatFilters);
-  
-  const result = await getFilteredKidEntries(scoreSource);
-  
-  statSeasonFilter = savedSeason;
-  Object.assign(statFilters, savedFilters);
-  
-  return result;
+  // ⚡ W2-4: filtrai parametru — be globalaus swap
+  return getFilteredKidEntries(scoreSource, undefined, { ...clubStatFilters }, clubStatSeasonFilter);
 }
 
 function renderClubFiltersUI(tabType) {
@@ -25257,7 +25238,12 @@ async function loadClubMainDashboard(){
   if (!currentClub?.id) return;
   const cid = currentClub.id;
   const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el){ if(typeof v==='string' && v.indexOf('<svg')!==-1) el.innerHTML=v; else el.textContent=v; } };
-  const clubKids = (typeof _getClubKids==='function') ? (await _getClubKids().catch(()=>[])) : [];
+  let clubKids = (typeof _getClubKids==='function') ? (await _getClubKids().catch(()=>[])) : [];
+  // ⚡ W2-5 (F4-02): boot metu galėjo užsikešuoti tuščias sąrašas (race su currentClub/klaida) —
+  // dashboard'e 0 vaikų yra įtartina, todėl vieną kartą persikraunam su force
+  if (!(clubKids||[]).length && typeof _getClubKids === 'function') {
+    clubKids = await _getClubKids(true).catch(()=>[]);
+  }
   const kidsCount = (clubKids||[]).length;
 
   // 1) TRENERIŲ ŠVIESOFORAS (club_trainer_activity: ≥7d 🔴 / ≥3d 🟡 / else 🟢)
@@ -26798,50 +26784,49 @@ async function submitNewChallenge() {
   let eligibleKids = [];
   
   if (audience === 'all_club') {
-    // Visi klubo vaikai - per profiles → kids
-    const { data: profiles, error: profErr } = await sb.from('profiles')
-      .select('id, first_name, last_name')
-      .eq('club_id', currentProfile.club_id)
-      .eq('role', 'kid');
-    
-    if (profErr) {
-      console.error('[challenge] Klaida kraunant klubą:', profErr);
+    // ⚡ W2-1 (F1-13/F2-01): kids-first — be-login vaikai (user_id NULL) anksčiau VISAI iškrisdavo,
+    // nes ėjom profiles→kids. Dabar tiesiai iš kids pagal club_id (RLS treneriui leidžia).
+    const { data: clubKidRows, error: kidsErrC } = await sb.from('kids')
+      .select('id, user_id, first_name, last_name, gender, group_id')
+      .eq('club_id', resolveMyClubId())
+      .eq('approval_status', 'approved');
+
+    if (kidsErrC) {
+      console.error('[challenge] Klaida kraunant klubą:', kidsErrC);
       btn.disabled = false;
       btn.textContent = 'SUKURTI IŠŠŪKĮ';
-      showToast(ico('klaida')+' Klaida: ' + profErr.message, 'error');
+      showToast(ico('klaida')+' Klaida: ' + kidsErrC.message, 'error');
       return;
     }
-    
-    const userIds = (profiles || []).map(p => p.id);
-    let kidsData = [];
-    if (userIds.length > 0) {
-      const { data: kids } = await sb.from('kids')
-        .select('id, user_id, gender, group_id')
-        .in('user_id', userIds);
-      kidsData = kids || [];
+
+    // Vardai kids-first; profiles tik fallback senoms paskyroms be kids.first_name
+    const needProfC = (clubKidRows || []).filter(k => !k.first_name && k.user_id).map(k => k.user_id);
+    const profilesMapC = {};
+    if (needProfC.length > 0) {
+      const { data: profiles } = await sb.from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', needProfC);
+      (profiles || []).forEach(p => { profilesMapC[p.id] = p; });
     }
-    
-    const profilesMap = {};
-    (profiles || []).forEach(p => { profilesMap[p.id] = p; });
-    
-    eligibleKids = kidsData.map(k => {
-      const p = profilesMap[k.user_id];
+
+    eligibleKids = (clubKidRows || []).map(k => {
+      const p = k.user_id ? profilesMapC[k.user_id] : null;
       return {
         id: k.id,
-        first_name: p?.first_name || 'Vaikas',
-        last_name: p?.last_name || '',
+        first_name: k.first_name || p?.first_name || 'Vaikas',
+        last_name: k.last_name || p?.last_name || '',
         gender: k.gender,
         group_id: k.group_id
       };
     });
-    
+
     console.log('[challenge] all_club eligibleKids:', eligibleKids.length);
   } else {
     // Grupė / berniukai / mergaitės
     const { data: groupKids, error: kidsErr } = await sb.from('kids')
-      .select('id, user_id, gender, group_id')
+      .select('id, user_id, first_name, last_name, gender, group_id')
       .eq('group_id', groupId);
-    
+
     if (kidsErr) {
       console.error('[challenge] Klaida kraunant grupes vaikus:', kidsErr);
       btn.disabled = false;
@@ -26849,11 +26834,11 @@ async function submitNewChallenge() {
       showToast(ico('klaida')+' Klaida kraunant grupę: ' + kidsErr.message, 'error', 5000);
       return;
     }
-    
+
     console.log('[challenge] groupKids found:', groupKids?.length, 'group_id:', groupId);
-    
-    // Užkraunam profilius atskirai
-    const userIds = (groupKids || []).map(k => k.user_id).filter(Boolean);
+
+    // ⚡ W2-1: vardai kids-first; profiles tik fallback (be-login vaikai rodė „Vaikas")
+    const userIds = (groupKids || []).filter(k => !k.first_name && k.user_id).map(k => k.user_id);
     let profilesMap = {};
     if (userIds.length > 0) {
       const { data: profiles } = await sb.from('profiles')
@@ -26861,13 +26846,13 @@ async function submitNewChallenge() {
         .in('id', userIds);
       (profiles || []).forEach(p => { profilesMap[p.id] = p; });
     }
-    
+
     eligibleKids = (groupKids || []).map(k => {
-      const p = profilesMap[k.user_id];
+      const p = k.user_id ? profilesMap[k.user_id] : null;
       return {
         id: k.id,
-        first_name: p?.first_name || 'Vaikas',
-        last_name: p?.last_name || '',
+        first_name: k.first_name || p?.first_name || 'Vaikas',
+        last_name: k.last_name || p?.last_name || '',
         gender: k.gender,
         group_id: k.group_id
       };
@@ -27334,50 +27319,46 @@ async function loadTrainerOwnChallenges() {
   console.log('🔍 [loadTrainerOwnChallenges] starting, user_id:', currentUser?.id);
   if (typeof _trainerGroupChallenges === 'function') _trainerGroupChallenges();
 
-  const { data: challenges, error } = await sb.from('challenges')
-    .select('*')
-    .eq('trainer_id', currentUser.id)
-    .order('created_at', { ascending: false });
-  
+  // ⚡ W2-8: getMyKidIds nepriklauso nuo challenges — abu startuoja lygiagrečiai
+  // (buvo 5 nuoseklios užklausos → ekranas ~10-15 s; dabar 2 bangos)
+  const [chRes, myKidIds] = await Promise.all([
+    sb.from('challenges')
+      .select('*')
+      .eq('trainer_id', currentUser.id)
+      .order('created_at', { ascending: false }),
+    getMyKidIds().catch(() => [])
+  ]);
+  const { data: challenges, error } = chRes;
+
   console.log('📦 [loadTrainerOwnChallenges] result:', { count: challenges?.length, error });
-  
+
   if (error) {
     console.error('loadTrainerOwnChallenges:', error);
     document.getElementById('tr-my-challenges-content').innerHTML =
       `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`;
     return;
   }
-  
-  // Atskirai užkrauti grupių vardus (RLS gali blokuoti JOIN)
+
   const groupIds = [...new Set((challenges || []).map(c => c.group_id).filter(Boolean))];
-  let groupsMap = {};
-  if (groupIds.length > 0) {
-    const { data: groupsData } = await sb.from('groups')
-      .select('id, name')
-      .in('id', groupIds);
-    (groupsData || []).forEach(g => { groupsMap[g.id] = g; });
-  }
-  
-  // Apskaičiuoti eligible vaikų skaičių per iššūkį
-  const myKidIds = await getMyKidIds();
-  let allMyKids = [];
-  if (myKidIds.length > 0) {
-    const { data: kidsData } = await sb.from('kids')
-      .select('id, gender, group_id')
-      .in('id', myKidIds)
-      .eq('approval_status', 'approved');
-    allMyKids = kidsData || [];
-  }
-  
-  // Surinkti submission'ų info per vieną užklausą
   const challengeIds = (challenges || []).map(c => c.id);
-  let allSubs = [];
-  if (challengeIds.length > 0) {
-    const { data: subsData } = await sb.from('challenge_submissions')
-      .select('challenge_id, status, kid_id')
-      .in('challenge_id', challengeIds);
-    allSubs = subsData || [];
-  }
+
+  // ⚡ W2-8: grupės (RLS gali blokuoti JOIN) + vaikai + pateikimai — 3 nepriklausomos užklausos lygiagrečiai
+  const [groupsRes, kidsRes, subsRes] = await Promise.all([
+    groupIds.length > 0
+      ? sb.from('groups').select('id, name').in('id', groupIds)
+      : Promise.resolve({ data: [] }),
+    (myKidIds || []).length > 0
+      ? sb.from('kids').select('id, gender, group_id').in('id', myKidIds).eq('approval_status', 'approved')
+      : Promise.resolve({ data: [] }),
+    challengeIds.length > 0
+      ? sb.from('challenge_submissions').select('challenge_id, status, kid_id').in('challenge_id', challengeIds)
+      : Promise.resolve({ data: [] })
+  ]);
+
+  let groupsMap = {};
+  (groupsRes.data || []).forEach(g => { groupsMap[g.id] = g; });
+  const allMyKids = kidsRes.data || [];
+  const allSubs = subsRes.data || [];
   
   // Suskaičiuoti dalyvių per iššūkį + apskaičiuoti eligible
   const subsByChallenge = {};
@@ -29219,6 +29200,10 @@ function nv(p,el,sid){
   if (sid === 'tr-challenges' && typeof loadTrainerOwnChallenges === 'function') {
     loadTrainerOwnChallenges();
   }
+  // ⚡ W2-6 (F2-02): grupių kortelės (laukiančių skaičiai) atsinaujina kaskart atidarius, ne tik login
+  if (sid === 'tr-groups' && typeof loadTrainerGroups === 'function') {
+    loadTrainerGroups();
+  }
   if (sid === 'k-events' && typeof loadClubCompetitions === 'function') {
     loadClubCompetitions();
     if (typeof loadClubBeltTests === 'function') loadClubBeltTests();
@@ -29312,29 +29297,49 @@ function _addSeen(sk, id) {
   try { localStorage.setItem('spobu_seen_' + sk, JSON.stringify(arr)); } catch (e) {}
 }
 
+// ⚡ W2-7 (F2-05): ar kur nors ekrane yra vartotojo įvestas tekstas? Reload jį sunaikintų.
+function _resumeInputOpen() {
+  try {
+    const els = document.querySelectorAll('input, textarea');
+    for (const el of els) {
+      if (!el.offsetParent) continue;                                  // nematomas
+      if (el.type === 'checkbox' || el.type === 'radio' || el.readOnly) continue;
+      if ((el.value || '').trim()) return true;                        // yra įvestis
+    }
+  } catch (e) {}
+  return false;
+}
+
+// ⚡ W2-7: vienas ping bandymas su nurodytu timeout
+async function _resumePing(timeoutMs) {
+  try {
+    const pingPromise = sb.from('kids').select('id').limit(1);
+    const timeoutPromise = new Promise((_, rej) =>
+      setTimeout(() => rej(new Error('timeout')), timeoutMs)
+    );
+    const result = await Promise.race([pingPromise, timeoutPromise]);
+    return !!(result && !result.error); // atsakė be klaidos — DB ryšys gyvas
+  } catch (e) {
+    return false;
+  }
+}
+
 async function handleAppResume() {
   if (!currentUser || !sb) {
     return;
   }
 
-  // 1) GREITAS ryšio patikrinimas su 2.5 sek timeout
-  // SVARBU: tikram DB ryšiui tikrinti naudojam TIKRĄ užklausą, ne getSession
-  // (getSession grąžina sesiją iš atminties net jei tinklo ryšys miręs)
-  let connectionAlive = false;
-  try {
-    const pingPromise = sb.from('kids').select('id').limit(1);
-    const timeoutPromise = new Promise((_, rej) =>
-      setTimeout(() => rej(new Error('timeout')), 2500)
-    );
-    const result = await Promise.race([pingPromise, timeoutPromise]);
-    // Jei užklausa atsakė be klaidos - DB ryšys gyvas
-    connectionAlive = !!(result && !result.error);
-  } catch (e) {
-    connectionAlive = false;
-  }
-  
+  // 1) Ryšio patikrinimas — TIKRA užklausa, ne getSession (tas grąžina sesiją iš atminties).
+  // ⚡ W2-7 (F2-05): timeout 2.5s → 7s + 1 retry; reload TIK po 2 nesėkmių (lėtas tinklas ≠ miręs tinklas)
+  let connectionAlive = await _resumePing(7000);
+  if (!connectionAlive) connectionAlive = await _resumePing(8000);
 
   if (!connectionAlive) {
+    // ⚡ W2-7: NIEKADA nereload'inam ant vartotojo įvesties — geriau palikti seną vaizdą
+    if (_resumeInputOpen()) {
+      try { showToast(''+ico('signalas')+' Ryšio problema — duomenys neatnaujinti (tavo įvestis išsaugota)', 'error', 4500); } catch(_){}
+      return;
+    }
     try { showToast(''+ico('signalas')+' Ryšys atsistato — perkraunama...', 'info', 1400); } catch(_){}
     setTimeout(() => location.reload(), 1500);
     return;
@@ -29407,9 +29412,10 @@ async function handleAppResume() {
     }
 
   } catch (e) {
-    console.error('[resume] klaida — perkraunam:', e);
-    try { showToast(ico('atnaujinti')+' Atnaujinama...', 'info', 1400); } catch(_){}
-    setTimeout(() => location.reload(), 1500);
+    // ⚡ W2-7 (F2-05): loaderio klaida NEBE reload — toast + paliekam esamą vaizdą
+    // (reload čia prarasdavo pildomas formas; kitas resume/navigacija atnaujins)
+    console.error('[resume] loaderio klaida (be reload):', e);
+    try { showToast(ico('ispejimas')+' Nepavyko atnaujinti dalies duomenų — patikrink ryšį', 'error', 4000); } catch(_){}
   }
 }
 
@@ -30599,8 +30605,9 @@ function goBackFromMessages() {
   let mainScreenId;
   if (currentProfile?.role === 'trainer') mainScreenId = 'tr-main';
   else if (currentProfile?.role === 'club_admin') mainScreenId = 'k-main';
+  else if (currentProfile?.role === 'kid') mainScreenId = 'v-main'; // ⚡ W2-3 (F1-12): vaikas grįžta į SAVO portalą, ne į tėvų
   else mainScreenId = 't-main';
-  
+
   const mainScreen = document.getElementById(mainScreenId);
   if (mainScreen) mainScreen.classList.add('on');
 }
@@ -31178,6 +31185,22 @@ let composeContext = {
   recipientLabel: '' // UI label
 };
 
+// ⚡ W2-2 (F2-04): konteksto kopija laikoma modalo DOM dataset'e — išgyvena globalo resetą
+// (storm/re-init nebegali nunulinti parentIds/groupId tarp atidarymo ir SIŲSTI).
+function _composeSaveCtx() {
+  try {
+    const m = document.getElementById('msg-compose-modal');
+    if (m) m.dataset.ctx = JSON.stringify(composeContext);
+  } catch (e) {}
+}
+function _composeLoadCtx() {
+  try {
+    const m = document.getElementById('msg-compose-modal');
+    if (m && m.dataset.ctx) return JSON.parse(m.dataset.ctx);
+  } catch (e) {}
+  return { ...composeContext }; // fallback — globalo kopija
+}
+
 // Atidaryti modal'ą su pre-set'intu kontekstu
 function openComposeModal(context) {
   // Reset į švarius defaults PRIEŠ merge — kitaip groupId/parentIds/category iš ankstesnės žinutės užsilieka ant naujos
@@ -31254,9 +31277,10 @@ function openComposeModal(context) {
   // Treneris NEGALI kurti pokalbio - tik pranešimą
   // Klubas NEGALI kurti pokalbio jei audience yra trainers ar kids
   updateChatModeAvailability();
-  
+
   // Rodyti modal
   document.getElementById('msg-compose-modal').style.display = 'flex';
+  _composeSaveCtx(); // ⚡ W2-2: kontekstas į DOM (po visų pradinių mutacijų)
 }
 
 // Patikrinti ar pokalbio režimas leidžiamas pagal audience/role
@@ -31293,7 +31317,8 @@ function updateChatModeAvailability() {
 // Pasirinkti tipą (announcement / chat)
 function setComposeMode(mode) {
   composeContext.mode = mode;
-  
+  _composeSaveCtx(); // ⚡ W2-2
+
   document.querySelectorAll('.msg-mode-btn').forEach(btn => {
     if (btn.dataset.mode === mode) {
       btn.classList.add('on');
@@ -31334,7 +31359,7 @@ function setComposeMode(mode) {
 // Pasirinkti kategoriją
 function setComposeCategory(cat) {
   composeContext.category = cat;
-  
+  _composeSaveCtx(); // ⚡ W2-2
   document.querySelectorAll('.msg-cat-btn').forEach(btn => {
     if (btn.dataset.cat === cat) {
       btn.classList.add('on');
@@ -31353,7 +31378,7 @@ function setComposeCategory(cat) {
 // Pasirinkti auditoriją (klubo broadcast'ams)
 function setComposeAudience(aud) {
   composeContext.audience = aud;
-  
+  _composeSaveCtx(); // ⚡ W2-2
   document.querySelectorAll('.msg-aud-btn').forEach(btn => {
     if (btn.dataset.aud === aud) {
       btn.classList.add('on');
@@ -31477,165 +31502,152 @@ async function submitComposeMessage() {
   submitBtn.textContent = 'SIUNČIAMA...';
   
   try {
+    // ⚡ W2-2 (F2-04/F2-08): kontekstas iš modalo DOM — globalo resetas nebegali nunulinti parentIds/groupId
+    const ctx = _composeLoadCtx();
+
     // Validacija: pokalbis leidžiamas tik su tėvais
-    if (composeContext.mode === 'chat' && composeContext.type === 'group' 
-        && composeContext.audience !== 'parents') {
+    if (ctx.mode === 'chat' && ctx.type === 'group' && ctx.audience !== 'parents') {
       throw new Error('Pokalbį galima kurti tik su grupės tėvais. Vaikams - tik pranešimai.');
     }
-    
-    if (composeContext.mode === 'chat' && composeContext.type === 'broadcast' 
-        && composeContext.audience !== 'parents') {
+
+    if (ctx.mode === 'chat' && ctx.type === 'broadcast' && ctx.audience !== 'parents') {
       throw new Error('Pokalbį galima kurti tik su tėvais. Treneriams ir vaikams - tik pranešimai.');
     }
-    
+
     // Patikrinti pavadinimą jei announcement
     const titleInput = document.getElementById('msg-compose-title-input').value.trim();
-    if ((composeContext.type === 'group' || composeContext.type === 'broadcast') && !titleInput) {
+    if ((ctx.type === 'group' || ctx.type === 'broadcast') && !titleInput) {
       showToast(ico('klaida')+' Įveskite pavadinimą', 'error');
       submitBtn.disabled = false;
       submitBtn.textContent = 'SIŲSTI ŽINUTĘ';
       return;
     }
-    
+
     // Nustatyti DB tipą pagal mode
-    let dbType = composeContext.type;
-    if ((composeContext.type === 'group' || composeContext.type === 'broadcast') && composeContext.mode === 'announcement') {
+    let dbType = ctx.type;
+    if ((ctx.type === 'group' || ctx.type === 'broadcast') && ctx.mode === 'announcement') {
       dbType = 'announcement';
     }
-    
+
     // Pavadinimas
-    let title = titleInput || composeContext.title || null;
-    if (!title && composeContext.type === 'direct') {
+    let title = titleInput || ctx.title || null;
+    if (!title && ctx.type === 'direct') {
       title = null; // Direct'ams nereikia
     }
-    
+
     // Kategorija - tik announcement'ams
-    const category = (dbType === 'announcement') ? (composeContext.category || 'general') : null;
-    
-    // 1. Sukurti pokalbį
-    const convData = {
-      type: dbType,
-      title: title,
-      category: category,
-      kid_id: composeContext.kidId || null,
-      group_id: composeContext.groupId || null,
-      club_id: currentProfile?.club_id,
-      created_by: currentUser.id
-    };
-    
-    const { data: conv, error: convErr } = await sb.from('conversations')
-      .insert(convData)
-      .select()
-      .single();
-    
-    if (convErr) throw convErr;
-    
-    // 2. Pridėti narius (trigger jau pridėjo kūrėją - tik gavėjus reikia)
-    const memberInserts = [];
-    
-    if (composeContext.type === 'direct') {
-      // Pridėti VISUS vaiko tėvus
-      composeContext.parentIds.forEach(pid => {
-        if (pid !== currentUser.id) {
-          memberInserts.push({
-            conversation_id: conv.id,
-            user_id: pid,
-            role: 'parent'
-          });
-        }
+    const category = (dbType === 'announcement') ? (ctx.category || 'general') : null;
+
+    // ═══ 1. GAVĖJAI PIRMIAUSIA (⚡ W2-2, F1-11): nesant gavėjų — klaida BE jokio DB rašymo, orphan'ų nebelieka ═══
+    const recipients = []; // { user_id, role }
+
+    if (ctx.type === 'direct') {
+      // VISI vaiko tėvai
+      (ctx.parentIds || []).forEach(pid => {
+        if (pid !== currentUser.id) recipients.push({ user_id: pid, role: 'parent' });
       });
-    } else if (composeContext.type === 'group') {
-      // Pridėti narius pagal audience
-      const audience = composeContext.audience || 'parents';
-      
+      if (recipients.length === 0) {
+        throw new Error('Nerasti gavėjai (tėvų paskyros). Uždaryk ir atidaryk žinutės langą iš naujo.');
+      }
+    } else if (ctx.type === 'group') {
+      const audience = ctx.audience || 'parents';
+
       // Gauti grupės vaikus
       const { data: groupKids } = await sb.from('kids')
         .select('id, user_id')
-        .eq('group_id', composeContext.groupId);
-      
+        .eq('group_id', ctx.groupId);
+
       const groupKidIds = (groupKids || []).map(g => g.id);
-      
+
       if (groupKidIds.length > 0) {
-        // Pridėti tėvus jei reikia
+        // Tėvai
         if (audience === 'parents' || audience === 'all') {
           const { data: parentLinks } = await sb.from('kid_parent_links')
             .select('parent_id')
             .in('kid_id', groupKidIds);
-          
+
           const uniqueParentIds = [...new Set((parentLinks || []).map(l => l.parent_id))];
-          
           uniqueParentIds.forEach(pid => {
-            if (pid !== currentUser.id) {
-              memberInserts.push({
-                conversation_id: conv.id,
-                user_id: pid,
-                role: 'parent'
-              });
-            }
+            if (pid !== currentUser.id) recipients.push({ user_id: pid, role: 'parent' });
           });
         }
-        
-        // Pridėti vaikus jei reikia (TIK tuos kur user_id egzistuoja profiles lentelėje)
+
+        // Vaikai (TIK tie, kurių user_id yra profiles su role='kid')
         if (audience === 'kids' || audience === 'all') {
           const candidateUserIds = (groupKids || [])
             .map(k => k.user_id)
             .filter(uid => uid && uid !== currentUser.id);
-          
+
           if (candidateUserIds.length > 0) {
-            // Patikrinti kurie iš jų TIKRAI yra profiles lentelėje su role='kid'
             const { data: validKidProfiles } = await sb.from('profiles')
               .select('id')
               .in('id', candidateUserIds)
               .eq('role', 'kid');
-            
+
             const validIds = (validKidProfiles || []).map(p => p.id);
-            
-            validIds.forEach(uid => {
-              memberInserts.push({
-                conversation_id: conv.id,
-                user_id: uid,
-                role: 'kid'
-              });
-            });
-            
-            // Jei buvo audience='kids' bet nė vienas vaikas neturi paskyros - klaida
+            validIds.forEach(uid => recipients.push({ user_id: uid, role: 'kid' }));
+
             if (audience === 'kids' && validIds.length === 0) {
               throw new Error('Šios grupės vaikai dar neturi savo paskyrų. Pranešimą galima siųsti tik per tėvus.');
             }
+          } else if (audience === 'kids') {
+            throw new Error('Šios grupės vaikai dar neturi savo paskyrų. Pranešimą galima siųsti tik per tėvus.');
           }
         }
       }
-    } else if (composeContext.type === 'broadcast') {
-      // Pridėti narius pagal audience
-      const audience = composeContext.audience || 'parents';
+    } else if (ctx.type === 'broadcast') {
+      const audience = ctx.audience || 'parents';
       let rolesFilter = ['parent'];
       if (audience === 'trainers') rolesFilter = ['trainer'];
       else if (audience === 'kids') rolesFilter = ['kid'];
       else if (audience === 'all') rolesFilter = ['parent', 'trainer', 'kid'];
-      
+
       const { data: clubProfiles } = await sb.from('profiles')
         .select('id, role')
-        .eq('club_id', currentProfile?.club_id)
+        .eq('club_id', resolveMyClubId()) // ⚡ W1-6
         .in('role', rolesFilter)
         .neq('id', currentUser.id);
-      
-      (clubProfiles || []).forEach(p => {
-        memberInserts.push({
-          conversation_id: conv.id,
-          user_id: p.id,
-          role: p.role
-        });
-      });
+
+      (clubProfiles || []).forEach(p => recipients.push({ user_id: p.id, role: p.role }));
     }
-    
-    if (memberInserts.length < 1) {
+
+    if (recipients.length < 1) {
       throw new Error('Nėra gavėjų pokalbiui');
     }
-    
+
+    // ═══ 2. Sukurti pokalbį (gavėjai jau žinomi) ═══
+    const convData = {
+      type: dbType,
+      title: title,
+      category: category,
+      kid_id: ctx.kidId || null,
+      group_id: ctx.groupId || null,
+      club_id: resolveMyClubId(),
+      created_by: currentUser.id
+    };
+
+    const { data: conv, error: convErr } = await sb.from('conversations')
+      .insert(convData)
+      .select()
+      .single();
+
+    if (convErr) throw convErr;
+
+    // ═══ 3. Nariai (trigger jau pridėjo kūrėją — tik gavėjus) ═══
+    const memberInserts = recipients.map(r => ({
+      conversation_id: conv.id,
+      user_id: r.user_id,
+      role: r.role
+    }));
+
     const { error: memErr } = await sb.from('conversation_members').insert(memberInserts);
-    if (memErr) throw memErr;
-    
-    // 3. Siųsti pirmąją žinutę
+    if (memErr) {
+      // Best-effort valymas — kad neliktų orphan pokalbio be narių
+      try { await sb.from('conversations').delete().eq('id', conv.id); } catch (e2) {}
+      throw memErr;
+    }
+
+    // ═══ 4. Pirmoji žinutė ═══
     const { error: msgErr } = await sb.from('messages').insert({
       conversation_id: conv.id,
       sender_id: currentUser.id,
@@ -33647,8 +33659,15 @@ function initPullToRefresh() {
         setTimeout(() => { indicator.style.top = '-60px'; }, 800);
       } catch (e) {
         // 🔴 Timeout/klaida - app miręs, būtinas pilnas perkrovimas
-        if (text) text.textContent = 'PERKRAUNAMA...';
-        setTimeout(() => location.reload(), 400);
+        // ⚡ W2-7: bet NIEKADA ant vartotojo įvesties — geriau parodyti nesėkmę
+        if (typeof _resumeInputOpen === 'function' && _resumeInputOpen()) {
+          if (icon) { icon.textContent = '⚠️'; icon.style.animation = ''; }
+          if (text) text.textContent = 'NEPAVYKO — RYŠYS?';
+          setTimeout(() => { indicator.style.top = '-60px'; }, 1200);
+        } else {
+          if (text) text.textContent = 'PERKRAUNAMA...';
+          setTimeout(() => location.reload(), 400);
+        }
       }
     } else {
       indicator.style.top = '-60px';
