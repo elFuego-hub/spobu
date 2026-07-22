@@ -232,11 +232,12 @@ async function loadPrices(){
 function _applyPricesToUI(){
   try {
     const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    const setH = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; }; // ⚡ W1-1: SVG ikonoms (turinys — tik app konstantos)
     const f = v => (Math.round(v * 100) / 100).toFixed(2) + '€';
     set('ps-annual-v', f(PRICES.subscription_annual));
-    set('ps-rep-l', `${ico('dokumentas')} 3 ataskaitos (3 × ${f(PRICES.report)})`);
+    setH('ps-rep-l', `${ico('dokumentas')} 3 ataskaitos (3 × ${f(PRICES.report)})`);
     set('ps-rep-v', f(PRICES.report * 3));
-    set('ps-home-l', `${ico('treniruote')} 3 namų planai (3 × ${f(PRICES.homeplan)})`);
+    setH('ps-home-l', `${ico('treniruote')} 3 namų planai (3 × ${f(PRICES.homeplan)})`);
     set('ps-home-v', f(PRICES.homeplan * 3));
     set('ps-sum-v', f(PRICES.summer));
     set('ps-total-v', f(PRICES.subscription_annual + PRICES.report * 3 + PRICES.homeplan * 3 + PRICES.summer));
@@ -10471,7 +10472,7 @@ function showAchievement(catName, tier) {
   
   const badgeHtml = `<div class="skb skb-${tier}" style="cursor:default;"><div class="skb-circle">${icon}</div></div>`;
   document.getElementById('amo-badge').innerHTML = badgeHtml;
-  document.getElementById('amo-tier').textContent = `${tierEmoji} ${tierName.toUpperCase()}`;
+  document.getElementById('amo-tier').innerHTML = `${tierEmoji} ${tierName.toUpperCase()}`; // ⚡ W1-1: tierEmoji dabar SVG (app konstanta)
   document.getElementById('amo-cat').textContent = catName;
   document.getElementById('amo-msg').textContent = messages[tier] || 'Pasiekei naują lygį!';
   document.getElementById('amo').classList.add('open');
@@ -15899,7 +15900,8 @@ async function loadNextEvent() {
     const levelLabel = levelLabels[comp.level] || comp.level || '';
     if (iconEl) iconEl.innerHTML = ico('kalendorius');
     if (nameEl) nameEl.textContent = comp.title || 'Varžybos';
-    if (metaEl) metaEl.textContent = `📅 ${new Date(comp.event_date).toLocaleDateString('lt-LT')}${levelLabel ? ' · ' + levelLabel : ''}`;
+    // ⚡ W1-1: innerHTML — levelLabel turi SVG ikoną (visos dalys app konstantos, be vartotojo teksto)
+    if (metaEl) metaEl.innerHTML = `📅 ${new Date(comp.event_date).toLocaleDateString('lt-LT')}${levelLabel ? ' · ' + levelLabel : ''}`;
   }
   if (daysEl) daysEl.textContent = days;
   if (countdownEl) countdownEl.style.display = 'block';
