@@ -957,6 +957,7 @@ async function afterLogin() {
       subscribeTrainerNotifications(); // po duomenų — realtime tik papildomas, negali blokuoti portalo
       op('tr');
       _checkClubChallengeResultsTrainer(); // ${ico('trofejai')} grupių iššūkio pabaigos pop-up (vieną kartą)
+      _checkTrainerUnreadMessages(); // 💬 praleistų žinučių pop-up (realtime toast veikia tik prisijungus gyvai)
     } else if (profile.role === 'kid') {
       // Krauname kid duomenis - ieškom per user_id (NE per id, nes kids.id !== auth.users.id)
       const { data: kidData } = await sb.from('kids')
@@ -28340,6 +28341,25 @@ function subscribeTrainerNotifications() {
   }
 }
 
+// 💬 Po trenerio prisijungimo: neperskaitytų pokalbių pop-up (realtime kanalas pagauna tik GYVAI
+// atėjusias žinutes — kas atsiųsta treneriui atsijungus, be šito liktų tik tylus badge)
+async function _checkTrainerUnreadMessages() {
+  try {
+    const { data: mems } = await sb.from('conversation_members')
+      .select('last_read_at, conversations!inner(id, type, last_message_at, last_message_sender_id)')
+      .eq('user_id', currentUser.id).limit(50);
+    const unread = (mems || []).filter(m => {
+      const c = m.conversations;
+      if (!c || !c.last_message_at || c.type === 'announcement') return false;
+      if (c.last_message_sender_id === currentUser.id) return false;
+      return !m.last_read_at || new Date(c.last_message_at) > new Date(m.last_read_at);
+    }).length;
+    if (unread > 0) {
+      showToast(`${ico('zinutes')} Neperskaitytų pokalbių: ${unread} — rasi varpelyje`, 'info', 7000, { sound: 'send' });
+    }
+  } catch (e) { /* nekritinis */ }
+}
+
 // 🛡️ Apsaugos nuo dvigubų kvietimų (channel duplicate + missed events race)
 let _kidChannelsSubscribed = false;
 let _missedEventsRunning = false;
@@ -32501,6 +32521,13 @@ function renderNotifTab(tab) {
     ? `<div style="text-align:center;margin-bottom:10px;"><button onclick="kidComposeToTrainer()" style="background:linear-gradient(135deg,#FF4D00,#FF8000);color:white;border:none;padding:9px 18px;border-radius:99px;font-size:12px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">${ico('zinutes')} Rašyti treneriui</button></div>`
     : '';
 
+  // 💬 Kai chat įjungtas — žinučių tabe rodom vaiko POKALBIŲ sąrašą
+  // (kitaip pats parašęs žinutę pokalbio neberastum, kol treneris neatsakė)
+  if (tab === 'messages' && kidChatBtn) {
+    loadKidConversationsTab(kidChatBtn);
+    return;
+  }
+
   if (items.length === 0) {
     list.innerHTML = kidChatBtn + `<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">${tab === 'messages' ? 'Nėra žinučių' : 'Nėra pranešimų šioje kategorijoje'}</div>`;
     return;
@@ -32614,11 +32641,12 @@ async function kidStartTrainerChat(trainerId, trainerName) {
       }
     }
     if (!convId) {
-      // 2. Nėra — kuriam naują; klubas: kids.club_id, fallback per pagrindinio trenerio klubą
+      // 2. Nėra — kuriam naują; klubas: kids.club_id → resolveMyClubId → trenerio profilis (kaip checkForNewCompetitions)
       let clubId = currentKid?.club_id || null;
+      if (!clubId && typeof resolveMyClubId === 'function') { try { clubId = resolveMyClubId() || null; } catch (e) {} }
       if (!clubId && currentKid?.assigned_trainer_id) {
         try {
-          const { data: tr } = await sb.from('trainers').select('club_id').eq('id', currentKid.assigned_trainer_id).maybeSingle();
+          const { data: tr } = await sb.from('profiles').select('club_id').eq('id', currentKid.assigned_trainer_id).maybeSingle();
           clubId = tr?.club_id || null;
         } catch (e) { /* tylim */ }
       }
@@ -32646,6 +32674,63 @@ function openKidConversation(convId) {
   if (bell) bell.style.display = 'none';
   if (typeof openMessages === 'function') openMessages();
   if (typeof openConversation === 'function') openConversation(convId);
+}
+
+// 💬 Žinučių tabas kai chat įjungtas: vaiko pokalbių sąrašas — paspaudus atsidaro gija
+async function loadKidConversationsTab(btnHtml) {
+  const list = document.getElementById('v-notif-list');
+  if (!list) return;
+  list.innerHTML = btnHtml + '<div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>';
+  try {
+    const { data: mems } = await sb.from('conversation_members')
+      .select('last_read_at, conversations!inner(id, type, title, last_message_at, last_message_preview, last_message_sender_id)')
+      .eq('user_id', currentUser.id).limit(30);
+    const convs = (mems || []).filter(m => m.conversations && m.conversations.last_message_at)
+      .sort((a, b) => new Date(b.conversations.last_message_at) - new Date(a.conversations.last_message_at));
+    if (!convs.length) {
+      list.innerHTML = btnHtml + '<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Nėra žinučių</div>';
+      return;
+    }
+    // Direct pokalbiams antraštė = kito nario (trenerio) vardas, ne mano paties title
+    const dirIds = convs.filter(m => m.conversations.type === 'direct').map(m => m.conversations.id);
+    const nameByConv = {};
+    if (dirIds.length) {
+      const { data: others } = await sb.from('conversation_members')
+        .select('conversation_id, user_id').in('conversation_id', dirIds).neq('user_id', currentUser.id);
+      const uids = [...new Set((others || []).map(o => o.user_id))];
+      if (uids.length) {
+        const { data: profs } = await sb.from('profiles').select('id, first_name, last_name, role').in('id', uids);
+        const pById = {}; (profs || []).forEach(p => { pById[p.id] = p; });
+        (others || []).forEach(o => {
+          const p = pById[o.user_id];
+          if (p && !nameByConv[o.conversation_id]) {
+            const nm = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+            nameByConv[o.conversation_id] = (nm || 'Treneris') + (p.role === 'trainer' ? ' (treneris)' : '');
+          }
+        });
+      }
+    }
+    const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    list.innerHTML = btnHtml + convs.map(m => {
+      const c = m.conversations;
+      const unread = (!m.last_read_at || new Date(c.last_message_at) > new Date(m.last_read_at)) && c.last_message_sender_id !== currentUser.id;
+      const isAnn = c.type === 'announcement';
+      const title = isAnn ? (c.title || 'Klubo pranešimas') : (nameByConv[c.id] || c.title || 'Pokalbis');
+      const when = new Date(c.last_message_at).toLocaleDateString('lt-LT');
+      return `<div onclick="openKidConversation('${c.id}')" style="background:${unread ? 'rgba(255,77,0,.08)' : 'var(--card)'};border:.5px solid ${unread ? 'rgba(255,77,0,.3)' : 'var(--bdr)'};border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:10px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+        <div style="font-size:20px;flex-shrink:0;">${isAnn ? ico('skelbimas') : ico('zinutes')}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:800;color:white;margin-bottom:2px;">${esc(title)}</div>
+          <div style="font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.last_message_preview || '')}</div>
+        </div>
+        <div style="font-size:9px;color:var(--mut);white-space:nowrap;flex-shrink:0;">${when}</div>
+        ${unread ? '<div style="width:8px;height:8px;background:#FF4D00;border-radius:50%;box-shadow:0 0 6px #FF4D00;flex-shrink:0;"></div>' : ''}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('loadKidConversationsTab:', e);
+    list.innerHTML = btnHtml + '<div style="text-align:center;padding:24px;color:var(--br);font-size:12px;">Klaida kraunant pokalbius.</div>';
+  }
 }
 
 // ════════════════════════════════════════
