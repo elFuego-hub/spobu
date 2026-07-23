@@ -21799,7 +21799,7 @@ async function openTrainerSettings() {
             <div style="font-size:10px;color:var(--mut);margin:2px 0 8px;">Įjunk, apie ką nori gauti pranešimus į telefoną — net kai programėlė uždaryta</div>
             <div onclick="toggleTrainerPushPref('messages')" style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;border-top:.5px solid var(--bdr);">
               <div style="font-size:18px;">${ico('zinutes')}</div>
-              <div style="flex:1;font-size:12px;font-weight:700;color:white;">Tėvų žinutės</div>
+              <div style="flex:1;font-size:12px;font-weight:700;color:white;">Tėvų ir vaikų žinutės</div>
               <div id="trpp-sw-messages" style="width:38px;height:22px;border-radius:99px;background:#66BB6A;position:relative;transition:background .2s;flex-shrink:0;"><div id="trpp-knob-messages" style="width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:3px;left:19px;transition:left .2s;"></div></div>
             </div>
             <div onclick="toggleTrainerPushPref('announcements')" style="display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;border-top:.5px solid var(--bdr);">
