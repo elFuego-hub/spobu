@@ -263,7 +263,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v374</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v377</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg> PILNAS MOBILE</button>
@@ -347,7 +347,7 @@ window.addEventListener('unhandledrejection', function(e) {
     
     <!-- ===== EKRANAS 2: ASMENINĖ INFORMACIJA ===== -->
     <div id="rw-screen-2" style="display:none;">
-      <div class="auth-title">JŪSŲ DUOMENYS</div>
+      <div class="auth-title">TAVO DUOMENYS</div>
       <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
         Užpildyk savo (tėvų/globėjo) duomenis
       </div>
@@ -433,7 +433,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="auth-box">
     <div class="auth-logo">SPO<span>BU</span><span style="color:var(--br);">.</span></div>
     <div class="auth-title">ATSTATYTI SLAPTAŽODĮ</div>
-    <div class="ok-msg" id="forgot-ok">Laiškas išsiųstas! Patikrinkite el. paštą.</div>
+    <div class="ok-msg" id="forgot-ok">Laiškas išsiųstas! Patikrink el. paštą.</div>
     <div class="err-msg" id="forgot-err"></div>
     <label class="lbl">EL. PAŠTAS</label>
     <input class="inp" type="email" id="forgot-email" placeholder="vardas@email.lt">
@@ -824,10 +824,10 @@ window.addEventListener('unhandledrejection', function(e) {
         talentas be drausmės užgęsta. Tavo tikslas — <b style="color:#fff;">visos 7 kryptys</b>: vienas pilnas kovotojas, ne viena savybė.
       </div>
       <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
-        <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;"><svg class="ico" aria-hidden="true"><use href="#i-zenkliukai"></use></svg> Nesikrauk dėl lygių</div>
+        <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;"><svg class="ico" aria-hidden="true"><use href="#i-zenkliukai"></use></svg> Nesijaudink dėl lygių</div>
         Lygiai matuoja <b style="color:#e8d9c5;">TAVO kelią</b>, ne lenktynes su kitais. Jei dabar <svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg> ar <svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg> — viskas gerai:
-        <b style="color:#e8d9c5;">kiekvienas čempionas ten pradėjo</b>. Lygiai auga kartu su tavimi — su amžiumi, stažu ir darbu.
-        <svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg> Completed — ilgametis elito tikslas: nepasiekti jo šiandien yra normalu, siekti — privaloma.
+        <b style="color:#e8d9c5;">kiekvienas čempionas ten pradėjo</b>. Lygiai auga kartu su tavimi — su amžiumi, patirtimi ir darbu.
+        <svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg> MASTER — aukščiausias tikslas, kurio siekiama metais: nepasiekti jo šiandien — visiškai normalu, o kelias jo link — smagiausia dalis.
       </div>
       <div style="background:rgba(255,77,0,.08);border:1px solid rgba(255,77,0,.35);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
         <div style="font-size:11px;color:#FF4D00;font-weight:800;margin-bottom:4px;"><svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg> OSU dvasia — treniruokis kaip Oyama</div>
@@ -853,10 +853,10 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
       <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;"><svg class="ico" aria-hidden="true"><use href="#i-zenkliukai"></use></svg> Ką reiškia lygiai</div>
-      Normatyvai bendri visai amžiaus grupei, todėl lygį natūraliai lemia <b style="color:#e8d9c5;">amžius ir treniruočių stažas</b> — tai ne trūkumas, o kelias:
+      Normatyvai bendri visai amžiaus grupei, todėl lygį natūraliai lemia <b style="color:#e8d9c5;">amžius ir treniruočių patirtis</b> — tai ne trūkumas, o kelias:
       <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span><b style="color:#e8d9c5;">Bronze ir Silver</b> — jei vaikui 8–10 m. arba jis <b style="color:#e8d9c5;">neseniai pradėjo lankyti</b>, ši zona reiškia, kad jis puikiai juda pagal savo amžių ir patirtį.</span></div>
-      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span><b style="color:#e8d9c5;">Gold</b> ateina su branda ir stažu — augančia jėga, ūgiu ir treniruočių metais.</span></div>
-      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;"><svg class="ico" aria-hidden="true"><use href="#i-varzybos"></use></svg></span><span><b style="color:#e8d9c5;">Completed</b> — elito tikslas, kurio siekiama metais. Nepasiekti jo šiandien — normalu. Siekti — privaloma.</span></div>
+      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span><b style="color:#e8d9c5;">Gold</b> ateina su branda ir patirtimi — augančia jėga, ūgiu ir treniruočių metais.</span></div>
+      <div style="display:flex;gap:7px;margin-top:5px;"><span style="flex:none;"><svg class="ico" aria-hidden="true"><use href="#i-varzybos"></use></svg></span><span><b style="color:#e8d9c5;">MASTER</b> — aukščiausias tikslas, kurio siekiama metais. Nepasiekti jo šiandien — normalu. Kelias jo link — smagiausia dalis.</span></div>
       <div style="margin-top:6px;color:#d9d9e2;"><b>Pasiekimai ateina su laiku</b> — svarbiausia ne greitis, o kryptis ir nuoseklumas.</div>
     </div>
     <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
@@ -882,9 +882,9 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="mt">ATMESTI PATEIKIMĄ</div>
     <label class="lbl">PRIEŽASTIS</label>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-      <div class="ch" onclick="sr(this)" style="padding:10px 14px;border-radius:12px;font-size:13px;">Rezultatas neįtikimas</div>
-      <div class="ch" onclick="sr(this)" style="padding:10px 14px;border-radius:12px;font-size:13px;">Trūksta įrodymo</div>
-      <div class="ch" onclick="sr(this)" style="padding:10px 14px;border-radius:12px;font-size:13px;">Senas PR nesuderinamas</div>
+      <div class="ch" onclick="sr(this)" style="padding:10px 14px;border-radius:12px;font-size:13px;">Rezultatą reikia patikslinti</div>
+      <div class="ch" onclick="sr(this)" style="padding:10px 14px;border-radius:12px;font-size:13px;">Pridėk vaizdo įrašą ar nuotrauką</div>
+      <div class="ch" onclick="sr(this)" style="padding:10px 14px;border-radius:12px;font-size:13px;">Nesutampa su ankstesniu rekordu</div>
       <div class="ch" onclick="sr(this)" style="padding:10px 14px;border-radius:12px;font-size:13px;">Kita priežastis</div>
     </div>
     <textarea class="inp" id="reject-comment" placeholder="Papildomas komentaras..." rows="2" style="resize:none;"></textarea>
@@ -1558,7 +1558,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="font-size:24px;"><svg class="ico" aria-hidden="true"><use href="#i-archyvas"></use></svg></div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:800;color:white;">SKILL BADGES · iki 14 m.</div>
+          <div style="font-size:12px;font-weight:800;color:white;">ĮGŪDŽIŲ ŽENKLIUKAI · iki 14 m.</div>
           <div id="v-prof-archive-sum" style="font-size:9px;color:var(--mut);margin-top:2px;">—</div>
         </div>
         <div style="font-size:16px;color:#4FC3F7;">›</div>
@@ -1580,7 +1580,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       <div class="tap-react" onclick="openBadgesModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
         <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-zenkliukai"></use></svg></div>
-        <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">SKILL BADGES</div>
+        <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">ĮGŪDŽIŲ ŽENKLIUKAI</div>
         <div id="v-prof-badges-summary" style="font-size:8px;color:var(--mut);margin-top:2px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg>0 <svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg>0 <svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg>0 <svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg>0</div>
       </div>
       <div class="tap-react" onclick="openChallengeTypesModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;cursor:pointer;text-align:center;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
@@ -2533,14 +2533,14 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
 
     <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 16px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:10px;">
-      <div style="text-align:center;flex:1;"><div style="font-size:18px;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">DIAGNOZĖ</div></div>
+      <div style="text-align:center;flex:1;"><div style="font-size:18px;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">DIAGNOSTIKA</div></div>
       <div style="color:var(--br);font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></div>
       <div style="text-align:center;flex:1;"><div style="font-size:18px;"><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg></div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">PLANAS</div></div>
       <div style="color:var(--br);font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></div>
       <div style="text-align:center;flex:1;"><div style="font-size:18px;"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">PROGRESAS</div></div>
     </div>
 
-    <div class="st">PRENUMERATOS</div>
+    <div class="st">PLANAI</div>
 
     <!-- FREE -->
     <div style="margin:0 16px 11px;background:var(--card);border:.5px solid var(--bdr);border-radius:16px;padding:15px;">
@@ -2610,7 +2610,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12.5px;font-weight:800;color:white;">AI ataskaita</div>
+          <div style="font-size:12.5px;font-weight:800;color:white;">AI diagnostika</div>
           <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">Detali vaiko analizė + rekomendacijos · PDF</div>
           <div onclick="openReportInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-info"></use></svg> Kas tai ir kodėl verta? ›</div>
         </div>
@@ -2626,8 +2626,8 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg></div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12.5px;font-weight:800;color:white;">Namų treniruočių planas</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">Asmeninis planas tarp treniruočių · ketvirčiui</div>
+          <div style="font-size:12.5px;font-weight:800;color:white;">Namų planas</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">Asmeninis planas tarp treniruočių · 2 mėnesiams</div>
           <div onclick="openHomePlanInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-info"></use></svg> Kas tai ir kodėl verta? ›</div>
         </div>
         <div id="shop-cnt-home" style="flex-shrink:0;"></div>
@@ -2643,7 +2643,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-vasara"></use></svg></div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12.5px;font-weight:800;color:white;">Vasaros programa</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">8 savaičių individualus planas namuose</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.3;">12 savaičių individualus planas namuose</div>
           <div onclick="openSummerInfoModal()" style="display:inline-block;font-size:10px;color:var(--br);font-weight:800;margin-top:5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-info"></use></svg> Kas tai ir kodėl verta? ›</div>
         </div>
         <div id="shop-cnt-summer" style="flex-shrink:0;"></div>
@@ -2729,7 +2729,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       <div class="tap-react" onclick="openParentBadges()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
         <div style="font-size:20px;line-height:1;margin-bottom:3px;"><svg class="ico" aria-hidden="true"><use href="#i-zenkliukai"></use></svg></div>
-        <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">SKILL BADGES</div>
+        <div style="font-size:9px;font-weight:800;letter-spacing:.3px;color:white;">ĮGŪDŽIŲ ŽENKLIUKAI</div>
         <div id="tk-prof-badges" style="font-size:8px;color:var(--mut);margin-top:2px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg>0 <svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg>0 <svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg>0 <svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg>0</div>
       </div>
       <div class="tap-react" onclick="openParentChallengeTypes()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
@@ -4228,13 +4228,13 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:14px;margin-bottom:12px;">
         <div style="font-size:11px;color:var(--br);font-weight:800;letter-spacing:1px;margin-bottom:8px;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg> EXP UŽ ELGESĮ</div>
         <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:10px;">
-          Fiksuoti taškai už elgesį / aktyvumą / pasiekimą treniruotėje. Trackinama kaip <b style="color:rgba(255,255,255,.75);">EXP gavimas</b> — matosi vaiko ir tėvų sraute su priežastimi. Sumos fiksuotos, kad būtų sąžininga.
+          Fiksuoti taškai už elgesį / aktyvumą / pasiekimą treniruotėje. Fiksuojama kaip <b style="color:rgba(255,255,255,.75);">EXP gavimas</b> — matosi vaiko ir tėvų sraute su priežastimi. Sumos fiksuotos, kad būtų sąžininga.
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
           <button class="kdbe-btn" data-amt="25" onclick="kdSelectBehavior(25,'Geras elgesys','Geras elgesys treniruotėje 👏')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-patinka"></use></svg> +25 Geras elgesys</button>
           <button class="kdbe-btn" data-amt="10" onclick="kdSelectBehavior(10,'Aktyvus dalyvavimas','Labai aktyviai dirbo treniruotėje 🔥')" style="background:rgba(34,197,94,.15);color:var(--grn);border:.5px solid rgba(34,197,94,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> +10 Aktyvumas</button>
           <button class="kdbe-btn" data-amt="50" onclick="kdSelectBehavior(50,'Pasiekimas treniruotėje','Šaunus pasiekimas treniruotėje ⭐')" style="background:rgba(34,197,94,.2);color:var(--grn);border:.5px solid rgba(34,197,94,.4);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg> +50 Pasiekimas</button>
-          <button class="kdbe-btn" data-amt="-10" onclick="kdSelectBehavior(-10,'Drausmės pažeidimas','Drausmės pastaba — verta pakalbėti ⚠️')" style="background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> -10 Drausmė</button>
+          <button class="kdbe-btn" data-amt="-10" onclick="kdSelectBehavior(-10,'Priminimas apie taisykles','Trenerio priminimas apie taisykles — pasikalbėkite namuose 🤝')" style="background:rgba(239,68,68,.15);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:700;font-family:inherit;"><svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> -10 Priminimas</button>
         </div>
         <textarea class="inp" id="kd-be-reason" rows="2" placeholder="Priežastis (matys vaikas ir tėvai)..." style="width:100%;resize:vertical;font-family:inherit;font-size:13px;margin:0 0 8px;"></textarea>
         <div id="kd-be-selected" style="font-size:11px;color:var(--mut);text-align:center;margin-bottom:8px;">↑ Pasirink taškus</div>
@@ -4388,7 +4388,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=374"></script>
+<script src="app.js?v=377"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
