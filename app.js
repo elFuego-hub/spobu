@@ -12330,13 +12330,13 @@ async function loadClubPushPrefs(){
   let p=null;
   try { p=currentProfile?.push_prefs; if(!p){ const {data}=await sb.from('profiles').select('push_prefs').eq('id',currentUser.id).maybeSingle(); p=data?.push_prefs||null; if(currentProfile&&p) currentProfile.push_prefs=p; } } catch(e){}
   const saved={ club_admin:true, club_events:true, messages:true, ...(p||{}) };
-  const subscribed=localStorage.getItem('spobu_push_on')==='1';
+  const subscribed=pushRegisteredForMe();
   _clubPushPrefs = subscribed ? { club_admin:saved.club_admin!==false, club_events:saved.club_events!==false, messages:saved.messages!==false } : { club_admin:false, club_events:false, messages:false };
   CLUB_PUSH_KEYS.forEach(k=>_applyClubPushSwitch(k,_clubPushPrefs[k]!==false));
 }
 async function toggleClubPushPref(key){
   const turningOn=_clubPushPrefs[key]===false;
-  if (turningOn && localStorage.getItem('spobu_push_on')!=='1'){ const ok=(typeof enablePushNotifications==='function')?await enablePushNotifications():false; if(!ok){ _applyClubPushSwitch(key,false); return; } }
+  if (turningOn && !pushRegisteredForMe()){ const ok=(typeof enablePushNotifications==='function')?await enablePushNotifications():false; if(!ok){ _applyClubPushSwitch(key,false); return; } }
   _clubPushPrefs[key]=turningOn; _applyClubPushSwitch(key,turningOn);
   if (currentProfile) currentProfile.push_prefs={ ...(currentProfile.push_prefs||{}), ..._clubPushPrefs };
   try { const {error}=await sb.from('profiles').update({ push_prefs: currentProfile.push_prefs }).eq('id',currentUser.id); if(error && typeof showToast==='function') showToast(ico('ispejimas')+' Neišsaugota (ar paleidai SQL push_prefs?)','error',7000); } catch(e){}
@@ -21997,15 +21997,15 @@ async function loadTrainerPushPrefs() {
     }
   } catch (e) { /* stulpelio gali nebūti kol nepaleistas SQL — graceful */ }
   const saved = { messages: true, announcements: true, submissions: true, ...(p || {}) };
-  // Rodom pagal realybę: jei pranešimai telefone NEĮJUNGTI — visi OFF (vartotojas turi įjungti rankiniu paspaudimu)
-  const subscribed = localStorage.getItem('spobu_push_on') === '1';
+  // Rodom pagal realybę: jei ŠIS vartotojas neįregistravęs push savo vardu — visi OFF
+  const subscribed = pushRegisteredForMe();
   _trPushPrefs = subscribed ? saved : { messages: false, announcements: false, submissions: false };
   ['messages', 'announcements', 'submissions'].forEach(k => _applyTrPushPrefSwitch(k, _trPushPrefs[k] !== false));
 }
 async function toggleTrainerPushPref(key) {
   const turningOn = _trPushPrefs[key] === false;
-  // Įjungiant tipą, kai pranešimai telefone dar neįjungti → paprašom leidimo ir užregistruojam
-  if (turningOn && localStorage.getItem('spobu_push_on') !== '1') {
+  // Įjungiant tipą, kai ŠIS vartotojas dar neįregistravęs push savo vardu → registruojam
+  if (turningOn && !pushRegisteredForMe()) {
     const ok = (typeof enablePushNotifications === 'function') ? await enablePushNotifications() : false;
     if (!ok) { _applyTrPushPrefSwitch(key, false); return; } // leidimas atmestas — paliekam OFF
   }
@@ -30271,8 +30271,8 @@ async function updatePushToggleUI() {
     return;
   }
 
-  // 1) IŠKART parodyti localStorage būseną (greita - be laukimo)
-  const cached = localStorage.getItem('spobu_push_on') === '1';
+  // 1) IŠKART parodyti localStorage būseną (greita - be laukimo; ĮJUNGTA tik jei šis vartotojas registravęs)
+  const cached = localStorage.getItem('spobu_push_on') === '1' && pushRegisteredForMe();
   const applyState = (on) => {
     if (icon) icon.textContent = on ? '🔔' : '🔕';
     if (status) status.textContent = on ? 'Įjungti · gausi pranešimus' : 'Išjungti · spausk įjungti';
@@ -30285,14 +30285,21 @@ async function updatePushToggleUI() {
   };
   applyState(cached);
   
-  // 2) Async patikslinti realią būseną (be "Tikrinama..." kabėjimo)
-  const real = await isPushEnabled();
+  // 2) Async patikslinti realią būseną (be "Tikrinama..." kabėjimo; + ar registruota ŠIO vartotojo vardu)
+  const real = (await isPushEnabled()) && pushRegisteredForMe();
   if (real !== cached) applyState(real);
 }
 
 // ════════════════════════════════════════
 // 🔔 PUSH NOTIFICATIONS
 // ════════════════════════════════════════
+
+// 🔑 Prenumeratos „nuosavybė" per vartotoją: naršyklė turi VIENĄ push endpoint visiems
+// login'ams, todėl vien 'spobu_push_on' (įrenginio lygis) neužtenka — perjungus paskyrą
+// (vaikas→treneris) toggle'ai manydavo „jau užregistruota" ir DB registracijos nebekviesdavo.
+// Kiekvienas vartotojas endpoint'ą turi įregistruoti SAVO vardu (register_push_subscription RPC).
+function _pushRegKey(){ return 'spobu_push_reg_' + (currentUser?.id || 'anon'); }
+function pushRegisteredForMe(){ return localStorage.getItem(_pushRegKey()) === '1'; }
 
 // base64url → Uint8Array (VAPID raktui)
 function urlB64ToUint8Array(base64String) {
@@ -30441,6 +30448,7 @@ async function enablePushNotifications() {
     }
     
     localStorage.setItem('spobu_push_on', '1');
+    localStorage.setItem(_pushRegKey(), '1'); // šis vartotojas įregistravo endpoint'ą savo vardu
     showToast(ico('pranesimai')+' Pranešimai įjungti!', 'success', 3000);
     return true;
   } catch (e) {
@@ -30463,6 +30471,7 @@ async function disablePushNotifications() {
       }
     }
     localStorage.setItem('spobu_push_on', '0');
+    localStorage.setItem(_pushRegKey(), '0');
     showToast(''+ico('be-garso')+' Pranešimai išjungti', 'success', 3000);
     return true;
   } catch (e) {
