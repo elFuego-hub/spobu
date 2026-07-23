@@ -263,7 +263,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v377</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v378</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg> PILNAS MOBILE</button>
@@ -815,7 +815,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="mo" id="kinfo">
   <div class="mbox" style="max-height:88vh;overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="mt" style="margin:0;"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg> KAIP VEIKIA KARJERA</div>
+      <div class="mt" style="margin:0;"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg> KAIP VEIKIA KELIAS</div>
       <button class="bb" onclick="closeKarjeraInfo()"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
     <div id="kinfo-kid" style="display:none;">
@@ -848,7 +848,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="kinfo-parent">
     <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:11px;color:#c9c9d4;line-height:1.6;">
       <b style="color:#fff;">Geriausi kovotojai — universaliausi.</b> Čempionu netampama dėl vienos savybės: jėga be ištvermės pavargsta,
-      greitis be technikos nepataiko, talentas be drausmės užgęsta. Karjeros tikslas — <b style="color:#fff;">viso kūno ir charakterio
+      greitis be technikos nepataiko, talentas be drausmės užgęsta. Kelio tikslas — <b style="color:#fff;">viso kūno ir charakterio
       tobulumas</b>: 7 kryptys, vienas kovotojas.
     </div>
     <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:10.5px;color:#b9b9c4;line-height:1.6;">
@@ -901,7 +901,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <button class="pb" onclick="op('v')">
     <div class="pi" style="background:var(--br);"><svg width="22" height="22" viewBox="0 0 26 26" fill="none"><path d="M15 4L8 14h7l-4 8 9-12h-7l4-6z" fill="white"/></svg></div>
-    <div><div style="font-size:15px;font-weight:900;color:var(--txt);">Vaiko paskyra</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">EXP, karjera, iššūkiai, varžybos</div></div>
+    <div><div style="font-size:15px;font-weight:900;color:var(--txt);">Vaiko paskyra</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">EXP, rekordai, iššūkiai, varžybos</div></div>
   </button>
   <button class="pb" onclick="op('t')">
     <div class="pi" style="background:var(--card);border:1px solid var(--br);"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg>‍<svg class="ico" aria-hidden="true"><use href="#i-vaikas"></use></svg></div>
@@ -942,7 +942,7 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     <nav class="vdn-nav">
       <a class="vdn-item" data-sid="v-main" onclick="nvDesktop('v-main')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span> Pagrindinis</a>
-      <a class="vdn-item" data-sid="v-kar"  onclick="nvDesktop('v-kar')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span> Karjera</a>
+      <a class="vdn-item" data-sid="v-kar"  onclick="nvDesktop('v-kar')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span> Kelias</a>
       <a class="vdn-item" data-sid="v-ish"  onclick="nvDesktop('v-ish')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-issukiai"></use><use href="#i-issukiai"></use></svg></span> Iššūkiai</a>
       <a class="vdn-item" data-sid="v-comp" onclick="nvDesktop('v-comp')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-varzybos"></use><use href="#i-varzybos"></use></svg></span> Varžybos</a>
       <a class="vdn-item" data-sid="v-stat" onclick="nvDesktop('v-stat')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-statistika"></use><use href="#i-statistika"></use></svg></span> Statistika</a>
@@ -1188,7 +1188,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <div class="bn2">
     <div class="ni on" onclick="nv('v',this,'v-main')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-issukiai"></use><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-varzybos"></use><use href="#i-varzybos"></use></svg></span><span class="lb">Varžybos</span><div class="nd"></div></div>
     
@@ -1200,7 +1200,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="v-kar">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 6px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">KARJERA</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">KELIAS</div>
     <div style="display:flex;gap:8px;align-items:center;">
       <div onclick="toggleNotifications()" style="position:relative;width:34px;height:34px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div id="v-kar-notif-badge" style="position:absolute;top:-2px;right:-2px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -1220,7 +1220,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:28%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
       </div>
       <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-dvikova"></use></svg></div>
-      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">KARJEROS EXP</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">KELIO EXP</div>
       <div id="v-kar-total-num" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#4FC3F7;line-height:1;text-shadow:0 0 20px rgba(79,195,247,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;--glow-color:#4FC3F7;">0</div>
       <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="v-kar-next-tier">Iki MASTER: 4 200 EXP</div>
       <div id="v-kar-medals-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;">
@@ -1241,7 +1241,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-issukiai"></use><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-varzybos"></use><use href="#i-varzybos"></use></svg></span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-profilis"></use><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -1353,7 +1353,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('v',this,'v-ish')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-issukiai"></use><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-varzybos"></use><use href="#i-varzybos"></use></svg></span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-profilis"></use><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -1434,7 +1434,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-issukiai"></use><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('v',this,'v-comp')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-varzybos"></use><use href="#i-varzybos"></use></svg></span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-profilis"></use><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -1483,7 +1483,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-issukiai"></use><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-varzybos"></use><use href="#i-varzybos"></use></svg></span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-profilis"></use><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -1597,7 +1597,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-issukiai"></use><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-varzybos"></use><use href="#i-varzybos"></use></svg></span><span class="lb">Varžybos</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('v',this,'v-prof')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-profilis"></use><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -1716,7 +1716,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="trh-groups-strip" style="display:flex;flex-direction:column;gap:6px;padding:0 16px;margin-top:10px;"></div>
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> GERIAUSI MANO VAIKAI — geriausio vaiko VIETA klubo poole pagal kategoriją (v124) -->
-    <div class="st"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-statistika"></use></svg>GERIAUSI VAIKAI · VIETA KLUBE</div>
+    <div class="st"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-statistika"></use></svg>VAIKO VIETA KLUBE</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 16px;">
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openTrainerStatScreen('competitions')">
         <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></div>
@@ -1736,7 +1736,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openTrainerStatScreen('skills')">
         <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:#FF4D00;text-shadow:0 0 6px rgba(255,77,0,.4);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="trh-best-kar">–</div>
-        <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Karjera</div>
+        <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Kelias</div>
       </div>
     </div>
     <div style="padding:4px 16px 0;">
@@ -1904,7 +1904,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- Tabai -->
     <div class="tabs no-scrollbar" style="padding:0 16px 10px;">
-      <div class="tab on" onclick="switchTrTab(this,'career')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-augimas"></use></svg> Karjera <span id="tr-career-count" style="opacity:.6;">0</span></div>
+      <div class="tab on" onclick="switchTrTab(this,'career')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-augimas"></use></svg> Kelias <span id="tr-career-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'challenges')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-issukiai"></use></svg> Iššūkiai <span id="tr-challenges-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'competitions')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'duels')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dvikova"></use></svg> Dvikovos <span id="tr-duels-count" style="opacity:.6;">0</span></div>
@@ -2143,7 +2143,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-kodas"></use></svg> Visų vaikų karjeros radaras (lytis × amžius) — sutraukiama -->
     <div style="margin:0 12px 6px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
       <div onclick="_trToggleSection('trp-career-body','trp-career-chev')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-        <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-kodas"></use></svg> VAIKŲ KARJEROS PROFILIS</div>
+        <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-kodas"></use></svg> VAIKŲ ĮGŪDŽIŲ PROFILIS</div>
         <span id="trp-career-chev" style="color:var(--mut);font-size:11px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="trp-career-body" style="display:none;margin-top:10px;">
@@ -2416,7 +2416,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <!-- BNAV apačioje -->
   <div class="bn2">
     <div class="ni on" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -2429,7 +2429,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="t-kar">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px 6px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">KARJERA</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">KELIAS</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -2449,7 +2449,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="position:absolute;width:160%;height:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);top:28%;left:-30%;transform:rotate(-12deg);animation:shimmer 8s linear infinite;"></div>
       </div>
       <div style="position:absolute;font-size:80px;right:-15px;top:-15px;opacity:.08;line-height:1;"><svg class="ico" aria-hidden="true"><use href="#i-dvikova"></use></svg></div>
-      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">KARJEROS EXP</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:2px;font-weight:800;position:relative;">KELIO EXP</div>
       <div id="tk-kar-total" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#4FC3F7;line-height:1;text-shadow:0 0 20px rgba(79,195,247,.5);margin:3px 0 4px;letter-spacing:2px;position:relative;">0</div>
       <div style="font-size:10px;color:rgba(255,255,255,.7);position:relative;" id="tk-kar-next-tier">Iki MASTER: – EXP</div>
       <div id="tk-kar-medals" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);position:relative;"></div>
@@ -2465,7 +2465,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -2500,7 +2500,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -2548,7 +2548,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Vaiko žaidimas ir ryšys</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--grn);margin:8px 0 6px;">0€</div>
       <ul style="list-style:none;margin:0 0 12px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Vaiko žaidimas: iššūkiai, karjera, dvikovos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Vaiko žaidimas: iššūkiai, rekordai, dvikovos</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Trenerio žinutės ir pranešimai</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Laimėjimai realiu laiku (medaliai, lygiai)</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Lygis, diržas, serijos</li>
@@ -2564,7 +2564,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <ul style="list-style:none;margin:0 0 12px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
         <li style="padding:3px 0 3px 20px;position:relative;color:var(--mut);"><span style="position:absolute;left:0;">·</span> Viskas iš Nemokamos</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> <svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> Mėnesio pasiekimų suvestinė</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Gili karjeros statistika ir istorija</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Gili progreso statistika ir istorija</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> <svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg> Bendraamžių percentiliai</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Pilni reitingai ir tendencijos</li>
       </ul>
@@ -2656,7 +2656,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -2741,7 +2741,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Karjera</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
@@ -3319,7 +3319,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="padding:0 14px;" id="km-next-event"><div class="cd" style="margin:0;text-align:center;color:var(--mut);font-size:12px;padding:16px;">Kraunama...</div></div>
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg> GERIAUSI VAIKAI -->
-    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:10px 14px 5px;"><svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg> GERIAUSI VAIKAI</div>
+    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:10px 14px 5px;"><svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg> KLUBO LYDERIAI</div>
     <div style="padding:0 14px;" id="km-best-kids"><div style="text-align:center;color:var(--mut);padding:12px;font-size:12px;">Kraunama...</div></div>
 
     <!-- Veiksmai -->
@@ -4388,7 +4388,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=377"></script>
+<script src="app.js?v=378"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

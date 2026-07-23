@@ -643,7 +643,7 @@ async function loadKidProductsCard(){
       else right = `<button onclick="kidAskParents('${it.key}')" style="background:rgba(255,77,0,.14);border:.5px solid rgba(255,77,0,.4);color:var(--br);font-size:10px;font-weight:800;padding:6px 10px;border-radius:99px;cursor:pointer;">${ico('patinka')} Paprašyti tėvų</button>`;
       return `<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:.5px solid var(--bdr);">
         <span style="font-size:16px;">${it.ico}</span>
-        <div style="flex:1;min-width:0;"><div style="font-size:11.5px;font-weight:700;color:white;">${it.t}</div><div style="font-size:9.5px;color:var(--mut);">${priceOf(it.key)}</div></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:11.5px;font-weight:700;color:white;">${it.t}</div></div>
         ${right}
       </div>`;
     }).join('') + (!ov.has_parent
@@ -1304,7 +1304,7 @@ function openParentHelpModal() {
   const bugBody = encodeURIComponent(`Aprašyk, kas nutiko:\n\n• Ką dariau: \n• Kas nutiko: \n• Vaiko vardas: \n• Telefonas / naršyklė: \n• App versija: ${appV}\n`);
   const bugHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – problema / klaida')}&body=${bugBody}`;
   const faq = [
-    ['Kaip matau vaiko progresą?', 'Pagrindiniame lange — vaiko hero, reitingai, artimiausios varžybos. „Karjera" — statistika pagal kategorijas. „Pasiekimai" — naujausi medaliai, iššūkiai ir rekordai.'],
+    ['Kaip matau vaiko progresą?', 'Pagrindiniame lange — vaiko hero, reitingai, artimiausios varžybos. „Kelias" — statistika pagal kategorijas. „Pasiekimai" — naujausi medaliai, iššūkiai ir rekordai.'],
     ['Kodėl negaliu pateikti rezultatų?', 'Tu esi stebėtojas — pateikti iššūkius/rezultatus gali tik pats vaikas savo paskyroje. Tu matai progresą ir palaikai.'],
     ['Kaip pridėti antrą vaiką?', 'Paspausk avatarą viršuje → „Pridėti vaiką". Vaiką sukuria klubas, tu jį priimi prie savo paskyros.'],
     ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsas turi būti įdiegtas į pradžios ekraną ir duotas pranešimų leidimas.'],
@@ -1399,15 +1399,15 @@ function openHelpModal(who) {
   const FAQ = {
     trainer: [
       ['Iš kur atsiranda grupės ir vaikai?', 'Grupes kuria ir vaikus priskiria KLUBAS. Tu matai tau priskirtas grupes (kaip pagrindinis treneris arba asistentas) ir valdai jų kasdienybę.'],
-      ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai karjeros rekordus, iššūkius, varžybas ir dvikovas. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
+      ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai pratimų rekordus, iššūkius, varžybas ir dvikovas. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
       ['Kaip skirti iššūkį?', 'Grupės lange „'+ico('tikslas')+' IŠŠŪKIS GRUPEI" arba paspaudęs vaiką — asmeninį iššūkį. Siūlyk tik tai, ką gali patikrinti.'],
       ['Kaip žymiu lankomumą?', 'Grupės lange „'+ico('dokumentas')+' ŽYMĖTI LANKOMUMĄ". Pilna savaitė → +15 EXP vaikui, pilnas mėnuo → +100.'],
       ['Kur matau pratimų normatyvus?', 'Antraštėje spausk '+ico('jega')+' — matysi rėžius ('+ico('medalis')+''+ico('medalis')+''+ico('medalis')+''+ico('trofejai')+') pagal lytį ir amžių.'],
       ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsą reikia įsidėti į pradžios ekraną.']
     ],
     kid: [
-      ['Kaip gaunu EXP ir keliu lygį?', 'Atlik karjeros pratimus, įveik trenerio iššūkius, dalyvauk varžybose ir lankyk treniruotes. Treneris patvirtina — ir EXP auga!'],
-      ['Kaip pateikiu rezultatą?', '„Karjera" lange pasirink sritį ir pratimą, įrašyk naują rekordą. Treneris jį patvirtins.'],
+      ['Kaip gaunu EXP ir keliu lygį?', 'Atlik pratimus Kelio lange, įveik trenerio iššūkius, dalyvauk varžybose ir lankyk treniruotes. Treneris patvirtina — ir EXP auga!'],
+      ['Kaip pateikiu rezultatą?', '„Kelias" lange pasirink sritį ir pratimą, įrašyk naują rekordą. Treneris jį patvirtins.'],
       ['Kas yra dvikova?', '1 prieš 1 iššūkis draugui (atsispaudimai, bėgimas...). Iškviesk draugą, abu atlikit, treneris patvirtina — nugalėtojas gauna daugiau EXP!'],
       ['Kodėl mano lygis žemas?', 'Tai normalu — lygiai auga su amžiumi ir treniruotėmis. Svarbiausia stengtis ir nenuleisti rankų. OSU! '+ico('dirzas')+''],
       ['Kaip pasidalinti pasiekimu?', 'Varpelyje prie „PR patvirtintas" spausk '+ico('programele')+' — sukursi kortelę su nuotrauka, kurią gali dėti į Instagram/TikTok.'],
@@ -1471,10 +1471,10 @@ function openParentInfoModal() {
         <button onclick="document.getElementById('parent-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:16px 18px 28px;">
-        ${sec(''+ico('perziura')+'', 'KĄ MATAI', 'Realiu laiku matai vaiko progresą: lygį ir stadiją, karjeros statistiką pagal 7 kategorijas, varžybų medalius, įveiktus iššūkius, diržą ir naujausių pasiekimų srautą. Esi pasyvus stebėtojas — pateikti gali tik pats vaikas.')}
+        ${sec(''+ico('perziura')+'', 'KĄ MATAI', 'Realiu laiku matai vaiko progresą: lygį ir stadiją, progreso statistiką pagal 7 kategorijas, varžybų medalius, įveiktus iššūkius, diržą ir naujausių pasiekimų srautą. Esi pasyvus stebėtojas — pateikti gali tik pats vaikas.')}
         ${sec(''+ico('tikslas')+'', 'TAVO ROLĖ', 'Stebėk ir palaikyk. Valdai administracinius/saugumo duomenis: sveikatą (alergijos, vaistai), avarinį kontaktą, foto/video sutikimą, svorį ir matomumą statistikose. Vaiką sukuria klubas — tu jį priimi prie savo paskyros.')}
         ${sec(''+ico('dirzas')+'', 'KĄ GAUNA VAIKAS', 'Žaidybinę motyvaciją: kelia lygį, renka EXP, kyla diržo laiptais, įveikinėja trenerio iššūkius, kovoja dvikovose ir dalyvauja varžybose. Tai paverčia treniruotes įdomesnėmis ir padeda nepamesti motyvacijos ilgam.')}
-        ${sec(''+ico('statistika')+'', 'ATASKAITOS', '„Pasiekimų" lange kiekvieną mėnesį matai vaiko mėnesio ataskaitą — kiek iššūkių įveikė, kiek karjeros rekordų pagerino, kiek varžybų laimėjo. Ateityje — ketvirtinės AI ataskaitos su stipriųjų/silpnųjų pusių analize.')}
+        ${sec(''+ico('statistika')+'', 'ATASKAITOS', '„Pasiekimų" lange kiekvieną mėnesį matai vaiko mėnesio ataskaitą — kiek iššūkių įveikė, kiek rekordų pagerino, kiek varžybų laimėjo. Ateityje — ketvirtinės AI ataskaitos su stipriųjų/silpnųjų pusių analize.')}
         ${sec(''+ico('premium-plus')+'', 'PREMIUM', 'Premium prenumerata atrakins gilesnę statistiką ir ketvirtines AI ataskaitas apie tavo vaiką. Netrukus — ieškok „Parduotuvės" lange.')}
         ${sec(''+ico('pranesimai')+'', 'PRANEŠIMAI', 'Į varpelį ateina klubo ir trenerio pranešimai bei žinutės, susijusios būtent su tavo vaiku. Vaiko pasiekimai (medaliai, iššūkiai, rekordai) tyliai keliauja į „Pasiekimų" srautą.')}
       </div>
@@ -2875,7 +2875,7 @@ async function loadParentKidFeed() {
     krRows.forEach(r => {
       const ex = exMap[r.exercise_id];
       const unit = ex?.unit ? ' ' + ex.unit : '';
-      items.push({ kind: 'record', color: '#22C55E', icon: ''+ico('grafikas')+'', title: (ex?.name || 'Pratimas') + ` → ${r.new_value}${unit}`, label: 'Karjeros rekordas', exp: r.exp_gain || 0, date: r.reviewed_at });
+      items.push({ kind: 'record', color: '#22C55E', icon: ''+ico('grafikas')+'', title: (ex?.name || 'Pratimas') + ` → ${r.new_value}${unit}`, label: 'Pratimo rekordas', exp: r.exp_gain || 0, date: r.reviewed_at });
     });
 
     if (items.length === 0) { list.innerHTML = '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:24px;text-align:center;"><div style="font-size:34px;margin-bottom:8px;">'+ico('pastas')+'</div><div style="font-size:12px;color:var(--mut);">Dar nėra pasiekimų šį mėnesį</div><div style="font-size:10px;color:var(--mut);margin-top:5px;line-height:1.5;">Čia atsiras vaiko medaliai, įveikti iššūkiai ir nauji rekordai</div></div>'; return; }
@@ -3269,7 +3269,7 @@ async function redeemHome(){
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
   const gdH = _kidDataDays(k, 60);
-  if (gdH > 0) { showToast(''+ico('statistika')+' Ataskaitos atrakinamos po 2 mėn. treniruočių (liko ' + gdH + ' d.) — kol kas vaikas kaupia duomenis Karjeros lange.', 'error', 5500); return; }
+  if (gdH > 0) { showToast(''+ico('statistika')+' Ataskaitos atrakinamos po 2 mėn. treniruočių (liko ' + gdH + ' d.) — kol kas vaikas kaupia duomenis Kelio lange.', 'error', 5500); return; }
   if ((e.homeplan_credits || 0) <= 0) { showToast('Nebėra namų planų kreditų', 'error'); return; }
   const days = _entCdDays(e.homeplan_last_used, 2);
   if (days > 0) { showToast('Dar negali panaudoti — kitas planas po ' + days + ' d. (kas 2 mėn.)', 'error', 4500); return; }
@@ -3283,7 +3283,7 @@ async function redeemSummer(){
   const k = parentActiveKid;
   if (!k) { showToast('Nėra pasirinkto vaiko', 'error'); return; }
   const gdS = _kidDataDays(k, 60);
-  if (gdS > 0) { showToast(''+ico('statistika')+' Ataskaitos atrakinamos po 2 mėn. treniruočių (liko ' + gdS + ' d.) — kol kas vaikas kaupia duomenis Karjeros lange.', 'error', 5500); return; }
+  if (gdS > 0) { showToast(''+ico('statistika')+' Ataskaitos atrakinamos po 2 mėn. treniruočių (liko ' + gdS + ' d.) — kol kas vaikas kaupia duomenis Kelio lange.', 'error', 5500); return; }
   if ((e.summer_credits || 0) <= 0) { showToast('Nebėra vasaros kreditų', 'error'); return; }
   const days = _summerDaysLeft();
   if (days > 0) { showToast('Dar negali panaudoti — vasaros programa po ' + days + ' d. (nuo gegužės 15)', 'error', 4500); return; }
@@ -3443,7 +3443,7 @@ function openReportOrderModal(useCredit){
   const old = document.getElementById('report-order-modal'); if (old) old.remove();
   const lockDays = _kidDataDays(k, 60);  // ${ico('statistika')} duomenų vartai: ataskaitos atrakinamos po 2 mėn. treniruočių (kol susikaupia duomenys)
   const orderCard = lockDays > 0
-    ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:20px 14px;margin-bottom:16px;text-align:center;"><div style="font-size:36px;margin-bottom:8px;">${ico('uzrakinta')}</div><div style="font-size:14px;font-weight:800;color:white;margin-bottom:7px;">Ataskaita dar kaupia duomenis</div><div style="font-size:11px;color:var(--mut);line-height:1.55;">Pirmoms ataskaitoms reikia ~2 mėn. treniruočių duomenų, kad būtų ką analizuoti. Kol kas vaikas kaupia rezultatus Karjeros lange — kuo daugiau jų užfiksuos, tuo asmeniškesnė bus analizė.</div><div style="margin-top:11px;font-size:12px;color:var(--br);font-weight:800;">${ico('laukia')} Prieinama po ${lockDays} d.</div></div>`
+    ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:20px 14px;margin-bottom:16px;text-align:center;"><div style="font-size:36px;margin-bottom:8px;">${ico('uzrakinta')}</div><div style="font-size:14px;font-weight:800;color:white;margin-bottom:7px;">Ataskaita dar kaupia duomenis</div><div style="font-size:11px;color:var(--mut);line-height:1.55;">Pirmoms ataskaitoms reikia ~2 mėn. treniruočių duomenų, kad būtų ką analizuoti. Kol kas vaikas kaupia rezultatus Kelio lange — kuo daugiau jų užfiksuos, tuo asmeniškesnė bus analizė.</div><div style="margin-top:11px;font-size:12px;color:var(--br);font-weight:800;">${ico('laukia')} Prieinama po ${lockDays} d.</div></div>`
     : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div><div style="display:flex;gap:10px;"><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div></div><div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div><div style="margin-top:11px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">TRAUMOS / APRIBOJIMAI (NEBŪTINA)</label><input id="rep-injuries" type="text" placeholder="pvz. neseniai skaudėjo kelį" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><div style="margin-top:10px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">KO LABIAUSIAI TIKITĖS IŠ ATASKAITOS? (NEBŪTINA)</label><input id="rep-goal" type="text" placeholder="pvz. ar verta ruoštis varžyboms" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><label style="display:flex;gap:8px;font-size:10.5px;color:var(--mut);line-height:1.45;margin-top:11px;cursor:pointer;"><input type="checkbox" id="rep-consent" style="margin-top:2px;flex-shrink:0;"> Sutinku, kad ataskaita būtų parengta ir pateikta iš karto, ir suprantu, kad ją pateikus netenku teisės atsisakyti sutarties (CK 6.228¹⁰ str.).</label><button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:9px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button><div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div></div>`;
   const m = document.createElement('div');
   m.id = 'report-order-modal';
@@ -6313,7 +6313,7 @@ function _showAgeUpCelebration() {
       <div style="font-size:60px;line-height:1;margin-bottom:8px;">${ico('gimtadienis')}</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1.5px;color:#fff;line-height:1.05;">PERĖJAI Į <span style="color:#FF4D00;">14+</span> GRUPĘ!</div>
       <div style="font-size:13px;color:#cbd2da;line-height:1.6;margin:12px 0 6px;">Sveikinam, <b style="color:#fff;">${(currentKid?.first_name || 'kovotojau')}</b>! Tu užaugai ${ico('dirzas')}</div>
-      <div style="font-size:12.5px;color:#aeb6c0;line-height:1.6;margin-bottom:16px;">Tavo rekordai <b style="color:#fff;">išsaugoti</b> ir užšaldyti „6–13 m. karjeros" istorijoje. Dabar laukia <b style="color:#FFD700;">nauji, sunkesni tikslai</b> — tavo lygis nedingo, tik atsivėrė daugiau erdvės augti!</div>
+      <div style="font-size:12.5px;color:#aeb6c0;line-height:1.6;margin-bottom:16px;">Tavo rekordai <b style="color:#fff;">išsaugoti</b> ir užšaldyti „6–13 m. etapo" istorijoje. Dabar laukia <b style="color:#FFD700;">nauji, sunkesni tikslai</b> — tavo lygis nedingo, tik atsivėrė daugiau erdvės augti!</div>
       <div style="background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.3);border-radius:10px;padding:9px;font-size:12px;color:#e8d9c5;margin-bottom:18px;">${ico('dirzas')} <b style="color:#FF4D00;">OSU!</b> Tikras kelias tik prasideda.</div>
       <button onclick="document.getElementById('ageup-modal').remove()" style="width:100%;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-size:14px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;">PIRMYN! ${ico('jega')}</button>
     </div>`;
@@ -12496,9 +12496,9 @@ function openClubRolesGuide(){
     <div style="padding:14px 16px 24px;">
       <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Keturios paskyros, kiekviena su savo vaidmeniu. Kad viskas suktųsi — kiekvienas daro savo dalį:</div>
       ${role(''+ico('klubas')+'','KLUBAS — tu (administratorius)','#3B82F6',['Kuri grupes ir priskiri joms trenerius','Tvirtini arba atmeti naujų vaikų registracijas','Kuri varžybas, diržų laikymą, stovyklas, grupių iššūkius','Kvieti ir valdai trenerius','Matai analitiką, apyvartą, bonusą'])}
-      ${role(''+ico('dirzas')+'','TRENERIS','#22C55E',['Žymi lankomumą','Tvirtina rezultatus: varžybų, iššūkių, karjeros, dvikovų, stovyklų','Skiria EXP už elgesį','Pildo grupių iššūkio dienos rezultatus','Bendrauja su tėvais (žinutės, skelbimai)'])}
+      ${role(''+ico('dirzas')+'','TRENERIS','#22C55E',['Žymi lankomumą','Tvirtina rezultatus: varžybų, iššūkių, pratimų, dvikovų, stovyklų','Skiria EXP už elgesį','Pildo grupių iššūkio dienos rezultatus','Bendrauja su tėvais (žinutės, skelbimai)'])}
       ${role(''+ico('grupe')+'‍'+ico('vaikas')+'','TĖVAS','#8B5CF6',['Stebi vaiko progresą ir pasiekimus','Gauna pranešimus apie vaiką','Perka AI ataskaitas','Bendrauja su treneriu ir klubu','NEteikia rezultatų — tik stebi'])}
-      ${role(''+ico('vaikas')+'','VAIKAS','#FF8C00',['Pats atlieka veiklas: teikia iššūkius, varžybų rezultatus, karjeros rekordus','Kviečia draugus į dvikovas','Mato savo EXP, lygį, reitingus, karjerą'])}
+      ${role(''+ico('vaikas')+'','VAIKAS','#FF8C00',['Pats atlieka veiklas: teikia iššūkius, varžybų rezultatus, pratimų rekordus','Kviečia draugus į dvikovas','Mato savo EXP, lygį, reitingus, progresą'])}
       <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-top:6px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px;">${ico('pagalba')} Trumpai: <b>klubas</b> tvarko struktūrą (grupės, registracijos, renginiai), <b>treneris</b> tvirtina ir vertina, <b>tėvas</b> stebi, <b>vaikas</b> daro.</div>
     </div>
   </div>`;
@@ -13692,7 +13692,7 @@ async function openCreateCamp(editId){
       </select>
       <label class="lbl">EXP UŽ DALYVAVIMĄ <span style="color:var(--mut);font-weight:600;">(0–<span id="camp-exp-cap">${_campType(c.event_type).cap}</span>)</span></label>
       <input class="inp" id="camp-exp" type="number" min="0" max="${_campType(c.event_type).cap}" value="${Math.min(_campType(c.event_type).cap, c.exp_reward||0)}" style="margin-bottom:4px;">
-      <div id="camp-exp-hint" style="font-size:11px;color:var(--mut);margin-bottom:12px;">Maks. ${_campType(c.event_type).cap} EXP šiam tipui — kad renginiai nesugriautų karjeros balanso.</div>
+      <div id="camp-exp-hint" style="font-size:11px;color:var(--mut);margin-bottom:12px;">Maks. ${_campType(c.event_type).cap} EXP šiam tipui — kad renginiai nesugriautų EXP balanso.</div>
       <label class="lbl">APRAŠYMAS</label>
       <textarea class="inp" id="camp-desc" rows="3" placeholder="Programa, ką pasiimti, kt." style="margin-bottom:16px;resize:vertical;">${c.description||''}</textarea>
       <button class="btn btng" style="width:100%;margin:0;" onclick="submitNewCamp('${editId||''}')">${ico('issaugoti')} ${editId?'IŠSAUGOTI':'SUKURTI STOVYKLĄ'}</button>
@@ -19183,7 +19183,7 @@ function _assignExpStep1() {
   const btn = 'width:100%;text-align:left;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;color:white;font-family:inherit;display:flex;align-items:center;gap:14px;';
   b.innerHTML = `
     <div style="font-size:12px;color:var(--mut);margin-bottom:14px;">Vaikui <b style="color:white;">${name}</b> (be telefono) — pasirink, už ką skirti EXP:</div>
-    <button onclick="_assignExpCareer()" style="${btn}"><span style="font-size:26px;">${ico('treniruote')}</span><div><div style="font-size:14px;font-weight:800;">Karjera</div><div style="font-size:11px;color:var(--mut);">Pratimo rezultatas (EXP pagal pakopas)</div></div></button>
+    <button onclick="_assignExpCareer()" style="${btn}"><span style="font-size:26px;">${ico('treniruote')}</span><div><div style="font-size:14px;font-weight:800;">Kelias</div><div style="font-size:11px;color:var(--mut);">Pratimo rezultatas (EXP pagal pakopas)</div></div></button>
     <button onclick="_assignExpChallengeList()" style="${btn}"><span style="font-size:26px;">${ico('issukiai')}</span><div><div style="font-size:14px;font-weight:800;">Iššūkis</div><div style="font-size:11px;color:var(--mut);">Pažymėti iššūkį atliktą</div></div></button>
     <button onclick="_assignExpCompetitionList()" style="${btn}"><span style="font-size:26px;">${ico('varzybos')}</span><div><div style="font-size:14px;font-weight:800;">Varžybos</div><div style="font-size:11px;color:var(--mut);">Įrašyti varžybų rezultatą</div></div></button>`;
 }
@@ -19383,7 +19383,7 @@ async function _assignExpCareer() {
   _aecCareer = { ageGroup: ag, cat: null, list: [], ex: null };
   const cats = await getCareerCategories();
   if (!cats.length) {
-    b.innerHTML = `${_assignExpBack()}<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Karjeros kategorijų nėra.</div>`;
+    b.innerHTML = `${_assignExpBack()}<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Kelio kategorijų nėra.</div>`;
     return;
   }
   const sorted = cats.slice().sort((a, c) => (a.sort_order || 0) - (c.sort_order || 0));
@@ -19559,7 +19559,7 @@ async function _aecSubmit() {
       if (row && row.exp_gain != null) realGain = row.exp_gain;
     } catch (_) {}
     showToast(realGain > 0
-      ? `${ico('patvirtinta')} Karjeros rezultatas įrašytas — +${realGain} EXP priskirta!`
+      ? `${ico('patvirtinta')} Pratimo rezultatas įrašytas — +${realGain} EXP priskirta!`
       : `${ico('patvirtinta')} Rezultatas užfiksuotas — papildomo EXP nepridėta (vaikas jau turi tokį ar geresnį pasiekimą).`,
       'success', 4500);
     const em = document.getElementById('assign-exp-modal'); if (em) em.remove();
@@ -19852,7 +19852,7 @@ function renderTrainerPatHero() {
 
 let _trPatFullHtml = { career: '', challenges: '', competitions: '', duels: '', forms: '' };
 let _trPatAllTab = 'career';
-const TR_PAT_TITLES = { career: ''+ico('treniruote')+' KARJERA', challenges: ''+ico('tikslas')+' IŠŠŪKIAI', competitions: ''+ico('medalis')+' VARŽYBOS', duels: ''+ico('dvikova')+' DVIKOVOS', forms: ''+ico('stovykla')+' STOVYKLOS' };
+const TR_PAT_TITLES = { career: ''+ico('treniruote')+' KELIAS', challenges: ''+ico('tikslas')+' IŠŠŪKIAI', competitions: ''+ico('medalis')+' VARŽYBOS', duels: ''+ico('dvikova')+' DVIKOVOS', forms: ''+ico('stovykla')+' STOVYKLOS' };
 
 // Bendras renderis: pagrindiniam tabe TOP 3 + DAUGIAU, pilnas sąrašas — sub-lange
 function _trPatRenderTop(listId, tab, cardsArr, emptyHtml) {
@@ -20449,7 +20449,7 @@ function openTrInfo(which) {
     case 'pat':
       title = ''+ico('pagalba')+' PATVIRTINIMAI';
       html = intro('Čia tvirtini, ką pateikė vaikai ir tėvai. Patvirtinus — EXP priskiriamas automatiškai. Gali filtruoti pagal grupę.') +
-        row(''+ico('tikslas')+'', 'Karjera', 'Nauji pratimų rekordai (PR).') +
+        row(''+ico('tikslas')+'', 'Kelias', 'Nauji pratimų rekordai.') +
         row(''+ico('jega')+'', 'Iššūkiai', 'Atlikti iššūkiai.') +
         row(''+ico('zenkliukai')+'', 'Varžybos', 'Varžybų rezultatai ir medaliai.') +
         row(''+ico('dvikova')+'', 'Dvikovos', 'Dvikovų rezultatai.') +
@@ -20460,7 +20460,7 @@ function openTrInfo(which) {
       title = ''+ico('pagalba')+' PROFILIS';
       html = intro('Tavo profilis ir grupių analitika.') +
         row(''+ico('dirzas')+'', 'Tavo lygis', 'Etapas ir progresas iki kito lygio.') +
-        row('🕸️', 'Vaikų karjeros profilis', 'Radaras pagal lytį ir amžių — kur grupė stipri, kur reikia padirbėti.') +
+        row('🕸️', 'Vaikų įgūdžių profilis', 'Radaras pagal lytį ir amžių — kur grupė stipri, kur reikia padirbėti.') +
         row(''+ico('dirzas')+'', 'Vaikų diržai', 'Diržų pasiskirstymas grupėse.') +
         row(''+ico('trofejai')+'', 'Grupių reitingas', 'Filtruok pagal skillą, varžybas ar iššūkius (vidurkis vienam vaikui).');
       break;
@@ -20492,7 +20492,7 @@ function openParentInfo(which) {
     case 'feed':
       title = ''+ico('pagalba')+' PASIEKIMAI';
       html = intro('Vaiko pasiekimų juosta — viskas, kas naujo, vienoje vietoje.') +
-        row(''+ico('grafikas')+'', 'Rekordai', 'Nauji karjeros pratimų rezultatai (PR).') +
+        row(''+ico('grafikas')+'', 'Rekordai', 'Nauji pratimų rekordai.') +
         row(''+ico('jega')+'', 'Iššūkiai', 'Vaiko įveikti iššūkiai.') +
         row(''+ico('zenkliukai')+'', 'Medaliai', 'Varžybų rezultatai.') +
         row(''+ico('patinka')+'', 'Pagyrimai', 'Trenerio skirtas EXP už elgesį/pastangas.') +
@@ -21358,7 +21358,7 @@ async function _loadTrainerHomePending(kidIds) {
   ]);
 
   const items = [];
-  (rsR.data || []).forEach(s => items.push({ ts: s.created_at, kid: s.kid_id, icon: ''+ico('treniruote')+'', label: s.exercises?.name || 'Karjeros rezultatas', tab: 'career' }));
+  (rsR.data || []).forEach(s => items.push({ ts: s.created_at, kid: s.kid_id, icon: ''+ico('treniruote')+'', label: s.exercises?.name || 'Pratimo rezultatas', tab: 'career' }));
   (csR.data || []).forEach(s => items.push({ ts: s.created_at, kid: s.kid_id, icon: s.challenges?.icon || ''+ico('tikslas')+'', label: s.challenges?.title || 'Iššūkis', tab: 'challenges' }));
   (crR.data || []).forEach(s => items.push({ ts: s.created_at, kid: s.kid_id, icon: ''+ico('trofejai')+'', label: 'Varžybų rezultatas', tab: 'competitions' }));
   items.sort((a, b) => new Date(b.ts) - new Date(a.ts));
@@ -21501,7 +21501,7 @@ async function _fetchTrainerNotifications(force) {
 
   trainerNotifications = {
     system: dedupeById([
-      ...(rsR.data || []).map(s => ({ id: 'rs-' + s.id, icon: ''+ico('treniruote')+'', title: `${kidName(s.kid_id)} pateikė rezultatą`, sub: (s.exercises?.name || 'Karjeros pratimas'), ts: s.created_at })),
+      ...(rsR.data || []).map(s => ({ id: 'rs-' + s.id, icon: ''+ico('treniruote')+'', title: `${kidName(s.kid_id)} pateikė rezultatą`, sub: (s.exercises?.name || 'Pratimas'), ts: s.created_at })),
       ...(nkR.data || []).map(k => ({ id: 'kid-' + k.id, icon: ''+ico('zyma')+'', title: `Nauja paskyra: ${kidNameMap[k.id] || 'Vaikas'}`, sub: 'Laukia patvirtinimo pagrindiniame', ts: k.created_at }))
     ].sort((a, b) => new Date(b.ts) - new Date(a.ts))),
     challenges: dedupeById((csR.data || []).map(s => ({ id: 'cs-' + s.id, icon: (s.challenges?.icon || ''+ico('tikslas')+''), title: `${kidName(s.kid_id)} pateikė iššūkį`, sub: (s.challenges?.title || 'Iššūkis'), ts: s.created_at }))),
@@ -21861,7 +21861,7 @@ async function openTrainerSettings() {
             <b>${ico('kalendorius')} Šiandien</b> — grupės pagal tvarkaraštį (nustatyk Grupės → ${ico('redaguoti')}). Spausk grupę → vaikai, iššūkis grupei.<br>
             <b>${ico('grupe')} Grupės</b> — spausk grupę → pilnas vaizdas su vaikais; oranžinis skaičius prie vaiko = laukia patvirtinimo.<br>
             <b>${ico('tikslas')} Iššūkiai</b> — kurk grupei, berniukams/mergaitėms ar vienam vaikui. Tipų spalvos kaip vaikų appse.<br>
-            <b>${ico('patvirtinta')} Patvirtinimai</b> — karjera / iššūkiai / varžybos / dvikovos. Patvirtinus vaikas iškart gauna EXP.<br>
+            <b>${ico('patvirtinta')} Patvirtinimai</b> — kelias / iššūkiai / varžybos / dvikovos. Patvirtinus vaikas iškart gauna EXP.<br>
             <b>${ico('pranesimai')} Varpelis</b> — nauji pateikimai ir žinutės. Paspaudus nukelia tiesiai į patvirtinimą.<br>
             <b>${ico('dirzas')} Lygiai</b> — kiekvienas patvirtinimas ir sukurtas iššūkis = +1 taškas tavo kelyje iki Sensėjaus.
           </div>
@@ -21884,7 +21884,7 @@ async function openTrainerSettings() {
             <div style="font-size:18px;color:var(--mut);">›</div>
           </button>
           <div id="trs-points-body" style="display:none;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:14px;padding:14px;font-size:11px;color:rgba(255,255,255,.85);line-height:1.8;">
-            ${ico('patvirtinta')} Patvirtintas vaiko rezultatas (karjera) — <b style="color:var(--grn);">+1 tšk.</b><br>
+            ${ico('patvirtinta')} Patvirtintas vaiko rezultatas (kelias) — <b style="color:var(--grn);">+1 tšk.</b><br>
             ${ico('tikslas')} Patvirtintas vaiko iššūkis — <b style="color:var(--grn);">+1 tšk.</b><br>
             ${ico('trofejai')} Patvirtintas varžybų rezultatas — <b style="color:var(--grn);">+1 tšk.</b><br>
             ${ico('zvaigzde')} Sukurtas iššūkis — <b style="color:var(--br);">+1 tšk.</b><br>
@@ -25486,10 +25486,10 @@ function renderClubGroupsRanked(){
   const careerSum = m => Object.values(m.cats||{}).reduce((a,b)=>a+(b||0),0);
   const valOf = gid => { const m=M[gid]||{cats:{}}; if(key==='overall') return m.exp||0; if(key==='varzybos') return (m.g||0)*3+(m.s||0)*2+(m.b||0); if(key==='issukiai') return m.ch||0; if(key==='career') return careerSum(m); return (m.cats&&m.cats[key])||0; };
   const chip = (k,label,active) => `<button onclick="setClubGroupsRank('${k}')" style="flex-shrink:0;background:${active?'rgba(255,77,0,.15)':'transparent'};color:${active?'var(--br)':'var(--mut)'};border:.5px solid ${active?'rgba(255,77,0,.4)':'var(--bdr)'};padding:7px 13px;border-radius:99px;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;">${label}</button>`;
-  const chips = chip('overall',''+ico('statistika')+' Bendras', key==='overall') + chip('career',''+ico('grafikas')+' Karjera'+(isCareer?' ▾':''), isCareer) + chip('varzybos',''+ico('medalis')+' Varžybos', key==='varzybos') + chip('issukiai',''+ico('tikslas')+' Iššūkiai', key==='issukiai');
+  const chips = chip('overall',''+ico('statistika')+' Bendras', key==='overall') + chip('career',''+ico('grafikas')+' Kelias'+(isCareer?' ▾':''), isCareer) + chip('varzybos',''+ico('medalis')+' Varžybos', key==='varzybos') + chip('issukiai',''+ico('tikslas')+' Iššūkiai', key==='issukiai');
   let careerSel = '';
   if (isCareer){
-    const opts = `<option value="career" ${key==='career'?'selected':''}>Visos karjeros sritys</option>` + cats.map(c=>`<option value="${c.id}" ${key===c.id?'selected':''}>${c.icon||''} ${c.name}</option>`).join('');
+    const opts = `<option value="career" ${key==='career'?'selected':''}>Visos Kelio sritys</option>` + cats.map(c=>`<option value="${c.id}" ${key===c.id?'selected':''}>${c.icon||''} ${c.name}</option>`).join('');
     careerSel = `<select onchange="setClubGroupsRank(this.value)" style="width:100%;box-sizing:border-box;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:9px;color:#fff;font-size:12px;margin-bottom:10px;">${opts}</select>`;
   }
   const chipsBar = `<div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 0 ${isCareer?'8px':'10px'};">${chips}</div>${careerSel}`;
@@ -25498,7 +25498,7 @@ function renderClubGroupsRanked(){
     if(key==='overall'){ const lvl=m.n?Math.round(m.lvlSum/m.n):1; return `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${(m.exp||0).toLocaleString()}</div><div style="font-size:9px;color:var(--mut);">EXP · lvl ${lvl}</div>`; }
     if(key==='varzybos') return `<div style="font-size:13px;white-space:nowrap;">${ico('medalis')}${m.g||0} ${ico('medalis')}${m.s||0} ${ico('medalis')}${m.b||0}</div>`;
     if(key==='issukiai') return `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${(m.ch||0).toLocaleString()}</div><div style="font-size:9px;color:var(--mut);">iššūkių EXP</div>`;
-    if(key==='career') return `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${careerSum(m).toLocaleString()}</div><div style="font-size:9px;color:var(--mut);">karjeros EXP</div>`;
+    if(key==='career') return `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${careerSum(m).toLocaleString()}</div><div style="font-size:9px;color:var(--mut);">Kelio EXP</div>`;
     const cat=cats.find(c=>c.id===key); return `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">${valOf(gid).toLocaleString()}</div><div style="font-size:9px;color:var(--mut);">${cat?cat.icon:''} EXP</div>`;
   };
   const cards = sorted.map((g,i)=>{
@@ -29200,7 +29200,7 @@ async function sendSubmissionToTrainer(trainerId, newVal, oldPr, comment, lower)
 
   showToast(ico('patvirtinta')+' Išsiųsta treneriui patvirtinti!', 'success', 3000);
   playSound('send');
-  notifyTrainersNewSubmission('🏋️ Naujas karjeros rezultatas', 'pateikė rezultatą — laukia patvirtinimo');
+  notifyTrainersNewSubmission('🏋️ Naujas pratimo rezultatas', 'pateikė rezultatą — laukia patvirtinimo');
   closeExercises();
   await loadKidPendingSubmissions();
   } finally {
@@ -33250,7 +33250,7 @@ function openInstructionsModal() {
       </div>
       
       <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #4FC3F7;">
-        <div style="font-size:14px;font-weight:800;color:#4FC3F7;margin-bottom:6px;">${ico('treniruote')} Karjera</div>
+        <div style="font-size:14px;font-weight:800;color:#4FC3F7;margin-bottom:6px;">${ico('treniruote')} Kelias</div>
         <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">7 sporto kategorijos su pratimais (JĖGA, GREITIS, IŠTVERMĖ, ir t.t.). Pateik savo asmeninius rekordus (PR) - treneris patvirtins ir gausi EXP. Pasiek tier'us: BRONZE → SILVER → GOLD → MAX.</div>
       </div>
       
@@ -33270,7 +33270,7 @@ function openInstructionsModal() {
       </div>
 
       <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #66BB6A;">
-        <div style="font-size:14px;font-weight:800;color:#66BB6A;margin-bottom:6px;">${ico('jega')} Karjera</div>
+        <div style="font-size:14px;font-weight:800;color:#66BB6A;margin-bottom:6px;">${ico('jega')} Kelias</div>
         <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Tavo asmeniniai rekordai (PR): atsispaudimai, pritūpimai, greitis ir kt. Pagerink rekordą, pateik trenerio patvirtinimui ir gauk EXP + medalius.</div>
       </div>
 
@@ -33497,7 +33497,7 @@ function openHowExpModal() {
       <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #22C55E;">
         <div style="font-size:13px;font-weight:800;color:#22C55E;margin-bottom:6px;">${ico('jega')} ASMENINIAI REKORDAI (PR)</div>
         <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
-          Pateik naują PR pratime (karjera tab'e). Treneris patvirtins ir gausi EXP proporcingai skirtumui nuo seno PR.
+          Pateik naują rekordą pratime (Kelio lange). Treneris patvirtins ir gausi EXP proporcingai skirtumui nuo seno PR.
         </div>
       </div>
       
