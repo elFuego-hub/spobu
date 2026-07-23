@@ -30363,8 +30363,8 @@ async function enablePushNotifications() {
     showToast(''+ico('isjungta')+' Tavo naršyklė nepalaiko pranešimų', 'error', 4000);
     return false;
   }
-  // Tėvas IR treneris registruojasi be kid_id (user_id režimas)
-  const isParent = currentProfile?.role === 'parent' || currentProfile?.role === 'trainer';
+  // Tėvas/treneris/klubas/adminas registruojasi be kid_id (user_id režimas); tik vaikui reikia currentKid
+  const isParent = ['parent', 'trainer', 'club_admin', 'admin'].indexOf(currentProfile?.role) !== -1;
   if (!isParent && !currentKid?.id) {
     showToast(ico('klaida')+' Pirma prisijunk', 'error');
     return false;
@@ -30411,17 +30411,29 @@ async function enablePushNotifications() {
       });
     }
     
-    // Išsaugoti Supabase
+    // Išsaugoti Supabase — per RPC (server-push-fix.sql): įrenginys turi VIENĄ endpoint visiems
+    // login'ams, tai perjungus paskyrą (vaikas→treneris) upsert bandytų perrašyti SVETIMĄ eilutę,
+    // o UPDATE policy nėra → tyliai nepavyksta. RPC ištrina seną ir įrašo dabartiniam vartotojui.
     const subJson = sub.toJSON();
-    const { error } = await sb.from('push_subscriptions').upsert({
-      kid_id: isParent ? null : currentKid.id,
-      user_id: currentUser.id,
-      endpoint: subJson.endpoint,
-      p256dh: subJson.keys.p256dh,
-      auth: subJson.keys.auth,
-      user_agent: navigator.userAgent.slice(0, 200),
-    }, { onConflict: 'endpoint' });
-    
+    let { error } = await sb.rpc('register_push_subscription', {
+      p_endpoint: subJson.endpoint,
+      p_p256dh: subJson.keys.p256dh,
+      p_auth: subJson.keys.auth,
+      p_kid_id: isParent ? null : currentKid.id,
+      p_user_agent: navigator.userAgent.slice(0, 200)
+    });
+    if (error) {
+      // Fallback kol serveryje nepaleistas server-push-fix.sql (veikia, kai endpoint dar niekieno)
+      ({ error } = await sb.from('push_subscriptions').upsert({
+        kid_id: isParent ? null : currentKid.id,
+        user_id: currentUser.id,
+        endpoint: subJson.endpoint,
+        p256dh: subJson.keys.p256dh,
+        auth: subJson.keys.auth,
+        user_agent: navigator.userAgent.slice(0, 200),
+      }, { onConflict: 'endpoint' }));
+    }
+
     if (error) {
       console.error('Push subscription saugojimo klaida:', error);
       showToast(ico('klaida')+' Klaida išsaugant', 'error', 4000);
