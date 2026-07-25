@@ -13512,8 +13512,14 @@ async function saveClubRevPct(v){
 
 // 🚪 PASLĖPIMAS — kai vėliava išjungta, funkcija dingsta. Tik display:none, jokios logikos.
 // Saugu: visi su egzistavimo apsaugomis; default-matomi elementai (force show/hide OK).
-function _gateEl(id, show){ const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; }
-function _gateSel(sel, show){ document.querySelectorAll(sel).forEach(el=>{ el.style.display = show ? '' : 'none'; }); }
+// ⚠️ Rodant NEGALIMA rašyti display:'' — tai ištrintų elemento SAVO inline display
+// (pvz. v-att-btn turi display:flex, kuris centruoja ikoną). Įsimenam originalą ir jį grąžinam.
+function _gateApply(el, show){
+  if (el.dataset.gateD === undefined) el.dataset.gateD = el.style.display || '';
+  el.style.display = show ? el.dataset.gateD : 'none';
+}
+function _gateEl(id, show){ const el = document.getElementById(id); if (el) _gateApply(el, show); }
+function _gateSel(sel, show){ document.querySelectorAll(sel).forEach(el=>{ _gateApply(el, show); }); }
 function applyClubFlagGates(){
   try {
     // KLUBO portalas — k-events sub-tabai + kūrimo mygtukai (admino paties klubas)
