@@ -10,7 +10,7 @@ function ico(name, cls = '', label = ''){
 }
 
 // Emoji→ikona (DB įrašytos kategorijų/pratimų emoji) + pakopos ikona
-const EMOJI_ICO = {'💪':'jega','🏃':'istverme','🥋':'kata','🤸':'aukstasspyris','⚡':'sprintas','🎓':'seminaras','🧘':'seiza','⚖️':'seiza','🎭':'spyris','🔬':'mokslas','🎯':'tikslas','🏆':'trofejai','🥇':'medalis','🥈':'medalis','🥉':'medalis','🔥':'streak','📊':'statistika','⭐':'zvaigzde','👑':'premium','⚔️':'dvikova','🌱':'augimas','🐉':'ninja','📅':'kalendorius'};
+const EMOJI_ICO = {'💪':'jega','🏃':'istverme','🥋':'kata','🤸':'lankstumas','⚡':'sprintas','🎓':'seminaras','🧘':'seiza','⚖️':'seiza','🎭':'spyris','🔬':'mokslas','🎯':'tikslas','🏆':'trofejai','🥇':'medalis','🥈':'medalis','🥉':'medalis','🔥':'streak','📊':'statistika','⭐':'zvaigzde','👑':'premium','⚔️':'dvikova','🌱':'augimas','🐉':'ninja','📅':'kalendorius'};
 function emojiToIco(v){ if(!v) return ico('tikslas'); if(typeof v==='string' && v.indexOf('<svg')!==-1) return v; const k=(v+'').trim(); if(EMOJI_ICO[k]) return ico(EMOJI_ICO[k]); return v; }
 const STAGE_ICO = {'Naujokas':'augimas','Pažengęs':'jega','Patyręs':'kata','Ekspertas':'dvikova','Čempionas':'trofejai','Legenda':'premium','Drakonas':'ninja','Šlovės salė':'zvaigzde'};
 function stageIco(stageName){ return ico(STAGE_ICO[stageName] || 'augimas'); }
@@ -9431,7 +9431,7 @@ const CATEGORY_ICONS = {
   'Jėga ir korpusas': ico('jega'),
   'Ištvermė': ico('istverme'),
   'Technika': ico('spyris'),
-  'Lankstumas': ico('aukstasspyris'),
+  'Lankstumas': ico('lankstumas'),
   'Greitis': ico('sprintas'),
   'Greitis ir vikrumas': ico('sprintas'),
   'Karate atributika': ico('seminaras'),
@@ -20573,7 +20573,7 @@ function openKidInfo(which) {
            Iškviesk komandos draugą į draugišką dvikovą! Kaip:
            <div style="margin-top:6px;color:#fff;line-height:1.75;">
              <b>1.</b> Rask komandos draugą ir paspausk „Iškviesti į dvikovą".<br>
-             <b>2.</b> Pasirink tipą: ${ico('jega')} atsispaudimai · ${ico('koja')} pritūpimai · ${ico('lankstumas')} presas · ${ico('laikmatis')} lenta · ${ico('istverme')} bėgimas.<br>
+             <b>2.</b> Pasirink tipą: ${ico('jega')} atsispaudimai · ${ico('koja')} pritūpimai · ${ico('treniruote')} presas · ${ico('laikmatis')} lenta · ${ico('istverme')} bėgimas.<br>
              <b>3.</b> Draugas priima iššūkį.<br>
              <b>4.</b> Abu atliekate ir įvedate savo rezultatą.<br>
              <b>5.</b> Treneris patvirtina — ir paaiškėja nugalėtojas! ${ico('trofejai')}
