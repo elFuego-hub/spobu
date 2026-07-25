@@ -10,7 +10,7 @@ function ico(name, cls = '', label = ''){
 }
 
 // Emoji→ikona (DB įrašytos kategorijų/pratimų emoji) + pakopos ikona
-const EMOJI_ICO = {'💪':'jega','🏃':'istverme','🥋':'kata','🤸':'aukstasspyris','⚡':'sprintas','🎓':'mokslas','🧘':'seiza','⚖️':'seiza','🎭':'spyris','🔬':'dirzomazgas','🎯':'tikslas','🏆':'trofejai','🥇':'medalis','🥈':'medalis','🥉':'medalis','🔥':'streak','📊':'statistika','⭐':'zvaigzde','👑':'premium','⚔️':'dvikova','🌱':'augimas','🐉':'ninja','📅':'kalendorius'};
+const EMOJI_ICO = {'💪':'jega','🏃':'istverme','🥋':'kata','🤸':'aukstasspyris','⚡':'sprintas','🎓':'seminaras','🧘':'seiza','⚖️':'seiza','🎭':'spyris','🔬':'mokslas','🎯':'tikslas','🏆':'trofejai','🥇':'medalis','🥈':'medalis','🥉':'medalis','🔥':'streak','📊':'statistika','⭐':'zvaigzde','👑':'premium','⚔️':'dvikova','🌱':'augimas','🐉':'ninja','📅':'kalendorius'};
 function emojiToIco(v){ if(!v) return ico('tikslas'); if(typeof v==='string' && v.indexOf('<svg')!==-1) return v; const k=(v+'').trim(); if(EMOJI_ICO[k]) return ico(EMOJI_ICO[k]); return v; }
 const STAGE_ICO = {'Naujokas':'augimas','Pažengęs':'jega','Patyręs':'kata','Ekspertas':'dvikova','Čempionas':'trofejai','Legenda':'premium','Drakonas':'ninja','Šlovės salė':'zvaigzde'};
 function stageIco(stageName){ return ico(STAGE_ICO[stageName] || 'augimas'); }
@@ -9434,9 +9434,9 @@ const CATEGORY_ICONS = {
   'Lankstumas': ico('aukstasspyris'),
   'Greitis': ico('sprintas'),
   'Greitis ir vikrumas': ico('sprintas'),
-  'Karate atributika': ico('dirzomazgas'),
-  'Atributika': ico('dirzomazgas'),
-  'Karate Atributika': ico('dirzomazgas'),
+  'Karate atributika': ico('seminaras'),
+  'Atributika': ico('seminaras'),
+  'Karate Atributika': ico('seminaras'),
   'Drausmė': ico('seiza')
 };
 
@@ -12889,7 +12889,7 @@ async function loadClubAttendance(){
           return `<div style="display:flex;align-items:center;gap:9px;padding:9px 12px;border-top:.5px solid var(--bdr);"><span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;${red?'box-shadow:0 0 6px #EF4444;':''}"></span><div style="flex:1;min-width:0;font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.name}</div><div style="flex-shrink:0;text-align:right;"><div style="font-size:12px;font-weight:700;color:${col};">${x.streak} iš eilės</div><div style="font-size:9px;color:var(--mut);">${x.lastPresent?'paskutinį '+formatDateLT(x.lastPresent):'nė karto'}</div></div></div>`; }).join('')
       : '<div style="text-align:center;color:var(--grn);padding:14px;font-size:12px;">'+ico('gimtadienis')+' Visi lanko reguliariai</div>';
     const grpBars = groupRows.map(g=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;"><div style="flex:1;min-width:0;font-size:11px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div><div style="width:80px;height:8px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${g.pct}%;height:100%;background:${g.pct>=70?'#22C55E':g.pct>=50?'#EAB308':'#EF4444'};border-radius:5px;"></div></div><div style="width:32px;text-align:right;font-size:11px;color:#fff;">${g.pct}%</div></div>`).join('');
-    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">${ico('signalas')} NELANKANTYS — VERTA SUSISIEKTI</span>${streaks.length?`<span style="font-size:11px;font-weight:700;"><span class="dot dot-bad"></span> ${redN} 🟡 ${yelN}</span>`:''}</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${alertRows}</div><div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:12px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${overall>=70?'var(--grn)':overall>=50?'#EAB308':'#EF4444'};line-height:1;">${overall}%</div><div style="font-size:10px;color:var(--mut);">vidutinis lankomumas (60 d.)</div></div><div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:0 2px 6px;">PAGAL GRUPĘ</div>${grpBars}`;
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">${ico('alertas')} NELANKANTYS — VERTA SUSISIEKTI</span>${streaks.length?`<span style="font-size:11px;font-weight:700;"><span class="dot dot-bad"></span> ${redN} 🟡 ${yelN}</span>`:''}</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${alertRows}</div><div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:12px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${overall>=70?'var(--grn)':overall>=50?'#EAB308':'#EF4444'};line-height:1;">${overall}%</div><div style="font-size:10px;color:var(--mut);">vidutinis lankomumas (60 d.)</div></div><div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:0 2px 6px;">PAGAL GRUPĘ</div>${grpBars}`;
   } catch(e){ console.error('[club-att]',e); el.innerHTML = _secErr(e.message); }
 }
 
@@ -23382,7 +23382,7 @@ function openAdminInfo(){
     <div style="padding:18px 20px;font-size:13px;color:var(--text);line-height:1.7;">
       Platformos valdymo centras.<br><br>
       ${ico('namai')} <b>Apžvalga</b> — skaitliukai, atsiliepimai, AI ataskaitos, gyva veikla.<br>
-      ${ico('signalas')} <b>Klaidos</b> — kliento klaidų telemetrija (mini-Sentry).<br>
+      ${ico('alertas')} <b>Klaidos</b> — kliento klaidų telemetrija (mini-Sentry).<br>
       ${ico('pinigai')} <b>Finansai</b> — pajamos, klubo bonusai, kainodara.<br>
       ${ico('statistika')} <b>Analitika</b> — KPI, funnel, klubų palyginimas.<br>
       ${ico('ai')} <b>AI studija</b> — ataskaitų peržiūra, kokybė, žinių bazė.<br>
@@ -23441,7 +23441,7 @@ async function _fetchAdminNotifications(force){
   ]);
   const tLbl = { report:'Diagnostika', plan:'Namų planas', homeplan:'Namų planas', summer:'Vasaros programa', subscription:'Prenumerata', bundle:'Rinkinys' };
   adminNotifications = {
-    errors: (erR.data||[]).map(e => ({ id:'ce-'+e.id, icon:''+ico('signalas')+'', title:(e.message||'Klaida').slice(0,70), sub:`${e.app_version||'?'} · ${e.role||'?'}`, ts:e.created_at })),
+    errors: (erR.data||[]).map(e => ({ id:'ce-'+e.id, icon:''+ico('alertas')+'', title:(e.message||'Klaida').slice(0,70), sub:`${e.app_version||'?'} · ${e.role||'?'}`, ts:e.created_at })),
     purchases: (puR.data||[]).map(p => ({ id:'pu-'+p.id, icon:''+ico('pinigai')+'', title:`+${(+p.amount_eur||0).toFixed(2)} € · ${tLbl[p.item_type]||p.item_type||''}`, sub:p.plan||'', ts:p.created_at })),
     feedback: (fbR.data||[]).map(f => ({ id:'fb-'+f.id, icon:f.type==='bug'?''+ico('bug')+'':''+ico('pastas')+'', title:`${f.name||'Vartotojas'} (${f.role||'?'})`, sub:(f.message||'').slice(0,60), ts:f.created_at })),
     reports: (rpR.data||[]).map(r => ({ id:'rp-'+r.id, icon:r.status==='error'?''+ico('klaida')+'':''+ico('laukia')+'', title:r.status==='error'?'AI klaida':'Laukia peržiūros', sub:`${tLbl[r.type]||r.type||''} · ${((r.kids?.first_name||'')+' '+(r.kids?.last_name||'')).trim()}`, ts:r.created_at }))
@@ -23537,7 +23537,7 @@ function subscribeAdminNotifications(){
     // client_errors lentelė atsiras Bloke B — iki tol kanalas tiesiog tylės
     sb.channel('admin-errors-'+uid)
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'client_errors' }, p => {
-        showToast(''+ico('signalas')+' Nauja kliento klaida', 'error');
+        showToast(''+ico('alertas')+' Nauja kliento klaida', 'error');
         updateAdminNotifBadge(true);
         if (typeof loadAdminErrors==='function') loadAdminErrors();
       }).subscribe();
@@ -23586,7 +23586,7 @@ function startAdminStatusBar(){
         const { count: hc, error: he } = await sb.from('client_errors').select('id', { count: 'exact', head: true }).gte('created_at', sinceH);
         if (!he && (hc || 0) >= 20){
           if (eled) eled.className = 'led bad';
-          if (!window._adminSpikeToasted){ window._adminSpikeToasted = true; showToast(''+ico('signalas')+' Klaidų šuolis: ' + hc + ' per valandą!', 'error', 6000); }
+          if (!window._adminSpikeToasted){ window._adminSpikeToasted = true; showToast(''+ico('alertas')+' Klaidų šuolis: ' + hc + ' per valandą!', 'error', 6000); }
         }
       }
     } catch(e){}
@@ -23705,7 +23705,7 @@ async function openAdminErrorGroup(hash){
   m.innerHTML = `<div style="width:100%;max-width:760px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
     <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:10px;">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13.5px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ico('signalas')} ${escapeHtml(grp?.message||r0.message||'Klaida')}</div>
+        <div style="font-size:13.5px;font-weight:800;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ico('alertas')} ${escapeHtml(grp?.message||r0.message||'Klaida')}</div>
         <div class="aerr-meta">${grp?grp.count:(rows||[]).length}× · ${escapeHtml(r0.source||'?')}:${r0.lineno||'?'} · ${escapeHtml(r0.url||'')}</div>
       </div>
       <button onclick="document.getElementById('admin-err-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;flex-shrink:0;">${ico('uzdaryti')}</button>
@@ -24759,7 +24759,7 @@ async function loadAdminNudges(){
   ]);
   const items = [];
   // Cron/serverio alertai (nauji viršuje; ✓ pažymi matytu)
-  const alertIco = { error_spike: ''+ico('signalas')+'', review_sla: ''+ico('laikmatis')+'', big_purchase: ''+ico('pinigai')+'', digest: ''+ico('pastas')+'' };
+  const alertIco = { error_spike: ''+ico('alertas')+'', review_sla: ''+ico('laikmatis')+'', big_purchase: ''+ico('pinigai')+'', digest: ''+ico('pastas')+'' };
   (al.data || []).filter(a => !a.seen && a.kind !== 'digest').forEach(a => {
     items.push({ html: `${alertIco[a.kind] || ''+ico('zyma')+''} <b>${_aaiEsc(a.title || a.kind)}</b>${a.body ? ' — ' + _aaiEsc(a.body) : ''} <span class="aerr-meta" style="display:inline;">${typeof _agoLT === 'function' ? _agoLT(a.created_at) : ''}</span>`, alertId: a.id });
   });
