@@ -1402,7 +1402,7 @@ function openHelpModal(who) {
       ['Iš kur atsiranda grupės ir vaikai?', 'Grupes kuria ir vaikus priskiria KLUBAS. Tu matai tau priskirtas grupes (kaip pagrindinis treneris arba asistentas) ir valdai jų kasdienybę.'],
       ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai pratimų rekordus, iššūkius, varžybas ir dvikovas. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
       ['Kaip skirti iššūkį?', 'Grupės lange „'+ico('tikslas')+' IŠŠŪKIS GRUPEI" arba paspaudęs vaiką — asmeninį iššūkį. Siūlyk tik tai, ką gali patikrinti.'],
-      ['Kaip žymiu lankomumą?', 'Grupės lange „'+ico('dokumentas')+' ŽYMĖTI LANKOMUMĄ". Pilna savaitė → +15 EXP vaikui, pilnas mėnuo → +100.'],
+      ['Kaip žymiu lankomumą?', 'Grupės lange „'+ico('lankomumas')+' ŽYMĖTI LANKOMUMĄ". Pilna savaitė → +15 EXP vaikui, pilnas mėnuo → +100.'],
       ['Kur matau pratimų normatyvus?', 'Antraštėje spausk '+ico('jega')+' — matysi rėžius ('+ico('medalis')+''+ico('medalis')+''+ico('medalis')+''+ico('trofejai')+') pagal lytį ir amžių.'],
       ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsą reikia įsidėti į pradžios ekraną.']
     ],
@@ -2892,7 +2892,7 @@ async function loadParentKidFeed() {
     if (typeof flagOn !== 'function' || flagOn('attendance_enabled')) {
       try { const aSt = await _attStatsForKid(k); if (aSt && (aSt.weekScheduled || aSt.monthScheduled)) _attStats = aSt; } catch (_) {}
     }
-    const attLine = _attStats ? `${ico('kalendorius')} Lankomumas · sav. ${_attStats.weekPresent}/${_attStats.weekScheduled} · mėn. ${_attStats.monthPresent}/${_attStats.monthScheduled}` : '';
+    const attLine = _attStats ? `${ico('lankomumas')} Lankomumas · sav. ${_attStats.weekPresent}/${_attStats.weekScheduled} · mėn. ${_attStats.monthPresent}/${_attStats.monthScheduled}` : '';
     // 📲 Mėnesio kortelei (dalinimasis) — išsaugom šio mėnesio statistiką
     _pmCard = { kid: k, name: (k.first_name || 'VAIKAS'), monthLabel, month: (now.getMonth() + 1), year: now.getFullYear(), exp: monthExp, challenges: chCount, records: recCount, medals: medalCount, wonComps: items.filter(i => i.kind === 'comp' && i.won), att: _attStats ? { wPres: _attStats.weekPresent, wSch: _attStats.weekScheduled, mPres: _attStats.monthPresent, mSch: _attStats.monthScheduled } : null };
     // Hero fonas pagal vaiko stadiją (toks pat kaip karjeros / pagrindinio hero)
@@ -12544,7 +12544,7 @@ function kidChatOn(){ return !!clubFlags && clubFlags.kid_trainer_chat_enabled =
 
 const CLUB_FLAG_DEFS = [
   { sec:'FUNKCIJOS' },
-  { k:'attendance_enabled', t:''+ico('dokumentas')+' Lankomumas', d:'Treneris žymi, vaikas/tėvas mato, EXP už pilną savaitę/mėnesį.', info:'Lankomumas — treneris po treniruotės pažymi, kas dalyvavo. Vaikas ir tėvas mato lankomumą, o už pilną savaitę (+15 EXP) ir pilną mėnesį (+100 EXP) vaikas gauna premiją.<br><br>Išjungus: treneriai nebegalės žymėti lankomumo, vaikai/tėvai jo nebematys ir negaus EXP premijų.' },
+  { k:'attendance_enabled', t:''+ico('lankomumas')+' Lankomumas', d:'Treneris žymi, vaikas/tėvas mato, EXP už pilną savaitę/mėnesį.', info:'Lankomumas — treneris po treniruotės pažymi, kas dalyvavo. Vaikas ir tėvas mato lankomumą, o už pilną savaitę (+15 EXP) ir pilną mėnesį (+100 EXP) vaikas gauna premiją.<br><br>Išjungus: treneriai nebegalės žymėti lankomumo, vaikai/tėvai jo nebematys ir negaus EXP premijų.' },
   { k:'duels_enabled', t:''+ico('dvikova')+' Dvikovos', d:'Vaikai kviečia vienas kitą į dvikovas.', info:'Dvikovos — vaikas iškviečia draugą į 1-prieš-1 pratimų varžytuves (atsispaudimai, pritūpimai ir pan.), o treneris patvirtina rezultatą.<br><br>Išjungus: vaikai nebegalės kurti ar priimti dvikovų.' },
   { k:'group_challenges_enabled', t:''+ico('trofejai')+' Grupių iššūkis', d:'Klubo komandinis grupių iššūkis.', info:'Grupių iššūkis — klubinis komandinis iššūkis, kur būreliai (grupės) varžosi tarpusavyje; jų vaikų rezultatai sumuojami (vidurkis vienam vaikui).<br><br>Išjungus: nebegalėsi kurti grupių iššūkių.' },
   { k:'competitions_enabled', t:''+ico('medalis')+' Varžybos', d:'Varžybų kūrimas ir rezultatai.', info:'Varžybos — kumite/kata renginiai su registracija ir rezultatais (vietos, medaliai).<br><br>Išjungus: nebebus galima kurti varžybų, o vaikai jų nebematys.' },
@@ -13822,7 +13822,7 @@ async function rsvpCampKid(eventId, kidId){
 // GRUPIŲ IŠŠŪKIS (Blokas 5) — club_challenges + entries (server-klubas-grupiu-issukis.sql)
 // ════════════════════════════════════════
 function _gcMetricLabel(c){
-  if (c.metric==='attendance') return ''+ico('dokumentas')+' Lankomumas (auto)';
+  if (c.metric==='attendance') return ''+ico('lankomumas')+' Lankomumas (auto)';
   if (c.metric==='km') return ''+ico('istverme')+' Kilometrai';
   return `${ico('jega')} ${c.exercise_label||'Pakartojimai'}`;
 }
@@ -18973,7 +18973,7 @@ async function openAttendance(groupId){
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">${ico('dokumentas')} LANKOMUMAS</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">${ico('lankomumas')} LANKOMUMAS</div>
       <button onclick="document.getElementById('att-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px;">
@@ -19063,12 +19063,12 @@ async function _attAwardBonuses(group, dateStr){
   const d=new Date(dateStr+'T12:00:00');
   const weekDates=_attWeekDates(td, d);
   if(weekDates.length && dateStr===weekDates[weekDates.length-1]){
-    await _attFinalizePeriod(group,'week',_attWeekKey(d),_attWeekStart(d),_attWeekEnd(d),15,''+ico('kalendorius')+' Pilnas savaitės lankomumas');
+    await _attFinalizePeriod(group,'week',_attWeekKey(d),_attWeekStart(d),_attWeekEnd(d),15,''+ico('lankomumas')+' Pilnas savaitės lankomumas');
   }
   const monDates=_attMonthDates(td, d);
   if(monDates.length && dateStr===monDates[monDates.length-1]){
     const ms=new Date(d.getFullYear(),d.getMonth(),1), me=new Date(d.getFullYear(),d.getMonth()+1,0);
-    await _attFinalizePeriod(group,'month',_attMonthKey(d),ms,me,100,''+ico('kalendorius')+' Pilnas mėnesio lankomumas');
+    await _attFinalizePeriod(group,'month',_attMonthKey(d),ms,me,100,''+ico('lankomumas')+' Pilnas mėnesio lankomumas');
   }
 }
 
@@ -19135,7 +19135,7 @@ async function openKidAttendance(){
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">${ico('dokumentas')} MANO LANKOMUMAS</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;">${ico('lankomumas')} MANO LANKOMUMAS</div>
       <button onclick="document.getElementById('kid-att-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
     </div>
     <div style="padding:16px;" id="kid-att-body"><div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
@@ -20428,7 +20428,7 @@ function openTrInfo(which) {
         row(ico('prideti'), 'Sukurti grupę', 'Pavadinimas, spalva ir tvarkaraštis (dienos + laikas).') +
         row(''+ico('profilis')+'', 'Priskirti vaikus', 'Pridėk mokinius į grupę.') +
         row(''+ico('ranka')+'', 'Paspausk ant vaiko', 'Atsidaro vaiko kortelė: duomenys, el. paštas, tėvai, sveikata, laukiantys patvirtinimai. Gali skirti EXP, asmeninį iššūkį ar EXP už elgesį.') +
-        row(''+ico('dokumentas')+'', 'Lankomumas', 'Žymėk, kas atėjo. Pilna savaitė → +15 EXP, pilnas mėnuo → +100.') +
+        row(''+ico('lankomumas')+'', 'Lankomumas', 'Žymėk, kas atėjo. Pilna savaitė → +15 EXP, pilnas mėnuo → +100.') +
         row(''+ico('tikslas')+'', 'Grupės iššūkis', 'Vienu paspaudimu skelbk iššūkį visai grupei.') +
         row(''+ico('zinutes')+'', 'Pranešimai', 'Rašyk žinutę visai grupei.');
       break;
@@ -20497,7 +20497,7 @@ function openParentInfo(which) {
         row(''+ico('jega')+'', 'Iššūkiai', 'Vaiko įveikti iššūkiai.') +
         row(''+ico('zenkliukai')+'', 'Medaliai', 'Varžybų rezultatai.') +
         row(''+ico('patinka')+'', 'Pagyrimai', 'Trenerio skirtas EXP už elgesį/pastangas.') +
-        row(''+ico('dokumentas')+'', 'Lankomumas', 'Treniruočių lankymas ir savaitės/mėnesio premijos.') +
+        row(''+ico('lankomumas')+'', 'Lankomumas', 'Treniruočių lankymas ir savaitės/mėnesio premijos.') +
         row(''+ico('programele')+'', 'Dalintis', 'Mėnesio pasiekimų kortelę galite pasidalinti.');
       break;
     case 'shop':
@@ -20537,7 +20537,7 @@ function openKidInfo(which) {
         row(''+ico('greitis')+'', 'EXP taškai', 'Gauni juos už pratimus, iššūkius, varžybas ir treniruočių lankymą. Daugiau EXP → aukštesnis lygis.') +
         row(''+ico('streak')+'', 'Serija (streak)', 'Kiek dienų iš eilės buvai aktyvus. Stenkis jos nenutraukti!') +
         row(''+ico('trofejai')+'', 'Reitingai', 'Tavo vieta tarp BENDRAAMŽIŲ — lyginiesi su panašiais į tave, ne su vyresniais.') +
-        row(''+ico('dokumentas')+'', 'Lankomumas', 'Mygtukas viršuje — matyk, kaip lankai treniruotes. Už pilną savaitę ir mėnesį gauni papildomą EXP.');
+        row(''+ico('lankomumas')+'', 'Lankomumas', 'Mygtukas viršuje — matyk, kaip lankai treniruotes. Už pilną savaitę ir mėnesį gauni papildomą EXP.');
       break;
     case 'ish':
       title = ''+ico('pagalba')+' IŠŠŪKIAI';
@@ -20745,7 +20745,7 @@ function confirmDeleteGroup(groupId, groupName) {
       <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:11px;">KAS NUTIKS:</div>
       ${row(''+ico('profilis')+'', 'Vaikai <b>NEBUS ištrinti</b> — tik atkabinti iš grupės (atsidurs „Be grupės"). Jų EXP, pasiekimai ir istorija lieka.')}
       ${row(''+ico('kalendorius')+'', 'Grupės tvarkaraštis (treniruočių dienos ir laikas) bus prarastas.')}
-      ${row(''+ico('dokumentas')+'', 'Šios grupės lankomumo nebebus galima žymėti; vaikų savaitės/mėnesio lankomumas nustos skaičiuotis, kol jie nebus priskirti kitai grupei.')}
+      ${row(''+ico('lankomumas')+'', 'Šios grupės lankomumo nebebus galima žymėti; vaikų savaitės/mėnesio lankomumas nustos skaičiuotis, kol jie nebus priskirti kitai grupei.')}
       ${row(''+ico('zinutes')+'', 'Grupei skirti pranešimai ir iššūkiai nebepasieks atkabintų vaikų.')}
       ${row(''+ico('ispejimas')+'', 'Veiksmas <b>negrįžtamas</b>.')}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px;">

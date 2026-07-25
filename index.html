@@ -161,6 +161,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <symbol id="i-kumite" viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3a5 5 0 0 1-2.5 4.33V17h-5v-1.67A5 5 0 0 1 7 11Z"/><path d="M7 9H5.5A1.5 1.5 0 0 0 4 10.5 1.5 1.5 0 0 0 5.5 12H7"/><rect x="9" y="17" width="6" height="5" rx="1"/></symbol>
   <symbol id="i-laikas" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
   <symbol id="i-laikmatis" viewBox="0 0 24 24"><path d="M10 2h4"/><path d="M12 14v-4"/><circle cx="12" cy="14" r="8"/></symbol>
+  <symbol id="i-lankomumas" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></symbol>
   <symbol id="i-lankstumas" viewBox="0 0 24 24"><path d="M2.5 19.5h19" opacity=".3"/><circle cx="12" cy="6.4" r="2"/><path d="M12 8.4v5.1"/><path d="M12 13.5 3.5 17.6"/><path d="M12 13.5 20.5 17.6"/><path d="M12 10.3 8.4 11.9"/><path d="M12 10.3 15.6 11.9"/></symbol>
   <symbol id="i-laukia" viewBox="0 0 24 24"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol>
   <symbol id="i-leisti" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
@@ -261,7 +262,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v386</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF8C00;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v387</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg> PILNAS MOBILE</button>
@@ -668,7 +669,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="chs" style="margin-bottom:6px;" id="cc-content-types">
       <div class="ch on" onclick="selectChallengeContentType(this,'achievement')" data-content="achievement">💪 Pasiekimas</div>
       <div class="ch" onclick="selectChallengeContentType(this,'distance')" data-content="distance"><svg class="ico" aria-hidden="true"><use href="#i-istverme"></use></svg> Distancija</div>
-      <div class="ch" onclick="selectChallengeContentType(this,'attendance')" data-content="attendance">📅 Lankymas</div>
+      <div class="ch" onclick="selectChallengeContentType(this,'attendance')" data-content="attendance"><svg class="ico" aria-hidden="true"><use href="#i-lankomumas"></use></svg> Lankymas</div>
       <div class="ch" onclick="selectChallengeContentType(this,'competition')" data-content="competition">🏆 Varžybos</div>
     </div>
     <input type="hidden" id="cc-content-type" value="achievement">
@@ -962,7 +963,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidInfo('main')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
         <!-- LANKOMUMO MYGTUKAS -->
         <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidAttendance()" id="v-att-btn" title="Lankomumas">
-          <svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg>
+          <svg class="ico" aria-hidden="true"><use href="#i-lankomumas"></use></svg>
         </div>
         <!-- VARPELIO MYGTUKAS -->
         <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleNotifications()" id="v-notif-btn">
@@ -4386,7 +4387,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=386"></script>
+<script src="app.js?v=387"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
