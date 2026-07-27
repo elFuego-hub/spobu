@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 72" role="img" aria-label="SPOBU GIMNASTIKA">
+  <g fill="#9333EA" stroke="#9333EA">
+    <circle cx="32" cy="8.5" r="5.5" stroke="none"></circle>
+    <path d="M13 34 32 17 51 34" fill="none" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M13 55 32 38 51 55" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+  <text x="80" y="36" font-family="Bebas Neue, sans-serif" font-size="34" letter-spacing="5" fill="#1A1A1A">SPOBU</text>
+  <text x="82" y="54" font-family="Nunito, sans-serif" font-weight="800" font-size="12" letter-spacing="3" fill="#8A8178">GIMNASTIKA</text>
+</svg>

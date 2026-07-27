@@ -1,0 +1,44 @@
+/* SPOBU lokalūs šriftai — offline PWA (be fonts.googleapis.com)
+   Bebas Neue v16 (latin + latin-ext), Nunito v32 variable (latin + latin-ext),
+   Noto Serif JP v33 SUBSET — tik appse naudojami kanji (30 glifų, 12 KB):
+   一七三九二五先八六初力助努勝匠十四夏始師戦指昇武段無王空聖道龍 */
+@font-face {
+  font-family: 'Bebas Neue';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('bebas-neue-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Bebas Neue';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('bebas-neue-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url('nunito-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url('nunito-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Noto Serif JP';
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url('noto-serif-jp-subset.woff2') format('woff2');
+  unicode-range: U+4E00, U+4E03, U+4E09, U+4E5D, U+4E8C, U+4E94, U+5148, U+516B, U+516D, U+521D, U+529B, U+52A9-52AA, U+52DD, U+5320, U+5341, U+56DB, U+590F, U+59CB, U+5E2B, U+6226, U+6307, U+6607, U+6B66, U+6BB5, U+7121, U+738B, U+7A7A, U+8056, U+9053, U+9F8D;
+}
