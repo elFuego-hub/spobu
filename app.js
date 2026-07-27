@@ -1036,6 +1036,7 @@ async function afterLogin() {
       console.log('✅ [afterLogin] loadClubData baigėsi, rodom portal k');
       op('k');
       if (typeof _maybeClubOnboarding === 'function') _maybeClubOnboarding();  // ${ico('startas')} pradžios vediklis naujam klubui
+      setTimeout(() => maybeShowWelcome('club_admin'), 1600); // 👋 vėliau nei vediklis (DB + 600ms) — konfliktą tikrina viduje
     } else if (profile.role === 'trainer') {
       await loadTrainerData();
       await _detectClubManager(); // ${ico('raktas')} deleguota klubo prieiga (club_managers)
@@ -1043,6 +1044,7 @@ async function afterLogin() {
       op('tr');
       _checkClubChallengeResultsTrainer(); // ${ico('trofejai')} grupių iššūkio pabaigos pop-up (vieną kartą)
       _checkTrainerUnreadMessages(); // 💬 praleistų žinučių pop-up (realtime toast veikia tik prisijungus gyvai)
+      setTimeout(() => maybeShowWelcome('trainer'), 800); // 👋 pirmo prisijungimo pasveikinimas
     } else if (profile.role === 'kid') {
       // Krauname kid duomenis - ieškom per user_id (NE per id, nes kids.id !== auth.users.id)
       const { data: kidData } = await sb.from('kids')
@@ -1071,6 +1073,7 @@ async function afterLogin() {
       subscribeKidNotifications();
       await loadKidData();
       op('v');
+      setTimeout(() => maybeShowWelcome('kid'), 800); // 👋 pirmo prisijungimo pasveikinimas (praleidžiamas, jei rodomas age-up)
       // 📬 Patikrint praleistus įvykius (po reload arba prisijungimo)
       if (typeof showMissedEvents === 'function') {
         setTimeout(() => showMissedEvents(), 1500);
@@ -1081,6 +1084,7 @@ async function afterLogin() {
       subscribeParentNotifications();
       op('t');
       if (typeof _checkParentPurchaseRequests === 'function') _checkParentPurchaseRequests(); // ${ico('patinka')} vaiko (14+) pirkimo prašymai
+      setTimeout(() => maybeShowWelcome('parent'), 800); // 👋 pirmo prisijungimo pasveikinimas
       // 📬 Praleisti įvykiai (po reload arba prisijungimo)
       if (typeof showParentMissedEvents === 'function') {
         setTimeout(() => showParentMissedEvents(), 1500);
@@ -1417,11 +1421,25 @@ function openParentHelpModal() {
             <div style="font-size:18px;color:#8B5CF6;">›</div>
           </div>
         </a>
-        <div onclick="openParentReportModal()" style="cursor:pointer;margin-bottom:16px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+        <div onclick="openParentReportModal()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
           <div style="background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">${ico('bug')}</div>
             <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Radai klaidą? Keliaus tiesiai administratoriui</div></div>
             <div style="font-size:18px;color:var(--br);">›</div>
+          </div>
+        </div>
+        <div onclick="openMyMessages()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(34,197,94,.2);">
+          <div style="background:rgba(34,197,94,.10);border:.5px solid rgba(34,197,94,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">${ico('pastas')}</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Mano žinutės</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Tavo pranešimai ir SPOBU atsakymai</div></div>
+            <div style="font-size:18px;color:var(--grn);">›</div>
+          </div>
+        </div>
+        <div onclick="reshowWelcome()" style="cursor:pointer;margin-bottom:16px;-webkit-tap-highlight-color:rgba(255,255,255,.1);">
+          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">${ico('gidas')}</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Rodyti įvadą iš naujo</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Pasveikinimo langas su pirmais žingsniais</div></div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
           </div>
         </div>
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:4px 2px 8px;">${ico('pagalba')} DAŽNIAUSI KLAUSIMAI</div>
@@ -1528,11 +1546,18 @@ function openHelpModal(who) {
             <div style="font-size:18px;color:var(--br);">›</div>
           </div>
         </div>
-        <div onclick="openMyMessages()" style="cursor:pointer;margin-bottom:16px;-webkit-tap-highlight-color:rgba(34,197,94,.2);">
+        <div onclick="openMyMessages()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(34,197,94,.2);">
           <div style="background:rgba(34,197,94,.10);border:.5px solid rgba(34,197,94,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">${ico('pastas')}</div>
             <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Mano žinutės</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Tavo pranešimai ir SPOBU atsakymai</div></div>
             <div style="font-size:18px;color:var(--grn);">›</div>
+          </div>
+        </div>
+        <div onclick="reshowWelcome()" style="cursor:pointer;margin-bottom:16px;-webkit-tap-highlight-color:rgba(255,255,255,.1);">
+          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">${ico('gidas')}</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Rodyti įvadą iš naujo</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Pasveikinimo langas su pirmais žingsniais</div></div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
           </div>
         </div>
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:4px 2px 8px;">${ico('pagalba')} DAŽNIAUSI KLAUSIMAI</div>
@@ -1541,6 +1566,93 @@ function openHelpModal(who) {
     </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
+}
+
+// ════════════════════════════════════════
+// 👋 WELCOME MODALAS — pasveikinimas po pirmo prisijungimo (vaikas/tėvas/treneris/klubas; admin — ne)
+// Raktas spobu_welcome_seen_<userId> saugo matytą versiją; pakėlus WELCOME_VERSION rodys visiems iš naujo.
+// ════════════════════════════════════════
+const WELCOME_VERSION = 'v1';
+function _welcomeKey(){ return 'spobu_welcome_seen_' + (currentUser?.id || ''); }
+const WELCOME_CONTENT = {
+  kid: {
+    icon: 'dirzas', title: 'SVEIKAS ATVYKĘS Į SPOBU!', cta: 'PRADĖTI!', foot: 'OSU!',
+    items: [
+      ['augimas',    '<b style="color:white;">KELIAS</b> — atlik pratimus, rink EXP ir kilk lygiais'],
+      ['dvikova',    '<b style="color:white;">Iššūkiai ir dvikovos</b> — varžykis su draugais ir siek rekordų'],
+      ['zenkliukai', '<b style="color:white;">Diržai ir ženkliukai</b> — visas tavo progresas vienoje vietoje'],
+      ['pagalba',    'Jei kažkas neveikia ar nesupranti — pasakyk tėvams arba treneriui']
+    ]
+  },
+  parent: {
+    icon: 'dirzas', title: 'SVEIKI ATVYKĘ Į SPOBU!', cta: 'PRADĖTI',
+    items: [
+      ['vaikas',     'SPOBU — vaiko sporto motyvacijos programėlė: progresas, iššūkiai, diržai ir AI įžvalgos'],
+      ['premium',    'Pirmą mėnesį — visos <b style="color:white;">Premium</b> galimybės <b style="color:white;">NEMOKAMAI</b>. Vėliau galėsi rinktis planą'],
+      ['bug',        'Tai pradinė versija — tobuliname kasdien. Radęs klaidą: Pagalba → „Pranešti problemą". Atsakymą gausi ten pat („Mano žinutės")'],
+      ['pranesimai', 'Įjunk push pranešimus nustatymuose — nepraleisi trenerio žinučių']
+    ]
+  },
+  trainer: {
+    icon: 'treneris', title: 'SVEIKAS, TRENERI!', cta: 'PRADĖTI',
+    items: [
+      ['grupe',       'Tavo grupės, lankomumas, rezultatų tvirtinimas ir vaikų progresas — vienoje vietoje'],
+      ['startas',     'Pirmi žingsniai: pasitikrink grupes → žymėk lankomumą → tvirtink pateiktus rezultatus'],
+      ['teisingumas', 'Tavo patvirtinimai formuoja vaikų statistiką — vertink sąžiningai'],
+      ['bug',         'Pradinė versija: radęs klaidą — Pagalba → „Pranešti problemą"']
+    ]
+  },
+  club_admin: {
+    icon: 'klubas', title: 'SVEIKI! ČIA JŪSŲ KLUBO CENTRAS', cta: 'PRADĖTI',
+    items: [
+      ['mokiniai',   'Nariai, grupės, treneriai, renginiai ir klubo funkcijų įjungimas/išjungimas'],
+      ['startas',    'Pradžios vediklis (Nustatymuose) padės paruošti klubą: grupė → treneris → vaikai'],
+      ['nustatymai', 'Jūs valdote, kurios funkcijos veikia jūsų klube (pvz., vaikų žinutės treneriui)'],
+      ['bug',        'Pradinė versija: pastabas siųskite per Pagalba → „Pranešti problemą"']
+    ]
+  }
+};
+
+function maybeShowWelcome(role, force){
+  try {
+    const cfg = WELCOME_CONTENT[role];
+    if (!cfg || !currentUser?.id) return;   // admin ir nežinomos rolės — be modalo
+    if (!force) {
+      if (localStorage.getItem(_welcomeKey()) === WELCOME_VERSION) return;
+      // Konfliktai: age-up šventimas (vaikas) arba klubo pradžios vediklis — raktas nerašomas,
+      // welcome parodys kitą prisijungimą
+      if (document.getElementById('ageup-modal') || document.getElementById('club-onboard')) return;
+    }
+    const old = document.getElementById('welcome-modal'); if (old) old.remove();
+    const rows = cfg.items.map(it => `<div style="display:flex;align-items:flex-start;gap:12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:8px;">
+      <div style="font-size:22px;flex-shrink:0;line-height:1.2;">${ico(it[0])}</div>
+      <div style="font-size:12.5px;color:#cbd2da;line-height:1.55;">${it[1]}</div>
+    </div>`).join('');
+    const m = document.createElement('div'); m.id = 'welcome-modal';
+    m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:center;justify-content:center;padding:20px;';
+    m.onclick = (e) => { if (e.target === m) m.remove(); };
+    m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border:.5px solid var(--bdr);border-radius:22px;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+      <div style="padding:22px 20px 6px;text-align:center;">
+        <div style="font-size:46px;line-height:1;">${ico(cfg.icon)}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1.5px;color:white;line-height:1.1;margin-top:10px;">${cfg.title}</div>
+      </div>
+      <div style="padding:14px 18px 4px;">${rows}</div>
+      <div style="padding:8px 18px 20px;">
+        <button onclick="document.getElementById('welcome-modal').remove()" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-size:14px;font-weight:800;letter-spacing:1px;cursor:pointer;font-family:inherit;">${cfg.cta}</button>
+        ${cfg.foot ? `<div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--mut);margin-top:12px;">${cfg.foot} ${ico('dirzas')}</div>` : ''}
+      </div>
+    </div>`;
+    document.body.appendChild(m);
+    // Raktas rašomas TIK realiai parodžius (praleidus dėl konflikto — liks kitam prisijungimui)
+    try { localStorage.setItem(_welcomeKey(), WELCOME_VERSION); } catch(_){}
+  } catch(e){ console.warn('maybeShowWelcome:', e); }
+}
+
+// „Rodyti įvadą iš naujo" (Pagalbos meniu): ištrina raktą ir iškart parodo modalą
+function reshowWelcome(){
+  try { localStorage.removeItem(_welcomeKey()); } catch(_){}
+  ['help-modal','parent-help-modal','parent-settings-modal','club-acct-menu'].forEach(id => document.getElementById(id)?.remove());
+  maybeShowWelcome(currentProfile?.role, true);
 }
 
 // 💡 Tėvų gidas — paaiškina rolę, ką mato, ką gauna vaikas, ataskaitas, premium
@@ -12780,6 +12892,21 @@ function openClubAccountMenu(){
       <div onclick="document.getElementById('club-acct-menu').remove();openClubRolesGuide();" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('info')}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Kaip veikia SPOBU</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Rolės: ką daro klubas, treneris, tėvas, vaikas</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>
+      <div onclick="reshowWelcome()" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">${ico('gidas')}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Rodyti įvadą iš naujo</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Pasveikinimo langas su pirmais žingsniais</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>
+      <div onclick="document.getElementById('club-acct-menu').remove();openHelpReportModal();" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">${ico('bug')}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Radote klaidą? Keliaus tiesiai administratoriui</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>
+      <div onclick="document.getElementById('club-acct-menu').remove();openMyMessages();" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">${ico('pastas')}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Mano žinutės</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Jūsų pranešimai ir SPOBU atsakymai</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
       <a href="${contactHref}" style="text-decoration:none;display:block;"><div style="${rs}">
