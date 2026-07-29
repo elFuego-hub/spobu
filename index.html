@@ -60,6 +60,7 @@ window.addEventListener('unhandledrejection', function(e) {
 // Patikima CDN užkrovimo logika su fallback
 (function() {
   const CDN_URLS = [
+    { url: 'supabase.js?v=391', name: 'lokalus' },   // self-host (GDPR/availability) — CDN'ai lieka fallback
     { url: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js', name: 'jsdelivr' },
     { url: 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js', name: 'unpkg' },
     { url: 'https://cdn.skypack.dev/@supabase/supabase-js@2', name: 'skypack' }
@@ -102,7 +103,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=389">
+<link rel="stylesheet" href="styles.css?v=391">
 </head>
 <body>
 
@@ -267,7 +268,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v390</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v391</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg> PILNAS MOBILE</button>
@@ -337,7 +338,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <label class="lbl">EL. PAŠTAS</label>
       <input class="inp" type="email" id="rw-parent-email" placeholder="vardas@email.lt">
       
-      <label class="lbl">SLAPTAŽODIS (min. 8 simb.)</label>
+      <label class="lbl">SLAPTAŽODIS (min. 8, didžioji raidė ir skaičius)</label>
       <input class="inp" type="password" id="rw-parent-pass" placeholder="••••••••" minlength="8">
       
       <label class="lbl">PAKARTOTI SLAPTAŽODĮ</label>
@@ -3680,7 +3681,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="adn-sysfoot">v— · SPOBU<br><span id="adn-sysfoot-user">—</span></div>
     <div class="vdn-bottom">
       <button onclick="toggleAdminNotifications()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> Pranešimai <span id="adn-notif-badge" class="vdn-badge">0</span></button>
-      <button onclick="doLogout()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-atsijungti"></use></svg> Atsijungti</button>
+      <button onclick="appConfirm('Ar tikrai atsijungti?').then(function(ok){if(ok)doLogout();})" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-atsijungti"></use></svg> Atsijungti</button>
     </div>
   </aside>
 <div class="df"><div class="ds"><div class="ph">
@@ -3823,7 +3824,12 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     <div class="st">PASKYROS NUSTATYMAI</div>
     <div class="cd" style="padding:12px;">
-      <button class="btn btnd" style="margin:0;width:100%;" onclick="doLogout()"><svg class="ico" aria-hidden="true"><use href="#i-atsijungti"></use></svg> Atsijungti</button>
+      <button class="btn btng" style="margin:0 0 8px;width:100%;" onclick="openChangePasswordModal()"><svg class="ico" aria-hidden="true"><use href="#i-uzrakinta"></use></svg> Keisti slaptažodį</button>
+      <button class="btn btnd" style="margin:0;width:100%;" onclick="appConfirm('Ar tikrai atsijungti?').then(function(ok){if(ok)doLogout();})"><svg class="ico" aria-hidden="true"><use href="#i-atsijungti"></use></svg> Atsijungti</button>
+      <div style="display:flex;gap:14px;justify-content:center;padding:12px 0 2px;">
+        <a href="privatumo-politika.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Privatumo politika</a>
+        <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Naudojimo taisyklės</a>
+      </div>
     </div>
   </div>
   <div class="bn2">
@@ -4397,7 +4403,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=390"></script>
+<script src="app.js?v=391"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

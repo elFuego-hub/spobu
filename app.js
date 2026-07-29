@@ -274,7 +274,7 @@ async function showPendingApprovalScreen(profile) {
         </div>
         <button class="btn-auth" onclick="checkApprovalStatus()">${ico('atnaujinti')} PATIKRINTI BŪKLĘ</button>
         <div style="margin-top:12px;">
-          <button class="btn-link" onclick="logout()">Atsijungti</button>
+          <button class="btn-link" onclick="doLogout()">Atsijungti</button>
         </div>
       </div>
     `;
@@ -504,6 +504,14 @@ document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfS
 
 // ── 📜 Sutikimų žurnalas (server-consents.sql) — BDAR įrodymas: kas/kada/kokia versija ──
 const POLICY_VERSION = 'v1.0';   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
+const SUPPORT_EMAIL = 'pagalba@spobu.lt';   // TODO: pakeisti į realią dėžutę, kai bus spobu.lt domenas
+// 🔒 Slaptažodžio taisyklės — kaip set-password.html: min. 8 + didžioji raidė + skaičius
+function _pwPolicyError(p){
+  if (!p || p.length < 8) return 'Slaptažodis — bent 8 simboliai';
+  if (!/[A-ZĄČĘĖĮŠŲŪŽ]/.test(p)) return 'Slaptažodyje turi būti bent viena DIDŽIOJI raidė';
+  if (!/[0-9]/.test(p)) return 'Slaptažodyje turi būti bent vienas skaičius';
+  return null;
+}
 async function logConsent(ctype, opts){
   try {
     const o = opts || {};
@@ -562,7 +570,7 @@ function openKidSelfSignup(){
     <div id="ksr-step2" style="display:none;">
       <label class="lbl">EL. PAŠTAS *</label>
       <input class="inp" id="ksr-email" type="email" style="margin-bottom:8px;">
-      <label class="lbl">SLAPTAŽODIS (min. 8) *</label>
+      <label class="lbl">SLAPTAŽODIS (min. 8, didžioji ir skaičius) *</label>
       <input class="inp" id="ksr-pass" type="password" style="margin-bottom:8px;">
       <label class="lbl">PAKARTOK SLAPTAŽODĮ *</label>
       <input class="inp" id="ksr-pass2" type="password" style="margin-bottom:8px;">
@@ -646,7 +654,8 @@ async function submitKidSelfSignup(){
   const emgPhone = document.getElementById('ksr-emg-phone').value.trim();
   const health = document.getElementById('ksr-health').value.trim();
   if (!/^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)){ _ksrErr('Neteisingas el. pašto formatas'); return; }
-  if (!pass || pass.length < 8){ _ksrErr('Slaptažodis — bent 8 simboliai'); return; }
+  const _ksrPwErr = _pwPolicyError(pass);
+  if (_ksrPwErr){ _ksrErr(_ksrPwErr); return; }
   if (pass !== pass2){ _ksrErr('Slaptažodžiai nesutampa'); return; }
   if (!clubCode){ _ksrErr('Įvesk klubo kodą'); return; }
   if (!document.getElementById('ksr-c1').checked || !document.getElementById('ksr-c2').checked){ _ksrErr('Pažymėk abu sutikimus'); return; }
@@ -1264,6 +1273,28 @@ async function openParentSettings() {
           </div>
         </div>
         <div style="padding:8px 16px 0;">
+          <div onclick="openChangePasswordModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;">${ico('uzrakinta')}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Keisti slaptažodį</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Tavo paskyros slaptažodis</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
+        </div>
+        <div style="padding:8px 16px 0;">
+          <a href="mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – duomenys/ištrynimas')}&body=${encodeURIComponent('Prašau (pažymėk):\n[ ] eksportuoti mano ir vaiko duomenis (GDPR)\n[ ] ištrinti paskyrą\n\n')}" style="text-decoration:none;display:block;">
+            <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+              <div style="font-size:28px;">${ico('dokumentas')}</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:800;color:white;">Duomenys ir paskyra</div>
+                <div style="font-size:11px;color:var(--mut);margin-top:2px;">Eksportas (GDPR) ar paskyros ištrynimas</div>
+              </div>
+              <div style="font-size:18px;color:var(--mut);">›</div>
+            </div>
+          </a>
+        </div>
+        <div style="padding:8px 16px 0;">
           <div onclick="openParentHelpModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
             <div style="font-size:28px;">${ico('pagalba')}</div>
             <div style="flex:1;">
@@ -1295,6 +1326,10 @@ async function openParentSettings() {
         </div>
         <div style="padding:6px 16px 20px;">
           <button onclick="appConfirm('Ar tikrai atsijungti?').then(function(ok){if(ok){document.getElementById('parent-settings-modal').remove();doLogout();}})" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#8B5CF6);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(99,102,241,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
+        </div>
+        <div style="display:flex;gap:14px;justify-content:center;padding:0 16px 4px;">
+          <a href="privatumo-politika.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Privatumo politika</a>
+          <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Naudojimo taisyklės</a>
         </div>
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
           SPOBU v1.0 · © 2026
@@ -1388,7 +1423,7 @@ async function submitParentReport(btn) {
 
 // ❓ Pagalba ir atsiliepimai — Susisiekti / Pranešti problemą / DUK
 function openParentHelpModal() {
-  const SUPPORT_EMAIL = 'pagalba@spobu.lt'; // ${ico('ispejimas')} PAKEISK Į SAVO TIKRĄ EL. PAŠTĄ
+  // SUPPORT_EMAIL — globalus const (viršuje, prie POLICY_VERSION)
   const appV = (document.getElementById('app-version')?.textContent || '');
   const contactHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – klausimas')}`;
   const bugBody = encodeURIComponent(`Aprašyk, kas nutiko:\n\n• Ką dariau: \n• Kas nutiko: \n• Vaiko vardas: \n• Telefonas / naršyklė: \n• App versija: ${appV}\n`);
@@ -6341,8 +6376,9 @@ function rwNext(currentScreen) {
       showErr(errEl, 'Neteisingas el. pašto formatas (be lietuviškų raidžių)');
       return;
     }
-    if (!pass || pass.length < 8) {
-      showErr(errEl, 'Slaptažodis turi būti bent 8 simboliai');
+    const _pwErr = _pwPolicyError(pass);
+    if (_pwErr) {
+      showErr(errEl, _pwErr);
       return;
     }
     if (pass !== pass2) {
@@ -6471,7 +6507,7 @@ async function doForgot() {
 
   if (!email) { showErr(errEl, 'Įveskite el. paštą'); return; }
   const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`
+    redirectTo: `${window.location.origin}/spobu/set-password.html`
   });
   if (error) showErr(errEl, error.message);
   else okEl.style.display = 'block';
@@ -12841,7 +12877,7 @@ function openClubAccountMenu(){
   const email = currentProfile?.email || currentUser?.email || '–';
   const clubName = currentClub?.name || 'Klubas';
   const appV = document.getElementById('app-version')?.textContent || '';
-  const SUP = 'pagalba@spobu.lt';
+  const SUP = SUPPORT_EMAIL;
   const contactHref = `mailto:${SUP}?subject=${encodeURIComponent('SPOBU klubas – klausimas')}`;
   const gdprHref = `mailto:${SUP}?subject=${encodeURIComponent('SPOBU klubas – duomenys/ištrynimas')}&body=${encodeURIComponent('Prašau (pažymėk):\n[ ] eksportuoti klubo duomenis (GDPR)\n[ ] ištrinti klubo paskyrą\n\nKlubas: '+clubName+'\nApp: '+appV+'\n')}`;
   const m = document.createElement('div'); m.id = 'club-acct-menu';
@@ -12883,12 +12919,22 @@ function openClubAccountMenu(){
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Klubo funkcijos ir logotipas</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Įjunk/išjunk funkcijas, keisk logo ir info</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>` : ''}
-      <div onclick="openClubChangePassword()" style="${rs}">
+      <div onclick="openChangePasswordModal()" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('uzrakinta')}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Keisti slaptažodį</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Klubo paskyros slaptažodis</div></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Keisti slaptažodį</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Tavo paskyros slaptažodis</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
       <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;padding:10px 2px 6px;">TEISINIAI IR PAGALBA</div>
+      <a href="privatumo-politika.html" target="_blank" rel="noopener" style="text-decoration:none;display:block;"><div style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">${ico('dokumentas')}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Privatumo politika</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Kaip tvarkomi duomenys</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div></a>
+      <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="text-decoration:none;display:block;"><div style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">${ico('dokumentas')}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Naudojimo taisyklės</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Paslaugos sąlygos</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div></a>
       <div onclick="document.getElementById('club-acct-menu').remove();openClubRolesGuide();" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('info')}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Kaip veikia SPOBU</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Rolės: ką daro klubas, treneris, tėvas, vaikas</div></div>
@@ -12928,33 +12974,34 @@ function openClubAccountMenu(){
   if (typeof updatePushToggleUI==='function') updatePushToggleUI();
 }
 
-// 🔒 Klubo slaptažodžio keitimas (Supabase auth)
-function openClubChangePassword(){
-  const old=document.getElementById('club-pw-modal'); if(old) old.remove();
-  const m=document.createElement('div'); m.id='club-pw-modal';
+// 🔒 Slaptažodžio keitimas (Supabase auth) — BENDRAS visoms rolėms (v391; updateUser veikia bet kuriai sesijai)
+function openChangePasswordModal(){
+  const old=document.getElementById('pw-modal'); if(old) old.remove();
+  const m=document.createElement('div'); m.id='pw-modal';
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100005;align-items:flex-end;justify-content:center;';
   m.onclick=e=>{ if(e.target===m) m.remove(); };
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('uzrakinta')} KEISTI SLAPTAŽODĮ</div><button onclick="document.getElementById('club-pw-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('uzrakinta')} KEISTI SLAPTAŽODĮ</div><button onclick="document.getElementById('pw-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div style="padding:16px 20px 22px;">
       <label class="lbl">NAUJAS SLAPTAŽODIS</label>
-      <input class="inp" id="club-pw-new" type="password" placeholder="min. 6 simboliai" autocomplete="new-password" style="margin-bottom:10px;">
+      <input class="inp" id="pw-new" type="password" placeholder="min. 8, didžioji raidė ir skaičius" autocomplete="new-password" style="margin-bottom:10px;">
       <label class="lbl">PAKARTOK</label>
-      <input class="inp" id="club-pw-new2" type="password" placeholder="dar kartą" autocomplete="new-password" style="margin-bottom:14px;">
-      <button class="btn btng" style="width:100%;margin:0;" onclick="_clubChangePassword()">${ico('issaugoti')} IŠSAUGOTI</button>
+      <input class="inp" id="pw-new2" type="password" placeholder="dar kartą" autocomplete="new-password" style="margin-bottom:14px;">
+      <button class="btn btng" style="width:100%;margin:0;" onclick="_submitChangePassword()">${ico('issaugoti')} IŠSAUGOTI</button>
     </div>
   </div>`;
   document.body.appendChild(m);
 }
-async function _clubChangePassword(){
-  const p1=document.getElementById('club-pw-new')?.value||''; const p2=document.getElementById('club-pw-new2')?.value||'';
-  if (p1.length<6){ showToast(ico('klaida')+' Min. 6 simboliai','error'); return; }
+async function _submitChangePassword(){
+  const p1=document.getElementById('pw-new')?.value||''; const p2=document.getElementById('pw-new2')?.value||'';
+  const _err=_pwPolicyError(p1);
+  if (_err){ showToast(ico('klaida')+' '+_err,'error'); return; }
   if (p1!==p2){ showToast(ico('klaida')+' Slaptažodžiai nesutampa','error'); return; }
   try {
     const { error } = await sb.auth.updateUser({ password:p1 });
     if (error) throw error;
     showToast(ico('patvirtinta')+' Slaptažodis pakeistas','success',3500);
-    document.getElementById('club-pw-modal')?.remove();
+    document.getElementById('pw-modal')?.remove();
   } catch(e){ showToast(ico('klaida')+' '+(e.message||'Nepavyko'),'error',5000); }
 }
 
@@ -22190,6 +22237,32 @@ async function openTrainerSettings() {
           </div>
         </div>
 
+        <!-- 🔒 KEISTI SLAPTAŽODĮ -->
+        <div style="padding:8px 16px 0;">
+          <div onclick="openChangePasswordModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;">${ico('uzrakinta')}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Keisti slaptažodį</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Tavo paskyros slaptažodis</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
+        </div>
+
+        <!-- ${ico('dokumentas')} GDPR / PASKYRA -->
+        <div style="padding:8px 16px 0;">
+          <a href="mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU treneris – duomenys/ištrynimas')}&body=${encodeURIComponent('Prašau (pažymėk):\n[ ] eksportuoti mano duomenis (GDPR)\n[ ] ištrinti paskyrą\n\n')}" style="text-decoration:none;display:block;">
+            <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+              <div style="font-size:28px;">${ico('dokumentas')}</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:800;color:white;">Duomenys ir paskyra</div>
+                <div style="font-size:11px;color:var(--mut);margin-top:2px;">Eksportas (GDPR) ar paskyros ištrynimas</div>
+              </div>
+              <div style="font-size:18px;color:var(--mut);">›</div>
+            </div>
+          </a>
+        </div>
+
         <!-- ${ico('pagalba')} PAGALBA IR ATSILIEPIMAI -->
         <div style="padding:8px 16px 0;">
           <div onclick="openHelpModal('trainer')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -22207,6 +22280,10 @@ async function openTrainerSettings() {
           <button onclick="appConfirm('Ar tikrai atsijungti?').then(function(ok){if(ok){document.getElementById('trainer-settings-modal').remove();doLogout();}})" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF7A33);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(255,77,0,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
         </div>
 
+        <div style="display:flex;gap:14px;justify-content:center;padding:0 16px 4px;">
+          <a href="privatumo-politika.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Privatumo politika</a>
+          <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Naudojimo taisyklės</a>
+        </div>
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
           SPOBU v1.0 · © 2026
         </div>
@@ -33378,6 +33455,18 @@ async function openKidSettings() {
           </div>
         </div>
         
+        <!-- 🔒 KEISTI SLAPTAŽODĮ — rodomas TIK 14+ (jaunesnių prisijungimą valdo tėvai) -->
+        <div id="kid-pw-row" style="display:none;padding:0 16px 14px;">
+          <div onclick="openChangePasswordModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;">${ico('uzrakinta')}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Keisti slaptažodį</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Tavo prisijungimo slaptažodis</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
+        </div>
+
         <!-- ${ico('pagalba')} PAGALBA IR ATSILIEPIMAI -->
         <div style="padding:8px 16px 0;">
           <div onclick="openHelpModal('kid')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -33394,8 +33483,12 @@ async function openKidSettings() {
         <div style="padding:6px 16px 20px;">
           <button onclick="appConfirm('Ar tikrai atsijungti?').then(function(ok){if(ok){document.getElementById('kid-settings-modal').remove();doLogout();}})" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF7A33);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(255,77,0,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
         </div>
-        
-        <!-- App info -->
+
+        <!-- Teisiniai + App info -->
+        <div style="display:flex;gap:14px;justify-content:center;padding:0 16px 4px;">
+          <a href="privatumo-politika.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Privatumo politika</a>
+          <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Naudojimo taisyklės</a>
+        </div>
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
           SPOBU v1.0 · © 2026
         </div>
@@ -33427,7 +33520,15 @@ async function openKidSettings() {
   updatePushToggleUI();
   // 🔍 Atnaujint vaizdo dydžio mygtukus
   if (typeof updateZoomButtonsUI === 'function') updateZoomButtonsUI();
-  
+
+  // 🔒 „Keisti slaptažodį" — tik 14+ (sprendimas 2026-07-27; jaunesnių prisijungimą valdo tėvai)
+  const _pwRow = document.getElementById('kid-pw-row');
+  if (_pwRow){
+    let _kAge = null;
+    try { if (currentKid?.birth_date && typeof calculateAge === 'function') _kAge = calculateAge(currentKid.birth_date); } catch(e){}
+    _pwRow.style.display = (_kAge !== null && _kAge >= 14) ? 'block' : 'none';
+  }
+
   modal.style.display = 'flex';
 }
 
