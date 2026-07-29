@@ -20753,7 +20753,8 @@ function _trNormRender() {
     });
   });
   const hint = html
-    ? `<div style="font-size:10px;color:var(--mut);line-height:1.5;margin:2px 0 4px;">${ico('ranka')} Paspausk ant pratimo — pamatysi, kaip jis atliekamas teisingai ir kokius pakartojimus užskaityti.</div>`
+    ? `<div style="font-size:10px;color:var(--mut);line-height:1.5;margin:2px 0 4px;">${ico('ranka')} Paspausk ant pratimo — pamatysi, kaip jis atliekamas teisingai ir kokius pakartojimus užskaityti.<br>
+         <b style="color:#c9c9d4;">Matavimo vienetas pasako taisyklę:</b> „iš 10", „(2 min)", „(30 s)" — <b>suma</b>, klaida serijos nenutraukia · „iš eilės" — <b>serija</b>, pirma klaida ją nutraukia · „per karjerą" — <b>bendras kaupiamas skaičius</b>.</div>`
     : '';
   body.innerHTML = (hint + html) || '<div style="text-align:center;padding:30px;color:var(--mut);">Pratimų nėra</div>';
 }
