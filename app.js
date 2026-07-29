@@ -706,7 +706,7 @@ async function submitKidSelfSignup(){
     document.getElementById('ksr-done').style.display = 'block';
   } catch(err){
     if (!_ksrSignedUp) window._suppressAuthChange = false;   // signUp nepavyko — sesijos nėra, slopinti nebereikia
-    _ksrErr(''+ico('klaida')+' ' + (err.message || 'Nepavyko — bandyk dar kartą'));
+    _ksrErr(err.message || 'Nepavyko — bandyk dar kartą');   // be ico() — _ksrErr rašo per textContent, SVG spausdintųsi kaip tekstas
   } finally {
     btn.disabled = false;
     btn.textContent = _ksrSignedUp ? '🔁 Bandyti dar kartą' : '🥋 Sukurti paskyrą';
@@ -7267,8 +7267,9 @@ function updateExpBar(totalExp, level) {
   }
   
   if (nextTxt) {
-    nextTxt.textContent = info.isHallOfFame 
-      ? ''+ico('zvaigzde')+' MAKSIMALUS LYGIS' 
+    // ⚠️ ico() grąžina SVG — TIK innerHTML (textContent išspausdintų žymes tekstu)
+    nextTxt.innerHTML = info.isHallOfFame
+      ? `${ico('zvaigzde')} MAKSIMALUS LYGIS`
       : `Iki LVL ${info.globalLevel + 1}: +${info.expToNextLevel} EXP`;
   }
 }
@@ -11419,8 +11420,9 @@ async function openSubmitChallenge(challengeId) {
   // Užpildyti modal'o turinį
   document.getElementById('vsc-icon').textContent = challenge.icon || '🎯';
   document.getElementById('vsc-title').textContent = challenge.title;
-  document.getElementById('vsc-target').textContent = challenge.target_value 
-    ? `${ico('tikslas')} Tikslas: ${challenge.target_value} ${challenge.target_unit || ''}`
+  // ⚠️ ico() grąžina SVG — TIK innerHTML (textContent išspausdintų žymes tekstu)
+  document.getElementById('vsc-target').innerHTML = challenge.target_value
+    ? `${ico('tikslas')} Tikslas: ${escapeHtml(String(challenge.target_value))} ${escapeHtml(challenge.target_unit || '')}`
     : '';
   document.getElementById('vsc-exp').textContent = `+${challenge.exp_reward} EXP`;
   document.getElementById('vsc-description').textContent = challenge.description || '';
@@ -20643,6 +20645,7 @@ function openTrGroupsModal() {
 let _trNormData = null;
 let _trNormGender = 'male';
 let _trNormBand = 'young'; // 'young'=6–13, 'old'=14+
+let _trNormOpenEx = {};    // kurių pratimų technikos aprašymas išskleistas
 
 async function openTrainerNormatyvai() {
   let m = document.getElementById('tr-norm-modal');
@@ -20674,7 +20677,7 @@ async function openTrainerNormatyvai() {
     try {
       let cats = _trCareerCatsCache;
       const [exR, agR, ccR] = await Promise.all([
-        sb.from('exercises').select('id, category_id, name, unit, lower_is_better, sort_order').eq('is_active', true).order('sort_order'),
+        sb.from('exercises').select('id, category_id, name, unit, lower_is_better, sort_order, description, why_text, strava').eq('is_active', true).order('sort_order'),
         sb.from('exercise_age_groups').select('*'),
         (cats && cats.length) ? Promise.resolve({ data: cats }) : sb.from('career_categories').select('id, name, icon, sort_order').order('sort_order').limit(7)
       ]);
@@ -20697,6 +20700,12 @@ async function openTrainerNormatyvai() {
 
 function _trNormSet(kind, val) {
   if (kind === 'gender') _trNormGender = val; else _trNormBand = val;
+  _trNormRender();
+}
+
+// Technikos aprašymas: kaip teisingai atliekamas pratimas ir ką užskaitom
+function _trNormToggleEx(exId) {
+  _trNormOpenEx[exId] = !_trNormOpenEx[exId];
   _trNormRender();
 }
 
@@ -20727,13 +20736,26 @@ function _trNormRender() {
     exs.forEach(ex => {
       const t = targetFor(ex.id);
       const unit = ex.unit ? ` <span style="color:var(--mut);font-weight:400;font-size:10px;">(${ex.unit}${ex.lower_is_better ? ', mažiau=geriau' : ''})</span>` : '';
+      const open = !!_trNormOpenEx[ex.id];
       html += `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;margin-bottom:6px;">
-          <div style="font-size:12px;font-weight:700;margin-bottom:6px;">${ex.name}${unit}</div>
+          <div onclick="_trNormToggleEx('${ex.id}')" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
+            <div style="flex:1;min-width:0;font-size:12px;font-weight:700;">${ex.name}${unit}</div>
+            <div style="flex:none;font-size:9px;font-weight:800;letter-spacing:.4px;color:${open ? '#FF7A33' : 'var(--mut)'};">TECHNIKA ${open ? '▴' : '▾'}</div>
+          </div>
           ${t ? `<div style="display:flex;gap:4px;">${cell(''+ico('medalis')+'', t.bronze)}${cell(''+ico('medalis')+'', t.silver)}${cell(''+ico('medalis')+'', t.gold)}${cell(''+ico('trofejai')+'', t.completed)}</div>` : '<div style="font-size:11px;color:var(--mut);">Rėžių šiai grupei nėra</div>'}
+          ${open ? `<div style="border-top:.5px solid var(--bdr);margin-top:8px;padding-top:8px;">
+            <div style="font-size:9px;font-weight:800;letter-spacing:.4px;color:#FF7A33;margin-bottom:4px;">${ico('patvirtinta')} KAIP TEISINGAI · KĄ UŽSKAITOM</div>
+            <div style="font-size:11px;color:#c9c9d4;line-height:1.55;">${ex.description || 'Aprašymo dar nėra — skaičiuok tik pilnus, švarius pakartojimus.'}</div>
+            ${ex.why_text ? `<div style="font-size:10px;color:#9a9aa8;margin-top:7px;line-height:1.5;background:rgba(0,0,0,.25);border-left:2px solid #3a3a48;padding:6px 9px;border-radius:0 8px 8px 0;">${ico('tikslas')} <b style="color:#c9c9d4;">Kodėl:</b> ${ex.why_text}</div>` : ''}
+            ${ex.strava ? `<div style="margin-top:7px;"><span style="font-size:8.5px;font-weight:800;border:1px solid #7a3414;color:#ff7a3d;border-radius:20px;padding:2px 8px;">${ico('vieta')} STRAVA ĮRODYMAS</span></div>` : ''}
+          </div>` : ''}
         </div>`;
     });
   });
-  body.innerHTML = html || '<div style="text-align:center;padding:30px;color:var(--mut);">Pratimų nėra</div>';
+  const hint = html
+    ? `<div style="font-size:10px;color:var(--mut);line-height:1.5;margin:2px 0 4px;">${ico('ranka')} Paspausk ant pratimo — pamatysi, kaip jis atliekamas teisingai ir kokius pakartojimus užskaityti.</div>`
+    : '';
+  body.innerHTML = (hint + html) || '<div style="text-align:center;padding:30px;color:var(--mut);">Pratimų nėra</div>';
 }
 
 // 💡 Trenerio langų gidas — kiekvienas langas turi lemputę su paaiškinimu
@@ -20752,7 +20774,7 @@ function openTrInfo(which) {
         row(''+ico('kalendorius')+'', 'Šiandienos treniruotės', 'Grupės, kurios treniruojasi šiandien pagal tvarkaraštį.') +
         row(''+ico('trofejai')+'', 'Geriausi vaikai', 'Tavo aktyviausi mokiniai pagal EXP.') +
         row(''+ico('laukia')+'', 'Laukia patvirtinimo', 'Vaikų pateikti rezultatai, kuriuos reikia patvirtinti.') +
-        row(''+ico('jega')+'', 'Normatyvai', 'Antraštės mygtukas — pratimų rėžiai pagal amžių ir lytį.');
+        row(''+ico('jega')+'', 'Normatyvai', 'Antraštės mygtukas — pratimų rėžiai pagal amžių ir lytį. Paspaudus ant pratimo matai techniką: kaip atliekamas teisingai ir kokius pakartojimus užskaityti.');
       break;
     case 'groups':
       title = ''+ico('pagalba')+' GRUPĖS';
@@ -27087,8 +27109,9 @@ function togglePartialResults() {
   if (toggle) toggle.style.background = newState ? '#FF4D00' : 'var(--bdr)';
   if (dot) dot.style.left = newState ? '23px' : '3px';
   if (desc) {
-    desc.textContent = newState 
-      ? ''+ico('patvirtinta')+' Vaikas pateikia po dalį, sumuojama iki tikslo' 
+    // ⚠️ ico() grąžina SVG — TIK innerHTML (textContent išspausdintų žymes tekstu)
+    desc.innerHTML = newState
+      ? `${ico('patvirtinta')} Vaikas pateikia po dalį, sumuojama iki tikslo`
       : 'Vaikas pateikia po dalį, sumuojama iki tikslo';
   }
 }
