@@ -663,6 +663,16 @@ async function submitKidSelfSignup(){
   const btn = document.getElementById('ksr-submit');
   btn.disabled = true; btn.textContent = 'KURIAMA...';
   try {
+    // 0) klubo kodas tikrinamas PRIEŠ signUp (A-04): kitaip nepavykus lieka „našlaitė"
+    // aktyvi paskyra su užimtu el. paštu, o vartotojas negali pakartoti su geru kodu.
+    if (!_ksrSignedUp){
+      const ccRes = await sb.rpc('spobu_club_code_exists', { p_code: clubCode });
+      // Jei RPC dar nepaleistas serveryje — nestabdom registracijos (validacija liks RPC viduje)
+      if (!ccRes.error && ccRes.data === false){
+        _ksrErr('Klubo kodas nerastas. Patikslink jį pas savo klubą.');
+        return;   // mygtuką atstato finally blokas
+      }
+    }
     if (!_ksrSignedUp){
       // 🔑 signUp auto-loginina → SIGNED_IN paleistų afterLogin ANKSČIAU nei RPC sukurs kids įrašą
       // (afterLogin nerastų vaiko, mestų klaidą ir atjungtų). Slopinam, kaip trenerio kvietime.
@@ -2564,7 +2574,7 @@ async function loadParentKidPending(k) {
     const top = items.slice(0, 3);
     const gridCols = top.length === 1 ? '1fr' : top.length === 2 ? '1fr 1fr' : '1fr 1fr 1fr';
     const kindStyle = {
-      career:       { bd: 'rgba(255,77,0,.3)',   bg: 'rgba(255,77,0,.2)',   fg: '#FF7A33', badge: 'Karj' },
+      career:       { bd: 'rgba(255,77,0,.3)',   bg: 'rgba(255,77,0,.2)',   fg: '#FF7A33', badge: 'Kelias' },
       challenges:   { bd: 'rgba(79,195,247,.3)', bg: 'rgba(79,195,247,.2)', fg: '#4FC3F7', badge: 'Iššūk' },
       competitions: { bd: 'rgba(255,215,0,.3)',  bg: 'rgba(255,215,0,.2)',  fg: '#FFD700', badge: 'Varž' }
     };
@@ -3678,7 +3688,7 @@ function openReportOrderModal(useCredit){
   const lockDays = _kidDataDays(k, 60);  // ${ico('statistika')} duomenų vartai: ataskaitos atrakinamos po 2 mėn. treniruočių (kol susikaupia duomenys)
   const orderCard = lockDays > 0
     ? `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:20px 14px;margin-bottom:16px;text-align:center;"><div style="font-size:36px;margin-bottom:8px;">${ico('uzrakinta')}</div><div style="font-size:14px;font-weight:800;color:white;margin-bottom:7px;">Ataskaita dar kaupia duomenis</div><div style="font-size:11px;color:var(--mut);line-height:1.55;">Pirmoms ataskaitoms reikia ~2 mėn. treniruočių duomenų, kad būtų ką analizuoti. Kol kas vaikas kaupia rezultatus Kelio lange — kuo daugiau jų užfiksuos, tuo asmeniškesnė bus analizė.</div><div style="margin-top:11px;font-size:12px;color:var(--br);font-weight:800;">${ico('laukia')} Prieinama po ${lockDays} d.</div></div>`
-    : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div><div style="display:flex;gap:10px;"><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div></div><div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div><div style="margin-top:11px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">TRAUMOS / APRIBOJIMAI (NEBŪTINA)</label><input id="rep-injuries" type="text" placeholder="pvz. neseniai skaudėjo kelį" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><div style="margin-top:10px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">KO LABIAUSIAI TIKITĖS IŠ ATASKAITOS? (NEBŪTINA)</label><input id="rep-goal" type="text" placeholder="pvz. ar verta ruoštis varžyboms" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><label style="display:flex;gap:8px;font-size:10.5px;color:var(--mut);line-height:1.45;margin-top:11px;cursor:pointer;"><input type="checkbox" id="rep-consent" style="margin-top:2px;flex-shrink:0;"> Sutinku, kad ataskaita būtų parengta ir pateikta iš karto, ir suprantu, kad ją pateikus netenku teisės atsisakyti sutarties (CK 6.228¹⁰ str.).</label><button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:9px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button><div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div></div>`;
+    : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--mut);margin-bottom:11px;line-height:1.45;">Išsami <b style="color:white;">${_rEsc(parentKidName(k))}</b> fizinio pasirengimo, technikos ir augimo analizė. Generuoja AI pagal vaiko SPOBU duomenis.</div><div style="display:flex;gap:10px;"><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">ŪGIS (cm)</label><input id="rep-height" type="number" inputmode="numeric" value="${k.height_cm||''}" placeholder="pvz. 145" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div><div style="flex:1;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">SVORIS (kg)</label><input id="rep-weight" type="number" inputmode="decimal" value="${k.weight_kg||''}" placeholder="pvz. 44" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:14px;box-sizing:border-box;"></div></div><div style="font-size:9px;color:var(--mut);margin-top:7px;line-height:1.4;">Ūgis ir svoris reikalingi augimo (KMI) daliai. Gali palikti tuščius — tada ji bus praleista.</div><div style="margin-top:11px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">TRAUMOS / APRIBOJIMAI (NEBŪTINA)</label><input id="rep-injuries" type="text" placeholder="pvz. neseniai skaudėjo kelį" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><label style="display:flex;gap:8px;font-size:10.5px;color:var(--mut);line-height:1.45;margin-top:8px;cursor:pointer;"><input type="checkbox" id="rep-health-consent" style="margin-top:2px;flex-shrink:0;"> Sutinku, kad nurodyta sveikatos informacija (traumos/apribojimai) būtų panaudota ataskaitai parengti. <span style="color:var(--mut);opacity:.75;">(reikia tik jei pildai traumų lauką)</span></label><div style="margin-top:10px;"><label style="font-size:9px;color:var(--mut);letter-spacing:.5px;font-weight:700;">KO LABIAUSIAI TIKITĖS IŠ ATASKAITOS? (NEBŪTINA)</label><input id="rep-goal" type="text" placeholder="pvz. ar verta ruoštis varžyboms" style="width:100%;margin-top:4px;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:9px;color:white;font-size:13px;box-sizing:border-box;"></div><label style="display:flex;gap:8px;font-size:10.5px;color:var(--mut);line-height:1.45;margin-top:11px;cursor:pointer;"><input type="checkbox" id="rep-consent" style="margin-top:2px;flex-shrink:0;"> Sutinku, kad ataskaita būtų parengta ir pateikta iš karto, ir suprantu, kad ją pateikus netenku teisės atsisakyti sutarties (CK 6.228¹⁰ str.).</label><button id="rep-gen-btn" onclick="submitReportOrder(this)" class="btn btng" style="width:100%;margin-top:9px;padding:13px;font-size:13px;font-weight:800;">✨ Generuoti ataskaitą</button><div id="rep-gen-status" style="display:none;font-size:11px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.4;"></div></div>`;
   const m = document.createElement('div');
   m.id = 'report-order-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
@@ -3747,11 +3757,18 @@ async function submitReportOrder(btn){
   const inj = document.getElementById('rep-injuries')?.value?.trim() || '';
   const gl = document.getElementById('rep-goal')?.value?.trim() || '';
   const status = document.getElementById('rep-gen-status');
+  // 📜 BDAR 9 str.: traumos = sveikatos duomenys → atskiras sutikimas (C-01)
+  const _repHC = document.getElementById('rep-health-consent');
+  if (inj && _repHC && !_repHC.checked){
+    if (status){ status.style.display = 'block'; status.style.color = 'var(--br)'; status.textContent = '❌ Įrašei traumų informaciją — pažymėk sutikimą, kad ją galėtume naudoti ataskaitai.'; }
+    return;
+  }
   if (btn.disabled) return;
   btn.disabled = true; btn.textContent = '⏳ Generuojama...';
   if (status) { status.style.display = 'block'; status.style.color = 'var(--mut)'; status.textContent = 'AI analizuoja vaiko duomenis… tai gali užtrukti iki ~40 s. Neuždaryk lango.'; }
   _savePrefs(k.id, 'report', { injuries: inj || null, parent_goal: gl || null });
   if (_repC) await logConsent('digital_content', { kid_id: k.id, source: _reportCreditMode ? 'report_order_credit' : 'report_order' });
+  if (inj) await logConsent('health', { kid_id: k.id, source: 'report_order' });   // BDAR 9 (C-01)
   try {
     const { data, error } = await sb.functions.invoke('generate-report', {
       body: { kid_id: k.id, height_cm: h ? Number(h) : null, weight_kg: w ? Number(w) : null, prefs: { injuries: inj || null, parent_goal: gl || null } }
@@ -5450,16 +5467,8 @@ async function akSubmit() {
       club_id: akData.club_id || null,
       assigned_trainer_id: akData.trainer_id || null,
       user_id: null,
-      // Sveikatos info
-      health_allergies: akData.health_allergies,
-      health_medications: akData.health_medications,
-      health_conditions: akData.health_conditions,
-      health_injuries: akData.health_injuries,
-      health_notes: akData.health_notes,
-      // Avarinis kontaktas
-      emergency_contact_name: akData.emergency_contact_name,
-      emergency_contact_phone: akData.emergency_contact_phone,
-      emergency_contact_relation: akData.emergency_contact_relation,
+      // 🔐 Sveikata ir avarinis kontaktas čia NErašomi — jie keliauja į kid_health
+      // po tėvo saito sukūrimo (E2-1, server-kid-health-split.sql)
       // Media sutikimas
       media_consent: akData.media_consent
     }).select().single();
@@ -5481,6 +5490,26 @@ async function akSubmit() {
     if (linkError) {
       console.error('Link error:', linkError);
       throw new Error('Susiejimo klaida: ' + linkError.message);
+    }
+
+    // 2a-2. 🔐 Sveikata + avarinis kontaktas → kid_health (RLS leidžia tik PO saito)
+    const _akHealthRow = {
+      health_allergies: akData.health_allergies,
+      health_medications: akData.health_medications,
+      health_conditions: akData.health_conditions,
+      health_injuries: akData.health_injuries,
+      health_notes: akData.health_notes,
+      emergency_contact_name: akData.emergency_contact_name,
+      emergency_contact_phone: akData.emergency_contact_phone,
+      emergency_contact_relation: akData.emergency_contact_relation
+    };
+    if (Object.values(_akHealthRow).some(v => v)) {
+      const { error: healthErr } = await saveKidHealth(kidId, _akHealthRow);
+      if (healthErr) {
+        console.error('kid_health insert klaida:', healthErr);
+        showToast(ico('ispejimas')+' Vaikas sukurtas, bet sveikatos info neišsaugota — įrašyk per vaiko kortelę.', 'error', 6000);
+        // Nelūžtam: vaikas jau sukurtas, sveikatą galima suvesti vėliau
+      }
     }
 
     // 📜 Sutikimų žurnalas: sveikata (jei pildyta) + media pasirinkimas (fiksuojam ir „ne")
@@ -5670,7 +5699,8 @@ async function showKidDetail(kidId) {
   }
   
   currentParentKid = kid;
-  
+  await mergeKidHealth(kid);   // 🔐 sveikata iš kid_health (E2-1)
+
   const fullName = `${kid.first_name || 'Vaikas'} ${kid.last_name || ''}`.trim();
   document.getElementById('t-kid-name').textContent = fullName;
   
@@ -5961,9 +5991,38 @@ function parentCancelHealthEdit() {
   document.getElementById('t-kid-health-display').style.display = 'block';
 }
 
+// ════════════════════════════════════════
+// 🔐 BDAR 9 (E2-1): sveikata + avarinis kontaktas gyvena ATSKIROJE kid_health
+// lentelėje su siaura RLS (tėvas · priskirtas treneris · klubo adminas · pats
+// vaikas). `kids` lentelėje jų nebėra, nes RLS neriboja stulpelių ir anksčiau
+// juos matė visas klubas. SQL: server-kid-health-split.sql
+// ════════════════════════════════════════
+const KID_HEALTH_FIELDS = ['health_allergies','health_medications','health_conditions','health_injuries','health_notes','emergency_contact_name','emergency_contact_phone','emergency_contact_relation'];
+
+async function loadKidHealth(kidId){
+  if (!kidId) return null;
+  const { data, error } = await sb.from('kid_health').select('*').eq('kid_id', kidId).maybeSingle();
+  if (error){ console.warn('kid_health load:', error.message); return null; }
+  return data || null;
+}
+
+// Įlieja sveikatos laukus į vaiko objektą — taip visas UI kodas lieka nepakitęs
+async function mergeKidHealth(kid){
+  if (!kid || !kid.id) return kid;
+  const h = await loadKidHealth(kid.id);
+  KID_HEALTH_FIELDS.forEach(f => { kid[f] = h ? (h[f] ?? null) : null; });
+  return kid;
+}
+
+async function saveKidHealth(kidId, updates){
+  return await sb.from('kid_health')
+    .upsert({ kid_id: kidId, ...updates }, { onConflict: 'kid_id' })
+    .select();
+}
+
 async function parentSaveHealth() {
   if (!currentParentKid?.id) return;
-  
+
   const updates = {
     health_allergies: document.getElementById('t-edit-allergies').value.trim() || null,
     health_medications: document.getElementById('t-edit-medications').value.trim() || null,
@@ -5971,9 +6030,9 @@ async function parentSaveHealth() {
     health_injuries: document.getElementById('t-edit-injuries').value.trim() || null,
     health_notes: document.getElementById('t-edit-health-notes').value.trim() || null
   };
-  
-  const { data, error } = await sb.from('kids').update(updates).eq('id', currentParentKid.id).select();
-  
+
+  const { data, error } = await saveKidHealth(currentParentKid.id, updates);
+
   if (error) { showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000); return; }
   if (!data || data.length === 0) { showToast(ico('klaida')+' Negalima keisti - nepakanka teisių', 'error', 5000); return; }
   
@@ -6010,9 +6069,9 @@ async function parentSaveEmergency() {
     emergency_contact_phone: document.getElementById('t-edit-emergency-phone').value.trim() || null,
     emergency_contact_relation: document.getElementById('t-edit-emergency-relation').value.trim() || null
   };
-  
-  const { data, error } = await sb.from('kids').update(updates).eq('id', currentParentKid.id).select();
-  
+
+  const { data, error } = await saveKidHealth(currentParentKid.id, updates);
+
   if (error) { showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000); return; }
   if (!data || data.length === 0) { showToast(ico('klaida')+' Negalima keisti - nepakanka teisių', 'error', 5000); return; }
   
@@ -6509,13 +6568,27 @@ async function doForgot() {
   const { error } = await sb.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/spobu/set-password.html`
   });
-  if (error) showErr(errEl, error.message);
+  // A-02: Supabase klaidos ateina angliškai — verčiam, kaip login formoje
+  if (error) showErr(errEl, _resetErrLt(error.message));
   else okEl.style.display = 'block';
+}
+
+// Supabase reset klaidų vertimas į LT (nenurodom, ar paskyra egzistuoja — be enumeracijos)
+function _resetErrLt(msg){
+  const m = (msg || '').toLowerCase();
+  if (m.includes('invalid') && m.includes('email')) return 'Neteisingas el. pašto adresas.';
+  if (m.includes('rate limit') || m.includes('too many')) return 'Per daug bandymų. Pabandyk po kelių minučių.';
+  if (m.includes('not found') || m.includes('user')) return 'Jei tokia paskyra yra — laišką išsiuntėme.';
+  return 'Nepavyko išsiųsti laiško. Patikrink el. paštą ir bandyk dar kartą.';
 }
 
 async function doLogout() {
   await sb.auth.signOut();
   showToast('Atsijungta', 'success');
+  // A-01: vien signOut nepaslepia aktyvaus portalo — jis lieka DOM'e po login ekranu
+  // (bendrame kompiuteryje kitas žmogus pamatytų buvusio vartotojo duomenis, be to
+  // juos išsaugo naršyklės tab-restore). Perkrovimas išvalo viską patikimiausiai.
+  setTimeout(() => location.reload(), 400);
 }
 
 // ════════════════════════════════════════
@@ -19012,8 +19085,8 @@ function renderKidIcons(kid) {
     icons.push('<span title="Turi telefoną" style="font-size:14px;">'+ico('programele')+'</span>');
   }
   
-  // Sveikatos pastabos (jei yra)
-  const hasHealth = kid.health_allergies || kid.health_medications || kid.health_conditions;
+  // Sveikatos pastabos (jei yra) — turinys gyvena kid_health, sąrašui užtenka vėliavos (E2-1)
+  const hasHealth = kid.has_health_info || kid.health_allergies || kid.health_medications || kid.health_conditions;
   if (hasHealth) {
     icons.push('<span title="Sveikatos pastabos" style="font-size:14px;">'+ico('sveikata')+'</span>');
   }
@@ -22725,7 +22798,8 @@ async function openKidDetailsModal(kidId) {
   }
   
   currentKidDetails = fullKid;
-  
+  await mergeKidHealth(fullKid);   // 🔐 sveikata iš kid_health (E2-1)
+
   // Apskaičiuojam amžių
   const age = fullKid.birth_date ? calculateAge(fullKid.birth_date) : (new Date().getFullYear() - fullKid.birth_year);
   const isUnder13 = age <= 12;
@@ -23214,9 +23288,9 @@ async function kdSaveHealth() {
     health_injuries: document.getElementById('kd-edit-injuries').value.trim() || null,
     health_notes: document.getElementById('kd-edit-health-notes').value.trim() || null
   };
-  
-  const { data, error } = await sb.from('kids').update(updates).eq('id', currentKidDetails.id).select();
-  
+
+  const { data, error } = await saveKidHealth(currentKidDetails.id, updates);
+
   if (error) {
     console.error('Sveikatos info klaida:', error);
     showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
@@ -23287,9 +23361,9 @@ async function kdSaveEmergency() {
     emergency_contact_phone: document.getElementById('kd-edit-emergency-phone').value.trim() || null,
     emergency_contact_relation: document.getElementById('kd-edit-emergency-relation').value.trim() || null
   };
-  
-  const { data, error } = await sb.from('kids').update(updates).eq('id', currentKidDetails.id).select();
-  
+
+  const { data, error } = await saveKidHealth(currentKidDetails.id, updates);
+
   if (error) {
     showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000);
     return;
@@ -23994,7 +24068,7 @@ async function loadAdminActivity(){
   const tLbl = { report:'Diagnostika', plan:'Namų planas', homeplan:'Namų planas', summer:'Vasaros programa', subscription:'Prenumerata', bundle:'Rinkinys' };
   const items = [];
   (pu.data||[]).forEach(p=>items.push({ ts:p.created_at, icon:''+ico('pinigai')+'', tag:'PIRKIMAS', cls:'buy', txt:`${tLbl[p.item_type]||p.item_type||'?'} · ${(+p.amount_eur||0).toFixed(2)} €` }));
-  (fb.data||[]).forEach(f=>items.push({ ts:f.created_at, icon:f.type==='bug'?''+ico('bug')+'':''+ico('pastas')+'', tag:'ATSILIEP.', cls:'fb', txt:`${f.name||f.role||'vartotojas'}${f.type==='bug'?' · '+ico('bug')+' bug':''}` }));
+  (fb.data||[]).forEach(f=>items.push({ ts:f.created_at, icon:f.type==='bug'?''+ico('bug')+'':''+ico('pastas')+'', tag:'ATSILIEP.', cls:'fb', txt:`${f.name||f.role||'vartotojas'}${f.type==='bug'?' · bug':''}` }));   // F-01: be ico() — txt renderinamas per escapeHtml, SVG spausdintųsi kaip tekstas (ikona jau yra icon lauke)
   (rp.data||[]).forEach(r=>{ const s = r.status==='pending_review'?'laukia peržiūros':(r.status==='error'?'KLAIDA':'paruošta'); items.push({ ts:r.created_at, icon:''+ico('ai')+'', tag:'ATASKAITA', cls:(r.status==='error'?'err':'rep'), txt:`${tLbl[r.type]||r.type||'?'} — ${s}` }); });
   (pr.data||[]).forEach(p=>items.push({ ts:p.created_at, icon:''+ico('zyma')+'', tag:'PASKYRA', cls:'acc', txt:`${p.first_name||''} (${p.role||'?'})` }));
   items.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
