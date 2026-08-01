@@ -2543,7 +2543,10 @@ async function loadParentKidNextEvent() {
       const c = comps[0];
       const d = Math.ceil((new Date(c.event_date) - new Date()) / 86400000);
       if (nameEl) nameEl.textContent = c.title || 'Varžybos';
-      if (metaEl) metaEl.textContent = `${c.event_date}${c.level ? ' · ' + c.level : ''}`;
+      // ⚠️ textContent — TIK tekstinis žemėlapis. ico() variantai (11841/15403/16385)
+      // čia išspausdintų <svg> tekstu (v391/F-01/V1-02 klasė).
+      const LEVEL_TXT = { local: 'Vietinė', medium: 'Vidutinė', european: 'Europos', national: 'Šalies' };
+      if (metaEl) metaEl.textContent = `${c.event_date}${c.level ? ' · ' + (LEVEL_TXT[c.level] || c.level) : ''}`;
       if (cd) cd.style.display = 'block';
       if (daysEl) daysEl.textContent = d >= 0 ? d : 0;
     } else {
@@ -5919,7 +5922,7 @@ function renderHealthInfo(kid) {
   return items.map(item => `
     <div style="margin-bottom:6px;">
       <span style="color:var(--mut);font-size:11px;">${item.label}:</span>
-      <span style="color:${item.color || 'var(--text)'};font-weight:${item.color ? '700' : '500'};margin-left:6px;">${item.val}</span>
+      <span style="color:${item.color || 'var(--text)'};font-weight:${item.color ? '700' : '500'};margin-left:6px;">${escapeHtml(item.val)}</span>
     </div>
   `).join('');
 }
@@ -5931,13 +5934,16 @@ function renderEmergencyInfo(kid) {
   
   let html = '';
   if (kid.emergency_contact_name) {
-    html += `<div style="font-weight:700;font-size:14px;margin-bottom:4px;">${kid.emergency_contact_name}</div>`;
+    html += `<div style="font-weight:700;font-size:14px;margin-bottom:4px;">${escapeHtml(kid.emergency_contact_name)}</div>`;
   }
   if (kid.emergency_contact_relation) {
-    html += `<div style="font-size:11px;color:var(--mut);margin-bottom:6px;">${kid.emergency_contact_relation}</div>`;
+    html += `<div style="font-size:11px;color:var(--mut);margin-bottom:6px;">${escapeHtml(kid.emergency_contact_relation)}</div>`;
   }
   if (kid.emergency_contact_phone) {
-    html += `<a href="tel:${kid.emergency_contact_phone}" style="display:inline-flex;align-items:center;gap:6px;background:var(--grn);color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;margin-top:4px;">${ico('skambutis')} ${kid.emergency_contact_phone}</a>`;
+    // 🔐 telefonas eina ir į href, ir į matomą tekstą — reikia ABIEJŲ apsaugų
+    const telRaw = String(kid.emergency_contact_phone);
+    const telHref = telRaw.replace(/[^\d+]/g, '');
+    html += `<a href="tel:${telHref}" style="display:inline-flex;align-items:center;gap:6px;background:var(--grn);color:white;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;margin-top:4px;">${ico('skambutis')} ${escapeHtml(telRaw)}</a>`;
   }
   return html;
 }
@@ -6683,7 +6689,7 @@ async function openArchiveBadgesModal() {
           <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${ico('archyvas')} ĮGŪDŽIŲ ŽENKLIUKAI · IKI 14 M.</div>
           <div style="font-size:9px;color:#4FC3F7;font-weight:800;letter-spacing:.5px;margin-top:1px;">${ico('zyma')} 13 metų užšaldyta era${meta ? ` · LVL ${meta.level || 1}` : ''}</div>
         </div>
-        <button onclick="document.getElementById('prof-archive-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
+        <button onclick="document.getElementById('prof-archive-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">${cards || '<div style="grid-column:span 3;text-align:center;padding:20px;color:var(--mut);font-size:11px;">Nėra archyvo</div>'}</div>
@@ -7017,7 +7023,7 @@ const STAGES = [
   { name: 'Čempionas',    emoji: '🏆', kanji: '勝', meaning: 'PERGALĖ · TURNYRŲ KARYS',     color: '#D4A056', bgGradient: 'linear-gradient(135deg, #4A2C00, #6B3C00)', beltGradient: 'linear-gradient(90deg,#8B4513,#5D2906)',      minExp: 9000,  maxExp: 14499  },
   { name: 'Legenda',      emoji: '👑', kanji: '王', meaning: 'KARALIUS · GARBĖS KELIAS',   color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',         minExp: 14500, maxExp: 20999  },
   { name: 'Drakonas',     emoji: '🐉', kanji: '龍', meaning: 'DRAKONO DVASIA · UGNIS',       color: '#FF4500', bgGradient: 'linear-gradient(135deg, #2D0000, #5D0000)', beltGradient: 'linear-gradient(90deg,#1a1a1a,#000)',         minExp: 21000, maxExp: 29999  },
-  { name: 'Šlovės salė', emoji: '⭐', kanji: '聖', meaning: 'AMŽINOJI ŠLOVĖ',     color: '#FFD700', bgGradient: 'linear-gradient(135deg, #2A1F00, #4A3500)', beltGradient: 'linear-gradient(90deg,#FFD700,#FFA500)',      minExp: 30000, maxExp: Infinity }
+  { name: 'Šlovės salė', emoji: '⭐', kanji: '聖', meaning: 'AMŽINOJI ŠLOVĖ',     color: '#FFF3B0', bgGradient: 'linear-gradient(135deg, #1a1a1a, #3a2f00)', beltGradient: 'linear-gradient(90deg,#FFD700,#FFA500)',      minExp: 30000, maxExp: Infinity }
 ];
 
 // EXP slenksčiai kiekvienam lvl (atitinka DB level_thresholds)
@@ -7791,7 +7797,11 @@ window.testBelt = function(newKyu = '9 kyu') {
 // 🎯 IŠŠŪKIO ĮVEIKIMO CELEBRATION
 // ════════════════════════════════════════
 
+// v395 (V1-01): per eilę — kitaip piešiasi VIENU METU su level-up/pakopos/diržo šventimu
 function showChallengeCelebration(challengeName, expEarned = 0) {
+  _celebEnqueue(() => _showChallengeCelebrationNow(challengeName, expEarned));
+}
+function _showChallengeCelebrationNow(challengeName, expEarned = 0) {
   let modal = document.getElementById('challenge-celebration-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -7864,6 +7874,7 @@ function showChallengeCelebration(challengeName, expEarned = 0) {
 function closeChallengeCelebration() {
   const modal = document.getElementById('challenge-celebration-modal');
   if (modal) modal.style.display = 'none';
+  _celebDone(); // v395 (V1-01): kitas šventimas iš eilės
 }
 
 window.testChallenge = function(name = '100 atsispaudimų') {
@@ -7947,7 +7958,16 @@ async function detectNewMedals() {
 // ════════════════════════════════════════
 // 🥋 DALYVAVIMO CELEBRATION - 4+ vieta, motyvuojantis
 // ════════════════════════════════════════
+// v395 (V1-01): per eilę — kaip ir kiti šventimai
 function showParticipationCelebration(competitionTitle = '', expEarned = 0, placement = 0) {
+  _celebEnqueue(() => _showParticipationCelebrationNow(competitionTitle, expEarned, placement));
+}
+function closeParticipationCelebration() {
+  const m = document.getElementById('participation-modal');
+  if (m) m.remove();
+  _celebDone(); // v395 (V1-01)
+}
+function _showParticipationCelebrationNow(competitionTitle = '', expEarned = 0, placement = 0) {
   let modal = document.getElementById('participation-modal');
   if (modal) modal.remove();
   
@@ -7992,7 +8012,7 @@ function showParticipationCelebration(competitionTitle = '', expEarned = 0, plac
         <div style="font-size:12px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">EXP</div>
       </div>` : ''}
       
-      <button onclick="document.getElementById('participation-modal').remove()" style="
+      <button onclick="closeParticipationCelebration()" style="
         background:linear-gradient(135deg, ${accent}, #2E9BD6);
         color:white;border:none;padding:11px 30px;border-radius:13px;
         font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;cursor:pointer;
@@ -8887,7 +8907,7 @@ function openTeammatesModal() {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${ico('bendradarbiavimas')} KOMANDOS DRAUGAI</div>
-        <button onclick="document.getElementById('teammates-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
+        <button onclick="document.getElementById('teammates-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:12px 16px;">
         <div style="padding:8px 10px;background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,77,0,.04));border-radius:10px;margin-bottom:10px;text-align:center;">
@@ -9007,7 +9027,7 @@ async function openFriendModal(friendJson) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${ico('profilis')} KOMANDOS DRAUGAS</div>
-        <button onclick="document.getElementById('friend-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
+        <button onclick="document.getElementById('friend-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;${stage.bgGradient ? `background:${stage.bgGradient};` : ''}" id="friend-modal-body">
         <!-- HERO su kanji + progreso žiedu -->
@@ -9199,7 +9219,7 @@ async function openDuelChallenge(friendJson) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${ico('dvikova')} DVIKOVA SU ${friendName.toUpperCase()}</div>
-        <button onclick="document.getElementById('duel-challenge-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">${ico('uzdaryti')}</button>
+        <button onclick="document.getElementById('duel-challenge-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;">
         <div style="font-size:10px;color:#EC407A;font-weight:800;letter-spacing:1px;margin-bottom:8px;">1️⃣ DVIKOVOS TIPAS</div>
@@ -9418,7 +9438,7 @@ async function openTrophiesModal(kidId, kidName) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${titleText}</div>
-        <button onclick="document.getElementById('prof-trophies-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
+        <button onclick="document.getElementById('prof-trophies-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;" id="prof-trophies-modal-body">
         <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
@@ -9583,7 +9603,7 @@ async function openBadgesModal(kidId, kidName) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${titleText}</div>
-        <button onclick="document.getElementById('prof-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
+        <button onclick="document.getElementById('prof-badges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
@@ -9613,7 +9633,7 @@ async function openChallengeTypesModal(kidId, kidName) {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${titleText}</div>
-        <button onclick="document.getElementById('prof-challenges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
+        <button onclick="document.getElementById('prof-challenges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;" id="prof-challenges-modal-body">
         <div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Kraunama...</div>
@@ -11453,7 +11473,7 @@ function openKidChallengesModal() {
       <!-- HEADER -->
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${ico('tikslas')} VISI IŠŠŪKIAI (${count})</div>
-        <button onclick="document.getElementById('kid-challenges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
+        <button onclick="document.getElementById('kid-challenges-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       
       <!-- TURINYS - scroll'inamas -->
@@ -13238,7 +13258,7 @@ async function loadClubSkill(filter){
     else if (f==='c') filtered = filtered.filter(k=>{const a=ageOf(k);return a!=null&&a>=12&&a<=13;});
     else if (f==='d') filtered = filtered.filter(k=>{const a=ageOf(k);return a!=null&&a>=14;});
     const ids = filtered.map(k=>k.id);
-    const chip = (v,l)=>`<button onclick="loadClubSkill('${v}')" style="flex-shrink:0;background:${_skillFilter===v?'rgba(255,77,0,.15)':'transparent'};color:${_skillFilter===v?'var(--br)':'var(--mut)'};border:.5px solid ${_skillFilter===v?'rgba(255,77,0,.4)':'var(--bdr)'};padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;">${l}</button>`;
+    const chip = (v,l)=>`<button onclick="loadClubSkill('${v}')" style="flex-shrink:0;background:${_skillFilter===v?'rgba(255,77,0,.15)':'transparent'};color:${_skillFilter===v?'var(--br)':'var(--mut)'};border:.5px solid ${_skillFilter===v?'rgba(255,77,0,.4)':'var(--bdr)'};padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;cursor:pointer;white-space:nowrap;">${l}</button>`;
     const chips = `<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px;">${chip('all','Visi')}${chip('male',''+ico('vaikas')+'')}${chip('female',''+ico('vaikas')+'')}${chip('a','6–8')}${chip('b','9–11')}${chip('c','12–13')}${chip('d','14+')}</div>`;
     if (!ids.length){ el.innerHTML = chips + _SEC_EMPTY; return; }
     const [catsRes, recsRes] = await Promise.all([
@@ -15471,7 +15491,7 @@ function openKidCompModal() {
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${ico('trofejai')} VISI RENGINIAI (${count})</div>
-        <button onclick="document.getElementById('kid-comp-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
+        <button onclick="document.getElementById('kid-comp-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:12px 16px;">
         ${content}
@@ -17116,10 +17136,12 @@ function renderFiltersUI(tabType) {
 }
 
 function chipStyle(active) {
+  // v395 (V6-01): min-height 40px — lietimo taikinys (buvo ~26px)
+  const bendra = 'padding:5px 8px;border-radius:99px;font-size:9px;font-weight:800;letter-spacing:.3px;cursor:pointer;min-height:40px;display:inline-flex;align-items:center;justify-content:center;';
   if (active) {
-    return 'background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 8px;border-radius:99px;font-size:9px;font-weight:800;letter-spacing:.3px;cursor:pointer;';
+    return 'background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);' + bendra;
   }
-  return 'background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 8px;border-radius:99px;font-size:9px;font-weight:800;letter-spacing:.3px;cursor:pointer;';
+  return 'background:transparent;color:var(--mut);border:.5px solid var(--bdr);' + bendra;
 }
 
 // Filtras keičiasi - perkrauti aktyvų taba
@@ -20001,7 +20023,7 @@ function _groupFilterChips(containerId, activeId, onclickFn) {
   groups.forEach(g => { nameCount[g.name] = (nameCount[g.name] || 0) + 1; });
   const chip = (id, label, color) => {
     const on = activeId === id;
-    return `<div onclick="${onclickFn}(${id ? `'${id}'` : 'null'})" style="flex-shrink:0;padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.3px;cursor:pointer;border:.5px solid ${on ? (color || 'var(--br)') : 'var(--bdr)'};background:${on ? ((color || '#FF4D00') + '26') : 'var(--card)'};color:${on ? (color || 'var(--br)') : 'var(--mut)'};white-space:nowrap;">${label}</div>`;
+    return `<div onclick="${onclickFn}(${id ? `'${id}'` : 'null'})" style="flex-shrink:0;padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.3px;cursor:pointer;border:.5px solid ${on ? (color || 'var(--br)') : 'var(--bdr)'};background:${on ? ((color || '#FF4D00') + '26') : 'var(--card)'};color:${on ? (color || 'var(--br)') : 'var(--mut)'};white-space:nowrap;">${label}</div>`;
   };
   wrap.innerHTML = chip(null, ''+ico('grupe')+' Visos', null) +
     groups.map(g => {
@@ -20641,7 +20663,7 @@ function _renderTrGroupsToggle() {
   if (!el) return;
   el.innerHTML = _trGroupsMetricOrder.map(k => {
     const M = _trGroupsMetrics[k]; const on = k === _trGroupsMetric;
-    return `<button onclick="_trGroupsSetMetric('${k}')" data-m="${k}" style="flex:0 0 auto;padding:6px 10px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;background:${on ? '#FF4D00' : 'rgba(255,255,255,.07)'};color:${on ? '#1a0a00' : 'var(--mut)'};">${M.icon} ${M.label}</button>`;
+    return `<button onclick="_trGroupsSetMetric('${k}')" data-m="${k}" style="flex:0 0 auto;padding:6px 10px;border-radius:8px;border:none;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:40px;display:inline-flex;align-items:center;gap:4px;background:${on ? '#FF4D00' : 'rgba(255,255,255,.07)'};color:${on ? '#1a0a00' : 'var(--mut)'};">${M.icon} ${M.label}</button>`;
   }).join('');
 }
 
@@ -20703,7 +20725,7 @@ function openTrGroupsModal() {
   m.innerHTML = `<div style="background:var(--bg);width:100%;max-width:600px;max-height:85vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:.5px solid var(--bdr);">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${ico('trofejai')} VISOS GRUPĖS · ${M.label.toUpperCase()}</div>
-        <button onclick="document.getElementById('tr-groups-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
+        <button onclick="document.getElementById('tr-groups-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">UŽDARYTI ${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:8px 16px 20px;">${listHtml}</div>
     </div>`;
@@ -23238,25 +23260,9 @@ async function loadKidHealth(kid) {
     if (link) editBtn.style.display = 'inline-block';
   }
   
-  // Renderiname info
-  const items = [];
-  if (kid.health_allergies) items.push({ label: 'Alergijos', val: kid.health_allergies, color: '#EF4444' });
-  if (kid.health_medications) items.push({ label: 'Vaistai', val: kid.health_medications });
-  if (kid.health_conditions) items.push({ label: 'Ligos / Būklės', val: kid.health_conditions, color: '#EF4444' });
-  if (kid.health_injuries) items.push({ label: 'Traumos', val: kid.health_injuries });
-  if (kid.health_notes) items.push({ label: 'Pastabos', val: kid.health_notes });
-  
-  if (items.length === 0) {
-    display.innerHTML = '<div style="text-align:center;color:var(--mut);padding:8px;font-style:italic;">Sveikatos info neužpildyta</div>';
-    return;
-  }
-  
-  display.innerHTML = items.map(item => `
-    <div style="margin-bottom:6px;">
-      <span style="color:var(--mut);font-size:11px;">${item.label}:</span>
-      <span style="color:${item.color || 'var(--text)'};font-weight:${item.color ? '700' : '500'};margin-left:6px;">${item.val}</span>
-    </div>
-  `).join('');
+  // Renderiname info — BENDRA funkcija su tėvų portalu (v395: dublikatas pašalintas).
+  // renderHealthInfo pati grąžina ir tuščios būsenos tekstą, ir escapeHtml'ina reikšmes.
+  display.innerHTML = renderHealthInfo(kid);
 }
 
 function kdToggleHealthEdit() {

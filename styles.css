@@ -436,7 +436,8 @@ body.full-mobile-preview #a-desktop-nav, body.full-mobile-preview #a-statusbar {
 .bb{width:36px;height:36px;border-radius:50%;background:var(--card);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--txt);}
 .tt{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--txt);}
 .tabs{display:flex;gap:8px;padding:0 16px 14px;overflow-x:auto;}
-.tab{padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;border:.5px solid var(--bdr);background:var(--card);color:var(--mut);cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:'Nunito',sans-serif;}
+/* v395 (V6-01): min-height 40px — lietimo taikinys (buvo ~26px) */
+.tab{padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;border:.5px solid var(--bdr);background:var(--card);color:var(--mut);cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:'Nunito',sans-serif;min-height:40px;display:inline-flex;align-items:center;justify-content:center;}
 .tab.on{background:var(--br);color:white;border-color:var(--br);}
 .fp{background:var(--card);border-radius:var(--r);border:.5px solid var(--bdr);margin:0 16px 12px;padding:14px;display:none;}
 .fp.open{display:block;}

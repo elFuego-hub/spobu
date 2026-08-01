@@ -25,7 +25,7 @@ window._spobuBuffErr = function(message, source, lineno, colno, stack){
     window._earlyErrors.push({ message: String(message||'').slice(0,300), source: String(source||'').slice(0,200), lineno: lineno||null, colno: colno||null, stack: String(stack||'').slice(0,2000), ts: Date.now() });
   } catch(_){}
 };
-// <svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg> Žmogiškas klaidos baneris (3.1 #1): VIENAS pernaudojamas div (nesikaupia),
+// Žmogiškas klaidos baneris (3.1 #1): VIENAS pernaudojamas div (nesikaupia),
 // be techninio teksto vartotojui (detalės — console + telemetrija), auto-pasislepia.
 window._spobuShowErrBanner = function(kind, msg){
   try {
@@ -37,7 +37,7 @@ window._spobuShowErrBanner = function(kind, msg){
       d = document.createElement('div');
       d.id = 'spobu-err-banner';
       d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#7f1d1d;color:#fff;padding:10px 14px;z-index:99999;font-family:sans-serif;font-size:13px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.4);';
-      d.textContent = '<svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> Įvyko klaida. Jei programa neveikia — perkrauk puslapį.';
+      d.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> Įvyko klaida. Jei programa neveikia — perkrauk puslapį.';
       if (document.body) document.body.appendChild(d);
       else document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(d); });
     }
@@ -60,7 +60,7 @@ window.addEventListener('unhandledrejection', function(e) {
 // Patikima CDN užkrovimo logika su fallback
 (function() {
   const CDN_URLS = [
-    { url: 'supabase.js?v=394', name: 'lokalus' },   // self-host (GDPR/availability) — CDN'ai lieka fallback
+    { url: 'supabase.js?v=395', name: 'lokalus' },   // self-host (GDPR/availability) — CDN'ai lieka fallback
     { url: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js', name: 'jsdelivr' },
     { url: 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js', name: 'unpkg' },
     { url: 'https://cdn.skypack.dev/@supabase/supabase-js@2', name: 'skypack' }
@@ -103,7 +103,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=394">
+<link rel="stylesheet" href="styles.css?v=395">
 </head>
 <body>
 
@@ -268,7 +268,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v394</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v395</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg> PILNAS MOBILE</button>
@@ -966,18 +966,18 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px;">
       <div style="display:flex;align-items:center;gap:7px;"><svg class="mark" style="font-size:26px;" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;line-height:1;color:var(--txt);">SPOBU</span></div>
       <div style="display:flex;gap:5px;align-items:center;">
-        <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidInfo('main')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+        <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidInfo('main')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
         <!-- LANKOMUMO MYGTUKAS -->
-        <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidAttendance()" id="v-att-btn" title="Lankomumas">
+        <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidAttendance()" id="v-att-btn" title="Lankomumas">
           <svg class="ico" aria-hidden="true"><use href="#i-lankomumas"></use></svg>
         </div>
         <!-- VARPELIO MYGTUKAS -->
-        <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleNotifications()" id="v-notif-btn">
+        <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleNotifications()" id="v-notif-btn">
           <svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
           <div id="v-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div>
         </div>
         <!-- NUSTATYMŲ MYGTUKAS -->
-        <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidSettings()" id="v-settings-btn">
+        <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openKidSettings()" id="v-settings-btn">
           <svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg>
         </div>
       </div>
@@ -1259,11 +1259,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="openKidInfo('ish')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="openKidInfo('ish')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div id="v-ish-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openKidSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1340,8 +1340,8 @@ window.addEventListener('unhandledrejection', function(e) {
     
     <!-- Tabai -->
     <div style="display:flex;gap:4px;margin:0 16px 6px;">
-      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-streak"></use></svg> AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
-      <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dokumentas"></use></svg> ARCHYVAS <span id="v-completed-count" style="opacity:.7;">0</span></button>
+      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-streak"></use></svg> AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
+      <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dokumentas"></use></svg> ARCHYVAS <span id="v-completed-count" style="opacity:.7;">0</span></button>
     </div>
     
     <div id="v-ish-duels" style="padding:0 16px;">
@@ -1372,11 +1372,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">VARŽYBOS</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="openKidInfo('comp')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="openKidInfo('comp')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div id="v-comp-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openKidSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1428,9 +1428,9 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- Tabai -->
     <div style="display:flex;gap:4px;margin:0 16px 6px;">
-      <button class="vc-tab on" data-tab="upcoming" onclick="switchVcTab(this,'upcoming')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-kalendorius"></use></svg> ARTĖJA <span id="vc-upcoming-count" style="opacity:.7;">0</span></button>
-      <button class="vc-tab" data-tab="pending" onclick="switchVcTab(this,'pending')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-laukia"></use></svg> LAUKIA <span id="vc-pending-count" style="opacity:.7;">0</span></button>
-      <button class="vc-tab" data-tab="completed" onclick="switchVcTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> ATLIKTOS <span id="vc-completed-count" style="opacity:.7;">0</span></button>
+      <button class="vc-tab on" data-tab="upcoming" onclick="switchVcTab(this,'upcoming')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-kalendorius"></use></svg> ARTĖJA <span id="vc-upcoming-count" style="opacity:.7;">0</span></button>
+      <button class="vc-tab" data-tab="pending" onclick="switchVcTab(this,'pending')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-laukia"></use></svg> LAUKIA <span id="vc-pending-count" style="opacity:.7;">0</span></button>
+      <button class="vc-tab" data-tab="completed" onclick="switchVcTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> ATLIKTOS <span id="vc-completed-count" style="opacity:.7;">0</span></button>
     </div>
     
     <div id="v-comp-list" style="padding:0 16px;">
@@ -1448,21 +1448,21 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <div class="sc" id="v-stat">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">STATISTIKA</div><div onclick="openKidInfo('stat')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">STATISTIKA</div><div onclick="openKidInfo('stat')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div></div>
   <div class="sa">
     
     <!-- Sezono filtras - kompaktiškas -->
     <div style="display:flex;gap:4px;margin:0 16px 6px;">
-      <button class="season-filter-btn on" data-filter="season" onclick="setStatSeasonFilter('season')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> ŠIS SEZONAS</button>
-      <button class="season-filter-btn" data-filter="all" onclick="setStatSeasonFilter('all')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg> VISŲ LAIKŲ</button>
+      <button class="season-filter-btn on" data-filter="season" onclick="setStatSeasonFilter('season')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> ŠIS SEZONAS</button>
+      <button class="season-filter-btn" data-filter="all" onclick="setStatSeasonFilter('all')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg> VISŲ LAIKŲ</button>
     </div>
     
     <!-- Tab nav - kompaktiškas -->
     <div style="display:flex;gap:4px;margin:0 16px 8px;overflow-x:auto;padding-bottom:2px;">
-      <button class="stat-tab on" data-tab="overall" onclick="switchStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-grafikas"></use></svg> LVL</button>
-      <button class="stat-tab" data-tab="skills" onclick="switchStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> SKILL'AI</button>
-      <button class="stat-tab" data-tab="challenges" onclick="switchStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-issukiai"></use></svg> IŠŠŪKIAI</button>
-      <button class="stat-tab" data-tab="competitions" onclick="switchStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> VARŽYBOS</button>
+      <button class="stat-tab on" data-tab="overall" onclick="switchStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-grafikas"></use></svg> LVL</button>
+      <button class="stat-tab" data-tab="skills" onclick="switchStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> SKILL'AI</button>
+      <button class="stat-tab" data-tab="challenges" onclick="switchStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-issukiai"></use></svg> IŠŠŪKIAI</button>
+      <button class="stat-tab" data-tab="competitions" onclick="switchStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> VARŽYBOS</button>
     </div>
     
     <!-- TAB: BENDRAS LVL (leaderboard) -->
@@ -1501,11 +1501,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="openKidInfo('prof')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="toggleNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="openKidInfo('prof')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div id="v-prof-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openKidSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openKidSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1621,14 +1621,14 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px;">
       <div style="display:flex;align-items:center;gap:7px;"><svg class="mark" style="font-size:26px;" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;line-height:1;color:var(--txt);">SPOBU</span></div>
       <div style="display:flex;gap:5px;align-items:center;">
-        <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrInfo('main')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-        <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrainerNormatyvai()" title="Pratimų normatyvai"><svg class="ico" aria-hidden="true"><use href="#i-jega"></use></svg></div>
-        <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleTrainerNotifications()" id="trh-notif-btn">
+        <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrInfo('main')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+        <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrainerNormatyvai()" title="Pratimų normatyvai"><svg class="ico" aria-hidden="true"><use href="#i-jega"></use></svg></div>
+        <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleTrainerNotifications()" id="trh-notif-btn">
           <svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
           <div id="trh-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div>
           <div id="tr-notif-badge" style="display:none;"></div>
         </div>
-        <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrainerSettings()">
+        <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openTrainerSettings()">
           <svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg>
         </div>
       </div>
@@ -1797,11 +1797,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">IŠŠŪKIAI</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="openTrInfo('challenges')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="toggleTrainerNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="openTrInfo('challenges')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleTrainerNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="trh-nbadge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openTrainerSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openTrainerSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1882,11 +1882,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PATVIRTINIMAI</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="openTrInfo('pat')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="toggleTrainerNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="openTrInfo('pat')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleTrainerNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="trh-nbadge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openTrainerSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openTrainerSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -1951,7 +1951,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 6px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">MANO GRUPĖS</div>
     <div style="display:flex;gap:6px;align-items:center;">
-      <div onclick="openTrInfo('groups')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="openTrInfo('groups')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
     </div>
   </div>
   <div class="sa" id="tr-groups-content">
@@ -2088,11 +2088,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="openTrInfo('prof')" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="toggleTrainerNotifications()" style="position:relative;width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="openTrInfo('prof')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleTrainerNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="trh-nbadge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openTrainerSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openTrainerSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -2147,7 +2147,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-kodas"></use></svg> Visų vaikų karjeros radaras (lytis × amžius) — sutraukiama -->
     <div style="margin:0 12px 6px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
-      <div onclick="_trToggleSection('trp-career-body','trp-career-chev')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+      <div onclick="_trToggleSection('trp-career-body','trp-career-chev')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;min-height:40px;">
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-kodas"></use></svg> VAIKŲ ĮGŪDŽIŲ PROFILIS</div>
         <span id="trp-career-chev" style="color:var(--mut);font-size:11px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
@@ -2164,7 +2164,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg> Vaikų diržai — sutraukiama -->
     <div style="margin:0 12px 6px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
-      <div onclick="_trToggleSection('trp-belts-body','trp-belts-chev')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+      <div onclick="_trToggleSection('trp-belts-body','trp-belts-chev')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;min-height:40px;">
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-dirzas"></use></svg> VAIKŲ DIRŽAI</div>
         <span id="trp-belts-chev" style="color:var(--mut);font-size:11px;"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
@@ -2265,11 +2265,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px;">
     <div style="display:flex;align-items:center;gap:7px;"><svg class="mark" style="font-size:26px;" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;line-height:1;color:var(--txt);">SPOBU</span></div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="openParentInfo('main')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="openParentInfo('main')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openParentSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" title="Pasirinkti vaiką" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2436,10 +2436,10 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px 6px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">KELIAS</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openParentSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2488,11 +2488,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PASIEKIMAI</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="openParentInfo('feed')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="openParentInfo('feed')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openParentSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2520,11 +2520,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PARDUOTUVĖ</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="openParentInfo('shop')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="openParentInfo('shop')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openParentSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2676,11 +2676,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <div onclick="openParentInfo('prof')" style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div onclick="openParentInfo('prof')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:30px;height:30px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div onclick="openParentSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -3249,9 +3249,9 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="k-club-name">KLUBAS <svg class="ico" aria-hidden="true"><use href="#i-klubas"></use></svg></div>
     </div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('main')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" id="kh-notif-btn"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kh-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('main')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" id="kh-notif-btn"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kh-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
 
@@ -3354,9 +3354,9 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="tb" style="display:flex;align-items:center;gap:8px;">
     <div class="tt" style="flex:1;">KLUBAS</div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('team')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kt-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('team')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kt-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
@@ -3408,9 +3408,9 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="tb" style="display:flex;align-items:center;gap:8px;">
     <div class="tt" style="flex:1;">RENGINIAI</div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('events')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kev-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('events')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kev-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <!-- Sub-tabai -->
@@ -3472,9 +3472,9 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 6px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">PROFILIS</div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('prof')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kp-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('prof')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kp-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -3557,9 +3557,9 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 6px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">ANALITIKA</div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('stat')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kst-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('stat')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg><div id="kst-notif-badge-count" style="display:none;position:absolute;top:-3px;right:-3px;width:15px;height:15px;background:#FF4D00;border-radius:50%;border:1.5px solid var(--bg);color:white;font-size:9px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 6px rgba(255,77,0,.6);">0</div></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div style="display:flex;gap:6px;padding:0 12px 8px;overflow-x:auto;">
@@ -3694,8 +3694,8 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;" id="a-name">ADMIN <svg class="ico" aria-hidden="true"><use href="#i-premium"></use></svg></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <div style="cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openAdminInfo()" title="Apie portalą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div style="position:relative;cursor:pointer;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleAdminNotifications()" id="ah-notif-btn" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openAdminInfo()" title="Apie portalą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleAdminNotifications()" id="ah-notif-btn" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <span id="ah-notif-badge-count" style="display:none;position:absolute;top:-5px;right:-5px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;align-items:center;justify-content:center;padding:0 4px;">0</span>
       </div>
       <div style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--pur);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--pur);" id="a-avatar">A</div>
@@ -4403,7 +4403,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=394"></script>
+<script src="app.js?v=395"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
