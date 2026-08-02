@@ -360,9 +360,9 @@ async function pingActivity(){
 let _errSessCount = 0;
 const _errLastByHash = {};
 function _spobuHash(s){ let h = 0; for (let i = 0; i < s.length; i++){ h = ((h << 5) - h + s.charCodeAt(i)) | 0; } return 'e' + Math.abs(h); }
-async function _spobuLogError(message, source, lineno, colno, stack){
+async function _spobuLogError(message, source, lineno, colno, stack, ts){
   try {
-    if (typeof sb === 'undefined' || !currentUser?.id) return;   // iki login kaupia HEAD buferis
+    if (typeof sb === 'undefined') return;   // sb dar nesukurtas — kaupia HEAD buferis
     if (_errSessCount >= 10) return;
     const msg = String(message || '').slice(0, 300);
     if (!msg || /ResizeObserver|Script error\.?$/.test(msg)) return;
@@ -370,13 +370,18 @@ async function _spobuLogError(message, source, lineno, colno, stack){
     const now = Date.now();
     if (_errLastByHash[hash] && now - _errLastByHash[hash] < 60000) return;
     _errLastByHash[hash] = now; _errSessCount++;
+    // 🐛 A-09 fix (2026-08-02): klaidos iš NEPRISIJUNGUSIO (login/registracija) nebedingsta —
+    // siunčiamos kaip role='anon' su user_id NULL (RLS: client_errors_insert_anon, server-fix-anon-telemetrija.sql).
+    // Anksčiau jos laukdavo login ir būdavo priskiriamos TAM, kas prisijungs (neteisinga rolė/žmogus/laikas).
+    const uid = (typeof currentUser !== 'undefined' && currentUser?.id) || null;
     await sb.from('client_errors').insert({
       err_hash: hash, message: msg, source: String(source || '').slice(0, 200),
       lineno: lineno || null, colno: colno || null, stack: String(stack || '').slice(0, 2000),
       url: (location.hash || location.pathname || '').slice(0, 150),
       app_version: document.getElementById('app-version')?.textContent || null,
-      role: (typeof currentProfile !== 'undefined' && currentProfile?.role) || null,
-      user_id: currentUser.id, ua: navigator.userAgent.slice(0, 180)
+      role: (typeof currentProfile !== 'undefined' && currentProfile?.role) || (uid ? null : 'anon'),
+      user_id: uid, ua: navigator.userAgent.slice(0, 180),
+      occurred_at: new Date(ts || Date.now()).toISOString()   // tikras įvykio laikas (buferio atveju ≠ insert laikas)
     });
   } catch(e){}
 }
@@ -384,11 +389,13 @@ async function _flushEarlyErrors(){
   try {
     const buf = window._earlyErrors || [];
     window._spobuBuffErr = function(){};   // nuo dabar siunčia tiesioginiai listeneriai
-    for (const e of buf.splice(0, 10)) await _spobuLogError(e.message, e.source, e.lineno, e.colno, e.stack);
+    for (const e of buf.splice(0, 10)) await _spobuLogError(e.message, e.source, e.lineno, e.colno, e.stack, e.ts);
   } catch(e){}
 }
 window.addEventListener('error', function(e){ _spobuLogError(e.message, e.filename, e.lineno, e.colno, e.error && e.error.stack); });
 window.addEventListener('unhandledrejection', function(e){ _spobuLogError('Promise: ' + (e.reason?.message || e.reason), '', null, null, e.reason && e.reason.stack); });
+// A-09: buferį išsiunčiam iš karto (anon), nebelaukiam login — setTimeout(0), kad visi let/const jau būtų deklaruoti
+setTimeout(function(){ _flushEarlyErrors(); }, 0);
 
 // ── F3: „Mano žinutės" — savo feedback + SPOBU atsakymai (visų rolių Pagalboje) ──
 async function _checkFeedbackReplies(){
@@ -1112,7 +1119,7 @@ async function afterLogin() {
     applyClubFlagGates(); // ${ico('atsijungti')} paslėpti išjungtas funkcijas (visi portalai)
     window._appInitedUserId = currentUser?.id || null; // ⚡ W1-2: pilnas init baigtas — kiti SIGNED_IN re-fire ignoruojami
     console.log('🎉 [afterLogin] BAIGTA SĖKMINGAI');
-    _flushEarlyErrors(); // 📡 B1: iki-login sukauptos klaidos → client_errors
+    _flushEarlyErrors(); // 📡 B1 atsarginis (nuo A-09 fix buferis siunčiamas iškart per setTimeout(0) — čia jau būna tuščias)
   } catch (e) {
     console.error('❌ [afterLogin] EXCEPTION rolės kraunant:', e);
     showToast(ico('klaida')+' Klaida kraunant duomenis: ' + e.message, 'error', 8000);
@@ -24159,7 +24166,7 @@ function renderAdminErrors(){
 async function openAdminErrorGroup(hash){
   const grp = (_adminErrGroups||[]).find(x => x.hash === hash);
   const { data: rows } = await sb.from('client_errors')
-    .select('id, message, source, lineno, colno, stack, url, app_version, role, ua, created_at')
+    .select('id, message, source, lineno, colno, stack, url, app_version, role, ua, created_at, occurred_at')
     .eq('err_hash', hash).order('created_at', { ascending: false }).limit(20);
   const r0 = (rows||[])[0] || {};
   const old = document.getElementById('admin-err-modal'); if (old) old.remove();
@@ -24184,7 +24191,7 @@ async function openAdminErrorGroup(hash){
       ${r0.stack ? `<div class="aerr-meta" style="margin-bottom:6px;">STACK</div><pre style="background:rgba(255,255,255,.04);border:.5px solid var(--bdr);border-radius:10px;padding:12px;font-size:10.5px;line-height:1.5;color:#c3c2b7;white-space:pre-wrap;word-break:break-all;margin:0 0 14px;">${escapeHtml((r0.stack||'').slice(0,3000))}</pre>` : ''}
       <div class="aerr-meta" style="margin-bottom:6px;">PASKUTINIAI ĮVYKIAI (${(rows||[]).length})</div>
       ${(rows||[]).map(r => `<div style="display:flex;gap:10px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:11px;color:var(--mut);">
-        <span style="flex-shrink:0;">${new Date(r.created_at).toLocaleString('lt-LT')}</span>
+        <span style="flex-shrink:0;">${new Date(r.occurred_at || r.created_at).toLocaleString('lt-LT')}</span>
         <span style="flex-shrink:0;">${r.app_version||'?'}</span>
         <span style="flex-shrink:0;">${r.role||'?'}</span>
         <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml((r.ua||'').slice(0,60))}</span>
@@ -24238,6 +24245,10 @@ function setAfinPeriod(p){
   renderAdminFinance();
 }
 
+// 🕐 D-05a fix (2026-08-02): mėnesio raktas VIETINE laiko zona — toISOString() verčia į UTC,
+// tad LT (UTC+3) visas 12 mėn. grafikas būdavo pastumtas per mėnesį, o einamojo mėnesio nebūdavo iš viso
+const _afinYM = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+
 function _afinRange(){
   const now = new Date();
   if (_afinPeriod === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -24260,7 +24271,7 @@ async function loadAdminFinance(){
   _afinClubs = cl.data || [];
   _afinAdj = adj.data || [];
   const pi = document.getElementById('afin-period');
-  if (pi && !pi.value) pi.value = new Date().toISOString().slice(0, 7);
+  if (pi && !pi.value) pi.value = _afinYM(new Date());
   renderAdminFinance();
   renderAfinPrices();
   renderAfinAdjustments();
@@ -24289,10 +24300,10 @@ function renderAdminFinance(){
   const months = []; const now = new Date();
   for (let i = 11; i >= 0; i--){
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push({ key: d.toISOString().slice(0, 7), lbl: String(d.getMonth() + 1).padStart(2, '0'), sum: 0 });
+    months.push({ key: _afinYM(d), lbl: String(d.getMonth() + 1).padStart(2, '0'), sum: 0 });
   }
   const mMap = {}; months.forEach(m => mMap[m.key] = m);
-  _afinPurch.forEach(p => { const k = String(p.created_at).slice(0, 7); if (mMap[k]) mMap[k].sum += (+p.amount_eur || 0); });
+  _afinPurch.forEach(p => { const k = _afinYM(new Date(p.created_at)); if (mMap[k]) mMap[k].sum += (+p.amount_eur || 0); });
   const chEl = document.getElementById('afin-chart');
   if (chEl) chEl.innerHTML = _afinBarChart(months);
   // Pagal tipą
@@ -24333,7 +24344,7 @@ function _afinBarChart(months){
 // ── Bonusų ledgeris ──
 async function loadAfinPayouts(){
   const el = document.getElementById('afin-payouts'); if (!el) return;
-  const period = document.getElementById('afin-period')?.value || new Date().toISOString().slice(0, 7);
+  const period = document.getElementById('afin-period')?.value || _afinYM(new Date());
   const { data, error } = await sb.from('club_payouts').select('*').eq('period', period).order('total', { ascending: false });
   if (error){ el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Paleisk server-admin-apskaita.sql</div>'; return; }
   _afinPayoutRows = data || [];
@@ -24558,7 +24569,9 @@ async function loadAdminAnalytics(){
     if (!uaRows.length){
       rEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--mut);font-size:11.5px;line-height:1.5;">Kohortos kaupsis nuo aktyvumo ping įjungimo<br>(bendro kodo etapas — user_activity dar tuščia)</div>';
     } else {
-      const wk = d => { const t = new Date(d + 'T00:00:00'); const day = (t.getDay() + 6) % 7; t.setDate(t.getDate() - day); return t.toISOString().slice(0, 10); };
+      // 🕐 D-05c fix (2026-08-02): vietinė data vietoj toISOString() — UTC+3 zonose pirmadienio etiketė virsdavo sekmadieniu
+      const _locD = t => t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+      const wk = d => { const t = new Date(d + 'T00:00:00'); const day = (t.getDay() + 6) % 7; t.setDate(t.getDate() - day); return _locD(t); };
       const firstWeek = {}, activeWeeks = {};
       uaRows.forEach(r => {
         const w = wk(r.day);
@@ -24568,7 +24581,7 @@ async function loadAdminAnalytics(){
       const cohorts = {};
       Object.entries(firstWeek).forEach(([u, w]) => { (cohorts[w] = cohorts[w] || []).push(u); });
       const weeks = Object.keys(cohorts).sort().slice(-8);
-      const addW = (w, n) => { const t = new Date(w + 'T00:00:00'); t.setDate(t.getDate() + n * 7); return t.toISOString().slice(0, 10); };
+      const addW = (w, n) => { const t = new Date(w + 'T00:00:00'); t.setDate(t.getDate() + n * 7); return _locD(t); };
       let html = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:10px;width:100%;"><tr><th style="text-align:left;padding:3px 6px;color:var(--mut);">Kohorta</th>';
       for (let i = 0; i < 8; i++) html += `<th style="padding:3px 4px;color:var(--mut);">S${i}</th>`;
       html += '</tr>';
@@ -24697,7 +24710,17 @@ function renderAaiQueue(){
 async function openAaiViewer(id){
   const { data: r, error } = await sb.from('reports').select('*, kids(first_name, last_name)').eq('id', id).single();
   if (error || !r){ showToast(ico('klaida')+' Nepavyko užkrauti', 'error'); return; }
-  if (typeof openReportViewer === 'function') openReportViewer(r);
+  // 🐛 C-02a fix (2026-08-02): turinys guli r.report_json, NE eilutės šaknyje — perdavus visą DB eilutę
+  // buildReportPrintDoc piešė tuščią šabloną ir adminas tvirtindavo nematęs turinio (kokybės vartai neveikė)
+  const rj = r.report_json || {};
+  const hasContent = !!(rj.summary || (Array.isArray(rj.skills) && rj.skills.length) || Array.isArray(rj.goals) || rj.intro);
+  if (!hasContent){
+    showToast(r.status === 'generating'
+      ? ''+ico('laukia')+' Ataskaita dar generuojama — palauk 1–2 min ir spausk vėl.'
+      : ''+ico('ispejimas')+' Ši ataskaita be turinio (generavimas nepavyko) — spausk Retry.', 'error', 6000);
+    return;
+  }
+  if (typeof openReportViewer === 'function') openReportViewer(rj);   // be reportId — adminui vertinimo juostos nereikia
 }
 
 // ✏️ Redagavimas: per-key editorius (string → textarea; kita → JSON textarea)
