@@ -253,7 +253,13 @@ async function init() {
 async function showPendingApprovalScreen(profile) {
   // Slėpiame visus portal'us
   hideAll();
-  
+  // F-12c: hideAll nepaslepia portalo apvalkalo — jei portalas buvo atidarytas
+  // anksčiau, liktų #sw juosta ir am/portal-* body klasės (kaip „profilis
+  // nerastas" šaka tai daro per showLogin kelią)
+  const _sw = document.getElementById('sw'); if (_sw) _sw.style.display = 'none';
+  document.body.classList.remove('am');
+  ['portal-v','portal-t','portal-tr','portal-k','portal-a'].forEach(c => document.body.classList.remove(c));
+
   // Sukuriame pending ekraną
   let pendingDiv = document.getElementById('pending-approval-screen');
   if (!pendingDiv) {
@@ -268,7 +274,7 @@ async function showPendingApprovalScreen(profile) {
         <div class="auth-title" style="margin-bottom:14px;">LAUKIA PATVIRTINIMO</div>
         <div style="font-size:14px;color:var(--mut);line-height:1.6;margin-bottom:20px;text-align:left;">
           Tavo paskyra sukurta sėkmingai!<br><br>
-          ${ico('dirzas')} <strong>Treneris</strong> gavo pranešimą apie tavo registraciją ir greitai patvirtins paskyrą.<br><br>
+          ${ico('dirzas')} <strong>Klubas</strong> gavo pranešimą apie tavo registraciją ir greitai patvirtins paskyrą.<br><br>
           ${ico('pastas')} Apie patvirtinimą informuosime per paštą: <span style="color:var(--br);">${currentUser.email}</span><br><br>
           Atvyk vėliau!
         </div>
@@ -535,6 +541,7 @@ async function logConsent(ctype, opts){
 function openKidSelfSignup(){
   const old = document.getElementById('kid-selfreg-modal'); if (old) old.remove();
   _ksrSignedUp = false; window._suppressAuthChange = false;   // švarus startas
+  if (_ksrClient) _ksrClient.auth.signOut({ scope: 'local' }).catch(()=>{});   // pamiršta izoliuota sesija
   const m = document.createElement('div'); m.id = 'kid-selfreg-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:100010;align-items:center;justify-content:center;padding:16px;overflow-y:auto;';
   m.innerHTML = `<div style="width:100%;max-width:420px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;max-height:92vh;overflow-y:auto;padding:20px;">
@@ -611,15 +618,17 @@ function openKidSelfSignup(){
 
 function _ksrErr(msg){ const e = document.getElementById('ksr-err'); if (e){ e.textContent = msg; e.style.display = 'block'; } }
 
-// ✕ uždarymas: jei signUp jau įvyko, o anketa nebaigta — tyliai atjungiam pusiau sukurtą sesiją
+// ✕ uždarymas: jei signUp jau įvyko, o anketa nebaigta — naikinam pusiau sukurtą paskyrą
+// (F-01 rollback per EF; nepavykus — bent atjungiam izoliuotą sesiją, kad neliktų šiukšlių)
 async function ksrClose(){
   const doneVisible = (document.getElementById('ksr-done')?.style.display === 'block');
   if (doneVisible){ location.reload(); return; }   // baigta — elgiamės kaip „Supratau"
   const m = document.getElementById('kid-selfreg-modal'); if (m) m.remove();
   window._suppressAuthChange = false;
   if (_ksrSignedUp){
+    await _ksrRollback();                          // best-effort: el. paštas lieka nesudegintas
+    try { await _ksrClient?.auth.signOut({ scope: 'local' }); } catch(e){}
     _ksrSignedUp = false;
-    try { await sb.auth.signOut(); } catch(e){}    // SIGNED_OUT handler'is išvalys būseną ir parodys login
   }
 }
 
@@ -641,6 +650,33 @@ function ksrNext(){
 }
 
 let _ksrSignedUp = false;   // jei signUp pavyko, o RPC ne (pvz. blogas klubo kodas) — kartojam TIK RPC
+// 🔑 F-01 (P0): registracija vyksta per IZOLIUOTĄ klientą su savo storageKey — bendrame sb
+// kliente signUp sesija mirdavo per ~600–800 ms ir register_self_kid gaudavo auth.uid()=null.
+let _ksrClient = null;
+function _ksrGetClient(){
+  if (!_ksrClient){
+    _ksrClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { storageKey: 'spobu-ksr-temp', persistSession: false, autoRefreshToken: false }
+    });
+  }
+  return _ksrClient;
+}
+// 🧹 Rollback (F-01/F-13): RPC nepavykus naikinam pusiau sukurtą auth paskyrą per EF
+// delete-user (self-orphan taisyklė), kad el. paštas nebūtų sudegintas. Best-effort —
+// jei EF dar neišdeploy'inta, grąžinam false ir paliekam sesiją RPC pakartojimui.
+async function _ksrRollback(){
+  if (!_ksrSignedUp || !_ksrClient) return false;
+  try {
+    const sess = (await _ksrClient.auth.getSession())?.data?.session;
+    const uid = sess?.user?.id;
+    if (!uid) return false;
+    const { error } = await _ksrClient.functions.invoke('delete-user', { body: { user_id: uid, reason: 'ksr_rollback' } });
+    if (error){ console.warn('ksr rollback EF:', error.message || error); return false; }
+    try { await _ksrClient.auth.signOut({ scope: 'local' }); } catch(e){}
+    _ksrSignedUp = false;
+    return true;
+  } catch(e){ console.warn('ksr rollback:', e); return false; }
+}
 async function submitKidSelfSignup(){
   const e = document.getElementById('ksr-err'); if (e) e.style.display = 'none';
   const email = document.getElementById('ksr-email').value.trim().toLowerCase();
@@ -680,26 +716,38 @@ async function submitKidSelfSignup(){
         return;   // mygtuką atstato finally blokas
       }
     }
+    // F-01: viskas per izoliuotą klientą — pagrindinė sb sesija nė nepaliečiama,
+    // todėl _suppressAuthChange signUp'ui nebereikalingas.
+    const tc = _ksrGetClient();
     if (!_ksrSignedUp){
-      // 🔑 signUp auto-loginina → SIGNED_IN paleistų afterLogin ANKSČIAU nei RPC sukurs kids įrašą
-      // (afterLogin nerastų vaiko, mestų klaidą ir atjungtų). Slopinam, kaip trenerio kvietime.
-      window._suppressAuthChange = true;
       // 1) pending_invitations role='kid' → handle_new_user priskirs rolę (identiškai tėvų wizard'ui)
       const { error: invErr } = await sb.from('pending_invitations').insert({
         email, role: 'kid', invited_by: null, first_name: fname, last_name: lname || null, status: 'pending'
       });
       if (invErr) throw new Error('Registracija: ' + invErr.message);
-      // 2) signUp
-      const { error: suErr } = await sb.auth.signUp({ email, password: pass });
+      // 2) signUp izoliuotame kliente
+      const { error: suErr } = await tc.auth.signUp({ email, password: pass });
       if (suErr){
         if ((suErr.message || '').includes('already')) throw new Error('Šis el. paštas jau užregistruotas — bandyk prisijungti.');
         throw suErr;
       }
       _ksrSignedUp = true;
-      await new Promise(r => setTimeout(r, 700));   // trigeriui sukurti profilį
+    }
+    // 2b) laukiam, kol sesija TIKRAI yra (vietoj aklo setTimeout(700)) — maks. ~5 s
+    let _ksrSess = null;
+    for (let i = 0; i < 25 && !_ksrSess; i++){
+      _ksrSess = (await tc.auth.getSession())?.data?.session || null;
+      if (!_ksrSess) await new Promise(r => setTimeout(r, 200));
+    }
+    if (!_ksrSess) throw new Error('Sesija nesusikūrė per 5 s — patikrink ryšį ir spausk „Bandyti dar kartą".');
+    // 2c) trumpai palaukiam handle_new_user trigerio profilio (nekritinis — RPC turi savo validaciją)
+    for (let i = 0; i < 15; i++){
+      const { data: _prof } = await tc.from('profiles').select('id').eq('id', _ksrSess.user.id).maybeSingle();
+      if (_prof) break;
+      await new Promise(r => setTimeout(r, 200));
     }
     // 3) atominis vaiko sukūrimas serveryje (visa validacija ten — amžius/klubas/vėliavos)
-    let rpcRes = await sb.rpc('register_self_kid', {
+    let rpcRes = await tc.rpc('register_self_kid', {
       p_fname: fname, p_lname: lname || null, p_gender: gender, p_birth_date: bdate,
       p_club_code: clubCode, p_phone: phone || null,
       p_kyu: kyu, p_height_cm: heightCm, p_weight_kg: weightKg,
@@ -707,22 +755,32 @@ async function submitKidSelfSignup(){
     });
     if (rpcRes.error && /PGRST202|Could not find the function/i.test(rpcRes.error.message || '')){
       // serveryje dar senas RPC (be anketos laukų — patch1 nepaleistas) — registruojam be jų
-      rpcRes = await sb.rpc('register_self_kid', {
+      rpcRes = await tc.rpc('register_self_kid', {
         p_fname: fname, p_lname: lname || null, p_gender: gender, p_birth_date: bdate,
         p_club_code: clubCode, p_phone: phone || null
       });
     }
     if (rpcRes.error) throw rpcRes.error;
-    // Sėkmė: sesija lieka (status='pending') — po „Supratau" reload parodys laukimo ekraną
+    // 4) Sėkmė: prijungiam PAGRINDINĮ klientą (status='pending') — po „Supratau" reload
+    // parodys laukimo ekraną. SIGNED_IN slopinam, kad afterLogin nešoktų per anksti.
+    window._suppressAuthChange = true;
+    try { await sb.auth.signInWithPassword({ email, password: pass }); }
+    catch(e){ console.warn('ksr: pagrindinis login nepavyko (vaikas prisijungs rankiniu būdu):', e?.message || e); }
     window._suppressAuthChange = false;
     // 📜 Sutikimų žurnalas (politika; sveikata — jei pildyta)
     const _newKidId = rpcRes.data || null;
-    await logConsent('privacy_terms', { kid_id: _newKidId, source: 'kid_selfsignup' });
-    if (health) await logConsent('health', { kid_id: _newKidId, source: 'kid_selfsignup' });
+    await logConsent('privacy_terms', { kid_id: _newKidId, user_id: _ksrSess.user.id, source: 'kid_selfsignup' });
+    if (health) await logConsent('health', { kid_id: _newKidId, user_id: _ksrSess.user.id, source: 'kid_selfsignup' });
+    // ⚠️ scope:'local' — global signOut atšauktų ir ką tik sukurtą pagrindinę sesiją
+    try { await tc.auth.signOut({ scope: 'local' }); } catch(e){}
+    _ksrSignedUp = false;
     document.getElementById('ksr-step2').style.display = 'none';
     document.getElementById('ksr-done').style.display = 'block';
   } catch(err){
-    if (!_ksrSignedUp) window._suppressAuthChange = false;   // signUp nepavyko — sesijos nėra, slopinti nebereikia
+    window._suppressAuthChange = false;
+    // 🧹 RPC nepavyko → rollback, kad el. paštas nebūtų sudegintas; nepavykus (EF dar
+    // neišdeploy'inta) _ksrSignedUp lieka true ir mygtukas kartoja TIK RPC.
+    if (_ksrSignedUp) await _ksrRollback();
     _ksrErr(err.message || 'Nepavyko — bandyk dar kartą');   // be ico() — _ksrErr rašo per textContent, SVG spausdintųsi kaip tekstas
   } finally {
     btn.disabled = false;
@@ -1640,7 +1698,7 @@ const WELCOME_CONTENT = {
     icon: 'dirzas', title: 'SVEIKI ATVYKĘ Į SPOBU!', cta: 'PRADĖTI',
     items: [
       ['vaikas',     'SPOBU — vaiko sporto motyvacijos programėlė: progresas, iššūkiai, diržai ir AI įžvalgos'],
-      ['premium',    'Pirmą mėnesį — visos <b style="color:white;">Premium</b> galimybės <b style="color:white;">NEMOKAMAI</b>. Vėliau galėsi rinktis planą'],
+      ['premium',    'Vaiko sporto kelias — <b style="color:white;">nemokamas</b>. <b style="color:white;">Premium</b> atrakina gilesnę statistiką ir AI įžvalgas — planą pasirinksi, kada norėsi'],
       ['bug',        'Tai pradinė versija — tobuliname kasdien. Radęs klaidą: Pagalba → „Pranešti problemą". Atsakymą gausi ten pat („Mano žinutės")'],
       ['pranesimai', 'Įjunk push pranešimus nustatymuose — nepraleisi trenerio žinučių']
     ]
@@ -1682,7 +1740,7 @@ function maybeShowWelcome(role, force){
     </div>`).join('');
     const m = document.createElement('div'); m.id = 'welcome-modal';
     m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:center;justify-content:center;padding:20px;';
-    m.onclick = (e) => { if (e.target === m) m.remove(); };
+    m.onclick = (e) => { if (e.target === m) _welcomeClose(); };
     m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border:.5px solid var(--bdr);border-radius:22px;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
       <div style="padding:22px 20px 6px;text-align:center;">
         <div style="font-size:46px;line-height:1;">${ico(cfg.icon)}</div>
@@ -1690,14 +1748,20 @@ function maybeShowWelcome(role, force){
       </div>
       <div style="padding:14px 18px 4px;">${rows}</div>
       <div style="padding:8px 18px 20px;">
-        <button onclick="document.getElementById('welcome-modal').remove()" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-size:14px;font-weight:800;letter-spacing:1px;cursor:pointer;font-family:inherit;">${cfg.cta}</button>
+        <button onclick="_welcomeClose()" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-size:14px;font-weight:800;letter-spacing:1px;cursor:pointer;font-family:inherit;">${cfg.cta}</button>
         ${cfg.foot ? `<div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--mut);margin-top:12px;">${cfg.foot} ${ico('dirzas')}</div>` : ''}
       </div>
     </div>`;
     document.body.appendChild(m);
-    // Raktas rašomas TIK realiai parodžius (praleidus dėl konflikto — liks kitam prisijungimui)
-    try { localStorage.setItem(_welcomeKey(), WELCOME_VERSION); } catch(_){}
   } catch(e){ console.warn('maybeShowWelcome:', e); }
+}
+
+// F-10: raktas rašomas UŽDARANT modalą, ne jį sukūrus — kitaip registracijos metu
+// sukurtas (ir signOut paslėptas) modalas „sudegindavo" raktą ir naujas vartotojas
+// welcome nebematydavo niekada
+function _welcomeClose(){
+  document.getElementById('welcome-modal')?.remove();
+  try { localStorage.setItem(_welcomeKey(), WELCOME_VERSION); } catch(_){}
 }
 
 // „Rodyti įvadą iš naujo" (Pagalbos meniu): ištrina raktą ir iškart parodo modalą
@@ -2303,6 +2367,12 @@ function _renderParentApprovalBanner(k){
 }
 
 // 🏠 PAGRINDINIS — vaiko dashboard
+// F-12a: bendra „nėra vaikų" būsena tėvo ekranams (t-main/t-kar/t-feed/t-prof) —
+// „Pasirink vaiką" be vaikų yra aklavietė, o t-prof rodydavo nulinį VAIKO profilį
+function _parentNoKidsHtml(){
+  return '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:18px;text-align:center;"><div style="font-size:30px;margin-bottom:6px;">'+ico('vaikas')+'</div><div style="font-size:12px;color:var(--mut);margin-bottom:10px;">Dar neturite pridėtų vaikų</div><button class="btn btng" style="font-size:11px;padding:8px 16px;" onclick="if(typeof openAddKidWizard===\'function\')openAddKidWizard()">+ Pridėti vaiką</button><div style="margin-top:8px;"><button class="btn" style="font-size:11px;padding:8px 12px;background:rgba(79,195,247,.12);border:.5px solid rgba(79,195,247,.4);color:#4FC3F7;" onclick="if(typeof openLinkKidByCode===\'function\')openLinkKidByCode()">'+ico('pazymejimas')+' Turiu vaiko kodą</button></div></div>';
+}
+
 async function loadParentKidMain() {
   const k = parentActiveKid;
   let pName = (currentProfile?.first_name || '').trim();
@@ -2315,7 +2385,7 @@ async function loadParentKidMain() {
     const sub = document.getElementById('tk-hero-sub'); if (sub) sub.textContent = 'Dar nėra pridėtų vaikų';
     const av = document.getElementById('tk-hero-avatar'); if (av) { av.style.backgroundImage = ''; av.textContent = '?'; }
     const pend = document.getElementById('tk-pending-list');
-    if (pend) pend.innerHTML = '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:18px;text-align:center;"><div style="font-size:30px;margin-bottom:6px;">'+ico('vaikas')+'</div><div style="font-size:12px;color:var(--mut);margin-bottom:10px;">Dar neturite pridėtų vaikų</div><button class="btn btng" style="font-size:11px;padding:8px 16px;" onclick="if(typeof openAddKidWizard===\'function\')openAddKidWizard()">+ Pridėti vaiką</button><div style="margin-top:8px;"><button class="btn" style="font-size:11px;padding:8px 12px;background:rgba(79,195,247,.12);border:.5px solid rgba(79,195,247,.4);color:#4FC3F7;" onclick="if(typeof openLinkKidByCode===\'function\')openLinkKidByCode()">'+ico('pazymejimas')+' Turiu vaiko kodą</button></div></div>';
+    if (pend) pend.innerHTML = _parentNoKidsHtml();
     return;
   }
 
@@ -2607,7 +2677,13 @@ async function loadParentKidPending(k) {
 async function loadParentKidCareer() {
   const k = parentActiveKid;
   const list = document.getElementById('tk-categories-list');
-  if (!k) { if (list) list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Pasirink vaiką</div>'; return; }
+  if (!k) {
+    // F-12a: be vaikų — pilna tuščia būsena (kaip t-main); su vaikais — tik paraginimas
+    if (list) list.innerHTML = (parentKids && parentKids.length)
+      ? '<div style="text-align:center;padding:20px;color:var(--mut);grid-column:span 2;">Pasirink vaiką</div>'
+      : '<div style="grid-column:span 2;">' + _parentNoKidsHtml() + '</div>';
+    return;
+  }
   try {
     // ⚡ Kategorijos iš cache (statinės) + rekordai lygiagrečiai
     const [catsAll, recsR] = await Promise.all([
@@ -3054,7 +3130,13 @@ async function loadParentKidFeed() {
   const list = document.getElementById('tk-feed-list');
   const title = document.getElementById('tk-feed-title');
   if (!list) return;
-  if (!k) { list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Pasirink vaiką</div>'; return; }
+  if (!k) {
+    // F-12a: be vaikų — pilna tuščia būsena (kaip t-main); su vaikais — tik paraginimas
+    list.innerHTML = (parentKids && parentKids.length)
+      ? '<div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Pasirink vaiką</div>'
+      : _parentNoKidsHtml();
+    return;
+  }
   if (title) title.textContent = `📰 ${(k.first_name || 'VAIKO').toUpperCase()} PATVIRTINIMAI`;
   list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Kraunama...</div>';
   try {
@@ -4396,7 +4478,27 @@ function openParentChallengeTypes() { if (parentActiveKid && typeof openChalleng
 
 async function loadParentKidProfile() {
   const k = parentActiveKid;
-  if (!k) return;
+  // F-12a: be vaikų anksčiau likdavo statinis „nulinis" VAIKO profilis — rodome
+  // tą pačią tuščią būseną kaip t-main. Slepiam/grąžinam per _gateApply, kad
+  // neprarastume elementų inline display (v388 pamoka).
+  const _profSa = document.querySelector('#t-prof .sa');
+  if (!k) {
+    if (_profSa && !(parentKids && parentKids.length)) {
+      if (!document.getElementById('tk-prof-empty')) {
+        const d = document.createElement('div');
+        d.id = 'tk-prof-empty';
+        d.innerHTML = _parentNoKidsHtml();
+        _profSa.prepend(d);
+      }
+      Array.from(_profSa.children).forEach(ch => { if (ch.id !== 'tk-prof-empty') _gateApply(ch, false); });
+    }
+    return;
+  }
+  const _profEmpty = document.getElementById('tk-prof-empty');
+  if (_profEmpty && _profSa) {
+    _profEmpty.remove();
+    Array.from(_profSa.children).forEach(ch => _gateApply(ch, true));
+  }
   const info = getStageInfo(k.total_exp || 0);
   const stageObj = STAGES.find(s => s.name === info.stage) || STAGES[0];
   const stageIdx = STAGES.indexOf(stageObj);
@@ -4812,7 +4914,7 @@ async function loadParentBellContent() {
         <div style="flex:1;min-width:0;">
           <div style="margin-bottom:3px;"><span style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:${accent};background:${accent}22;padding:1px 7px;border-radius:99px;">${tag}</span>${catBadge}</div>
           <div style="font-size:11px;font-weight:800;color:white;">${conv.title || (isTr ? 'Trenerio pranešimas' : 'Klubo pranešimas')}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${(conv.last_message_preview || '').substring(0, 90)}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${escapeHtml((conv.last_message_preview || '').substring(0, 90))}</div>
           <div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(conv.last_message_at)}</div>
         </div>
         ${unread ? `<div style="width:7px;height:7px;background:${accent};border-radius:50%;margin-top:5px;flex-shrink:0;"></div>` : ''}
@@ -4876,7 +4978,7 @@ async function loadParentBellContent() {
         <div style="flex:1;min-width:0;">
           <div style="display:inline-block;font-size:8px;font-weight:800;letter-spacing:.4px;color:${tColor};background:${tColor}22;padding:1px 7px;border-radius:99px;margin-bottom:3px;">${tIcon} ${tLabel}</div>
           <div style="font-size:11px;font-weight:800;color:white;">${conv.title || 'Žinutė'}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${(conv.last_message_preview || '').substring(0, 90)}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">${escapeHtml((conv.last_message_preview || '').substring(0, 90))}</div>
           <div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:4px;">${tkTimeAgo(conv.last_message_at)}</div>
         </div>
         ${unread ? `<div style="width:7px;height:7px;background:${tColor};border-radius:50%;margin-top:5px;flex-shrink:0;"></div>` : ''}
@@ -5456,6 +5558,16 @@ async function akSubmit() {
   btn.textContent = 'KURIAMA...';
   
   try {
+    // F-04: career_band pagal amžių jau kuriant (ta pati 14 m. riba kaip age_up_career
+    // serveryje) — kitaip 14-metis įkrenta kaip DB default '6-13'; pg_cron pataiso tik
+    // po ~24 val., o vyresniems nei 19 m. — niekada.
+    const _akIs14 = (() => {
+      if (akData.birth_date){
+        const b = new Date(akData.birth_date), t = new Date();
+        return b <= new Date(t.getFullYear() - 14, t.getMonth(), t.getDate());
+      }
+      return akData.birth_year ? (new Date().getFullYear() - akData.birth_year >= 14) : false;
+    })();
     // 1. Sukuriam vaiko įrašą kids lentelėje
     const { data: newKid, error: kidError } = await sb.from('kids').insert({
       first_name: akData.fname,
@@ -5464,6 +5576,7 @@ async function akSubmit() {
       gender: akData.gender,
       birth_year: akData.birth_year,
       birth_date: akData.birth_date,
+      career_band: _akIs14 ? '14+' : '6-13',
       weight_range: akData.weight_range,
       kyu: akData.kyu,
       karate_since: akData.karate_since,
@@ -5987,16 +6100,19 @@ function renderMediaConsent(kid, canEdit) {
 // ════════════════════════════════════════
 // PARENT EDIT: Health
 // ════════════════════════════════════════
-function parentToggleHealthEdit() {
+async function parentToggleHealthEdit() {
   if (!currentParentKid) return;
   document.getElementById('t-kid-health-display').style.display = 'none';
   document.getElementById('t-kid-health-edit').style.display = 'block';
-  
-  document.getElementById('t-edit-allergies').value = currentParentKid.health_allergies || '';
-  document.getElementById('t-edit-medications').value = currentParentKid.health_medications || '';
-  document.getElementById('t-edit-conditions').value = currentParentKid.health_conditions || '';
-  document.getElementById('t-edit-injuries').value = currentParentKid.health_injuries || '';
-  document.getElementById('t-edit-health-notes').value = currentParentKid.health_notes || '';
+
+  // F-02: pildome iš ŠVIEŽIO kid_health įrašo, ne iš keše laikomo objekto —
+  // pasenęs kešas reikštų, kad „Saugoti" tyliai ištrina realius duomenis
+  const h = (await loadKidHealth(currentParentKid.id)) || currentParentKid;
+  document.getElementById('t-edit-allergies').value = h.health_allergies || '';
+  document.getElementById('t-edit-medications').value = h.health_medications || '';
+  document.getElementById('t-edit-conditions').value = h.health_conditions || '';
+  document.getElementById('t-edit-injuries').value = h.health_injuries || '';
+  document.getElementById('t-edit-health-notes').value = h.health_notes || '';
 }
 
 function parentCancelHealthEdit() {
@@ -6275,9 +6391,10 @@ async function showAddKidAccess(kidId) {
   const kid = currentParentKid;
   const defaultEmail = (kid && kid.pending_email) || '';
   
-  const promptText = defaultEmail 
+  // ⚠️ be ico() — appPrompt rašo per textContent, SVG spausdintųsi kaip tekstas (F-09b)
+  const promptText = defaultEmail
     ? `Vaiko email: ${defaultEmail}\n\nAr siųsti laišką šiuo adresu? Jei ne - nutrauk ir įvesk kitą.`
-    : 'Įvesk vaiko email\'ą:\n\n'+ico('pagalba')+' Vaikas gaus laišką su slaptažodžio nustatymo nuoroda. Po to galės prisijungti su SAVO paskyra.';
+    : 'Įvesk vaiko email\'ą:\n\nVaikas gaus laišką su slaptažodžio nustatymo nuoroda. Po to galės prisijungti su SAVO paskyra.';
   
   const newEmail = await appPrompt(promptText, defaultEmail);
   if (newEmail === null) return; // Cancel
@@ -6497,7 +6614,11 @@ async function rwSubmit() {
   const btn = document.getElementById('rw-submit-btn');
   btn.disabled = true;
   btn.textContent = 'KURIAMA...';
-  
+
+  // F-10: signUp auto-loginina → be slopinimo SIGNED_IN paleidžia pilną afterLogin,
+  // kuris parodo welcome modalą ir įrašo jo raktą, o žingsnio 4 signOut viską paslepia —
+  // naujas tėvas welcome nebematytų NIEKADA (taip daro ir 14+ kelias)
+  window._suppressAuthChange = true;
   try {
     // 1. Sukuriam pending invitation TĖVAMS
     const { error: parentInvError } = await sb.from('pending_invitations').insert({
@@ -6556,11 +6677,13 @@ async function rwSubmit() {
     
     // 4. Atsijungiam (kad tėvai galėtų prisijungti rankiniu būdu)
     await sb.auth.signOut();
-    
+    window._suppressAuthChange = false;
+
     // 5. Sėkmė
     rwShowScreen('success');
-    
+
   } catch (error) {
+    window._suppressAuthChange = false;
     console.error('rwSubmit error:', error);
     showErr(errEl, 'Klaida: ' + (error.message || 'nežinoma'));
     btn.disabled = false;
@@ -8704,7 +8827,7 @@ async function renderMyDuels() {
       const noteHtml = d.note ? `
             <div style="background:rgba(236,64,122,.08);border-radius:7px;padding:6px 8px;margin-top:6px;display:flex;gap:5px;align-items:flex-start;">
               <div style="font-size:10px;">${ico('zinutes')}</div>
-              <div style="font-size:9px;color:rgba(255,255,255,.8);line-height:1.3;font-style:italic;">${d.note}</div>
+              <div style="font-size:9px;color:rgba(255,255,255,.8);line-height:1.3;font-style:italic;">${escapeHtml(d.note)}</div>
             </div>` : '';
       
       const cardHtml = `
@@ -10605,7 +10728,7 @@ function showDuelChallengePopup(duel, challengerName) {
     
     ${duel.note ? `<div style="background:rgba(236,64,122,.12);border:.5px solid rgba(236,64,122,.3);border-radius:10px;padding:9px 11px;margin-bottom:14px;display:flex;gap:7px;align-items:flex-start;text-align:left;">
       <div style="font-size:13px;">${ico('zinutes')}</div>
-      <div style="font-size:11px;color:white;line-height:1.35;font-style:italic;">${duel.note}</div>
+      <div style="font-size:11px;color:white;line-height:1.35;font-style:italic;">${escapeHtml(duel.note)}</div>
     </div>` : ''}
     
     <div style="height:1px;background:linear-gradient(90deg,transparent,#FF4D00,transparent);margin:14px 0;"></div>
@@ -11864,10 +11987,13 @@ const COMP_TYPE_LABELS = {
   belt_test: ''+ico('dirzas')+' Diržo testas'
 };
 
+// ⚠️ F-09: GRYNAS tekstas — šitos konstantos rašomos ir per textContent (trenerio hero),
+// ico() HTML čia spausdintųsi kaip <svg> tekstas. Ikoną deda atvaizdavimo vieta (innerHTML).
+const COMP_LEVEL_ICO = { local: 'miestas', medium: 'miestas', european: 'svetaine' };
 const COMP_LEVEL_LABELS = {
-  local: ''+ico('miestas')+' Vietinės',
-  medium: ''+ico('miestas')+' Vidutinės',
-  european: ''+ico('svetaine')+' Europos'
+  local: 'Vietinės',
+  medium: 'Vidutinės',
+  european: 'Europos'
 };
 
 function openCreateCompetition(preType) {
@@ -12118,7 +12244,7 @@ async function loadClubCompetitions() {
     if (!isPast) { const days = Math.ceil((new Date(c.event_date) - new Date()) / 86400000); timeInfo = days===0?''+ico('streak')+' Šiandien!':(days===1?''+ico('laikmatis')+' Rytoj':`${ico('laikmatis')} Liko ${days} d.`); }
     else { const days = Math.ceil((new Date() - new Date(c.event_date)) / 86400000); timeInfo = `${ico('kalendorius')} Prieš ${days} d.`; }
     const typeLabel = COMP_TYPE_LABELS[c.competition_type] || c.competition_type;
-    const levelLabel = c.level ? COMP_LEVEL_LABELS[c.level] : '';
+    const levelLabel = c.level ? ico(COMP_LEVEL_ICO[c.level] || 'miestas') + ' ' + (COMP_LEVEL_LABELS[c.level] || c.level) : '';
     const accent = { kumite:'#EF4444', kata:'#4FC3F7' }[c.competition_type] || 'var(--br)';
     const safe = (c.title || '').replace(/'/g, "\\'");
     let statsBlock;
@@ -13085,6 +13211,8 @@ function openChangePasswordModal(){
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('uzrakinta')} KEISTI SLAPTAŽODĮ</div><button onclick="document.getElementById('pw-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div style="padding:16px 20px 22px;">
+      <label class="lbl">SENAS SLAPTAŽODIS</label>
+      <input class="inp" id="pw-old" type="password" placeholder="dabartinis slaptažodis" autocomplete="current-password" style="margin-bottom:10px;">
       <label class="lbl">NAUJAS SLAPTAŽODIS</label>
       <input class="inp" id="pw-new" type="password" placeholder="min. 8, didžioji raidė ir skaičius" autocomplete="new-password" style="margin-bottom:10px;">
       <label class="lbl">PAKARTOK</label>
@@ -13095,11 +13223,22 @@ function openChangePasswordModal(){
   document.body.appendChild(m);
 }
 async function _submitChangePassword(){
+  const p0=document.getElementById('pw-old')?.value||'';
   const p1=document.getElementById('pw-new')?.value||''; const p2=document.getElementById('pw-new2')?.value||'';
+  if (!p0){ showToast(ico('klaida')+' Įvesk seną slaptažodį','error'); return; }
   const _err=_pwPolicyError(p1);
   if (_err){ showToast(ico('klaida')+' '+_err,'error'); return; }
   if (p1!==p2){ showToast(ico('klaida')+' Slaptažodžiai nesutampa','error'); return; }
   try {
+    // F-12d: seną slaptažodį tikrinam IZOLIUOTAME kliente (bendras šeimos įrenginys —
+    // kitaip bet kas prie palikto prisijungimo pasikeistų slaptažodį). Pagrindinės
+    // sesijos neliečia; scope:'local', kad neatšauktų kitų sesijų.
+    const vc = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { storageKey: 'spobu-pwcheck', persistSession: false, autoRefreshToken: false }
+    });
+    const { error: oldErr } = await vc.auth.signInWithPassword({ email: currentUser?.email, password: p0 });
+    if (oldErr){ showToast(ico('klaida')+' Neteisingas senas slaptažodis','error'); return; }
+    try { await vc.auth.signOut({ scope: 'local' }); } catch(e){}
     const { error } = await sb.auth.updateUser({ password:p1 });
     if (error) throw error;
     showToast(ico('patvirtinta')+' Slaptažodis pakeistas','success',3500);
@@ -13119,7 +13258,9 @@ function toggleClubSettingsSection(key){
 }
 
 function _renderClubSettingsHtml(s){
-  const isOn = k => s[k] !== false;
+  // ⚠️ kid_trainer_chat_enabled semantika ATVIRKŠTINĖ (kaip kidChatOn: trūksta => IŠJUNGTA) —
+  // kitaip be club_settings eilutės jungiklis rodo „įjungta" ir pirmas paspaudimas nieko nekeičia
+  const isOn = k => (k === 'kid_trainer_chat_enabled') ? (s[k] === true) : (s[k] !== false);
   const toggle = (k) => {
     const on = isOn(k);
     return `<div onclick="event.stopPropagation();toggleClubFlag('${k}', ${!on})" style="flex-shrink:0;width:42px;height:24px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;"><div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s;"></div></div>`;
@@ -15348,8 +15489,8 @@ async function loadKidCompetitions() {
     }
     
     const typeLabel = COMP_TYPE_LABELS[c.competition_type] || c.competition_type;
-    const levelLabel = c.level ? COMP_LEVEL_LABELS[c.level] : '';
-    
+    const levelLabel = c.level ? ico(COMP_LEVEL_ICO[c.level] || 'miestas') + ' ' + (COMP_LEVEL_LABELS[c.level] || c.level) : '';
+
     // Mygtukų logika pagal status'ą
     let statusBadge = '';
     let actionButtons = '';
@@ -15580,7 +15721,8 @@ async function openSubmitCompResult(competitionId, defaultStatus) {
   
   // Užpildyti modal'o turinį
   document.getElementById('crm-title').textContent = comp.title;
-  document.getElementById('crm-type').textContent = COMP_TYPE_LABELS[comp.competition_type] || comp.competition_type;
+  // F-09: COMP_TYPE_LABELS turi ico() HTML → per textContent SVG spausdintųsi kaip tekstas
+  document.getElementById('crm-type').innerHTML = COMP_TYPE_LABELS[comp.competition_type] || escapeHtml(comp.competition_type || '');
   document.getElementById('crm-status').value = defaultStatus;
   
   // Reset state
@@ -19026,7 +19168,7 @@ async function loadPendingSubmissions() {
         <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">DELTA</div><div style="font-family:'Bebas Neue',sans-serif;font-size:${deltaRaw == null ? 15 : 24}px;color:${deltaGood ? 'var(--grn)' : 'var(--br)'};">${deltaTxt}</div></div>
         <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">EXP</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);">+${expG}</div></div>
       </div>
-      ${s.comment?`<div style="font-size:11px;color:var(--mut);margin-bottom:10px;">${ico('zinutes')} ${s.comment}</div>`:''}
+      ${s.comment?`<div style="font-size:11px;color:var(--mut);margin-bottom:10px;">${ico('zinutes')} ${escapeHtml(s.comment)}</div>`:''}
       <div style="display:flex;gap:8px;">
         <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveSubmission('${s.id}')">${ico('atlikta')} Patvirtinti</button>
         <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="openRejectModal('${s.id}')">✗ Atmesti</button>
@@ -22894,7 +23036,7 @@ async function openKidDetailsModal(kidId) {
   await loadKidTrainers(kidId);
   
   // Sveikatos info, avarinis kontaktas, media sutikimas
-  await loadKidHealth(fullKid);
+  await renderKidHealthPanel(fullKid);
   await loadKidEmergency(fullKid);
   await loadKidMedia(fullKid);
   
@@ -23251,7 +23393,9 @@ async function kdRemoveTrainer(ktId, trainerName) {
 // SVEIKATOS INFO + AVARINIS + MEDIA
 // ════════════════════════════════════════
 
-async function loadKidHealth(kid) {
+// ⚠️ NEVADINTI loadKidHealth — tokia funkcija jau yra (kid_health duomenų krovėjas);
+// vėlesnė deklaracija ją perrašytų ir mergeKidHealth nunulintų visus sveikatos laukus.
+async function renderKidHealthPanel(kid) {
   const display = document.getElementById('kd-health-display');
   const editBtn = document.getElementById('kd-edit-health-btn');
   
@@ -23272,17 +23416,20 @@ async function loadKidHealth(kid) {
   display.innerHTML = renderHealthInfo(kid);
 }
 
-function kdToggleHealthEdit() {
+async function kdToggleHealthEdit() {
   if (!currentKidDetails) return;
   document.getElementById('kd-health-display').style.display = 'none';
   document.getElementById('kd-edit-health-btn').style.display = 'none';
   document.getElementById('kd-health-edit').style.display = 'block';
-  
-  document.getElementById('kd-edit-allergies').value = currentKidDetails.health_allergies || '';
-  document.getElementById('kd-edit-medications').value = currentKidDetails.health_medications || '';
-  document.getElementById('kd-edit-conditions').value = currentKidDetails.health_conditions || '';
-  document.getElementById('kd-edit-injuries').value = currentKidDetails.health_injuries || '';
-  document.getElementById('kd-edit-health-notes').value = currentKidDetails.health_notes || '';
+
+  // F-02: pildome iš ŠVIEŽIO kid_health įrašo, ne iš keše laikomo objekto —
+  // pasenęs kešas reikštų, kad „Saugoti" tyliai ištrina realius duomenis
+  const h = (await loadKidHealth(currentKidDetails.id)) || currentKidDetails;
+  document.getElementById('kd-edit-allergies').value = h.health_allergies || '';
+  document.getElementById('kd-edit-medications').value = h.health_medications || '';
+  document.getElementById('kd-edit-conditions').value = h.health_conditions || '';
+  document.getElementById('kd-edit-injuries').value = h.health_injuries || '';
+  document.getElementById('kd-edit-health-notes').value = h.health_notes || '';
 }
 
 function kdCancelHealthEdit() {
@@ -23317,7 +23464,7 @@ async function kdSaveHealth() {
   Object.assign(currentKidDetails, updates);
   showToast(ico('patvirtinta')+' Sveikatos info atnaujinta', 'success');
   kdCancelHealthEdit();
-  await loadKidHealth(currentKidDetails);
+  await renderKidHealthPanel(currentKidDetails);
 }
 
 async function loadKidEmergency(kid) {
@@ -23803,6 +23950,7 @@ async function loadAdminClubs() {
         <div style="flex:1;">
           <div style="font-size:14px;font-weight:900;">${c.name}</div>
           <div style="font-size:11px;color:var(--mut);">${c.city || '–'} · ${c.sports?.name || ''}</div>
+          ${!c.sport_id ? `<div style="font-size:10.5px;color:#EAB308;font-weight:800;margin-top:3px;">${ico('ispejimas')} Be sporto šakos — tėvai klubo NEMATO „Pridėti vaiką" vediklyje</div>` : ''}
         </div>
         <div class="bg ${c.is_active ? 'gn' : 'mu'}">${c.is_active ? 'Aktyvus' : 'Neaktyvus'}</div>
       </div>
@@ -25096,6 +25244,7 @@ async function openAdminUserCard(id){
           : `<button class="aerr-tool" style="color:#fab219;" onclick="setUserStatus('${p.id}','suspended')">⏸️ Sustabdyti</button>`}
         <select class="inp" id="au-role-sel" style="margin:0;width:130px;padding:6px;">${['parent','trainer','kid','club_admin','admin'].map(r => `<option value="${r}" ${p.role === r ? 'selected' : ''}>${(_auRoleLbl[r] || [r])[0]}</option>`).join('')}</select>
         <button class="aerr-tool" onclick="changeUserRole('${p.id}')">Keisti rolę</button>
+        ${p.role !== 'admin' ? `<button class="aerr-tool" style="color:#ff9c9c;" title="Ištrinti vartotoją VISIŠKAI (BDAR 17 str.)" onclick="deleteUserCascadeUI('${p.id}','${((p.first_name || '') + ' ' + (p.last_name || '')).replace(/['"<>\\]/g, '')}')">${ico('trinti')} Ištrinti</button>` : ''}
       </div>
       ${kids.length ? `<div class="aerr-meta" style="margin-bottom:4px;">VAIKAI</div>` + kids.map(k => `
         <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:12px;">
@@ -25110,6 +25259,72 @@ async function openAdminUserCard(id){
     </div>
   </div>`;
   document.body.appendChild(m);
+}
+
+// 🗑 F-13: pilnas vartotojo trynimas — public kaskada + auth.users per EF delete-user.
+// EF dar neišdeploy'inta → bent RPC kaskada, o auth liks matomas „Auth našlaičiuose".
+async function deleteUserCascadeUI(id, name){
+  if (!(await appConfirm(`⚠️ NEGRĮŽTAMA!\n\nIštrinti vartotoją „${name}" VISIŠKAI — profilis, sutikimai, ryšiai IR prisijungimo (auth) paskyra?\n\nJei tai tėvas: vaikai su kitu tėvu lieka, o vienintelio tėvo vaikus pirmiausia ištrink per VAIKAI sąrašo mygtuką šioje kortelėje.`))) return;
+  if (!(await appConfirm('PASKUTINIS patvirtinimas: trinti negrįžtamai?'))) return;
+  const { data, error } = await sb.functions.invoke('delete-user', { body: { user_id: id, reason: 'admin_ui' } });
+  let msg = data?.error || error?.message || '';
+  if (error?.context){ try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch(_){} }
+  if (error || data?.error){
+    if (/not found|404|Failed to send|FunctionsFetchError/i.test(msg)){
+      const r = await sb.rpc('admin_delete_user_cascade', { p_user: id });
+      if (r.error){ showToast(ico('klaida')+' ' + r.error.message, 'error', 7000); return; }
+      showToast(ico('ispejimas')+' Duomenys ištrinti, BET auth paskyra LIKO (EF delete-user neišdeploy\'inta) — el. paštas lieka užimtas. Žr. „Auth našlaičiai".', 'error', 9000);
+    } else {
+      showToast(ico('klaida')+' ' + (msg || 'Nepavyko'), 'error', 7000);
+      return;
+    }
+  } else {
+    showToast(ico('patvirtinta')+' Vartotojas ištrintas (kartu su auth paskyra)', 'success', 5000);
+  }
+  document.getElementById('au-card-modal')?.remove();
+  loadAdminUsers();
+}
+
+// 🧹 F-13: auth.users be profiles — „sudeginti" el. paštai (po vaiko trynimo /
+// nepavykusios registracijos tuo pačiu adresu registruotis nebeįmanoma)
+async function openOrphanAuthUsers(){
+  const { data, error } = await sb.rpc('admin_orphan_auth_users');
+  if (error){ showToast(ico('klaida')+' ' + error.message + '\n(Ar paleistas server-admin-delete-user.sql?)', 'error', 7000); return; }
+  const rows = data || [];
+  const old = document.getElementById('au-orphan-modal'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'au-orphan-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:center;justify-content:center;padding:20px;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:640px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;font-size:14px;font-weight:800;">🧹 AUTH NAŠLAIČIAI <span class="aerr-meta" style="display:inline;">(${rows.length})</span></div>
+      <button onclick="document.getElementById('au-orphan-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:12px 18px;">
+      <div class="aerr-meta" style="margin-bottom:10px;">auth.users be profilio — šiais el. paštais registruotis NEBEGALIMA, kol neištrinti. „Ištrinti" veikia per EF delete-user; jei ji neišdeploy'inta — trink per Supabase → Authentication → Users (uuid žemiau).</div>
+      ${rows.length ? rows.map(r => `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:12px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(r.email || '—')}</div>
+          <div class="aerr-meta" style="font-family:monospace;">${r.user_id} · ${new Date(r.created_at).toLocaleDateString('lt-LT')}</div>
+        </div>
+        <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" onclick="deleteOrphanAuthUser('${r.user_id}','${escapeHtml(r.email || '')}')">${ico('trinti')} Ištrinti</button>
+      </div>`).join('') : '<div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Našlaičių nėra — visi auth vartotojai turi profilius 🎉</div>'}
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+async function deleteOrphanAuthUser(id, email){
+  if (!(await appConfirm(`Ištrinti auth paskyrą ${email}?\n\nEl. paštas vėl taps laisvas registracijai.`))) return;
+  const { data, error } = await sb.functions.invoke('delete-user', { body: { user_id: id, reason: 'orphan_cleanup' } });
+  let msg = data?.error || error?.message || '';
+  if (error?.context){ try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch(_){} }
+  if (error || data?.error){
+    showToast(ico('klaida')+' ' + (msg || 'Nepavyko') + (/not found|404|Failed to send/i.test(msg) ? '\nEF delete-user neišdeploy\'inta — trink per Supabase dashboard.' : ''), 'error', 8000);
+    return;
+  }
+  showToast(ico('patvirtinta')+' Auth paskyra ištrinta — el. paštas laisvas', 'success', 5000);
+  openOrphanAuthUsers();
 }
 
 async function setUserStatus(id, status){
@@ -25487,9 +25702,15 @@ async function submitNewClub() {
   btn.textContent = 'KURIAMA...';
 
   try {
-    // 1. Patikriname, ar email jau egzistuoja sistemoje (kaip kitos rolės)
-    const { data: existingProfile } = await sb.rpc('check_email_exists', { p_email: adminEmail });
-    
+    // 1. F-07: esamam vartotojui handle_new_user nesuveikia → klubas liktų BE
+    // admin_profile_id, rolė nepasikeistų, o UI meluotų „Klubas sukurtas!".
+    // Todėl esamo el. pašto neleidžiam — stabdom PRIEŠ kuriant bet ką.
+    const { data: emailTaken, error: ceErr } = await sb.rpc('check_email_exists', { p_email: adminEmail });
+    if (!ceErr && emailTaken === true){
+      showToast(ico('klaida')+' Šis el. paštas jau užregistruotas sistemoje su kita paskyra.\n\nKlubo administratoriui reikia NAUJO el. pašto — arba pirmiausia ištrink/pakeisk esamą vartotoją („Vartotojai").', 'error', 8000);
+      return;
+    }
+
     // Generuojame invite_code klubo nariams
     const inviteCode = name.replace(/[^A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž0-9]/g, '').toUpperCase().slice(0, 6) + '-' + Math.floor(Math.random()*9000+1000);
 
@@ -25512,6 +25733,12 @@ async function submitNewClub() {
     }).select().single();
 
     if (clubError) throw clubError;
+
+    // 2b. F-05: club_settings eilutė IŠKART — kitaip pirmas bet kurios vėliavos
+    // perjungimas sukurtų ją su DB defaults ir tyliai išjungtų 14+ registraciją
+    // (self_signup_enabled DB default=false, o be eilutės serveris skaito true)
+    const { error: csErr } = await sb.from('club_settings').insert({ club_id: newClub.id, self_signup_enabled: true });
+    if (csErr) console.warn('club_settings insert:', csErr.message);
 
     // 3. Sukuriame pending invitation
     const { error: invError } = await sb.from('pending_invitations').insert({
@@ -25544,12 +25771,11 @@ async function submitNewClub() {
     });
 
     if (signUpError) {
-      // Jei vartotojas jau egzistuoja – tik siunčiam reset password
+      // F-07: čia patenkam tik jei check_email_exists patikra viršuje nesuveikė —
+      // esamam vartotojui admin_profile_id NEPRISKIRTAS ir rolė nepakeista, todėl
+      // NErodome žalios sėkmės, o sakome tiesą.
       if (signUpError.message.includes('already') || signUpError.message.includes('exists')) {
-        await sb.auth.resetPasswordForEmail(adminEmail, {
-          redirectTo: `${window.location.origin}/spobu/set-password.html`
-        });
-        showToast(ico('patvirtinta')+' Klubas sukurtas!\n\nVartotojas jau egzistuoja, jam išsiųstas slaptažodžio nustatymo email\'as.', 'success');
+        showToast(ico('ispejimas')+' Klubas sukurtas, BET be administratoriaus: šis el. paštas jau užregistruotas kita paskyra.\n\nPriskirk administratorių rankiniu būdu („Vartotojai" → rolė) arba ištrink klubą ir sukurk su nauju el. paštu.', 'error', 10000);
       } else {
         throw signUpError;
       }
@@ -26857,7 +27083,7 @@ async function loadPendingDuels() {
         </div>
         ${d.note ? `<div style="background:rgba(236,64,122,.08);border-radius:8px;padding:7px 9px;margin-bottom:10px;display:flex;gap:6px;align-items:flex-start;">
           <div style="font-size:11px;">${ico('zinutes')}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.8);line-height:1.3;font-style:italic;">${d.note}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.8);line-height:1.3;font-style:italic;">${escapeHtml(d.note)}</div>
         </div>` : ''}
         <div style="display:flex;align-items:stretch;gap:8px;margin-bottom:10px;">
           <div style="flex:1;background:${chWins ? 'rgba(34,197,94,.12)' : isDraw ? 'rgba(255,140,0,.1)' : 'var(--bg)'};border:.5px solid ${chWins ? 'rgba(34,197,94,.4)' : 'var(--bdr)'};border-radius:10px;padding:8px;text-align:center;">
@@ -28643,7 +28869,7 @@ async function loadPendingCompetitionResults() {
     const kidName = kidNameMap[r.kid_id] || 'Vaikas';
     const genderIcon = kid.gender === 'female' ? '👦' : '👧';
     const typeLabel = COMP_TYPE_LABELS[comp.competition_type] || comp.competition_type;
-    const levelLabel = comp.level ? COMP_LEVEL_LABELS[comp.level] : '';
+    const levelLabel = comp.level ? ico(COMP_LEVEL_ICO[comp.level] || 'miestas') + ' ' + (COMP_LEVEL_LABELS[comp.level] || comp.level) : '';
     
     // Rezultato aprašymas
     let resultDesc = '';
@@ -29167,7 +29393,9 @@ async function resubscribeParentChannels() {
     const chans = sb.getChannels ? sb.getChannels() : [];
     chans.forEach(ch => {
       const t = ch.topic || '';
-      if (t.includes('parent-approvals-') || t.includes('parent-duels-') || t.includes('parent-msgs-') || t.includes('parent-reports-')) {
+      // F-08: būtinai IR parent-preq- — jo nepašalinus, subscribeParentNotifications
+      // bando .on(...) ant jau prenumeruoto kanalo ir lūžta („cannot add callbacks after subscribe()")
+      if (t.includes('parent-approvals-') || t.includes('parent-duels-') || t.includes('parent-preq-') || t.includes('parent-msgs-') || t.includes('parent-reports-')) {
         sb.removeChannel(ch);
       }
     });
