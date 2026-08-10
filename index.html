@@ -60,7 +60,7 @@ window.addEventListener('unhandledrejection', function(e) {
 // Patikima CDN užkrovimo logika su fallback
 (function() {
   const CDN_URLS = [
-    { url: 'supabase.js?v=397', name: 'lokalus' },   // self-host (GDPR/availability) — CDN'ai lieka fallback
+    { url: 'supabase.js?v=399', name: 'lokalus' },   // self-host (GDPR/availability) — CDN'ai lieka fallback
     { url: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js', name: 'jsdelivr' },
     { url: 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js', name: 'unpkg' },
     { url: 'https://cdn.skypack.dev/@supabase/supabase-js@2', name: 'skypack' }
@@ -103,7 +103,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=397">
+<link rel="stylesheet" href="styles.css?v=399">
 </head>
 <body>
 
@@ -268,7 +268,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v397</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v399</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg> PILNAS MOBILE</button>
@@ -659,17 +659,34 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <div class="mo" id="ccmo">
   <div class="mbox" style="max-height:90vh;overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div class="mt">NAUJAS IŠŠŪKIS</div>
       <button class="bb" onclick="closeCreateChallenge()"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
     </div>
-    
+
+    <!-- 🗂️ TABAI: Katalogas (wizard) / Savo iššūkis (laisva forma) -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button id="cc-tab-btn-catalog" onclick="ccSwitchTab('catalog')" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;background:#FF4D00;color:#1a0a00;">🗂️ KATALOGAS</button>
+      <button id="cc-tab-btn-custom" onclick="ccSwitchTab('custom')" style="flex:1;padding:9px;border:none;border-radius:10px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;background:rgba(255,255,255,.07);color:var(--mut);">✏️ SAVO IŠŠŪKIS</button>
+    </div>
+
+    <!-- ═══ KATALOGO WIZARD (turinys renderinamas JS) ═══ -->
+    <div id="cc-tab-catalog">
+      <div id="kw-step-aud"></div>
+      <div id="kw-step-type"></div>
+      <div id="kw-step-ex"></div>
+      <div id="kw-step-diff"></div>
+      <div id="kw-history"></div>
+    </div>
+
+    <!-- ═══ SAVO IŠŠŪKIS (esama forma) ═══ -->
+    <div id="cc-tab-custom" style="display:none;">
     <label class="lbl">PAVADINIMAS</label>
     <input class="inp" type="text" id="cc-title" placeholder="Pvz. 50 atsispaudimų" maxlength="80">
-    
+
     <label class="lbl">APRAŠYMAS / INSTRUKCIJOS</label>
     <textarea class="inp" id="cc-description" placeholder="Detalesnis aprašymas vaikams..." rows="3" style="resize:none;"></textarea>
-    
+
     <!-- TURINIO TIPAS -->
     <label class="lbl">TURINIO TIPAS</label>
     <div class="chs" style="margin-bottom:6px;" id="cc-content-types">
@@ -682,7 +699,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="cc-content-help" style="font-size:11px;color:var(--mut);margin-bottom:14px;line-height:1.4;">
       <svg class="ico" aria-hidden="true"><use href="#i-jega"></use></svg> Pasiekimas: kartų skaičius (atsispaudimai, pritupimai)
     </div>
-    
+
     <!-- TIKSLAS -->
     <div id="cc-target-section">
       <label class="lbl">TIKSLAS</label>
@@ -691,7 +708,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <input class="inp" type="text" id="cc-target-unit" placeholder="Vienetai (kartai, km)" readonly style="background:var(--bg2);">
       </div>
     </div>
-    
+
     <!-- TARPINIAI REZULTATAI (toggle) -->
     <div id="cc-partial-section" style="margin-bottom:14px;display:none;">
       <div id="cc-partial-box" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
@@ -706,7 +723,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       <input type="hidden" id="cc-allow-partial" value="false">
     </div>
-    
+
     <!-- TRUKMĖS TIPAS -->
     <label class="lbl">TRUKMĖ</label>
     <div class="chs" style="margin-bottom:14px;" id="cc-types">
@@ -717,10 +734,17 @@ window.addEventListener('unhandledrejection', function(e) {
       <div class="ch" onclick="selectChallengeType(this,'permanent')" data-type="permanent">♾️ Be termino</div>
     </div>
     <input type="hidden" id="cc-type" value="weekly">
-    
-    <label class="lbl">EXP ATLYGIS <span id="cc-exp-max" style="color:var(--mut);">(max 25)</span></label>
-    <input class="inp" type="number" id="cc-exp" min="1" max="25" value="10" oninput="validateChallengeExp()">
-    
+
+    <!-- SUNKUMAS → EXP pagal kreivę (v399: treneris EXP nebeįveda) -->
+    <label class="lbl">SUNKUMAS <span id="cc-exp-preview" style="color:var(--br);font-weight:800;"></span></label>
+    <div class="chs" style="margin-bottom:14px;" id="cc-diff-chips">
+      <div class="ch" onclick="selectCustomDifficulty(this,'easy')" data-diff="easy">🟢 Lengvas</div>
+      <div class="ch on" onclick="selectCustomDifficulty(this,'medium')" data-diff="medium">🟡 Vidutinis</div>
+      <div class="ch" onclick="selectCustomDifficulty(this,'hard')" data-diff="hard">🔴 Sunkus</div>
+    </div>
+    <input type="hidden" id="cc-exp" value="10">
+    <span id="cc-exp-max" style="display:none;"></span>
+
     <label class="lbl">IKONA</label>
     <div class="chs" style="margin-bottom:14px;" id="cc-icons">
       <div class="ch on" onclick="selectChallengeIcon(this,'🎯')">🎯</div>
@@ -733,7 +757,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div class="ch" onclick="selectChallengeIcon(this,'🥋')">🥋</div>
     </div>
     <input type="hidden" id="cc-icon" value="🎯">
-    
+
     <!-- GAVĖJAI -->
     <label class="lbl">KAM SKIRTAS?</label>
     <div class="chs" style="margin-bottom:8px;" id="cc-audiences">
@@ -743,23 +767,24 @@ window.addEventListener('unhandledrejection', function(e) {
       <div class="ch" onclick="selectChallengeAudience(this,'specific_kid')" data-audience="specific_kid">🎯 Konkretus vaikas</div>
     </div>
     <input type="hidden" id="cc-audience" value="group">
-    
+
     <!-- Grupės pasirinkimas (rodomas kai grupė/berniukai/mergaitės) -->
     <div id="cc-group-select-section" style="margin-bottom:14px;">
-      <select class="inp" id="cc-group-select">
+      <select class="inp" id="cc-group-select" onchange="updateCustomExp()">
         <option value="">Pasirink grupę...</option>
       </select>
     </div>
-    
+
     <!-- Vaiko pasirinkimas (rodomas kai 'specific_kid') -->
     <div id="cc-kid-select-section" style="display:none;margin-bottom:14px;">
-      <select class="inp" id="cc-kid-select">
+      <select class="inp" id="cc-kid-select" onchange="updateCustomExp()">
         <option value="">Pasirink vaiką...</option>
       </select>
     </div>
-    
+
     <button class="btn btng" id="cc-submit" style="margin:8px 0 0;width:100%;" onclick="submitNewChallenge()">SUKURTI IŠŠŪKĮ</button>
     <button class="btn btnd" style="margin:8px 0 0;width:100%;" onclick="closeCreateChallenge()">Atšaukti</button>
+    </div>
   </div>
 </div>
 
@@ -1084,41 +1109,8 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
     
-    <!-- <svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg> AKTYVUS SAVAITINIS IŠŠŪKIS - kompaktiškas -->
-    <div id="v-week-challenge-card" onclick="openActiveWeeklyChallenge()" style="margin:8px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(79,195,247,.12), rgba(79,195,247,.04));border: 1px solid rgba(79,195,247,.25);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(79,195,247,.2);transition:border-color .2s;display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
-        <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:13px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></span>
-          <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-week-challenge-title">–</span>
-        </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#4FC3F7;line-height:1;flex-shrink:0;" id="v-week-challenge-progress">0 / 0</div>
-      </div>
-      <div style="height:4px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;">
-        <div style="height:100%;background:linear-gradient(90deg,#4FC3F7,#29B6F6);box-shadow:0 0 6px rgba(79,195,247,.5);border-radius:2px;width:0%;transition:width .4s ease;" id="v-week-challenge-bar"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:8px;color:var(--mut);">
-        <span id="v-week-challenge-pct">0% atlikta</span>
-        <span id="v-week-challenge-days">– d. liko</span>
-      </div>
-    </div>
-    
-    <!-- <svg class="ico" aria-hidden="true"><use href="#i-menesinis"></use></svg> AKTYVUS MĖNESINIS IŠŠŪKIS - kompaktiškas -->
-    <div id="v-month-challenge-card" onclick="openActiveMonthlyChallenge()" style="margin:4px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(186,104,200,.12), rgba(186,104,200,.04));border: 1px solid rgba(186,104,200,.25);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(186,104,200,.2);transition:border-color .2s;display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
-        <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:13px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-menesinis"></use></svg></span>
-          <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="v-month-challenge-title">–</span>
-        </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#BA68C8;line-height:1;flex-shrink:0;" id="v-month-challenge-progress">0 / 0</div>
-      </div>
-      <div style="height:4px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;">
-        <div style="height:100%;background:linear-gradient(90deg,#BA68C8,#8E24AA);box-shadow:0 0 6px rgba(186,104,200,.5);border-radius:2px;width:0%;transition:width .4s ease;" id="v-month-challenge-bar"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:8px;color:var(--mut);">
-        <span id="v-month-challenge-pct">0% atlikta</span>
-        <span id="v-month-challenge-days">– d. liko</span>
-      </div>
-    </div>
+    <!-- 🗂️ v399: AKTYVŪS SAVAITINIAI/MĖNESINIAI IŠŠŪKIAI — SĄRAŠAS (keli vienu metu, EXP kreivė) -->
+    <div id="v-home-challenges-list" style="margin:8px 16px 0;"></div>
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg> AKTYVUS GRUPIŲ IŠŠŪKIS - kompaktiškas (vaiko grupės vieta) -->
     <div id="v-group-challenge-card" onclick="_kidOpenGroupChallenge()" style="margin:4px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(234,179,8,.14), rgba(234,179,8,.04));border:1px solid rgba(234,179,8,.3);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(234,179,8,.2);transition:border-color .2s;display:none;">
@@ -2332,41 +2324,8 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
 
-    <!-- <svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg> AKTYVUS SAVAITINIS IŠŠŪKIS -->
-    <div id="tk-week-card" style="margin:8px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(79,195,247,.12), rgba(79,195,247,.04));border:1px solid rgba(79,195,247,.25);border-radius:10px;display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
-        <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:13px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-greitis"></use></svg></span>
-          <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="tk-week-title">–</span>
-        </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#4FC3F7;line-height:1;flex-shrink:0;" id="tk-week-progress">0 / 0</div>
-      </div>
-      <div style="height:4px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;">
-        <div style="height:100%;background:linear-gradient(90deg,#4FC3F7,#29B6F6);box-shadow:0 0 6px rgba(79,195,247,.5);border-radius:2px;width:0%;" id="tk-week-bar"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:8px;color:var(--mut);">
-        <span id="tk-week-pct">0% atlikta</span>
-        <span id="tk-week-days">– d. liko</span>
-      </div>
-    </div>
-
-    <!-- <svg class="ico" aria-hidden="true"><use href="#i-tikslas"></use></svg> AKTYVUS MĖNESINIS IŠŠŪKIS -->
-    <div id="tk-month-card" style="margin:6px 16px 0;padding:8px 10px;background:linear-gradient(135deg, rgba(186,104,200,.12), rgba(186,104,200,.04));border:1px solid rgba(186,104,200,.25);border-radius:10px;display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:4px;">
-        <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">
-          <span style="font-size:13px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></span>
-          <span style="font-size:11px;color:white;font-weight:800;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="tk-month-title">–</span>
-        </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:#BA68C8;line-height:1;flex-shrink:0;" id="tk-month-progress">0 / 0</div>
-      </div>
-      <div style="height:4px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;">
-        <div style="height:100%;background:linear-gradient(90deg,#BA68C8,#8E24AA);box-shadow:0 0 6px rgba(186,104,200,.5);border-radius:2px;width:0%;" id="tk-month-bar"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:8px;color:var(--mut);">
-        <span id="tk-month-pct">0% atlikta</span>
-        <span id="tk-month-days">– d. liko</span>
-      </div>
-    </div>
+    <!-- 🗂️ v399: AKTYVŪS SAVAITINIAI/MĖNESINIAI IŠŠŪKIAI — SĄRAŠAS (veidrodis vaiko namų) -->
+    <div id="tk-challenges-list" style="margin:8px 16px 0;"></div>
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> VAIKO REITINGAI (gated) -->
     <div id="tk-stats-gate" style="position:relative;overflow:hidden;border-radius:14px;">
@@ -4283,13 +4242,13 @@ window.addEventListener('unhandledrejection', function(e) {
       <div id="vsc-description" style="font-size:12px;color:var(--mut);line-height:1.5;"></div>
     </div>
     
-    <label class="lbl">TAVO REZULTATAS</label>
-    <div style="display:flex;gap:8px;margin-bottom:14px;">
+    <label class="lbl" id="vsc-result-label">TAVO REZULTATAS</label>
+    <div style="display:flex;gap:8px;margin-bottom:14px;" id="vsc-result-row">
       <input class="inp" type="number" id="vsc-result" placeholder="Skaičius" min="0" step="any" style="flex:1;">
       <div id="vsc-unit" style="display:flex;align-items:center;padding:0 14px;background:var(--bg2);border:.5px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--mut);font-weight:700;">vienetai</div>
     </div>
-    
-    <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-bottom:14px;">
+
+    <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-bottom:14px;" id="vsc-info-text">
       <svg class="ico" aria-hidden="true"><use href="#i-info"></use></svg> Rezultatas bus išsiųstas treneriui patvirtinimui. Po patvirtinimo gausi EXP.
     </div>
     
@@ -4404,7 +4363,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=397"></script>
+<script src="app.js?v=399"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
