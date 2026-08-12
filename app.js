@@ -17329,13 +17329,13 @@ function openStreakRoad() {
   const s = window._streakRowCache || {};
   const old = document.getElementById('streak-road-modal'); if (old) old.remove();
   const SEC = [
-    { tp: 'training', title: 'TRENIRUOČIŲ SERIJA', unit: 'd.', color: '#FF4D00', icon: 'streak',
+    { tp: 'training', title: 'TRENIRUOČIŲ SERIJA', unit: 'd.', color: '#FF4D00', icon: 'streak', big: 36, bigLabel: 'DIDYSIS',
       cur: s.training_current || 0, best: s.training_best || 0, earned: s.training_total_exp || 0,
       rule: 'Skaičiuoja treniruočių dienas. Ta pati diena nesidubliuoja; tarpas >7 d. — serija iš naujo.' },
-    { tp: 'weekly', title: 'SAVAIČIŲ SERIJA', unit: 'sav.', color: '#4FC3F7', icon: 'kalendorius',
+    { tp: 'weekly', title: 'SAVAIČIŲ SERIJA', unit: 'sav.', color: '#4FC3F7', icon: 'kalendorius', big: 24, bigLabel: 'DIDYSIS',
       cur: s.weekly_current || 0, best: s.weekly_best || 0, earned: s.weekly_total_exp || 0,
       rule: 'Bent 1 savaitinis kiekvieną savaitę. Praleista savaitė — serija iš naujo.' },
-    { tp: 'monthly', title: 'MĖNESIŲ SERIJA', unit: 'mėn.', color: '#BA68C8', icon: 'zenkliukai',
+    { tp: 'monthly', title: 'MĖNESIŲ SERIJA', unit: 'mėn.', color: '#BA68C8', icon: 'zenkliukai', big: 9, bigLabel: 'SEZONAS',
       cur: s.monthly_current || 0, best: s.monthly_best || 0, earned: s.monthly_total_exp || 0,
       rule: 'Bent 1 mėnesinis kiekvieną mėnesį. Praleistas mėnuo — serija iš naujo. 9 mėn. = SEZONAS!' }
   ];
@@ -17349,12 +17349,24 @@ function openStreakRoad() {
       const total = parts.reduce((a, b) => a + b, 0);
       const brk = parts.length > 1 ? ` (${parts.join('+')})` : '';
       const mut = state === 'passed';
+      // 🏆 v405: didžiojo slenksčio (36/24/SEZONAS 9) eilutė — auksinė, su etikete
+      if (k % sec.big === 0 && state !== 'passed') {
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;margin:2px 0;background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.35);border-radius:9px;">
+          <span style="font-size:12px;flex-shrink:0;">🏆</span>
+          <span style="flex:1;font-size:11.5px;color:#FFD700;font-weight:800;">${sec.bigLabel} · ${k} ${sec.unit}</span>
+          <span style="font-size:11px;color:#FFD700;font-weight:800;">+${total}${brk}</span>
+        </div>`;
+      }
       return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;${mut ? 'opacity:.5;' : ''}">
         <span style="font-size:12px;flex-shrink:0;">${mut ? '✅' : (state === 'next' ? '🎯' : '◦')}</span>
         <span style="flex:1;font-size:11.5px;color:${state === 'next' ? 'white' : 'var(--mut)'};font-weight:${state === 'next' ? 800 : 700};">${k} ${sec.unit}</span>
         <span style="font-size:11px;color:${sec.color};font-weight:800;">+${total}${brk}</span>
       </div>`;
     };
+    // 🏆 v405: DIDYSIS visada matomas — jei nepateko tarp artimiausių 3, pridedamas po „⋯"
+    const nextBig = Math.ceil((sec.cur + 1) / sec.big) * sec.big;
+    const bigTail = ahead.includes(nextBig) ? '' :
+      `<div style="text-align:center;color:var(--mut);font-size:10px;line-height:1.4;">⋯ dar ${nextBig - sec.cur} ${sec.unit} ⋯</div>${node(nextBig, 'future')}`;
     const danger = _streakDanger(sec.tp, s);
     return `<div style="background:var(--card);border:.5px solid ${danger ? 'rgba(255,140,0,.5)' : 'var(--bdr)'};border-radius:12px;padding:11px 13px;margin-bottom:8px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -17363,7 +17375,7 @@ function openStreakRoad() {
         <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;line-height:1;">${sec.cur}</span>
       </div>
       ${danger ? `<div style="font-size:10px;color:#FF9E40;font-weight:800;margin-bottom:5px;">⚠️ Serija tuoj nutrūks — ${danger.leftTxt}</div>` : ''}
-      ${passed.map(k => node(k, 'passed')).join('')}${ahead.map((k, i) => node(k, i === 0 ? 'next' : 'future')).join('')}
+      ${passed.map(k => node(k, 'passed')).join('')}${ahead.map((k, i) => node(k, i === 0 ? 'next' : 'future')).join('')}${bigTail}
       <div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:.5px dashed var(--bdr);font-size:9px;color:var(--mut);">
         <span>Geriausia: <b style="color:white;">${sec.best}</b></span>
         <span>Uždirbta iš serijos: <b style="color:${sec.color};">+${sec.earned}</b></span>
