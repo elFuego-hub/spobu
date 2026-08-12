@@ -10529,6 +10529,28 @@ async function checkForNewCompetitions() {
 // Vietoj trijų skirtingų UI (auksinis šventimas su citata / tipo popup / toast).
 // Viskas per _celebQueue po vieną.
 // ════════════════════════════════════════
+// 🔥 v403: serijų slenksčių VEIDRODIS (turi sutapti su server-streak-v3.sql!)
+// Sutampant sumuojasi; monthly papildomai kiekvienas mėnuo nuo 2-o → +30.
+const STREAK_MILESTONES = {
+  training: [[3, 10], [12, 20], [36, 150]],
+  weekly:   [[2, 20], [4, 40], [24, 300]],
+  monthly:  [[3, 60], [9, 450]]
+};
+const STREAK_UNIT = { training: 'd.', weekly: 'sav.', monthly: 'mėn.' };
+function streakPrizeAt(type, n) {
+  let sum = 0;
+  (STREAK_MILESTONES[type] || []).forEach(([m, p]) => { if (n > 0 && n % m === 0) sum += p; });
+  if (type === 'monthly' && n >= 2) sum += 30;
+  return sum;
+}
+function streakNextPrize(type, n) {
+  for (let k = (n || 0) + 1; k <= (n || 0) + 36; k++) {
+    const s = streakPrizeAt(type, k);
+    if (s > 0) return { in: k - (n || 0), prize: s };
+  }
+  return null;
+}
+
 function showApprovalStd(opts) { _celebEnqueue(() => _showApprovalStdNow(opts)); }
 function _showApprovalStdNow(opts) {
   const TYPE = {
@@ -10563,7 +10585,8 @@ function _showApprovalStdNow(opts) {
       <div style="font-size:13px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">EXP</div>
     </div>` : (completed ? '' : `
     <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:12px;">Progresas įskaitytas · EXP gausi pasiekęs tikslą</div>`)}
-    ${opts.streakExp ? `<div style="display:inline-block;padding:5px 14px;background:${t.color}22;border:1px solid ${t.color}66;border-radius:99px;font-size:11px;color:${t.color};font-weight:800;margin-bottom:12px;">${ico('streak')} Serijos bonusas +${opts.streakExp}</div>` : ''}
+    ${opts.streakExp ? `<div style="display:inline-block;padding:5px 14px;background:${t.color}22;border:1px solid ${t.color}66;border-radius:99px;font-size:11px;color:${t.color};font-weight:800;margin-bottom:12px;">${ico('streak')} Serija: ${opts.streakCount ?? '–'} · bonusas +${opts.streakExp}</div>`
+      : (opts.streakNext && opts.streakCount != null ? `<div style="display:inline-block;padding:5px 14px;background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.18);border-radius:99px;font-size:11px;color:rgba(255,255,255,.75);font-weight:800;margin-bottom:12px;">${ico('streak')} Serija: ${opts.streakCount} · dar ${opts.streakNext.in} ${STREAK_UNIT[opts.type] || ''} iki +${opts.streakNext.prize}</div>` : '')}
     ${completed ? `<div style="margin:0 -6px 12px;padding:7px;background:linear-gradient(90deg,rgba(34,197,94,.18),rgba(34,197,94,.08));border:1px solid rgba(34,197,94,.4);border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#22C55E;">${ico('trofejai')} IŠŠŪKIS ĮVEIKTAS!</div>` : ''}
     <button class="apst-close" style="background:linear-gradient(135deg,${t.color},${t.color}CC);color:white;border:none;padding:10px 26px;border-radius:12px;font-size:11px;font-weight:800;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 12px ${t.color}66;">GERAI!</button>`;
   document.body.appendChild(popup);
@@ -10682,6 +10705,19 @@ async function _checkForNewApprovedSubmissionsInner() {
     if (sk) (setBuckets[sk] = setBuckets[sk] || []).push(sub);
     else singles.push(sub);
   });
+  // 🔥 v403: serijos būsena atskaitai pop-upe („Serija: N · dar X iki +Y") — po trigerio, tad aktuali
+  let _stRow = null;
+  try {
+    const { data: stR } = await sb.from('kid_streaks').select('training_current, weekly_current, monthly_current').eq('kid_id', currentKid.id).maybeSingle();
+    _stRow = stR;
+  } catch (e) { /* tylim — be atskaitos */ }
+  const _stCount = (tp) => _stRow ? ((tp === 'training' ? _stRow.training_current : tp === 'weekly' ? _stRow.weekly_current : tp === 'monthly' ? _stRow.monthly_current : null) ?? null) : null;
+  const _stOpts = (tp) => {
+    if (!['training', 'weekly', 'monthly'].includes(tp)) return {};
+    const n = _stCount(tp);
+    return n == null ? {} : { streakCount: n, streakNext: streakNextPrize(tp, n) };
+  };
+
   // ✅ v402: VISKAS per vieną STANDARTINĮ pop-upą (showApprovalStd) — vietoj trijų UI.
   for (const [sk, bucket] of Object.entries(setBuckets)) {
     const sumExp = bucket.reduce((s, x) => s + (x.exp_gain ?? x.challenges?.exp_reward ?? 0), 0);
@@ -10697,7 +10733,7 @@ async function _checkForNewApprovedSubmissionsInner() {
         cum = Math.max(bucket.length, new Set((apprRows || []).map(a => a.challenge_id)).size);
       }
     } catch (e) { /* tylim — rodom bent bangos sk. */ }
-    showApprovalStd({ type: 'training', title: 'Šiandienos rinkinys', progress: `${cum}/${total}`, exp: sumExp, streakExp: streakSum, completed: cum >= total });
+    showApprovalStd({ type: 'training', title: 'Šiandienos rinkinys', progress: `${cum}/${total}`, exp: sumExp, streakExp: streakSum, completed: cum >= total, ..._stOpts('training') });
   }
 
   // Pavieniai — grupuojam pagal iššūkį (kelios to paties dalys vienoje bangoje = VIENAS
@@ -10720,7 +10756,7 @@ async function _checkForNewApprovedSubmissionsInner() {
       showApprovalStd({
         type: ch?.type, title: ch?.title || 'Iššūkis', progress: progStr,
         exp: isCompleted ? (expSum || ch?.exp_reward || 0) : 0,
-        streakExp: streakSum, completed: isCompleted
+        streakExp: streakSum, completed: isCompleted, ..._stOpts(ch?.type)
       });
     } else {
       // Ne-partial (training/weekly/monthly/one_time/permanent): patvirtinimas = įveikimas
@@ -10728,7 +10764,7 @@ async function _checkForNewApprovedSubmissionsInner() {
       showApprovalStd({
         type: ch?.type, title: ch?.title || 'Iššūkis',
         progress: nv ? `${nv} ${unit}`.trim() : null,
-        exp: expSum || ch?.exp_reward || 0, streakExp: streakSum, completed: true
+        exp: expSum || ch?.exp_reward || 0, streakExp: streakSum, completed: true, ..._stOpts(ch?.type)
       });
     }
   }
