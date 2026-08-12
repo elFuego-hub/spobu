@@ -17280,6 +17280,114 @@ function calculateTotalStreakBonus(type, streakCount) {
   return total;
 }
 
+// 🔥 v404: serijų UI pagalbininkai (slenksčių lentelė — STREAK_MILESTONES veidrodis)
+function streakPrizeParts(type, k) {
+  const parts = [];
+  if (type === 'monthly' && k >= 2) parts.push(30); // kiekvienas mėnuo nuo 2-o
+  (STREAK_MILESTONES[type] || []).forEach(([m, p]) => { if (k > 0 && k % m === 0) parts.push(p); });
+  return parts;
+}
+function _streakPrevMilestone(type, n) {
+  for (let k = n; k >= 1; k--) if (streakPrizeAt(type, k) > 0) return k;
+  return 0;
+}
+function _locISO(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+// Pavojaus būsena: serija gyva, bet tuoj nutrūks → {leftTxt}
+function _streakDanger(tp, s) {
+  const now = new Date();
+  if (tp === 'training') {
+    if (!(s.training_current > 0) || !s.training_last_at) return null;
+    const days = Math.floor((now - new Date(s.training_last_at)) / 86400000);
+    const left = 7 - days;
+    if (left >= 0 && left <= 2) return { leftTxt: left === 0 ? 'paskutinė diena!' : `liko ${left} d.` };
+    return null;
+  }
+  const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  if (tp === 'weekly') {
+    if (!(s.weekly_current > 0) || !s.weekly_last_week) return null;
+    if (s.weekly_last_week === _locISO(monday)) return null; // ši savaitė jau įskaityta
+    const prevMonday = new Date(monday); prevMonday.setDate(monday.getDate() - 7);
+    const dow = (now.getDay() + 6) % 7; // 0=Pr … 6=Sk
+    if (s.weekly_last_week === _locISO(prevMonday) && dow >= 4) return { leftTxt: 'iki sekmadienio!' };
+    return null;
+  }
+  if (tp === 'monthly') {
+    if (!(s.monthly_current > 0) || !s.monthly_last_month) return null;
+    const curM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    if (s.monthly_last_month === curM) return null; // šis mėnuo jau įskaitytas
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevM = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-01`;
+    const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
+    if (s.monthly_last_month === prevM && daysLeft <= 7) return { leftTxt: daysLeft === 0 ? 'paskutinė diena!' : `liko ${daysLeft} d.` };
+    return null;
+  }
+  return null;
+}
+
+// 🗺️ v404: „Serijų kelias" — bottom-sheet su slenksčių žemėlapiu (tap ant serijos čipo)
+function openStreakRoad() {
+  const s = window._streakRowCache || {};
+  const old = document.getElementById('streak-road-modal'); if (old) old.remove();
+  const SEC = [
+    { tp: 'training', title: 'TRENIRUOČIŲ SERIJA', unit: 'd.', color: '#FF4D00', icon: 'streak',
+      cur: s.training_current || 0, best: s.training_best || 0, earned: s.training_total_exp || 0,
+      rule: 'Skaičiuoja treniruočių dienas. Ta pati diena nesidubliuoja; tarpas >7 d. — serija iš naujo.' },
+    { tp: 'weekly', title: 'SAVAIČIŲ SERIJA', unit: 'sav.', color: '#4FC3F7', icon: 'kalendorius',
+      cur: s.weekly_current || 0, best: s.weekly_best || 0, earned: s.weekly_total_exp || 0,
+      rule: 'Bent 1 savaitinis kiekvieną savaitę. Praleista savaitė — serija iš naujo.' },
+    { tp: 'monthly', title: 'MĖNESIŲ SERIJA', unit: 'mėn.', color: '#BA68C8', icon: 'zenkliukai',
+      cur: s.monthly_current || 0, best: s.monthly_best || 0, earned: s.monthly_total_exp || 0,
+      rule: 'Bent 1 mėnesinis kiekvieną mėnesį. Praleistas mėnuo — serija iš naujo. 9 mėn. = SEZONAS!' }
+  ];
+  const secHtml = SEC.map(sec => {
+    const milestones = [];
+    for (let i = 1; i <= 200 && milestones.length < 40; i++) { const p = streakPrizeAt(sec.tp, i); if (p > 0) milestones.push(i); }
+    const passed = milestones.filter(i => i <= sec.cur).slice(-2);
+    const ahead = milestones.filter(i => i > sec.cur).slice(0, 3);
+    const node = (k, state) => {
+      const parts = streakPrizeParts(sec.tp, k);
+      const total = parts.reduce((a, b) => a + b, 0);
+      const brk = parts.length > 1 ? ` (${parts.join('+')})` : '';
+      const mut = state === 'passed';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;${mut ? 'opacity:.5;' : ''}">
+        <span style="font-size:12px;flex-shrink:0;">${mut ? '✅' : (state === 'next' ? '🎯' : '◦')}</span>
+        <span style="flex:1;font-size:11.5px;color:${state === 'next' ? 'white' : 'var(--mut)'};font-weight:${state === 'next' ? 800 : 700};">${k} ${sec.unit}</span>
+        <span style="font-size:11px;color:${sec.color};font-weight:800;">+${total}${brk}</span>
+      </div>`;
+    };
+    const danger = _streakDanger(sec.tp, s);
+    return `<div style="background:var(--card);border:.5px solid ${danger ? 'rgba(255,140,0,.5)' : 'var(--bdr)'};border-radius:12px;padding:11px 13px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:15px;">${ico(sec.icon)}</span>
+        <span style="flex:1;font-size:11px;font-weight:800;letter-spacing:1px;color:${sec.color};">${sec.title}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:white;line-height:1;">${sec.cur}</span>
+      </div>
+      ${danger ? `<div style="font-size:10px;color:#FF9E40;font-weight:800;margin-bottom:5px;">⚠️ Serija tuoj nutrūks — ${danger.leftTxt}</div>` : ''}
+      ${passed.map(k => node(k, 'passed')).join('')}${ahead.map((k, i) => node(k, i === 0 ? 'next' : 'future')).join('')}
+      <div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:.5px dashed var(--bdr);font-size:9px;color:var(--mut);">
+        <span>Geriausia: <b style="color:white;">${sec.best}</b></span>
+        <span>Uždirbta iš serijos: <b style="color:${sec.color};">+${sec.earned}</b></span>
+      </div>
+      <div style="font-size:9px;color:var(--mut);margin-top:5px;line-height:1.35;">${sec.rule}</div>
+    </div>`;
+  }).join('');
+  const m = document.createElement('div');
+  m.id = 'streak-road-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99998;align-items:flex-end;justify-content:center;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:14px 18px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">${ico('streak')} SERIJŲ KELIAS</div>
+      <button onclick="document.getElementById('streak-road-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
+    </div>
+    <div style="padding:12px 14px 22px;">
+      ${secHtml}
+      ${(s.total_streak_exp || 0) > 0 ? `<div style="text-align:center;margin-top:4px;font-size:10px;color:var(--mut);">VISO IŠ SERIJŲ: <b style="color:var(--br);font-size:13px;">+${(s.total_streak_exp || 0).toLocaleString('lt-LT')} EXP</b></div>` : ''}
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
 async function loadStreaks() {
   if (!currentKid?.id) return;
   
@@ -17302,67 +17410,67 @@ async function loadStreaks() {
   
   console.log('[loadStreaks] training:', trainingStreak, 'weekly:', weeklyStreak, 'monthly:', monthlyStreak);
   
-  // ⭐ PAGRINDINIO LANGO streak'ai
-  const homeTraining = document.getElementById('v-home-streak-train-num');
-  const homeWeekly = document.getElementById('v-home-streak-week-num');
-  const homeMonthly = document.getElementById('v-home-streak-month-num');
-  if (homeTraining) homeTraining.textContent = trainingStreak;
-  if (homeWeekly) homeWeekly.textContent = weeklyStreak;
-  if (homeMonthly) homeMonthly.textContent = monthlyStreak;
-  
-  // Highlight aktyvius streakus (≥2)
-  const trainCard = document.getElementById('v-home-streak-training');
-  const weekCard = document.getElementById('v-home-streak-weekly');
-  const monthCard = document.getElementById('v-home-streak-monthly');
-  if (trainCard) trainCard.style.background = trainingStreak >= 2 ? 'linear-gradient(135deg, rgba(255,77,0,.2), rgba(255,128,0,.05))' : '';
-  if (weekCard) weekCard.style.background = weeklyStreak >= 2 ? 'linear-gradient(135deg, rgba(255,77,0,.2), rgba(255,128,0,.05))' : '';
-  if (monthCard) monthCard.style.background = monthlyStreak >= 2 ? 'linear-gradient(135deg, rgba(255,77,0,.2), rgba(255,128,0,.05))' : '';
+  // ⭐ v404: PAGRINDINIO LANGO serijų ČIPAI 2.0 — progresas iki kito slenksčio + prizas +
+  // pavojaus būsena; tap → „Serijų kelias" (savininko užsakymas 08-12)
+  window._streakRowCache = s;
+  const chipDefs = [
+    { id: 'v-home-streak-training', numId: 'v-home-streak-train-num', tp: 'training', label: 'Treniruotės', icon: 'streak', n: trainingStreak, color: '#FF4D00' },
+    { id: 'v-home-streak-weekly', numId: 'v-home-streak-week-num', tp: 'weekly', label: 'Savaitės', icon: 'kalendorius', n: weeklyStreak, color: '#4FC3F7' },
+    { id: 'v-home-streak-monthly', numId: 'v-home-streak-month-num', tp: 'monthly', label: 'Mėnesiai', icon: 'zenkliukai', n: monthlyStreak, color: '#BA68C8' }
+  ];
+  chipDefs.forEach(d => {
+    const el = document.getElementById(d.id);
+    if (!el) return;
+    const next = streakNextPrize(d.tp, d.n);
+    const danger = _streakDanger(d.tp, s);
+    let pct = 0;
+    if (next) {
+      const target = d.n + next.in;
+      const prev = _streakPrevMilestone(d.tp, d.n);
+      pct = target > prev ? Math.max(0, Math.min(100, Math.round(((d.n - prev) / (target - prev)) * 100))) : 0;
+    }
+    el.style.cursor = 'pointer';
+    el.onclick = openStreakRoad;
+    el.style.borderColor = danger ? 'rgba(255,140,0,.6)' : '';
+    el.style.background = d.n >= 2 ? 'linear-gradient(135deg, rgba(255,77,0,.14), rgba(255,128,0,.04))' : 'var(--card)';
+    el.innerHTML = `
+      <div style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ico(d.icon)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:baseline;gap:4px;">
+          <span id="${d.numId}" style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${danger ? '#FF9E40' : '#FF7A33'};line-height:1;">${d.n}</span>
+          <span style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.label}</span>
+        </div>
+        <div style="height:3px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden;margin:3px 0 2px;">
+          <div style="height:100%;width:${pct}%;background:${danger ? '#FF9E40' : d.color};border-radius:2px;"></div>
+        </div>
+        <div style="font-size:7px;color:${danger ? '#FF9E40' : 'var(--mut)'};font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${danger ? `⚠️ ${danger.leftTxt}` : (next ? `dar ${next.in} → +${next.prize} EXP` : '')}</div>
+      </div>`;
+  });
   
   // PROFILIO langas (jei yra)
   const container = document.getElementById('v-streaks');
   if (!container) return;
   
-  // 3 streak konfigūracijos
+  // 3 streak konfigūracijos — v404: tikslas/prizas DINAMIŠKI pagal v3 slenksčius
+  // (senos fiksuotos reikšmės 5→+30/4→+100/3→+200 buvo našlaitės funkcijos, niekada neveikė)
+  const _mkCfg = (tp, icon, name, cur, best, earned, color, bg, bdr, rule) => {
+    const next = streakNextPrize(tp, cur);
+    return {
+      icon, name, current: cur, best, bonusesEarned: earned,
+      target: next ? cur + next.in : cur, bonusExp: next ? next.prize : 0,
+      color, bgColor: bg, borderColor: bdr, description: rule
+    };
+  };
   const streakConfigs = [
-    {
-      icon: ''+ico('treniruote')+'',
-      name: 'Treniruotės',
-      current: s.training_current || 0,
-      best: s.training_best || 0,
-      bonusesEarned: s.training_bonuses_earned || 0,
-      target: 5,
-      bonusExp: 30,
-      color: '#FF4D00',
-      bgColor: 'rgba(255,77,0,.08)',
-      borderColor: 'rgba(255,77,0,.3)',
-      description: '5 treniruotės iš eilės'
-    },
-    {
-      icon: ''+ico('greitis')+'',
-      name: 'Savaitinis',
-      current: s.weekly_current || 0,
-      best: s.weekly_best || 0,
-      bonusesEarned: s.weekly_bonuses_earned || 0,
-      target: 4,
-      bonusExp: 100,
-      color: '#FFD700',
-      bgColor: 'rgba(255,215,0,.08)',
-      borderColor: 'rgba(255,215,0,.3)',
-      description: '4 savaitės iš eilės'
-    },
-    {
-      icon: ''+ico('tikslas')+'',
-      name: 'Mėnesinis',
-      current: s.monthly_current || 0,
-      best: s.monthly_best || 0,
-      bonusesEarned: s.monthly_bonuses_earned || 0,
-      target: 3,
-      bonusExp: 200,
-      color: '#A855F7',
-      bgColor: 'rgba(168,85,247,.08)',
-      borderColor: 'rgba(168,85,247,.3)',
-      description: '3 mėnesiai iš eilės'
-    }
+    _mkCfg('training', ''+ico('treniruote')+'', 'Treniruotės', s.training_current || 0, s.training_best || 0,
+      s.training_bonuses_earned || 0, '#FF4D00', 'rgba(255,77,0,.08)', 'rgba(255,77,0,.3)',
+      'Dienos iš eilės (tarpas iki 7 d.) · kas 3 → +10 · kas 12 → +20 · kas 36 → +150'),
+    _mkCfg('weekly', ''+ico('greitis')+'', 'Savaitinis', s.weekly_current || 0, s.weekly_best || 0,
+      s.weekly_bonuses_earned || 0, '#FFD700', 'rgba(255,215,0,.08)', 'rgba(255,215,0,.3)',
+      'Savaitės iš eilės · kas 2 → +20 · kas 4 → +40 · kas 24 → +300'),
+    _mkCfg('monthly', ''+ico('tikslas')+'', 'Mėnesinis', s.monthly_current || 0, s.monthly_best || 0,
+      s.monthly_bonuses_earned || 0, '#A855F7', 'rgba(168,85,247,.08)', 'rgba(168,85,247,.3)',
+      'Mėnesiai iš eilės · kiekvienas nuo 2-o → +30 · ketvirtis → +60 · SEZONAS (9) → +450')
   ];
   
   const streakHtml = streakConfigs.map(sc => {
