@@ -20349,20 +20349,32 @@ async function openGroupView(groupId, silent) {
   if (!body) return;
 
   const gvBtn = 'padding:10px 6px;border-radius:10px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:inherit;';
-  const kidRows = kidsInGroup.map(k => `
-    <div onclick="openKidDetailsModal('${k.id}')" style="background:var(--card);border:.5px solid ${pend[k.id] ? 'rgba(255,77,0,.4)' : 'var(--bdr)'};border-radius:12px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
-      <div style="width:36px;height:36px;border-radius:50%;${k.avatar_url ? `background-image:url('${k.avatar_url}');background-size:cover;background-position:center;` : `background:${color};`}display:flex;align-items:center;justify-content:center;color:white;font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;pointer-events:none;">${k.avatar_url ? '' : (k.first_name?.[0] || '?')}</div>
+  // 🎨 v411: švari kortelė — vardas VIENA eilute, pasyvūs ženkliukai pakeisti signalų chips'ais,
+  // kurie rodomi TIK kai reikia trenerio dėmesio (nėra tikslo / sveikata / media draudimas).
+  // Tvarkingo vaiko kortelė = 2 švarios eilutės. Telefonas — smulkiai meta eilutėje.
+  const _sigChip = (c) => `font-size:8.5px;font-weight:800;letter-spacing:.2px;padding:2px 7px;border-radius:99px;background:${c}1f;color:${c};border:.5px solid ${c}55;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;`;
+  const kidRows = kidsInGroup.map(k => {
+    const gl = goal[k.id] || {};
+    const hasHealth = k.has_health_info || k.health_allergies || k.health_medications || k.health_conditions;
+    const chips = [];
+    if (!gl.w && !gl.m) chips.push(`<span style="${_sigChip('#fbbf24')}" title="Neturi nei savaitinio, nei mėnesinio tikslo">⚡🎯 be tikslų</span>`);
+    else if (!gl.w) chips.push(`<span style="${_sigChip('#fbbf24')}" title="Turi mėnesinį, bet ne savaitinį tikslą">⚡ be savaitinio</span>`);
+    else if (!gl.m) chips.push(`<span style="${_sigChip('#fbbf24')}" title="Turi savaitinį, bet ne mėnesinį tikslą">🎯 be mėnesinio</span>`);
+    if (hasHealth) chips.push(`<span style="${_sigChip('#f87171')}" title="Yra sveikatos pastabų — atsidaryk vaiko kortelę">${ico('sveikata')} sveikata</span>`);
+    if (!k.media_consent) chips.push(`<span style="${_sigChip('#94a3b8')}" title="Tėvai NELEIDŽIA fotografuoti / filmuoti">${ico('nuotrauka')} nefilmuoti</span>`);
+    return `
+    <div onclick="openKidDetailsModal('${k.id}')" style="background:var(--card);border:.5px solid ${pend[k.id] ? 'rgba(255,77,0,.4)' : 'var(--bdr)'};border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+      <div style="width:38px;height:38px;border-radius:50%;${k.avatar_url ? `background-image:url('${k.avatar_url}');background-size:cover;background-position:center;` : `background:${color};`}display:flex;align-items:center;justify-content:center;color:white;font-family:'Bebas Neue',sans-serif;font-size:15px;flex-shrink:0;pointer-events:none;">${k.avatar_url ? '' : (k.first_name?.[0] || '?')}</div>
       <div style="flex:1;min-width:0;pointer-events:none;">
-        <div style="font-size:13px;font-weight:700;">${k.first_name || 'Vaikas'} ${k.last_name || ''}</div>
-        <div style="font-size:11px;color:var(--mut);">${k.kyu || '10 kyu'} · ${(k.total_exp || 0).toLocaleString()} EXP</div>
+        <div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${k.first_name || 'Vaikas'} ${k.last_name || ''}</div>
+        <div style="font-size:10.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${k.kyu || '10 kyu'} · ${(k.total_exp || 0).toLocaleString('lt-LT')} EXP${(k.has_phone || k.kid_phone) ? ` · ${ico('programele')}` : ''}</div>
+      ${chips.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;pointer-events:auto;">${chips.join('')}</div>` : ''}
       </div>
-      ${renderKidIcons(k)}
-      <div style="display:flex;gap:2px;flex-shrink:0;font-size:11px;pointer-events:none;" title="Savaitinis tikslas: ${goal[k.id]?.w ? goal[k.id].w : 'nėra'} · Mėnesinis: ${goal[k.id]?.m ? goal[k.id].m : 'nėra'}"><span style="opacity:${goal[k.id]?.w ? 1 : .15};">⚡</span><span style="opacity:${goal[k.id]?.m ? 1 : .15};">🎯</span></div>
       ${pend[k.id] ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;box-shadow:0 0 8px rgba(255,77,0,.5);" title="Laukia patvirtinimo">${pend[k.id]}</div>` : ''}
-      <button onclick="event.stopPropagation();openAssignExp('${k.id}')" style="background:rgba(255,77,0,.15);color:#FF7A33;border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;" title="Skirti EXP">${ico('prideti')} EXP</button>
+      <button onclick="event.stopPropagation();openAssignExp('${k.id}')" style="background:transparent;color:#FF7A33;border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;" title="Skirti EXP">${ico('prideti')} EXP</button>
       <div style="font-size:14px;color:var(--mut);flex-shrink:0;pointer-events:none;">›</div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   body.innerHTML = `
     <div style="margin:4px 16px 8px;padding:14px;border-radius:16px;background:linear-gradient(135deg, ${color}26, ${color}0a);border:1px solid ${color}55;position:relative;overflow:hidden;">
