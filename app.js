@@ -20318,14 +20318,32 @@ async function openGroupView(groupId, silent) {
 
   // Pending skaičiai visiems grupės vaikams — VIENAS užklausų rinkinys, ne po vieną
   const pend = {};
+  const goal = {}; // 📅 v410: kidId → {w, m} — ar vaikas turi AKTYVŲ savaitinį/mėnesinį tikslą
   if (kidIds.length) {
-    const [a, b, c] = await Promise.all([
+    const [a, b, c, gch] = await Promise.all([
       sb.from('result_submissions').select('kid_id').in('kid_id', kidIds).eq('status', 'pending').limit(500),
       sb.from('challenge_submissions').select('kid_id').in('kid_id', kidIds).eq('status', 'pending').limit(500),
-      sb.from('competition_results').select('kid_id').in('kid_id', kidIds).eq('approval_status', 'pending').eq('status', 'participated').limit(500)
+      sb.from('competition_results').select('kid_id').in('kid_id', kidIds).eq('approval_status', 'pending').eq('status', 'participated').limit(500),
+      sb.from('challenges').select('type, target_audience, target_kid_id, group_id')
+        .eq('club_id', currentProfile?.club_id).in('type', ['weekly', 'monthly'])
+        .eq('is_active', true).gt('expires_at', new Date().toISOString()).limit(500)
     ]);
     [...(a.data || []), ...(b.data || []), ...(c.data || [])].forEach(r => { pend[r.kid_id] = (pend[r.kid_id] || 0) + 1; });
+    (gch.data || []).forEach(ch => {
+      const aud = ch.target_audience || 'group';
+      kidsInGroup.forEach(k => {
+        const hit = aud === 'specific_kid' ? ch.target_kid_id === k.id
+          : aud === 'group' ? ch.group_id === k.group_id
+          : aud === 'boys_in_group' ? (ch.group_id === k.group_id && k.gender === 'male')
+          : aud === 'girls_in_group' ? (ch.group_id === k.group_id && k.gender === 'female')
+          : aud === 'all_club';
+        if (!hit) return;
+        (goal[k.id] = goal[k.id] || { w: 0, m: 0 })[ch.type === 'weekly' ? 'w' : 'm']++;
+      });
+    });
   }
+  const goalW = kidsInGroup.filter(k => goal[k.id]?.w).length;
+  const goalM = kidsInGroup.filter(k => goal[k.id]?.m).length;
 
   const body = document.getElementById('gv-body');
   if (!body) return;
@@ -20339,6 +20357,7 @@ async function openGroupView(groupId, silent) {
         <div style="font-size:11px;color:var(--mut);">${k.kyu || '10 kyu'} · ${(k.total_exp || 0).toLocaleString()} EXP</div>
       </div>
       ${renderKidIcons(k)}
+      <div style="display:flex;gap:2px;flex-shrink:0;font-size:11px;pointer-events:none;" title="Savaitinis tikslas: ${goal[k.id]?.w ? goal[k.id].w : 'nėra'} · Mėnesinis: ${goal[k.id]?.m ? goal[k.id].m : 'nėra'}"><span style="opacity:${goal[k.id]?.w ? 1 : .15};">⚡</span><span style="opacity:${goal[k.id]?.m ? 1 : .15};">🎯</span></div>
       ${pend[k.id] ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;box-shadow:0 0 8px rgba(255,77,0,.5);" title="Laukia patvirtinimo">${pend[k.id]}</div>` : ''}
       <button onclick="event.stopPropagation();openAssignExp('${k.id}')" style="background:rgba(255,77,0,.15);color:#FF7A33;border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;" title="Skirti EXP">${ico('prideti')} EXP</button>
       <div style="font-size:14px;color:var(--mut);flex-shrink:0;pointer-events:none;">›</div>
@@ -20357,6 +20376,7 @@ async function openGroupView(groupId, silent) {
         ${sched ? `<span style="color:${color};font-weight:800;">${ico('kalendorius')} ${sched}</span>` : '<span>'+ico('kalendorius')+' Tvarkaraštis nenustatytas</span>'}
         <span>${ico('grupe')} ${kidsInGroup.length} ${kidsInGroup.length === 1 ? 'narys' : 'nariai'}</span>
         ${totalExp ? `<span>${ico('greitis')} ${totalExp.toLocaleString()} EXP</span>` : ''}
+        ${kidsInGroup.length ? `<span title="Kiek vaikų turi aktyvų savaitinį / mėnesinį tikslą">⚡${goalW}/${kidsInGroup.length} · 🎯${goalM}/${kidsInGroup.length} turi tikslą</span>` : ''}
       </div>
     </div>
 
@@ -28139,13 +28159,54 @@ const CHALLENGE_EXP_LIMITS = {
 };
 
 // Iššūkių galiojimo dienos
-const CHALLENGE_EXPIRY_DAYS = { 
+const CHALLENGE_EXPIRY_DAYS = {
   training: 1,      // treniruotės metu - 1 diena
   weekly: 7,
   monthly: 30,
-  one_time: 365,    // vienkartinis - 1 metai 
+  one_time: 365,    // vienkartinis - 1 metai
   permanent: null   // be termino - NULL expires_at
 };
+
+// 📅 v410: KALENDORINIS galiojimas (savininko sprendimas) — savaitinis baigiasi sekmadienį
+// 23:59, mėnesinis — mėnesio paskutinę dieną 23:59, treniruotės — šiandien 23:59. Taip serijos
+// (date_trunc week/month), tėvų mėnesio ataskaita ir iššūkiai kalba VIENA kalendorine kalba.
+// Minimalaus laiko taisyklė (kad tikslas nebūtų „3 dienos katai išmokti"): jei iki periodo
+// pabaigos liko per mažai — galioja iki KITO periodo pabaigos:
+//   savaitinis liko <3 d. → kitas sekmadienis; mėnesinis liko <10 d. → kito mėn. pabaiga;
+//   treniruotė paskirta po 21:00 → rytojaus 23:59.
+function katCalendarExpiry(type) {
+  const now = new Date();
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 0);
+  if (type === 'training') {
+    if (now.getHours() >= 21) end.setDate(end.getDate() + 1);
+  } else if (type === 'weekly') {
+    const dow = (now.getDay() + 6) % 7;   // 0=Pr … 6=Sk
+    let add = 6 - dow;                    // dienų iki šio sekmadienio
+    if (add < 3) add += 7;                // liko <3 d. → kitas sekmadienis
+    end.setDate(end.getDate() + add);
+  } else if (type === 'monthly') {
+    end.setMonth(end.getMonth() + 1, 0);  // šio mėnesio paskutinė diena
+    if ((end - now) / 86400000 < 10) end.setMonth(end.getMonth() + 2, 0); // → kito mėn. pabaiga
+  } else {
+    const d = CHALLENGE_EXPIRY_DAYS[type];
+    return d == null ? null : new Date(Date.now() + d * 86400 * 1000).toISOString();
+  }
+  return end.toISOString();
+}
+
+// „Galioja iki sekmadienio (08-17) · dar 4 d." — rodoma wizardo suvestinėje
+function katExpiryLabel(type) {
+  const iso = katCalendarExpiry(type);
+  if (!iso) return '';
+  const e = new Date(iso);
+  const days = Math.max(1, Math.ceil((e - new Date()) / 86400000));
+  const mmdd = String(e.getMonth() + 1).padStart(2, '0') + '-' + String(e.getDate()).padStart(2, '0');
+  const what = type === 'training' ? (days > 1 ? 'rytojaus vakaro' : 'šios dienos pabaigos')
+    : type === 'weekly' ? `sekmadienio (${mmdd})`
+    : `mėnesio pabaigos (${mmdd})`;
+  return `Galioja iki ${what} · dar ${days} d.`;
+}
 
 // Turinio tipų konfigūracija
 const CHALLENGE_CONTENT_CONFIG = {
@@ -28988,6 +29049,7 @@ function katRenderDiff() {
     <div style="background:var(--card);border:.5px solid ${m.color}55;border-left:3px solid ${m.color};border-radius:10px;padding:10px 12px;margin-top:10px;">
       <div style="font-size:11px;font-weight:800;color:${m.color};margin-bottom:6px;">${sumLine}</div>
       ${partRows}
+      <div style="font-size:9.5px;color:var(--mut);margin-top:6px;">📅 ${katExpiryLabel(s.type)}</div>
     </div>
     <button id="kw-assign-btn" class="btn btng" style="margin:12px 0 0;width:100%;" onclick="katAssign()">SKIRTI</button>
     <div style="height:12px;"></div>`;
@@ -29077,8 +29139,7 @@ async function katAssign() {
     const plan = katComputePlan();
     if (!plan.rows.length) { showToast(ico('klaida')+' Nėra pratimų', 'error'); return; }
 
-    const expiryDays = CHALLENGE_EXPIRY_DAYS[s.type];
-    const expiresAt = new Date(Date.now() + expiryDays * 86400 * 1000).toISOString();
+    const expiresAt = katCalendarExpiry(s.type); // 📅 v410: kalendorinis (sekmadienis / mėn. pabaiga)
     const setKey = s.type === 'training' ? katNewSetKey() : null;
     const isKid = s.aud === 'specific_kid';
     const groupId = isKid ? null : s.groupId;
@@ -29690,11 +29751,8 @@ async function submitNewChallenge() {
     if (!groupId) { showToast(ico('klaida')+' Pasirink grupę', 'error'); return; }
   }
   
-  // Apskaičiuoti expires_at
-  const expiryDays = CHALLENGE_EXPIRY_DAYS[type];
-  const expiresAt = expiryDays === null
-    ? null
-    : new Date(Date.now() + expiryDays * 86400 * 1000).toISOString();
+  // Apskaičiuoti expires_at — 📅 v410: kalendorinis (sekmadienis / mėn. pabaiga; fallback seniems tipams)
+  const expiresAt = katCalendarExpiry(type);
 
   const btn = document.getElementById('cc-submit');
   btn.disabled = true;
