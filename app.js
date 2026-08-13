@@ -3320,7 +3320,9 @@ async function loadParentKidFeed() {
     let _attStats = null, attRows = [];
     if (typeof flagOn !== 'function' || flagOn('attendance_enabled')) {
       try { const aSt = await _attStatsForKid(k); if (aSt && (aSt.weekScheduled || aSt.monthScheduled)) _attStats = aSt; } catch (_) {}
-      try { const { data: aR } = await sb.from('attendance').select('session_date, present').eq('kid_id', k.id).gte('session_date', cut.slice(0, 10)); attRows = aR || []; } catch (_) {}
+      // ⚠️ v414: mėnesio riba LOKALIA data (cut.slice būdavo UTC → įtraukdavo liepos 31 d.)
+      const monthStartYmd = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+      try { const { data: aR } = await sb.from('attendance').select('session_date, present').eq('kid_id', k.id).gte('session_date', monthStartYmd); attRows = aR || []; } catch (_) {}
     }
     if (items.length === 0 && !attRows.length) { list.innerHTML = '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:24px;text-align:center;"><div style="font-size:34px;margin-bottom:8px;">'+ico('pastas')+'</div><div style="font-size:12px;color:var(--mut);">Dar nėra pasiekimų šį mėnesį</div><div style="font-size:10px;color:var(--mut);margin-top:5px;line-height:1.5;">Čia atsiras vaiko medaliai, įveikti iššūkiai ir nauji rekordai</div></div>'; return; }
     // 📲 Mėnesio kortelei (dalinimasis) — išsaugom šio mėnesio statistiką
@@ -3386,7 +3388,7 @@ async function loadParentKidFeed() {
     const WD = ['SEKMADIENIS', 'PIRMADIENIS', 'ANTRADIENIS', 'TREČIADIENIS', 'KETVIRTADIENIS', 'PENKTADIENIS', 'ŠEŠTADIENIS'];
     const todayKey = dk(new Date()), yestKey = dk(new Date(Date.now() - 86400000));
     _pfDays = { group: _attStats?.group || null, days };
-    const rowsHtml = Object.keys(days).sort().reverse().map(key => {
+    const dayRowsArr = Object.keys(days).sort().reverse().map(key => {
       const d = days[key], its = d.items;
       const trainN = its.filter(i => i.kind === 'challenge' && i.ctype === 'training').length;
       const goalN = its.filter(i => i.kind === 'challenge' && i.ctype !== 'training').length;
@@ -3414,7 +3416,13 @@ async function loadParentKidFeed() {
         ${dexp ? `<div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--grn);flex-shrink:0;pointer-events:none;">+${dexp}</div>` : ''}
         <div style="font-size:13px;color:var(--mut);flex-shrink:0;pointer-events:none;">›</div>
       </div>`;
-    }).join('');
+    });
+
+    // v414 (savininko pastaba): rodom 5 paskutines dienas, likusios — po „Ankstesnės dienos"
+    const restDays = dayRowsArr.slice(5);
+    const rowsHtml = dayRowsArr.slice(0, 5).join('')
+      + (restDays.length ? `<div id="pf-more-days" style="display:none;">${restDays.join('')}</div>
+        <button id="pf-more-btn" onclick="document.getElementById('pf-more-days').style.display='block';this.remove();" style="width:100%;padding:11px;margin-top:2px;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;border-radius:10px;cursor:pointer;font-family:inherit;">Ankstesnės dienos (${restDays.length}) →</button>` : '');
 
     list.innerHTML = strip + rowsHtml;
   } catch (e) { console.warn('parent feed', e); list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant feed</div>'; }
