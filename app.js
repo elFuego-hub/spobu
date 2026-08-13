@@ -20362,12 +20362,14 @@ async function openGroupView(groupId, silent) {
     else if (!gl.m) chips.push(`<span style="${_sigChip('#fbbf24')}" title="Turi savaitinį, bet ne mėnesinį tikslą">🎯 be mėnesinio</span>`);
     if (hasHealth) chips.push(`<span style="${_sigChip('#f87171')}" title="Yra sveikatos pastabų — atsidaryk vaiko kortelę">${ico('sveikata')} sveikata</span>`);
     if (!k.media_consent) chips.push(`<span style="${_sigChip('#94a3b8')}" title="Tėvai NELEIDŽIA fotografuoti / filmuoti">${ico('nuotrauka')} nefilmuoti</span>`);
+    // v412: be telefono = vaikas appso nemato → treniruotes ir iššūkius už jį žymi TRENERIS
+    if (!k.has_phone && !k.kid_phone) chips.push(`<span style="${_sigChip('#60a5fa')}" title="Vaikas neturi telefono — treniruotes ir iššūkius už jį žymi treneris">${ico('programele')} žymi treneris</span>`);
     return `
     <div onclick="openKidDetailsModal('${k.id}')" style="background:var(--card);border:.5px solid ${pend[k.id] ? 'rgba(255,77,0,.4)' : 'var(--bdr)'};border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
       <div style="width:38px;height:38px;border-radius:50%;${k.avatar_url ? `background-image:url('${k.avatar_url}');background-size:cover;background-position:center;` : `background:${color};`}display:flex;align-items:center;justify-content:center;color:white;font-family:'Bebas Neue',sans-serif;font-size:15px;flex-shrink:0;pointer-events:none;">${k.avatar_url ? '' : (k.first_name?.[0] || '?')}</div>
       <div style="flex:1;min-width:0;pointer-events:none;">
         <div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${k.first_name || 'Vaikas'} ${k.last_name || ''}</div>
-        <div style="font-size:10.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${k.kyu || '10 kyu'} · ${(k.total_exp || 0).toLocaleString('lt-LT')} EXP${(k.has_phone || k.kid_phone) ? ` · ${ico('programele')}` : ''}</div>
+        <div style="font-size:10.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${k.kyu || '10 kyu'} · ${(k.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
       ${chips.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;pointer-events:auto;">${chips.join('')}</div>` : ''}
       </div>
       ${pend[k.id] ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;box-shadow:0 0 8px rgba(255,77,0,.5);" title="Laukia patvirtinimo">${pend[k.id]}</div>` : ''}
