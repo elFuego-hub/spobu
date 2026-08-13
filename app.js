@@ -12250,7 +12250,35 @@ async function openSubmitChallenge(challengeId) {
     : `${ico('info')} Rezultatas bus išsiųstas treneriui patvirtinimui. Po patvirtinimo gausi EXP.`;
   if (sbtn) sbtn.textContent = isLearn ? 'PASIRUOŠIAU' : 'SIŲSTI';
 
+  // 📱 v406: ĮRODYMO sekcija — distancijoms nuoroda (neprivaloma), Namų planui PRIVALOMA
+  // (nuoroda ARBA aprašas). Saugoma value lauke, skaičius lieka numeric_value.
+  const proofMode = _chNeedsProof(challenge);
+  let pw = document.getElementById('vsc-proof-wrap');
+  if (!pw && it) { pw = document.createElement('div'); pw.id = 'vsc-proof-wrap'; it.parentElement.insertBefore(pw, it); }
+  if (pw) {
+    if (proofMode && !isLearn) {
+      pw.style.display = 'block';
+      pw.innerHTML = `
+        <div style="background:rgba(79,195,247,.06);border:.5px solid rgba(79,195,247,.3);border-radius:10px;padding:9px 11px;margin:8px 0;">
+          <div style="font-size:10px;font-weight:800;color:#4FC3F7;letter-spacing:.5px;margin-bottom:5px;">📱 ĮRODYMAS${proofMode === 'required' ? '' : ' (neprivaloma)'}</div>
+          <input class="inp" id="vsc-proof-link" type="url" placeholder="Strava / Garmin / Polar nuoroda" style="width:100%;margin-bottom:6px;font-size:12px;">
+          ${proofMode === 'required' ? `<textarea class="inp" id="vsc-proof-note" rows="2" maxlength="160" placeholder="ARBA aprašyk, ką darei (pvz. 3×20 pritūpimų, 15 min virvutė)" style="width:100%;font-size:12px;font-family:inherit;"></textarea>
+          <div style="font-size:9px;color:var(--mut);margin-top:4px;">Be įrodymo treneris gali grąžinti pataisyti</div>` : ''}
+        </div>`;
+      if (proofMode === 'required' && challenge.content_type === 'attendance') {
+        const r = document.getElementById('vsc-result'); if (r && !r.value) r.value = '1'; // +1 treniruotė
+      }
+    } else { pw.style.display = 'none'; pw.innerHTML = ''; }
+  }
+
   document.getElementById('vsc-modal').style.display = 'flex';
+}
+
+// 📱 v406: ar iššūkiui reikia įrodymo? 'required' — Namų plano seed'ai; 'optional' — distancijos
+function _chNeedsProof(ch) {
+  if (/\[kat:k:(s6|m8)_namu/.test(ch?.instructions || '')) return 'required';
+  if (ch?.content_type === 'distance') return 'optional';
+  return null;
 }
 
 function closeSubmitChallenge() {
@@ -12289,8 +12317,23 @@ async function submitChallengeResult() {
         return;
       }
     }
+
+    // 📱 v406: įrodymas — Namų planui privalomas (nuoroda ARBA aprašas), distancijai neprivalomas
+    const proofMode = _chNeedsProof(currentChallengeForSubmission);
+    if (proofMode) {
+      const link = (document.getElementById('vsc-proof-link')?.value || '').trim();
+      const note = (document.getElementById('vsc-proof-note')?.value || '').trim();
+      if (proofMode === 'required' && !link && !note) {
+        showToast(ico('klaida')+' Pridėk įrodymą: Strava nuorodą arba aprašyk, ką darei', 'error', 4500);
+        return;
+      }
+      const parts = [];
+      if (link) parts.push(link);
+      if (note) parts.push(note);
+      if (parts.length) resultStr = parts.join(' · ');
+    }
   }
-  
+
   // Etapas 5: vaikas pasirenka trenerį (kaip karjeros). 1 grupės treneris → auto; >1 → popup.
   let _chTrs = [];
   try { _chTrs = await getMyTrainers(); } catch(_){}
@@ -28175,6 +28218,16 @@ function katSplitPot(pot, k) {
   return Array.from({ length: k }, () => Math.max(1, base + (rem-- > 0 ? 1 : 0)));
 }
 
+// 🧮 v407 (B banga): taikinio išvedimas iš VIENO bazinio skaičiaus (vaikinai 10–13 m., Vidutinis).
+// Koeficientai: merginos ×0.75; amžius 6–9 ×0.6 / 14+ ×1.4; sunkumas L ×0.6 / S ×1.4.
+const KAT_GENDER_MULT = { male: 1, female: 0.75 };
+const KAT_AGE_MULT = [0.6, 1, 1.4]; // pagal KAT_BANDS indeksą
+function katDeriveTarget(base, bandIdx, gender, diff) {
+  if (!(base > 0)) return 1;
+  const v = base * (KAT_AGE_MULT[bandIdx] ?? 1) * (KAT_GENDER_MULT[gender] ?? 1) * (KAT_TARGET_MULT[diff] ?? 1);
+  return katRoundTarget(v);
+}
+
 // Savaitinių taikinio apvalinimas: ≥200→50, ≥50→10, ≥20→5, kitaip sveikas; min 1
 function katRoundTarget(v) {
   let r;
@@ -28258,7 +28311,9 @@ const KAT_WEEKLY_SEED = [
   { key: 's2_begimas', name: 'Bėgimas', cat: 'ištvermė', unit: 'km', base: [3, 6, 9], check: 'strava', content: 'distance', icon: '🏃', desc: 'Bėgimas per savaitę — parodyk treneriui Strava įrašą' },
   { key: 's3_dviratis', name: 'Dviratis', cat: 'ištvermė', unit: 'km', base: [9, 20, 35], check: 'strava', content: 'distance', icon: '🚴', desc: 'Važiavimas dviračiu per savaitę — parodyk treneriui Strava įrašą' },
   { key: 's4_ejimas', name: 'Ėjimas', cat: 'ištvermė', unit: 'km', base: [10, 15, 20], check: 'strava', content: 'distance', icon: '🚶', desc: 'Ėjimas per savaitę — parodyk treneriui Strava įrašą' },
-  { key: 's5_jega', name: 'Papildoma jėgos/ištvermės treniruotė', cat: 'jėga', unit: 'kartai', base: [1, 1, 2], check: 'coach', content: 'achievement', icon: '💪', desc: 'Papildoma treniruotė šalia įprastų' }
+  { key: 's5_jega', name: 'Papildoma jėgos/ištvermės treniruotė', cat: 'jėga', unit: 'kartai', base: [1, 1, 2], check: 'coach', content: 'achievement', icon: '💪', desc: 'Papildoma treniruotė šalia įprastų' },
+  // 🏠 v406: namų sportas — įrodymas privalomas (Strava nuoroda ARBA aprašas), žr. _chNeedsProof
+  { key: 's6_namu_planas', name: 'Namų plano treniruotė', cat: 'drausmė', unit: 'treniruotės', fx: true, base: [1, 2, 2], check: 'coach', content: 'attendance', icon: '🏠', desc: 'Atlik treniruotę namie pagal savo Namų planą ar trenerio nurodymus — pateik su Strava nuoroda arba aprašyk, ką darei' }
 ];
 // Mėnesiniai (diržo kelio logika): fx — be sunkumo (mult=1); learn — taikinys 1, sunkumas keičia tik EXP
 const KAT_MONTHLY_SEED = [
@@ -28268,7 +28323,9 @@ const KAT_MONTHLY_SEED = [
   { key: 'm4_zodynas', name: 'Naujo diržo JAPONIŠKAS ŽODYNAS', cat: 'technika', learn: true, check: 'coach', content: 'achievement', icon: '🗣️', desc: 'Išmok diržo programos žodyną — treneris apklaus žodžiu' },
   { key: 'm5_lankstumas', name: 'Lankstumo progresas', cat: 'lankstumas', unit: 'cm', byDiff: [2, 3, 4], check: 'coach', content: 'achievement', icon: '🧘', desc: 'Pagerink lankstumą (siekimas/špagatas) — matuojama mėnesio pradžioje ir pabaigoje' },
   { key: 'm6_varzybos', name: 'Dalyvavimas varžybose', cat: 'kova', fx: true, target: 1, check: 'coach', content: 'competition', icon: '🏆', desc: 'Sudalyvauk varžybose šį mėnesį' },
-  { key: 'm7_egzaminas', name: 'Dalyvavimas diržo egzamine', cat: 'technika', fx: true, target: 1, check: 'coach', content: 'achievement', icon: '🎓', desc: 'Sudalyvauk diržo egzamine šį mėnesį' }
+  { key: 'm7_egzaminas', name: 'Dalyvavimas diržo egzamine', cat: 'technika', fx: true, target: 1, check: 'coach', content: 'achievement', icon: '🎓', desc: 'Sudalyvauk diržo egzamine šį mėnesį' },
+  // 🏠 v406: namų sportas per mėnesį — įrodymas privalomas kiekvienam pateikimui
+  { key: 'm8_namu_planas', name: 'Namų plano treniruotės', cat: 'drausmė', unit: 'treniruotės', fx: true, base: [4, 6, 8], check: 'coach', content: 'attendance', icon: '🏠', desc: 'Atlik namų treniruotes pagal savo Namų planą ar trenerio nurodymus — kiekvieną pateik su Strava nuoroda arba aprašyk, ką darei' }
 ];
 
 // Seed pratimo taikinys pagal juostą + sunkumą (§2.3)
@@ -28442,7 +28499,8 @@ async function katWizardInit(prefill) {
   katState = {
     aud: null, groupId: null, kidId: null, kids: [], bandIdx: 1, bandAuto: true,
     type: null, selected: [], diff: 'medium', nPrev: 0, nPrevLoaded: false,
-    recos: null, recoInfo: null, catFilter: null, busy: false
+    recos: null, recoInfo: null, catFilter: null, busy: false,
+    itemOpts: {} // ✏️ v406: per-pratimo override'ai {token: {desc, target, unit, diff, targetBoys, targetGirls}}
   };
   // Auditorijos kešas valomas kas atidarymą (grupės sudėtis galėjo pasikeisti)
   Object.keys(_katAudKidsCache).forEach(k => delete _katAudKidsCache[k]);
@@ -28458,15 +28516,25 @@ async function katWizardInit(prefill) {
 }
 
 // Kelias pratimų sąrašas + kategorijos (kešas sesijai)
+let _katTplCache = null; // v407: DB šablonai (null = lentelė nepasiekiama → localStorage fallback)
 async function katEnsureExercises() {
   if (_katExCache) return _katExCache;
-  const [exR, catR] = await Promise.all([
-    sb.from('exercises').select('id, category_id, name, unit, sort_order, strava').eq('is_active', true).order('sort_order'),
+  const [exR, catR, tplR] = await Promise.all([
+    sb.from('exercises').select('id, category_id, name, unit, sort_order, strava, training_ok').eq('is_active', true).order('sort_order'),
     (typeof _trCareerCatsCache !== 'undefined' && _trCareerCatsCache && _trCareerCatsCache.length)
       ? Promise.resolve({ data: _trCareerCatsCache })
-      : sb.from('career_categories').select('id, name, icon, sort_order').order('sort_order').limit(7)
+      : sb.from('career_categories').select('id, name, icon, sort_order').order('sort_order').limit(7),
+    // v407: klubo šablonai — jei lentelės dar nėra (SQL nepaleistas) → tyliai fallback
+    sb.from('trainer_exercise_templates').select('id, name, description, type, content_type, unit, base_target, check_kind, category_id, cat_slug, icon, trainer_id').eq('club_id', currentProfile?.club_id).eq('is_active', true).limit(200)
   ]);
-  _katExCache = { exercises: exR.data || [], cats: catR.data || [] };
+  // training_ok stulpelio gali nebūti (SQL nepaleistas) — tada exR klaida; retry be jo
+  let exercises = exR.data;
+  if (exR.error) {
+    const { data: exOld } = await sb.from('exercises').select('id, category_id, name, unit, sort_order, strava').eq('is_active', true).order('sort_order');
+    exercises = exOld || [];
+  }
+  _katExCache = { exercises: exercises || [], cats: catR.data || [] };
+  _katTplCache = tplR.error ? null : (tplR.data || []);
   if (typeof _trCareerCatsCache !== 'undefined' && !_trCareerCatsCache) _trCareerCatsCache = catR.data || [];
   return _katExCache;
 }
@@ -28532,6 +28600,7 @@ async function katSetType(tp) {
   if (!katState.kids.length) { showToast(ico('ispejimas')+' Pirma pasirink grupę arba vaiką', 'error'); return; }
   katState.type = tp;
   katState.selected = [];
+  katState.itemOpts = {}; // v406: override'ai galioja vienam skyrimui
   katState.catFilter = null;
   katState.nPrevLoaded = false;
   katRenderAll();
@@ -28557,57 +28626,85 @@ function katSelectLimit() {
   return Math.max(0, KAT_MAX_ACTIVE - (katState.nPrevLoaded ? katState.nPrev : 0));
 }
 
-// ── Katalogo elementai pagal tipą (seed + Kelias + savi) ──
+// ── Katalogo elementai pagal tipą (seed + Kelias + DB šablonai + ls savi) ──
 function katItemsForType() {
-  const own = katOwnExercises().filter(o => o.type === katState.type)
-    .map(o => ({ token: 'own:' + o.id, name: o.name, icon: '⭐', unit: 'kartai', content: 'achievement', check: o.check || 'coach', own: true, catId: o.catId || null, catSlug: o.catSlug || null, desc: 'Trenerio pratimas — parodyk treneriui treniruotėje' }));
+  // v407: DB šablonai (klubo — mato visi treneriai) + localStorage fallback (kol SQL nepaleistas)
+  const tpl = (_katTplCache || []).filter(t => t.type === katState.type).map(t => ({
+    token: 'tpl:' + t.id, name: t.name, icon: t.icon || '⭐', unit: t.unit || 'kartai',
+    content: t.content_type || 'achievement', check: t.check_kind || 'coach', own: true,
+    catId: t.category_id || null, catSlug: t.cat_slug || null,
+    baseT: t.base_target > 0 ? +t.base_target : null,
+    desc: t.description || 'Trenerio pratimas — parodyk treneriui treniruotėje'
+  }));
+  const tplNames = new Set(tpl.map(t => _katNorm(t.name)));
+  const own = katOwnExercises().filter(o => o.type === katState.type && !tplNames.has(_katNorm(o.name)))
+    .map(o => ({ token: 'own:' + o.id, name: o.name, icon: '⭐', unit: o.unit || 'kartai', content: 'achievement', check: o.check || 'coach', own: true, catId: o.catId || null, catSlug: o.catSlug || null, baseT: o.baseT > 0 ? +o.baseT : null, desc: o.desc || 'Trenerio pratimas — parodyk treneriui treniruotėje' }));
+  const mine = [...tpl, ...own];
   if (katState.type === 'training') {
-    // 🚫 v401: karjeros meta-metrikos (Lankomumas, Varžybos per metus…) netinka „šiandienos salei"
-    const ex = (_katExCache?.exercises || []).filter(e => !KAT_TRAINING_EXCLUDE.has(_katNorm(e.name))).map(e => ({
+    // 🚫 meta-metrikos: DB training_ok (Fazė 2) su kliento KAT_TRAINING_EXCLUDE fallback'u
+    const ex = (_katExCache?.exercises || []).filter(e => (e.training_ok !== false) && !KAT_TRAINING_EXCLUDE.has(_katNorm(e.name))).map(e => ({
       token: 'ex:' + e.id, name: e.name, icon: null, exId: e.id, catId: e.category_id,
       unit: 'atlikta', content: 'achievement', check: e.strava ? 'strava' : 'coach',
       desc: 'Rinkinio pratimas — kiekius pasakys treneris salėje'
     }));
-    return [...ex, ...own];
+    return [...ex, ...mine];
   }
   const seed = katState.type === 'weekly' ? KAT_WEEKLY_SEED : KAT_MONTHLY_SEED;
-  return [...seed.map(s => ({ token: 'k:' + s.key, ...s })), ...own];
+  return [...seed.map(s => ({ token: 'k:' + s.key, ...s })), ...mine];
 }
 function katFindItem(token) { return katItemsForType().find(i => i.token === token) || null; }
 
 // ── Plano skaičiavimas (suvestinei ir SKIRTI) ──
+// ✏️ v406: sunkumas PER PRATIMĄ (itemOpts.diff, default — globalus) + override'ai
+// (desc/target/unit/targetBoys/targetGirls). Katilas: BAZINIS (be sunkumo) dalinamas
+// PO LYGIAI (v400 sąžiningumas), tada kiekviena dalis × TO pratimo koeficientą, min 1.
 function katComputePlan() {
   const items = katState.selected.map(katFindItem).filter(Boolean);
   const k = items.length;
   if (!k || !katState.type) return { rows: [], totalExp: 0, pot: 0 };
   const nPrev = katState.nPrevLoaded ? katState.nPrev : 0;
-  const diff = katState.diff;
-  if (katState.type === 'training') {
-    const potS = katTotal('training', Math.min(nPrev + k, KAT_MAX_ACTIVE)) - katTotal('training', nPrev);
-    const pot = Math.max(1, Math.round(potS * (KAT_DIFF_MULT[diff] ?? 1)));
-    const parts = katSplitPot(pot, k);
+  const io = katState.itemOpts || {};
+  const idiff = (it) => (io[it.token]?.diff) || katState.diff;
+  // 🧮 v407: šablonams su baziniu skaičiumi — taikiniai išvedami pagal juostą/lytį/sunkumą;
+  // mišrioje grupėje ♂/♀ automatiškai (katAssign tada kuria dvi bangas)
+  const mixed = katState.aud !== 'specific_kid'
+    && katState.kids.some(kk => kk.gender === 'male') && katState.kids.some(kk => kk.gender === 'female');
+  const audGender = katState.aud === 'specific_kid' ? (katState.kids[0]?.gender || 'male') : 'male';
+  const mkRow = (it, basePart) => {
+    const o = io[it.token] || {};
+    const d = idiff(it);
+    const exp = it.fx ? Math.max(1, basePart) : Math.max(1, Math.round(basePart * (KAT_DIFF_MULT[d] ?? 1)));
+    let target;
+    if (o.target != null) target = o.target;
+    else if (it.baseT > 0) target = katDeriveTarget(it.baseT, katState.bandIdx, audGender, d);
+    else target = (katState.type === 'training' ? 1 : katSeedTarget(it, katState.bandIdx, d));
+    let tb = o.targetBoys, tg = o.targetGirls;
+    if (mixed && it.baseT > 0 && tb == null && tg == null) {
+      tb = katDeriveTarget(it.baseT, katState.bandIdx, 'male', d);
+      tg = katDeriveTarget(it.baseT, katState.bandIdx, 'female', d);
+    }
     return {
-      rows: items.map((it, i) => ({ ...it, target: 1, exp: parts[i] })),
-      totalExp: parts.reduce((a, b) => a + b, 0), pot
+      ...it, diff: d, target, exp,
+      unit: o.unit ?? it.unit, desc: o.desc ?? it.desc,
+      targetBoys: tb, targetGirls: tg
     };
+  };
+  if (katState.type === 'training') {
+    const potBase = katTotal('training', Math.min(nPrev + k, KAT_MAX_ACTIVE)) - katTotal('training', nPrev);
+    const baseParts = katSplitPot(potBase, k);
+    const rows = items.map((it, i) => mkRow(it, baseParts[i]));
+    return { rows, totalExp: rows.reduce((a, r) => a + r.exp, 0), pot: rows.reduce((a, r) => a + r.exp, 0) };
   }
-  // ⚖️ v400: savaitinių/mėnesinių KATILAS skaičiuojamas kaip anksčiau (marginal suma —
-  // kreivė ir fx niuansas išlieka kaine), bet tarp eilučių dalinamas PO LYGIAI (kaip rinkinio).
-  // Anksčiau pirmoji pažymėta eilutė gaudavo T(1) (pvz. +20), likusios tik prieaugius
-  // (+4/+4/+3/+2) — paskirstymas priklausė nuo žymėjimo TVARKOS, vaikui atrodė kaip klaida.
-  const margs = items.map((it, i) => {
+  // ⚖️ v400 dalybos PO LYGIAI išlieka — tik dabar bazinis potas be sunkumo, o koeficientas
+  // taikomas kiekvienai daliai pagal eilutės sunkumą (fx — be koeficiento, kaip visada)
+  const margsBase = items.map((it, i) => {
     const n = Math.min(nPrev + i + 1, KAT_MAX_ACTIVE);
-    return it.fx
-      ? Math.max(1, katTotal(katState.type, n) - katTotal(katState.type, n - 1))
-      : katMarginalExp(katState.type, n, diff);
+    return Math.max(1, katTotal(katState.type, n) - katTotal(katState.type, n - 1));
   });
-  const pot = margs.reduce((a, b) => a + b, 0);
-  const parts = k > 1 ? katSplitPot(pot, k) : [pot];
-  const rows = items.map((it, i) => {
-    const target = katSeedTarget(it, katState.bandIdx, diff);
-    return { ...it, target, exp: parts[i] };
-  });
-  return { rows, totalExp: parts.reduce((a, b) => a + b, 0), pot };
+  const potBase = margsBase.reduce((a, b) => a + b, 0);
+  const baseParts = k > 1 ? katSplitPot(potBase, k) : [potBase];
+  const rows = items.map((it, i) => mkRow(it, baseParts[i]));
+  return { rows, totalExp: rows.reduce((a, r) => a + r.exp, 0), pot: potBase };
 }
 
 // ── RENDERIAI ──
@@ -28763,12 +28860,21 @@ function katRenderDiff() {
     ? `${s.kids[0]?.first_name || 'Vaikas'} ${s.kids[0]?.last_name || ''}`.trim()
     : ((_katGroupsCache || []).find(g => String(g.id) === String(s.groupId))?.name || 'Grupė');
   const m = KAT_TYPE_META[s.type];
-  // Suvestinės eilutės
-  const partRows = plan.rows.map(r => `
-    <div style="display:flex;justify-content:space-between;gap:8px;font-size:10.5px;padding:3px 0;border-bottom:.5px dashed rgba(255,255,255,.06);">
-      <span style="color:white;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.icon ? r.icon + ' ' : ''}${escapeHtml(r.name)}</span>
-      <span style="color:var(--mut);flex-shrink:0;">${s.type === 'training' ? 'atlikta/ne' : (r.learn ? 'išmokti' : `${r.target} ${r.unit || ''}`.trim())} · <b style="color:${m.color};">+${r.exp}</b></span>
-    </div>`).join('');
+  // Suvestinės eilutės — ✏️ v406: per-pratimo L/V/S chip'ai + redagavimo pieštukas
+  const partRows = plan.rows.map(r => {
+    const dchips = (r.fx || r.learn) ? '' : ['easy', 'medium', 'hard'].map(d =>
+      `<span onclick="katSetItemDiff('${r.token}','${d}')" style="cursor:pointer;font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:99px;border:.5px solid ${r.diff === d ? 'var(--br)' : 'var(--bdr)'};background:${r.diff === d ? 'rgba(255,77,0,.18)' : 'transparent'};color:${r.diff === d ? '#FF7A33' : 'var(--mut)'};flex-shrink:0;">${d === 'easy' ? 'L' : d === 'medium' ? 'V' : 'S'}</span>`).join('');
+    const tgtTxt = s.type === 'training'
+      ? (r.target > 1 ? `${r.target} ${r.unit || ''}`.trim() : 'atlikta/ne')
+      : (r.learn ? 'išmokti' : `${r.targetBoys && r.targetGirls && r.targetBoys !== r.targetGirls ? `♂${r.targetBoys}/♀${r.targetGirls}` : r.target} ${r.unit || ''}`.trim());
+    return `
+    <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;padding:3px 0;border-bottom:.5px dashed rgba(255,255,255,.06);">
+      <span style="flex:1;color:white;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.icon ? r.icon + ' ' : ''}${escapeHtml(r.name)}</span>
+      ${dchips}
+      <span style="color:var(--mut);flex-shrink:0;">${tgtTxt} · <b style="color:${m.color};">+${r.exp}</b></span>
+      <span onclick="katEditItem('${r.token}')" title="Redaguoti aprašymą/taikinį" style="cursor:pointer;flex-shrink:0;font-size:12px;padding:1px 3px;">✏️</span>
+    </div>`;
+  }).join('');
   const sumLine = s.type === 'training'
     ? `${escapeHtml(audName)} · Treniruotei · ${plan.rows.length} prat. · ${KAT_DIFF_LABEL[s.diff]} · katilas ${plan.pot} EXP`
     : `${escapeHtml(audName)} · ${m.label} · ${plan.rows.length} išš. · +${plan.totalExp} EXP (${plan.rows.map(r => r.exp).join('+')})`;
@@ -28784,6 +28890,67 @@ function katRenderDiff() {
     </div>
     <button id="kw-assign-btn" class="btn btng" style="margin:12px 0 0;width:100%;" onclick="katAssign()">SKIRTI</button>
     <div style="height:12px;"></div>`;
+}
+
+// ✏️ v406: per-pratimo sunkumo perjungimas ir redagavimo lapelis
+function katSetItemDiff(token, d) {
+  (katState.itemOpts[token] = katState.itemOpts[token] || {}).diff = d;
+  katRenderAll();
+}
+function katEditItem(token) {
+  const it = katFindItem(token);
+  if (!it) return;
+  const o = katState.itemOpts[token] || {};
+  const plan = katComputePlan();
+  const row = plan.rows.find(r => r.token === token) || {};
+  // Mišri grupė + ne-learn → du taikinio laukai (vaikinams/merginoms) — №4 savininko pastaba
+  const mixed = katState.aud !== 'specific_kid' && !it.learn
+    && katState.kids.some(k => k.gender === 'male') && katState.kids.some(k => k.gender === 'female');
+  const old = document.getElementById('kat-item-edit'); if (old) old.remove();
+  const mdl = document.createElement('div');
+  mdl.id = 'kat-item-edit';
+  mdl.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100006;align-items:flex-end;justify-content:center;';
+  mdl.onclick = (e) => { if (e.target === mdl) mdl.remove(); };
+  mdl.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;padding:16px 18px 22px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:10px;">✏️ ${escapeHtml(it.name)}</div>
+    <label style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">APRAŠYMAS VAIKUI</label>
+    <textarea class="inp" id="kie-desc" rows="2" maxlength="200" placeholder="pvz. 3 serijos po 10, poilsis 30 s" style="width:100%;margin:4px 0 10px;font-family:inherit;">${escapeHtml(o.desc ?? it.desc ?? '')}</textarea>
+    ${it.learn ? '' : (mixed ? `
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;"><label style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">TAIKINYS VAIKINAMS</label>
+      <input class="inp" id="kie-target-b" type="number" min="1" step="any" value="${o.targetBoys ?? row.targetBoys ?? o.target ?? row.target ?? 1}" style="width:100%;margin:4px 0 10px;"></div>
+      <div style="flex:1;"><label style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">TAIKINYS MERGINOMS <span style="font-weight:700;">(siūloma ×0.75)</span></label>
+      <input class="inp" id="kie-target-g" type="number" min="1" step="any" value="${o.targetGirls ?? row.targetGirls ?? katRoundTarget((o.target ?? row.target ?? 1) * 0.75)}" style="width:100%;margin:4px 0 10px;"></div>
+    </div>
+    <div style="font-size:9px;color:var(--mut);margin:-4px 0 8px;">Jei skaičiai skiriasi — vaikinai ir merginos gaus atskirus iššūkius su savo taikiniais</div>` : `
+    <label style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">TAIKINYS (kartai / km / min)</label>
+    <input class="inp" id="kie-target" type="number" min="1" step="any" value="${o.target ?? row.target ?? 1}" style="width:100%;margin:4px 0 10px;">`)}
+    <label style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">VIENETAS</label>
+    <input class="inp" id="kie-unit" type="text" maxlength="20" value="${escapeHtml(o.unit ?? it.unit ?? '')}" placeholder="kartai / km / min" style="width:100%;margin:4px 0 14px;">
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('kat-item-edit').remove()" style="flex:1;padding:11px;background:rgba(255,255,255,.07);color:var(--mut);border:none;border-radius:10px;font-weight:800;cursor:pointer;font-family:inherit;">Atšaukti</button>
+      <button onclick="katSaveItemEdit('${token}', ${mixed})" style="flex:1;padding:11px;background:linear-gradient(135deg,#FF4D00,#FF7A33);color:white;border:none;border-radius:10px;font-weight:800;cursor:pointer;font-family:inherit;">Išsaugoti</button>
+    </div>
+  </div>`;
+  document.body.appendChild(mdl);
+}
+function katSaveItemEdit(token, mixed) {
+  const o = katState.itemOpts[token] = katState.itemOpts[token] || {};
+  const desc = (document.getElementById('kie-desc')?.value || '').trim();
+  if (desc) o.desc = desc; else delete o.desc;
+  const unit = (document.getElementById('kie-unit')?.value || '').trim();
+  if (unit) o.unit = unit; else delete o.unit;
+  if (mixed) {
+    const b = parseFloat(document.getElementById('kie-target-b')?.value);
+    const g = parseFloat(document.getElementById('kie-target-g')?.value);
+    if (b > 0) { o.targetBoys = b; o.target = b; } else { delete o.targetBoys; }
+    if (g > 0) o.targetGirls = g; else delete o.targetGirls;
+  } else {
+    const t = parseFloat(document.getElementById('kie-target')?.value);
+    if (t > 0) o.target = t; else delete o.target;
+  }
+  document.getElementById('kat-item-edit')?.remove();
+  katRenderAll();
 }
 
 // ── SKIRTI: eilutės per esamą insert kelią (parent+kopijos grupei / single vaikui) ──
@@ -28837,12 +29004,34 @@ async function katAssign() {
         icon: r.icon || '🎯',
         is_active: true,
         expires_at: expiresAt,
-        allow_partial: !!(s.type !== 'training' && !r.learn && !r.fx && r.target > 1) || (r.token === 'k:m1_lankomumas'),
+        // v406: attendance su target>1 (Lankomumas, Namų plano m8/s6) — VISADA partial (kaupiama po vieną)
+        allow_partial: !!(s.type !== 'training' && !r.learn && !r.fx && r.target > 1) || (r.token === 'k:m1_lankomumas') || (r.content === 'attendance' && r.target > 1),
         group_id: groupId
       };
       if (isKid) {
         const { error } = await sb.from('challenges').insert({ ...payload, target_audience: 'specific_kid', target_kid_id: s.kids[0].id });
         if (error) { console.error('[katAssign] kid insert', error); showToast(ico('klaida')+' Klaida: ' + error.message, 'error', 5000); return; }
+        okRows++;
+      } else if (r.targetBoys > 0 && r.targetGirls > 0 && r.targetBoys !== r.targetGirls) {
+        // ♂/♀ v406: skirtingi taikiniai → DVI bangos (boys_in_group + girls_in_group) vienu paspaudimu
+        for (const [gAud, gTarget, gGender] of [['boys_in_group', r.targetBoys, 'male'], ['girls_in_group', r.targetGirls, 'female']]) {
+          const gKids = s.kids.filter(k2 => k2.gender === gGender);
+          if (!gKids.length) continue;
+          const gPayload = { ...payload, target_value: gTarget };
+          const { data: gp, error: gpe } = await sb.from('challenges').insert({
+            ...gPayload, is_active: false, target_audience: gAud,
+            distribution_meta: { total_kids: gKids.length, created_for: gKids.length, skipped: 0, skipped_kids: [] }
+          }).select().single();
+          if (gpe || !gp) { console.error('[katAssign] gender parent', gpe); showToast(ico('klaida')+' Klaida (parent): ' + (gpe?.message || '?'), 'error', 5000); return; }
+          const gRes = await Promise.allSettled(gKids.map(kid =>
+            sb.from('challenges').insert({
+              ...gPayload, target_audience: 'specific_kid', target_kid_id: kid.id,
+              group_id: kid.group_id || groupId, parent_challenge_id: gp.id
+            })
+          ));
+          const gOk = gRes.filter(x => x.status === 'fulfilled' && !x.value.error).length;
+          if (gOk < gKids.length) console.warn('[katAssign] gender kopijų:', gOk, '/', gKids.length);
+        }
         okRows++;
       } else {
         // Parent template (paslėptas) + kopijos kiekvienam vaikui — kaip esamas kelias
@@ -28902,31 +29091,83 @@ function katOpenOwnExercise() {
         <option value="lankomumas">Lankomumas</option>
         <option value="komanda">Komanda</option>
       </select>
-      <select class="inp" id="kw-own-check" style="margin-bottom:10px;">
+      <select class="inp" id="kw-own-check" style="margin-bottom:8px;">
         <option value="coach">📋 Tikrina treneris treniruotėje</option>
         <option value="strava">📱 Strava įrašas</option>
       </select>
+      <div style="display:flex;gap:8px;margin-bottom:2px;">
+        <div style="flex:1;"><label style="font-size:9px;color:var(--mut);font-weight:800;">BAZINIS TAIKINYS<br><span style="font-weight:700;">(vaikinai 10–13 m., Vidutinis)</span></label>
+        <input class="inp" id="kw-own-base" type="number" min="1" step="any" placeholder="pvz. 20" style="width:100%;margin-top:4px;"></div>
+        <div style="flex:1;"><label style="font-size:9px;color:var(--mut);font-weight:800;">VIENETAS<br><span style="font-weight:700;">&nbsp;</span></label>
+        <input class="inp" id="kw-own-unit" type="text" maxlength="20" placeholder="kartai / km / min" style="width:100%;margin-top:4px;"></div>
+      </div>
+      <div style="font-size:8.5px;color:var(--mut);margin-bottom:10px;line-height:1.35;">Iš bazinio automatiškai išvedama: merginoms ×0.75 · 6–9 m. ×0.6 · 14+ ×1.4 · pagal sunkumą ×0.6/×1.4. Palik tuščią — be skaičiaus („atlikta/ne").</div>
       <div style="display:flex;gap:8px;">
         <button onclick="katSaveOwnExercise()" style="flex:1;padding:9px;background:var(--grn);color:white;border:none;border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;">IŠSAUGOTI</button>
         <button onclick="document.getElementById('kw-own-form').style.display='none'" style="flex:1;padding:9px;background:rgba(255,255,255,.07);color:var(--mut);border:none;border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;">ATŠAUKTI</button>
       </div>
     </div>`;
 }
-function katSaveOwnExercise() {
+async function katSaveOwnExercise() {
   const name = (document.getElementById('kw-own-name')?.value || '').trim();
   if (!name) { showToast(ico('klaida')+' Įvesk pavadinimą', 'error'); return; }
   const catV = document.getElementById('kw-own-cat')?.value || null;
   const check = document.getElementById('kw-own-check')?.value || 'coach';
-  const list = katOwnExercises();
-  list.push({
-    id: katNewSetKey(), name, check,
-    catId: (catV === 'lankomumas' || catV === 'komanda') ? null : catV,
-    catSlug: (catV === 'lankomumas' || catV === 'komanda') ? catV : null,
-    type: katState?.type || 'training', created_at: new Date().toISOString()
+  const base = parseFloat(document.getElementById('kw-own-base')?.value);
+  const unit = (document.getElementById('kw-own-unit')?.value || '').trim() || 'kartai';
+  const catId = (catV === 'lankomumas' || catV === 'komanda') ? null : catV;
+  const catSlug = (catV === 'lankomumas' || catV === 'komanda') ? catV : null;
+  // 🗂️ v407 (B banga): pirmenybė — DB šablonas (klubo scope, matys kolegos, išliks pakeitus
+  // įrenginį); lentelės dar nėra (SQL nepaleistas) → tylus localStorage fallback kaip anksčiau
+  const saved = await _katTplInsert({
+    name, description: null, type: katState?.type || 'training', content_type: 'achievement',
+    unit, base_target: base > 0 ? base : null, check_kind: check, category_id: catId, cat_slug: catSlug, icon: '⭐'
   });
-  try { localStorage.setItem(_katOwnKey(), JSON.stringify(list)); } catch (e) { showToast(ico('klaida')+' Nepavyko išsaugoti', 'error'); return; }
-  showToast(ico('patvirtinta')+' Pratimas išsaugotas', 'success');
+  if (!saved) {
+    const list = katOwnExercises();
+    list.push({
+      id: katNewSetKey(), name, check, unit, baseT: base > 0 ? base : null,
+      catId, catSlug, type: katState?.type || 'training', created_at: new Date().toISOString()
+    });
+    try { localStorage.setItem(_katOwnKey(), JSON.stringify(list)); } catch (e) { showToast(ico('klaida')+' Nepavyko išsaugoti', 'error'); return; }
+  }
+  const f = document.getElementById('kw-own-form'); if (f) f.style.display = 'none';
+  showToast(ico('patvirtinta')+` Pratimas išsaugotas${saved ? ' — matys ir kiti klubo treneriai' : ''}`, 'success');
   katRenderAll();
+}
+
+// 🗂️ v407: „Savo iššūkis" → ŠABLONAS kataloge ateičiai (savininko №3: „sukuria ir nukeliauja
+// kaip šablonas prie bendrų iššūkių"). DB pirmenybė, ls fallback; dedup pagal vardą.
+async function _katCustomToTemplate(c) {
+  if (!['training', 'weekly', 'monthly'].includes(c.type)) return;
+  const ok = await _katTplInsert({
+    name: (c.title || '').slice(0, 80), description: c.desc || null, type: c.type,
+    content_type: c.contentType || 'achievement', unit: c.targetUnit || 'kartai',
+    base_target: c.targetValue > 0 ? c.targetValue : null, check_kind: 'coach',
+    category_id: null, cat_slug: null, icon: '✏️'
+  });
+  if (!ok) {
+    const list = katOwnExercises();
+    if (!list.some(o => _katNorm(o.name) === _katNorm(c.title) && o.type === c.type)) {
+      list.push({ id: katNewSetKey(), name: (c.title || '').slice(0, 80), check: 'coach', unit: c.targetUnit || 'kartai', baseT: c.targetValue > 0 ? c.targetValue : null, desc: c.desc || null, catId: null, catSlug: null, type: c.type, created_at: new Date().toISOString() });
+      try { localStorage.setItem(_katOwnKey(), JSON.stringify(list)); } catch (e) {}
+    }
+  }
+}
+
+// v407: šablono insert į DB; grąžina true jei pavyko (lentelė yra + RLS leido)
+async function _katTplInsert(tpl) {
+  try {
+    const clubId = currentProfile?.club_id || (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null);
+    if (!clubId) return false;
+    // dedup pagal vardą (klubo scope)
+    if ((_katTplCache || []).some(t => _katNorm(t.name) === _katNorm(tpl.name) && t.type === tpl.type)) return true;
+    const { data, error } = await sb.from('trainer_exercise_templates')
+      .insert({ ...tpl, club_id: clubId, trainer_id: currentUser.id }).select().single();
+    if (error || !data) return false;
+    if (_katTplCache) _katTplCache.push(data); else _katTplCache = [data];
+    return true;
+  } catch (e) { return false; }
 }
 async function katRemoveOwnExercise(id) {
   if (!(await appConfirm('Pašalinti šį savo pratimą?'))) return;
@@ -29428,6 +29669,7 @@ async function submitNewChallenge() {
       { title, desc, type, contentType, targetValue, targetUnit, icon, audience, allowPartial, targetKidId, groupId, exp, diff: _ccCustomDiff },
       document.getElementById('cc-kid-select')?.selectedOptions?.[0]?.textContent?.trim() || 'Vaikas'
     );
+    _katCustomToTemplate({ title, desc, type, contentType, targetValue, targetUnit }); // 🗂️ v407: → šablonas kataloge
     closeCreateChallenge();
     if (typeof loadTrainerOwnChallenges === 'function') await loadTrainerOwnChallenges();
     return;
@@ -29632,6 +29874,7 @@ async function submitNewChallenge() {
     audience === 'all_club' ? 'Visas klubas'
       : (document.getElementById('cc-group-select')?.selectedOptions?.[0]?.textContent?.trim() || 'Grupė')
   );
+  _katCustomToTemplate({ title, desc, type, contentType, targetValue, targetUnit }); // 🗂️ v407: → šablonas kataloge
 
   closeCreateChallenge();
   
@@ -30781,9 +31024,11 @@ async function loadPendingChallengeSubmissions() {
     const isPartial = ch?.allow_partial === true;
     const progress = progressMap[`${s.challenge_id}_${s.kid_id}`];
     const currentProgress = progress?.total_progress || 0;
-    const submissionValue = parseFloat(s.value || s.numeric_value || 0);
+    // v406: value gali būti Strava nuoroda/aprašas — skaičius PIRMA iš numeric_value
+    const submissionValue = parseFloat(s.numeric_value ?? s.value ?? 0) || 0;
     const projectedProgress = currentProgress + submissionValue; // jei patvirtins
     const willComplete = ch?.target_value && projectedProgress >= ch.target_value;
+    const proofHtml = _chProofHtml(s.value); // 📱 v406: nuoroda/aprašas kortelėje
     
     // Standartinis "meetsTarget" - vienkartinis pasiektas?
     const meetsTarget = !isPartial && ch?.target_value && submissionValue >= ch.target_value;
@@ -30806,7 +31051,7 @@ async function loadPendingChallengeSubmissions() {
       infoRow = `<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:9px;padding:8px 11px;margin-bottom:8px;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:8.5px;color:var(--mut);letter-spacing:.5px;text-transform:uppercase;">Pateikė${ch?.target_value ? ` · tikslas ${ch.target_value}` : ''}</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:21px;line-height:1.05;color:${meetsTarget ? 'var(--grn)' : 'white'};">${s.value || '?'} <span style="font-size:11px;color:var(--mut);">${ch?.target_unit || ''}</span>${meetsTarget ? ' <span style="font-size:11px;color:var(--grn);">'+ico('atlikta')+'</span>' : ''}</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:21px;line-height:1.05;color:${meetsTarget ? 'var(--grn)' : 'white'};">${/https?:\/\//.test(s.value || '') ? (s.numeric_value ?? '✓') : escapeHtml(String(s.value ?? s.numeric_value ?? '?')).slice(0, 40)} <span style="font-size:11px;color:var(--mut);">${ch?.target_unit || ''}</span>${meetsTarget ? ' <span style="font-size:11px;color:var(--grn);">'+ico('atlikta')+'</span>' : ''}</div>
         </div>
         <div style="text-align:center;background:${tColor}1a;border-radius:9px;padding:5px 12px;flex-shrink:0;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;color:${tColor};">+${ch?.exp_reward || 0}</div>
@@ -30824,6 +31069,7 @@ async function loadPendingChallengeSubmissions() {
         <div style="background:${tColor}22;color:${tColor};font-size:8.5px;font-weight:800;letter-spacing:.4px;padding:3px 8px;border-radius:99px;flex-shrink:0;white-space:nowrap;">${typeLabels[ch?.type] || ch?.type || ''}</div>
       </div>
       ${infoRow}
+      ${proofHtml ? `<div style="margin:-2px 0 8px;">${proofHtml}</div>` : ''}
       <div style="display:flex;gap:7px;">
         <button class="bsm" style="flex:1;background:var(--grn);color:white;padding:8px;" onclick="approveChallengeSubmission('${s.id}')">${ico('atlikta')} Patvirtinti</button>
         <button class="bsm" style="flex:none;width:46px;background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;" onclick="rejectChallengeSubmission('${s.id}')">✗</button>
@@ -30832,6 +31078,21 @@ async function loadPendingChallengeSubmissions() {
   })];
 
   _trPatRenderTop('tr-challenge-submissions-list', 'challenges', cards, '<div style="text-align:center;padding:40px;color:var(--mut);">'+ico('gimtadienis')+' Iššūkių pateikimų nėra</div>');
+}
+
+// 📱 v406: įrodymo atvaizdavimas trenerio kortelėje — URL → „Žiūrėti Strava" mygtukas,
+// tekstinis aprašas → 💬 citata (grynas skaičius / tuščia → nieko)
+function _chProofHtml(v) {
+  if (!v || typeof v !== 'string') return '';
+  const m = v.match(/https?:\/\/\S+/);
+  const url = m ? m[0] : null;
+  const note = v.replace(/https?:\/\/\S+/g, '').replace(/^[\s·]+|[\s·]+$/g, '');
+  const noteIsText = note && /[^\d.,\s]/.test(note) && note !== 'Pasiruošiau' && note !== 'Trenerio pažymėta';
+  if (!url && !noteIsText) return '';
+  let h = '';
+  if (url) h += `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:5px;background:rgba(79,195,247,.12);border:.5px solid rgba(79,195,247,.4);color:#4FC3F7;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;text-decoration:none;margin:0 6px 4px 0;">📱 Žiūrėti Strava</a>`;
+  if (noteIsText) h += `<span style="display:inline-block;font-size:10px;color:rgba(255,255,255,.75);background:rgba(255,255,255,.05);border:.5px solid var(--bdr);padding:4px 10px;border-radius:99px;">💬 «${escapeHtml(note.slice(0, 90))}»</span>`;
+  return h;
 }
 
 // 🗂️ v399: rinkinio BULK tvirtinimas — iteruoja esamą approve kelią (update pending→approved,
