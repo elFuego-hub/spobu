@@ -28626,8 +28626,42 @@ function katSelectLimit() {
   return Math.max(0, KAT_MAX_ACTIVE - (katState.nPrevLoaded ? katState.nPrev : 0));
 }
 
+// 🗑️ v408: trenerio paslėpti standartiniai pratimai (savininko pastaba „gali ištrinti").
+// Seed'ų fiziškai trinti negalim (konstantos) → paslepiam per trenerio localStorage.
+function _katHiddenKey() { return `spobu_kat_hidden_${currentUser?.id || 'x'}`; }
+function katHiddenSet() { try { return new Set(JSON.parse(localStorage.getItem(_katHiddenKey()) || '[]')); } catch (e) { return new Set(); } }
+function katHideItem(token) {
+  const h = katHiddenSet(); h.add(token);
+  try { localStorage.setItem(_katHiddenKey(), JSON.stringify([...h])); } catch (e) {}
+  katState.selected = katState.selected.filter(t => t !== token);
+  showToast(ico('patvirtinta')+' Paslėpta iš sąrašo', 'success', 2500);
+  katRenderAll();
+}
+function katUnhideAll() {
+  try { localStorage.removeItem(_katHiddenKey()); } catch (e) {}
+  showToast(ico('patvirtinta')+' Paslėpti grąžinti', 'success', 2000);
+  katRenderAll();
+}
+// DB/ls šablono trynimas (autoriaus; RLS delete leidžia tik autoriui)
+async function katDeleteTemplate(token) {
+  if (!(await appConfirm('Ištrinti šį pratimą iš katalogo visam laikui?'))) return;
+  if (token.indexOf('tpl:') === 0) {
+    const id = token.slice(4);
+    const { error } = await sb.from('trainer_exercise_templates').delete().eq('id', id);
+    if (error) { showToast(ico('klaida')+' '+error.message, 'error', 4000); return; }
+    if (_katTplCache) _katTplCache = _katTplCache.filter(t => t.id !== id);
+  } else if (token.indexOf('own:') === 0) {
+    const list = katOwnExercises().filter(o => o.id !== token.slice(4));
+    try { localStorage.setItem(_katOwnKey(), JSON.stringify(list)); } catch (e) {}
+  }
+  katState.selected = katState.selected.filter(t => t !== token);
+  showToast(ico('patvirtinta')+' Ištrinta', 'success', 2000);
+  katRenderAll();
+}
+
 // ── Katalogo elementai pagal tipą (seed + Kelias + DB šablonai + ls savi) ──
 function katItemsForType() {
+  const hidden = katHiddenSet();
   // v407: DB šablonai (klubo — mato visi treneriai) + localStorage fallback (kol SQL nepaleistas)
   const tpl = (_katTplCache || []).filter(t => t.type === katState.type).map(t => ({
     token: 'tpl:' + t.id, name: t.name, icon: t.icon || '⭐', unit: t.unit || 'kartai',
@@ -28647,10 +28681,10 @@ function katItemsForType() {
       unit: 'atlikta', content: 'achievement', check: e.strava ? 'strava' : 'coach',
       desc: 'Rinkinio pratimas — kiekius pasakys treneris salėje'
     }));
-    return [...ex, ...mine];
+    return [...ex, ...mine].filter(i => !hidden.has(i.token));
   }
   const seed = katState.type === 'weekly' ? KAT_WEEKLY_SEED : KAT_MONTHLY_SEED;
-  return [...seed.map(s => ({ token: 'k:' + s.key, ...s })), ...mine];
+  return [...seed.map(s => ({ token: 'k:' + s.key, ...s })), ...mine].filter(i => !hidden.has(i.token));
 }
 function katFindItem(token) { return katItemsForType().find(i => i.token === token) || null; }
 
@@ -28674,14 +28708,22 @@ function katComputePlan() {
     const o = io[it.token] || {};
     const d = idiff(it);
     const exp = it.fx ? Math.max(1, basePart) : Math.max(1, Math.round(basePart * (KAT_DIFF_MULT[d] ?? 1)));
+    // 🧮 v408: LYTIES koeficientas taikomas IR seed'ams (ne tik baseT šablonams).
+    // Bazinis taikinys BE lyties (baseT → amžius×sunkumas; seed → katSeedTarget jau įskaito
+    // amžių+sunkumą). Lytis (×0.75 merginoms) — atskiras sluoksnis viršuje.
+    const genderless = it.baseT > 0
+      ? Math.max(1, katRoundTarget(it.baseT * (KAT_AGE_MULT[katState.bandIdx] ?? 1) * (KAT_TARGET_MULT[d] ?? 1)))
+      : (katState.type === 'training' ? 1 : katSeedTarget(it, katState.bandIdx, d));
+    const noGender = it.learn || it.fx || katState.type === 'training';
     let target;
     if (o.target != null) target = o.target;
-    else if (it.baseT > 0) target = katDeriveTarget(it.baseT, katState.bandIdx, audGender, d);
-    else target = (katState.type === 'training' ? 1 : katSeedTarget(it, katState.bandIdx, d));
+    else if (noGender) target = genderless;
+    else target = katRoundTarget(genderless * (KAT_GENDER_MULT[audGender] ?? 1)); // specific_kid → jo lytis; grupė ♂=1
+    // Mišri grupė (ne learn/fx/training) → ♂/♀ AUTOMATIŠKAI ir seed'ams (be pieštuko)
     let tb = o.targetBoys, tg = o.targetGirls;
-    if (mixed && it.baseT > 0 && tb == null && tg == null) {
-      tb = katDeriveTarget(it.baseT, katState.bandIdx, 'male', d);
-      tg = katDeriveTarget(it.baseT, katState.bandIdx, 'female', d);
+    if (mixed && !noGender && tb == null && tg == null) {
+      tb = genderless; // vaikinai ×1
+      tg = katRoundTarget(genderless * (KAT_GENDER_MULT.female ?? 0.75));
     }
     return {
       ...it, diff: d, target, exp,
@@ -28736,11 +28778,20 @@ function katRenderAud() {
   }
   let band = '';
   if (s.kids.length) {
+    // 👦/👧 sudėtis + informacija apie automatinį lyčių skyrimą (v408 savininko pastaba)
+    const boys = s.kids.filter(k => k.gender === 'male').length;
+    const girls = s.kids.filter(k => k.gender === 'female').length;
+    const mixed = s.aud !== 'specific_kid' && boys > 0 && girls > 0;
+    const kidGender = s.aud === 'specific_kid' ? (s.kids[0]?.gender) : null;
+    const genderLine = mixed
+      ? `<div style="font-size:9.5px;color:#4FC3F7;margin-top:4px;line-height:1.35;">👦 ${boys} · 👧 ${girls} — skaitiniams pratimams taikiniai <b>skirsis pagal lytį</b> (merginoms ×0.75); matysi 4 žingsnyje, gali koreguoti ✏️</div>`
+      : (kidGender ? `<div style="font-size:9.5px;color:#4FC3F7;margin-top:4px;">${kidGender === 'female' ? '👧 Mergaitė' : '👦 Berniukas'} — taikiniai pritaikomi pagal lytį</div>` : '');
     band = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;">
       <span style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">AMŽIUS${s.bandAuto ? ' (auto)' : ''}:</span>
       ${KAT_BANDS.map((b, i) => `<div onclick="katSetBand(${i})" style="${_katChip(s.bandIdx === i)}">${b} m.</div>`).join('')}
     </div>
-    <div style="font-size:10px;color:var(--mut);margin-top:4px;">${s.kids.length} ${s.kids.length === 1 ? 'vaikas' : 'vaikai'} auditorijoje</div>`;
+    <div style="font-size:9.5px;color:var(--mut);margin-top:3px;line-height:1.35;">${s.kids.length} ${s.kids.length === 1 ? 'vaikas' : 'vaikai'} auditorijoje · amžius nustato pakartojimų skaičių (jaunesniems mažiau)${s.bandAuto ? ' — parinkta automatiškai, gali keisti' : ''}</div>
+    ${genderLine}`;
   }
   w.innerHTML = `
     <label class="lbl">1. KAM SKIRIAM?</label>
@@ -28748,6 +28799,7 @@ function katRenderAud() {
       <div onclick="katSetAud('group')" style="${_katChip(s.aud === 'group')}">👥 Grupei</div>
       <div onclick="katSetAud('specific_kid')" style="${_katChip(s.aud === 'specific_kid')}">🎯 Vaikui</div>
     </div>
+    <div style="font-size:9.5px;color:var(--mut);margin-top:5px;">Grupei — visiems iš karto (berniukams ir mergaitėms taikiniai skirsis); Vaikui — vienam, pagal jo amžių ir lytį</div>
     ${sel}${band}
     <div style="height:12px;"></div>`;
 }
@@ -28829,22 +28881,31 @@ function katRenderEx() {
     if (target != null && !it.learn) tLine.push(`${target} ${it.unit || ''}`.trim());
     if (it.learn) tLine.push('išmokimas');
     if (it.fx) tLine.push('be sunkumo');
+    // v408: pasirinkus → ✏️ redaguoti iškart; standartinius (seed/Kelias) → ✗ paslėpti; savo/šablonus → 🗑️ ištrinti
+    const isMine = it.own; // own/tpl
+    const actions = `${on ? `<span onclick="event.stopPropagation();katEditItem('${it.token}')" title="Redaguoti aprašymą/taikinį" style="font-size:13px;padding:3px 5px;cursor:pointer;">✏️</span>` : ''}${isMine
+      ? `<span onclick="event.stopPropagation();katDeleteTemplate('${it.token}')" title="Ištrinti pratimą" style="color:#EF4444;font-size:12px;padding:3px 5px;cursor:pointer;">🗑️</span>`
+      : `<span onclick="event.stopPropagation();katHideItem('${it.token}')" title="Paslėpti iš sąrašo" style="color:var(--mut);font-size:12px;padding:3px 5px;cursor:pointer;">✗</span>`}`;
     return `<div onclick="katToggleItem('${it.token}')" style="display:flex;align-items:center;gap:8px;background:${on ? 'rgba(34,197,94,.1)' : 'var(--card)'};border:.5px solid ${on ? 'rgba(34,197,94,.5)' : 'var(--bdr)'};border-radius:10px;padding:8px 10px;margin-bottom:5px;cursor:pointer;">
       <span style="font-size:15px;flex-shrink:0;">${on ? '☑️' : '⬜'}</span>
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:800;color:white;">${it.icon ? it.icon + ' ' : ''}${escapeHtml(it.name)}${it.own ? ' <span style="font-size:8px;background:rgba(255,215,0,.2);color:#FFD700;padding:1px 6px;border-radius:99px;font-weight:800;">mano</span>' : ''}</div>
         <div style="font-size:9px;color:var(--mut);">${tLine.length ? tLine.join(' · ') + ' · ' : ''}${checkBadge}</div>
       </div>
-      ${it.own ? `<span onclick="event.stopPropagation();katRemoveOwnExercise('${it.token.slice(4)}')" style="color:var(--mut);font-size:12px;padding:4px 6px;">✗</span>` : ''}
+      <div style="display:flex;align-items:center;gap:2px;flex-shrink:0;">${actions}</div>
     </div>`;
   }).join('');
 
+  const hiddenCount = katHiddenSet().size;
   w.innerHTML = `
     <label class="lbl">3. PRATIMAI <span style="color:${s.selected.length ? 'var(--grn)' : 'var(--mut)'};font-weight:800;">(${s.selected.length}/${limit})</span></label>
+    <div style="font-size:9.5px;color:var(--mut);margin-bottom:6px;line-height:1.35;">Paruošti pratimai — pažymėk ${s.type === 'training' ? 'ką darysite salėje' : 'ką vaikas atliks'}. Pažymėjus atsiranda ✏️ (keisk aprašymą/taikinį); ✗ paslepia, 🗑️ ištrina savo pratimą.</div>
     ${s.nPrevLoaded && s.nPrev > 0 ? `<div style="font-size:10px;color:var(--mut);margin-bottom:6px;">${ico('ispejimas')} Auditorija jau turi ${s.nPrev} aktyv. šio tipo — naujų EXP mažėja pagal kreivę</div>` : ''}
     ${recoHtml}${catChips}
     <div style="max-height:260px;overflow-y:auto;">${rows || '<div style="font-size:11px;color:var(--mut);padding:10px;">Sąrašas tuščias</div>'}</div>
-    <button onclick="katOpenOwnExercise()" style="width:100%;margin-top:6px;padding:9px;background:transparent;border:.5px dashed var(--bdr);color:var(--mut);border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;">+ SAVO PRATIMAS</button>
+    ${hiddenCount ? `<button onclick="katUnhideAll()" style="width:100%;margin-top:4px;padding:7px;background:transparent;border:none;color:var(--mut);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">↩︎ Rodyti paslėptus (${hiddenCount})</button>` : ''}
+    <button onclick="katOpenOwnExercise()" style="width:100%;margin-top:6px;padding:9px;background:transparent;border:.5px dashed var(--bdr);color:var(--mut);border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;">+ SUKURK SAVO PRATIMĄ</button>
+    <div style="font-size:9px;color:var(--mut);margin-top:3px;text-align:center;">Nėra tinkamo? Sukurk savo — jį matysi ir kitą kartą (ir klubo treneriai)</div>
     <div id="kw-own-form" style="display:none;"></div>
     <div style="height:12px;"></div>`;
 }
