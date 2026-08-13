@@ -28325,7 +28325,15 @@ const KAT_MONTHLY_SEED = [
   { key: 'm6_varzybos', name: 'Dalyvavimas varžybose', cat: 'kova', fx: true, target: 1, check: 'coach', content: 'competition', icon: '🏆', desc: 'Sudalyvauk varžybose šį mėnesį' },
   { key: 'm7_egzaminas', name: 'Dalyvavimas diržo egzamine', cat: 'technika', fx: true, target: 1, check: 'coach', content: 'achievement', icon: '🎓', desc: 'Sudalyvauk diržo egzamine šį mėnesį' },
   // 🏠 v406: namų sportas per mėnesį — įrodymas privalomas kiekvienam pateikimui
-  { key: 'm8_namu_planas', name: 'Namų plano treniruotės', cat: 'drausmė', unit: 'treniruotės', fx: true, base: [4, 6, 8], check: 'coach', content: 'attendance', icon: '🏠', desc: 'Atlik namų treniruotes pagal savo Namų planą ar trenerio nurodymus — kiekvieną pateik su Strava nuoroda arba aprašyk, ką darei' }
+  { key: 'm8_namu_planas', name: 'Namų plano treniruotės', cat: 'drausmė', unit: 'treniruotės', fx: true, base: [4, 6, 8], check: 'coach', content: 'attendance', icon: '🏠', desc: 'Atlik namų treniruotes pagal savo Namų planą ar trenerio nurodymus — kiekvieną pateik su Strava nuoroda arba aprašyk, ką darei' },
+  // 🦵 v409: karate spyriai — technikos IŠMOKIMAS (learn; treneris įvertina treniruotėje) + 1 ištvermės (rep)
+  { key: 'm9_mae_geri',    name: 'Mae-geri (priekinis spyris)',            cat: 'technika', learn: true, check: 'coach', content: 'achievement', icon: '🦵', desc: 'Išmok taisyklingai atlikti mae-geri — parodyk treneriui' },
+  { key: 'm10_mawashi',    name: 'Mawashi-geri (apskritas spyris)',        cat: 'technika', learn: true, check: 'coach', content: 'achievement', icon: '🦵', desc: 'Išmok taisyklingai atlikti mawashi-geri — parodyk treneriui' },
+  { key: 'm11_yoko_geri',  name: 'Yoko-geri (šoninis spyris)',             cat: 'technika', learn: true, check: 'coach', content: 'achievement', icon: '🦵', desc: 'Išmok taisyklingai atlikti yoko-geri — parodyk treneriui' },
+  { key: 'm12_ushiro',     name: 'Ushiro-geri (užpakalinis spyris)',       cat: 'technika', learn: true, check: 'coach', content: 'achievement', icon: '🦵', desc: 'Išmok taisyklingai atlikti ushiro-geri — parodyk treneriui' },
+  { key: 'm13_ushiro_maw', name: 'Ushiro-mawashi-geri (užpak. apskritas)', cat: 'technika', learn: true, check: 'coach', content: 'achievement', icon: '🌀', desc: 'Pažengęs spyris — išmok ushiro-mawashi-geri, parodyk treneriui' },
+  { key: 'm14_hiza_geri',  name: 'Hiza-geri (smūgis keliu)',               cat: 'technika', learn: true, check: 'coach', content: 'achievement', icon: '🦵', desc: 'Išmok taisyklingai atlikti hiza-geri — parodyk treneriui' },
+  { key: 'm15_spyriu_serija', name: 'Spyrių pakartojimai (ištvermė)',      cat: 'ištvermė', unit: 'spyriai', byDiff: [30, 50, 70], check: 'coach', content: 'achievement', icon: '💥', desc: 'Atlik mawashi-geri pakartojimus be sustojimo — ištvermei (kiek per kartą)' }
 ];
 
 // Seed pratimo taikinys pagal juostą + sunkumą (§2.3)
@@ -28490,9 +28498,12 @@ let _katExCache = null;       // { exercises, cats } — Kelias sąrašas + karj
 const _katAudKidsCache = {};  // auditorijos vaikai per raktą group:<id>/kid:<id> (amžius+aktyvūs+assign)
 
 const KAT_TYPE_META = {
-  training: { label: 'Treniruotei', q: '„Ką darysim šiandien salėje?"', dur: '1 d.', color: '#FF4D00', icon: '🏋️', flag: 'challenge_training_enabled' },
-  weekly:   { label: 'Savaitinis', q: '„Koks savaitės ritmas?"', dur: '7 d.', color: '#4FC3F7', icon: '⚡', flag: 'challenge_weekly_enabled' },
-  monthly:  { label: 'Mėnesinis', q: '„Koks pokytis per mėnesį?"', dur: '30 d.', color: '#BA68C8', icon: '🎯', flag: 'challenge_monthly_enabled' }
+  training: { label: 'Treniruotei', q: '„Ką darysim šiandien salėje?"', dur: '1 d.', color: '#FF4D00', icon: '🏋️', flag: 'challenge_training_enabled',
+    purpose: 'Šiandienos treniruotės užduotys — atliekamos salėje tau šalia. Galioja 1 dieną. Trumpiausias, greitas tikslas „šiandien padarysim tai".' },
+  weekly:   { label: 'Savaitinis', q: '„Koks savaitės ritmas?"', dur: '7 d.', color: '#4FC3F7', icon: '⚡', flag: 'challenge_weekly_enabled',
+    purpose: 'Ilgesnis, dažniausiai judėjimo tikslas visai savaitei (bėgimas, dviratis, papildomos treniruotės). Vaikas dirba savarankiškai — mato progresą per savaitę.' },
+  monthly:  { label: 'Mėnesinis', q: '„Koks pokytis per mėnesį?"', dur: '30 d.', color: '#BA68C8', icon: '🎯', flag: 'challenge_monthly_enabled',
+    purpose: 'Ilgiausias tikslas — kad vaikas ką nors IŠMOKTŲ per mėnesį: naujo diržo katą, techniką, žodyną, spyrius. Reikalauja kantrybės ir pasiruošimo.' }
 };
 
 async function katWizardInit(prefill) {
@@ -28500,7 +28511,8 @@ async function katWizardInit(prefill) {
     aud: null, groupId: null, kidId: null, kids: [], bandIdx: 1, bandAuto: true,
     type: null, selected: [], diff: 'medium', nPrev: 0, nPrevLoaded: false,
     recos: null, recoInfo: null, catFilter: null, busy: false,
-    itemOpts: {} // ✏️ v406: per-pratimo override'ai {token: {desc, target, unit, diff, targetBoys, targetGirls}}
+    itemOpts: {}, // ✏️ v406: per-pratimo override'ai {token: {desc, target, unit, diff, targetBoys, targetGirls}}
+    showReps: false // 🔢 v409: treniruotės pratimams rodyti pakartojimų skaičių (bendra taisyklė, default NE)
   };
   // Auditorijos kešas valomas kas atidarymą (grupės sudėtis galėjo pasikeisti)
   Object.keys(_katAudKidsCache).forEach(k => delete _katAudKidsCache[k]);
@@ -28601,6 +28613,7 @@ async function katSetType(tp) {
   katState.type = tp;
   katState.selected = [];
   katState.itemOpts = {}; // v406: override'ai galioja vienam skyrimui
+  katState.showReps = false; // v409: kiekio taisyklė nustatoma iš naujo kiekvienam tipui
   katState.catFilter = null;
   katState.nPrevLoaded = false;
   katRenderAll();
@@ -28608,6 +28621,13 @@ async function katSetType(tp) {
   katRenderAll();
 }
 function katSetDiff(d) { katState.diff = d; katRenderAll(); }
+// 🔢 v409: bendra treniruotės pakartojimų taisyklė (jungiklis prieš pratimų pasirinkimą).
+// Perjungus — išvalom rankinius target override'us, kad pasiūlymai persiskaičiuotų švariai.
+function katSetShowReps(on) {
+  katState.showReps = !!on;
+  Object.values(katState.itemOpts || {}).forEach(o => { delete o.target; delete o.targetBoys; delete o.targetGirls; });
+  katRenderAll();
+}
 function katToggleItem(token) {
   const i = katState.selected.indexOf(token);
   if (i >= 0) katState.selected.splice(i, 1);
@@ -28713,8 +28733,13 @@ function katComputePlan() {
     // amžių+sunkumą). Lytis (×0.75 merginoms) — atskiras sluoksnis viršuje.
     const genderless = it.baseT > 0
       ? Math.max(1, katRoundTarget(it.baseT * (KAT_AGE_MULT[katState.bandIdx] ?? 1) * (KAT_TARGET_MULT[d] ?? 1)))
-      : (katState.type === 'training' ? 1 : katSeedTarget(it, katState.bandIdx, d));
-    const noGender = it.learn || it.fx || katState.type === 'training';
+      : (katState.type === 'training'
+          // v409: rep jungiklis ĮJ → siūlomas kartų skaičius (bazė 15 × amžius × sunkumas); IŠJ → atlikta/ne
+          ? (katState.showReps ? Math.max(1, katRoundTarget(15 * (KAT_AGE_MULT[katState.bandIdx] ?? 1) * (KAT_TARGET_MULT[d] ?? 1))) : 1)
+          : katSeedTarget(it, katState.bandIdx, d));
+    // 🔢 v409: treniruotės pratimams pakartojimai rodomi tik kai treneris įjungė bendrą taisyklę
+    // (showReps) — tada siūlomas skaičius pagal amžių/sunkumą; kitaip „atlikta/ne" (target 1).
+    const noGender = it.learn || it.fx || (katState.type === 'training' && !katState.showReps);
     let target;
     if (o.target != null) target = o.target;
     else if (noGender) target = genderless;
@@ -28818,9 +28843,11 @@ function katRenderType() {
       <div style="font-size:8.5px;color:var(--mut);margin-top:2px;line-height:1.25;">${m.q}<br>${m.dur}</div>
     </div>`;
   });
+  const pm = s.type ? KAT_TYPE_META[s.type] : null;
   w.innerHTML = `
     <label class="lbl">2. TIPAS</label>
     ${cards.length ? `<div style="display:flex;gap:6px;">${cards.join('')}</div>` : '<div style="font-size:11px;color:var(--mut);padding:8px;">Klubas išjungė katalogo iššūkių tipus</div>'}
+    ${pm && pm.purpose ? `<div style="font-size:9.5px;color:var(--mut);line-height:1.4;background:${pm.color}12;border:.5px solid ${pm.color}40;border-radius:10px;padding:8px 10px;margin-top:8px;"><b style="color:${pm.color};">${pm.icon} ${pm.label.toUpperCase()} · ${pm.dur}</b> — ${pm.purpose}</div>` : ''}
     <div style="height:12px;"></div>`;
 }
 
@@ -28897,8 +28924,21 @@ function katRenderEx() {
   }).join('');
 
   const hiddenCount = katHiddenSet().size;
+  // 🔢 v409: BENDRA taisyklė treniruotės pratimams — su pakartojimais ar „atlikta/ne"
+  const repsToggle = s.type !== 'training' ? '' : `
+    <div style="background:var(--card);border:.5px solid ${s.showReps ? 'rgba(34,197,94,.45)' : 'var(--bdr)'};border-radius:10px;padding:9px 11px;margin-bottom:8px;">
+      <div style="font-size:10px;font-weight:800;color:var(--text);letter-spacing:.3px;margin-bottom:5px;">KAIP NURODYSI KIEKĮ?</div>
+      <div style="display:flex;gap:6px;">
+        <div onclick="katSetShowReps(true)" style="${_katChip(s.showReps, 'flex:1;text-align:center;')}">🔢 Su pakartojimais</div>
+        <div onclick="katSetShowReps(false)" style="${_katChip(!s.showReps, 'flex:1;text-align:center;')}">✅ Atlikta / ne</div>
+      </div>
+      <div style="font-size:9px;color:var(--mut);margin-top:5px;line-height:1.4;">${s.showReps
+        ? 'Kiekvienam pratimui bus pasiūlytas kartų skaičius pagal amžių ir sunkumą — gali keisti ✏️. <b style="color:#4FC3F7;">Tėvai mato tikslą</b>, tad rekomenduojam šį variantą.'
+        : 'Pratimai bus be skaičiaus („atlikta/ne") — kiekius pasakysi salėje. Greita, bet tėvai nematys konkretaus tikslo. <b style="color:#4FC3F7;">Rekomenduojam su pakartojimais</b>, jei žinai skaičius.'}</div>
+    </div>`;
   w.innerHTML = `
     <label class="lbl">3. PRATIMAI <span style="color:${s.selected.length ? 'var(--grn)' : 'var(--mut)'};font-weight:800;">(${s.selected.length}/${limit})</span></label>
+    ${repsToggle}
     <div style="font-size:9.5px;color:var(--mut);margin-bottom:6px;line-height:1.35;">Paruošti pratimai — pažymėk ${s.type === 'training' ? 'ką darysite salėje' : 'ką vaikas atliks'}. Pažymėjus atsiranda ✏️ (keisk aprašymą/taikinį); ✗ paslepia, 🗑️ ištrina savo pratimą.</div>
     ${s.nPrevLoaded && s.nPrev > 0 ? `<div style="font-size:10px;color:var(--mut);margin-bottom:6px;">${ico('ispejimas')} Auditorija jau turi ${s.nPrev} aktyv. šio tipo — naujų EXP mažėja pagal kreivę</div>` : ''}
     ${recoHtml}${catChips}
