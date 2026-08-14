@@ -3874,7 +3874,48 @@ function _cardCore(st) {
   </div>`;
 }
 
+// 📷 v427: nuotraukos kortelė (4:5) — tėvo pasirinkta nuotrauka + SPOBU juostos.
+// Nuotrauka NIEKUR nesiunčiama (lieka naršyklėje); archyve saugomas tik šablono tipas.
+function _cardFotoHtml(st) {
+  const esc = escapeHtml, p = st.p, t = st.tier;
+  const ph = st.photo
+    ? `<img src="${st.photo}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">`
+    : `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:34px;background:#1a1a1e;">📷<div style="font-size:16px;margin-top:10px;">Pasirink nuotrauką mygtuku viršuje</div></div>`;
+  return `<div style="position:relative;width:720px;height:900px;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;color:#fff;">
+    ${ph}
+    <div style="position:absolute;top:0;left:0;right:0;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(rgba(0,0,0,.55),transparent);font-size:14px;letter-spacing:2px;">
+      <span><img src="brand/mark-white-128.png" style="height:18px;vertical-align:middle;margin-right:6px;">SPOBU</span>
+      <span style="color:${t.accent};font-weight:800;">#${st.m}/12 · ${esc(p.monthNom || '')}</span>
+    </div>
+    <div style="position:absolute;left:0;right:0;bottom:0;padding:80px 24px 22px;background:linear-gradient(transparent, rgba(8,6,2,.94) 60%);text-align:center;">
+      <div style="font-size:38px;font-weight:800;letter-spacing:2px;">${esc(p.name || '').toUpperCase()}</div>
+      <div style="font-size:15px;letter-spacing:3px;color:${t.accent};margin-top:2px;">${esc(p.monthLabel || '')} ${t.word}${t.stars ? ' · ' + t.stars : ''}</div>
+      <div style="font-size:16px;color:rgba(255,255,255,.85);margin-top:8px;">+${(p.exp || 0).toLocaleString('lt-LT')} EXP · ${p.chCount || 0} iššūkiai${p.medalCount ? ' · 🥇 ' + p.medalCount : ''}${p.recCount ? ' · 📈 ' + p.recCount : ''}</div>
+    </div>
+  </div>`;
+}
+
+function _csFotoPick(inp) {
+  const f = inp.files && inp.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1440; // sumažinam — html2canvas greičiui ir atminčiai
+      const sc = Math.min(1, MAX / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * sc); cv.height = Math.round(img.height * sc);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      if (_csState) { _csState.photo = cv.toDataURL('image/jpeg', 0.88); _csRender(); }
+    };
+    img.src = rd.result;
+  };
+  rd.readAsDataURL(f);
+  inp.value = '';
+}
+
 function _cardHtml(st) {
+  if (st.tpl === 'foto') return _cardFotoHtml(st);
   if (st.tpl === 'pilna') {
     return `<div style="position:relative;"><div style="position:absolute;top:12px;right:14px;z-index:2;font-size:13px;font-weight:800;color:${st.tier.accent};border:1px solid ${st.tier.dim};border-radius:99px;padding:3px 10px;">#${st.m}/12</div>${_pfShareHtml({ p: st.p, narr: st.narr, clubName: st.clubName, clubLogo: st.clubLogo })}</div>`;
   }
@@ -3906,6 +3947,8 @@ async function openCardStudio(pd, mNum) {
   const body = `
     <div style="display:flex;gap:6px;flex-wrap:wrap;" id="cs-tpls"></div>
     <div style="display:flex;gap:6px;margin-top:6px;" id="cs-fmts"></div>
+    <input type="file" id="cs-foto-input" accept="image/*" style="display:none;" onchange="_csFotoPick(this)">
+    <div id="cs-extra"></div>
     <div style="margin-top:10px;display:flex;justify-content:center;background:rgba(255,255,255,.03);border-radius:12px;padding:8px;overflow:hidden;">
       <div id="cs-prev" style="width:720px;zoom:.4;border-radius:14px;overflow:hidden;"></div>
     </div>
@@ -3922,16 +3965,21 @@ function _csRender() {
   const st = _csState; if (!st) return;
   const chip = (on) => `padding:6px 11px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;border:.5px solid ${on ? 'var(--br)' : 'var(--bdr)'};background:${on ? 'rgba(255,77,0,.18)' : 'var(--card)'};color:${on ? '#FF7A33' : 'var(--mut)'};`;
   const tplEl = document.getElementById('cs-tpls');
-  if (tplEl) tplEl.innerHTML = [['santrauka', 'Santrauka'], ['palyginimai', '🤯 Palyginimai'], ['priespo', '📈 Prieš → po'], ['pilna', 'Pilna ataskaita']].map(x => `<div onclick="_csSet('tpl','${x[0]}')" style="${chip(st.tpl === x[0])}">${x[1]}</div>`).join('');
+  if (tplEl) tplEl.innerHTML = [['santrauka', 'Santrauka'], ['palyginimai', '🤯 Palyginimai'], ['priespo', '📈 Prieš → po'], ['foto', '📷 Nuotrauka'], ['pilna', 'Pilna ataskaita']].map(x => `<div onclick="_csSet('tpl','${x[0]}')" style="${chip(st.tpl === x[0])}">${x[1]}</div>`).join('');
   const fmtEl = document.getElementById('cs-fmts');
   if (fmtEl) fmtEl.innerHTML = (st.tpl === 'santrauka' || st.tpl === 'palyginimai')
     ? [['sq', '⬛ 1:1 postui'], ['story', '📱 Story 9:16']].map(x => `<div onclick="_csSet('fmt','${x[0]}')" style="${chip(st.fmt === x[0])}">${x[1]}</div>`).join('') : '';
+  const exEl = document.getElementById('cs-extra');
+  if (exEl) exEl.innerHTML = st.tpl === 'foto'
+    ? `<button onclick="document.getElementById('cs-foto-input').click()" style="width:100%;padding:10px;margin-top:8px;background:rgba(79,195,247,.12);color:#4FC3F7;border:.5px solid rgba(79,195,247,.4);border-radius:10px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">📷 ${st.photo ? 'Pakeisti nuotrauką' : 'Pasirinkti nuotrauką'}</button>
+       <div style="font-size:9px;color:var(--mut);margin-top:4px;text-align:center;">Nuotrauka lieka tik tavo telefone — niekur nesiunčiama</div>` : '';
   const prev = document.getElementById('cs-prev');
   if (prev) { prev.style.background = st.tier.bg; prev.innerHTML = _cardHtml(st); }
 }
 
 async function _cardShare() {
   const st = _csState; if (!st) return;
+  if (st.tpl === 'foto' && !st.photo) { showToast('📷 Pirmiausia pasirink nuotrauką', 'error', 3000); return; }
   const btn = document.getElementById('cs-share-btn');
   if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.textContent = 'Ruošiama…'; }
   let host = null;
