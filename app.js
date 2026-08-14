@@ -3571,14 +3571,31 @@ async function openMonthPdf() {
   let narr = '';
   try { narr = String(await computeMonthHighlight() || '').replace(/<[^>]*>/g, '').trim(); } catch (_) {}
   const html = _pfPdfDoc(p, clubName, clubLogo, narr);
-  let f = document.getElementById('pf-pdf-frame'); if (f) f.remove();
-  f = document.createElement('iframe');
-  f.id = 'pf-pdf-frame';
-  f.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;';
-  document.body.appendChild(f);
+  // 🖥️ v416: PERŽIŪRA appse (kaip AI ataskaitų viewer) — spausdinimo dialogas tik paspaudus mygtuką
+  const old = document.getElementById('pf-pdf-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'pf-pdf-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;flex-direction:column;';
+  m.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--bg);border-bottom:.5px solid var(--bdr);flex-shrink:0;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1.5px;">${ico('dokumentas')} ${escapeHtml(p.monthLabel)} ATASKAITA</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="_pfPdfPrint()" style="background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Įrašyti PDF / spausdinti</button>
+        <button onclick="document.getElementById('pf-pdf-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mut);">${ico('uzdaryti')}</button>
+      </div>
+    </div>
+    <iframe id="pf-pdf-frame" style="flex:1;border:0;width:100%;background:#525659;"></iframe>`;
+  document.body.appendChild(m);
+  const f = document.getElementById('pf-pdf-frame');
   const d = f.contentDocument;
   d.open(); d.write(html); d.close();
-  setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { console.warn('pf pdf print', e); } }, 450);
+}
+
+function _pfPdfPrint() {
+  const f = document.getElementById('pf-pdf-frame');
+  if (!f || !f.contentWindow) return;
+  try { f.contentWindow.focus(); f.contentWindow.print(); }
+  catch (e) { console.warn('pf pdf print', e); showToast(ico('klaida') + ' Nepavyko atidaryti spausdinimo', 'error'); }
 }
 
 function _pfPdfDoc(p, clubName, clubLogo, narr) {
@@ -3601,12 +3618,14 @@ function _pfPdfDoc(p, clubName, clubLogo, narr) {
   return `<!doctype html><html lang="lt"><head><meta charset="utf-8"><title>${esc(p.name)} — ${esc(p.monthNom.toLowerCase())} SPOBU</title><style>
     @page { size: A4; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; }
-    .pg { width: 210mm; height: 296mm; position: relative; overflow: hidden; page-break-after: always; }
+    html, body { width: 210mm; font-family: 'Segoe UI', Arial, sans-serif; background: #fff; }
+    /* v416: 1 lapas — TIKSLIAI 297mm + break TIK po jo; 2 lapas — laisvo aukščio (4 psl. bug fix) */
+    .pg1 { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; }
+    .pg2 { width: 210mm; min-height: 270mm; position: relative; }
     td, th { padding: 1.6mm 2mm; border-bottom: 0.4pt solid #e5e5e0; text-align: left; }
     th { color: #777; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; }
   </style></head><body>
-  <div class="pg" style="background:#12100e;color:#fff;text-align:center;">
+  <div class="pg1" style="background:#12100e;color:#fff;text-align:center;">
     <div style="position:absolute;font-size:170mm;left:50%;top:45%;transform:translate(-50%,-50%);opacity:.07;color:#FF7A33;font-family:'Yu Mincho','MS Mincho',serif;">武</div>
     <div style="position:absolute;inset:9mm;border:.5pt solid rgba(255,122,51,.35);border-radius:5mm;"></div>
     <div style="position:relative;padding-top:24mm;">
@@ -3629,7 +3648,7 @@ function _pfPdfDoc(p, clubName, clubLogo, narr) {
       <span style="font-size:9pt;letter-spacing:2px;color:rgba(255,255,255,.45);vertical-align:middle;">${p.year} ${esc(p.monthNom)} · SPOBU</span>
     </div>
   </div>
-  <div class="pg" style="background:#fff;color:#1a1a1a;padding:14mm 15mm;page-break-after:auto;">
+  <div class="pg2" style="background:#fff;color:#1a1a1a;padding:14mm 15mm 10mm;">
     <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2pt solid #E8560A;padding-bottom:3mm;">
       <div style="display:flex;align-items:center;gap:4mm;">${clubImg}</div>
       <div style="display:flex;align-items:center;gap:2mm;"><img src="brand/mark-orange-128.png" style="height:8mm;"><span style="font-weight:800;font-size:12pt;letter-spacing:1px;">SPOBU</span></div>
@@ -3648,7 +3667,7 @@ function _pfPdfDoc(p, clubName, clubLogo, narr) {
     ${streakLines ? `<div style="${h3}">Serijos</div><div style="font-size:10pt;line-height:1.7;">${streakLines}</div>` : ''}
     ${praiseLines ? `<div style="${h3}">Trenerio pagyrimai</div><div style="font-size:10pt;line-height:1.7;">${praiseLines}</div>` : ''}
     ${attStr ? `<div style="${h3}">Lankomumas (${p.attended}/${p.attSched || p.attDays.length})</div><div style="font-size:9.5pt;line-height:1.7;">${attStr}</div>` : ''}
-    <div style="position:absolute;bottom:10mm;left:15mm;right:15mm;display:flex;justify-content:space-between;font-size:8pt;color:#999;border-top:.4pt solid #e5e5e0;padding-top:2mm;">
+    <div style="display:flex;justify-content:space-between;font-size:8pt;color:#999;border-top:.4pt solid #e5e5e0;padding-top:2mm;margin-top:8mm;">
       <span>Sugeneruota SPOBU · spobu.lt</span><span>2 / 2</span>
     </div>
   </div>
