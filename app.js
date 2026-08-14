@@ -3268,8 +3268,22 @@ async function loadParentKidFeed() {
     });
     // Serijos bonusai
     slRows.forEach(s => { const tn = s.streak_type === 'training' ? 'treniruočių' : s.streak_type === 'weekly' ? 'savaičių' : 'mėnesių'; items.push({ kind: 'streak', color: '#FB923C', icon: ''+ico('streak')+'', title: `${s.streak_count} ${tn} iš eilės — serijos premija`, label: 'Serijos bonusas', exp: s.exp_awarded, date: s.created_at }); });
-    // Trenerio EXP už elgesį (kid_exp_adjustments) — su priežastimi
-    adjRows.forEach(a => { const pos = (a.exp_change || 0) >= 0; items.push({ kind: 'behavior', color: pos ? '#22C55E' : '#EF4444', icon: pos ? ''+ico('zvaigzde')+'' : ''+ico('ispejimas')+'', title: a.reason || 'Trenerio įvertinimas', label: 'Trenerio įvertinimas', exp: a.exp_change || 0, date: a.created_at }); });
+    // Trenerio EXP už elgesį (kid_exp_adjustments) — su priežastimi.
+    // 🏆 v434: grupių iššūkio ir stovyklų EXP ateina per tą pačią lentelę (reason prefiksai) —
+    // atskiriami į savo rūšis, kad nesirodytų kaip „trenerio pagyrimas" (savininko pastaba).
+    adjRows.forEach(a => {
+      const reason = a.reason || '';
+      if (/^Grupių iššūkis:/i.test(reason)) {
+        items.push({ kind: 'gc', color: '#EAB308', icon: '🏆', title: reason.replace(/^Grupių iššūkis:\s*/i, ''), label: 'Grupių iššūkis', exp: a.exp_change || 0, date: a.created_at });
+        return;
+      }
+      if (/^Stovykla:/i.test(reason)) {
+        items.push({ kind: 'camp', color: '#8B5CF6', icon: '🏕️', title: reason.replace(/^Stovykla:\s*/i, ''), label: 'Stovykla', exp: a.exp_change || 0, date: a.created_at });
+        return;
+      }
+      const pos = (a.exp_change || 0) >= 0;
+      items.push({ kind: 'behavior', color: pos ? '#22C55E' : '#EF4444', icon: pos ? ''+ico('zvaigzde')+'' : ''+ico('ispejimas')+'', title: reason || 'Trenerio įvertinimas', label: 'Trenerio įvertinimas', exp: a.exp_change || 0, date: a.created_at });
+    });
     // 🔄 v401 (B5): grąžinti pataisyti — rinkinio nariai (ta pati [set:] žymė + minutė) į VIENĄ įrašą
     {
       const setB = {}, singleRej = [];
@@ -3405,6 +3419,8 @@ async function loadParentKidFeed() {
       if (trainN) parts.push(trainN + (trainN === 1 ? ' užduotis' : ' užduotys'));
       if (goalN) parts.push(goalN === 1 ? 'iššūkis įveiktas' : goalN + ' iššūkiai įveikti');
       if (recN) parts.push(recN + (recN === 1 ? ' rekordas' : ' rekordai'));
+      if (its.some(i => i.kind === 'gc')) parts.push('<span style="color:#EAB308;">grupių iššūkis</span>');
+      if (its.some(i => i.kind === 'camp')) parts.push('<span style="color:#8B5CF6;">stovykla</span>');
       if (its.some(i => i.kind === 'behavior')) parts.push('trenerio įvertinimas');
       if (its.some(i => i.kind === 'streak')) parts.push('serijos premija');
       if (its.some(i => i.kind === 'returned')) parts.push('<span style="color:#FF8C00;">grąžinta pataisyti</span>');
@@ -3538,6 +3554,13 @@ function openPfDay(key) {
   // Rekordai
   const recs = its.filter(i => i.kind === 'record');
   if (recs.length) html += sect('Pagerino savo rekordus:', recs.map(i => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;"><span>${escapeHtml(i.rname || '')}</span><span>${i.rop != null && i.rop > 0 ? `<span style="color:var(--mut);">${i.rop}</span> ` : ''}<span style="color:var(--grn);font-weight:800;">→ ${i.rv}${i.runit ? ' ' + escapeHtml(i.runit) : ''}</span></span></div>`).join(''));
+  // 🏆 Grupių iššūkis / 🏕️ stovykla — komandiniai įvykiai (v434)
+  its.filter(i => i.kind === 'gc').forEach(i => {
+    html += `<div style="background:rgba(234,179,8,.08);border:.5px solid rgba(234,179,8,.35);border-radius:10px;padding:8px 10px;margin-top:9px;font-size:12px;color:#EAB308;">🏆 Grupių iššūkis — ${escapeHtml(i.title || '')} <b>+${i.exp}</b></div>`;
+  });
+  its.filter(i => i.kind === 'camp').forEach(i => {
+    html += `<div style="background:rgba(139,92,246,.08);border:.5px solid rgba(139,92,246,.35);border-radius:10px;padding:8px 10px;margin-top:9px;font-size:12px;color:#a78bfa;">🏕️ Stovykla — ${escapeHtml(i.title || '')} <b>+${i.exp}</b></div>`;
+  });
   // Trenerio įvertinimai (pagyrimai / pastabos)
   its.filter(i => i.kind === 'behavior').forEach(i => {
     const pos = (i.exp || 0) >= 0;
