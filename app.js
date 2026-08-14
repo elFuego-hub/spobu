@@ -3241,7 +3241,7 @@ async function loadParentKidFeed() {
       sb.from('competition_results').select('approved_at, exp_gained, placement, competitions(title)').eq('kid_id', k.id).eq('approval_status', 'approved').gte('approved_at', cut).order('approved_at', { ascending: false }).limit(50),
       // ⚡ W3-2 (F3-03): rekordams imam APPROVED result_submissions su REALIU exp_gain —
       // kid_records.category_exp yra KAUPIAMAS ir pūsdavo feed/mėnesio sumą (+42 vietoj +9)
-      sb.from('result_submissions').select('exercise_id, new_value, exp_gain, reviewed_at').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(50),
+      sb.from('result_submissions').select('exercise_id, old_pr, new_value, exp_gain, reviewed_at').eq('kid_id', k.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(50),
       sb.from('streak_bonus_log').select('created_at, exp_awarded, streak_type, streak_count').eq('kid_id', k.id).gte('created_at', cut).order('created_at', { ascending: false }).limit(50),
       sb.from('kid_exp_adjustments').select('created_at, exp_change, reason').eq('kid_id', k.id).gte('created_at', cut).order('created_at', { ascending: false }).limit(50),
       // 🔄 v401 (B5): atmesti iššūkių pateikimai — „grąžinta pataisyti" signalas tėvui feed'e
@@ -3306,7 +3306,7 @@ async function loadParentKidFeed() {
     krRows.forEach(r => {
       const ex = exMap[r.exercise_id];
       const unit = ex?.unit ? ' ' + ex.unit : '';
-      items.push({ kind: 'record', rname: ex?.name || 'Pratimas', rv: r.new_value, runit: ex?.unit || '', color: '#22C55E', icon: ''+ico('grafikas')+'', title: (ex?.name || 'Pratimas') + ` → ${r.new_value}${unit}`, label: 'Pratimo rekordas', exp: r.exp_gain || 0, date: r.reviewed_at });
+      items.push({ kind: 'record', rname: ex?.name || 'Pratimas', rop: r.old_pr, rv: r.new_value, runit: ex?.unit || '', color: '#22C55E', icon: ''+ico('grafikas')+'', title: (ex?.name || 'Pratimas') + ` → ${r.new_value}${unit}`, label: 'Pratimo rekordas', exp: r.exp_gain || 0, date: r.reviewed_at });
     });
 
     items.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -3424,6 +3424,30 @@ async function loadParentKidFeed() {
       + (restDays.length ? `<div id="pf-more-days" style="display:none;">${restDays.join('')}</div>
         <button id="pf-more-btn" onclick="document.getElementById('pf-more-days').style.display='block';this.remove();" style="width:100%;padding:11px;margin-top:2px;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.5px;border-radius:10px;cursor:pointer;font-family:inherit;">Ankstesnės dienos (${restDays.length}) →</button>` : '');
 
+    // 📄 v415: PDF ataskaitos (diplomas + statistika) duomenys — surenkami čia, spausdinama openMonthPdf
+    const wk = {};
+    items.forEach(it => {
+      if (!it.date) return;
+      const t = new Date(it.date);
+      const mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7));
+      const wkey = dk(mon);
+      wk[wkey] = (wk[wkey] || 0) + (it.exp || 0);
+    });
+    _pfPdf = {
+      name: k.first_name || 'Vaikas', kyu: k.kyu || '', monthLabel,
+      monthNom: LT_MONTHS_NOM[now.getMonth()], year: now.getFullYear(),
+      exp: monthExp, chCount, recCount, medalCount,
+      attended, attSched: _attStats?.monthScheduled || 0,
+      attDays: attRows.slice().sort((a, b) => (a.session_date < b.session_date ? -1 : 1)),
+      numsRows: _pfNums.rows,
+      weeks: Object.keys(wk).sort().map(w => ({ from: w.slice(5), exp: wk[w] })),
+      recs: items.filter(i => i.kind === 'record').map(i => ({ name: i.rname, op: i.rop, nv: i.rv, unit: i.runit })),
+      medals: (_pmCard.wonComps || []).map(c => ({ title: c.title, label: String(c.label || '').split(' · ')[0] })),
+      praise: items.filter(i => i.kind === 'behavior' && (i.exp || 0) >= 0).map(i => i.title),
+      learned: items.filter(i => i.kind === 'challenge' && i.ctype === 'monthly').map(i => i.title),
+      streaks: items.filter(i => i.kind === 'streak').map(i => ({ t: i.title, exp: i.exp }))
+    };
+
     list.innerHTML = strip + rowsHtml;
   } catch (e) { console.warn('parent feed', e); list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant feed</div>'; }
 }
@@ -3499,7 +3523,7 @@ function openPfDay(key) {
   if (goals.length) html += sect('Įveikti iššūkiai:', goals.map(i => `<div style="font-size:12px;padding:2px 0;"><span style="color:${i.color};">●</span> ${escapeHtml(i.title || '')} <span style="color:var(--mut);font-size:10px;">${i.ctype === 'weekly' ? '(savaitinis)' : i.ctype === 'monthly' ? '(mėnesinis)' : ''}</span></div>`).join(''));
   // Rekordai
   const recs = its.filter(i => i.kind === 'record');
-  if (recs.length) html += sect('Pagerino savo rekordus:', recs.map(i => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;"><span>${escapeHtml(i.rname || '')}</span><span style="color:var(--grn);font-weight:800;">→ ${i.rv}${i.runit ? ' ' + escapeHtml(i.runit) : ''}</span></div>`).join(''));
+  if (recs.length) html += sect('Pagerino savo rekordus:', recs.map(i => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;"><span>${escapeHtml(i.rname || '')}</span><span>${i.rop != null && i.rop > 0 ? `<span style="color:var(--mut);">${i.rop}</span> ` : ''}<span style="color:var(--grn);font-weight:800;">→ ${i.rv}${i.runit ? ' ' + escapeHtml(i.runit) : ''}</span></span></div>`).join(''));
   // Trenerio įvertinimai (pagyrimai / pastabos)
   its.filter(i => i.kind === 'behavior').forEach(i => {
     const pos = (i.exp || 0) >= 0;
@@ -3525,8 +3549,110 @@ function openPfNumbers() {
     <div style="font-size:10px;color:var(--mut);margin-bottom:8px;">viskas, ką ${escapeHtml(n.kidName)} užfiksavo per iššūkius šį mėnesį</div>
     ${rows}
     <div style="font-size:9px;color:var(--mut);margin-top:10px;text-align:center;">Skaičiuojama iš trenerio patvirtintų iššūkių · EXP: +${(n.monthExp || 0).toLocaleString('lt-LT')}</div>
-    <button onclick="document.getElementById('pf-num-modal').remove();openMonthCard()" style="width:100%;padding:12px;margin-top:12px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('programele')} Mėnesio kortelė · dalintis</button>`;
+    <button onclick="document.getElementById('pf-num-modal').remove();openMonthCard()" style="width:100%;padding:12px;margin-top:12px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('programele')} Mėnesio kortelė · dalintis</button>
+    <button onclick="openMonthPdf()" style="width:100%;padding:12px;margin-top:8px;background:transparent;color:#FF7A33;border:.5px solid rgba(255,77,0,.45);border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Mėnesio ataskaita (PDF)</button>`;
   _pfSheet('pf-num-modal', `${n.monthLabel} SKAIČIAI`, body);
+}
+
+// 📄 v415: mėnesio PDF — 1 psl. DIPLOMAS (vaikui) + 2 psl. STATISTIKA (tėvui).
+// Naratyvas — KODO generuotas (computeMonthHighlight), ne trenerio (savininko sprendimas).
+// Spausdinama per paslėptą iframe (kaip AI ataskaitų printReportFrame) → tėvas renkasi „Įrašyti kaip PDF".
+let _pfPdf = null;
+async function openMonthPdf() {
+  const p = _pfPdf;
+  if (!p) { showToast(ico('klaida') + ' Atidaryk Pasiekimų langą iš naujo', 'error'); return; }
+  showToast(ico('dokumentas') + ' Ruošiama ataskaita…', 'success', 2500);
+  let clubLogo = null, clubName = '';
+  try { clubLogo = await _shareClubLogo(); } catch (_) {}
+  try {
+    const cid = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : null;
+    if (cid && sb) { const { data } = await sb.from('clubs').select('name').eq('id', cid).maybeSingle(); clubName = data?.name || ''; }
+  } catch (_) {}
+  let narr = '';
+  try { narr = String(await computeMonthHighlight() || '').replace(/<[^>]*>/g, '').trim(); } catch (_) {}
+  const html = _pfPdfDoc(p, clubName, clubLogo, narr);
+  let f = document.getElementById('pf-pdf-frame'); if (f) f.remove();
+  f = document.createElement('iframe');
+  f.id = 'pf-pdf-frame';
+  f.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;';
+  document.body.appendChild(f);
+  const d = f.contentDocument;
+  d.open(); d.write(html); d.close();
+  setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { console.warn('pf pdf print', e); } }, 450);
+}
+
+function _pfPdfDoc(p, clubName, clubLogo, narr) {
+  const esc = escapeHtml;
+  const cn = esc(clubName || 'SPOBU klubas');
+  const clubImg = clubLogo ? `<img src="${clubLogo}" style="height:11mm;max-width:50mm;object-fit:contain;">` : `<span style="font-weight:700;font-size:11pt;">${cn}</span>`;
+  const wmax = Math.max(1, ...p.weeks.map(w => w.exp));
+  const bars = p.weeks.map(w => `<div style="flex:1;text-align:center;"><div style="font-size:8.5pt;color:#333;margin-bottom:1mm;">${w.exp}</div><div style="height:${Math.max(3, Math.round(w.exp / wmax * 34))}mm;background:${w.exp === wmax ? '#E8560A' : '#f0c9ae'};border-radius:2mm 2mm 0 0;"></div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">nuo ${esc(w.from)}</div></div>`).join('');
+  const numRows = p.numsRows.map(r => `<tr><td>${esc(r.name)}</td><td style="text-align:right;font-weight:700;color:${r.color === '#4FC3F7' ? '#1a7fb5' : r.color === '#FFD700' ? '#a8790a' : r.color === '#22C55E' ? '#1D9E75' : '#E8560A'};">${esc(r.val)}</td></tr>`).join('');
+  const recRows = p.recs.length ? p.recs.map(r => `<tr><td>${esc(r.name || '')}</td><td style="color:#999;">${r.op != null && r.op > 0 ? r.op : '—'}</td><td style="color:#1D9E75;font-weight:700;">${r.nv}${r.unit ? ' ' + esc(r.unit) : ''}</td></tr>`).join('') : '';
+  const attStr = p.attDays.map(a => a.present
+    ? `<span>${esc(String(a.session_date).slice(5))} ✓</span>`
+    : `<span style="color:#c0392b;">${esc(String(a.session_date).slice(5))} praleista</span>`).join(' · ');
+  const medalLine = p.medals.map(m => `${esc(m.label)} — „${esc(m.title)}"`).join(' · ');
+  const learnedLine = p.learned.map(esc).join(' · ');
+  const streakLines = p.streaks.map(s => `<div>🔥 ${esc(s.t)} <b style="color:#E8560A;">+${s.exp}</b></div>`).join('');
+  const praiseLines = p.praise.map(t => `<div>⭐ „${esc(t)}"</div>`).join('');
+  const h3 = 'font-size:9.5pt;letter-spacing:1px;color:#555;margin:5mm 0 2mm;text-transform:uppercase;font-weight:700;';
+  const tbl = 'width:100%;border-collapse:collapse;font-size:9.5pt;';
+  return `<!doctype html><html lang="lt"><head><meta charset="utf-8"><title>${esc(p.name)} — ${esc(p.monthNom.toLowerCase())} SPOBU</title><style>
+    @page { size: A4; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; }
+    .pg { width: 210mm; height: 296mm; position: relative; overflow: hidden; page-break-after: always; }
+    td, th { padding: 1.6mm 2mm; border-bottom: 0.4pt solid #e5e5e0; text-align: left; }
+    th { color: #777; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; }
+  </style></head><body>
+  <div class="pg" style="background:#12100e;color:#fff;text-align:center;">
+    <div style="position:absolute;font-size:170mm;left:50%;top:45%;transform:translate(-50%,-50%);opacity:.07;color:#FF7A33;font-family:'Yu Mincho','MS Mincho',serif;">武</div>
+    <div style="position:absolute;inset:9mm;border:.5pt solid rgba(255,122,51,.35);border-radius:5mm;"></div>
+    <div style="position:relative;padding-top:24mm;">
+      ${clubLogo ? `<img src="${clubLogo}" style="height:14mm;max-width:70mm;object-fit:contain;">` : ''}
+      <div style="font-size:11pt;letter-spacing:5px;color:rgba(255,255,255,.6);margin-top:4mm;">${cn.toUpperCase()}</div>
+      <div style="font-size:40pt;font-weight:800;letter-spacing:3px;margin-top:14mm;">${esc(p.name).toUpperCase()}</div>
+      <div style="font-size:14pt;letter-spacing:5px;color:#FF7A33;margin-top:2mm;">${esc(p.monthLabel)} KARYS</div>
+      <div style="font-size:48pt;font-weight:800;color:#FF7A33;margin-top:15mm;">+${p.exp.toLocaleString('lt-LT')}</div>
+      <div style="font-size:9.5pt;letter-spacing:4px;color:rgba(255,255,255,.55);">EXP PER MĖNESĮ</div>
+      <div style="display:flex;justify-content:center;gap:16mm;margin-top:14mm;">
+        <div><div style="font-size:20pt;font-weight:800;">${p.chCount}</div><div style="font-size:8.5pt;color:rgba(255,255,255,.55);">iššūkių įveikta</div></div>
+        ${p.medalCount ? `<div><div style="font-size:20pt;font-weight:800;color:#FFD700;">🥇 ${p.medalCount}</div><div style="font-size:8.5pt;color:rgba(255,255,255,.55);">${p.medalCount === 1 ? 'medalis' : 'medaliai'}</div></div>` : ''}
+        ${p.recCount ? `<div><div style="font-size:20pt;font-weight:800;">${p.recCount}</div><div style="font-size:8.5pt;color:rgba(255,255,255,.55);">nauji rekordai</div></div>` : ''}
+        ${p.attSched ? `<div><div style="font-size:20pt;font-weight:800;color:#22C55E;">${p.attended}/${p.attSched}</div><div style="font-size:8.5pt;color:rgba(255,255,255,.55);">treniruotės</div></div>` : ''}
+      </div>
+      ${learnedLine ? `<div style="margin-top:12mm;font-size:12pt;color:#FB923C;">Nauja: ${learnedLine}</div>` : ''}
+    </div>
+    <div style="position:absolute;bottom:14mm;left:0;right:0;text-align:center;">
+      <img src="brand/mark-white-128.png" style="height:7mm;vertical-align:middle;margin-right:2mm;">
+      <span style="font-size:9pt;letter-spacing:2px;color:rgba(255,255,255,.45);vertical-align:middle;">${p.year} ${esc(p.monthNom)} · SPOBU</span>
+    </div>
+  </div>
+  <div class="pg" style="background:#fff;color:#1a1a1a;padding:14mm 15mm;page-break-after:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2pt solid #E8560A;padding-bottom:3mm;">
+      <div style="display:flex;align-items:center;gap:4mm;">${clubImg}</div>
+      <div style="display:flex;align-items:center;gap:2mm;"><img src="brand/mark-orange-128.png" style="height:8mm;"><span style="font-weight:800;font-size:12pt;letter-spacing:1px;">SPOBU</span></div>
+    </div>
+    <div style="margin-top:5mm;display:flex;justify-content:space-between;align-items:baseline;">
+      <div style="font-size:15pt;font-weight:700;">${esc(p.name)} — mėnesio statistika</div>
+      <div style="color:#777;font-size:9.5pt;">${p.year} m. ${esc(p.monthNom.toLowerCase())}${p.kyu ? ' · ' + esc(p.kyu) : ''}</div>
+    </div>
+    ${narr ? `<div style="background:#f6f6f2;border-left:2mm solid #E8560A;padding:3mm 4mm;margin-top:4mm;font-size:10pt;font-style:italic;">${esc(narr)}</div>` : ''}
+    <div style="${h3}">EXP pagal savaites</div>
+    <div style="display:flex;align-items:flex-end;gap:4mm;border-bottom:.5pt solid #ddd;padding:0 2mm;">${bars}</div>
+    <div style="${h3}">Mėnesio skaičiai</div>
+    <table style="${tbl}">${numRows}</table>
+    ${recRows ? `<div style="${h3}">Rekordų šuoliai</div><table style="${tbl}"><tr><th>Pratimas</th><th>Buvo</th><th>Tapo</th></tr>${recRows}</table>` : ''}
+    ${medalLine ? `<div style="${h3}">Varžybos</div><div style="font-size:10pt;">🏆 ${medalLine}</div>` : ''}
+    ${streakLines ? `<div style="${h3}">Serijos</div><div style="font-size:10pt;line-height:1.7;">${streakLines}</div>` : ''}
+    ${praiseLines ? `<div style="${h3}">Trenerio pagyrimai</div><div style="font-size:10pt;line-height:1.7;">${praiseLines}</div>` : ''}
+    ${attStr ? `<div style="${h3}">Lankomumas (${p.attended}/${p.attSched || p.attDays.length})</div><div style="font-size:9.5pt;line-height:1.7;">${attStr}</div>` : ''}
+    <div style="position:absolute;bottom:10mm;left:15mm;right:15mm;display:flex;justify-content:space-between;font-size:8pt;color:#999;border-top:.4pt solid #e5e5e0;padding-top:2mm;">
+      <span>Sugeneruota SPOBU · spobu.lt</span><span>2 / 2</span>
+    </div>
+  </div>
+  </body></html>`;
 }
 
 // ════════════════════════════════════════════════════════════
