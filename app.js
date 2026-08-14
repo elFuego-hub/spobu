@@ -3623,8 +3623,8 @@ async function openMonthPdf(prevMonth) {
     </div>
     <iframe id="pf-pdf-frame" style="flex:1;border:0;width:100%;background:#525659;"></iframe>`;
   document.body.appendChild(m);
-  // 💾 v419: failo vardui — kas ir kuris mėnuo
-  _pfPdfMeta = { name: p.name || 'Vaikas', y: p.year, mn: p.monthNom || '' };
+  // 💾 v419/v422: failo vardui + share paveiksliukui (pilni duomenys)
+  _pfPdfMeta = { name: p.name || 'Vaikas', y: p.year, mn: p.monthNom || '', p, narr, clubName, clubLogo, interim };
   const f = document.getElementById('pf-pdf-frame');
   const d = f.contentDocument;
   d.open(); d.write(html); d.close();
@@ -3679,24 +3679,60 @@ async function _pfPdfSave() {
   }
 }
 
-// 📲 v420: dalinimasis PAVEIKSLIUKAIS (Instagram/Messenger PDF nepriima — tik nuotraukas).
-// Abu lapai kaip JPG per navigator.share; be share palaikymo — atsisiunčia failais.
+// 📲 v422: dalinimasis — ATSKIRAS telefonui pritaikytas paveiksliukas (Instagram/Messenger PDF
+// nepriima; A4 lapų klijavimas v421 atrodė smulkus ir su tuščiais tarpais). Vienas tamsus JPG,
+// 720px pločio, turinys be A4 rėmų — chat'e skaitosi be zoom.
+function _pfShareHtml(m) {
+  const esc = escapeHtml, p = m.p || {};
+  const row = (l, v, c) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:16px;"><span>${l}</span><span style="font-weight:800;color:${c || '#FF7A33'};">${v}</span></div>`;
+  const h = (t) => `<div style="font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.5);font-weight:800;margin:22px 0 6px;">${t}</div>`;
+  const PF_TITLE_TIERS = [[500, 'LEGENDA'], [300, 'SAMURAJUS'], [100, 'KARYS'], [0, 'KOVOTOJAS']];
+  const titleWord = (PF_TITLE_TIERS.find(t => (p.exp || 0) >= t[0]) || [0, 'KARYS'])[1];
+  return `<div style="padding:36px 34px 28px;color:#fff;font-family:'Segoe UI',Arial,sans-serif;text-align:center;position:relative;overflow:hidden;">
+    <div style="position:absolute;font-size:520px;left:50%;top:230px;transform:translateX(-50%);opacity:.06;color:#FF7A33;font-family:'Yu Mincho','MS Mincho',serif;line-height:1;">武</div>
+    <div style="position:relative;">
+      ${m.clubLogo ? `<img src="${m.clubLogo}" style="height:44px;max-width:220px;object-fit:contain;">` : ''}
+      <div style="font-size:14px;letter-spacing:5px;color:rgba(255,255,255,.6);margin-top:8px;">${esc((m.clubName || 'SPOBU KLUBAS')).toUpperCase()}</div>
+      <div style="font-size:52px;font-weight:800;letter-spacing:3px;margin-top:18px;">${esc(p.name || '').toUpperCase()}</div>
+      <div style="font-size:19px;letter-spacing:5px;color:#FF7A33;margin-top:2px;">${esc(p.monthLabel || '')} ${titleWord}</div>
+      <div style="font-size:62px;font-weight:800;color:#FF7A33;margin-top:20px;line-height:1;">+${(p.exp || 0).toLocaleString('lt-LT')}</div>
+      <div style="font-size:12px;letter-spacing:4px;color:rgba(255,255,255,.55);margin-top:2px;">EXP PER MĖNESĮ</div>
+      <div style="display:flex;justify-content:center;gap:34px;margin-top:22px;">
+        <div><div style="font-size:26px;font-weight:800;">${p.chCount || 0}</div><div style="font-size:11px;color:rgba(255,255,255,.55);">iššūkiai</div></div>
+        ${p.medalCount ? `<div><div style="font-size:26px;font-weight:800;color:#FFD700;">${p.medalCount}</div><div style="font-size:11px;color:rgba(255,255,255,.55);">medaliai</div></div>` : ''}
+        ${p.recCount ? `<div><div style="font-size:26px;font-weight:800;color:#22C55E;">${p.recCount}</div><div style="font-size:11px;color:rgba(255,255,255,.55);">rekordai</div></div>` : ''}
+        ${p.attSched ? `<div><div style="font-size:26px;font-weight:800;">${p.attended}/${p.attSched}</div><div style="font-size:11px;color:rgba(255,255,255,.55);">treniruotės</div></div>` : ''}
+      </div>
+      ${(p.learned || []).length ? `<div style="margin-top:18px;font-size:15px;color:#FB923C;">Nauja: ${(p.learned || []).map(esc).join(' · ')}</div>` : ''}
+      <div style="text-align:left;margin-top:10px;">
+        ${h('MĖNESIO SKAIČIAI')}
+        ${(p.numsRows || []).map(r => row(esc(r.name), esc(r.val), r.color)).join('')}
+        ${(p.recs || []).length ? h('REKORDŲ ŠUOLIAI') + (p.recs || []).map(r => row(esc(r.name || ''), `${r.op != null && r.op > 0 ? `<span style="color:rgba(255,255,255,.45);font-weight:400;">${r.op}</span> → ` : ''}${r.nv}${r.unit ? ' ' + esc(r.unit) : ''}`, '#22C55E')).join('') : ''}
+        ${(m.p.medals || []).length ? h('VARŽYBOS') + (m.p.medals || []).map(md => `<div style="font-size:16px;padding:5px 0;color:#FFD700;">🏆 ${esc(md.label)} — „${esc(md.title)}"</div>`).join('') : ''}
+        ${(p.streaks || []).length ? h('SERIJOS') + (p.streaks || []).map(s => `<div style="font-size:15px;padding:4px 0;color:#FB923C;">🔥 ${esc(s.t)} <b>+${s.exp}</b></div>`).join('') : ''}
+        ${(p.praise || []).length ? h('TRENERIO PAGYRIMAI') + (p.praise || []).map(t => `<div style="font-size:15px;padding:4px 0;color:#22C55E;">⭐ „${esc(t)}"</div>`).join('') : ''}
+      </div>
+      <div style="margin-top:26px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.45);">
+        <img src="brand/mark-white-128.png" style="height:20px;vertical-align:middle;margin-right:6px;">${p.year || ''} ${esc(p.monthNom || '')} · SPOBU · spobu.lt
+      </div>
+    </div>
+  </div>`;
+}
+
 async function _pfPdfShare() {
   const m = _pfPdfMeta || {};
+  if (!m.p) { showToast(ico('klaida') + ' Atidaryk ataskaitą iš naujo', 'error'); return; }
+  let host = null;
   try {
     showToast('📲 Ruošiamas paveiksliukas…', 'success', 2500);
-    const cvs = await _pfPdfCanvases();
-    if (!cvs || !cvs.length) { showToast(ico('klaida') + ' Nepavyko paruošti', 'error'); return; }
-    // v421: VIENAS paveiksliukas — lapai suklijuojami vertikaliai (savininko pastaba: ne 2 atskiri)
-    const W = Math.max(...cvs.map(c => c.width));
-    const H = cvs.reduce((s, c) => s + c.height, 0);
-    const joined = document.createElement('canvas');
-    joined.width = W; joined.height = H;
-    const ctx = joined.getContext('2d');
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
-    let y = 0;
-    cvs.forEach(c => { ctx.drawImage(c, Math.round((W - c.width) / 2), y); y += c.height; });
-    const blob = await new Promise(r => joined.toBlob(r, 'image/jpeg', 0.9));
+    if (typeof html2canvas !== 'function') { showToast(ico('klaida') + ' Nepavyko (nėra ryšio?)', 'error'); return; }
+    host = document.createElement('div');
+    host.style.cssText = 'position:absolute;left:-10000px;top:0;width:720px;background:#12100e;';
+    host.innerHTML = _pfShareHtml(m);
+    document.body.appendChild(host);
+    const cv = await html2canvas(host, { scale: 2, useCORS: true, backgroundColor: '#12100e', logging: false });
+    host.remove(); host = null;
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
     const files = blob ? [new File([blob], `SPOBU-${String(m.name || 'ataskaita')}.jpg`, { type: 'image/jpeg' })] : [];
     if (files.length && navigator.share && navigator.canShare && navigator.canShare({ files })) {
       await navigator.share({ files, title: 'SPOBU mėnesio ataskaita' });
@@ -3710,7 +3746,7 @@ async function _pfPdfShare() {
     }
   } catch (e) {
     if (e?.name !== 'AbortError') { console.warn('pf share', e); showToast(ico('klaida') + ' Nepavyko pasidalinti', 'error'); }
-  }
+  } finally { if (host) host.remove(); }
 }
 
 function _pfPdfFitZoom() {
