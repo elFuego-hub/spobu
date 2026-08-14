@@ -3910,7 +3910,10 @@ async function openCardStudio(pd, mNum) {
       <div id="cs-prev" style="width:720px;zoom:.4;border-radius:14px;overflow:hidden;"></div>
     </div>
     <button onclick="_cardShare()" id="cs-share-btn" style="width:100%;padding:13px;margin-top:12px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📲 Dalintis šia kortele</button>
-    <button onclick="openCardShelf()" style="width:100%;padding:11px;margin-top:8px;background:transparent;color:var(--mut);border:.5px solid var(--bdr);border-radius:11px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">🃏 Kolekcija (${Object.keys(months).length}/12)</button>`;
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button onclick="openCardShelf()" style="flex:1;padding:11px;background:transparent;color:var(--mut);border:.5px solid var(--bdr);border-radius:11px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">🃏 Kolekcija (${Object.keys(months).length}/12)</button>
+      ${_csState.isCur ? `<button onclick="document.getElementById('card-studio-modal').remove();openMonthPdf()" style="flex:1;padding:11px;background:transparent;color:#FF7A33;border:.5px solid rgba(255,77,0,.45);border-radius:11px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} PDF ataskaita</button>` : ''}
+    </div>`;
   _pfSheet('card-studio-modal', '🃏 KORTELĖS STUDIJA', body);
   _csRender();
 }
