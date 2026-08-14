@@ -3381,7 +3381,10 @@ async function loadParentKidFeed() {
         <div style="font-size:10px;color:rgba(255,255,255,.55);">${_attStats ? `lankė ${_attStats.monthPresent}/${_attStats.monthScheduled}` : `+${monthExp.toLocaleString('lt-LT')} EXP`}</div>
       </div>
       ${tiles.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px;">${tileHtml}</div>` : ''}
-      <div onclick="openPfNumbers()" style="background:rgba(255,122,51,.12);border:.5px solid rgba(255,122,51,.3);border-radius:8px;padding:6px 9px;margin-top:6px;text-align:center;cursor:pointer;font-size:10.5px;color:#FF7A33;font-weight:800;">Visi mėnesio skaičiai (${_pfNums.rows.length}) →</div>
+      <div style="display:flex;gap:5px;margin-top:6px;">
+        <div onclick="openPfNumbers()" style="flex:1;background:rgba(255,122,51,.12);border:.5px solid rgba(255,122,51,.3);border-radius:8px;padding:6px 9px;text-align:center;cursor:pointer;font-size:10.5px;color:#FF7A33;font-weight:800;">Visi skaičiai (${_pfNums.rows.length}) →</div>
+        <div onclick="openCardStudio()" style="flex:1;background:rgba(255,122,51,.12);border:.5px solid rgba(255,122,51,.3);border-radius:8px;padding:6px 9px;text-align:center;cursor:pointer;font-size:10.5px;color:#FF7A33;font-weight:800;">🃏 Mėnesio kortelė</div>
+      </div>
     </div>`;
 
     // 6) Dienų sąrašas — kompaktiškos eilutės, tap → dienos sheet'as
@@ -3560,7 +3563,7 @@ function openPfNumbers() {
     <div style="font-size:10px;color:var(--mut);margin-bottom:8px;">viskas, ką ${escapeHtml(n.kidName)} užfiksavo per iššūkius šį mėnesį</div>
     ${rows}
     <div style="font-size:9px;color:var(--mut);margin-top:10px;text-align:center;">Skaičiuojama iš trenerio patvirtintų iššūkių · EXP: +${(n.monthExp || 0).toLocaleString('lt-LT')}</div>
-    <button onclick="document.getElementById('pf-num-modal').remove();openMonthCard()" style="width:100%;padding:12px;margin-top:12px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('programele')} Mėnesio kortelė · dalintis</button>
+    <button onclick="document.getElementById('pf-num-modal').remove();openCardStudio()" style="width:100%;padding:12px;margin-top:12px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">🃏 Kortelės studija · dalintis</button>
     <button onclick="openMonthPdf()" style="width:100%;padding:12px;margin-top:8px;background:transparent;color:#FF7A33;border:.5px solid rgba(255,77,0,.45);border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Mėnesio ataskaita (PDF)</button>
     <button onclick="openMonthPdf(true)" style="width:100%;padding:11px;margin-top:8px;background:transparent;color:var(--mut);border:.5px solid var(--bdr);border-radius:11px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('kalendorius')} Praėjusio mėnesio ataskaita</button>`;
   _pfSheet('pf-num-modal', `${n.monthLabel} SKAIČIAI`, body);
