@@ -3579,8 +3579,10 @@ async function openMonthPdf() {
   m.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--bg);border-bottom:.5px solid var(--bdr);flex-shrink:0;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1.5px;">${ico('dokumentas')} ${escapeHtml(p.monthLabel)} ATASKAITA</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button onclick="_pfPdfPrint()" style="background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Įrašyti PDF / spausdinti</button>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button onclick="_pfPdfZoom(-1)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer;font-family:inherit;flex-shrink:0;">−</button>
+        <button onclick="_pfPdfZoom(1)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer;font-family:inherit;flex-shrink:0;">+</button>
+        <button onclick="_pfPdfPrint()" style="background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:9px;padding:8px 12px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Įrašyti PDF</button>
         <button onclick="document.getElementById('pf-pdf-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mut);">${ico('uzdaryti')}</button>
       </div>
     </div>
@@ -3589,13 +3591,40 @@ async function openMonthPdf() {
   const f = document.getElementById('pf-pdf-frame');
   const d = f.contentDocument;
   d.open(); d.write(html); d.close();
+  // 📱 v417: sutalpinti A4 (794px) į ekrano plotį — kaip AI ataskaitų _fitReportZoom
+  setTimeout(_pfPdfFitZoom, 80);
 }
 
+function _pfPdfFitZoom() {
+  const f = document.getElementById('pf-pdf-frame');
+  const d = f && (f.contentDocument || f.contentWindow?.document);
+  if (!d || !d.body) return;
+  const w = f.clientWidth || window.innerWidth;
+  const z = Math.min(1, Math.max(0.3, Math.round(((w - 6) / 794) * 100) / 100));
+  d.body.style.zoom = z;
+  f.dataset.z = z;
+}
+function _pfPdfZoom(dir) {
+  const f = document.getElementById('pf-pdf-frame');
+  const d = f && (f.contentDocument || f.contentWindow?.document);
+  if (!d || !d.body) return;
+  let z = parseFloat(f.dataset.z) || 1;
+  z = dir > 0 ? z * 1.2 : z / 1.2;
+  z = Math.min(2, Math.max(0.3, Math.round(z * 100) / 100));
+  d.body.style.zoom = z;
+  f.dataset.z = z;
+}
 function _pfPdfPrint() {
   const f = document.getElementById('pf-pdf-frame');
   if (!f || !f.contentWindow) return;
-  try { f.contentWindow.focus(); f.contentWindow.print(); }
-  catch (e) { console.warn('pf pdf print', e); showToast(ico('klaida') + ' Nepavyko atidaryti spausdinimo', 'error'); }
+  try {
+    // Spausdinimui zoom → 1 (PDF tikro A4 dydžio), po to atstatom (kaip printReportFrame)
+    const d = f.contentDocument || f.contentWindow.document;
+    const z = f.dataset.z || '';
+    if (d && d.body) d.body.style.zoom = 1;
+    f.contentWindow.focus(); f.contentWindow.print();
+    if (d && d.body && z) setTimeout(() => { d.body.style.zoom = z; }, 500);
+  } catch (e) { console.warn('pf pdf print', e); showToast(ico('klaida') + ' Nepavyko atidaryti spausdinimo', 'error'); }
 }
 
 function _pfPdfDoc(p, clubName, clubLogo, narr) {
@@ -3618,10 +3647,14 @@ function _pfPdfDoc(p, clubName, clubLogo, narr) {
   return `<!doctype html><html lang="lt"><head><meta charset="utf-8"><title>${esc(p.name)} — ${esc(p.monthNom.toLowerCase())} SPOBU</title><style>
     @page { size: A4; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    html, body { width: 210mm; font-family: 'Segoe UI', Arial, sans-serif; background: #fff; }
+    html { width: 100%; background: #525659; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { width: 210mm; margin: 0 auto; }
     /* v416: 1 lapas — TIKSLIAI 297mm + break TIK po jo; 2 lapas — laisvo aukščio (4 psl. bug fix) */
     .pg1 { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; }
-    .pg2 { width: 210mm; min-height: 270mm; position: relative; }
+    .pg2 { width: 210mm; min-height: 270mm; position: relative; background: #fff; }
+    /* v417: ekrane lapai atrodo kaip PDF viewer'yje; spausdinant — švaru */
+    @media screen { .pg1, .pg2 { box-shadow: 0 3px 16px rgba(0,0,0,.45); margin-bottom: 10px; } }
+    @media print { html { background: #fff; } .pg1, .pg2 { box-shadow: none; margin-bottom: 0; } }
     td, th { padding: 1.6mm 2mm; border-bottom: 0.4pt solid #e5e5e0; text-align: left; }
     th { color: #777; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; }
   </style></head><body>
