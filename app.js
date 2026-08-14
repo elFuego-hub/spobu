@@ -3615,6 +3615,7 @@ async function openMonthPdf(prevMonth) {
       <div style="display:flex;gap:6px;align-items:center;">
         <button onclick="_pfPdfZoom(-1)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer;font-family:inherit;flex-shrink:0;">−</button>
         <button onclick="_pfPdfZoom(1)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer;font-family:inherit;flex-shrink:0;">+</button>
+        <button onclick="_pfPdfShare()" title="Dalintis paveiksliuku (Instagram, Messenger…)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0;">📲</button>
         <button onclick="_pfPdfPrint()" title="Spausdinti" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0;">🖨️</button>
         <button id="pf-pdf-save-btn" onclick="_pfPdfSave()" style="background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:9px;padding:8px 12px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Įrašyti PDF</button>
         <button onclick="document.getElementById('pf-pdf-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mut);">${ico('uzdaryti')}</button>
@@ -3635,25 +3636,37 @@ async function openMonthPdf(prevMonth) {
 // 💾 v419: TIESIOGINIS PDF išsaugojimas be spausdinimo dialogo — html2canvas + jsPDF
 // (abu lapai → JPEG → A4 PDF failas). Jei bibliotekos neužsikrovė — fallback į print.
 let _pfPdfMeta = null;
-async function _pfPdfSave() {
+// Bendras helperis: abu lapai → canvas'ai (zoom laikinai 1, po — atstatomas)
+async function _pfPdfCanvases() {
   const f = document.getElementById('pf-pdf-frame');
   const d = f && (f.contentDocument || f.contentWindow?.document);
-  if (!d || !d.body) return;
+  if (!d || !d.body || typeof html2canvas !== 'function') return null;
+  const z = f.dataset.z || '';
+  d.body.style.zoom = 1;
+  try {
+    const out = [];
+    const pages = d.querySelectorAll('.pg1, .pg2');
+    for (let i = 0; i < pages.length; i++) {
+      out.push(await html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false }));
+    }
+    return out;
+  } finally { if (z) d.body.style.zoom = z; }
+}
+
+async function _pfPdfSave() {
   const JsPDF = window.jspdf?.jsPDF;
-  if (typeof html2canvas !== 'function' || !JsPDF) { _pfPdfPrint(); return; }
+  if (!JsPDF || typeof html2canvas !== 'function') { _pfPdfPrint(); return; }
   const btn = document.getElementById('pf-pdf-save-btn');
   if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.textContent = 'Ruošiama…'; }
-  const z = f.dataset.z || '';
   try {
-    d.body.style.zoom = 1; // tikras dydis renderinimui
-    const pages = d.querySelectorAll('.pg1, .pg2');
+    const cvs = await _pfPdfCanvases();
+    if (!cvs || !cvs.length) throw new Error('no pages');
     const pdf = new JsPDF({ unit: 'mm', format: 'a4', compress: true });
-    for (let i = 0; i < pages.length; i++) {
-      const cv = await html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+    cvs.forEach((cv, i) => {
       if (i > 0) pdf.addPage();
       const h = Math.min(297, cv.height / cv.width * 210);
       pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, h);
-    }
+    });
     const m = _pfPdfMeta || {};
     pdf.save(`SPOBU-${String(m.name || 'ataskaita')}-${m.y || ''}-${String(m.mn || '').toLowerCase()}.pdf`);
     showToast(ico('patvirtinta') + ' PDF įrašytas', 'success', 3000);
@@ -3662,8 +3675,35 @@ async function _pfPdfSave() {
     showToast(ico('klaida') + ' Nepavyko — bandom per spausdinimą', 'error', 3500);
     _pfPdfPrint();
   } finally {
-    if (z) d.body.style.zoom = z;
     if (btn) { delete btn.dataset.busy; btn.innerHTML = ico('dokumentas') + ' Įrašyti PDF'; }
+  }
+}
+
+// 📲 v420: dalinimasis PAVEIKSLIUKAIS (Instagram/Messenger PDF nepriima — tik nuotraukas).
+// Abu lapai kaip JPG per navigator.share; be share palaikymo — atsisiunčia failais.
+async function _pfPdfShare() {
+  const m = _pfPdfMeta || {};
+  try {
+    showToast('📲 Ruošiamas paveiksliukas…', 'success', 2500);
+    const cvs = await _pfPdfCanvases();
+    if (!cvs || !cvs.length) { showToast(ico('klaida') + ' Nepavyko paruošti', 'error'); return; }
+    const files = [];
+    for (let i = 0; i < cvs.length; i++) {
+      const blob = await new Promise(r => cvs[i].toBlob(r, 'image/jpeg', 0.9));
+      if (blob) files.push(new File([blob], `SPOBU-${String(m.name || 'ataskaita')}-${i + 1}.jpg`, { type: 'image/jpeg' }));
+    }
+    if (files.length && navigator.share && navigator.canShare && navigator.canShare({ files })) {
+      await navigator.share({ files, title: 'SPOBU mėnesio ataskaita' });
+    } else {
+      files.forEach(fl => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(fl); a.download = fl.name; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      });
+      showToast('Paveiksliukai atsisiųsti', 'success', 3000);
+    }
+  } catch (e) {
+    if (e?.name !== 'AbortError') { console.warn('pf share', e); showToast(ico('klaida') + ' Nepavyko pasidalinti', 'error'); }
   }
 }
 
