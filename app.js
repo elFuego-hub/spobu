@@ -4097,6 +4097,194 @@ function _csShelfOpen(m) {
   openCardStudio(r.pdf_json, m);
 }
 
+// ═══════════ 📣 v430: KLUBO FB POSTŲ STUDIJA (k-main mygtukas) ═══════════
+// 3 šablonai: klubo skaičiai (be vardų — saugus standartas) / mėnesio karys (TIK media_consent,
+// tik vardas) / kvietimas naujokams. Preview + JPG share + posto teksto pasiūlymas kopijavimui.
+let _fbState = null;
+async function openFbStudio() {
+  if (!currentClub?.id || !sb) { showToast(ico('klaida') + ' Klubas neužkrautas', 'error'); return; }
+  showToast('📣 Renkami mėnesio duomenys…', 'success', 2500);
+  try {
+    const kids = await _getClubKids();
+    const ids = (kids || []).map(k => k.id);
+    const now = new Date();
+    const cut = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const monthStartYmd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const _s = (r) => (r.status === 'fulfilled' ? (r.value?.data || []) : []);
+    const emptyQ = Promise.resolve({ data: [] });
+    const [chsR, compsR, attR, consR] = await Promise.allSettled([
+      ids.length ? sb.from('challenge_submissions').select('kid_id, exp_gain, numeric_value, challenges(title, type, target_value, target_unit)').in('kid_id', ids).eq('status', 'approved').gte('reviewed_at', cut).limit(1000) : emptyQ,
+      ids.length ? sb.from('competition_results').select('kid_id, exp_gained, placement').in('kid_id', ids).eq('approval_status', 'approved').gte('approved_at', cut).limit(500) : emptyQ,
+      ids.length ? sb.from('attendance').select('kid_id, present').in('kid_id', ids).eq('present', true).gte('session_date', monthStartYmd).limit(3000) : emptyQ,
+      ids.length ? sb.from('kids').select('id, media_consent').in('id', ids) : emptyQ
+    ]);
+    const chs = _s(chsR), comps = _s(compsR), att = _s(attR), cons = _s(consR);
+    // Klubo kartojimų sumos (kaip tėvo _pfPdf agregatas, tik per visus vaikus)
+    const agg = {};
+    const expByKid = {};
+    chs.forEach(s => {
+      expByKid[s.kid_id] = (expByKid[s.kid_id] || 0) + (s.exp_gain || 0);
+      const ch = s.challenges || {};
+      let n = 0;
+      if (ch.type === 'training' && (ch.target_value || 0) > 1) n = ch.target_value;
+      else if (ch.type !== 'training' && (s.numeric_value || 0) > 1) n = s.numeric_value;
+      if (!n) return;
+      const name = String(ch.title || '').replace(/\s*\(.*\)\s*$/, '').trim() || 'Pratimas';
+      const unit = String(ch.target_unit || '').trim();
+      const key = name.toLowerCase() + '|' + unit.toLowerCase();
+      (agg[key] = agg[key] || { name, unit, sum: 0 }).sum += n;
+    });
+    comps.forEach(c => { expByKid[c.kid_id] = (expByKid[c.kid_id] || 0) + (c.exp_gained || 0); });
+    const aggArr = Object.values(agg).sort((a, b) => b.sum - a.sum);
+    const fmtN = (x) => (Math.round(x * 10) / 10).toLocaleString('lt-LT');
+    const numsRows = aggArr.map(a => ({ name: a.name, val: fmtN(a.sum) + (a.unit ? ' ' + a.unit : ''), color: /km/.test(a.unit.toLowerCase()) ? '#4FC3F7' : '#FF7A33' }));
+    const medals = comps.filter(c => c.placement >= 1 && c.placement <= 3).length;
+    const consMap = {}; cons.forEach(c => { consMap[c.id] = !!c.media_consent; });
+    // Kario kandidatai: TIK su media sutikimu, rikiuoti pagal mėnesio EXP
+    const heroes = (kids || []).filter(k => consMap[k.id]).map(k => ({ id: k.id, name: k.first_name || 'Vaikas', exp: expByKid[k.id] || 0 })).sort((a, b) => b.exp - a.exp).slice(0, 12);
+    const LT_GEN = ['SAUSIO', 'VASARIO', 'KOVO', 'BALANDŽIO', 'GEGUŽĖS', 'BIRŽELIO', 'LIEPOS', 'RUGPJŪČIO', 'RUGSĖJO', 'SPALIO', 'LAPKRIČIO', 'GRUODŽIO'];
+    let clubLogo = null;
+    try { clubLogo = await _shareClubLogo(); } catch (_) {}
+    _fbState = {
+      tpl: 'klubas', kidId: heroes[0]?.id || null,
+      d: {
+        monthLabel: LT_GEN[now.getMonth()], year: now.getFullYear(),
+        clubName: currentClub?.name || 'SPOBU klubas', clubLogo,
+        kidsCount: ids.length, tasks: chs.length, medals,
+        attCount: att.length, numsRows, heroes, expByKid
+      }
+    };
+    const body = `
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="fb-tpls"></div>
+      <div id="fb-extra"></div>
+      <div style="margin-top:10px;display:flex;justify-content:center;background:rgba(255,255,255,.03);border-radius:12px;padding:8px;overflow:hidden;">
+        <div id="fb-prev" style="width:720px;zoom:.4;border-radius:14px;overflow:hidden;"></div>
+      </div>
+      <div style="font-size:10px;color:var(--mut);margin:10px 0 4px;">Posto tekstas (paspausk — nukopijuos):</div>
+      <div id="fb-text" onclick="_fbCopyText()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:10px 12px;font-size:11.5px;line-height:1.55;cursor:pointer;white-space:pre-wrap;"></div>
+      <button onclick="_fbShare()" id="fb-share-btn" style="width:100%;padding:13px;margin-top:10px;background:linear-gradient(90deg,#1877F2,#4293f5);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📣 Dalintis / atsisiųsti paveiksliuką</button>`;
+    _pfSheet('fb-studio-modal', '📣 FB POSTŲ STUDIJA', body);
+    _fbRender();
+  } catch (e) { console.error('[fb studio]', e); showToast(ico('klaida') + ' Nepavyko surinkti duomenų', 'error', 4000); }
+}
+function _fbSet(k, v) { if (_fbState) { _fbState[k] = v; _fbRender(); } }
+function _fbRender() {
+  const st = _fbState; if (!st) return;
+  const chip = (on) => `padding:6px 11px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;border:.5px solid ${on ? '#4293f5' : 'var(--bdr)'};background:${on ? 'rgba(24,119,242,.18)' : 'var(--card)'};color:${on ? '#6aa9f7' : 'var(--mut)'};`;
+  const tplEl = document.getElementById('fb-tpls');
+  if (tplEl) tplEl.innerHTML = [['klubas', '🏛️ Klubo skaičiai'], ['karys', '🥇 Mėnesio karys'], ['kvietimas', '😏 Ar įveiktum?']].map(x => `<div onclick="_fbSet('tpl','${x[0]}')" style="${chip(st.tpl === x[0])}">${x[1]}</div>`).join('');
+  const exEl = document.getElementById('fb-extra');
+  if (exEl) {
+    if (st.tpl === 'karys') {
+      const hs = st.d.heroes;
+      exEl.innerHTML = hs.length
+        ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">${hs.map(h => `<div onclick="_fbSet('kidId','${h.id}')" style="${chip(st.kidId === h.id)}">${escapeHtml(h.name)} · +${h.exp}</div>`).join('')}</div>
+           <div style="font-size:9px;color:var(--mut);margin-top:4px;">Rodomi TIK vaikai su tėvų media sutikimu · kortelėje tik vardas</div>`
+        : '<div style="font-size:10.5px;color:#EF4444;margin-top:6px;">Nėra vaikų su tėvų media sutikimu — kario posto skelbti negalima</div>';
+    } else exEl.innerHTML = '';
+  }
+  const prev = document.getElementById('fb-prev');
+  if (prev) { prev.style.background = '#12100e'; prev.innerHTML = _fbHtml(st); }
+  const txtEl = document.getElementById('fb-text');
+  if (txtEl) txtEl.textContent = _fbPostText(st);
+}
+function _fbHero(st) { return st.d.heroes.find(h => h.id === st.kidId) || st.d.heroes[0] || null; }
+function _fbHtml(st) {
+  const esc = escapeHtml, d = st.d;
+  const head = `${d.clubLogo ? `<img src="${d.clubLogo}" style="height:42px;max-width:220px;object-fit:contain;">` : ''}
+    <div style="font-size:14px;letter-spacing:4px;color:rgba(255,255,255,.6);margin-top:6px;">${esc(d.clubName).toUpperCase()}</div>`;
+  const foot = `<div style="margin-top:26px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.45);"><img src="brand/mark-white-128.png" style="height:18px;vertical-align:middle;margin-right:6px;">${d.year} ${esc(d.monthLabel)} · SPOBU</div>`;
+  if (st.tpl === 'karys') {
+    const h = _fbHero(st);
+    if (!h) return '<div style="padding:60px 30px;color:rgba(255,255,255,.5);text-align:center;font-family:sans-serif;">Nėra vaikų su media sutikimu</div>';
+    const t = _pfTier(h.exp);
+    return `<div style="padding:44px 36px 26px;color:#fff;font-family:'Segoe UI',Arial,sans-serif;text-align:center;position:relative;overflow:hidden;background:${t.bg};${t.frame2 ? `border:1px solid ${t.dim};` : ''}">
+      ${t.glow ? `<div style="position:absolute;inset:0;background:${t.glow};"></div>` : ''}
+      <div style="position:absolute;font-size:460px;left:50%;top:52%;transform:translate(-50%,-50%);opacity:.06;color:${t.accent};font-family:'Yu Mincho','MS Mincho',serif;line-height:1;">武</div>
+      <div style="position:relative;">${head}
+        <div style="font-size:17px;letter-spacing:5px;color:${t.accent};margin-top:22px;">${esc(d.monthLabel)} ${t.word}</div>
+        ${t.stars ? `<div style="font-size:14px;letter-spacing:8px;color:${t.dim};margin-top:4px;">${t.stars}</div>` : ''}
+        <div style="font-size:54px;font-weight:800;letter-spacing:3px;margin-top:8px;">${esc(h.name).toUpperCase()}</div>
+        <div style="font-size:44px;font-weight:800;color:${t.accent};margin-top:16px;${t.glow ? `text-shadow:0 0 24px ${t.dim};` : ''}">+${h.exp.toLocaleString('lt-LT')} EXP</div>
+        <div style="font-size:15px;color:rgba(255,255,255,.7);margin-top:14px;">Didžiuojamės! 🥋</div>
+        ${foot}
+      </div>
+    </div>`;
+  }
+  if (st.tpl === 'kvietimas') {
+    const facts = _cardFacts({ numsRows: d.numsRows }).slice(0, 3);
+    return `<div style="padding:44px 36px 26px;color:#fff;font-family:'Segoe UI',Arial,sans-serif;text-align:center;background:#0e1420;border:1px solid rgba(79,195,247,.35);">
+      ${head}
+      <div style="font-size:30px;font-weight:800;color:#4FC3F7;margin-top:24px;line-height:1.3;">AR ĮVEIKTUM<br>MŪSŲ VAIKUS? 😏</div>
+      <div style="text-align:left;margin-top:24px;">
+        ${facts.map(f => `<div style="margin-bottom:14px;font-size:19px;">${f.icon} <b style="color:#FF7A33;">${esc(String(f.big))}</b> ${esc(String(f.name || '').toLowerCase())}<div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:2px;">${esc(f.small)}</div></div>`).join('') || `<div style="font-size:16px;color:rgba(255,255,255,.7);text-align:center;">${d.kidsCount} vaikų · ${d.attCount} apsilankymų per mėnesį</div>`}
+      </div>
+      <div style="background:#E8560A;border-radius:12px;padding:14px;margin-top:20px;font-size:17px;font-weight:800;">Atvesk savo vaiką išbandyti 🥋</div>
+      ${foot}
+    </div>`;
+  }
+  // klubas (numatytasis) — kolektyviniai skaičiai be vardų
+  const top = d.numsRows.slice(0, 3);
+  return `<div style="padding:44px 36px 26px;color:#fff;font-family:'Segoe UI',Arial,sans-serif;text-align:center;background:#12100e;border:1px solid rgba(255,122,51,.35);">
+    ${head}
+    <div style="font-size:19px;letter-spacing:4px;color:#FF7A33;margin-top:22px;">MŪSŲ ${esc(d.monthLabel)} 💪</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px;">
+      ${top.map(r => `<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:14px 10px;"><div style="font-size:26px;font-weight:800;color:${r.color};">${esc(r.val)}</div><div style="font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;">${esc(r.name.toLowerCase())}</div></div>`).join('')}
+      ${d.medals ? `<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:14px 10px;"><div style="font-size:26px;font-weight:800;color:#FFD700;">${d.medals}</div><div style="font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;">medaliai</div></div>` : `<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:14px 10px;"><div style="font-size:26px;font-weight:800;color:#22C55E;">${d.attCount}</div><div style="font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;">apsilankymai</div></div>`}
+    </div>
+    <div style="font-size:15px;color:rgba(255,255,255,.65);margin-top:18px;">${d.kidsCount} karžygių · didžiuojamės kiekvienu! 🥋</div>
+    ${foot}
+  </div>`;
+}
+function _fbPostText(st) {
+  const d = st.d, mo = d.monthLabel.toLowerCase();
+  if (st.tpl === 'karys') {
+    const h = _fbHero(st);
+    return h ? `${d.monthLabel[0]}${mo.slice(1)} ${_pfTier(h.exp).word.toLowerCase()} — ${h.name}! 🥋\n+${h.exp} EXP per mėnesį. Didžiuojamės!\n#karate #vaikusportas #spobu` : '';
+  }
+  if (st.tpl === 'kvietimas') {
+    const f = _cardFacts({ numsRows: d.numsRows })[0];
+    return `Ar įveiktum mūsų vaikus? 😏\n${f ? `Vien per ${mo}: ${f.big} ${String(f.name || '').toLowerCase()} — ${f.small}!` : `${d.kidsCount} vaikų kasdien auga mūsų salėje.`}\nAtvesk savo vaiką išbandyti — lauksim! 🥋\n#karate #vaikusportas #${(d.clubName || 'klubas').replace(/\s+/g, '').toLowerCase()}`;
+  }
+  const top = d.numsRows[0];
+  return `Mūsų klubo ${mo} skaičiais 💪\n${top ? `${top.val} ${top.name.toLowerCase()}` : `${d.tasks} įveiktų užduočių`}${d.medals ? ` · ${d.medals} medaliai` : ''} · ${d.kidsCount} karžygių.\nDidžiuojamės kiekvienu! 🥋\n#karate #vaikusportas #spobu`;
+}
+function _fbCopyText() {
+  const t = _fbPostText(_fbState || {});
+  if (!t) return;
+  try { navigator.clipboard.writeText(t); showToast('📋 Tekstas nukopijuotas', 'success', 2500); }
+  catch (_) { showToast('Nukopijuok ranka (paspausk ir laikyk)', 'error', 3000); }
+}
+async function _fbShare() {
+  const st = _fbState; if (!st) return;
+  if (st.tpl === 'karys' && !_fbHero(st)) { showToast(ico('klaida') + ' Nėra vaikų su media sutikimu', 'error', 3500); return; }
+  const btn = document.getElementById('fb-share-btn');
+  if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.textContent = 'Ruošiama…'; }
+  let host = null;
+  try {
+    if (typeof html2canvas !== 'function') { showToast(ico('klaida') + ' Nepavyko (nėra ryšio?)', 'error'); return; }
+    host = document.createElement('div');
+    host.style.cssText = 'position:absolute;left:-10000px;top:0;width:720px;background:#12100e;';
+    host.innerHTML = _fbHtml(st);
+    document.body.appendChild(host);
+    const cv = await html2canvas(host, { scale: 2, useCORS: true, backgroundColor: '#12100e', logging: false });
+    host.remove(); host = null;
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
+    const files = blob ? [new File([blob], `SPOBU-FB-${st.tpl}.jpg`, { type: 'image/jpeg' })] : [];
+    if (files.length && navigator.share && navigator.canShare && navigator.canShare({ files })) {
+      await navigator.share({ files, title: 'SPOBU klubo postas' });
+    } else {
+      files.forEach(fl => { const a = document.createElement('a'); a.href = URL.createObjectURL(fl); a.download = fl.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); });
+      showToast('Paveiksliukas atsisiųstas — įkelk į FB kartu su tekstu', 'success', 4000);
+    }
+  } catch (e) {
+    if (e?.name !== 'AbortError') { console.warn('fb share', e); showToast(ico('klaida') + ' Nepavyko', 'error'); }
+  } finally {
+    if (host) host.remove();
+    if (btn) { delete btn.dataset.busy; btn.textContent = '📣 Dalintis / atsisiųsti paveiksliuką'; }
+  }
+}
+
 // ═══ 💬 v428: VAIKO BALSAS — mėnesio momentas (server-vaiko-balsas.sql) ═══
 // Paskutinę mėnesio savaitę vaiko paklausiam „koks tavo mėnesio momentas?" — pasiūlymai
 // iš JO duomenų + laisvas tekstas → monthly_reports.kid_moment → tėvo „Vaiko balsas" kortelė.
