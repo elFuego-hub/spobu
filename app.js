@@ -3842,6 +3842,15 @@ function _cardCore(st) {
       <div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:4px;">+${(p.exp || 0).toLocaleString('lt-LT')} EXP · ${p.chCount || 0} iššūkiai${p.medalCount ? ' · 🥇 ' + p.medalCount : ''}</div>
     </div>`;
   }
+  if (st.tpl === 'balsas') {
+    const core = st.moment
+      ? `<div style="background:rgba(255,255,255,.06);border:1px solid ${t.dim};border-radius:18px;padding:28px 26px;margin-top:26px;font-size:25px;line-height:1.55;font-style:italic;">„${esc(st.moment)}"</div>
+         <div style="font-size:14px;color:rgba(255,255,255,.55);margin-top:12px;">— ${esc(p.name || '')}, pats išsirinkęs savo mėnesio momentą</div>`
+      : `<div style="font-size:16px;color:rgba(255,255,255,.6);margin-top:26px;padding:22px;border:1px dashed rgba(255,255,255,.25);border-radius:14px;line-height:1.6;">Vaikas dar nepasirinko mėnesio momento —<br>paklausk jo appse 😊</div>`;
+    return `<div style="text-align:center;">${headSm}${core}
+      <div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:18px;">+${(p.exp || 0).toLocaleString('lt-LT')} EXP · ${p.chCount || 0} iššūkiai${p.medalCount ? ' · 🥇 ' + p.medalCount : ''}</div>
+    </div>`;
+  }
   if (st.tpl === 'priespo') {
     const recs = (p.recs || []).slice(0, 6);
     const rows = recs.length
@@ -3939,11 +3948,11 @@ async function openCardStudio(pd, mNum) {
   const months = {};
   try {
     const k = parentActiveKid;
-    if (k && sb && p.year) { const { data } = await sb.from('monthly_reports').select('month, exp').eq('kid_id', k.id).eq('year', p.year); (data || []).forEach(r => { months[r.month] = r; }); }
+    if (k && sb && p.year) { const { data } = await sb.from('monthly_reports').select('month, exp, kid_moment').eq('kid_id', k.id).eq('year', p.year); (data || []).forEach(r => { months[r.month] = r; }); }
   } catch (_) {}
   const nowM = new Date().getMonth() + 1;
   const m = mNum || (_CS_NOM.indexOf(p.monthNom) + 1) || nowM;
-  _csState = { p, m, months, narr: pd ? (pd.narr || '') : (meta.narr || ''), clubName, clubLogo, tpl: (pd && pd.tpl) || 'santrauka', fmt: 'sq', tier: _pfTier(p.exp), isCur: p.year === new Date().getFullYear() && m === nowM };
+  _csState = { p, m, months, moment: (months[m] && months[m].kid_moment) || null, narr: pd ? (pd.narr || '') : (meta.narr || ''), clubName, clubLogo, tpl: (pd && pd.tpl) || 'santrauka', fmt: 'sq', tier: _pfTier(p.exp), isCur: p.year === new Date().getFullYear() && m === nowM };
   const body = `
     <div style="display:flex;gap:6px;flex-wrap:wrap;" id="cs-tpls"></div>
     <div style="display:flex;gap:6px;margin-top:6px;" id="cs-fmts"></div>
@@ -3965,7 +3974,7 @@ function _csRender() {
   const st = _csState; if (!st) return;
   const chip = (on) => `padding:6px 11px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;border:.5px solid ${on ? 'var(--br)' : 'var(--bdr)'};background:${on ? 'rgba(255,77,0,.18)' : 'var(--card)'};color:${on ? '#FF7A33' : 'var(--mut)'};`;
   const tplEl = document.getElementById('cs-tpls');
-  if (tplEl) tplEl.innerHTML = [['santrauka', 'Santrauka'], ['palyginimai', '🤯 Palyginimai'], ['priespo', '📈 Prieš → po'], ['foto', '📷 Nuotrauka'], ['pilna', 'Pilna ataskaita']].map(x => `<div onclick="_csSet('tpl','${x[0]}')" style="${chip(st.tpl === x[0])}">${x[1]}</div>`).join('');
+  if (tplEl) tplEl.innerHTML = [['santrauka', 'Santrauka'], ['palyginimai', '🤯 Palyginimai'], ['priespo', '📈 Prieš → po'], ['foto', '📷 Nuotrauka'], ['balsas', `💬 Vaiko balsas${st.moment ? ' ●' : ''}`], ['pilna', 'Pilna ataskaita']].map(x => `<div onclick="_csSet('tpl','${x[0]}')" style="${chip(st.tpl === x[0])}">${x[1]}</div>`).join('');
   const fmtEl = document.getElementById('cs-fmts');
   if (fmtEl) fmtEl.innerHTML = (st.tpl === 'santrauka' || st.tpl === 'palyginimai')
     ? [['sq', '⬛ 1:1 postui'], ['story', '📱 Story 9:16']].map(x => `<div onclick="_csSet('fmt','${x[0]}')" style="${chip(st.fmt === x[0])}">${x[1]}</div>`).join('') : '';
@@ -3980,6 +3989,7 @@ function _csRender() {
 async function _cardShare() {
   const st = _csState; if (!st) return;
   if (st.tpl === 'foto' && !st.photo) { showToast('📷 Pirmiausia pasirink nuotrauką', 'error', 3000); return; }
+  if (st.tpl === 'balsas' && !st.moment) { showToast('💬 Vaikas dar nepasirinko mėnesio momento appse', 'error', 3500); return; }
   const btn = document.getElementById('cs-share-btn');
   if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.textContent = 'Ruošiama…'; }
   let host = null;
@@ -4045,6 +4055,84 @@ function _csShelfOpen(m) {
   if (!r || !r.pdf_json) { showToast(ico('klaida') + ' Šio mėnesio kortelės archyve nėra', 'error', 3500); return; }
   const old = document.getElementById('card-shelf-modal'); if (old) old.remove();
   openCardStudio(r.pdf_json, m);
+}
+
+// ═══ 💬 v428: VAIKO BALSAS — mėnesio momentas (server-vaiko-balsas.sql) ═══
+// Paskutinę mėnesio savaitę vaiko paklausiam „koks tavo mėnesio momentas?" — pasiūlymai
+// iš JO duomenų + laisvas tekstas → monthly_reports.kid_moment → tėvo „Vaiko balsas" kortelė.
+async function maybeAskKidMoment() {
+  try {
+    if (!currentKid || !sb) return;
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    if (now.getDate() < lastDay - 6) return; // tik paskutinę savaitę
+    const key = `spobu_moment_${currentKid.id}_${now.getFullYear()}-${now.getMonth() + 1}`;
+    if (localStorage.getItem(key)) return;
+    const cut = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const _g = (r) => (r.status === 'fulfilled' ? (r.value?.data || []) : []);
+    const [compsR, recsR, chsR] = await Promise.allSettled([
+      sb.from('competition_results').select('placement, competitions(title)').eq('kid_id', currentKid.id).eq('approval_status', 'approved').gte('approved_at', cut).limit(3),
+      sb.from('result_submissions').select('exercise_id, new_value').eq('kid_id', currentKid.id).eq('status', 'approved').gte('reviewed_at', cut).order('reviewed_at', { ascending: false }).limit(3),
+      sb.from('challenge_submissions').select('challenges(title, type)').eq('kid_id', currentKid.id).eq('status', 'approved').gte('reviewed_at', cut).limit(30)
+    ]);
+    const opts = [];
+    _g(compsR).forEach(c => { if (c.placement >= 1 && c.placement <= 3) opts.push(`${['🥇', '🥈', '🥉'][c.placement - 1]} ${c.placement} vieta — ${c.competitions?.title || 'varžybos'}`); });
+    _g(chsR).filter(s => s.challenges?.type === 'monthly').slice(0, 2).forEach(s => opts.push(`🥋 Išmokau: ${s.challenges?.title || ''}`));
+    const recRows = _g(recsR);
+    if (recRows.length) {
+      try {
+        const ids = [...new Set(recRows.map(r => r.exercise_id).filter(Boolean))];
+        const { data: exs } = ids.length ? await sb.from('exercises').select('id, name, unit').in('id', ids) : { data: [] };
+        const em = {}; (exs || []).forEach(e => { em[e.id] = e; });
+        recRows.slice(0, 2).forEach(r => { const e = em[r.exercise_id]; if (e) opts.push(`📈 Naujas rekordas: ${e.name} — ${r.new_value}${e.unit ? ' ' + e.unit : ''}`); });
+      } catch (_) {}
+    }
+    opts.push('💪 Stipriai padirbėjau visą mėnesį');
+    window._kmOpts = opts.slice(0, 4);
+    window._kmSel = null;
+    const chips = window._kmOpts.map((o, i) => `<div class="km-chip" onclick="_kmPick(this,${i})" style="padding:10px 12px;margin-bottom:6px;border:.5px solid var(--bdr);background:var(--card);border-radius:11px;font-size:12px;cursor:pointer;line-height:1.4;">${escapeHtml(o)}</div>`).join('');
+    const body = `
+      <div style="font-size:11px;color:var(--mut);margin-bottom:10px;">Pasirink arba parašyk savo žodžiais — tavo atsakymas atsiras tėvų mėnesio kortelėje 😊</div>
+      <div id="km-opts">${chips}</div>
+      <textarea id="km-text" maxlength="140" placeholder="Arba parašyk savo žodžiais…" style="width:100%;min-height:64px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:10px 12px;color:var(--text);font-size:12px;font-family:inherit;resize:none;box-sizing:border-box;"></textarea>
+      <button onclick="_kidMomentSave()" id="km-save" style="width:100%;padding:13px;margin-top:10px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">Išsaugoti</button>
+      <button onclick="localStorage.setItem('${key}','skip');document.getElementById('kid-moment-modal').remove()" style="width:100%;padding:10px;margin-top:6px;background:transparent;color:var(--mut);border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">Praleisti šį mėnesį</button>`;
+    _pfSheet('kid-moment-modal', '💬 TAVO MĖNESIO MOMENTAS', body);
+  } catch (e) { console.warn('kid moment', e); }
+}
+function _kmPick(el, i) {
+  window._kmSel = (window._kmOpts || [])[i] || null;
+  document.querySelectorAll('#km-opts .km-chip').forEach(c => { c.style.borderColor = 'var(--bdr)'; c.style.background = 'var(--card)'; });
+  el.style.borderColor = 'var(--br)'; el.style.background = 'rgba(255,77,0,.15)';
+}
+async function _kidMomentSave() {
+  const btn = document.getElementById('km-save');
+  if (btn && btn.dataset.busy) return;
+  const txt = (document.getElementById('km-text')?.value || '').trim();
+  const moment = (txt || window._kmSel || '').slice(0, 140);
+  if (!moment) { showToast('Pasirink variantą arba parašyk savo 😊', 'error', 3000); return; }
+  if (btn) { btn.dataset.busy = '1'; btn.textContent = 'Saugoma…'; }
+  try {
+    const now = new Date();
+    const y = now.getFullYear(), mo = now.getMonth() + 1;
+    const GEN = ['SAUSIO', 'VASARIO', 'KOVO', 'BALANDŽIO', 'GEGUŽĖS', 'BIRŽELIO', 'LIEPOS', 'RUGPJŪČIO', 'RUGSĖJO', 'SPALIO', 'LAPKRIČIO', 'GRUODŽIO'];
+    // Du žingsniai (ne upsert) — kad nenutrintume tėvo pdf_json/exp esamoje eilutėje
+    const { data: upd, error } = await sb.from('monthly_reports').update({ kid_moment: moment }).eq('kid_id', currentKid.id).eq('year', y).eq('month', mo).select('kid_id');
+    if (error) throw error;
+    if (!upd || !upd.length) {
+      const { error: ie } = await sb.from('monthly_reports').insert({ kid_id: currentKid.id, year: y, month: mo, month_label: GEN[mo - 1], kid_moment: moment });
+      if (ie) throw ie;
+    }
+    localStorage.setItem(`spobu_moment_${currentKid.id}_${y}-${mo}`, 'done');
+    const m = document.getElementById('kid-moment-modal'); if (m) m.remove();
+    showToast('💬 Išsaugota — tėvai pamatys tavo kortelėje!', 'success', 4000);
+    if (typeof playSound === 'function') playSound('success');
+  } catch (e) {
+    console.warn('kid moment save', e);
+    showToast(ico('klaida') + ' Nepavyko išsaugoti — pabandyk vėliau', 'error', 4000);
+  } finally {
+    if (btn) { delete btn.dataset.busy; btn.textContent = 'Išsaugoti'; }
+  }
 }
 
 function _pfPdfFitZoom() {
@@ -7744,6 +7832,7 @@ async function loadKidData() {
   setText('v-prof-name', `${(currentProfile.first_name || '').toUpperCase()} ${(currentProfile.last_name || '').toUpperCase()}`);
   _initArchiveButton(); // ${ico('archyvas')} iki 14 m. skill ženkliukų mygtukas (jei perėjo į 14+)
   _checkClubChallengeResultsKid(); // ${ico('trofejai')} grupių iššūkio pabaigos pop-up (vieną kartą)
+  if (typeof maybeAskKidMoment === 'function') maybeAskKidMoment(); // 💬 v428: mėnesio momentas (paskutinė savaitė)
   if (typeof loadKidProductsCard === 'function') loadKidProductsCard(); // ${ico('dokumentas')} 14+ AI ataskaitų prašymai (v-prof kortelė)
   // 💻 DESKTOP side nav user info
   applyAvatarById('vdn-avatar', currentKid?.avatar_url || null, currentProfile.first_name?.[0] || '?');
