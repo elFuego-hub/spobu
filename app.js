@@ -3429,7 +3429,9 @@ async function loadParentKidFeed() {
     items.forEach(it => {
       if (!it.date) return;
       const t = new Date(it.date);
-      const mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7));
+      let mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7));
+      // v418: pirmoji savaitė prasideda mėnesio 1 d. (ne praeito mėn. pirmadienį — buvo „nuo 07-27")
+      if (mon.getMonth() !== now.getMonth()) mon = new Date(now.getFullYear(), now.getMonth(), 1);
       const wkey = dk(mon);
       wk[wkey] = (wk[wkey] || 0) + (it.exp || 0);
     });
@@ -3447,6 +3449,15 @@ async function loadParentKidFeed() {
       learned: items.filter(i => i.kind === 'challenge' && i.ctype === 'monthly').map(i => i.title),
       streaks: items.filter(i => i.kind === 'streak').map(i => ({ t: i.title, exp: i.exp }))
     };
+    // 📄 v418: PDF duomenų snapshot'as į monthly_reports (praėjusio mėn. peržiūrai) — best effort;
+    // reikia server-menesio-pdf-archyvas.sql (pdf_json stulpelis), be jo — tyliai praleidžia.
+    try {
+      sb.from('monthly_reports').upsert({
+        kid_id: k.id, year: now.getFullYear(), month: now.getMonth() + 1,
+        month_label: monthLabel, exp: monthExp, challenges: chCount, records: recCount, medals: medalCount,
+        pdf_json: _pfPdf
+      }, { onConflict: 'kid_id,year,month' }).then(r => { if (r.error) console.warn('pdf snapshot:', r.error.message); });
+    } catch (_) {}
 
     list.innerHTML = strip + rowsHtml;
   } catch (e) { console.warn('parent feed', e); list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant feed</div>'; }
@@ -3550,7 +3561,8 @@ function openPfNumbers() {
     ${rows}
     <div style="font-size:9px;color:var(--mut);margin-top:10px;text-align:center;">Skaičiuojama iš trenerio patvirtintų iššūkių · EXP: +${(n.monthExp || 0).toLocaleString('lt-LT')}</div>
     <button onclick="document.getElementById('pf-num-modal').remove();openMonthCard()" style="width:100%;padding:12px;margin-top:12px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('programele')} Mėnesio kortelė · dalintis</button>
-    <button onclick="openMonthPdf()" style="width:100%;padding:12px;margin-top:8px;background:transparent;color:#FF7A33;border:.5px solid rgba(255,77,0,.45);border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Mėnesio ataskaita (PDF)</button>`;
+    <button onclick="openMonthPdf()" style="width:100%;padding:12px;margin-top:8px;background:transparent;color:#FF7A33;border:.5px solid rgba(255,77,0,.45);border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Mėnesio ataskaita (PDF)</button>
+    <button onclick="openMonthPdf(true)" style="width:100%;padding:11px;margin-top:8px;background:transparent;color:var(--mut);border:.5px solid var(--bdr);border-radius:11px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('kalendorius')} Praėjusio mėnesio ataskaita</button>`;
   _pfSheet('pf-num-modal', `${n.monthLabel} SKAIČIAI`, body);
 }
 
@@ -3558,8 +3570,22 @@ function openPfNumbers() {
 // Naratyvas — KODO generuotas (computeMonthHighlight), ne trenerio (savininko sprendimas).
 // Spausdinama per paslėptą iframe (kaip AI ataskaitų printReportFrame) → tėvas renkasi „Įrašyti kaip PDF".
 let _pfPdf = null;
-async function openMonthPdf() {
-  const p = _pfPdf;
+async function openMonthPdf(prevMonth) {
+  let p = _pfPdf;
+  let narr = '';
+  // 🗓️ v418: praėjusio mėnesio ataskaita iš monthly_reports.pdf_json archyvo
+  if (prevMonth) {
+    const k = parentActiveKid;
+    if (!k || !sb) return;
+    try {
+      const pm = new Date(); pm.setDate(1); pm.setMonth(pm.getMonth() - 1);
+      const { data } = await sb.from('monthly_reports').select('pdf_json').eq('kid_id', k.id)
+        .eq('year', pm.getFullYear()).eq('month', pm.getMonth() + 1).maybeSingle();
+      p = data?.pdf_json || null;
+    } catch (_) { p = null; }
+    if (!p) { showToast(ico('klaida') + ' Praėjusio mėnesio ataskaitos archyve nėra', 'error', 4500); return; }
+    narr = p.narr || '';
+  }
   if (!p) { showToast(ico('klaida') + ' Atidaryk Pasiekimų langą iš naujo', 'error'); return; }
   showToast(ico('dokumentas') + ' Ruošiama ataskaita…', 'success', 2500);
   let clubLogo = null, clubName = '';
@@ -3568,9 +3594,16 @@ async function openMonthPdf() {
     const cid = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : null;
     if (cid && sb) { const { data } = await sb.from('clubs').select('name').eq('id', cid).maybeSingle(); clubName = data?.name || ''; }
   } catch (_) {}
-  let narr = '';
-  try { narr = String(await computeMonthHighlight() || '').replace(/<[^>]*>/g, '').trim(); } catch (_) {}
-  const html = _pfPdfDoc(p, clubName, clubLogo, narr);
+  if (!prevMonth) {
+    try { narr = String(await computeMonthHighlight() || '').replace(/<[^>]*>/g, '').trim(); } catch (_) {}
+    // Naratyvą įrašom į archyvą (kad praėjusio mėn. PDF jį turėtų) + tarpinės žymė
+    try { if (narr && parentActiveKid) { p.narr = narr; sb.from('monthly_reports').update({ pdf_json: p }).eq('kid_id', parentActiveKid.id).eq('year', p.year).eq('month', new Date().getMonth() + 1).then(() => {}); } } catch (_) {}
+  }
+  const now2 = new Date();
+  const lastDay = new Date(now2.getFullYear(), now2.getMonth() + 1, 0).getDate();
+  const interim = !prevMonth && now2.getDate() < lastDay
+    ? `tarpinė · iki ${String(now2.getMonth() + 1).padStart(2, '0')}-${String(now2.getDate()).padStart(2, '0')}` : '';
+  const html = _pfPdfDoc(p, clubName, clubLogo, narr, interim);
   // 🖥️ v416: PERŽIŪRA appse (kaip AI ataskaitų viewer) — spausdinimo dialogas tik paspaudus mygtuką
   const old = document.getElementById('pf-pdf-modal'); if (old) old.remove();
   const m = document.createElement('div');
@@ -3627,8 +3660,11 @@ function _pfPdfPrint() {
   } catch (e) { console.warn('pf pdf print', e); showToast(ico('klaida') + ' Nepavyko atidaryti spausdinimo', 'error'); }
 }
 
-function _pfPdfDoc(p, clubName, clubLogo, narr) {
+function _pfPdfDoc(p, clubName, clubLogo, narr, interim) {
   const esc = escapeHtml;
+  // 🏅 v418: titulas pagal mėnesio EXP rėžius (savininko idėja) — rėžiai lengvai keičiami
+  const PF_TITLE_TIERS = [[500, 'LEGENDA'], [300, 'SAMURAJUS'], [100, 'KARYS'], [0, 'KOVOTOJAS']];
+  const titleWord = (PF_TITLE_TIERS.find(t => (p.exp || 0) >= t[0]) || [0, 'KARYS'])[1];
   const cn = esc(clubName || 'SPOBU klubas');
   const clubImg = clubLogo ? `<img src="${clubLogo}" style="height:11mm;max-width:50mm;object-fit:contain;">` : `<span style="font-weight:700;font-size:11pt;">${cn}</span>`;
   const wmax = Math.max(1, ...p.weeks.map(w => w.exp));
@@ -3665,7 +3701,7 @@ function _pfPdfDoc(p, clubName, clubLogo, narr) {
       ${clubLogo ? `<img src="${clubLogo}" style="height:14mm;max-width:70mm;object-fit:contain;">` : ''}
       <div style="font-size:11pt;letter-spacing:5px;color:rgba(255,255,255,.6);margin-top:4mm;">${cn.toUpperCase()}</div>
       <div style="font-size:40pt;font-weight:800;letter-spacing:3px;margin-top:14mm;">${esc(p.name).toUpperCase()}</div>
-      <div style="font-size:14pt;letter-spacing:5px;color:#FF7A33;margin-top:2mm;">${esc(p.monthLabel)} KARYS</div>
+      <div style="font-size:14pt;letter-spacing:5px;color:#FF7A33;margin-top:2mm;">${esc(p.monthLabel)} ${titleWord}</div>
       <div style="font-size:48pt;font-weight:800;color:#FF7A33;margin-top:15mm;">+${p.exp.toLocaleString('lt-LT')}</div>
       <div style="font-size:9.5pt;letter-spacing:4px;color:rgba(255,255,255,.55);">EXP PER MĖNESĮ</div>
       <div style="display:flex;justify-content:center;gap:16mm;margin-top:14mm;">
@@ -3688,7 +3724,7 @@ function _pfPdfDoc(p, clubName, clubLogo, narr) {
     </div>
     <div style="margin-top:5mm;display:flex;justify-content:space-between;align-items:baseline;">
       <div style="font-size:15pt;font-weight:700;">${esc(p.name)} — mėnesio statistika</div>
-      <div style="color:#777;font-size:9.5pt;">${p.year} m. ${esc(p.monthNom.toLowerCase())}${p.kyu ? ' · ' + esc(p.kyu) : ''}</div>
+      <div style="color:#777;font-size:9.5pt;">${p.year} m. ${esc(p.monthNom.toLowerCase())}${p.kyu ? ' · ' + esc(p.kyu) : ''}${interim ? ` · <span style="color:#c0392b;">${esc(interim)}</span>` : ''}</div>
     </div>
     ${narr ? `<div style="background:#f6f6f2;border-left:2mm solid #E8560A;padding:3mm 4mm;margin-top:4mm;font-size:10pt;font-style:italic;">${esc(narr)}</div>` : ''}
     <div style="${h3}">EXP pagal savaites</div>
