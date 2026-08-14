@@ -16023,8 +16023,19 @@ const CAMP_TYPES = {
 const CAMP_EXP_CAP = 300;  // absoliučios lubos (= didžiausio tipo cap)
 function _campType(t){ return CAMP_TYPES[t] || CAMP_TYPES.camp; }
 
-// 🏆 Grupių iššūkis: 1 vietos EXP lubos; kitos vietos auto (70/50/30%). Serveris irgi riboja (least(...,150)).
-const GROUP_CHALLENGE_EXP_CAP = 150;
+// 🏆 Grupių iššūkis: 1 vietos EXP lubos; kitos vietos auto (70/50/30%). Serveris irgi riboja
+// (least(...,50) — server-grupiu-issukio-lubos-50.sql). v432: 150 → 50 (savininkas: „per daug").
+const GROUP_CHALLENGE_EXP_CAP = 50;
+// 📅 v433: grupių iššūkis = KALENDORINIS mėnuo (ta pati v410 taisyklė kaip trenerio mėnesiniai):
+// nuo šiandien iki mėnesio paskutinės d.; jei liko <10 d. — iki kito mėnesio pabaigos.
+function _gcCalendarRange() {
+  const now = new Date();
+  const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  let end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  if ((end - now) / 86400000 < 10) end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+  const days = Math.max(1, Math.ceil((end - now) / 86400000));
+  return { start: ymd(now), end: ymd(end), label: `Galioja iki ${ymd(end).slice(5)} · dar ${days} d.` };
+}
 function _gcTierExp(first, rnk){
   const f = Math.min(GROUP_CHALLENGE_EXP_CAP, Math.max(0, first||0));
   return rnk===1 ? f : rnk===2 ? Math.round(f*0.7) : rnk===3 ? Math.round(f*0.5) : Math.round(f*0.3);
@@ -16301,10 +16312,7 @@ async function openCreateClubChallenge(){
       </div>
       <label class="lbl">DALYVAUJANČIOS GRUPĖS *</label>
       <div style="margin-bottom:12px;">${groupsHtml}</div>
-      <div style="display:flex;gap:10px;">
-        <div style="flex:1;"><label class="lbl">DATA NUO</label><input class="inp" id="gc-start" type="date" style="margin-bottom:12px;"></div>
-        <div style="flex:1;"><label class="lbl">DATA IKI</label><input class="inp" id="gc-end" type="date" style="margin-bottom:12px;"></div>
-      </div>
+      <div style="font-size:11px;color:var(--mut);background:rgba(186,104,200,.1);border:.5px solid rgba(186,104,200,.35);border-radius:10px;padding:9px 11px;margin-bottom:12px;line-height:1.5;">${ico('kalendorius')} <b style="color:#BA68C8;">${_gcCalendarRange().label}</b> — kalendorinio mėnesio taisyklė (kaip trenerio iššūkiuose): baigiasi mėnesio paskutinę dieną; jei liko mažiau nei 10 d. — kito mėnesio pabaigoje.</div>
       <label class="lbl">1 VIETOS EXP <span style="color:var(--mut);font-weight:600;">(0–${GROUP_CHALLENGE_EXP_CAP})</span></label>
       <input class="inp" id="gc-exp" type="number" min="0" max="${GROUP_CHALLENGE_EXP_CAP}" value="0" style="margin-bottom:4px;">
       <div style="font-size:11px;color:var(--mut);margin-bottom:16px;line-height:1.5;">Kitos vietos automatiškai: 2v · 70%, 3v · 50%, likusios · 30%. VISI dalyvavusių grupių vaikai gauna EXP.<br>Reitingas — pagal VIDURKĮ vienam vaikui (mažos grupės nenukenčia). Rezultatus kasdien pildo grupių TRENERIAI (lankomumo metrika — automatiškai).</div>
@@ -16329,8 +16337,9 @@ async function submitNewClubChallenge(){
     metric,
     exercise_label: metric==='attendance' ? null : (document.getElementById('gc-exlabel').value.trim() || null),
     unit: metric==='attendance' ? null : (document.getElementById('gc-unit').value.trim() || null),
-    starts_on: document.getElementById('gc-start').value || null,
-    ends_on: document.getElementById('gc-end').value || null,
+    // 📅 v433: kalendorinis mėnuo (kaip trenerio iššūkiai, v410 taisyklė) — datos auto
+    starts_on: _gcCalendarRange().start,
+    ends_on: _gcCalendarRange().end,
     winner_exp: _exp,
     created_by: currentUser.id
   };
