@@ -3687,11 +3687,17 @@ async function _pfPdfShare() {
     showToast('📲 Ruošiamas paveiksliukas…', 'success', 2500);
     const cvs = await _pfPdfCanvases();
     if (!cvs || !cvs.length) { showToast(ico('klaida') + ' Nepavyko paruošti', 'error'); return; }
-    const files = [];
-    for (let i = 0; i < cvs.length; i++) {
-      const blob = await new Promise(r => cvs[i].toBlob(r, 'image/jpeg', 0.9));
-      if (blob) files.push(new File([blob], `SPOBU-${String(m.name || 'ataskaita')}-${i + 1}.jpg`, { type: 'image/jpeg' }));
-    }
+    // v421: VIENAS paveiksliukas — lapai suklijuojami vertikaliai (savininko pastaba: ne 2 atskiri)
+    const W = Math.max(...cvs.map(c => c.width));
+    const H = cvs.reduce((s, c) => s + c.height, 0);
+    const joined = document.createElement('canvas');
+    joined.width = W; joined.height = H;
+    const ctx = joined.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+    let y = 0;
+    cvs.forEach(c => { ctx.drawImage(c, Math.round((W - c.width) / 2), y); y += c.height; });
+    const blob = await new Promise(r => joined.toBlob(r, 'image/jpeg', 0.9));
+    const files = blob ? [new File([blob], `SPOBU-${String(m.name || 'ataskaita')}.jpg`, { type: 'image/jpeg' })] : [];
     if (files.length && navigator.share && navigator.canShare && navigator.canShare({ files })) {
       await navigator.share({ files, title: 'SPOBU mėnesio ataskaita' });
     } else {
