@@ -29370,7 +29370,12 @@ const KAT_EXP_TOTALS = {
 const KAT_DIFF_MULT = { easy: 1/3, medium: 2/3, hard: 1 };
 const KAT_DIFF_LABEL = { easy: 'Lengvas', medium: 'Vidutinis', hard: 'Sunkus' };
 const KAT_TARGET_MULT = { easy: 0.6, medium: 1.0, hard: 1.4 }; // savaitinių skaitiniai taikiniai
-const KAT_MAX_ACTIVE = 5;            // max aktyvūs / tipui auditorijai
+const KAT_MAX_ACTIVE = 5;            // EXP lentelių riba (katTotal kapoja ties 5 — ekonomikos lubos)
+// 🔓 v431 (savininko sprendimas): treniruotei pratimų kiekis BE limito (EXP katilas vis tiek
+// kapojamas ties 5 — papildomi pratimai dalinasi tą patį potą, ekonomika nesprogsta);
+// savaitiniams/mėnesiniams — max 3 aktyvūs (mažiau, bet vertingesni).
+const KAT_MAX_BY_TYPE = { training: 99, weekly: 3, monthly: 3 };
+function katMaxActive(type) { return KAT_MAX_BY_TYPE[type] ?? KAT_MAX_ACTIVE; }
 const KAT_BANDS = ['6–9', '10–13', '14+']; // amžiaus juostos (index 0/1/2)
 // 🚫 v401: treniruotės rinkinio ("Ką darysim šiandien salėje?") ATMESTINOS karjeros meta-metrikos —
 // laiko/karjeros skaitliukai, kurių per vieną treniruotę atlikti neįmanoma (savininko sąrašas 08-11).
@@ -29828,7 +29833,7 @@ function katToggleItem(token) {
 }
 function katSelectLimit() {
   if (!katState.type) return KAT_MAX_ACTIVE;
-  return Math.max(0, KAT_MAX_ACTIVE - (katState.nPrevLoaded ? katState.nPrev : 0));
+  return Math.max(0, katMaxActive(katState.type) - (katState.nPrevLoaded ? katState.nPrev : 0));
 }
 
 // 🗑️ v408: trenerio paslėpti standartiniai pratimai (savininko pastaba „gali ištrinti").
@@ -30046,7 +30051,7 @@ function katRenderEx() {
   const limit = katSelectLimit();
   if (limit === 0) {
     w.innerHTML = `<label class="lbl">3. PRATIMAI</label>
-      <div style="font-size:11.5px;color:var(--br);background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.3);border-radius:10px;padding:10px;">${ico('ispejimas')} Auditorija jau turi ${KAT_MAX_ACTIVE} aktyvius šio tipo iššūkius — nauji negalimi, kol nepasibaigs esami.</div>
+      <div style="font-size:11.5px;color:var(--br);background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.3);border-radius:10px;padding:10px;">${ico('ispejimas')} Auditorija jau turi ${katMaxActive(s.type)} aktyvius šio tipo iššūkius — nauji negalimi, kol nepasibaigs esami.</div>
       <div style="height:12px;"></div>`;
     return;
   }
@@ -30122,7 +30127,7 @@ function katRenderEx() {
         : 'Pratimai bus be skaičiaus („atlikta/ne") — kiekius pasakysi salėje. Greita, bet tėvai nematys konkretaus tikslo. <b style="color:#4FC3F7;">Rekomenduojam su pakartojimais</b>, jei žinai skaičius.'}</div>
     </div>`;
   w.innerHTML = `
-    <label class="lbl">3. PRATIMAI <span style="color:${s.selected.length ? 'var(--grn)' : 'var(--mut)'};font-weight:800;">(${s.selected.length}/${limit})</span></label>
+    <label class="lbl">3. PRATIMAI <span style="color:${s.selected.length ? 'var(--grn)' : 'var(--mut)'};font-weight:800;">(${s.type === 'training' ? s.selected.length : s.selected.length + '/' + limit})</span></label>
     ${repsToggle}
     <div style="font-size:9.5px;color:var(--mut);margin-bottom:6px;line-height:1.35;">Paruošti pratimai — pažymėk ${s.type === 'training' ? 'ką darysite salėje' : 'ką vaikas atliks'}. Pažymėjus atsiranda ✏️ (keisk aprašymą/taikinį); ✗ paslepia, 🗑️ ištrina savo pratimą.</div>
     ${s.nPrevLoaded && s.nPrev > 0 ? `<div style="font-size:10px;color:var(--mut);margin-bottom:6px;">${ico('ispejimas')} Auditorija jau turi ${s.nPrev} aktyv. šio tipo — naujų EXP mažėja pagal kreivę</div>` : ''}
@@ -30256,8 +30261,8 @@ async function katAssign() {
     // Autoritetingas aktyvių perskaičiavimas prieš skiriant (max 5/tipui)
     await katRefreshActive();
     const k = s.selected.length;
-    if (s.nPrev + k > KAT_MAX_ACTIVE) {
-      showToast(`${ico('ispejimas')} Max ${KAT_MAX_ACTIVE} aktyvūs ${m.label.toLowerCase()} iššūkiai — auditorija jau turi ${s.nPrev}, telpa dar ${Math.max(0, KAT_MAX_ACTIVE - s.nPrev)}`, 'error', 6000);
+    if (s.nPrev + k > katMaxActive(s.type)) {
+      showToast(`${ico('ispejimas')} Max ${katMaxActive(s.type)} aktyvūs ${m.label.toLowerCase()} iššūkiai — auditorija jau turi ${s.nPrev}, telpa dar ${Math.max(0, katMaxActive(s.type) - s.nPrev)}`, 'error', 6000);
       return;
     }
     const plan = katComputePlan();
@@ -30829,8 +30834,8 @@ async function updateCustomExp() {
       if (kids.length) nPrev = await katCountActive(type, kids);
     } catch (e) { /* tylim — nPrev 0 */ }
     if (seq !== _ccExpCalcSeq) return; // pasenęs skaičiavimas (spėta pakeisti formą)
-    if (nPrev >= KAT_MAX_ACTIVE) {
-      if (prev) prev.textContent = `— auditorija jau turi ${KAT_MAX_ACTIVE} aktyvius!`;
+    if (nPrev >= katMaxActive(type)) {
+      if (prev) prev.textContent = `— auditorija jau turi ${katMaxActive(type)} aktyvius!`;
       document.getElementById('cc-exp').value = '0';
       validateChallengeExp();
       return;
@@ -30888,10 +30893,10 @@ async function submitNewChallenge() {
     try {
       const audKids = await _ccAudienceKids();
       const nPrev = audKids.length ? await katCountActive(type, audKids) : 0;
-      if (nPrev >= KAT_MAX_ACTIVE) {
+      if (nPrev >= katMaxActive(type)) {
         btn.disabled = false;
         btn.textContent = 'SUKURTI IŠŠŪKĮ';
-        showToast(`${ico('ispejimas')} Auditorija jau turi ${KAT_MAX_ACTIVE} aktyvius ${getTypeLabel(type)} iššūkius — daugiau negalima`, 'error', 6000);
+        showToast(`${ico('ispejimas')} Auditorija jau turi ${katMaxActive(type)} aktyvius ${getTypeLabel(type)} iššūkius — daugiau negalima`, 'error', 6000);
         return;
       }
       exp = katMarginalExp(type, nPrev + 1, _ccCustomDiff);
