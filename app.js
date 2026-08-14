@@ -3615,7 +3615,7 @@ async function openMonthPdf(prevMonth) {
       <div style="display:flex;gap:6px;align-items:center;">
         <button onclick="_pfPdfZoom(-1)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer;font-family:inherit;flex-shrink:0;">−</button>
         <button onclick="_pfPdfZoom(1)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer;font-family:inherit;flex-shrink:0;">+</button>
-        <button onclick="_pfPdfShare()" title="Dalintis paveiksliuku (Instagram, Messenger…)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0;">📲</button>
+        <button onclick="openCardStudio()" title="Kortelės studija — dalintis (Instagram, Messenger…)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0;">📲</button>
         <button onclick="_pfPdfPrint()" title="Spausdinti" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0;">🖨️</button>
         <button id="pf-pdf-save-btn" onclick="_pfPdfSave()" style="background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:9px;padding:8px 12px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Įrašyti PDF</button>
         <button onclick="document.getElementById('pf-pdf-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mut);">${ico('uzdaryti')}</button>
@@ -3749,6 +3749,248 @@ async function _pfPdfShare() {
   } catch (e) {
     if (e?.name !== 'AbortError') { console.warn('pf share', e); showToast(ico('klaida') + ' Nepavyko pasidalinti', 'error'); }
   } finally { if (host) host.remove(); }
+}
+
+// ═══════════ 🃏 v424: KORTELĖS STUDIJA (PROMPTAS-KORTELES-STUDIJA.md, A dalis) ═══════════
+// Tėvas kas mėnesį renkasi kortelės stilių; kolekcijos rėmas (#N/12 + juostelė) — ant visų.
+const _CS_MN = ['SAU', 'VAS', 'KOV', 'BAL', 'GEG', 'BIR', 'LIE', 'RGP', 'RGS', 'SPA', 'LAP', 'GRU'];
+const _CS_NOM = ['SAUSIS', 'VASARIS', 'KOVAS', 'BALANDIS', 'GEGUŽĖ', 'BIRŽELIS', 'LIEPA', 'RUGPJŪTIS', 'RUGSĖJIS', 'SPALIS', 'LAPKRITIS', 'GRUODIS'];
+
+// Gyvi palyginimai — 3 sluoksniai: vienetas → raktažodis → universalus ritmo fallback
+// (nežinomiems trenerio pratimams fizikos nespėliojam). Frazės — lengvai pildomas sąrašas.
+function _cardFacts(p) {
+  const facts = [];
+  const perDay = (n) => Math.max(1, Math.round(n / 30));
+  const pick = (arr, v) => { let s = arr[0][1]; for (const r of arr) { if (v >= r[0]) s = r[1]; } return s; };
+  (p.numsRows || []).forEach(r => {
+    const low = String(r.name || '').toLowerCase();
+    const valS = String(r.val || '');
+    const num = parseFloat(valS.replace(/\s/g, '').replace(',', '.')) || 0;
+    if (!num) return;
+    let icon = '🔥', small = null, score = num / 300;
+    if (/km/.test(valS)) {
+      icon = '🏃'; score = num / 10;
+      small = pick([[0, 'beveik ratas aplink Vingio parką'], [6, 'kaip nuo Vilniaus iki Nemenčinės'], [14, 'kaip nuo Vilniaus iki Trakų'], [45, 'kaip nuo Vilniaus iki Kauno'], [120, 'kaip iki pat Rygos!']], num);
+    } else if (/atsispaud/.test(low)) {
+      icon = '💪'; score = num / 120;
+      small = pick([[0, 'po ' + perDay(num) + ' kasdien — be poilsio dienų'], [120, 'kartu sudėjus pakeltų didelį šunį'], [250, 'kartu sudėjus pakeltų poni!'], [600, 'kartu sudėjus pakeltų automobilį!']], num);
+    } else if (/šuoli|suoli|virvut/.test(low)) {
+      icon = '🤸'; score = num / 110;
+      small = pick([[0, 'po ' + perDay(num) + ' kasdien'], [90, 'šuolis po šuolio — užšoktų ant Gedimino bokšto 3 kartus'], [400, 'šuoliai iki Eifelio bokšto viršūnės!']], num);
+    } else if (/spyri|geri/.test(low)) {
+      icon = '🥋'; score = num / 60;
+      small = pick([[0, 'spyrių serija kaip su tikru sensėjumi'], [60, 'spyrių maratonas — kaip karate filme!']], num);
+    } else if (/plank|kyb|laikym|pusiausv/.test(low) || /sek\.|min/.test(valS)) {
+      icon = '🧱'; score = num / 90;
+      small = pick([[0, 'išlaikytų visą reklamos pertrauką'], [60, 'išlaikytų visą mėgstamą dainą'], [180, 'ilgiau nei animacinio serija!']], num);
+    } else if (/pritūp|pritup/.test(low)) {
+      icon = '🦵'; score = num / 150;
+      small = pick([[0, 'po ' + perDay(num) + ' kasdien'], [150, 'liftas nebereikalingas — kojos plieninės'], [400, 'pritūpimų bokštas iki debesų!']], num);
+    } else {
+      small = 'po ' + perDay(num) + ' kasdien — visą mėnesį be pertraukos';
+    }
+    facts.push({ icon, big: valS, name: r.name, small, score });
+  });
+  facts.sort((a, b) => b.score - a.score);
+  return facts.slice(0, 3);
+}
+
+// Kolekcijos juostelė: 12 mėnesių langelių pagal to mėnesio pakopą (iš monthly_reports)
+function _cardStripHtml(st) {
+  let cells = '';
+  for (let m = 1; m <= 12; m++) {
+    const row = st.months[m];
+    let s = 'width:26px;height:34px;border-radius:4px;font-size:9px;display:flex;align-items:center;justify-content:center;';
+    if (m === st.m) s += `border:2px solid ${st.tier.accent};background:${st.tier.accent}22;color:#fff;box-shadow:0 0 8px ${st.tier.dim};font-weight:800;`;
+    else if (row) { const tc = _pfTier(row.exp || 0); s += `border:1px solid ${tc.dim};background:${tc.accent}1a;color:rgba(255,255,255,.75);`; }
+    else s += 'border:1px dashed rgba(255,255,255,.2);color:rgba(255,255,255,.3);';
+    cells += `<div style="${s}">${_CS_MN[m - 1]}</div>`;
+  }
+  return `<div style="display:flex;gap:4px;justify-content:center;margin-top:20px;">${cells}</div>`;
+}
+
+// Bendras rėmas: pakopos fonas/rėmai + #N/12 žymė + juostelė + SPOBU footeris
+function _cardWrap(st, core, minH) {
+  const t = st.tier;
+  return `<div style="padding:34px 32px 22px;color:#fff;font-family:'Segoe UI',Arial,sans-serif;position:relative;overflow:hidden;${minH ? `min-height:${minH}px;display:flex;flex-direction:column;justify-content:space-between;` : ''}${t.frame2 ? `border:1px solid ${t.dim};` : ''}">
+    ${t.glow ? `<div style="position:absolute;inset:0;background:${t.glow};"></div>` : ''}
+    <div style="position:absolute;top:14px;right:16px;font-size:13px;font-weight:800;color:${t.accent};border:1px solid ${t.dim};border-radius:99px;padding:3px 10px;">#${st.m}/12</div>
+    <div style="position:relative;">${core}</div>
+    <div style="position:relative;">${_cardStripHtml(st)}
+      <div style="text-align:center;margin-top:10px;font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.45);"><img src="brand/mark-white-128.png" style="height:18px;vertical-align:middle;margin-right:6px;">${st.p.year || ''} ${escapeHtml(st.p.monthNom || '')} · SPOBU</div>
+    </div>
+  </div>`;
+}
+
+// Turinio šablonai: santrauka / palyginimai / prieš→po (pilna — _pfShareHtml)
+function _cardCore(st) {
+  const esc = escapeHtml, p = st.p, t = st.tier;
+  const headSm = `<div style="font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.55);">${esc((st.clubName || 'SPOBU KLUBAS')).toUpperCase()}</div>
+    <div style="font-size:34px;font-weight:800;letter-spacing:2px;margin-top:8px;">${esc(p.name || '').toUpperCase()}</div>
+    <div style="font-size:13px;letter-spacing:3px;color:${t.accent};margin-top:2px;">${esc(p.monthLabel || '')} ${t.word}${t.stars ? ' · ' + t.stars : ''}</div>`;
+  if (st.tpl === 'palyginimai') {
+    const facts = _cardFacts(p);
+    const fb = facts.length
+      ? facts.map(f => `<div style="margin-bottom:16px;"><div style="font-size:19px;"><span style="margin-right:6px;">${f.icon}</span><b style="color:${t.accent};">${esc(String(f.big))}</b> ${esc(String(f.name || '').toLowerCase())}</div><div style="font-size:14px;color:rgba(255,255,255,.65);margin-top:3px;">${esc(f.small)}</div></div>`).join('')
+      : `<div style="font-size:16px;color:rgba(255,255,255,.7);">${p.attended || 0} treniruotės · ${p.chCount || 0} užduotys — tvirtas mėnuo!</div>`;
+    return `<div style="text-align:center;">${headSm}
+      <div style="font-size:14px;letter-spacing:3px;color:${t.accent};margin-top:${st.fmt === 'story' ? 34 : 18}px;">MĖNUO SKAIČIAIS 🤯</div>
+      <div style="text-align:left;margin-top:16px;">${fb}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:4px;">+${(p.exp || 0).toLocaleString('lt-LT')} EXP · ${p.chCount || 0} iššūkiai${p.medalCount ? ' · 🥇 ' + p.medalCount : ''}</div>
+    </div>`;
+  }
+  if (st.tpl === 'priespo') {
+    const recs = (p.recs || []).slice(0, 6);
+    const rows = recs.length
+      ? recs.map(r => `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:17px;"><span>${esc(r.name || '')}</span><span>${r.op != null && r.op > 0 ? `<span style="color:rgba(255,255,255,.4);">${r.op}</span> ` : ''}<b style="color:#22C55E;">→ ${r.nv}${r.unit ? ' ' + esc(r.unit) : ''}</b></span></div>`).join('')
+      : `<div style="font-size:15px;color:rgba(255,255,255,.65);padding:8px 0;">Šį mėnesį rekordų nebuvo — bet buvo ${p.chCount || 0} užduotys ir ${p.attended || 0} treniruotės 💪</div>`;
+    return `<div style="text-align:center;">${headSm}
+      <div style="font-size:14px;letter-spacing:3px;color:${t.accent};margin-top:18px;">KAIP PAAUGO PER MĖNESĮ 📈</div>
+      <div style="text-align:left;margin-top:12px;">${rows}
+        ${(p.learned || []).length ? `<div style="padding:9px 0;font-size:16px;color:${t.warm};">🥋 Nauja technika: ${(p.learned || []).map(esc).join(' · ')}</div>` : ''}
+      </div>
+      <div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:12px;">Vienas mėnuo. Štai kiek paaugo.</div>
+    </div>`;
+  }
+  // santrauka (numatytoji)
+  return `<div style="text-align:center;">
+    ${st.clubLogo ? `<img src="${st.clubLogo}" style="height:40px;max-width:200px;object-fit:contain;">` : ''}
+    <div style="font-size:13px;letter-spacing:4px;color:rgba(255,255,255,.6);margin-top:6px;">${esc((st.clubName || 'SPOBU KLUBAS')).toUpperCase()}</div>
+    <div style="font-size:46px;font-weight:800;letter-spacing:3px;margin-top:14px;">${esc(p.name || '').toUpperCase()}</div>
+    <div style="font-size:17px;letter-spacing:4px;color:${t.accent};margin-top:2px;">${esc(p.monthLabel || '')} ${t.word}</div>
+    ${t.stars ? `<div style="font-size:13px;letter-spacing:8px;color:${t.dim};margin-top:4px;">${t.stars}</div>` : ''}
+    <div style="font-size:56px;font-weight:800;color:${t.accent};margin-top:${st.fmt === 'story' ? 44 : 16}px;line-height:1;${t.glow ? `text-shadow:0 0 24px ${t.dim};` : ''}">+${(p.exp || 0).toLocaleString('lt-LT')}</div>
+    <div style="font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.55);">EXP PER MĖNESĮ</div>
+    <div style="display:flex;justify-content:center;gap:28px;margin-top:${st.fmt === 'story' ? 44 : 18}px;">
+      <div><div style="font-size:24px;font-weight:800;">${p.chCount || 0}</div><div style="font-size:11px;color:rgba(255,255,255,.55);">iššūkiai</div></div>
+      ${p.medalCount ? `<div><div style="font-size:24px;font-weight:800;color:#FFD700;">${p.medalCount}</div><div style="font-size:11px;color:rgba(255,255,255,.55);">medaliai</div></div>` : ''}
+      ${p.recCount ? `<div><div style="font-size:24px;font-weight:800;color:#22C55E;">${p.recCount}</div><div style="font-size:11px;color:rgba(255,255,255,.55);">rekordai</div></div>` : ''}
+      ${p.attSched ? `<div><div style="font-size:24px;font-weight:800;">${p.attended}/${p.attSched}</div><div style="font-size:11px;color:rgba(255,255,255,.55);">treniruotės</div></div>` : ''}
+    </div>
+    ${(p.learned || []).length ? `<div style="margin-top:18px;font-size:15px;color:${t.warm};">Nauja: ${(p.learned || []).map(esc).join(' · ')}</div>` : ''}
+  </div>`;
+}
+
+function _cardHtml(st) {
+  if (st.tpl === 'pilna') {
+    return `<div style="position:relative;"><div style="position:absolute;top:12px;right:14px;z-index:2;font-size:13px;font-weight:800;color:${st.tier.accent};border:1px solid ${st.tier.dim};border-radius:99px;padding:3px 10px;">#${st.m}/12</div>${_pfShareHtml({ p: st.p, narr: st.narr, clubName: st.clubName, clubLogo: st.clubLogo })}</div>`;
+  }
+  return _cardWrap(st, _cardCore(st), st.fmt === 'story' ? 1140 : 640);
+}
+
+// ── Studija: gyva peržiūra + šablonų/formato pasirinkimas + dalinimasis + kolekcija ──
+let _csState = null, _csShelfRows = null;
+async function openCardStudio(pd, mNum) {
+  const meta = _pfPdfMeta || {};
+  const p = pd || meta.p || _pfPdf;
+  if (!p) { showToast(ico('klaida') + ' Atidaryk Pasiekimų langą iš naujo', 'error'); return; }
+  let clubName = meta.clubName || '', clubLogo = meta.clubLogo || null;
+  if (!clubLogo) { try { clubLogo = await _shareClubLogo(); } catch (_) {} }
+  if (!clubName) {
+    try {
+      const cid = (typeof getActiveKidClubId === 'function') ? await getActiveKidClubId() : null;
+      if (cid && sb) { const { data } = await sb.from('clubs').select('name').eq('id', cid).maybeSingle(); clubName = data?.name || ''; }
+    } catch (_) {}
+  }
+  const months = {};
+  try {
+    const k = parentActiveKid;
+    if (k && sb && p.year) { const { data } = await sb.from('monthly_reports').select('month, exp').eq('kid_id', k.id).eq('year', p.year); (data || []).forEach(r => { months[r.month] = r; }); }
+  } catch (_) {}
+  const nowM = new Date().getMonth() + 1;
+  const m = mNum || (_CS_NOM.indexOf(p.monthNom) + 1) || nowM;
+  _csState = { p, m, months, narr: pd ? (pd.narr || '') : (meta.narr || ''), clubName, clubLogo, tpl: (pd && pd.tpl) || 'santrauka', fmt: 'sq', tier: _pfTier(p.exp), isCur: p.year === new Date().getFullYear() && m === nowM };
+  const body = `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;" id="cs-tpls"></div>
+    <div style="display:flex;gap:6px;margin-top:6px;" id="cs-fmts"></div>
+    <div style="margin-top:10px;display:flex;justify-content:center;background:rgba(255,255,255,.03);border-radius:12px;padding:8px;overflow:hidden;">
+      <div id="cs-prev" style="width:720px;zoom:.4;border-radius:14px;overflow:hidden;"></div>
+    </div>
+    <button onclick="_cardShare()" id="cs-share-btn" style="width:100%;padding:13px;margin-top:12px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📲 Dalintis šia kortele</button>
+    <button onclick="openCardShelf()" style="width:100%;padding:11px;margin-top:8px;background:transparent;color:var(--mut);border:.5px solid var(--bdr);border-radius:11px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">🃏 Kolekcija (${Object.keys(months).length}/12)</button>`;
+  _pfSheet('card-studio-modal', '🃏 KORTELĖS STUDIJA', body);
+  _csRender();
+}
+function _csSet(k, v) { if (_csState) { _csState[k] = v; _csRender(); } }
+function _csRender() {
+  const st = _csState; if (!st) return;
+  const chip = (on) => `padding:6px 11px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;border:.5px solid ${on ? 'var(--br)' : 'var(--bdr)'};background:${on ? 'rgba(255,77,0,.18)' : 'var(--card)'};color:${on ? '#FF7A33' : 'var(--mut)'};`;
+  const tplEl = document.getElementById('cs-tpls');
+  if (tplEl) tplEl.innerHTML = [['santrauka', 'Santrauka'], ['palyginimai', '🤯 Palyginimai'], ['priespo', '📈 Prieš → po'], ['pilna', 'Pilna ataskaita']].map(x => `<div onclick="_csSet('tpl','${x[0]}')" style="${chip(st.tpl === x[0])}">${x[1]}</div>`).join('');
+  const fmtEl = document.getElementById('cs-fmts');
+  if (fmtEl) fmtEl.innerHTML = (st.tpl === 'santrauka' || st.tpl === 'palyginimai')
+    ? [['sq', '⬛ 1:1 postui'], ['story', '📱 Story 9:16']].map(x => `<div onclick="_csSet('fmt','${x[0]}')" style="${chip(st.fmt === x[0])}">${x[1]}</div>`).join('') : '';
+  const prev = document.getElementById('cs-prev');
+  if (prev) { prev.style.background = st.tier.bg; prev.innerHTML = _cardHtml(st); }
+}
+
+async function _cardShare() {
+  const st = _csState; if (!st) return;
+  const btn = document.getElementById('cs-share-btn');
+  if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.textContent = 'Ruošiama…'; }
+  let host = null;
+  try {
+    if (typeof html2canvas !== 'function') { showToast(ico('klaida') + ' Nepavyko (nėra ryšio?)', 'error'); return; }
+    host = document.createElement('div');
+    host.style.cssText = `position:absolute;left:-10000px;top:0;width:720px;background:${st.tier.bg};`;
+    host.innerHTML = _cardHtml(st);
+    document.body.appendChild(host);
+    const cv = await html2canvas(host, { scale: 2, useCORS: true, backgroundColor: st.tier.bg, logging: false });
+    host.remove(); host = null;
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
+    const files = blob ? [new File([blob], `SPOBU-${String(st.p.name || 'kortele')}-${st.m}.jpg`, { type: 'image/jpeg' })] : [];
+    if (files.length && navigator.share && navigator.canShare && navigator.canShare({ files })) {
+      await navigator.share({ files, title: 'SPOBU mėnesio kortelė' });
+    } else {
+      files.forEach(fl => { const a = document.createElement('a'); a.href = URL.createObjectURL(fl); a.download = fl.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); });
+      showToast('Kortelė atsisiųsta', 'success', 3000);
+    }
+    // Šablono įsiminimas archyve — lentyna žinos, kokį stilių tą mėnesį rinkai
+    if (st.isCur && parentActiveKid && sb) {
+      try { st.p.tpl = st.tpl; sb.from('monthly_reports').update({ pdf_json: st.p }).eq('kid_id', parentActiveKid.id).eq('year', st.p.year).eq('month', st.m).then(() => {}); } catch (_) {}
+    }
+  } catch (e) {
+    if (e?.name !== 'AbortError') { console.warn('card share', e); showToast(ico('klaida') + ' Nepavyko pasidalinti', 'error'); }
+  } finally {
+    if (host) host.remove();
+    if (btn) { delete btn.dataset.busy; btn.textContent = '📲 Dalintis šia kortele'; }
+  }
+}
+
+// ── Lentyna: metų kolekcija iš monthly_reports; tap → to mėnesio studija ──
+async function openCardShelf() {
+  const k = parentActiveKid;
+  if (!k || !sb) { showToast(ico('klaida') + ' Pasirink vaiką', 'error'); return; }
+  const y = new Date().getFullYear();
+  let rows = [];
+  try { const { data } = await sb.from('monthly_reports').select('month, exp, pdf_json').eq('kid_id', k.id).eq('year', y); rows = data || []; } catch (_) {}
+  _csShelfRows = {}; rows.forEach(r => { _csShelfRows[r.month] = r; });
+  const nowM = new Date().getMonth() + 1;
+  let cells = '';
+  for (let m = 1; m <= 12; m++) {
+    const r = _csShelfRows[m];
+    if (r) {
+      const t = _pfTier(r.exp || 0);
+      cells += `<div onclick="_csShelfOpen(${m})" style="aspect-ratio:3/4;background:${t.accent}14;border:${m === nowM ? '2px solid ' + t.accent : '1px solid ' + t.dim};border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;${m === nowM && t.glow ? 'box-shadow:0 0 10px ' + t.dim + ';' : ''}">
+        <div style="font-size:11px;color:${t.accent};">${t.stars || '·'}</div>
+        <div style="font-size:12px;font-weight:800;">${_CS_MN[m - 1]}</div>
+        <div style="font-size:10px;color:${t.accent};">+${(r.exp || 0).toLocaleString('lt-LT')}</div>
+      </div>`;
+    } else {
+      cells += `<div style="aspect-ratio:3/4;border:1px dashed var(--bdr);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mut);font-size:9px;gap:2px;"><div style="font-size:12px;font-weight:800;">${_CS_MN[m - 1]}</div>${m < nowM ? '<div>praleista</div>' : ''}</div>`;
+    }
+  }
+  const body = `
+    <div style="font-size:10px;color:var(--mut);margin-bottom:8px;">surinkta ${rows.length} iš 12 · spausk kortelę — peržiūra ir dalinimasis</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">${cells}</div>
+    ${rows.length ? '<div style="font-size:9.5px;color:var(--mut);margin-top:10px;text-align:center;">Gruodį — visas albumas 🎁</div>' : '<div style="font-size:10px;color:var(--mut);margin-top:10px;text-align:center;">Kolekcija pildosi kas mėnesį naudojantis appsu</div>'}`;
+  _pfSheet('card-shelf-modal', `🃏 ${y} KOLEKCIJA`, body);
+}
+function _csShelfOpen(m) {
+  const r = _csShelfRows && _csShelfRows[m];
+  if (!r || !r.pdf_json) { showToast(ico('klaida') + ' Šio mėnesio kortelės archyve nėra', 'error', 3500); return; }
+  const old = document.getElementById('card-shelf-modal'); if (old) old.remove();
+  openCardStudio(r.pdf_json, m);
 }
 
 function _pfPdfFitZoom() {
