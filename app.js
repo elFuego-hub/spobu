@@ -3686,16 +3686,17 @@ function _pfShareHtml(m) {
   const esc = escapeHtml, p = m.p || {};
   const row = (l, v, c) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:16px;"><span>${l}</span><span style="font-weight:800;color:${c || '#FF7A33'};">${v}</span></div>`;
   const h = (t) => `<div style="font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.5);font-weight:800;margin:22px 0 6px;">${t}</div>`;
-  const PF_TITLE_TIERS = [[500, 'LEGENDA'], [300, 'SAMURAJUS'], [100, 'KARYS'], [0, 'KOVOTOJAS']];
-  const titleWord = (PF_TITLE_TIERS.find(t => (p.exp || 0) >= t[0]) || [0, 'KARYS'])[1];
-  return `<div style="padding:36px 34px 28px;color:#fff;font-family:'Segoe UI',Arial,sans-serif;text-align:center;position:relative;overflow:hidden;">
-    <div style="position:absolute;font-size:520px;left:50%;top:230px;transform:translateX(-50%);opacity:.06;color:#FF7A33;font-family:'Yu Mincho','MS Mincho',serif;line-height:1;">武</div>
+  const tr = _pfTier(p.exp);
+  return `<div style="padding:36px 34px 28px;color:#fff;font-family:'Segoe UI',Arial,sans-serif;text-align:center;position:relative;overflow:hidden;${tr.frame2 ? `border:1px solid ${tr.dim};` : ''}">
+    ${tr.glow ? `<div style="position:absolute;inset:0;background:${tr.glow};"></div>` : ''}
+    <div style="position:absolute;font-size:520px;left:50%;top:230px;transform:translateX(-50%);opacity:.06;color:${tr.accent};font-family:'Yu Mincho','MS Mincho',serif;line-height:1;">武</div>
     <div style="position:relative;">
       ${m.clubLogo ? `<img src="${m.clubLogo}" style="height:44px;max-width:220px;object-fit:contain;">` : ''}
       <div style="font-size:14px;letter-spacing:5px;color:rgba(255,255,255,.6);margin-top:8px;">${esc((m.clubName || 'SPOBU KLUBAS')).toUpperCase()}</div>
       <div style="font-size:52px;font-weight:800;letter-spacing:3px;margin-top:18px;">${esc(p.name || '').toUpperCase()}</div>
-      <div style="font-size:19px;letter-spacing:5px;color:#FF7A33;margin-top:2px;">${esc(p.monthLabel || '')} ${titleWord}</div>
-      <div style="font-size:62px;font-weight:800;color:#FF7A33;margin-top:20px;line-height:1;">+${(p.exp || 0).toLocaleString('lt-LT')}</div>
+      <div style="font-size:19px;letter-spacing:5px;color:${tr.accent};margin-top:2px;">${esc(p.monthLabel || '')} ${tr.word}</div>
+      ${tr.stars ? `<div style="font-size:14px;letter-spacing:8px;color:${tr.dim};margin-top:4px;">${tr.stars}</div>` : ''}
+      <div style="font-size:62px;font-weight:800;color:${tr.accent};margin-top:18px;line-height:1;${tr.glow ? `text-shadow:0 0 26px ${tr.dim};` : ''}">+${(p.exp || 0).toLocaleString('lt-LT')}</div>
       <div style="font-size:12px;letter-spacing:4px;color:rgba(255,255,255,.55);margin-top:2px;">EXP PER MĖNESĮ</div>
       <div style="display:flex;justify-content:center;gap:34px;margin-top:22px;">
         <div><div style="font-size:26px;font-weight:800;">${p.chCount || 0}</div><div style="font-size:11px;color:rgba(255,255,255,.55);">iššūkiai</div></div>
@@ -3726,11 +3727,12 @@ async function _pfPdfShare() {
   try {
     showToast('📲 Ruošiamas paveiksliukas…', 'success', 2500);
     if (typeof html2canvas !== 'function') { showToast(ico('klaida') + ' Nepavyko (nėra ryšio?)', 'error'); return; }
+    const tbg = _pfTier(m.p?.exp).bg;
     host = document.createElement('div');
-    host.style.cssText = 'position:absolute;left:-10000px;top:0;width:720px;background:#12100e;';
+    host.style.cssText = `position:absolute;left:-10000px;top:0;width:720px;background:${tbg};`;
     host.innerHTML = _pfShareHtml(m);
     document.body.appendChild(host);
-    const cv = await html2canvas(host, { scale: 2, useCORS: true, backgroundColor: '#12100e', logging: false });
+    const cv = await html2canvas(host, { scale: 2, useCORS: true, backgroundColor: tbg, logging: false });
     host.remove(); host = null;
     const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
     const files = blob ? [new File([blob], `SPOBU-${String(m.name || 'ataskaita')}.jpg`, { type: 'image/jpeg' })] : [];
@@ -3781,11 +3783,20 @@ function _pfPdfPrint() {
   } catch (e) { console.warn('pf pdf print', e); showToast(ico('klaida') + ' Nepavyko atidaryti spausdinimo', 'error'); }
 }
 
+// 🏅 v423: pakopos DIZAINAS — kuo aukštesnis EXP rėžis, tuo įspūdingesnis diplomas ir share
+// paveiksliukas (savininko idėja: vaikas siekia ne tik titulo, bet ir gražesnio diplomo).
+function _pfTier(exp) {
+  const e = exp || 0;
+  if (e >= 500) return { word: 'LEGENDA',   bg: '#151006', accent: '#FFD700', warm: '#FFE9A0', dim: 'rgba(255,215,0,.5)',   frame2: true,  glow: 'radial-gradient(circle at 50% 36%, rgba(255,215,0,.16), transparent 55%)', stars: '★ ★ ★' };
+  if (e >= 300) return { word: 'SAMURAJUS', bg: '#170b0a', accent: '#FF4530', warm: '#FF9A80', dim: 'rgba(255,69,48,.5)',   frame2: true,  glow: 'radial-gradient(circle at 50% 36%, rgba(255,69,48,.13), transparent 55%)', stars: '★ ★' };
+  if (e >= 100) return { word: 'KARYS',     bg: '#12100e', accent: '#FF7A33', warm: '#FFB27D', dim: 'rgba(255,122,51,.45)', frame2: false, glow: '', stars: '★' };
+  return          { word: 'KOVOTOJAS', bg: '#0f1115', accent: '#8FA3B8', warm: '#C3D0DC', dim: 'rgba(143,163,184,.45)', frame2: false, glow: '', stars: '' };
+}
+
 function _pfPdfDoc(p, clubName, clubLogo, narr, interim) {
   const esc = escapeHtml;
-  // 🏅 v418: titulas pagal mėnesio EXP rėžius (savininko idėja) — rėžiai lengvai keičiami
-  const PF_TITLE_TIERS = [[500, 'LEGENDA'], [300, 'SAMURAJUS'], [100, 'KARYS'], [0, 'KOVOTOJAS']];
-  const titleWord = (PF_TITLE_TIERS.find(t => (p.exp || 0) >= t[0]) || [0, 'KARYS'])[1];
+  const t = _pfTier(p.exp);
+  const titleWord = t.word;
   const cn = esc(clubName || 'SPOBU klubas');
   const clubImg = clubLogo ? `<img src="${clubLogo}" style="height:11mm;max-width:50mm;object-fit:contain;">` : `<span style="font-weight:700;font-size:11pt;">${cn}</span>`;
   const wmax = Math.max(1, ...p.weeks.map(w => w.exp));
@@ -3816,15 +3827,18 @@ function _pfPdfDoc(p, clubName, clubLogo, narr, interim) {
     td, th { padding: 1.6mm 2mm; border-bottom: 0.4pt solid #e5e5e0; text-align: left; }
     th { color: #777; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; }
   </style></head><body>
-  <div class="pg1" style="background:#12100e;color:#fff;text-align:center;">
-    <div style="position:absolute;font-size:170mm;left:50%;top:45%;transform:translate(-50%,-50%);opacity:.07;color:#FF7A33;font-family:'Yu Mincho','MS Mincho',serif;">武</div>
-    <div style="position:absolute;inset:9mm;border:.5pt solid rgba(255,122,51,.35);border-radius:5mm;"></div>
+  <div class="pg1" style="background:${t.bg};color:#fff;text-align:center;">
+    ${t.glow ? `<div style="position:absolute;inset:0;background:${t.glow};"></div>` : ''}
+    <div style="position:absolute;font-size:170mm;left:50%;top:45%;transform:translate(-50%,-50%);opacity:.07;color:${t.accent};font-family:'Yu Mincho','MS Mincho',serif;">武</div>
+    <div style="position:absolute;inset:9mm;border:.5pt solid ${t.dim};border-radius:5mm;"></div>
+    ${t.frame2 ? `<div style="position:absolute;inset:12mm;border:.5pt solid ${t.dim};border-radius:4mm;"></div>` : ''}
     <div style="position:relative;padding-top:24mm;">
       ${clubLogo ? `<img src="${clubLogo}" style="height:14mm;max-width:70mm;object-fit:contain;">` : ''}
       <div style="font-size:11pt;letter-spacing:5px;color:rgba(255,255,255,.6);margin-top:4mm;">${cn.toUpperCase()}</div>
       <div style="font-size:40pt;font-weight:800;letter-spacing:3px;margin-top:14mm;">${esc(p.name).toUpperCase()}</div>
-      <div style="font-size:14pt;letter-spacing:5px;color:#FF7A33;margin-top:2mm;">${esc(p.monthLabel)} ${titleWord}</div>
-      <div style="font-size:48pt;font-weight:800;color:#FF7A33;margin-top:15mm;">+${p.exp.toLocaleString('lt-LT')}</div>
+      <div style="font-size:14pt;letter-spacing:5px;color:${t.accent};margin-top:2mm;">${esc(p.monthLabel)} ${titleWord}</div>
+      ${t.stars ? `<div style="font-size:10pt;letter-spacing:6px;color:${t.dim};margin-top:2mm;">${t.stars}</div>` : ''}
+      <div style="font-size:48pt;font-weight:800;color:${t.accent};margin-top:13mm;${t.glow ? `text-shadow:0 0 8mm ${t.dim};` : ''}">+${p.exp.toLocaleString('lt-LT')}</div>
       <div style="font-size:9.5pt;letter-spacing:4px;color:rgba(255,255,255,.55);">EXP PER MĖNESĮ</div>
       <div style="display:flex;justify-content:center;gap:16mm;margin-top:14mm;">
         <div><div style="font-size:20pt;font-weight:800;">${p.chCount}</div><div style="font-size:8.5pt;color:rgba(255,255,255,.55);">iššūkių įveikta</div></div>
@@ -3832,7 +3846,7 @@ function _pfPdfDoc(p, clubName, clubLogo, narr, interim) {
         ${p.recCount ? `<div><div style="font-size:20pt;font-weight:800;">${p.recCount}</div><div style="font-size:8.5pt;color:rgba(255,255,255,.55);">nauji rekordai</div></div>` : ''}
         ${p.attSched ? `<div><div style="font-size:20pt;font-weight:800;color:#22C55E;">${p.attended}/${p.attSched}</div><div style="font-size:8.5pt;color:rgba(255,255,255,.55);">treniruotės</div></div>` : ''}
       </div>
-      ${learnedLine ? `<div style="margin-top:12mm;font-size:12pt;color:#FB923C;">Nauja: ${learnedLine}</div>` : ''}
+      ${learnedLine ? `<div style="margin-top:12mm;font-size:12pt;color:${t.warm};">Nauja: ${learnedLine}</div>` : ''}
     </div>
     <div style="position:absolute;bottom:14mm;left:0;right:0;text-align:center;">
       <img src="brand/mark-white-128.png" style="height:7mm;vertical-align:middle;margin-right:2mm;">
