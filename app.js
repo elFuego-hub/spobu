@@ -3615,17 +3615,56 @@ async function openMonthPdf(prevMonth) {
       <div style="display:flex;gap:6px;align-items:center;">
         <button onclick="_pfPdfZoom(-1)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer;font-family:inherit;flex-shrink:0;">−</button>
         <button onclick="_pfPdfZoom(1)" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer;font-family:inherit;flex-shrink:0;">+</button>
-        <button onclick="_pfPdfPrint()" style="background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:9px;padding:8px 12px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Įrašyti PDF</button>
+        <button onclick="_pfPdfPrint()" title="Spausdinti" style="background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:30px;height:30px;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0;">🖨️</button>
+        <button id="pf-pdf-save-btn" onclick="_pfPdfSave()" style="background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:9px;padding:8px 12px;font-size:11.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">${ico('dokumentas')} Įrašyti PDF</button>
         <button onclick="document.getElementById('pf-pdf-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--mut);">${ico('uzdaryti')}</button>
       </div>
     </div>
     <iframe id="pf-pdf-frame" style="flex:1;border:0;width:100%;background:#525659;"></iframe>`;
   document.body.appendChild(m);
+  // 💾 v419: failo vardui — kas ir kuris mėnuo
+  _pfPdfMeta = { name: p.name || 'Vaikas', y: p.year, mn: p.monthNom || '' };
   const f = document.getElementById('pf-pdf-frame');
   const d = f.contentDocument;
   d.open(); d.write(html); d.close();
   // 📱 v417: sutalpinti A4 (794px) į ekrano plotį — kaip AI ataskaitų _fitReportZoom
   setTimeout(_pfPdfFitZoom, 80);
+  setTimeout(_pfPdfFitZoom, 400); // pakartojimas — iOS kartais dar nepaskaičiavęs clientWidth
+}
+
+// 💾 v419: TIESIOGINIS PDF išsaugojimas be spausdinimo dialogo — html2canvas + jsPDF
+// (abu lapai → JPEG → A4 PDF failas). Jei bibliotekos neužsikrovė — fallback į print.
+let _pfPdfMeta = null;
+async function _pfPdfSave() {
+  const f = document.getElementById('pf-pdf-frame');
+  const d = f && (f.contentDocument || f.contentWindow?.document);
+  if (!d || !d.body) return;
+  const JsPDF = window.jspdf?.jsPDF;
+  if (typeof html2canvas !== 'function' || !JsPDF) { _pfPdfPrint(); return; }
+  const btn = document.getElementById('pf-pdf-save-btn');
+  if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.textContent = 'Ruošiama…'; }
+  const z = f.dataset.z || '';
+  try {
+    d.body.style.zoom = 1; // tikras dydis renderinimui
+    const pages = d.querySelectorAll('.pg1, .pg2');
+    const pdf = new JsPDF({ unit: 'mm', format: 'a4', compress: true });
+    for (let i = 0; i < pages.length; i++) {
+      const cv = await html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+      if (i > 0) pdf.addPage();
+      const h = Math.min(297, cv.height / cv.width * 210);
+      pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, h);
+    }
+    const m = _pfPdfMeta || {};
+    pdf.save(`SPOBU-${String(m.name || 'ataskaita')}-${m.y || ''}-${String(m.mn || '').toLowerCase()}.pdf`);
+    showToast(ico('patvirtinta') + ' PDF įrašytas', 'success', 3000);
+  } catch (e) {
+    console.warn('pf pdf save', e);
+    showToast(ico('klaida') + ' Nepavyko — bandom per spausdinimą', 'error', 3500);
+    _pfPdfPrint();
+  } finally {
+    if (z) d.body.style.zoom = z;
+    if (btn) { delete btn.dataset.busy; btn.innerHTML = ico('dokumentas') + ' Įrašyti PDF'; }
+  }
 }
 
 function _pfPdfFitZoom() {
@@ -3683,7 +3722,8 @@ function _pfPdfDoc(p, clubName, clubLogo, narr, interim) {
   return `<!doctype html><html lang="lt"><head><meta charset="utf-8"><title>${esc(p.name)} — ${esc(p.monthNom.toLowerCase())} SPOBU</title><style>
     @page { size: A4; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    html { width: 100%; background: #525659; font-family: 'Segoe UI', Arial, sans-serif; }
+    /* v419: -webkit-text-size-adjust — iOS savavališkai pripūsdavo šriftus (telefone „nusimušdavo") */
+    html { width: 100%; background: #525659; font-family: 'Segoe UI', Arial, sans-serif; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     body { width: 210mm; margin: 0 auto; }
     /* v416: 1 lapas — TIKSLIAI 297mm + break TIK po jo; 2 lapas — laisvo aukščio (4 psl. bug fix) */
     .pg1 { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; }
