@@ -62,7 +62,7 @@ window.addEventListener('unhandledrejection', function(e) {
 // Patikima CDN užkrovimo logika su fallback
 (function() {
   const CDN_URLS = [
-    { url: 'supabase.js?v=428', name: 'lokalus' },   // self-host (GDPR/availability) — CDN'ai lieka fallback
+    { url: 'supabase.js?v=429', name: 'lokalus' },   // self-host (GDPR/availability) — CDN'ai lieka fallback
     { url: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js', name: 'jsdelivr' },
     { url: 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js', name: 'unpkg' },
     { url: 'https://cdn.skypack.dev/@supabase/supabase-js@2', name: 'skypack' }
@@ -105,7 +105,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=428">
+<link rel="stylesheet" href="styles.css?v=429">
 </head>
 <body>
 
@@ -270,7 +270,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v428</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v429</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg> PILNAS MOBILE</button>
@@ -4365,7 +4365,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=428"></script>
+<script src="app.js?v=429"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

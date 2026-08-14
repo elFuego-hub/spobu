@@ -3981,15 +3981,55 @@ function _csRender() {
   const exEl = document.getElementById('cs-extra');
   if (exEl) exEl.innerHTML = st.tpl === 'foto'
     ? `<button onclick="document.getElementById('cs-foto-input').click()" style="width:100%;padding:10px;margin-top:8px;background:rgba(79,195,247,.12);color:#4FC3F7;border:.5px solid rgba(79,195,247,.4);border-radius:10px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">📷 ${st.photo ? 'Pakeisti nuotrauką' : 'Pasirinkti nuotrauką'}</button>
-       <div style="font-size:9px;color:var(--mut);margin-top:4px;text-align:center;">Nuotrauka lieka tik tavo telefone — niekur nesiunčiama</div>` : '';
+       <div style="font-size:9px;color:var(--mut);margin-top:4px;text-align:center;">Nuotrauka lieka tik tavo telefone — niekur nesiunčiama</div>`
+    : st.tpl === 'balsas'
+    ? `<button onclick="_csMomentEdit()" style="width:100%;padding:10px;margin-top:8px;background:rgba(79,195,247,.12);color:#4FC3F7;border:.5px solid rgba(79,195,247,.4);border-radius:10px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">${st.moment ? '✏️ Pakeisti vaiko žodžius' : '✍️ Įrašyti vaiko žodžius'}</button>
+       <div style="font-size:9px;color:var(--mut);margin-top:4px;text-align:center;">Vaikas neturi telefono? Paklausk jo gyvai ir įrašyk JO žodžius 😊</div>` : '';
   const prev = document.getElementById('cs-prev');
   if (prev) { prev.style.background = st.tier.bg; prev.innerHTML = _cardHtml(st); }
+}
+
+// ✍️ v429: tėvas įrašo vaiko momentą už jį (mažiukams be telefono) — paklausęs gyvai
+function _csMomentEdit() {
+  const st = _csState; if (!st) return;
+  const body = `
+    <div style="font-size:11px;color:var(--mut);margin-bottom:8px;">Paklausk vaiko: „Kuo šį mėnesį labiausiai didžiuojiesi?" — ir įrašyk JO žodžius</div>
+    <textarea id="cs-moment-text" maxlength="140" placeholder="pvz.: Išmokau mawashi-geri — treneris sakė, kad jau kaip tikras!" style="width:100%;min-height:76px;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:10px 12px;color:var(--text);font-size:12px;font-family:inherit;resize:none;box-sizing:border-box;">${escapeHtml(st.moment || '')}</textarea>
+    <button onclick="_csMomentSave()" id="cs-moment-save" style="width:100%;padding:12px;margin-top:10px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">Išsaugoti</button>`;
+  _pfSheet('card-moment-modal', '✍️ VAIKO ŽODŽIAI', body);
+}
+async function _csMomentSave() {
+  const st = _csState; if (!st || !parentActiveKid || !sb) return;
+  const btn = document.getElementById('cs-moment-save');
+  if (btn && btn.dataset.busy) return;
+  const txt = (document.getElementById('cs-moment-text')?.value || '').trim().slice(0, 140);
+  if (!txt) { showToast('Įrašyk vaiko žodžius 😊', 'error', 3000); return; }
+  if (btn) { btn.dataset.busy = '1'; btn.textContent = 'Saugoma…'; }
+  try {
+    const GEN = ['SAUSIO', 'VASARIO', 'KOVO', 'BALANDŽIO', 'GEGUŽĖS', 'BIRŽELIO', 'LIEPOS', 'RUGPJŪČIO', 'RUGSĖJO', 'SPALIO', 'LAPKRIČIO', 'GRUODŽIO'];
+    const { data: upd, error } = await sb.from('monthly_reports').update({ kid_moment: txt }).eq('kid_id', parentActiveKid.id).eq('year', st.p.year).eq('month', st.m).select('kid_id');
+    if (error) throw error;
+    if (!upd || !upd.length) {
+      const { error: ie } = await sb.from('monthly_reports').insert({ kid_id: parentActiveKid.id, year: st.p.year, month: st.m, month_label: GEN[st.m - 1], kid_moment: txt });
+      if (ie) throw ie;
+    }
+    st.moment = txt;
+    if (st.months[st.m]) st.months[st.m].kid_moment = txt;
+    const mo = document.getElementById('card-moment-modal'); if (mo) mo.remove();
+    _csRender();
+    showToast('💬 Išsaugota', 'success', 2500);
+  } catch (e) {
+    console.warn('cs moment save', e);
+    showToast(ico('klaida') + ' Nepavyko išsaugoti (ar paleistas server-vaiko-balsas.sql?)', 'error', 4500);
+  } finally {
+    if (btn) { delete btn.dataset.busy; btn.textContent = 'Išsaugoti'; }
+  }
 }
 
 async function _cardShare() {
   const st = _csState; if (!st) return;
   if (st.tpl === 'foto' && !st.photo) { showToast('📷 Pirmiausia pasirink nuotrauką', 'error', 3000); return; }
-  if (st.tpl === 'balsas' && !st.moment) { showToast('💬 Vaikas dar nepasirinko mėnesio momento appse', 'error', 3500); return; }
+  if (st.tpl === 'balsas' && !st.moment) { showToast('💬 Įrašyk vaiko žodžius mygtuku viršuje', 'error', 3500); return; }
   const btn = document.getElementById('cs-share-btn');
   if (btn) { if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.textContent = 'Ruošiama…'; }
   let host = null;
