@@ -3478,8 +3478,45 @@ async function loadParentKidFeed() {
       }, { onConflict: 'kid_id,year,month' }).then(r => { if (r.error) console.warn('pdf snapshot:', r.error.message); });
     } catch (_) {}
 
-    list.innerHTML = strip + rowsHtml;
+    list.innerHTML = strip + '<div id="pf-gc-live"></div>' + rowsHtml;
+    _pfLoadGroupChallengeLive(k); // 🏆 v435: vykstančio grupių iššūkio gyva vieta (fire-and-forget)
   } catch (e) { console.warn('parent feed', e); list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant feed</div>'; }
+}
+
+// 🏆 v435: tėvui — kaip vaiko grupei sekasi VYKSTANČIAME grupių iššūkyje (savininko pastaba:
+// „nėra trackinimo kelintoje vietoje"). Kompaktiška auksinė kortelė virš dienų sąrašo;
+// jei aktyvių iššūkių nėra / RLS neleidžia — tyliai nerodoma.
+async function _pfLoadGroupChallengeLive(k) {
+  const el = document.getElementById('pf-gc-live');
+  if (!el || !k?.group_id || !sb) return;
+  try {
+    const { data: links } = await sb.from('club_challenge_groups').select('challenge_id').eq('group_id', k.group_id).limit(20);
+    const ids = (links || []).map(l => l.challenge_id);
+    if (!ids.length) return;
+    const { data: chs } = await sb.from('club_challenges').select('id, title, unit, ends_on').in('id', ids).eq('is_active', true).order('created_at', { ascending: false }).limit(3);
+    if (!chs || !chs.length) return;
+    const cards = [];
+    for (const ch of chs) {
+      let st = null;
+      try { const { data } = await sb.rpc('club_challenge_standings', { challenge_uuid: ch.id }); st = data; } catch (_) {}
+      const mine = (st || []).find(r => r.g_id === k.group_id);
+      if (!mine) continue;
+      const N = (st || []).length;
+      const rnk = +mine.rnk;
+      const medal = rnk === 1 ? '🥇' : rnk === 2 ? '🥈' : rnk === 3 ? '🥉' : rnk + '.';
+      const days = ch.ends_on ? Math.max(0, Math.ceil((new Date(ch.ends_on + 'T23:59:59') - new Date()) / 86400000)) : null;
+      cards.push(`<div style="background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.35);border-radius:12px;padding:9px 11px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:11.5px;font-weight:800;color:#EAB308;">🏆 ${escapeHtml(ch.title || 'Grupių iššūkis')} <span style="color:var(--mut);font-weight:400;">· vyksta</span></div>
+            <div style="font-size:9.5px;color:var(--mut);margin-top:2px;">vaiko grupė — <b style="color:#EAB308;">${medal} ${rnk} vieta iš ${N}</b>${days != null ? ` · liko ${days} d.` : ''}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#EAB308;line-height:1;">${(+mine.total_val || 0).toLocaleString('lt-LT')}</div><div style="font-size:7.5px;color:var(--mut);">${escapeHtml(ch.unit || '')}</div></div>
+        </div>
+      </div>`);
+    }
+    el.innerHTML = cards.join('');
+  } catch (e) { console.warn('pf gc live', e); }
 }
 
 // 📰 Visų pasiekimų modalas (bottom-sheet — kaip nustatymų)
