@@ -532,8 +532,8 @@ async function _checkSelfSignupFlag(){
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfSignupFlag, 1500); });
 
 // ── 📜 Sutikimų žurnalas (server-consents.sql) — BDAR įrodymas: kas/kada/kokia versija ──
-const POLICY_VERSION = 'v1.0';   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
-const SUPPORT_EMAIL = 'pagalba@spobu.lt';   // TODO: pakeisti į realią dėžutę, kai bus spobu.lt domenas
+const POLICY_VERSION = 'v1.1';   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
+const SUPPORT_EMAIL = 'info@spobu.lt';   // reali dėžutė nuo 2026-08-18 (iv.lt catch-all persiuntimas)
 // 🔒 Slaptažodžio taisyklės — kaip set-password.html: min. 8 + didžioji raidė + skaičius
 function _pwPolicyError(p){
   if (!p || p.length < 8) return 'Slaptažodis — bent 8 simboliai';
