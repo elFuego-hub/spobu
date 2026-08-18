@@ -534,6 +534,9 @@ document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfS
 // ── 📜 Sutikimų žurnalas (server-consents.sql) — BDAR įrodymas: kas/kada/kokia versija ──
 const POLICY_VERSION = 'v1.1';   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
 const SUPPORT_EMAIL = 'info@spobu.lt';   // reali dėžutė nuo 2026-08-18 (iv.lt catch-all persiuntimas)
+// 🔗 v438 (B1-01): set-password.html adresas SANTYKINAI nuo esamos vietos — veikia ir app.spobu.lt
+// šaknyje, ir sename elfuego-hub.github.io/spobu/ kelyje (buvo užkietinta /spobu/ → 404 naujame domene)
+function _setPasswordUrl(){ return new URL('set-password.html', window.location.href).href; }
 // 🔒 Slaptažodžio taisyklės — kaip set-password.html: min. 8 + didžioji raidė + skaičius
 function _pwPolicyError(p){
   if (!p || p.length < 8) return 'Slaptažodis — bent 8 simboliai';
@@ -6986,7 +6989,7 @@ async function akSubmit() {
             
             // Siunčiame slaptažodžio nustatymo laišką
             await sb.auth.resetPasswordForEmail(akData.kid_email, {
-              redirectTo: `${window.location.origin}/spobu/set-password.html`
+              redirectTo: _setPasswordUrl()
             });
           }
         }
@@ -7706,7 +7709,7 @@ async function addKidEmailAccess(kidId, newEmail) {
         // Jei email jau egzistuoja - bandom rasti per email
         showToast(ico('ispejimas')+' Email jau registruotas. Siunčiame slaptažodžio atstatymo nuorodą.', 'error', 5000);
         await sb.auth.resetPasswordForEmail(newEmail, {
-          redirectTo: `${window.location.origin}/spobu/set-password.html`
+          redirectTo: _setPasswordUrl()
         });
         return;
       }
@@ -7733,7 +7736,7 @@ async function addKidEmailAccess(kidId, newEmail) {
     
     // 7. Siunčiame slaptažodžio nustatymo laišką
     await sb.auth.resetPasswordForEmail(newEmail, {
-      redirectTo: `${window.location.origin}/spobu/set-password.html`
+      redirectTo: _setPasswordUrl()
     });
     
     showToast(ico('patvirtinta')+' Vaiko paskyra sukurta! Laiškas išsiųstas.', 'success', 6000);
@@ -7966,7 +7969,7 @@ async function doForgot() {
 
   if (!email) { showErr(errEl, 'Įveskite el. paštą'); return; }
   const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/spobu/set-password.html`
+    redirectTo: _setPasswordUrl()
   });
   // A-02: Supabase klaidos ateina angliškai — verčiam, kaip login formoje
   if (error) showErr(errEl, _resetErrLt(error.message));
@@ -27906,7 +27909,7 @@ async function submitNewClub() {
       email: adminEmail,
       password: tempPassword,
       options: {
-        emailRedirectTo: `${window.location.origin}/spobu/set-password.html`
+        emailRedirectTo: _setPasswordUrl()
       }
     });
 
@@ -27922,7 +27925,7 @@ async function submitNewClub() {
     } else {
       // 5. Iškart siunčiame password reset, kad vartotojas galėtų nustatyti savo slaptažodį
       await sb.auth.resetPasswordForEmail(adminEmail, {
-        redirectTo: `${window.location.origin}/spobu/set-password.html`
+        redirectTo: _setPasswordUrl()
       });
       
       showToast(`${ico('patvirtinta')} Klubas sukurtas!\n\n${ico('pastas')} ${adminEmail}\nIšsiųstas aktyvavimo email'as`, 'success');
@@ -29066,16 +29069,16 @@ async function submitInviteTrainer() {
     const tempPassword = 'Spobu_' + Math.random().toString(36).slice(2, 12) + 'TMP!';
     const { error: signUpError } = await sb.auth.signUp({
       email, password: tempPassword,
-      options: { emailRedirectTo: `${window.location.origin}/spobu/set-password.html` }
+      options: { emailRedirectTo: _setPasswordUrl() }
     });
 
     if (signUpError) {
       if (signUpError.message.includes('already') || signUpError.message.includes('exists')) {
-        await sb.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/spobu/set-password.html` });
+        await sb.auth.resetPasswordForEmail(email, { redirectTo: _setPasswordUrl() });
         showToast(`${ico('patvirtinta')} Kvietimas išsiųstas!\n\n${fname} ${lname} jau yra sistemoje — išsiųsta nauja prisijungimo nuoroda.`, 'success');
       } else { throw signUpError; }
     } else {
-      await sb.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/spobu/set-password.html` });
+      await sb.auth.resetPasswordForEmail(email, { redirectTo: _setPasswordUrl() });
       showToast(`${ico('patvirtinta')} Kvietimas išsiųstas!\n\n${ico('pastas')} ${email}\nTreneris gaus aktyvavimo email'ą`, 'success');
     }
     _ok = true;
