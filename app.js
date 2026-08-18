@@ -1191,6 +1191,7 @@ async function afterLogin() {
       }
     }
     applyClubFlagGates(); // ${ico('atsijungti')} paslėpti išjungtas funkcijas (visi portalai)
+    setTimeout(() => { if (typeof reRegisterPushAfterLogin === 'function') reRegisterPushAfterLogin(); }, 2500); // 🔔 v436: push endpoint → paskutinis prisijungęs (šeima viename telefone)
     window._appInitedUserId = currentUser?.id || null; // ⚡ W1-2: pilnas init baigtas — kiti SIGNED_IN re-fire ignoruojami
     console.log('🎉 [afterLogin] BAIGTA SĖKMINGAI');
     _flushEarlyErrors(); // 📡 B1 atsarginis (nuo A-09 fix buferis siunčiamas iškart per setTimeout(0) — čia jau būna tuščias)
@@ -34793,6 +34794,40 @@ async function updatePushToggleUI() {
 function _pushRegKey(){ return 'spobu_push_reg_' + (currentUser?.id || 'anon'); }
 function pushRegisteredForMe(){ return localStorage.getItem(_pushRegKey()) === '1'; }
 
+// 🔁 v436: po login TYLIAI perregistruojam esamą įrenginio prenumeratą dabartinio vartotojo
+// vardu (register_push_subscription RPC ištrina seną eilutę — „įrenginys priklauso PASKUTINIAM").
+// Sprendžia „šeima viename telefone" bug'ą (žinoma elgsena 07-23): push eidavo pirmam įsijungusiam.
+// Leidimo NEprašo ir naujos prenumeratos NEkuria — veikia tik kur push jau įjungtas.
+async function reRegisterPushAfterLogin() {
+  try {
+    if (!pushSupported() || !currentUser?.id) return;
+    if (Notification.permission !== 'granted') return;
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = reg && await reg.pushManager.getSubscription();
+    if (!sub) return; // įrenginyje push neįjungtas — nieko nedarom
+    if (localStorage.getItem('spobu_push_last_uid') === currentUser.id) {
+      localStorage.setItem(_pushRegKey(), '1'); // endpoint jau mūsų — tik sinchronizuojam žymę
+      return;
+    }
+    const isParent = ['parent', 'trainer', 'club_admin', 'admin'].indexOf(currentProfile?.role) !== -1;
+    if (!isParent && !currentKid?.id) return;
+    const subJson = sub.toJSON();
+    const { error } = await sb.rpc('register_push_subscription', {
+      p_endpoint: subJson.endpoint,
+      p_p256dh: subJson.keys.p256dh,
+      p_auth: subJson.keys.auth,
+      p_kid_id: isParent ? null : currentKid.id,
+      p_user_agent: navigator.userAgent.slice(0, 200)
+    });
+    if (!error) {
+      localStorage.setItem('spobu_push_last_uid', currentUser.id);
+      localStorage.setItem(_pushRegKey(), '1');
+      localStorage.setItem('spobu_push_on', '1');
+      console.log('🔔 Push endpoint perregistruotas dabartiniam vartotojui');
+    }
+  } catch (e) { console.warn('reRegisterPushAfterLogin:', e.message || e); }
+}
+
 // base64url → Uint8Array (VAPID raktui)
 function urlB64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -34941,6 +34976,7 @@ async function enablePushNotifications() {
     
     localStorage.setItem('spobu_push_on', '1');
     localStorage.setItem(_pushRegKey(), '1'); // šis vartotojas įregistravo endpoint'ą savo vardu
+    localStorage.setItem('spobu_push_last_uid', currentUser?.id || ''); // 🔔 v436: kam dabar priklauso endpoint
     showToast(ico('pranesimai')+' Pranešimai įjungti!', 'success', 3000);
     return true;
   } catch (e) {
@@ -34964,6 +35000,7 @@ async function disablePushNotifications() {
     }
     localStorage.setItem('spobu_push_on', '0');
     localStorage.setItem(_pushRegKey(), '0');
+    localStorage.removeItem('spobu_push_last_uid'); // 🔔 v436: endpoint atsisakytas — žymė nebegalioja
     showToast(''+ico('be-garso')+' Pranešimai išjungti', 'success', 3000);
     return true;
   } catch (e) {
