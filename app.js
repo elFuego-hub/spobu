@@ -10630,10 +10630,16 @@ async function openFriendModal(friendJson) {
               <circle cx="70" cy="70" r="63" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="5"/>
               <circle cx="70" cy="70" r="63" fill="none" stroke="${stage.color}" stroke-width="5" stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="${ringOffset}" style="${ringGlow}"/>
             </svg>
-            <div style="position:absolute;inset:9px;border-radius:50%;background:rgba(0,0,0,.4);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 30px rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.3);">
-              <div class="${kanjiGlowClass}" style="font-family:'Noto Serif JP','Hiragino Mincho ProN',serif;font-size:41px;font-weight:900;line-height:1;color:${stage.color};text-shadow:${kanjiGlow};margin-bottom:1px;--glow-color:${stage.color};">${stage.kanji}</div>
-              <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1.5px;color:white;line-height:1;">LVL ${stageInfo.globalLevel}</div>
-              <div style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:1px;font-weight:700;margin-top:1px;">${(friend.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
+            <div style="position:absolute;inset:9px;border-radius:50%;background:${friend.avatar_url ? `url('${friend.avatar_url}') center/cover, rgba(0,0,0,.4)` : 'rgba(0,0,0,.4)'};backdrop-filter:${friend.avatar_url ? 'none' : 'blur(20px)'};border:1px solid rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:${friend.avatar_url ? 'flex-end' : 'center'};box-shadow:inset 0 0 30px rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.3);overflow:hidden;">
+              <!-- v449: jei draugas turi nuotrauką — rodom ją (anksčiau visada tik kanji, nors avatar_url ateina) -->
+              ${friend.avatar_url
+                ? `<div style="width:100%;background:linear-gradient(transparent,rgba(0,0,0,.75));padding:8px 0 5px;text-align:center;">
+                     <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1.5px;color:white;line-height:1;">LVL ${stageInfo.globalLevel}</div>
+                     <div style="font-size:7px;color:rgba(255,255,255,.85);letter-spacing:1px;font-weight:700;margin-top:1px;">${(friend.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
+                   </div>`
+                : `<div class="${kanjiGlowClass}" style="font-family:'Noto Serif JP','Hiragino Mincho ProN',serif;font-size:41px;font-weight:900;line-height:1;color:${stage.color};text-shadow:${kanjiGlow};margin-bottom:1px;--glow-color:${stage.color};">${stage.kanji}</div>
+                   <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1.5px;color:white;line-height:1;">LVL ${stageInfo.globalLevel}</div>
+                   <div style="font-size:7px;color:rgba(255,255,255,.7);letter-spacing:1px;font-weight:700;margin-top:1px;">${(friend.total_exp || 0).toLocaleString('lt-LT')} EXP</div>`}
             </div>
           </div>
           <!-- Stage antraštė -->
@@ -34164,7 +34170,14 @@ async function handleAppResume() {
   // 1) Ryšio patikrinimas — TIKRA užklausa, ne getSession (tas grąžina sesiją iš atminties).
   // ⚡ W2-7 (F2-05): timeout 2.5s → 7s + 1 retry; reload TIK po 2 nesėkmių (lėtas tinklas ≠ miręs tinklas)
   let connectionAlive = await _resumePing(7000);
-  if (!connectionAlive) connectionAlive = await _resumePing(8000);
+  if (!connectionAlive) {
+    // 🔑 v449: dažniausia „mirusio ryšio" priežastis telefone — ne tinklas, o pasenusi sesija
+    // (fone naršyklė stabdo laikmačius, tad automatinis rakto atnaujinimas nesuveikia).
+    // Pirma bandom atnaujinti sesiją ir tik tada laikom ryšį mirusiu → mažiau perkrovimų.
+    try { await sb.auth.refreshSession(); } catch (e) { /* tylim */ }
+    connectionAlive = await _resumePing(8000);
+    if (!connectionAlive) connectionAlive = await _resumePing(8000);
+  }
 
   if (!connectionAlive) {
     // ⚡ W2-7: NIEKADA nereload'inam ant vartotojo įvesties — geriau palikti seną vaizdą
@@ -34493,7 +34506,10 @@ document.addEventListener('visibilitychange', () => {
     // Praleistų įvykių sekimas dabar per ID (_addSeen), ne per laiką — čia nieko nerašom.
   } else if (document.visibilityState === 'visible') {
     const hiddenDuration = Date.now() - _lastHiddenTime;
-    if (_lastHiddenTime > 0 && hiddenDuration > 3000) {
+    // 🔄 v449: slenkstis 3 s → 90 s. Trumpas perjungimas į kitą programą (pažiūrėti žinutę,
+    // atsiliepti) nebekelia ryšio patikros, kuri lėtame tinkle baigdavosi perkrovimu.
+    // Savininko pastaba 08-19: „appsas labai dažnai persikrauna".
+    if (_lastHiddenTime > 0 && hiddenDuration > 90000) {
       handleAppResume();
     }
   }
@@ -37434,6 +37450,14 @@ async function kidComposeToTrainer() {
   }
 }
 
+// ✏️ v449: „Rašyti" iš vaiko NUSTATYMŲ (trenerių sąrašo) — pirma uždarom nustatymų modalą,
+// kad pokalbio langas neatsidarytų po juo.
+function _kidWriteToTrainer(trainerId, trainerName) {
+  const m = document.getElementById('kid-settings-modal'); if (m) m.style.display = 'none';
+  const sub = document.getElementById('settings-submodal'); if (sub) sub.remove();
+  if (typeof kidStartTrainerChat === 'function') kidStartTrainerChat(trainerId, trainerName);
+}
+
 // Rasti esamą arba sukurti direct pokalbį vaikas↔treneris, tada atidaryti (pagal parentStartTrainerChat)
 async function kidStartTrainerChat(trainerId, trainerName) {
   try {
@@ -38015,20 +38039,20 @@ async function loadKidSettingsDetails() {
     const trainersList = (trainers || []).map(t => {
       const name = `${t.first_name || ''} ${t.last_name || ''}`.trim() || '–';
       const isPrimary = t.id === currentKid.assigned_trainer_id;
-      return { name, isPrimary };
+      return { id: t.id, name, isPrimary };
     });
-    
+
     // Sort: pagrindinis pirma
     trainersList.sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
-    
-    if (trainersList.length === 1) {
-      trainersHtml = trainersList[0].name;
-    } else {
-      // Daugiau nei vienas - rodom pagrindinį + skaičių
-      const primary = trainersList.find(t => t.isPrimary) || trainersList[0];
-      const others = trainersList.length - 1;
-      trainersHtml = `${primary.name} <span style="color:var(--mut);font-size:9px;">+${others}</span>`;
-    }
+
+    // 🧑‍🏫 v449: rodom VISUS trenerius (anksčiau — tik pagrindinį ir „+1"), o kai klubas
+    // įjungęs vaikų žinutes — prie kiekvieno „Rašyti" mygtukas (savininko pastaba 08-19).
+    const _canWrite = (typeof kidChatOn === 'function') && kidChatOn();
+    trainersHtml = trainersList.map(t => `
+      <div style="display:flex;align-items:center;gap:8px;padding:3px 0;">
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.name)}${t.isPrimary && trainersList.length > 1 ? ' <span style="color:var(--mut);font-size:8px;">pagrindinis</span>' : ''}</span>
+        ${_canWrite ? `<button onclick="event.stopPropagation();_kidWriteToTrainer('${t.id}','${(t.name || '').replace(/'/g, "\\'")}')" style="flex-shrink:0;background:rgba(255,77,0,.14);border:.5px solid rgba(255,77,0,.4);color:var(--br);font-size:9px;font-weight:800;padding:4px 9px;border-radius:99px;cursor:pointer;font-family:inherit;">${ico('zinutes')} Rašyti</button>` : ''}
+      </div>`).join('');
   }
   
   const cell = (icon, label, value) => `
@@ -38187,11 +38211,7 @@ function openInstructionsModal() {
         <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Iškviesk komandos draugą į draugišką dvikovą! Treneris patvirtina, kas laimėjo. Už dalyvavimą visada gauni EXP. Iškviesti gali 1× per savaitę, o priimti kvietimus — be limito.</div>
       </div>
 
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #66BB6A;">
-        <div style="font-size:14px;font-weight:800;color:#66BB6A;margin-bottom:6px;">${ico('jega')} Kelias</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Tavo asmeniniai rekordai (PR): atsispaudimai, pritūpimai, greitis ir kt. Pagerink rekordą, pateik trenerio patvirtinimui ir gauk EXP + medalius.</div>
-      </div>
-
+      <!-- v449: antra „Kelias" sekcija pašalinta — dubliavo pirmąją (savininko pastaba 08-19) -->
       <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #4FC3F7;">
         <div style="font-size:14px;font-weight:800;color:#4FC3F7;margin-bottom:6px;">${ico('zinutes')} Žinutės ir pranešimai</div>
         <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">${(typeof kidChatOn === 'function' && kidChatOn()) ? 'Susirašyk su treneriu, gauk' : 'Gauk'} klubo pranešimus (${ico('skelbimas')}). ${ico('pranesimai')} Varpelis viršuje renka visus pranešimus — iššūkius, varžybas ir patvirtinimus.</div>

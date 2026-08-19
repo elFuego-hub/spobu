@@ -5,7 +5,9 @@
 //     kad telefone matytųsi tikras tekstas, o ne naršyklės „naujas pranešimas iš…"
 // ═══════════════════════════════════════════════
 
-const APP_URL = 'https://elfuego-hub.github.io/spobu/';
+// v449: buvo užkoduotas senas GitHub Pages adresas — push paspaudus atidarydavo seną domeną.
+// Dabar imamas iš paties service worker'io vietos, tad veiks bet kuriame domene (app.spobu.lt).
+const APP_URL = new URL('./', self.location).href;
 
 // Paverčia bet kokį URL į teisingą app'o URL
 function resolveUrl(u) {
