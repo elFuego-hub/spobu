@@ -932,7 +932,8 @@ async function openParentRequestsModal(){
     }
   } catch(e){}
   const tl = { report: [''+ico('dokumentas')+'', 'AI diagnostika'], homeplan: [''+ico('treniruote')+'', 'Namų planas'], summer: [''+ico('vasara')+'', 'Vasaros programa'] };
-  const priceOf = k => (typeof PRICES !== 'undefined' && PRICES[k] != null) ? (+PRICES[k]).toFixed(2) + ' €' : '';
+  // 🛍️ v446: bandymo režime kainos nerodomos (paskutinis kainos leak'as iš 08-18 audito)
+  const priceOf = k => (typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? 'bandymo metu dovanų' : ((typeof PRICES !== 'undefined' && PRICES[k] != null) ? (+PRICES[k]).toFixed(2) + ' €' : '');
   const old = document.getElementById('parent-preq-modal'); if (old) old.remove();
   const m = document.createElement('div'); m.id = 'parent-preq-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100005;align-items:center;justify-content:center;padding:20px;';
@@ -1609,7 +1610,7 @@ function openParentHelpModal() {
   const faq = [
     ['Kaip matau vaiko progresą?', 'Pagrindiniame lange — vaiko hero, reitingai, artimiausios varžybos. „Kelias" — statistika pagal kategorijas. „Pasiekimai" — naujausi medaliai, iššūkiai ir rekordai.'],
     ['Kodėl negaliu pateikti rezultatų?', 'Tu esi stebėtojas — pateikti iššūkius/rezultatus gali tik pats vaikas savo paskyroje. Tu matai progresą ir palaikai.'],
-    ['Kaip pridėti antrą vaiką?', 'Paspausk avatarą viršuje → „Pridėti vaiką". Vaiką sukuria klubas, tu jį priimi prie savo paskyros.'],
+    ['Kaip pridėti antrą vaiką?', 'Paspausk avatarą viršuje → „Pridėti vaiką" ir užpildyk anketą — ją patvirtins klubas. Jei vaikas jau turi SPOBU paskyrą, paprašyk jo kodo ir spausk „Su kodu".'],
     ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsas turi būti įdiegtas į pradžios ekraną ir duotas pranešimų leidimas.'],
     ['Kaip pakeisti savo vardą?', 'Nustatymai → prie tavo paskyros paspausk „'+ico('redaguoti')+' Vardas".'],
     ['Kas yra anonimiškumas?', 'Vaiko duomenyse gali paslėpti vaiką viešose statistikose — tada leaderboard\'uose rodys „anonimas".'],
@@ -1902,7 +1903,7 @@ function openParentInfoModal() {
       </div>
       <div style="padding:16px 18px 28px;">
         ${sec(''+ico('perziura')+'', 'KĄ MATAI', 'Realiu laiku matai vaiko progresą: lygį ir stadiją, progreso statistiką pagal 7 kategorijas, varžybų medalius, įveiktus iššūkius, diržą ir naujausių pasiekimų srautą. Esi pasyvus stebėtojas — pateikti gali tik pats vaikas.')}
-        ${sec(''+ico('tikslas')+'', 'TAVO ROLĖ', 'Stebėk ir palaikyk. Valdai administracinius/saugumo duomenis: sveikatą (alergijos, vaistai), avarinį kontaktą, foto/video sutikimą, svorį ir matomumą statistikose. Vaiką sukuria klubas — tu jį priimi prie savo paskyros.')}
+        ${sec(''+ico('tikslas')+'', 'TAVO ROLĖ', 'Stebėk ir palaikyk. Valdai administracinius/saugumo duomenis: sveikatą (alergijos, vaistai), avarinį kontaktą, foto/video sutikimą, svorį ir matomumą statistikose. Vaiką pridedi pats per anketą („Pridėti vaiką") — klubas ją patvirtina.')}
         ${sec(''+ico('dirzas')+'', 'KĄ GAUNA VAIKAS', 'Žaidybinę motyvaciją: kelia lygį, renka EXP, kyla diržo laiptais, įveikinėja trenerio iššūkius, kovoja dvikovose ir dalyvauja varžybose. Tai paverčia treniruotes įdomesnėmis ir padeda nepamesti motyvacijos ilgam.')}
         ${sec(''+ico('statistika')+'', 'ATASKAITOS', '„Pasiekimų" lange kiekvieną mėnesį matai vaiko mėnesio ataskaitą — kiek iššūkių įveikė, kiek rekordų pagerino, kiek varžybų laimėjo. Ateityje — ketvirtinės AI ataskaitos su stipriųjų/silpnųjų pusių analize.')}
         ${sec(''+ico('premium-plus')+'', 'PREMIUM', 'Premium prenumerata atrakins gilesnę statistiką ir ketvirtines AI ataskaitas apie tavo vaiką. Netrukus — ieškok „Parduotuvės" lange.')}
