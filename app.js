@@ -21275,11 +21275,18 @@ async function approveKid(kidId) {
   
   try {
     // 1. Patvirtinam vaiką
-    const { error: kidError } = await sb.from('kids')
-      .update({ approval_status: 'approved' })
-      .eq('id', kidId);
-    
-    if (kidError) throw kidError;
+    // 🔑 v451: anketos tvirtinimas TIK per RPC. Tiesioginis kids.update tyliai neveikia —
+    // apsauginis trigeris (guard_kid_exp_columns) atstato approval_status be jokios klaidos,
+    // o UI rodydavo „patvirtinta". Patikrinta gyvai 08-19. RPC yra SECURITY DEFINER, tad praeina.
+    const { error: kidError } = await sb.rpc('club_approve_kid', { p_kid: kidId });
+    if (kidError) {
+      const msg = (kidError.message || '');
+      if (msg.includes('Ne klubo adminas')) {
+        showToast(ico('ispejimas') + ' Anketas tvirtina klubo paskyra — prisijunk klubo paskyra ir patvirtink ten', 'error', 7000);
+        return;
+      }
+      throw kidError;
+    }
     
     // 2. Vaiko profilis → active (tik jei vaikas turi auth paskyrą)
     const { data: kidData } = await sb.from('kids').select('user_id').eq('id', kidId).single();
@@ -21316,9 +21323,14 @@ async function rejectKid(kidId) {
   if (!(await appConfirm('Tikrai atmesti šią registraciją? Vaikas ir tėvai negalės naudotis platforma.'))) return;
   
   try {
-    await sb.from('kids')
-      .update({ approval_status: 'rejected' })
-      .eq('id', kidId);
+    // 🔑 v451: tas pats guard'as blokuoja ir atmetimą — tikrinam FAKTĄ, ne „error is null".
+    // Anksčiau statusas likdavo nepakitęs, o tėvai ir vaikas VIS TIEK būdavo suspenduojami.
+    await sb.from('kids').update({ approval_status: 'rejected' }).eq('id', kidId);
+    const { data: _chk } = await sb.from('kids').select('approval_status').eq('id', kidId).maybeSingle();
+    if (_chk?.approval_status !== 'rejected') {
+      showToast(ico('ispejimas') + ' Atmesti gali tik klubo paskyra — prisijunk klubo paskyra', 'error', 7000);
+      return;
+    }
     
     // Vaiko profile tik jei yra
     const { data: kidData } = await sb.from('kids').select('user_id').eq('id', kidId).single();
@@ -21350,13 +21362,21 @@ async function rejectKid(kidId) {
 }
 
 async function loadPendingSubmissions() {
-  // Gauti pateikimus, kuriuose trainer_id = aš
+  // 🔎 v451: VISI mano vaikų laukiantys pateikimai (buvo tik `trainer_id = aš` — kitam
+  // treneriui adresuoti kabodavo nematomi). Limitas 20 → 50, kad po savaitgalio
+  // susikaupę pateikimai netyliai neiškristų iš sąrašo.
+  const _myKidIds = await getMyKidIds();
+  if (!_myKidIds || !_myKidIds.length) {
+    const _el = document.getElementById('tr-submissions-list');
+    if (_el) _el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);">Pateikimų nėra</div>';
+    return;
+  }
   const { data: subs, error } = await sb.from('result_submissions')
     .select(`*, exercises(name,category_id,lower_is_better,unit,career_categories(name))`)
     .eq('status','pending')
-    .eq('trainer_id', currentUser.id)
+    .in('kid_id', _myKidIds)
     .order('created_at',{ascending:false})
-    .limit(20);
+    .limit(50);
 
   if (error) {
     console.error('loadPendingSubmissions error:', error);
@@ -21541,7 +21561,7 @@ async function loadTrainerGroups() {
   let kids = [];
   if (myKidIds.length > 0) {
     const result = await sb.from('kids')
-      .select('id, first_name, last_name, total_exp, current_level, kyu, weight_range, group_id, gender, birth_date, birth_year, media_consent, has_phone, kid_phone, health_allergies, health_medications, health_conditions, avatar_url')
+      .select('id, first_name, last_name, total_exp, current_level, kyu, weight_range, group_id, gender, birth_date, birth_year, media_consent, has_phone, kid_phone, has_health_info, health_allergies, health_medications, health_conditions, avatar_url')
       .in('id', myKidIds)
       .eq('approval_status', 'approved')
       .order('first_name');
@@ -21913,7 +21933,18 @@ async function _attConfirm(){
     const { error }=await sb.from('attendance').upsert(rows,{ onConflict:'group_id,kid_id,session_date' });
     if(error) throw error;
     showToast(ico('patvirtinta')+' Lankomumas išsaugotas','success');
-    await _attAwardBonuses(_attState.group, _attState.date);
+    // 🔁 v451: bonusų skaičiavimas perkeltas į SERVERĮ (server-lankomumas-bonusai-v2.sql).
+    // Kliente jie suveikdavo TIK pažymėjus paskutinę planuotą periodo dieną — žymint ne iš
+    // eilės arba neįvykus paskutinei treniruotei premija dingdavo visam laikui.
+    // Serveris perskaičiuoja visą savaitę/mėnesį po kiekvieno žymėjimo (ir atgaline data).
+    // Kol SQL dar nepaleistas — grįžtam į seną kelią, kad bonusai nedingtų visai.
+    let _recalcOk = false;
+    try {
+      const { error: rErr } = await sb.rpc('attendance_recalc_for_date', { p_group: _attState.groupId, p_date: _attState.date });
+      _recalcOk = !rErr;
+      if (rErr) console.warn('attendance_recalc_for_date:', rErr.message);
+    } catch(e){ console.warn('attendance_recalc_for_date EX', e); }
+    if (!_recalcOk && typeof _attAwardBonuses === 'function') await _attAwardBonuses(_attState.group, _attState.date);
     const em=document.getElementById('att-modal'); if(em) em.remove();
     if(typeof refreshGroupViewIfOpen==='function') refreshGroupViewIfOpen();
   }catch(e){
@@ -23321,9 +23352,10 @@ function openTrInfo(which) {
       break;
     case 'groups':
       title = ''+ico('pagalba')+' GRUPĖS';
-      html = intro('Čia kuri ir valdai savo grupes.') +
-        row(ico('prideti'), 'Sukurti grupę', 'Pavadinimas, spalva ir tvarkaraštis (dienos + laikas).') +
-        row(''+ico('profilis')+'', 'Priskirti vaikus', 'Pridėk mokinius į grupę.') +
+      // v451: tekstas pataisytas pagal faktą — grupes kuria ir vaikus priskiria KLUBAS,
+      // treneris jų kurti/redaguoti negali (anksčiau čia buvo aprašyti neegzistuojantys mygtukai).
+      html = intro('Čia matai savo grupes ir jų vaikus. Grupes kuria, tvarkaraštį nustato ir vaikus priskiria KLUBAS — jei kažko trūksta, kreipkis į klubą.') +
+        row(''+ico('profilis')+'', 'Grupės sudėtis', 'Matai savo grupes — ir tas, kur esi pagrindinis treneris, ir tas, kur pavaduoji.') +
         row(''+ico('ranka')+'', 'Paspausk ant vaiko', 'Atsidaro vaiko kortelė: duomenys, el. paštas, tėvai, sveikata, laukiantys patvirtinimai. Gali skirti EXP, asmeninį iššūkį ar EXP už elgesį.') +
         row(''+ico('lankomumas')+'', 'Lankomumas', 'Žymėk, kas atėjo. Pilna savaitė → +15 EXP, pilnas mėnuo → +100.') +
         row(''+ico('tikslas')+'', 'Grupės iššūkis', 'Vienu paspaudimu skelbk iššūkį visai grupei.') +
@@ -23341,7 +23373,7 @@ function openTrInfo(which) {
          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.9;">
            <b style="color:#fff;">${ico('kalendorius')} Savaitei (mažesni):</b> 150 atsispaudimų · 100 pritūpimų · nubėk 5 km · ateik į visas treniruotes<br>
            <b style="color:#fff;">${ico('kalendorius')} Mėnesiui (dideli):</b> nubėk 10 km · 500 atsispaudimų · planka 90 s · ištobulink naują kata · nepraleisk nė vienos treniruotės<br>
-           <b style="color:#fff;">${ico('tikslas')} Vienkartiniai (1 para):</b> 50 atsispaudimų be sustojimo · planka 2 min · 50 mawashi-geri be sustojimo · naujas sprinto rekordas
+           <b style="color:#fff;">${ico('tikslas')} Vienkartiniai (galioja metus):</b> 50 atsispaudimų be sustojimo · planka 2 min · 50 mawashi-geri be sustojimo · naujas sprinto rekordas
          </div>`;
       break;
     case 'pat':
@@ -24812,7 +24844,6 @@ async function openTrainerSettings() {
           </button>
           <div id="trs-help-body" style="display:none;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:14px;padding:14px;font-size:11px;color:rgba(255,255,255,.85);line-height:1.7;">
             <b>${ico('namai')} Pagrindinis</b> — tavo lygis, šiandienos treniruotės, naujausi laukiantys patvirtinimai.<br>
-            <b>${ico('kalendorius')} Šiandien</b> — grupės pagal tvarkaraštį (nustatyk Grupės → ${ico('redaguoti')}). Spausk grupę → vaikai, iššūkis grupei.<br>
             <b>${ico('grupe')} Grupės</b> — spausk grupę → pilnas vaizdas su vaikais; oranžinis skaičius prie vaiko = laukia patvirtinimo.<br>
             <b>${ico('tikslas')} Iššūkiai</b> — kurk grupei, berniukams/mergaitėms ar vienam vaikui. Tipų spalvos kaip vaikų appse.<br>
             <b>${ico('patvirtinta')} Patvirtinimai</b> — kelias / iššūkiai / varžybos / dvikovos. Patvirtinus vaikas iškart gauna EXP.<br>
@@ -29930,10 +29961,11 @@ async function openCreateChallenge(prefill) {
 
 // Užkrauti trenerio grupes ir vaikus į dropdown'us (+ kešas katalogo wizard'ui)
 async function loadCcGroupsAndKids() {
-  // Grupės - tik trenerio grupės
+  // v451: grupės kaip loadTrainerGroups — ir kur esu PAGRINDINIS, ir kur ASISTENTAS.
+  // Anksčiau asistentas savo grupei iššūkio skirti negalėjo (sąrašas būdavo tuščias).
   const { data: groups } = await sb.from('groups')
     .select('id, name')
-    .eq('trainer_id', currentUser.id)
+    .or('trainer_id.eq.' + currentUser.id + ',assistant_trainer_ids.cs.{' + currentUser.id + '}')
     .order('name');
 
   _katGroupsCache = groups || [];
@@ -31295,7 +31327,7 @@ async function submitNewChallenge() {
     // Grupė / berniukai / mergaitės
     const { data: groupKids, error: kidsErr } = await sb.from('kids')
       .select('id, user_id, first_name, last_name, gender, group_id')
-      .eq('group_id', groupId);
+      .eq('group_id', groupId).eq('approval_status','approved');   // v451: be nepatvirtintų anketų (skaičiavosi į „N iš N gavo")
 
     if (kidsErr) {
       console.error('[challenge] Klaida kraunant grupes vaikus:', kidsErr);
@@ -32442,7 +32474,11 @@ async function loadPendingChallengeSubmissions() {
   const { data: subs, error } = await sb.from('challenge_submissions')
     .select('*, challenges(title, icon, type, exp_reward, target_value, target_unit, content_type, allow_partial, instructions)')
     .eq('status', 'pending')
-    .eq('trainer_id', currentUser.id)
+    // 🔎 v451: buvo `.eq('trainer_id', currentUser.id)` — pateikimas, adresuotas KITAM
+    // treneriui (vaikas turi du) arba likęs be gavėjo, niekam nesimatydavo ir kabodavo
+    // amžinai: vaikui „laukiama", treneriui sąraše nieko. Patikrinta gyvai 08-19.
+    // Dabar rodom VISUS savo vaikų pateikimus — kas mato vaiką, tas gali ir patvirtinti.
+    .in('kid_id', myKidIds)
     .order('created_at', { ascending: false })
     .limit(50);
   
