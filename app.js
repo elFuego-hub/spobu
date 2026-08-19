@@ -15130,7 +15130,7 @@ async function loadClubFlags(){
   catch(e){ clubFlags = {}; }
 }
 function flagOn(name){ return clubFlags[name] !== false; } // trūksta/true => įjungta (saugus default)
-function kidChatOn(){ return !!clubFlags && clubFlags.kid_trainer_chat_enabled === true; } // 💬 vaiko→trenerio chat — default IŠJUNGTA (atvirkščiai nei flagOn: trūksta => išjungta)
+function kidChatOn(){ return !clubFlags || clubFlags.kid_trainer_chat_enabled !== false; } // 💬 v450: vaiko→trenerio chat — numatyta ĮJUNGTA (kaip flagOn: trūksta => įjungta); klubas gali išjungti savo nustatymuose
 
 const CLUB_FLAG_DEFS = [
   { sec:'FUNKCIJOS' },
@@ -15141,7 +15141,7 @@ const CLUB_FLAG_DEFS = [
   { k:'belt_grading_enabled', t:''+ico('dirzas')+' Diržų laikymas', d:'Diržo testų registravimas.', info:'Diržų laikymas — egzaminai naujam kyu/diržui gauti.<br><br>Išjungus: nebebus galima registruoti diržų laikymo ir jų rezultatų.' },
   { k:'self_signup_enabled', t:''+ico('profilis')+' Savarankiška 14+ registracija', d:'Paaugliai nuo 14 m. registruojasi patys su klubo kodu.', info:'Paauglys (14+) gali susikurti paskyrą pats, įvedęs TAVO KLUBO KODĄ. Jis pateks į „Laukia patvirtinimo" sąrašą BE grupės — tu priskiri grupę (treneris nusistato automatiškai) ir patvirtini TIK pažinodamas vaiką iš salės.<br><br>Išjungus: su tavo klubo kodu registruotis nebebus galima. Pastaba: funkcija veikia tik kai ją įjungęs ir platformos administratorius.' },
   { k:'camps_enabled', t:''+ico('stovykla')+' Stovyklos', d:'Stovyklos ir renginiai su dalyvavimu.', info:'Stovyklos — daugiadieniai renginiai su dalyvavimo žymėjimu (RSVP) ir neprivalomu EXP už sudalyvavimą.<br><br>Išjungus: nebegalėsi kurti stovyklų.' },
-  { k:'kid_trainer_chat_enabled', t:''+ico('zinutes')+' Vaikų žinutės treneriui', d:'Vaikas gali parašyti savo treneriui. Numatyta: išjungta.', info:'Vaikų žinutės treneriui — vaikas iš varpelio („Žinutės" tabo) gali parašyti SAVO treneriui, o treneris atsako įprastame žinučių lange.<br><br>Pagal nutylėjimą funkcija IŠJUNGTA — įjunk, jei jūsų klube toks tiesioginis susirašinėjimas pageidaujamas. Išjungus: vaikai nebegalės pradėti pokalbio ar atsakinėti, treneriui esami pokalbiai lieka matomi.' },
+{ k:'kid_trainer_chat_enabled', t:''+ico('zinutes')+' Vaikų žinutės treneriui', d:'Vaikas gali parašyti savo treneriui. Numatyta: įjungta.', info:'Vaikų žinutės treneriui — vaikas gali parašyti SAVO treneriui: iš varpelio („Žinutės" tabo) arba nustatymuose prie trenerio vardo spausdamas „Rašyti". Treneris atsako įprastame žinučių lange.<br><br>Vaikai TARPUSAVYJE susirašinėti negali — tai užrakinta sistemos lygiu.<br><br>Išjungus: vaikai nebegalės pradėti pokalbio ar atsakinėti, treneriui esami pokalbiai lieka matomi.' },
   { sec:'IŠŠŪKIŲ TIPAI' },
   { k:'challenge_training_enabled', t:''+ico('treniruote')+' Treniruotės', d:'Užduotis per vieną treniruotę.', info:'Treniruotės iššūkis — užduotis, atliekama per konkrečią treniruotę (pvz. „šiandien 30 pritūpimų salėje").<br><br>Išjungus: tokio tipo iššūkių nebebus galima kurti.' },
   { k:'challenge_weekly_enabled', t:''+ico('greitis')+' Savaitiniai', d:'Kartojasi kas savaitę.', info:'Savaitinis iššūkis — atsinaujina kas savaitę (pvz. „šią savaitę 100 atsispaudimų"). Tinka nuolatiniam aktyvumui palaikyti.<br><br>Išjungus: savaitinių iššūkių nebebus galima kurti.' },
@@ -15319,9 +15319,9 @@ function toggleClubSettingsSection(key){
 }
 
 function _renderClubSettingsHtml(s){
-  // ⚠️ kid_trainer_chat_enabled semantika ATVIRKŠTINĖ (kaip kidChatOn: trūksta => IŠJUNGTA) —
-  // kitaip be club_settings eilutės jungiklis rodo „įjungta" ir pirmas paspaudimas nieko nekeičia
-  const isOn = k => (k === 'kid_trainer_chat_enabled') ? (s[k] === true) : (s[k] !== false);
+  // v450: semantika suvienodinta su visomis kitomis vėliavomis (trūksta arba true => įjungta).
+  // Vaikų žinutės treneriui dabar veikia pagal nutylėjimą; klubas jas gali išjungti šiame lange.
+  const isOn = k => (s[k] !== false);   // v450: visos vėliavos vienodos — trūksta arba true => įjungta
   const toggle = (k) => {
     const on = isOn(k);
     return `<div onclick="event.stopPropagation();toggleClubFlag('${k}', ${!on})" style="flex-shrink:0;width:42px;height:24px;border-radius:99px;background:${on?'var(--grn)':'rgba(255,255,255,.15)'};position:relative;cursor:pointer;transition:.2s;"><div style="position:absolute;top:3px;${on?'right:3px':'left:3px'};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s;"></div></div>`;
@@ -16173,8 +16173,8 @@ function applyClubFlagGates(){
     _gateSel('#v-desktop-nav .vdn-item[data-sid="v-ish"]', flagOn('challenges_enabled'));
     _gateSel('.bn2 .ni[onclick*="v-comp"]', flagOn('competitions_enabled'));
     _gateSel('#v-desktop-nav .vdn-item[data-sid="v-comp"]', flagOn('competitions_enabled'));
-    // 💬 v447: varpelio „Žinutės" tabas vaikui — kai kid_trainer_chat_enabled IŠJUNGTA (numatyta),
-    // tabas kabodavo visada tuščias („Nėra žinučių") ir vaikas negalėdavo nieko padaryti.
+    // 💬 v447/v450: varpelio „Žinutės" tabas vaikui rodomas tik kai klubas leidžia rašyti treneriui
+    // (kitaip tabas kabotų visada tuščias „Nėra žinučių" ir vaikas nieko negalėtų padaryti).
     if (currentProfile?.role === 'kid') {
       _gateSel('#pv .notif-tab[data-tab="messages"]', typeof kidChatOn === 'function' ? kidChatOn() : false);
     }
