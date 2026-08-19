@@ -105,7 +105,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=443">
+<link rel="stylesheet" href="styles.css?v=444">
 </head>
 <body>
 
@@ -270,10 +270,10 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v443</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v444</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
-<button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg> PILNAS MOBILE</button>
+<!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
 
 <!-- LOADING -->
 <div class="loading-screen" id="loading">
@@ -2249,7 +2249,30 @@ window.addEventListener('unhandledrejection', function(e) {
 </div></div></div></div>
 
 <!-- Kiti portalai (tėvai, klubas, admin) bus analogiški -->
-<div id="pt" style="display:none;"><div class="df"><div class="ds"><div class="ph">
+<div id="pt" style="display:none;">
+  <!-- 💻 TĖVŲ DESKTOP ŠONINIS MENU — rodomas tik @media min-width 1024px (kaip vaiko #v-desktop-nav) -->
+  <aside id="t-desktop-nav">
+    <div class="vdn-logo"><svg class="mark" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">SPOBU</span></div>
+    <div class="vdn-user">
+      <div id="tdn-avatar" class="vdn-av"></div>
+      <div class="vdn-user-info">
+        <div id="tdn-name" class="vdn-name">–</div>
+        <div id="tdn-sub" class="vdn-level">TĖVŲ PASKYRA</div>
+      </div>
+    </div>
+    <nav class="vdn-nav">
+      <a class="vdn-item" data-sid="t-main" onclick="nv('t',null,'t-main')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span> Pagrindinis</a>
+      <a class="vdn-item" data-sid="t-kar"  onclick="nv('t',null,'t-kar')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span> Kelias</a>
+      <a class="vdn-item" data-sid="t-feed" onclick="nv('t',null,'t-feed')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-medalis"></use><use href="#i-medalis"></use></svg></span> Pasiekimai</a>
+      <a class="vdn-item" data-sid="t-shop" onclick="nv('t',null,'t-shop')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-parduotuve"></use><use href="#i-parduotuve"></use></svg></span> Parduotuvė</a>
+      <a class="vdn-item" data-sid="t-prof" onclick="nv('t',null,'t-prof')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-profilis"></use><use href="#i-profilis"></use></svg></span> Profilis</a>
+    </nav>
+    <div class="vdn-bottom">
+      <button onclick="toggleParentNotifications()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> Pranešimai <span class="tk-notif-badge" style="display:none;background:var(--br);color:white;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:99px;align-items:center;justify-content:center;padding:0 5px;">0</span></button>
+      <button onclick="openParentSettings()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> Nustatymai</button>
+    </div>
+  </aside>
+  <div class="df"><div class="ds"><div class="ph">
 <!-- ════════════════════════════════════════ -->
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg> TĖVŲ PAGRINDINIS — Hero + suvestinė + vaikų greitos kortelės -->
 <!-- ════════════════════════════════════════ -->
@@ -4391,7 +4414,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=443"></script>
+<script src="app.js?v=444"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

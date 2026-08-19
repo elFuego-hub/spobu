@@ -1242,6 +1242,9 @@ async function loadParentData() {
   renderParentKidPill();
   loadParentKidMain();
   if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+  // 💻 Desktop side nav user info (kaip vaiko vdn-*)
+  applyAvatarById('tdn-avatar', currentProfile?.avatar_url || null, currentProfile?.first_name?.[0] || '?');
+  const _tdnN = document.getElementById('tdn-name'); if (_tdnN) _tdnN.textContent = currentProfile?.first_name || '–';
 }
 
 function loadParentMarketingToggle() {
@@ -2390,6 +2393,9 @@ function renderParentKidPill() {
     }
     if (c) { c.textContent = parentKids.length || 0; c.style.display = (parentKids.length > 1) ? 'flex' : 'none'; }
   });
+  // 💻 Desktop sidebar: aktyvaus vaiko eilutė po tėvo vardu
+  const _tdnS = document.getElementById('tdn-sub');
+  if (_tdnS) _tdnS.textContent = k ? ('VAIKAS: ' + (k.first_name || '').toUpperCase()) : 'TĖVŲ PASKYRA';
 }
 
 // Pasirinkti vaiką iš switcher'io
@@ -33978,7 +33984,7 @@ function nv(p,el,sid){
   });
 
   // 💻 DESKTOP nav sinchronizacija
-  document.querySelectorAll('#v-desktop-nav .vdn-item, #a-desktop-nav .vdn-item, #k-desktop-nav .vdn-item').forEach(a => {
+  document.querySelectorAll('#v-desktop-nav .vdn-item, #a-desktop-nav .vdn-item, #k-desktop-nav .vdn-item, #t-desktop-nav .vdn-item').forEach(a => {
     if (a.dataset.sid === sid) a.classList.add('on');
     else a.classList.remove('on');
   });
