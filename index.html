@@ -105,7 +105,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=438">
+<link rel="stylesheet" href="styles.css?v=439">
 </head>
 <body>
 
@@ -270,7 +270,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v438</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v439</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <button id="mobile-preview-toggle" onclick="toggleMobilePreview()" style="position:fixed;top:10px;right:10px;z-index:9999;background:rgba(255,77,0,.2);color:var(--br);border:1px solid var(--br);padding:6px 12px;border-radius:99px;font-size:11px;cursor:pointer;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;"><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg> PILNAS MOBILE</button>
@@ -2506,6 +2506,27 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="text-align:center;flex:1;"><div style="font-size:18px;"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></div><div style="font-size:8px;color:var(--mut);font-weight:800;margin-top:1px;letter-spacing:.5px;">PROGRESAS</div></div>
     </div>
 
+    <!-- 🎁 v439 BANDYMO REŽIMAS — rodomas vietoj PLANŲ, kol app.js SHOP_TRIAL_MODE=true.
+         PILNAS REŽIMAS (planai su kainomis žemiau, #shop-plans-full) NETRINAMAS — grįžta sausį su mokėjimais. -->
+    <div id="shop-trial-block" style="display:none;margin:4px 16px 12px;position:relative;background:linear-gradient(160deg,rgba(255,77,0,.16),rgba(255,140,0,.05) 60%,var(--card));border:1.5px solid var(--br);border-radius:16px;padding:16px 15px 14px;box-shadow:0 8px 30px rgba(255,77,0,.16);">
+      <div style="position:absolute;top:-9px;right:14px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 10px;border-radius:20px;">🎁 BANDYMO LAIKOTARPIS</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;">JŪSŲ ŠEIMAI — VISKAS ĮJUNGTA</div>
+      <div style="font-size:10.5px;color:var(--mut);margin-top:3px;">Esate pirmieji Spobu bandytojai</div>
+      <div style="font-size:9.5px;font-weight:900;letter-spacing:1px;margin-top:10px;color:var(--grn);">✔ VISADA NEMOKAMA — IR PO BANDYMO</div>
+      <ul style="list-style:none;margin:4px 0 0;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Vaiko žaidimas: iššūkiai, rekordai, dvikovos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Lygis, diržas, serijos ir šventės</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Trenerio žinutės ir pranešimai</li>
+      </ul>
+      <div style="font-size:9.5px;font-weight:900;letter-spacing:1px;margin-top:10px;color:#FF7A33;">🎁 BANDYMO METU — DOVANŲ</div>
+      <ul style="list-style:none;margin:4px 0 0;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:#FF7A33;font-weight:900;">✓</span> Gili progreso statistika ir istorija</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:#FF7A33;font-weight:900;">✓</span> Mėnesio suvestinės, percentiliai, reitingai</li>
+      </ul>
+      <div style="margin-top:10px;background:rgba(0,0,0,.3);border:.5px dashed var(--bdr);border-radius:10px;padding:9px 11px;font-size:10.5px;color:var(--mut);">📄 <b style="color:#d6d6dd;">AI diagnostika ir namų planas</b> — kai vaikas sukaups pirmuosius duomenis, gausite pranešimą su dovana 😉</div>
+    </div>
+
+    <div id="shop-plans-full">
     <div class="st">PLANAI</div>
 
     <!-- FREE -->
@@ -2568,8 +2589,9 @@ window.addEventListener('unhandledrejection', function(e) {
       <button onclick="setKidTier('premium_plus')" style="width:100%;padding:12px;border-radius:11px;font-size:12px;font-weight:800;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:white;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(255,77,0,.4);">Gauti Premium+ <svg class="ico" aria-hidden="true"><use href="#i-premium"></use></svg></button>
       <div style="text-align:center;font-size:9px;color:var(--mut);margin-top:7px;"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg> Galima kas mėnesį · rekomenduojama kas 3 mėn.</div>
     </div>
+    </div><!-- /shop-plans-full -->
 
-    <div class="st">PERKI VIENĄ KARTĄ</div>
+    <div class="st" id="shop-onetime-title">PERKI VIENĄ KARTĄ</div>
 
     <!-- AI ataskaita -->
     <div style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;">
@@ -2604,7 +2626,7 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
 
     <!-- Vasaros programa -->
-    <div style="margin:0 16px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;">
+    <div id="shop-card-summer" style="margin:0 16px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-vasara"></use></svg></div>
         <div style="flex:1;min-width:0;">
@@ -4369,7 +4391,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=438"></script>
+<script src="app.js?v=439"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

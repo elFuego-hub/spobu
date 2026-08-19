@@ -534,6 +534,9 @@ document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfS
 // ── 📜 Sutikimų žurnalas (server-consents.sql) — BDAR įrodymas: kas/kada/kokia versija ──
 const POLICY_VERSION = 'v1.1';   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
 const SUPPORT_EMAIL = 'info@spobu.lt';   // reali dėžutė nuo 2026-08-18 (iv.lt catch-all persiuntimas)
+// 🎁 v439: parduotuvės BANDYMO REŽIMAS — planai su kainomis paslėpti (kainodara neskelbiama iki
+// mokėjimų įjungimo). Sausį su payments_live → pakeisti į false, pilnas langas grįžta pats.
+const SHOP_TRIAL_MODE = true;
 // 🔗 v438 (B1-01): set-password.html adresas SANTYKINAI nuo esamos vietos — veikia ir app.spobu.lt
 // šaknyje, ir sename elfuego-hub.github.io/spobu/ kelyje (buvo užkietinta /spobu/ → 404 naujame domene)
 function _setPasswordUrl(){ return new URL('set-password.html', window.location.href).href; }
@@ -1192,6 +1195,8 @@ async function afterLogin() {
       if (typeof showParentMissedEvents === 'function') {
         setTimeout(() => showParentMissedEvents(), 1500);
       }
+      // 🎁 v439: kreditų dovanos pop-up (bandymo režimas; rodo kartą, kai vaikas gavo kreditus)
+      setTimeout(() => { if (typeof maybeShowCreditGiftPopup === 'function') maybeShowCreditGiftPopup(); }, 3200);
     }
     applyClubFlagGates(); // ${ico('atsijungti')} paslėpti išjungtas funkcijas (visi portalai)
     setTimeout(() => { if (typeof reRegisterPushAfterLogin === 'function') reRegisterPushAfterLogin(); }, 2500); // 🔔 v436: push endpoint → paskutinis prisijungęs (šeima viename telefone)
@@ -4729,6 +4734,15 @@ function _setShopCard(key, credits, redeemFn, buyFn, priceLabel){
   if (cnt) cnt.innerHTML = credits > 0 ? '<span style="display:inline-block;background:rgba(34,197,94,.15);color:var(--grn);font-size:10px;font-weight:800;padding:3px 9px;border-radius:99px;white-space:nowrap;">'+ico('pazymejimas')+' ' + credits + '</span>' : '';
   const histLabel = key === 'report' ? 'Mano ataskaitos' : (key === 'home' ? 'Mano namų planai' : 'Mano vasaros programos');
   const histLink = '<div onclick="openHistoryModal(\'' + key + '\')" style="text-align:center;margin-top:8px;font-size:10.5px;color:var(--mut);font-weight:700;cursor:pointer;">'+ico('dokumentas')+' ' + histLabel + ' ›</div>';
+  // 🎁 v439 bandymo režimas: be kainų — kreditas="Užsisakyti", be kredito=dovanos užuomina
+  if (SHOP_TRIAL_MODE) {
+    if (credits > 0) {
+      act.innerHTML = '<button onclick="' + redeemFn + '" style="width:100%;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">'+ico('zvaigzde')+' Užsisakyti</button>' + histLink;
+    } else {
+      act.innerHTML = '<div style="text-align:center;background:rgba(0,0,0,.25);border:.5px dashed var(--bdr);border-radius:10px;padding:9px;font-size:10.5px;color:var(--mut);">🎁 Bus padovanota bandymo eigoje</div>' + histLink;
+    }
+    return;
+  }
   if (credits > 0) {
     act.innerHTML = '<div style="display:flex;gap:8px;align-items:stretch;"><button onclick="' + redeemFn + '" style="flex:1;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;padding:11px;border-radius:10px;font-size:11.5px;font-weight:800;cursor:pointer;">'+ico('zvaigzde')+' Panaudoti</button><button onclick="' + buyFn + '" style="flex-shrink:0;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);padding:11px 13px;border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;">Pirkti dar</button></div>' + histLink;
   } else {
@@ -4737,9 +4751,58 @@ function _setShopCard(key, credits, redeemFn, buyFn, priceLabel){
 }
 function renderShopCredits(){
   const e = parentEntitlements || {};
+  applyShopTrialMode(e);
   _setShopCard('report', e.report_credits || 0, 'redeemReport()', 'openReportInfoModal()', 'Sužinoti · 9,99€');
   _setShopCard('home', e.homeplan_credits || 0, 'redeemHome()', 'openHomePlanInfoModal()', 'Sužinoti · 19,99€');
   _setShopCard('summer', e.summer_credits || 0, 'redeemSummer()', 'openSummerInfoModal()', 'Sužinoti · 29,99€');
+}
+// 🎁 v439: bandymo režimo perjungimas — planų blokas slepiamas, trial blokas rodomas,
+// vasaros kortelė be kredito slepiama (jos pilotui nedovanoja). Sausį SHOP_TRIAL_MODE=false → viskas grįžta.
+function applyShopTrialMode(e){
+  const full = document.getElementById('shop-plans-full');
+  const trial = document.getElementById('shop-trial-block');
+  const title = document.getElementById('shop-onetime-title');
+  const summer = document.getElementById('shop-card-summer');
+  if (full) full.style.display = SHOP_TRIAL_MODE ? 'none' : '';
+  if (trial) trial.style.display = SHOP_TRIAL_MODE ? '' : 'none';
+  if (title) title.textContent = SHOP_TRIAL_MODE ? 'JŪSŲ KREDITAI' : 'PERKI VIENĄ KARTĄ';
+  if (summer) summer.style.display = (SHOP_TRIAL_MODE && !((e||{}).summer_credits > 0)) ? 'none' : '';
+}
+// 🎁 v439: kreditų DOVANOS pop-up (S2 dviejų žingsnių planas) — parodomas VIENĄ kartą vaikui,
+// kai bandymo režime tėvo aktyvus vaikas turi kreditų (dovana suteikiama admin/SQL ~4–6 sav.).
+async function maybeShowCreditGiftPopup(){
+  try {
+    if (!SHOP_TRIAL_MODE || currentProfile?.role !== 'parent') return;
+    const k = parentActiveKid;
+    if (!k?.id) return;
+    if (localStorage.getItem('spobu_gift_seen_' + k.id) === '1') return;
+    let e = (parentEntitlements && parentEntitlements.kid_id === k.id) ? parentEntitlements : null;
+    if (!e) {
+      const { data } = await sb.from('kid_entitlements').select('kid_id, report_credits, homeplan_credits').eq('kid_id', k.id).limit(1);
+      e = (data && data[0]) || null;
+    }
+    const rep = e?.report_credits || 0, home = e?.homeplan_credits || 0;
+    if (rep <= 0 && home <= 0) return;
+    localStorage.setItem('spobu_gift_seen_' + k.id, '1');
+    const row = (label, n) => '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;color:#d6d6dd;"><span>' + label + '</span><b style="color:var(--gld);font-family:\'Bebas Neue\',sans-serif;font-size:17px;">×' + n + '</b></div>';
+    const old = document.getElementById('gift-popup'); if (old) old.remove();
+    const m = document.createElement('div');
+    m.id = 'gift-popup';
+    m.style.cssText = 'position:fixed;inset:0;z-index:100005;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:24px;';
+    m.innerHTML = '<div style="width:100%;max-width:360px;background:var(--bg);border:1.5px solid var(--br);border-radius:22px;padding:24px 20px 18px;text-align:center;box-shadow:0 20px 60px rgba(255,77,0,.25);animation:slideUp .3s ease-out;">'
+      + '<div style="font-size:44px;">🎁</div>'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:26px;letter-spacing:1.5px;margin-top:6px;">JUMS SUTEIKTA DOVANA</div>'
+      + '<div style="font-size:12px;color:#d6d6dd;line-height:1.55;margin:8px 0 14px;">' + escapeHtml(k.first_name || 'Vaikas') + ' jau sukaupė pakankamai duomenų — laikas pažiūrėti giliau!</div>'
+      + '<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 14px;text-align:left;margin-bottom:14px;">'
+      + (rep > 0 ? row('📄 AI diagnostika', rep) : '')
+      + (home > 0 ? row(''+ico('treniruote')+' Namų treniruočių planas', home) : '')
+      + '</div>'
+      + '<button onclick="document.getElementById(\'gift-popup\').remove();nv(\'t\',null,\'t-shop\');" style="width:100%;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:900;letter-spacing:.5px;padding:14px;cursor:pointer;box-shadow:0 8px 22px rgba(255,77,0,.4);font-family:inherit;">UŽSISAKYTI DIAGNOSTIKĄ</button>'
+      + '<button onclick="document.getElementById(\'gift-popup\').remove()" style="background:none;border:none;color:var(--mut);font-size:11px;font-weight:700;margin-top:10px;cursor:pointer;font-family:inherit;">Vėliau</button>'
+      + '</div>';
+    m.onclick = (ev) => { if (ev.target === m) m.remove(); };
+    document.body.appendChild(m);
+  } catch (err) { console.warn('maybeShowCreditGiftPopup', err); }
 }
 function redeemReport(){
   const e = parentEntitlements || {};
