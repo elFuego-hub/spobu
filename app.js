@@ -21884,7 +21884,15 @@ async function openFees(groupId){
   const g = (trainerGroupsCache || []).find(x => x.id === groupId) || { id: groupId, name: 'Grupė' };
   const kids = (allTrainerKids || []).filter(k => k.group_id === groupId);
   if (!kids.length){ showToast(ico('ispejimas')+' Grupėje nėra vaikų', 'error'); return; }
-  _feeState = { groupId, group: g, kids, month: _feeMonthKey(new Date()), paid: new Set(), debts: {} };
+  // v452b: pradžios mėnuo — nuo jo skaičiuojama skola. Be jo langas rodydavo
+  // „nesumokėta ir už liepą (+5)" visiems, nors funkcija ką tik įjungta.
+  let startMonth = null;
+  try {
+    const cid = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || currentProfile?.club_id;
+    const { data: cs } = await sb.from('club_settings').select('fees_start_month').eq('club_id', cid).maybeSingle();
+    startMonth = cs?.fees_start_month || null;
+  } catch(e){ /* tylim — tada rodom tik einamąjį mėnesį */ }
+  _feeState = { groupId, group: g, kids, month: _feeMonthKey(new Date()), paid: new Set(), debts: {}, startMonth };
   await _feeReload();
 }
 
@@ -21913,10 +21921,17 @@ function _feeRender(){
     // ankstesnių mėnesių skola (be einamojo)
     const has = s.debts[k.id] || new Set();
     const prev = []; const d = new Date(s.month + '-01T12:00:00');
-    for (let i = 1; i <= 6; i++){ const p = new Date(d.getFullYear(), d.getMonth() - i, 1); const key = _feeMonthKey(p); if (!has.has(key)) prev.push(key); }
+    // tik mėnesiai nuo funkcijos įjungimo (s.startMonth) iki rodomo — ne 6 atgal aklai
+    for (let i = 1; i <= 12; i++){
+      const p = new Date(d.getFullYear(), d.getMonth() - i, 1);
+      const key = _feeMonthKey(p);
+      if (s.startMonth && key < s.startMonth) break;
+      if (!s.startMonth) break;
+      if (!has.has(key)) prev.push(key);
+    }
     const warn = prev.length ? `<div style="font-size:9.5px;color:#ff9c9c;margin-top:1px;">nesumokėta ir už ${_feeMonthLT(prev[0]).split(' ')[0]}${prev.length>1?' (+'+(prev.length-1)+')':''}</div>` : '';
     return `<div onclick="_feeToggle('${k.id}')" style="display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:.5px solid var(--bdr);cursor:pointer;-webkit-tap-highlight-color:rgba(34,197,94,.15);">
-      <div style="width:23px;height:23px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;${on?'background:var(--grn);border:1.5px solid var(--grn);color:#08240f;':'border:1.5px solid var(--bdr);'}">${on?'✓':''}</div>
+      <div id="fee-chk-${k.id}" style="width:23px;height:23px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;${on?'background:var(--grn);border:1.5px solid var(--grn);color:#08240f;':'border:1.5px solid var(--bdr);'}">${on?'✓':''}</div>
       <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:700;color:white;">${escapeHtml(nm)}</div>${warn}</div>
     </div>`;
   }).join('');
@@ -21945,8 +21960,22 @@ function _feeRender(){
     </div>`;
 }
 
-function _feeToggle(kidId){ if (!_feeState) return; const s = _feeState; if (s.paid.has(kidId)) s.paid.delete(kidId); else s.paid.add(kidId); _feeRender(); }
-function _feeAll(on){ if (!_feeState) return; _feeState.paid = on ? new Set(_feeState.kids.map(k=>k.id)) : new Set(); _feeRender(); }
+// v452b: varnelę perpiešiam VIETOJE, o ne visą langą — anksčiau paspaudus ant vaiko
+// sąrašas dingdavo ir atsirasdavo iš naujo (savininko radinys 08-19).
+function _feePaintRow(kidId){
+  const s = _feeState; if (!s) return;
+  const box = document.getElementById('fee-chk-' + kidId);
+  if (box){
+    const on = s.paid.has(kidId);
+    box.style.cssText = 'width:23px;height:23px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;' +
+      (on ? 'background:var(--grn);border:1.5px solid var(--grn);color:#08240f;' : 'border:1.5px solid var(--bdr);');
+    box.textContent = on ? '✓' : '';
+  }
+  const btn = document.getElementById('fee-save');
+  if (btn && !btn.dataset.busy) btn.textContent = `IŠSAUGOTI (${s.paid.size}/${s.kids.length})`;
+}
+function _feeToggle(kidId){ if (!_feeState) return; const s = _feeState; if (s.paid.has(kidId)) s.paid.delete(kidId); else s.paid.add(kidId); _feePaintRow(kidId); }
+function _feeAll(on){ if (!_feeState) return; _feeState.paid = on ? new Set(_feeState.kids.map(k=>k.id)) : new Set(); _feeState.kids.forEach(k => _feePaintRow(k.id)); }
 async function _feeMonthShift(delta){
   if (!_feeState) return;
   const d = new Date(_feeState.month + '-01T12:00:00');
@@ -21965,7 +21994,10 @@ async function _feeSave(){
     const toAdd = s.kids.filter(k => s.paid.has(k.id)).map(k => ({ kid_id: k.id, club_id: clubId, period_key: s.month, marked_by: currentUser.id }));
     const toDel = s.kids.filter(k => !s.paid.has(k.id)).map(k => k.id);
     if (toAdd.length){
-      const { error } = await sb.from('member_fees').upsert(toAdd, { onConflict: 'kid_id,period_key' });
+      // v452b: ignoreDuplicates — jau pažymėto vaiko įrašo NEbandom atnaujinti.
+      // Be šito upsert virsta UPDATE'u, kuriam teisių nėra, ir visas išsaugojimas
+      // krisdavo su „Neturi prieigos šiam veiksmui" (savininko radinys 08-19).
+      const { error } = await sb.from('member_fees').upsert(toAdd, { onConflict: 'kid_id,period_key', ignoreDuplicates: true });
       if (error) throw error;
     }
     if (toDel.length){
