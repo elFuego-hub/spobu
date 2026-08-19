@@ -15142,6 +15142,7 @@ const CLUB_FLAG_DEFS = [
   { k:'self_signup_enabled', t:''+ico('profilis')+' Savarankiška 14+ registracija', d:'Paaugliai nuo 14 m. registruojasi patys su klubo kodu.', info:'Paauglys (14+) gali susikurti paskyrą pats, įvedęs TAVO KLUBO KODĄ. Jis pateks į „Laukia patvirtinimo" sąrašą BE grupės — tu priskiri grupę (treneris nusistato automatiškai) ir patvirtini TIK pažinodamas vaiką iš salės.<br><br>Išjungus: su tavo klubo kodu registruotis nebebus galima. Pastaba: funkcija veikia tik kai ją įjungęs ir platformos administratorius.' },
   { k:'camps_enabled', t:''+ico('stovykla')+' Stovyklos', d:'Stovyklos ir renginiai su dalyvavimu.', info:'Stovyklos — daugiadieniai renginiai su dalyvavimo žymėjimu (RSVP) ir neprivalomu EXP už sudalyvavimą.<br><br>Išjungus: nebegalėsi kurti stovyklų.' },
 { k:'kid_trainer_chat_enabled', t:''+ico('zinutes')+' Vaikų žinutės treneriui', d:'Vaikas gali parašyti savo treneriui. Numatyta: įjungta.', info:'Vaikų žinutės treneriui — vaikas gali parašyti SAVO treneriui: iš varpelio („Žinutės" tabo) arba nustatymuose prie trenerio vardo spausdamas „Rašyti". Treneris atsako įprastame žinučių lange.<br><br>Vaikai TARPUSAVYJE susirašinėti negali — tai užrakinta sistemos lygiu.<br><br>Išjungus: vaikai nebegalės pradėti pokalbio ar atsakinėti, treneriui esami pokalbiai lieka matomi.' },
+{ k:'fees_enabled', t:''+ico('mokejimas')+' Nario mokesčio žymėjimas', d:'Treneris žymi, kas atnešė mėnesio mokestį. Numatyta: išjungta.', info:'Nario mokesčio žymėjimas — treneris grupės lange pažymi, kas sumokėjo šio mėnesio mokestį (tik varnelė, be sumų ir be banko duomenų). Nepažymėti rodomi kaip skolingi, su mėnesių skaičiumi; klubo lange matai visų grupių suvestinę.<br><br>Skola skaičiuojama nuo mėnesio, kurį įjungei funkciją — seni vaikai iš karto neatrodys skolingi.<br><br>SVARBU: tai mato TIK treneriai ir klubas. Tėvai ir vaikai šito nemato niekada.' },
   { sec:'IŠŠŪKIŲ TIPAI' },
   { k:'challenge_training_enabled', t:''+ico('treniruote')+' Treniruotės', d:'Užduotis per vieną treniruotę.', info:'Treniruotės iššūkis — užduotis, atliekama per konkrečią treniruotę (pvz. „šiandien 30 pritūpimų salėje").<br><br>Išjungus: tokio tipo iššūkių nebebus galima kurti.' },
   { k:'challenge_weekly_enabled', t:''+ico('greitis')+' Savaitiniai', d:'Kartojasi kas savaitę.', info:'Savaitinis iššūkis — atsinaujina kas savaitę (pvz. „šią savaitę 100 atsispaudimų"). Tinka nuolatiniam aktyvumui palaikyti.<br><br>Išjungus: savaitinių iššūkių nebebus galima kurti.' },
@@ -16128,7 +16129,18 @@ function showClubFlagInfo(k){
 
 async function toggleClubFlag(flag, val){
   if (_ownerOnly()) return;
-  const { error } = await sb.from('club_settings').upsert({ club_id: currentClub.id, [flag]: val, updated_at: new Date().toISOString() }, { onConflict:'club_id' });
+  // 💶 v452: mokesčių jungiklis eina per RPC — ji kartu užfiksuoja, nuo kurio mėnesio
+  // skaičiuoti skolą (kad seni vaikai iš karto neatrodytų skolingi).
+  if (flag === 'fees_enabled') {
+    const { error: fe } = await sb.rpc('club_fees_enable', { p_on: val });
+    if (fe){ showToast(ico('klaida')+' '+fe.message,'error'); return; }
+    clubFlags[flag] = val;
+    showToast(val?ico('patvirtinta')+' Įjungta':'⏸️ Išjungta','success');
+    loadClubSettings(); applyClubFlagGates();
+    if (typeof loadClubFeesCard === 'function') loadClubFeesCard();
+    return;
+  }
+  const { error } = await sb.from('club_settings').upsert({ club_id: currentClub.id, [flag]: val, updated_at:new Date().toISOString() }, { onConflict:'club_id' });
   if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
   clubFlags[flag] = val;
   showToast(val?ico('patvirtinta')+' Įjungta':'⏸️ Išjungta','success');
@@ -21783,6 +21795,7 @@ async function openGroupView(groupId, silent) {
         <div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${k.first_name || 'Vaikas'} ${k.last_name || ''}</div>
         <div style="font-size:10.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${k.kyu || '10 kyu'} · ${(k.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
       ${chips.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;pointer-events:auto;">${chips.join('')}</div>` : ''}
+      <div id="fee-chip-${k.id}" style="margin-top:5px;pointer-events:none;"></div>
       </div>
       ${pend[k.id] ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;box-shadow:0 0 8px rgba(255,77,0,.5);" title="Laukia patvirtinimo">${pend[k.id]}</div>` : ''}
       <button onclick="event.stopPropagation();openAssignExp('${k.id}')" style="background:transparent;color:#FF7A33;border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;" title="Skirti EXP">${ico('prideti')} EXP</button>
@@ -21808,6 +21821,8 @@ async function openGroupView(groupId, silent) {
 
     ${(typeof flagOn === 'function' && !flagOn('attendance_enabled')) ? '' : `<button onclick="openAttendance('${gObj.id}')" style="${gvBtn}width:calc(100% - 32px);margin:0 16px 8px;background:linear-gradient(135deg,#FF4D00,#FF7A33);color:white;border:none;display:block;">${ico('dokumentas')} ŽYMĖTI LANKOMUMĄ</button>`}
 
+    ${(typeof flagOn === 'function' && !flagOn('fees_enabled')) ? '' : `<button onclick="openFees('${gObj.id}')" style="${gvBtn}width:calc(100% - 32px);margin:0 16px 8px;background:linear-gradient(135deg,rgba(34,197,94,.16),rgba(34,197,94,.04));color:#4ade80;border:.5px solid rgba(34,197,94,.45);display:block;">${ico('mokejimas')} MĖNESIO MOKESČIAI</button>`}
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 16px 10px;">
       <button onclick="openCreateChallenge({groupId:'${gObj.id}'})" style="${gvBtn}background:rgba(34,197,94,.15);color:var(--grn);border:.5px dashed rgba(34,197,94,.5);">${ico('tikslas')} IŠŠŪKIS GRUPEI</button>
       <button onclick="composeMessageToGroup('${gObj.id}', '${(gObj.name || '').replace(/'/g, "\\'")}')" style="${gvBtn}background:rgba(99,102,241,.12);color:#8b8df5;border:.5px solid rgba(99,102,241,.35);">${ico('zinutes')} PRANEŠIMAI</button>
@@ -21818,6 +21833,9 @@ async function openGroupView(groupId, silent) {
       ${kidRows || `<div style="text-align:center;padding:24px;color:var(--mut);font-size:11px;background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;">Grupė tuščia.<br>Vaikus į grupę priskiria <strong style="color:var(--grn);">klubas</strong>.</div>`}
     </div>
   `;
+
+  // 💶 v452: skolų ženkliukai — kraunami atskirai, kad neuždelstų grupės atsidarymo
+  if (typeof _feeLoadDebtChips === "function") _feeLoadDebtChips(groupId);
 }
 
 // Atnaujina atidarytą grupės langą (po patvirtinimų / redagavimo)
@@ -21847,6 +21865,146 @@ function _attSchedLT(group){ return (group?.training_days||[]).filter(d=>d>=1&&d
 
 // — Trenerio žymėjimo langas —
 let _attState = null; // { groupId, date, group, kids, present:Set }
+
+// ════════════════════════════════════════════════════════════════════════════
+// 💶 NARIO MOKESČIO ŽYMĖJIMAS (v452) — trenerio draugo pasiūlyta funkcija
+// Treneris pažymi, kas atnešė mėnesio mokestį. Įrašas lentelėje = sumokėta.
+// NE mokėjimų sistema: jokių sumų, jokių banko duomenų — tik varnelė.
+// Mato TIK treneriai ir klubas (RLS); tėvai ir vaikai — niekada.
+// ════════════════════════════════════════════════════════════════════════════
+let _feeState = null;
+
+function _feeMonthKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function _feeMonthLT(key){
+  const M = ['sausis','vasaris','kovas','balandis','gegužė','birželis','liepa','rugpjūtis','rugsėjis','spalis','lapkritis','gruodis'];
+  const [y,m] = (key||'').split('-'); return (M[parseInt(m,10)-1] || '') + ' ' + y;
+}
+
+async function openFees(groupId){
+  const g = (trainerGroupsCache || []).find(x => x.id === groupId) || { id: groupId, name: 'Grupė' };
+  const kids = (allTrainerKids || []).filter(k => k.group_id === groupId);
+  if (!kids.length){ showToast(ico('ispejimas')+' Grupėje nėra vaikų', 'error'); return; }
+  _feeState = { groupId, group: g, kids, month: _feeMonthKey(new Date()), paid: new Set(), debts: {} };
+  await _feeReload();
+}
+
+async function _feeReload(){
+  if (!_feeState) return;
+  const kidIds = _feeState.kids.map(k => k.id);
+  // Šio mėnesio žymos
+  const { data: rows } = await sb.from('member_fees').select('kid_id')
+    .in('kid_id', kidIds).eq('period_key', _feeState.month);
+  _feeState.paid = new Set((rows || []).map(r => r.kid_id));
+  // Skolos (kiek mėnesių nepažymėta) — iš visų įrašų, kad matytųsi ir senesnės
+  const { data: all } = await sb.from('member_fees').select('kid_id, period_key').in('kid_id', kidIds);
+  const byKid = {}; (all || []).forEach(r => { (byKid[r.kid_id] = byKid[r.kid_id] || new Set()).add(r.period_key); });
+  _feeState.debts = byKid;
+  _feeRender();
+}
+
+function _feeRender(){
+  const s = _feeState; if (!s) return;
+  let m = document.getElementById('fee-modal');
+  if (!m){ m = document.createElement('div'); m.id = 'fee-modal'; document.body.appendChild(m); }
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100004;align-items:flex-end;justify-content:center;';
+  const rows = s.kids.map(k => {
+    const on = s.paid.has(k.id);
+    const nm = `${k.first_name || ''} ${k.last_name || ''}`.trim() || 'Vaikas';
+    // ankstesnių mėnesių skola (be einamojo)
+    const has = s.debts[k.id] || new Set();
+    const prev = []; const d = new Date(s.month + '-01T12:00:00');
+    for (let i = 1; i <= 6; i++){ const p = new Date(d.getFullYear(), d.getMonth() - i, 1); const key = _feeMonthKey(p); if (!has.has(key)) prev.push(key); }
+    const warn = prev.length ? `<div style="font-size:9.5px;color:#ff9c9c;margin-top:1px;">nesumokėta ir už ${_feeMonthLT(prev[0]).split(' ')[0]}${prev.length>1?' (+'+(prev.length-1)+')':''}</div>` : '';
+    return `<div onclick="_feeToggle('${k.id}')" style="display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:.5px solid var(--bdr);cursor:pointer;-webkit-tap-highlight-color:rgba(34,197,94,.15);">
+      <div style="width:23px;height:23px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;${on?'background:var(--grn);border:1.5px solid var(--grn);color:#08240f;':'border:1.5px solid var(--bdr);'}">${on?'✓':''}</div>
+      <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:700;color:white;">${escapeHtml(nm)}</div>${warn}</div>
+    </div>`;
+  }).join('');
+  const cnt = s.paid.size;
+  m.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+      <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);position:sticky;top:0;background:var(--bg);z-index:1;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1.4px;">${ico('mokejimas')} MĖNESIO MOKESČIAI</div>
+          <button onclick="document.getElementById('fee-modal').remove()" style="background:none;border:none;font-size:20px;color:var(--mut);cursor:pointer;">${ico('uzdaryti')}</button>
+        </div>
+        <div style="font-size:10.5px;color:var(--mut);margin-top:3px;">${escapeHtml(s.group.name || '')} · pažymėk, kas sumokėjo</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:8px 13px;margin-top:10px;">
+          <div onclick="_feeMonthShift(-1)" style="cursor:pointer;color:var(--mut);font-size:16px;padding:0 6px;">‹</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;text-transform:uppercase;">${_feeMonthLT(s.month)}</div>
+          <div onclick="_feeMonthShift(1)" style="cursor:pointer;color:var(--mut);font-size:16px;padding:0 6px;">›</div>
+        </div>
+        <div style="display:flex;gap:7px;margin-top:9px;">
+          <div onclick="_feeAll(true)" style="flex:1;text-align:center;font-size:10px;font-weight:800;padding:7px;border-radius:9px;border:.5px solid var(--bdr);background:var(--card);color:var(--mut);cursor:pointer;">Visi sumokėjo</div>
+          <div onclick="_feeAll(false)" style="flex:1;text-align:center;font-size:10px;font-weight:800;padding:7px;border-radius:9px;border:.5px solid var(--bdr);background:var(--card);color:var(--mut);cursor:pointer;">Išvalyti</div>
+        </div>
+      </div>
+      <div style="padding:4px 16px 0;">${rows}</div>
+      <button id="fee-save" onclick="_feeSave()" style="width:calc(100% - 32px);margin:13px 16px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;padding:13px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">IŠSAUGOTI (${cnt}/${s.kids.length})</button>
+      <div style="font-size:10px;color:var(--mut);text-align:center;padding:0 16px 18px;line-height:1.55;">Ankstesnius mėnesius gali taisyti bet kada — perjunk mėnesį viršuje.<br>Tėvai ir vaikai šito nemato.</div>
+    </div>`;
+}
+
+function _feeToggle(kidId){ if (!_feeState) return; const s = _feeState; if (s.paid.has(kidId)) s.paid.delete(kidId); else s.paid.add(kidId); _feeRender(); }
+function _feeAll(on){ if (!_feeState) return; _feeState.paid = on ? new Set(_feeState.kids.map(k=>k.id)) : new Set(); _feeRender(); }
+async function _feeMonthShift(delta){
+  if (!_feeState) return;
+  const d = new Date(_feeState.month + '-01T12:00:00');
+  const nd = new Date(d.getFullYear(), d.getMonth() + delta, 1);
+  if (nd > new Date()) { showToast(ico('ispejimas')+' Ateities mėnesio žymėti negalima'); return; }
+  _feeState.month = _feeMonthKey(nd);
+  await _feeReload();
+}
+
+async function _feeSave(){
+  const s = _feeState; if (!s) return;
+  const btn = document.getElementById('fee-save');
+  if (btn){ if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.disabled = true; btn.textContent = 'SAUGOMA...'; btn.style.opacity = '.6'; }
+  try {
+    const clubId = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || currentClub?.id || currentProfile?.club_id;
+    const toAdd = s.kids.filter(k => s.paid.has(k.id)).map(k => ({ kid_id: k.id, club_id: clubId, period_key: s.month, marked_by: currentUser.id }));
+    const toDel = s.kids.filter(k => !s.paid.has(k.id)).map(k => k.id);
+    if (toAdd.length){
+      const { error } = await sb.from('member_fees').upsert(toAdd, { onConflict: 'kid_id,period_key' });
+      if (error) throw error;
+    }
+    if (toDel.length){
+      const { error } = await sb.from('member_fees').delete().in('kid_id', toDel).eq('period_key', s.month);
+      if (error) throw error;
+    }
+    showToast(ico('patvirtinta')+' Mokesčiai išsaugoti', 'success');
+    const m = document.getElementById('fee-modal'); if (m) m.remove();
+    if (typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();
+  } catch(e){
+    if (btn){ btn.disabled = false; btn.dataset.busy = ''; btn.style.opacity = '1'; btn.textContent = 'IŠSAUGOTI'; }
+    showToast(ico('klaida')+' Nepavyko: ' + (e.message || ''), 'error', 6000);
+  }
+}
+
+// Skolų ženkliukai grupės vaikų sąraše — užkraunami po grupės atidarymo
+async function _feeLoadDebtChips(groupId){
+  if (typeof flagOn === 'function' && !flagOn('fees_enabled')) return;
+  try {
+    const kids = (allTrainerKids || []).filter(k => k.group_id === groupId);
+    if (!kids.length) return;
+    const { data: cs } = await sb.from('club_settings').select('fees_start_month')
+      .eq('club_id', (typeof resolveMyClubId === 'function' ? resolveMyClubId() : currentProfile?.club_id)).maybeSingle();
+    const start = cs?.fees_start_month; if (!start) return;
+    const { data: all } = await sb.from('member_fees').select('kid_id, period_key').in('kid_id', kids.map(k=>k.id));
+    const byKid = {}; (all||[]).forEach(r => { (byKid[r.kid_id] = byKid[r.kid_id] || new Set()).add(r.period_key); });
+    // mėnesių sąrašas nuo start iki dabar imtinai
+    const months = []; let d = new Date(start + '-01T12:00:00'); const now = new Date();
+    while (d <= now && months.length < 60){ months.push(_feeMonthKey(d)); d = new Date(d.getFullYear(), d.getMonth()+1, 1); }
+    kids.forEach(k => {
+      const has = byKid[k.id] || new Set();
+      const debt = months.filter(mk => !has.has(mk)).length;
+      const el = document.getElementById('fee-chip-' + k.id);
+      if (el) el.innerHTML = debt > 0
+        ? `<span style="background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.45);color:#ff9c9c;font-size:9px;font-weight:800;padding:2px 7px;border-radius:99px;white-space:nowrap;" title="Nepažymėta už ${debt} mėn.">${ico('mokejimas')} ${debt} mėn.</span>`
+        : '';
+    });
+  } catch(e){ console.warn('_feeLoadDebtChips', e); }
+}
 
 async function openAttendance(groupId){
   const g=(trainerGroupsCache||[]).find(x=>x.id===groupId);
@@ -28418,8 +28576,66 @@ async function loadClubMainPreview(){
 }
 
 // 🏠 KLUBO PAGRINDINIS DASHBOARD (v320) — kompaktiškas: 7 nepriklausomų blokų, kiekvienas savo try/catch.
+// 💶 v452: klubo mokesčių suvestinė — VISI skolingi, įskaitant einamąjį mėnesį
+// (savininko sprendimas 08-19). Duomenys per club_fee_debts RPC.
+async function loadClubFeesCard(){
+  const card = document.getElementById('k-fees-card');
+  if (!card) return;
+  if (typeof flagOn === 'function' && !flagOn('fees_enabled')) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const body = document.getElementById('k-fees-body');
+  try {
+    const { data, error } = await sb.rpc('club_fee_debts', { p_club: currentClub?.id || null });
+    if (error) throw error;
+    const rows = data || [];
+    const paid = rows.filter(r => r.paid_current).length;
+    const pend = rows.length - paid;
+    const pct = rows.length ? Math.round((paid / rows.length) * 100) : 0;
+    const debtors = rows.filter(r => r.debt_months > 0);
+    const mEl = document.getElementById('k-fees-month');
+    if (mEl) mEl.textContent = _feeMonthLT(_feeMonthKey(new Date()));
+
+    const kpi = `<div style="display:flex;gap:8px;margin-bottom:10px;">
+      <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:11px 9px;text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;line-height:1;color:#4ade80;">${paid}</div>
+        <div style="font-size:8.5px;color:var(--mut);letter-spacing:.7px;text-transform:uppercase;">Sumokėjo</div></div>
+      <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:11px 9px;text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;line-height:1;color:${pend?'#ff9c9c':'var(--mut)'};">${pend}</div>
+        <div style="font-size:8.5px;color:var(--mut);letter-spacing:.7px;text-transform:uppercase;">Laukiama</div></div>
+      <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:11px 9px;text-align:center;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;line-height:1;">${pct}%</div>
+        <div style="font-size:8.5px;color:var(--mut);letter-spacing:.7px;text-transform:uppercase;">Surinkta</div></div>
+    </div>
+    <div style="height:7px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden;margin-bottom:4px;">
+      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#22C55E,#4ade80);"></div></div>`;
+
+    const list = debtors.length
+      ? debtors.map(r => {
+          const nm = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Vaikas';
+          const cur = !r.paid_current;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid var(--bdr);">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12.5px;font-weight:700;color:white;">${escapeHtml(nm)}</div>
+              <div style="font-size:9.5px;color:var(--mut);margin-top:1px;">${escapeHtml(r.group_name || 'be grupės')}${cur ? ' · neatnešė už šį mėnesį' : ''}</div>
+            </div>
+            <span style="flex-shrink:0;background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.45);color:#ff9c9c;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;">${r.debt_months} mėn.</span>
+          </div>`;
+        }).join('')
+      : '<div style="text-align:center;padding:16px;color:var(--grn);font-size:11.5px;font-weight:700;">Visi sumokėję — skolų nėra</div>';
+
+    body.innerHTML = kpi +
+      `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:14px 0 2px;">SKOLINGI · ${debtors.length}</div>` +
+      list +
+      `<div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.5;">Žymi treneriai grupės lange. Tėvai ir vaikai šito nemato.</div>`;
+  } catch(e){
+    console.warn('loadClubFeesCard', e);
+    body.innerHTML = `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nepavyko užkrauti (${escapeHtml((e.message||'').slice(0,60))})</div>`;
+  }
+}
+
 async function loadClubMainDashboard(){
   if (!currentClub?.id) return;
+  if (typeof loadClubFeesCard === 'function') loadClubFeesCard();
   const cid = currentClub.id;
   const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el){ if(typeof v==='string' && v.indexOf('<svg')!==-1) el.innerHTML=v; else el.textContent=v; } };
   let clubKids = (typeof _getClubKids==='function') ? (await _getClubKids().catch(()=>[])) : [];

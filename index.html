@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=451">
+<link rel="stylesheet" href="styles.css?v=452">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v451</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v452</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3391,6 +3391,12 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
       <div id="k-groups-list" style="padding:0 16px 6px;"><div style="text-align:center;padding:18px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
     </div>
+
+    <!-- 💶 v452: NARIO MOKESČIAI (rodoma tik kai klubas įjungęs fees_enabled) -->
+    <div id="k-fees-card" class="cd" style="display:none;">
+      <div class="st" style="padding:0 0 8px;">💶 NARIO MOKESČIAI · <span id="k-fees-month" style="color:var(--mut);font-size:11px;"></span></div>
+      <div id="k-fees-body"><div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
+    </div>
     <!-- TRENERIAI -->
     <div id="k-team-trainers" class="k-team-pane" style="display:none;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px;">
@@ -4422,7 +4428,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=451"></script>
+<script src="app.js?v=452"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
