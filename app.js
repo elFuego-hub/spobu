@@ -256,7 +256,8 @@ async function init() {
         ['app-dialog-overlay', 'ch-trainer-pick', 'camp-trainer-pick', 'club-acct-menu',
          // PR-04: dinaminiai fixed overlay be „-modal" galūnės — kūrėjai atkuria iš naujo
          'parent-kid-switcher', 'parent-notif-popup', 'duel-challenge-popup', 'settings-submodal',
-         'club-notif-prefs', 'club-roles-guide', 'adm-club-edit', 'club-mgr-bar', 'club-onboard'].forEach(id => {
+         'club-notif-prefs', 'club-roles-guide', 'adm-club-edit', 'club-mgr-bar', 'club-onboard',
+         'trial-bug-fab', 'gift-popup'].forEach(id => { // 🐞🎁 v442: bandymo FAB + dovanos popup irgi valomi
           const el = document.getElementById(id);
           if (el) el.remove(); // dinaminiai — kūrėjai juos atkuria iš naujo
         });
@@ -1199,6 +1200,7 @@ async function afterLogin() {
       setTimeout(() => { if (typeof maybeShowCreditGiftPopup === 'function') maybeShowCreditGiftPopup(); }, 3200);
     }
     applyClubFlagGates(); // ${ico('atsijungti')} paslėpti išjungtas funkcijas (visi portalai)
+    if (typeof applyTrialBugFab === 'function') applyTrialBugFab(); // 🐞 v442: bandymo „Klaida?" mygtukas
     setTimeout(() => { if (typeof reRegisterPushAfterLogin === 'function') reRegisterPushAfterLogin(); }, 2500); // 🔔 v436: push endpoint → paskutinis prisijungęs (šeima viename telefone)
     window._appInitedUserId = currentUser?.id || null; // ⚡ W1-2: pilnas init baigtas — kiti SIGNED_IN re-fire ignoruojami
     console.log('🎉 [afterLogin] BAIGTA SĖKMINGAI');
@@ -1472,6 +1474,23 @@ async function loadParentSettingsTrainers() {
   } catch (e) {
     el.innerHTML = '<div style="font-size:11px;color:var(--br);">Nepavyko užkrauti trenerių.</div>';
   }
+}
+
+// 🐞 v442: BANDYMO režimo plaukiojantis „Klaida?" mygtukas (savininko pasirinktas A variantas,
+// žr. emergency-mygtuko-vizualas.html). Rodomas visose prisijungusiose rolėse (be platformos
+// admino), kol SHOP_TRIAL_MODE — sausį dingsta pats. Atidaro esamą „Pranešti problemą" formą.
+function applyTrialBugFab(){
+  const old = document.getElementById('trial-bug-fab');
+  const show = (typeof SHOP_TRIAL_MODE !== 'undefined') && SHOP_TRIAL_MODE
+    && !!currentUser && !!currentProfile?.role && currentProfile.role !== 'admin';
+  if (!show) { if (old) old.remove(); return; }
+  if (old) return; // jau yra
+  const b = document.createElement('div');
+  b.id = 'trial-bug-fab';
+  b.onclick = () => { if (typeof openHelpReportModal === 'function') openHelpReportModal(); };
+  b.style.cssText = 'position:fixed;right:14px;bottom:86px;z-index:99990;display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#FF4D00,#FF7A33);color:#fff;border-radius:24px;padding:10px 14px;font-size:12px;font-weight:800;box-shadow:0 8px 22px rgba(255,77,0,.45);cursor:pointer;font-family:inherit;user-select:none;-webkit-tap-highlight-color:rgba(255,77,0,.25);';
+  b.innerHTML = '<span style="font-size:15px;">🐞</span> Klaida?';
+  document.body.appendChild(b);
 }
 
 // 🐞 Problemos pranešimo forma → įrašo į `feedback` lentelę (mato admin)
