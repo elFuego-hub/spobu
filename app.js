@@ -816,6 +816,12 @@ async function loadKidProductsCard(){
   try {
     const card = document.getElementById('v-prod-card'); if (!card) return;
     if (typeof flagOn === 'function' && !flagOn('ai_reports_enabled')){ card.style.display = 'none'; return; }
+    // 🎂 v447: kortelė skirta 14+ paaugliams (jie prašo tėvų patys). Jaunesniems ji kūrė klaidingą
+    // lūkestį („užsisakiau, kur mano ataskaita?") — ataskaitas jiems užsako tėvai savo portale.
+    try {
+      const _a = currentKid?.birth_date ? calculateAge(currentKid.birth_date) : null;
+      if (_a !== null && _a < 14){ card.style.display = 'none'; return; }
+    } catch(e){}
     const { data: ov, error } = await sb.rpc('kid_request_overview');
     if (error || !ov || !ov.has_kid){ card.style.display = 'none'; return; }
     const items = [
@@ -823,8 +829,7 @@ async function loadKidProductsCard(){
       { key: 'homeplan', ico: ''+ico('treniruote')+'', t: 'Namų planas' },
       { key: 'summer', ico: ''+ico('vasara')+'', t: 'Vasaros programa' }
     ];
-    const priceOf = k => (typeof PRICES !== 'undefined' && PRICES[k] != null) ? (+PRICES[k]).toFixed(2) + ' €' : '';
-    const st = (ov.requests || {});
+    const st = (ov.requests || {}); // v447: nenaudojamas priceOf su € pašalintas (kainų mina bandymo režimui)
     const list = document.getElementById('v-prod-list');
     list.innerHTML = items.map(it => {
       const s = st[it.key];
@@ -1733,9 +1738,9 @@ function openHelpModal(who) {
       ['Kaip gaunu EXP ir keliu lygį?', 'Atlik pratimus Kelio lange, įveik trenerio iššūkius, dalyvauk varžybose ir lankyk treniruotes. Treneris patvirtina — ir EXP auga!'],
       ['Kaip pateikiu rezultatą?', '„Kelias" lange pasirink sritį ir pratimą, įrašyk naują rekordą. Treneris jį patvirtins.'],
       ['Kas yra dvikova?', '1 prieš 1 iššūkis draugui (atsispaudimai, bėgimas...). Iškviesk draugą, abu atlikit, treneris patvirtina — nugalėtojas gauna daugiau EXP!'],
-      ['Kodėl mano lygis žemas?', 'Tai normalu — lygiai auga su amžiumi ir treniruotėmis. Svarbiausia stengtis ir nenuleisti rankų. OSU! '+ico('dirzas')+''],
+      ['Kodėl mano lygis žemas?', 'Lygis auga nuo surinkto EXP — kuo daugiau treniruojiesi, atlieki iššūkių ir gerini rekordus, tuo greičiau kyla. Reitinguose lyginamas tik su savo amžiaus ir lyties draugais. OSU! '+ico('dirzas')+''],
       ['Kaip pasidalinti pasiekimu?', 'Varpelyje prie „PR patvirtintas" spausk '+ico('programele')+' — sukursi kortelę su nuotrauka, kurią gali dėti į Instagram/TikTok.'],
-      ['Negaunu pranešimų?', 'Paprašyk tėvų ar trenerio padėti įjungti pranešimus nustatymuose.']
+      ['Negaunu pranešimų?', 'Nustatymuose įjunk „Pranešimai" — gali tai padaryti pats. iPhone: appsas turi būti įsidėtas į pradžios ekraną. Jei vis tiek neveikia — paprašyk tėvų ar trenerio pagalbos.']
     ]
   };
   const faq = FAQ[who] || FAQ.kid;
@@ -1808,6 +1813,7 @@ const WELCOME_CONTENT = {
       ['augimas',    '<b style="color:white;">KELIAS</b> — atlik pratimus, rink EXP ir kilk lygiais'],
       ['dvikova',    '<b style="color:white;">Iššūkiai ir dvikovos</b> — varžykis su draugais ir siek rekordų'],
       ['zenkliukai', '<b style="color:white;">Diržai ir ženkliukai</b> — visas tavo progresas vienoje vietoje'],
+      ['bug',        'Tai pirmoji SPOBU versija. Radai klaidą? Spausk <b style="color:white;">🐞</b> mygtuką kampe — parašysi mums'],
       ['pagalba',    'Jei kažkas neveikia ar nesupranti — pasakyk tėvams arba treneriui']
     ]
   },
@@ -5139,7 +5145,11 @@ async function loadKidTierGate(){
       } catch (e2) { _kidTier = getKidTierLocal(currentKid.id); }
     }
   }
-  gateScreen('v-stat', _kidTier === 'free', _PG_KID);
+  // 🎁 v447: bandymo metu (SHOP_TRIAL_MODE) gate'as NIEKADA nerodomas — pažadėta „viskas įjungta
+  // nemokamai". Be šito naujas piloto vaikas (dar be kid_entitlements eilutės → tier='free')
+  // atsidaręs Statistiką matytų užrakintą ekraną „ŠIĄ DALĮ ATRAKINA TĖVAI" ir nieko negalėtų padaryti.
+  const _trial = (typeof SHOP_TRIAL_MODE !== 'undefined') && SHOP_TRIAL_MODE;
+  gateScreen('v-stat', !_trial && _kidTier === 'free', _PG_KID);
 }
 // 💳 Pakopos keitimas — TIK per serverio RPC set_kid_tier (server-monetizacija-enforcement.sql).
 // Serveris: gate payments_live=false, kreditų INCREMENT (+3/+3/+1), purchases žurnalas su
@@ -16155,6 +16165,11 @@ function applyClubFlagGates(){
     _gateSel('#v-desktop-nav .vdn-item[data-sid="v-ish"]', flagOn('challenges_enabled'));
     _gateSel('.bn2 .ni[onclick*="v-comp"]', flagOn('competitions_enabled'));
     _gateSel('#v-desktop-nav .vdn-item[data-sid="v-comp"]', flagOn('competitions_enabled'));
+    // 💬 v447: varpelio „Žinutės" tabas vaikui — kai kid_trainer_chat_enabled IŠJUNGTA (numatyta),
+    // tabas kabodavo visada tuščias („Nėra žinučių") ir vaikas negalėdavo nieko padaryti.
+    if (currentProfile?.role === 'kid') {
+      _gateSel('#pv .notif-tab[data-tab="messages"]', typeof kidChatOn === 'function' ? kidChatOn() : false);
+    }
     // TĖVO portalas — parduotuvė (t-shop nav) + AI ataskaitų pirkimas (shop-act-report)
     _gateSel('.bn2 .ni[onclick*="t-shop"]', flagOn('store_enabled'));
     _gateEl('shop-act-report', flagOn('ai_reports_enabled'));
@@ -19267,7 +19282,7 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
           <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
             <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;">#${myRank}</div>
             <div style="flex:1;min-width:0;">
-              <div style="font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;">${myEntry.name}</div>
+              <div style="font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;">${myEntry.isAnonymous ? 'TU' : myEntry.name}</div>
               <div style="font-size:8px;opacity:.8;margin-top:1px;">${myEntry.kyu || 'Mu kyu'}</div>
             </div>
           </div>
@@ -19297,7 +19312,7 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
         <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${isMe ? 'var(--br)' : 'var(--mut)'};min-width:22px;">${medal || '#' + rank}</div>
         <div style="width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:11px;color:white;${e.avatarUrl ? `background-image:url('${e.avatarUrl}');background-size:cover;background-position:center;` : `background:${isMe ? 'var(--br)' : 'rgba(255,255,255,.12)'};`}">${e.avatarUrl ? '' : (e.name?.[0] || '?').toUpperCase()}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:11px;font-weight:${isMe ? '800' : '600'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isMe ? 'var(--br)' : 'var(--text)'};line-height:1.1;">${e.name}</div>
+          <div style="font-size:11px;font-weight:${isMe ? '800' : '600'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isMe ? 'var(--br)' : 'var(--text)'};line-height:1.1;">${(isMe && e.isAnonymous) ? 'TU (anonimas)' : e.name}</div>
           <div style="font-size:8px;color:var(--mut);">${e.kyu || 'Mu kyu'}</div>
         </div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:${isMe ? 'var(--br)' : 'var(--text)'};flex-shrink:0;">${e.score.toLocaleString()}</div>
@@ -23416,11 +23431,13 @@ function openKidInfo(which) {
       break;
     case 'stat':
       title = ''+ico('pagalba')+' STATISTIKA';
-      html = intro('Čia matai savo kelią skaičiais ir grafikais.') +
-        row(''+ico('grafikas')+'', 'Lygis laike', 'Kaip augo tavo EXP ir lygis.') +
-        row(''+ico('zenkliukai')+'', 'Rekordai', 'Tavo geriausi pratimų rezultatai.') +
+      // v447: tekstas suderintas su tikru ekranu (buvo žadami grafikai ir rekordų sąrašas, kurių čia nėra —
+      // rekordai gyvena „Kelias" lange). Keturi tabai: LVL · SKILL'AI · IŠŠŪKIAI · VARŽYBOS.
+      html = intro('Čia matai, kaip atrodai tarp savo klubo draugų — keturi reitingai.') +
+        row(''+ico('dirzas')+'', 'LVL · SKILL\'AI', 'Reitingai pagal bendrą EXP ir pagal atskirus pratimus.') +
+        row(''+ico('tikslas')+'', 'IŠŠŪKIAI · VARŽYBOS', 'Kas daugiausiai įveikė iššūkių ir surinko varžybų taškų.') +
         row(''+ico('streak')+'', 'Sezonas / visų laikų', 'Perjunk, ar nori matyti šį sezoną, ar visą kelią.') +
-        row(''+ico('trofejai')+'', 'Palyginimas', 'Kaip atrodai tarp bendraamžių — su panašiais į tave.');
+        row(''+ico('trofejai')+'', 'Palyginimas', 'Lyginamas tik su savo amžiaus ir lyties draugais — sąžiningai.');
       break;
     case 'prof':
       title = ''+ico('pagalba')+' PROFILIS';
@@ -34005,6 +34022,11 @@ function nv(p,el,sid){
   if (sid === 'v-comp' && typeof loadKidCompetitions === 'function') {
     loadKidCompetitions();
   }
+  // 🥋 v447: Kelias atsinaujina KIEKVIENĄ kartą atidarius (anksčiau kraudavosi tik prisijungus /
+  // pull-to-refresh / grįžus iš fono — patvirtinus rezultatą vaikas matydavo senus skaičius).
+  if (sid === 'v-kar' && typeof loadCategories === 'function') {
+    loadCategories();
+  }
   if (sid === 'v-stat') {
     // Pradžioje atnaujinti aktyvų tabą
     if (typeof loadOverallStatTab === 'function') loadOverallStatTab();
@@ -38156,7 +38178,7 @@ function openInstructionsModal() {
 
       <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #4FC3F7;">
         <div style="font-size:14px;font-weight:800;color:#4FC3F7;margin-bottom:6px;">${ico('zinutes')} Žinutės ir pranešimai</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Susirašyk su treneriu, gauk klubo pranešimus (${ico('skelbimas')}). ${ico('pranesimai')} Varpelis viršuje renka visus pranešimus — iššūkius, varžybas, žinutes ir patvirtinimus.</div>
+        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">${(typeof kidChatOn === 'function' && kidChatOn()) ? 'Susirašyk su treneriu, gauk' : 'Gauk'} klubo pranešimus (${ico('skelbimas')}). ${ico('pranesimai')} Varpelis viršuje renka visus pranešimus — iššūkius, varžybas ir patvirtinimus.</div>
       </div>
 
       <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FF7A33;">
