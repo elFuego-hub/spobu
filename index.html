@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=447">
+<link rel="stylesheet" href="styles.css?v=448">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v447</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v448</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2332,24 +2332,26 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> STREAKAI -->
     <div style="display:flex;gap:6px;padding:0 16px;margin-top:10px;">
-      <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
+      <!-- v448: turinį renderina renderStreakChips(s,'tk-streak') — tas pats kaip vaiko pusėje
+           (progresas iki kito bonuso, ⚠️ pavojus, tap → „Serijų kelias") -->
+      <div id="tk-streak-training" style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
         <div style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ico" aria-hidden="true" style="width:15px;height:15px;vertical-align:0;"><use href="#i-streak"></use></svg></div>
         <div style="flex:1;min-width:0;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF7A33;line-height:1;" id="tk-streak-train">0</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF7A33;line-height:1;" id="tk-streak-train-num">0</div>
           <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Treniruotės</div>
         </div>
       </div>
-      <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
+      <div id="tk-streak-weekly" style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
         <div style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ico" aria-hidden="true" style="width:15px;height:15px;vertical-align:0;"><use href="#i-kalendorius"></use></svg></div>
         <div style="flex:1;min-width:0;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF7A33;line-height:1;" id="tk-streak-week">0</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF7A33;line-height:1;" id="tk-streak-week-num">0</div>
           <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Savaitės</div>
         </div>
       </div>
-      <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
+      <div id="tk-streak-monthly" style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:6px 8px;display:flex;align-items:center;gap:6px;">
         <div style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ico" aria-hidden="true" style="width:15px;height:15px;vertical-align:0;"><use href="#i-zenkliukai"></use></svg></div>
         <div style="flex:1;min-width:0;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF7A33;line-height:1;" id="tk-streak-month">0</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF7A33;line-height:1;" id="tk-streak-month-num">0</div>
           <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;">Mėnesiai</div>
         </div>
       </div>
@@ -4420,7 +4422,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=447"></script>
+<script src="app.js?v=448"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

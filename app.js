@@ -2548,15 +2548,17 @@ async function loadParentKidMain() {
 
   // ⚡ NAŠUMAS: streakai + klubo cache + rekordai (top skill) — lygiagrečiai (nepriklausomi)
   const [stR, , recsR] = await Promise.allSettled([
-    sb.from('kid_streaks').select('training_current, weekly_current, monthly_current').eq('kid_id', k.id).maybeSingle(),
+    sb.from('kid_streaks').select('*').eq('kid_id', k.id).maybeSingle(),  // v448: pilna eilutė — čipams reikia best/total_exp („Serijų kelias")
     getActiveKidClubId(),  // pašildo vaiko klubo cache (rankai/iššūkiai/renginys/laukiama nekartos profiles užklausos)
     sb.from('kid_records').select('category_id, category_exp').eq('kid_id', k.id)
   ]);
-  // Streakai
-  const sStreak = stR.status === 'fulfilled' ? stR.value?.data : null;
-  const elT = document.getElementById('tk-streak-train'); if (elT) elT.textContent = sStreak?.training_current || 0;
-  const elW = document.getElementById('tk-streak-week'); if (elW) elW.textContent = sStreak?.weekly_current || 0;
-  const elM = document.getElementById('tk-streak-month'); if (elM) elM.textContent = sStreak?.monthly_current || 0;
+  // 🔥 Streakai — v448: tėvas mato TĄ PATĮ vaizdą kaip vaikas (progresas iki kito bonuso,
+  // „⚠️ serija tuoj nutrūks", tap → „Serijų kelias"). Ta pati renderStreakChips funkcija.
+  const sStreak = (stR.status === 'fulfilled' ? stR.value?.data : null) || {
+    training_current: 0, weekly_current: 0, monthly_current: 0
+  };
+  window._streakRowCache = sStreak;   // „Serijų kelias" modalas skaito iš čia
+  if (typeof renderStreakChips === 'function') renderStreakChips(sStreak, 'tk-streak');
 
   if (typeof applyParentTierGating === 'function') applyParentTierGating();  // pakopų gating (REITINGAI)
 
@@ -18838,10 +18840,25 @@ async function loadStreaks() {
   // ⭐ v404: PAGRINDINIO LANGO serijų ČIPAI 2.0 — progresas iki kito slenksčio + prizas +
   // pavojaus būsena; tap → „Serijų kelias" (savininko užsakymas 08-12)
   window._streakRowCache = s;
+  renderStreakChips(s, 'v-home-streak');
+  // PROFILIO langas (jei yra)
+  const container = document.getElementById('v-streaks');
+  if (!container) return;
+  return _loadStreaksProfile(container, s);
+}
+
+// 🔥 v448: serijų čipai — VIENA funkcija vaikui IR tėvui (savininko užsakymas 08-19:
+// „rodyk kaip vaikams toje pačioje vietoje taip pat tėvams"). Prefiksas skiriasi tik ID:
+// vaikas → 'v-home-streak', tėvas → 'tk-streak'. Logika, prizai, pavojus ir „Serijų kelias" — tie patys.
+function renderStreakChips(s, prefix) {
+  if (!s) return;
+  const trainingStreak = s.training_current || 0;
+  const weeklyStreak = s.weekly_current || 0;
+  const monthlyStreak = s.monthly_current || 0;
   const chipDefs = [
-    { id: 'v-home-streak-training', numId: 'v-home-streak-train-num', tp: 'training', label: 'Treniruotės', icon: 'streak', n: trainingStreak, color: '#FF4D00' },
-    { id: 'v-home-streak-weekly', numId: 'v-home-streak-week-num', tp: 'weekly', label: 'Savaitės', icon: 'kalendorius', n: weeklyStreak, color: '#4FC3F7' },
-    { id: 'v-home-streak-monthly', numId: 'v-home-streak-month-num', tp: 'monthly', label: 'Mėnesiai', icon: 'zenkliukai', n: monthlyStreak, color: '#BA68C8' }
+    { id: prefix + '-training', numId: prefix + '-train-num', tp: 'training', label: 'Treniruotės', icon: 'streak', n: trainingStreak, color: '#FF4D00' },
+    { id: prefix + '-weekly', numId: prefix + '-week-num', tp: 'weekly', label: 'Savaitės', icon: 'kalendorius', n: weeklyStreak, color: '#4FC3F7' },
+    { id: prefix + '-monthly', numId: prefix + '-month-num', tp: 'monthly', label: 'Mėnesiai', icon: 'zenkliukai', n: monthlyStreak, color: '#BA68C8' }
   ];
   chipDefs.forEach(d => {
     const el = document.getElementById(d.id);
@@ -18871,11 +18888,10 @@ async function loadStreaks() {
         <div style="font-size:7px;color:${danger ? '#FF9E40' : 'var(--mut)'};font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${danger ? `⚠️ ${danger.leftTxt}` : (next ? `dar ${next.in} → +${next.prize} EXP` : '')}</div>
       </div>`;
   });
-  
-  // PROFILIO langas (jei yra)
-  const container = document.getElementById('v-streaks');
-  if (!container) return;
-  
+}
+
+// Profilio serijų blokas (paliktas kaip buvo; konteinerio v-streaks šiuo metu HTML nėra)
+function _loadStreaksProfile(container, s) {
   // 3 streak konfigūracijos — v404: tikslas/prizas DINAMIŠKI pagal v3 slenksčius
   // (senos fiksuotos reikšmės 5→+30/4→+100/3→+200 buvo našlaitės funkcijos, niekada neveikė)
   const _mkCfg = (tp, icon, name, cur, best, earned, color, bg, bdr, rule) => {
