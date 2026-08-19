@@ -161,6 +161,19 @@ body.full-mobile-preview #pv .sc { height: 100% !important; min-height: 0 !impor
   body.am.portal-v:not(.full-mobile-preview) #pv .sc { height: auto !important; flex: none !important; }
 }
 
+/* 👨‍👩‍👧 TĖVŲ PORTALAS — FIXED LAYOUT (v445, kaip #pv/#ptr/#pk): telefone aukštis fiksuotas,
+   turinys scrollinasi .sa viduje, .bn2 visada vietoje (buvo VIENINTELIS portalas be šito —
+   dėl to apačios mygtukai „nusimušdavo"). Desktop grid (≥1024px) turi savo override. */
+#pt .ph { height: 780px; display: flex; flex-direction: column; }
+#pt .sc { min-height: 0 !important; height: 100%; flex: 1; }
+#pt .sa { min-height: 0; }
+@media (max-width: 500px) {
+  #pt .ph { height: 100vh !important; height: 100dvh !important; min-height: 0 !important; }
+  #pt .sc { height: 100% !important; }
+}
+body.full-mobile-preview #pt .ph { height: 780px !important; min-height: 0 !important; }
+body.full-mobile-preview #pt .sc { height: 100% !important; min-height: 0 !important; }
+
 /* 🃏 Klubo Analitikos sekcijų kortelės (gražesnės nei plikas sąrašas) */
 .k-sec{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;margin:0 16px 8px;transition:border-color .15s,transform .1s;}
 .k-sec:active{transform:scale(.99);border-color:rgba(255,77,0,.45);}
@@ -273,8 +286,10 @@ body.full-mobile-preview #k-desktop-nav { display: none !important; }
 /* 💻 DESKTOP LAYOUT — TĖVAI (body.portal-t): sidebar + centruotas turinys (kaip vaiko portale) */
 #t-desktop-nav { display: none; }
 body.full-mobile-preview #t-desktop-nav { display: none !important; }
-/* Versijos ženkliukas tėvų paskyroje nerodomas (savininko sprendimas 08-19); textContent lieka feedback'ui */
-body.portal-t #app-version { display: none !important; }
+/* Versijos ženkliukas prisijungus NERODOMAS (savininko „clean app" 08-19) — lieka tik login ekrane
+   ir admin rolei (diagnostika). textContent lieka DOM'e — feedback pranešimai versiją prideda toliau. */
+body.portal-t #app-version, body.portal-v #app-version,
+body.portal-tr #app-version, body.portal-k #app-version { display: none !important; }
 @media (min-width: 1024px) {
   body.am.portal-t:not(.full-mobile-preview) { padding: 0 !important; }
   body.am.portal-t:not(.full-mobile-preview) #pt { display: grid !important; grid-template-columns: 260px 1fr; height: 100vh; overflow: hidden; }
