@@ -1385,16 +1385,14 @@ async function openParentSettings() {
           </div>
         </div>
         <div style="padding:8px 16px 0;">
-          <a href="mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – duomenys/ištrynimas')}&body=${encodeURIComponent('Prašau (pažymėk):\n[ ] eksportuoti mano ir vaiko duomenis (GDPR)\n[ ] ištrinti paskyrą\n\n')}" style="text-decoration:none;display:block;">
-            <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-              <div style="font-size:28px;">${ico('dokumentas')}</div>
-              <div style="flex:1;">
-                <div style="font-size:13px;font-weight:800;color:white;">Duomenys ir paskyra</div>
-                <div style="font-size:11px;color:var(--mut);margin-top:2px;">Eksportas (GDPR) ar paskyros ištrynimas</div>
-              </div>
-              <div style="font-size:18px;color:var(--mut);">›</div>
+          <div onclick="openDataAccountModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;">${ico('dokumentas')}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Duomenys ir paskyra</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Eksportas (GDPR) ar paskyros ištrynimas</div>
             </div>
-          </a>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
         </div>
         <div style="padding:8px 16px 0;">
           <div onclick="openParentHelpModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -1432,6 +1430,7 @@ async function openParentSettings() {
         <div style="display:flex;gap:14px;justify-content:center;padding:0 16px 4px;">
           <a href="privatumo-politika.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Privatumo politika</a>
           <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Naudojimo taisyklės</a>
+          <a href="https://spobu.lt" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">spobu.lt</a>
         </div>
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
           SPOBU v1.0 · © 2026
@@ -1488,9 +1487,69 @@ function applyTrialBugFab(){
   const b = document.createElement('div');
   b.id = 'trial-bug-fab';
   b.onclick = () => { if (typeof openHelpReportModal === 'function') openHelpReportModal(); };
-  b.style.cssText = 'position:fixed;right:14px;bottom:86px;z-index:99990;display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#FF4D00,#FF7A33);color:#fff;border-radius:24px;padding:10px 14px;font-size:12px;font-weight:800;box-shadow:0 8px 22px rgba(255,77,0,.45);cursor:pointer;font-family:inherit;user-select:none;-webkit-tap-highlight-color:rgba(255,77,0,.25);';
-  b.innerHTML = '<span style="font-size:15px;">🐞</span> Klaida?';
+  // v443: kompaktiškas apskritimas KAIRĖJE (savininko pastaba — dešinėje trukdė spausti eilučių mygtukus)
+  b.style.cssText = 'position:fixed;left:10px;bottom:92px;z-index:99990;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FF4D00,#FF7A33);color:#fff;border-radius:50%;font-size:18px;box-shadow:0 6px 18px rgba(255,77,0,.4);opacity:.88;cursor:pointer;font-family:inherit;user-select:none;-webkit-tap-highlight-color:rgba(255,77,0,.25);';
+  b.title = 'Pranešti klaidą';
+  b.innerHTML = '🐞';
   document.body.appendChild(b);
+}
+
+// 📨 v443: „Susisiekti" — mailto be pašto appso telefone tyliai nieko nedaro,
+// todėl pirmiausia nukopijuojam adresą (matomas patvirtinimas), tada bandom atidaryti paštą.
+function contactSupport(subject) {
+  const em = SUPPORT_EMAIL;
+  try { navigator.clipboard?.writeText(em); } catch (e) {}
+  showToast(ico('pastas') + ' ' + em + ' — adresas nukopijuotas');
+  setTimeout(() => { try { window.location.href = 'mailto:' + em + '?subject=' + encodeURIComponent(subject || 'SPOBU – klausimas'); } catch (e) {} }, 400);
+}
+
+// 📄 v443: „Duomenys ir paskyra" — vietoje mailto (telefone be pašto appso paspaudus NIEKO
+// nevyksta) — vidinis modalas, prašymas keliauja per tą patį feedback srautą pas admin.
+function openDataAccountModal() {
+  const old = document.getElementById('data-account-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'data-account-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100005;align-items:center;justify-content:center;padding:20px;';
+  m.innerHTML = `
+    <div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:20px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:6px;">${ico('dokumentas')} DUOMENYS IR PASKYRA</div>
+      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:14px;">Pasirink prašymą — jis keliaus administratoriui, atsakymą gausi „Mano žinutėse" (ir el. paštu, jei reikės failų).</div>
+      <button onclick="submitDataRequest('eksportas', this)" style="width:100%;margin-bottom:8px;padding:13px;background:var(--card);border:.5px solid var(--bdr);color:white;border-radius:12px;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:10px;"><span style="font-size:18px;">${ico('dokumentas')}</span> Gauti savo duomenų kopiją (GDPR)</button>
+      <button onclick="submitDataRequest('istrynimas', this)" style="width:100%;margin-bottom:12px;padding:13px;background:rgba(239,68,68,.08);border:.5px solid rgba(239,68,68,.3);color:#EF4444;border-radius:12px;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:10px;"><span style="font-size:18px;">${ico('trinti')}</span> Prašyti ištrinti paskyrą</button>
+      <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Arba parašyk tiesiogiai: <b style="color:rgba(255,255,255,.8);">${SUPPORT_EMAIL}</b></div>
+      <button onclick="document.getElementById('data-account-modal').remove()" style="width:100%;padding:12px;background:var(--card);border:.5px solid var(--bdr);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">Uždaryti</button>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+}
+
+async function submitDataRequest(kind, btn) {
+  const isDel = kind === 'istrynimas';
+  if (isDel) {
+    const ok = await appConfirm('Ar tikrai nori pateikti paskyros IŠTRYNIMO prašymą? Administratorius susisieks patvirtinti.');
+    if (!ok) return;
+  }
+  if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
+  try {
+    const appV = document.getElementById('app-version')?.textContent || '';
+    const fullName = `${currentProfile?.first_name || ''} ${currentProfile?.last_name || ''}`.trim();
+    const { data: ins, error } = await sb.from('feedback').insert({
+      user_id: currentUser?.id || null,
+      role: currentProfile?.role || null,
+      name: fullName || null,
+      message: isDel ? '[DUOMENŲ UŽKLAUSA] Prašau IŠTRINTI mano paskyrą ir duomenis.' : '[DUOMENŲ UŽKLAUSA] Prašau atsiųsti mano (ir mano vaikų) duomenų kopiją (GDPR eksportas).',
+      app_version: appV,
+      type: 'bug'
+    }).select('id');
+    if (error) throw error;
+    if (!ins || !ins.length) throw new Error('Prašymas neįrašytas — parašyk ' + SUPPORT_EMAIL);
+    showToast(ico('atlikta') + ' Prašymas išsiųstas — atsakymas bus „Mano žinutėse"');
+    const dm = document.getElementById('data-account-modal'); if (dm) dm.remove();
+  } catch (e) {
+    console.warn('submitDataRequest', e);
+    showToast(ico('klaida') + ' ' + (e?.message || 'Nepavyko išsiųsti'), 'error', 7000);
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  }
 }
 
 // 🐞 Problemos pranešimo forma → įrašo į `feedback` lentelę (mato admin)
@@ -1529,7 +1588,7 @@ async function submitParentReport(btn) {
       type: 'bug'
     }).select('id');
     if (error) throw error;
-    if (!ins || !ins.length) throw new Error('Pranešimas neįrašytas — parašyk pagalba@spobu.lt');
+    if (!ins || !ins.length) throw new Error('Pranešimas neįrašytas — parašyk ' + SUPPORT_EMAIL);
     showToast(ico('atlikta')+' Ačiū! Pranešimas išsiųstas administratoriui');
     const rm = document.getElementById('parent-report-modal'); if (rm) rm.remove();
     const hm = document.getElementById('parent-help-modal'); if (hm) hm.remove();
@@ -1543,10 +1602,7 @@ async function submitParentReport(btn) {
 // ❓ Pagalba ir atsiliepimai — Susisiekti / Pranešti problemą / DUK
 function openParentHelpModal() {
   // SUPPORT_EMAIL — globalus const (viršuje, prie POLICY_VERSION)
-  const appV = (document.getElementById('app-version')?.textContent || '');
-  const contactHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – klausimas')}`;
-  const bugBody = encodeURIComponent(`Aprašyk, kas nutiko:\n\n• Ką dariau: \n• Kas nutiko: \n• Vaiko vardas: \n• Telefonas / naršyklė: \n• App versija: ${appV}\n`);
-  const bugHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – problema / klaida')}&body=${bugBody}`;
+  // v443: mailto nuorodos pakeistos contactSupport() / openParentReportModal srautais
   const faq = [
     ['Kaip matau vaiko progresą?', 'Pagrindiniame lange — vaiko hero, reitingai, artimiausios varžybos. „Kelias" — statistika pagal kategorijas. „Pasiekimai" — naujausi medaliai, iššūkiai ir rekordai.'],
     ['Kodėl negaliu pateikti rezultatų?', 'Tu esi stebėtojas — pateikti iššūkius/rezultatus gali tik pats vaikas savo paskyroje. Tu matai progresą ir palaikai.'],
@@ -1568,13 +1624,13 @@ function openParentHelpModal() {
         <button onclick="document.getElementById('parent-help-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:16px 18px 28px;">
-        <a href="${contactHref}" style="text-decoration:none;display:block;margin-bottom:8px;">
+        <div onclick="contactSupport()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(99,102,241,.2);">
           <div style="background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.05));border:.5px solid rgba(99,102,241,.4);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">${ico('pastas')}</div>
-            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Parašyk klausimą el. paštu</div></div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">${SUPPORT_EMAIL} — paspaudus adresas nusikopijuos</div></div>
             <div style="font-size:18px;color:#8B5CF6;">›</div>
           </div>
-        </a>
+        </div>
         <div onclick="openParentReportModal()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
           <div style="background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">${ico('bug')}</div>
@@ -1596,6 +1652,13 @@ function openParentHelpModal() {
             <div style="font-size:18px;color:var(--mut);">›</div>
           </div>
         </div>
+        <a href="https://spobu.lt" target="_blank" rel="noopener" style="text-decoration:none;display:block;margin-bottom:16px;">
+          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">${ico('svetaine')}</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Apie SPOBU — spobu.lt</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Daugiau informacijos mūsų svetainėje</div></div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
+        </a>
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:4px 2px 8px;">${ico('pagalba')} DAŽNIAUSI KLAUSIMAI</div>
         ${faqHtml}
       </div>
@@ -1640,7 +1703,7 @@ async function submitHelpReport(btn) {
       type: 'bug'
     }).select('id');
     if (error) throw error;
-    if (!ins || !ins.length) throw new Error('Pranešimas neįrašytas — parašyk pagalba@spobu.lt');
+    if (!ins || !ins.length) throw new Error('Pranešimas neįrašytas — parašyk ' + SUPPORT_EMAIL);
     showToast(ico('atlikta')+' Ačiū! Pranešimas išsiųstas administratoriui');
     const rm = document.getElementById('help-report-modal'); if (rm) rm.remove();
     const hm = document.getElementById('help-modal'); if (hm) hm.remove();
@@ -1652,8 +1715,7 @@ async function submitHelpReport(btn) {
 }
 
 function openHelpModal(who) {
-  const SUPPORT_EMAIL = 'pagalba@spobu.lt';
-  const contactHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU – klausimas')}`;
+  // v443: naudojamas globalus SUPPORT_EMAIL (info@spobu.lt) — lokalus pagalba@ šešėliavimas pašalintas
   const FAQ = {
     trainer: [
       ['Iš kur atsiranda grupės ir vaikai?', 'Grupes kuria ir vaikus priskiria KLUBAS. Tu matai tau priskirtas grupes (kaip pagrindinis treneris arba asistentas) ir valdai jų kasdienybę.'],
@@ -1686,13 +1748,13 @@ function openHelpModal(who) {
         <button onclick="document.getElementById('help-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:16px 18px 28px;">
-        <a href="${contactHref}" style="text-decoration:none;display:block;margin-bottom:8px;">
+        <div onclick="contactSupport()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(99,102,241,.2);">
           <div style="background:rgba(99,102,241,.12);border:.5px solid rgba(99,102,241,.4);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">${ico('pastas')}</div>
-            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Parašyk klausimą el. paštu</div></div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">${SUPPORT_EMAIL} — paspaudus adresas nusikopijuos</div></div>
             <div style="font-size:18px;color:#8B5CF6;">›</div>
           </div>
-        </a>
+        </div>
         <div onclick="openHelpReportModal()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
           <div style="background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">${ico('bug')}</div>
@@ -1714,6 +1776,13 @@ function openHelpModal(who) {
             <div style="font-size:18px;color:var(--mut);">›</div>
           </div>
         </div>
+        <a href="https://spobu.lt" target="_blank" rel="noopener" style="text-decoration:none;display:block;margin-bottom:16px;">
+          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">${ico('svetaine')}</div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Apie SPOBU — spobu.lt</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Daugiau informacijos mūsų svetainėje</div></div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
+        </a>
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:4px 2px 8px;">${ico('pagalba')} DAŽNIAUSI KLAUSIMAI</div>
         ${faqHtml}
       </div>
@@ -3168,6 +3237,7 @@ async function openMonthCard() {
         <button onclick="shareMonthCard()" style="flex:1;border:none;border-radius:13px;padding:14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;">${ico('programele')} Dalintis</button>
         <button onclick="document.getElementById('month-card-modal').remove()" style="flex:none;border-radius:13px;padding:14px 18px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);">Uždaryti</button>
       </div>
+      <div style="text-align:center;font-size:10.5px;color:rgba(255,255,255,.55);margin-top:9px;line-height:1.5;">👵 Nusiųsk seneliams, krikštatėviams ar draugams — vaikui tai dviguba šventė!</div>
     </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
@@ -15069,8 +15139,6 @@ function openClubAccountMenu(){
   const clubName = currentClub?.name || 'Klubas';
   const appV = document.getElementById('app-version')?.textContent || '';
   const SUP = SUPPORT_EMAIL;
-  const contactHref = `mailto:${SUP}?subject=${encodeURIComponent('SPOBU klubas – klausimas')}`;
-  const gdprHref = `mailto:${SUP}?subject=${encodeURIComponent('SPOBU klubas – duomenys/ištrynimas')}&body=${encodeURIComponent('Prašau (pažymėk):\n[ ] eksportuoti klubo duomenis (GDPR)\n[ ] ištrinti klubo paskyrą\n\nKlubas: '+clubName+'\nApp: '+appV+'\n')}`;
   const m = document.createElement('div'); m.id = 'club-acct-menu';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100003;align-items:flex-end;justify-content:center;';
   m.onclick = (e) => { if (e.target === m) m.remove(); };
@@ -15126,6 +15194,11 @@ function openClubAccountMenu(){
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Naudojimo taisyklės</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Paslaugos sąlygos</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div></a>
+      <a href="https://spobu.lt" target="_blank" rel="noopener" style="text-decoration:none;display:block;"><div style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">${ico('svetaine')}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Apie SPOBU — spobu.lt</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Daugiau informacijos svetainėje</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div></a>
       <div onclick="document.getElementById('club-acct-menu').remove();openClubRolesGuide();" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('info')}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Kaip veikia SPOBU</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Rolės: ką daro klubas, treneris, tėvas, vaikas</div></div>
@@ -15146,16 +15219,16 @@ function openClubAccountMenu(){
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Mano žinutės</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Jūsų pranešimai ir SPOBU atsakymai</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
-      <a href="${contactHref}" style="text-decoration:none;display:block;"><div style="${rs}">
+      <div onclick="contactSupport('SPOBU klubas – klausimas')" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('pastas')}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Klausimas el. paštu (${SUP})</div></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">${SUP} — paspaudus adresas nusikopijuos</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
-      </div></a>
-      <a href="${gdprHref}" style="text-decoration:none;display:block;"><div style="${rs}">
+      </div>
+      <div onclick="openDataAccountModal()" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('dokumentas')}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Duomenys ir paskyra</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Eksportas (GDPR) ar paskyros ištrynimas</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
-      </div></a>
+      </div>
       <div style="text-align:center;font-size:10px;color:var(--mut);margin:12px 0 14px;">SPOBU · ${appV}</div>
       <button onclick="document.getElementById('club-acct-menu').remove();appConfirm('Atsijungti iš klubo paskyros?').then(function(ok){if(ok)doLogout();})" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(239,68,68,.1);border:.5px solid rgba(239,68,68,.3);color:#EF4444;padding:14px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;"><span style="font-size:17px;">🚪</span> Atsijungti</button>
     </div>
@@ -24753,16 +24826,14 @@ async function openTrainerSettings() {
 
         <!-- ${ico('dokumentas')} GDPR / PASKYRA -->
         <div style="padding:8px 16px 0;">
-          <a href="mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('SPOBU treneris – duomenys/ištrynimas')}&body=${encodeURIComponent('Prašau (pažymėk):\n[ ] eksportuoti mano duomenis (GDPR)\n[ ] ištrinti paskyrą\n\n')}" style="text-decoration:none;display:block;">
-            <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-              <div style="font-size:28px;">${ico('dokumentas')}</div>
-              <div style="flex:1;">
-                <div style="font-size:13px;font-weight:800;color:white;">Duomenys ir paskyra</div>
-                <div style="font-size:11px;color:var(--mut);margin-top:2px;">Eksportas (GDPR) ar paskyros ištrynimas</div>
-              </div>
-              <div style="font-size:18px;color:var(--mut);">›</div>
+          <div onclick="openDataAccountModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;">${ico('dokumentas')}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">Duomenys ir paskyra</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Eksportas (GDPR) ar paskyros ištrynimas</div>
             </div>
-          </a>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
         </div>
 
         <!-- ${ico('pagalba')} PAGALBA IR ATSILIEPIMAI -->
@@ -24785,6 +24856,7 @@ async function openTrainerSettings() {
         <div style="display:flex;gap:14px;justify-content:center;padding:0 16px 4px;">
           <a href="privatumo-politika.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Privatumo politika</a>
           <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Naudojimo taisyklės</a>
+          <a href="https://spobu.lt" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">spobu.lt</a>
         </div>
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
           SPOBU v1.0 · © 2026
@@ -37799,6 +37871,7 @@ async function openKidSettings() {
         <div style="display:flex;gap:14px;justify-content:center;padding:0 16px 4px;">
           <a href="privatumo-politika.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Privatumo politika</a>
           <a href="naudojimo-taisykles.html" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">Naudojimo taisyklės</a>
+          <a href="https://spobu.lt" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">spobu.lt</a>
         </div>
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
           SPOBU v1.0 · © 2026
@@ -38002,7 +38075,7 @@ function openInstallAppModal() {
       <!-- iPHONE -->
       <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #007AFF;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <div style="font-size:24px;">${ico('mityba')}</div>
+          <div style="font-size:24px;">${ico('programele')}</div>
           <div style="font-size:14px;font-weight:800;color:#007AFF;">iPHONE / iPAD (Safari)</div>
         </div>
         <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.7;">
