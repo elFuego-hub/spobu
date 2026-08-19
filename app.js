@@ -1723,8 +1723,8 @@ const WELCOME_CONTENT = {
     icon: 'dirzas', title: 'SVEIKI ATVYKĘ Į SPOBU!', cta: 'PRADĖTI',
     items: [
       ['vaikas',     'SPOBU — vaiko sporto motyvacijos programėlė: progresas, iššūkiai, diržai ir AI įžvalgos'],
-      ['premium',    'Vaiko sporto kelias — <b style="color:white;">nemokamas</b>. <b style="color:white;">Premium</b> atrakina gilesnę statistiką ir AI įžvalgas — planą pasirinksi, kada norėsi'],
-      ['bug',        'Tai pradinė versija — tobuliname kasdien. Radęs klaidą: Pagalba → „Pranešti problemą". Atsakymą gausi ten pat („Mano žinutės")'],
+      ['premium',    'Esate <b style="color:white;">pirmieji bandytojai</b> — jums <b style="color:white;">viskas įjungta nemokamai</b>: ir vaiko žaidimas, ir gili statistika, ir AI įžvalgos'],
+      ['bug',        'Tai pradinė versija — tobuliname kasdien. Radę klaidą: Pagalba → „Pranešti problemą". Atsakymą gausite ten pat („Mano žinutės")'],
       ['pranesimai', 'Įjunk push pranešimus nustatymuose — nepraleisi trenerio žinučių']
     ]
   },
@@ -2503,10 +2503,11 @@ async function computeParentKidRanks(kid) {
   try {
     const clubId = await getActiveKidClubId();
     if (!clubId || !kid) return res;
-    const { data: profs } = await sb.from('profiles').select('id').eq('club_id', clubId).eq('role', 'kid');
-    const pids = (profs || []).map(p => p.id);
-    if (pids.length === 0) return res;
-    const { data: allKids } = await sb.from('kids').select('id, total_exp, gender, birth_date, birth_year').in('user_id', pids).eq('approval_status', 'approved');
+    // 🏆 v441 FIX (reitingų faktas): VISI klubo approved vaikai per kids.club_id, ne tik
+    // turintys savo paskyrą (profiles.role='kid' → user_id). Be šio fix'o vaikai be telefono
+    // iškrisdavo ir tėvas namų kortelėje matydavo melagingą #1. Ta pati klaida buvo ir vaiko
+    // loadRankings — abi suderintos su leaderboard_entries RPC tiesa.
+    const { data: allKids } = await sb.from('kids').select('id, total_exp, gender, birth_date, birth_year').eq('club_id', clubId).eq('approval_status', 'approved');
     if (!allKids || !allKids.length) return res;
     const cat = parentKidCategory(kid);
     // Kategorijos etiketė (kaip vaiko: „(vaikinai, 8-10 m.)" arba „(visame klube)")
@@ -18336,25 +18337,16 @@ async function loadRankings() {
   if (!currentKid?.id || !_rkClubId) return;
   console.log('[loadRankings] start, club_id:', _rkClubId);
 
-  // 1) Surasti VISUS vaikus klube (per profiles lentelę)
-  const { data: clubProfiles } = await sb.from('profiles')
-    .select('id')
-    .eq('club_id', _rkClubId)
-    .eq('role', 'kid');
-  
-  if (!clubProfiles || clubProfiles.length === 0) {
-    console.log('[loadRankings] nera vaiku klube');
-    return;
-  }
-  
-  const profileIds = clubProfiles.map(p => p.id);
-  
-  // 2) Užkrauti kids su gender + birth_date (filtravimui) - TIK approved (kaip detali statistika)
+  // 🏆 v441 FIX (reitingų faktas): imam VISUS klubo approved vaikus per kids.club_id.
+  // Anksčiau ėjom per profiles.role='kid' → user_id, todėl į reitingą pateko TIK vaikai,
+  // turintys SAVO paskyrą. Vaikai be telefono (kuriuos valdo tik tėvai) iškrisdavo → paskyrą
+  // turintis vaikas melagingai atrodydavo #1 savo grupėje. Statistikos ekrano leaderboard_entries
+  // RPC visada ėmė visus klubo vaikus — dabar namų kortelė suderinta su ta pačia tiesa.
   const { data: allKids } = await sb.from('kids')
     .select('id, user_id, total_exp, gender, birth_date, birth_year')
-    .in('user_id', profileIds)
+    .eq('club_id', _rkClubId)
     .eq('approval_status', 'approved');
-  
+
   if (!allKids || allKids.length === 0) return;
   
   // 3) FILTRUOJAM pagal vaiko kategoriją (lytis + amžiaus grupė)
