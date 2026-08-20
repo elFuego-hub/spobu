@@ -4349,6 +4349,7 @@ async function openFbStudio() {
     _fbState = {
       tpl: 'klubas', kidId: heroes[0]?.id || null,
       selEx: null,   // v472: pratimų pasirinkimas (Set su numsRows indeksais; null = auto)
+      exOpen: false, // v475: ar išskleistas pilnas chip'ų sąrašas
       d: {
         monthLabel: LT_GEN[now.getMonth()], year: now.getFullYear(),
         clubName: currentClub?.name || 'SPOBU klubas', clubLogo,
@@ -4370,6 +4371,7 @@ async function openFbStudio() {
       <div id="fb-text" onclick="_fbCopyText()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:10px 12px;font-size:11.5px;line-height:1.55;cursor:pointer;white-space:pre-wrap;"></div>
       <button onclick="_fbShare()" id="fb-share-btn" style="width:100%;padding:13px;margin-top:10px;background:linear-gradient(90deg,#1877F2,#4293f5);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📣 Dalintis / atsisiųsti paveiksliuką</button>`;
     _pfSheet('fb-studio-modal', '📣 POSTŲ STUDIJA', body);
+    if (typeof _fbRestoreSel === 'function') _fbRestoreSel();   // v475: atkuriam įsimintą pasirinkimą
     _fbRender();
   } catch (e) { console.error('[fb studio]', e); showToast(ico('klaida') + ' Nepavyko surinkti duomenų', 'error', 4000); }
 }
@@ -4389,15 +4391,21 @@ function _fbRender() {
         : '<div style="font-size:10.5px;color:#EF4444;margin-top:6px;">Nėra vaikų su tėvų media sutikimu — kario posto skelbti negalima</div>';
     } else if ((st.tpl === 'klubas' || st.tpl === 'kvietimas') && (st.d.numsRows || []).length > 3) {
       // 🎛️ v472: adminas pats pasirenka, kurie pratimai eina į postą (max 3; Auto = pagal kodą)
+      // v475: kai pratimų daug — top 10 + pažymėti, likusius atskleidžia „Rodyti visus (N)"
       const rows = st.d.numsRows;
       const sel = st.selEx;
       const isOn = i => sel ? sel.has(i) : i < 3;
+      const SHOW = 10;
+      const expanded = !!st.exOpen || rows.length <= SHOW;
+      const idxs = rows.map((r, i) => i).filter(i => expanded || i < SHOW || isOn(i)).slice(0, 40);
       exEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;margin-bottom:4px;">
           <span style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:.8px;">PRATIMAI KORTELĖJE · ${sel ? sel.size : Math.min(3, rows.length)}/3</span>
           ${sel ? `<span onclick="_fbExAuto()" style="font-size:10px;color:#6aa9f7;font-weight:700;cursor:pointer;">↺ Auto</span>` : ''}
         </div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;">${rows.slice(0, 20).map((r, i) =>
-          `<div onclick="_fbToggleEx(${i})" style="${chip(isOn(i))}">${escapeHtml(r.val)} ${escapeHtml(String(r.name || '').slice(0, 26))}</div>`).join('')}</div>`;
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">${idxs.map(i => { const r = rows[i];
+          return `<div onclick="_fbToggleEx(${i})" style="${chip(isOn(i))}">${escapeHtml(r.val)} ${escapeHtml(String(r.name || '').slice(0, 26))}</div>`; }).join('')}
+          ${!expanded ? `<div onclick="_fbExMore()" style="${chip(false)}">▾ Rodyti visus (${rows.length})</div>`
+                      : (rows.length > SHOW ? `<div onclick="_fbExLess()" style="${chip(false)}">▴ Rodyti mažiau</div>` : '')}</div>`;
     } else exEl.innerHTML = '';
   }
   const prev = document.getElementById('fb-prev');
@@ -4412,6 +4420,27 @@ function _fbSelRows(d){
   const sel = _fbState?.selEx;
   return sel ? rows.filter((_, i) => sel.has(i)) : rows.slice(0, 3);
 }
+// v475: klubo pasirinkimas įsimenamas pagal pratimo PAVADINIMĄ (indeksai kas mėnesį keičiasi)
+function _fbSaveSel(){
+  try {
+    const st = _fbState; if (!st || !currentClub?.id) return;
+    const key = 'spobu_fb_selex_' + currentClub.id;
+    if (st.selEx){ const rows = st.d.numsRows || []; localStorage.setItem(key, JSON.stringify([...st.selEx].map(i => rows[i]?.name).filter(Boolean))); }
+    else localStorage.removeItem(key);
+  } catch(_){}
+}
+function _fbRestoreSel(){
+  try {
+    const st = _fbState; if (!st || !currentClub?.id) return;
+    const raw = localStorage.getItem('spobu_fb_selex_' + currentClub.id);
+    if (!raw) return;
+    const rows = st.d.numsRows || [];
+    const idx = new Set();
+    (JSON.parse(raw) || []).forEach(nm => { const i = rows.findIndex(r => r.name === nm); if (i >= 0 && idx.size < 3) idx.add(i); });
+    if (idx.size) st.selEx = idx;
+    else localStorage.removeItem('spobu_fb_selex_' + currentClub.id);   // pratimų nebėra — grįžtam į auto
+  } catch(_){}
+}
 function _fbToggleEx(i){
   const st = _fbState; if (!st) return;
   if (!st.selEx) st.selEx = new Set([0, 1, 2].filter(x => x < (st.d.numsRows || []).length));   // startas nuo auto top 3
@@ -4420,9 +4449,12 @@ function _fbToggleEx(i){
     if (st.selEx.size >= 3){ showToast(ico('ispejimas') + ' Kortelėje telpa 3 pratimai — pirma nuimk kurį nors', 'error', 3000); return; }
     st.selEx.add(i);
   }
+  _fbSaveSel();   // v475: įsimenam kitam kartui
   _fbRender();
 }
-function _fbExAuto(){ if (_fbState){ _fbState.selEx = null; _fbRender(); } }
+function _fbExAuto(){ if (_fbState){ _fbState.selEx = null; _fbSaveSel(); _fbRender(); } }
+function _fbExMore(){ if (_fbState){ _fbState.exOpen = true; _fbRender(); } }
+function _fbExLess(){ if (_fbState){ _fbState.exOpen = false; _fbRender(); } }
 function _fbHtml(st) {
   const esc = escapeHtml, d = st.d;
   // 📊 v471: „Mėnesio suvestinė" — buvusi atskira kortelė, dabar studijos šablonas.
@@ -4456,11 +4488,15 @@ function _fbHtml(st) {
   if (st.tpl === 'kvietimas') {
     // v472: jei adminas pasirinko pratimus — faktai iš jų; auto — iš visų pagal „įspūdingumo" balą
     const facts = _cardFacts({ numsRows: st.selEx ? _fbSelRows(d) : d.numsRows }).slice(0, 3);
+    // v473: tas pats palyginimas nekartojamas (105 km ir 60 km abu gaudavo „iki Kauno" —
+    // antram ir toliau rodom tik skaičių, be palyginimo eilutės)
+    const _seenSm = new Set();
+    const _smOf = f => { const s = String(f.small || ''); if (!s || _seenSm.has(s)) return null; _seenSm.add(s); return s; };
     return `<div style="padding:44px 36px 26px;color:#fff;font-family:'Segoe UI',Arial,sans-serif;text-align:center;background:#0e1420;border:1px solid rgba(79,195,247,.35);">
       ${head}
       <div style="font-size:30px;font-weight:800;color:#4FC3F7;margin-top:24px;line-height:1.3;">AR ĮVEIKTUM<br>MŪSŲ VAIKUS? 😏</div>
       <div style="text-align:left;margin-top:24px;">
-        ${facts.map(f => `<div style="margin-bottom:14px;font-size:19px;">${f.icon} <b style="color:#FF7A33;">${esc(String(f.big))}</b> ${esc(String(f.name || '').toLowerCase())}<div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:2px;">${esc(f.small)}</div></div>`).join('') || `<div style="font-size:16px;color:rgba(255,255,255,.7);text-align:center;">${d.kidsCount} vaikų · ${d.attCount} apsilankymų per mėnesį</div>`}
+        ${facts.map(f => { const sm = _smOf(f); return `<div style="margin-bottom:14px;font-size:19px;">${f.icon} <b style="color:#FF7A33;">${esc(String(f.big))}</b> ${esc(String(f.name || '').toLowerCase())}${sm ? `<div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:2px;">${esc(sm)}</div>` : ''}</div>`; }).join('') || `<div style="font-size:16px;color:rgba(255,255,255,.7);text-align:center;">${d.kidsCount} vaikų · ${d.attCount} apsilankymų per mėnesį</div>`}
       </div>
       <div style="background:#E8560A;border-radius:12px;padding:14px;margin-top:20px;font-size:17px;font-weight:800;">Atvesk savo vaiką išbandyti 🥋</div>
       ${foot}
@@ -21931,7 +21967,7 @@ async function _tpsFromProfile(){
 async function openTrainerPostStudio(groupId){
   const g = (trainerGroupsCache || []).find(x => x.id === groupId);
   if (!g){ showToast(ico('ispejimas')+' Pirma atidaryk grupę', 'error'); return; }
-  _tpsState = { groupId, group: g, tpl: 'photo', photo: null, canvas: null, d: null, sel: {} };   // sel: v472 — pratimų pasirinkimas po šabloną (null/nėra = auto top 8)
+  _tpsState = { groupId, group: g, tpl: 'photo', photo: null, canvas: null, d: null, sel: {}, exOpen: false };   // sel: v472 — pratimų pasirinkimas po šabloną (nėra = auto top 8); exOpen: v475 — pilnas chip'ų sąrašas
   _pfSheet('tps-modal', '📣 POSTŲ STUDIJA', `
     <div style="font-size:11px;color:var(--mut);margin-bottom:10px;">${escapeHtml(g.name || 'Grupė')}</div>
     <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;" class="no-scrollbar" id="tps-tpls"></div>
@@ -22175,6 +22211,7 @@ async function _tpsSet(k){
       <button onclick="_tpsPickPhoto()" style="flex:1;background:var(--card);border:.5px dashed var(--bdr);color:rgba(255,255,255,.8);border-radius:11px;padding:11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">${ico('nuotrauka')} ${s.photo ? 'Keisti nuotrauką' : 'Pridėti nuotrauką'}</button>
       ${s.photo ? `<button onclick="_tpsClearPhoto()" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:11px;padding:11px 14px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">Be nuotraukos</button>` : ''}
     </div>`;
+  if (typeof _tpsRestoreSel === 'function') _tpsRestoreSel();     // v475: atkuriam įsimintą pasirinkimą
   if (typeof _tpsRenderExRow === 'function') _tpsRenderExRow();   // v472: pratimų pasirinkimo chip'ai
   await _tpsRender();
 }
@@ -22201,41 +22238,77 @@ function _tpsCurList(){
   if (s.tpl === 'month') return d.monthTotals || [];
   return (d.todayTotals || []).length ? d.todayTotals : (d.weekTotals || []);   // today ir full — kaip kortelėje
 }
+// v475: pasirinkimas ĮSIMENAMAS (localStorage, pagal grupę+šabloną) — kad treneriui
+// nereikėtų kaskart rankioti chip'ų iš naujo. „Auto" ištrina įsiminimą.
+function _tpsExKeyOf(t){ return t.title + '|' + t.unit; }
+function _tpsSelStoreKey(){ const s = _tpsState; return 'spobu_tps_sel_' + (s?.groupId || '') + '_' + (s?.tpl || ''); }
+function _tpsRestoreSel(){
+  const s = _tpsState; if (!s) return;
+  s.sel = s.sel || {};
+  if (s.sel[s.tpl] !== undefined) return;   // šioje sesijoje jau liesta — nebeperrašinėjam
+  try {
+    const raw = localStorage.getItem(_tpsSelStoreKey());
+    if (!raw) return;
+    const have = new Set(_tpsCurList().map(_tpsExKeyOf));
+    const valid = (JSON.parse(raw) || []).filter(k => have.has(k));   // pratimai keičiasi — negyvus išmetam
+    if (valid.length) s.sel[s.tpl] = new Set(valid);
+    else localStorage.removeItem(_tpsSelStoreKey());
+  } catch(_){}
+}
+function _tpsSaveSel(){
+  const s = _tpsState; if (!s) return;
+  try {
+    const set = (s.sel || {})[s.tpl];
+    if (set) localStorage.setItem(_tpsSelStoreKey(), JSON.stringify([...set]));
+    else localStorage.removeItem(_tpsSelStoreKey());
+  } catch(_){}
+}
 function _tpsRenderExRow(){
   const s = _tpsState; const el = document.getElementById('tps-ex-row');
   if (!s || !el) return;
   const list = _tpsCurList();
   if (list.length < 2){ el.innerHTML = ''; return; }
   const sel = (s.sel || {})[s.tpl] || null;
-  const isOn = (t, i) => sel ? sel.has(t.title + '|' + t.unit) : i < 8;
+  const isOn = (t, i) => sel ? sel.has(_tpsExKeyOf(t)) : i < 8;
   const chip = (on) => `padding:6px 10px;border-radius:99px;font-size:10.5px;font-weight:700;cursor:pointer;border:.5px solid ${on ? 'rgba(255,122,51,.55)' : 'var(--bdr)'};background:${on ? 'rgba(255,122,51,.15)' : 'var(--card)'};color:${on ? '#FF9E40' : 'var(--mut)'};white-space:nowrap;`;
   const selN = sel ? sel.size : Math.min(8, list.length);
+  // v475: kai pratimų daug — rodom top 10 + visus PAŽYMĖTUS (kad aktyvus nepasislėptų),
+  // likusius atskleidžia „Rodyti visus (N)".
+  const SHOW = 10;
+  const expanded = !!s.exOpen || list.length <= SHOW;
+  const idx = list.map((t, i) => i).filter(i => expanded || i < SHOW || isOn(list[i], i));
   el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
       <span style="font-size:9.5px;color:var(--mut);font-weight:800;letter-spacing:.8px;">PRATIMAI KORTELĖJE · ${selN}/8</span>
       ${sel ? `<span onclick="_tpsExAuto()" style="font-size:10px;color:var(--br);font-weight:700;cursor:pointer;">↺ Auto (top 8)</span>` : ''}
     </div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;">${list.slice(0, 24).map((t, i) =>
-      `<div onclick="_tpsToggleEx(${i})" style="${chip(isOn(t, i))}">${t.total.toLocaleString('lt-LT')} ${escapeHtml((t.unit || '').slice(0, 12))} ${escapeHtml(t.title.slice(0, 26))}</div>`).join('')}
+    <div style="display:flex;gap:5px;flex-wrap:wrap;">${idx.map(i => { const t = list[i];
+      return `<div onclick="_tpsToggleEx(${i})" style="${chip(isOn(t, i))}">${t.total.toLocaleString('lt-LT')} ${escapeHtml((t.unit || '').slice(0, 12))} ${escapeHtml(t.title.slice(0, 26))}</div>`; }).join('')}
+      ${!expanded ? `<div onclick="_tpsExMore()" style="${chip(false)}">▾ Rodyti visus (${list.length})</div>`
+                  : (list.length > SHOW ? `<div onclick="_tpsExLess()" style="${chip(false)}">▴ Rodyti mažiau</div>` : '')}
     </div>`;
 }
+function _tpsExMore(){ if (_tpsState){ _tpsState.exOpen = true; _tpsRenderExRow(); } }
+function _tpsExLess(){ if (_tpsState){ _tpsState.exOpen = false; _tpsRenderExRow(); } }
 async function _tpsToggleEx(i){
   const s = _tpsState; if (!s) return;
   const list = _tpsCurList(); const it = list[i]; if (!it) return;
-  const key = it.title + '|' + it.unit;
+  const key = _tpsExKeyOf(it);
   s.sel = s.sel || {};
   let set = s.sel[s.tpl];
-  if (!set){ set = new Set(list.slice(0, 8).map(t => t.title + '|' + t.unit)); s.sel[s.tpl] = set; }   // startas nuo auto top 8
+  if (!set){ set = new Set(list.slice(0, 8).map(_tpsExKeyOf)); s.sel[s.tpl] = set; }   // startas nuo auto top 8
   if (set.has(key)) set.delete(key);
   else {
     if (set.size >= 8){ showToast(ico('ispejimas') + ' Kortelėje telpa iki 8 pratimų — pirma nuimk kurį nors', 'error', 3000); return; }
     set.add(key);
   }
+  _tpsSaveSel();   // v475: įsimenam kitam kartui
   _tpsRenderExRow();
   await _tpsRender();
 }
 async function _tpsExAuto(){
   const s = _tpsState; if (!s) return;
-  if (s.sel) delete s.sel[s.tpl];
+  if (s.sel) s.sel[s.tpl] = undefined;
+  try { localStorage.removeItem(_tpsSelStoreKey()); } catch(_){}
   _tpsRenderExRow();
   await _tpsRender();
 }
@@ -29285,6 +29358,9 @@ function openClubFeesAnalytics(){
 
 // 💶 v470: DETALUS mokesčių sąrašas Analitikoje (perkeltas iš pagrindinio lango kortelės)
 // + Excel eksportas pagal mėnesius. Geltona = tik einamasis mėnuo, raudona = kaupiasi skola.
+// v475: + grupės filtras (dideliam klubui 200 vaikų sąrašas — per ilgas be filtro).
+let _feesSecCache = null;    // paskutiniai club_fee_debts duomenys (filtravimui be pakartotinio fetch)
+let _feesSecGroup = 'all';   // 'all' | group_id | 'none' (be grupės)
 async function loadClubFeesSection(){
   const el = document.getElementById('k-fees-anal-content'); if (!el || !currentClub?.id) return;
   if (typeof flagOn === 'function' && !flagOn('fees_enabled')){
@@ -29295,38 +29371,71 @@ async function loadClubFeesSection(){
   try {
     const { data, error } = await sb.rpc('club_fee_debts', { p_club: currentClub?.id || null });
     if (error) throw error;
-    const rows = data || [];
-    const paid = rows.filter(r => r.paid_current).length;
-    const debtors = rows.filter(r => r.debt_months > 0);
-    const senos = debtors.filter(r => r.debt_months > 1 || r.paid_current).length;
-    const list = debtors.length
-      ? debtors.map(r => {
-          const nm = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Vaikas';
-          const cur = !r.paid_current;
-          const tikSis = (r.debt_months === 1 && cur);   // skolingas tik už einamąjį mėnesį
-          const bg = tikSis ? 'rgba(234,179,8,.14)' : 'rgba(239,68,68,.14)';
-          const bd = tikSis ? 'rgba(234,179,8,.45)' : 'rgba(239,68,68,.45)';
-          const cl = tikSis ? '#EAB308' : '#ff9c9c';
-          const lbl = tikSis ? 'šį mėn.' : (r.debt_months + ' mėn.');
-          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:.5px solid var(--bdr);">
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:12.5px;font-weight:700;color:white;">${escapeHtml(nm)}</div>
-              <div style="font-size:9.5px;color:var(--mut);margin-top:1px;">${escapeHtml(r.group_name || 'be grupės')}${cur ? ' · neatnešė už šį mėnesį' : ''}</div>
-            </div>
-            <span style="flex-shrink:0;background:${bg};border:1px solid ${bd};color:${cl};font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;">${lbl}</span>
-          </div>`;
-        }).join('')
-      : '<div style="text-align:center;padding:16px;color:var(--grn);font-size:11.5px;font-weight:700;">Visi sumokėję — skolų nėra</div>';
-    el.innerHTML =
-      `<div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:10px;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--grn);line-height:1;">${paid}/${rows.length}</div>
-        <div style="font-size:10px;color:var(--mut);">sumokėjo už ${_feeMonthLT(_feeMonthKey(new Date()))}</div>
-      </div>` +
-      `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:0 2px 5px;">DAR NEATNEŠĖ · ${debtors.length}${senos ? ` <span style="color:#ff9c9c;">· iš jų ${senos} su senesne skola</span>` : ''}</div>` +
-      `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${list}</div>` +
-      `<button onclick="exportClubFeesCsv()" class="btn btnd" style="width:100%;margin:12px 0 0;">${ico('pastas')} EKSPORTUOTI Į EXCEL (CSV)</button>` +
-      `<div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Faile — lentelė pagal mėnesius (nuo įjungimo): kas sumokėjo, kas ne.<br>Žymi treneriai grupės lange. Tėvai ir vaikai šito nemato.</div>`;
+    _feesSecCache = data || [];
+    _feesSecGroup = 'all';
+    _feesSecRender();
   } catch(e){ console.error('[club-fees-sec]', e); el.innerHTML = _secErr(e.message); }
+}
+function _feesSecPick(g){ _feesSecGroup = g; _feesSecRender(); }
+function _feesSecRender(){
+  const el = document.getElementById('k-fees-anal-content'); if (!el) return;
+  const all = _feesSecCache || [];
+  // grupių chip'ai (rodomi tik kai grupių > 1)
+  const gMap = {};
+  all.forEach(r => { const id = r.group_id || 'none'; if (!gMap[id]) gMap[id] = { id, name: r.group_id ? (r.group_name || 'Grupė') : 'Be grupės', n: 0 }; gMap[id].n++; });
+  const gList = Object.values(gMap).sort((a, b) => a.name.localeCompare(b.name, 'lt'));
+  const chip = (on) => `padding:6px 11px;border-radius:99px;font-size:10.5px;font-weight:700;cursor:pointer;border:.5px solid ${on ? 'rgba(34,197,94,.55)' : 'var(--bdr)'};background:${on ? 'rgba(34,197,94,.15)' : 'var(--card)'};color:${on ? '#4ade80' : 'var(--mut)'};white-space:nowrap;`;
+  const chipsHtml = gList.length > 1
+    ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">
+        <div onclick="_feesSecPick('all')" style="${chip(_feesSecGroup === 'all')}">Visos · ${all.length}</div>
+        ${gList.map(g => `<div onclick="_feesSecPick('${g.id}')" style="${chip(_feesSecGroup === g.id)}">${escapeHtml(g.name)} · ${g.n}</div>`).join('')}
+      </div>` : '';
+  const rows = _feesSecGroup === 'all' ? all : all.filter(r => (r.group_id || 'none') === _feesSecGroup);
+  const paid = rows.filter(r => r.paid_current).length;
+  const debtors = rows.filter(r => r.debt_months > 0);
+  const senos = debtors.filter(r => r.debt_months > 1 || r.paid_current).length;
+  const list = debtors.length
+    ? debtors.map(r => {
+        const nm = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Vaikas';
+        const cur = !r.paid_current;
+        const tikSis = (r.debt_months === 1 && cur);   // skolingas tik už einamąjį mėnesį
+        const bg = tikSis ? 'rgba(234,179,8,.14)' : 'rgba(239,68,68,.14)';
+        const bd = tikSis ? 'rgba(234,179,8,.45)' : 'rgba(239,68,68,.45)';
+        const cl = tikSis ? '#EAB308' : '#ff9c9c';
+        const lbl = tikSis ? 'šį mėn.' : (r.debt_months + ' mėn.');
+        return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:.5px solid var(--bdr);">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12.5px;font-weight:700;color:white;">${escapeHtml(nm)}</div>
+            <div style="font-size:9.5px;color:var(--mut);margin-top:1px;">${escapeHtml(r.group_name || 'be grupės')}${cur ? ' · neatnešė už šį mėnesį' : ''}</div>
+          </div>
+          <span style="flex-shrink:0;background:${bg};border:1px solid ${bd};color:${cl};font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;">${lbl}</span>
+        </div>`;
+      }).join('')
+    : '<div style="text-align:center;padding:16px;color:var(--grn);font-size:11.5px;font-weight:700;">Visi sumokėję — skolų nėra</div>';
+  el.innerHTML = chipsHtml +
+    `<div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:10px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--grn);line-height:1;">${paid}/${rows.length}</div>
+      <div style="font-size:10px;color:var(--mut);">sumokėjo už ${_feeMonthLT(_feeMonthKey(new Date()))}</div>
+    </div>` +
+    `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:0 2px 5px;">DAR NEATNEŠĖ · ${debtors.length}${senos ? ` <span style="color:#ff9c9c;">· iš jų ${senos} su senesne skola</span>` : ''}</div>` +
+    `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${list}</div>` +
+    `<button onclick="exportClubFeesCsv()" class="btn btnd" style="width:100%;margin:12px 0 0;">${ico('pastas')} EKSPORTUOTI Į EXCEL (CSV)</button>` +
+    `<div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Faile — VISOS grupės, lentelė pagal mėnesius (nuo įjungimo): kas sumokėjo, kas ne.<br>Žymi treneriai grupės lange. Tėvai ir vaikai šito nemato.</div>`;
+}
+
+// 📄 v474: Supabase grąžina max 1000 eilučių per užklausą — dideliam klubui eksportas
+// tyliai nutrūktų (dalis vaikų atrodytų nežymėti/nesumokėję). Traukiam puslapiais iki galo.
+// build — funkcija, kuri kaskart sukonstruoja ŠVIEŽIĄ užklausą (builder vienkartinis).
+async function _fetchAll(build){
+  const out = [];
+  for (let from = 0; ; from += 1000){
+    const { data, error } = await build().range(from, from + 999);
+    if (error) throw error;
+    out.push(...(data || []));
+    if (!data || data.length < 1000) break;
+    if (out.length >= 200000) break;   // saugiklis nuo begalinio ciklo
+  }
+  return out;
 }
 
 // 📊 v470: mokesčių Excel — CSV (UTF-8 su BOM, Excel atidaro tiesiogiai).
@@ -29340,13 +29449,12 @@ async function exportClubFeesCsv(){
     let d = new Date(parseInt(start.split('-')[0], 10), parseInt(start.split('-')[1], 10) - 1, 1);
     const now = new Date();
     while (d <= now && months.length < 60){ months.push(_feeMonthKey(d)); d = new Date(d.getFullYear(), d.getMonth() + 1, 1); }
-    const [feesRes, kidsRes] = await Promise.all([
-      sb.from('member_fees').select('kid_id, period_key').eq('club_id', cid),
+    const [feesData, kidsRes] = await Promise.all([
+      _fetchAll(() => sb.from('member_fees').select('kid_id, period_key').eq('club_id', cid)),   // v474: puslapiais — 200 vaikų × 12 mėn. jau viršija 1000
       sb.rpc('club_fee_debts', { p_club: cid })
     ]);
-    if (feesRes.error) throw feesRes.error;
     if (kidsRes.error) throw kidsRes.error;
-    const paidSet = new Set((feesRes.data || []).map(f => f.kid_id + '|' + f.period_key));
+    const paidSet = new Set((feesData || []).map(f => f.kid_id + '|' + f.period_key));
     const kids = (kidsRes.data || []).slice().sort((a, b) =>
       (a.group_name || 'žžž').localeCompare(b.group_name || 'žžž', 'lt') || (a.first_name || '').localeCompare(b.first_name || '', 'lt'));
     const q = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
@@ -29377,14 +29485,19 @@ async function exportClubAttendanceCsv(){
     const gName = {}; (groups || []).forEach(g => { gName[g.id] = g.name || 'Grupė'; });
     const gIds = (groups || []).map(g => g.id);
     if (!gIds.length){ showToast(ico('klaida') + ' Nėra grupių', 'error'); return; }
-    const { data: att, error } = await sb.from('attendance').select('group_id, kid_id, present, session_date').in('group_id', gIds).order('session_date');
-    if (error) throw error;
-    const rows = att || [];
+    // v474: puslapiais (1000 eilučių riba) + 365 d. langas, kad po kelių metų stulpelių
+    // skaičius Excel'yje neišsipūstų iki šimtų (metų ataskaita — daugiau nei pakanka).
+    const cut365 = new Date(Date.now() - 365 * 86400000).toISOString().split('T')[0];
+    const rows = await _fetchAll(() => sb.from('attendance').select('group_id, kid_id, present, session_date').in('group_id', gIds).gte('session_date', cut365).order('session_date'));
     if (!rows.length){ showToast(ico('klaida') + ' Lankomumas dar nežymėtas', 'error'); return; }
     const dates = [...new Set(rows.map(r => r.session_date))].sort();
     const kidIds = [...new Set(rows.map(r => r.kid_id))];
-    const { data: kd } = await sb.from('kids').select('id, first_name, last_name').in('id', kidIds);
-    const kInfo = {}; (kd || []).forEach(k => { kInfo[k.id] = k; });
+    // vardus traukiam dalimis po 200 — kad in() sąrašas neišpūstų URL dideliam klubui
+    const kInfo = {};
+    for (let i = 0; i < kidIds.length; i += 200){
+      const { data: kd } = await sb.from('kids').select('id, first_name, last_name').in('id', kidIds.slice(i, i + 200));
+      (kd || []).forEach(k => { kInfo[k.id] = k; });
+    }
     const mark = {};   // kid|group|date → '1' / '0'
     rows.forEach(r => { mark[r.kid_id + '|' + r.group_id + '|' + r.session_date] = r.present ? '1' : '0'; });
     const pairs = [...new Set(rows.map(r => r.kid_id + '|' + r.group_id))].map(p => {
