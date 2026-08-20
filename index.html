@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=456">
+<link rel="stylesheet" href="styles.css?v=458">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v456</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v458</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2169,6 +2169,16 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
 
+
+    <!-- 📣 v458: nuoroda į postų studiją (pagrindinė vieta — grupės lange) -->
+    <div onclick="_tpsFromProfile()" style="margin:0 12px 6px;background:linear-gradient(135deg,rgba(24,119,242,.16),rgba(66,147,245,.04));border:.5px solid rgba(66,147,245,.4);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+      <svg class="ico" aria-hidden="true" style="font-size:20px;color:#7ab3ff;"><use href="#i-nuotrauka"></use></svg>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12.5px;font-weight:800;color:#fff;">Postų studija</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:2px;">Grupės nuotrauka, savaitės ir mėnesio suvestinės</div>
+      </div>
+      <div style="color:#7ab3ff;font-size:15px;">›</div>
+    </div>
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-kodas"></use></svg> Visų vaikų karjeros radaras (lytis × amžius) — sutraukiama -->
     <div style="margin:0 12px 6px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
       <div onclick="_trToggleSection('trp-career-body','trp-career-chev')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;min-height:40px;">
@@ -4467,7 +4477,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=456"></script>
+<script src="app.js?v=458"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
