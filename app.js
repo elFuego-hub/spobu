@@ -257,7 +257,8 @@ async function init() {
          // PR-04: dinaminiai fixed overlay be „-modal" galūnės — kūrėjai atkuria iš naujo
          'parent-kid-switcher', 'parent-notif-popup', 'duel-challenge-popup', 'settings-submodal',
          'club-notif-prefs', 'club-roles-guide', 'adm-club-edit', 'club-mgr-bar', 'club-onboard',
-         'trial-bug-fab', 'gift-popup'].forEach(id => { // 🐞🎁 v442: bandymo FAB + dovanos popup irgi valomi
+         'trial-bug-fab', 'gift-popup',
+         'att-share-hint', 'tps-modal', 'fee-modal', 'note-modal'].forEach(id => { // 🐞🎁 v442/v465: bandymo FAB, dovanų popup ir naujų langų valymas
           const el = document.getElementById(id);
           if (el) el.remove(); // dinaminiai — kūrėjai juos atkuria iš naujo
         });
@@ -22013,7 +22014,7 @@ async function _tpsLoadData(){
         sb.from('attendance').select('kid_id, present').eq('group_id', s.groupId).eq('session_date', ymd(today)),
         sb.from('attendance').select('session_date').eq('group_id', s.groupId).gte('session_date', ymd(wkStart)),
         sb.from('attendance').select('session_date').eq('group_id', s.groupId).gte('session_date', ymd(moStart)),
-        sb.from('challenge_submissions').select('id, numeric_value, challenges(title, target_unit, target_value)').in('kid_id', kidIds).eq('status','approved').gte('created_at', wkStart.toISOString()),
+        sb.from('challenge_submissions').select('id, numeric_value, created_at, challenges(title, target_unit, target_value)').in('kid_id', kidIds).eq('status','approved').gte('created_at', wkStart.toISOString()),
         sb.from('challenge_submissions').select('id, kid_id, numeric_value, challenges(title, target_unit, target_value)').in('kid_id', kidIds).eq('status','approved').gte('created_at', moStart.toISOString())
       ]);
       const at = attT.data || [];
@@ -22049,6 +22050,11 @@ async function _tpsLoadData(){
       };
       d.weekTotals = _sum(chW.data);
       d.monthTotals = _sum(chM.data);
+      // 🏋️ v465: TOS DIENOS treniruotės rezultatai — ką grupė nudirbo šiandien.
+      // Imam pateikimus, patvirtintus/pateiktus šiandien (savininko klausimas: „kur
+      // treneris gali pasidalinti treniruotės rezultatais").
+      const _ymd = ymd(today);
+      d.todayTotals = _sum((chW.data || []).filter(r => (r.created_at || '').slice(0,10) === _ymd));
       const byKid = {}; (chM.data||[]).forEach(r => { byKid[r.kid_id] = (byKid[r.kid_id]||0)+1; });
       const topId = Object.keys(byKid).sort((a,b) => byKid[b]-byKid[a])[0];
       const topKid = kids.find(k => k.id === topId);
@@ -22080,12 +22086,17 @@ function _tpsBody(){
   };
 
   if (s.tpl === 'photo' || s.tpl === 'today'){
+    // v465: pirmiausia rodom ŠIOS dienos treniruotės rezultatus; jei jų dar nėra
+    // (treneris nespėjo patvirtinti) — krentam į savaitės sumas, kad kortelė nebūtų tuščia.
+    const hasToday = (d.todayTotals || []).length > 0;
+    const list = hasToday ? d.todayTotals : d.weekTotals;
+    const label = hasToday ? 'šiandien nudirbta' : 'šią savaitę nudirbta';
     return `<div style="text-align:center;padding:8px 4px;">
       ${head}
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff;margin-top:8px;">TRENIRUOTĖ ĮVYKO</div>
       <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;text-transform:capitalize;">${E(dayLT)}</div>
-      ${row([ big(d.todayPresent || 0, 'dalyvavo'), big(d.weekChallenges || 0, 'užduotys sav.') ])}
-      ${totalsHtml(d.weekTotals, 'šią savaitę nudirbta')}
+      ${row([ big(d.todayPresent || 0, 'dalyvavo'), big(hasToday ? (d.todayTotals.length) : (d.weekChallenges || 0), hasToday ? 'pratimai' : 'užduotys sav.') ])}
+      ${totalsHtml(list, label)}
     </div>`;
   }
   if (s.tpl === 'full'){
@@ -22602,6 +22613,21 @@ async function _attConfirm(){
     const { error }=await sb.from('attendance').upsert(rows,{ onConflict:'group_id,kid_id,session_date' });
     if(error) throw error;
     showToast(ico('patvirtinta')+' Lankomumas išsaugotas','success');
+    // 📣 v465: iškart pasiūlom pasidalinti treniruote — treneris dar telefone, momentas karštas
+    try {
+      const _gid = _attState.groupId;
+      setTimeout(() => {
+        if (document.getElementById('tps-modal')) return;
+        const t = document.createElement('div');
+        t.id = 'att-share-hint';
+        t.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:100007;background:linear-gradient(135deg,rgba(24,119,242,.96),rgba(66,147,245,.96));color:#fff;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:11px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-family:inherit;max-width:calc(100% - 28px);';
+        t.innerHTML = `<div style="font-size:12px;font-weight:800;line-height:1.35;">Pasidalinti treniruote?</div>
+          <button onclick="document.getElementById('att-share-hint')?.remove();openTrainerPostStudio('${_gid}')" style="flex-shrink:0;background:#fff;color:#1877F2;border:none;border-radius:10px;padding:8px 13px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">Kurti postą</button>
+          <span onclick="document.getElementById('att-share-hint')?.remove()" style="flex-shrink:0;cursor:pointer;opacity:.75;font-size:15px;">×</span>`;
+        document.body.appendChild(t);
+        setTimeout(() => document.getElementById('att-share-hint')?.remove(), 12000);
+      }, 700);
+    } catch(e){}
     // 🔁 v451: bonusų skaičiavimas perkeltas į SERVERĮ (server-lankomumas-bonusai-v2.sql).
     // Kliente jie suveikdavo TIK pažymėjus paskutinę planuotą periodo dieną — žymint ne iš
     // eilės arba neįvykus paskutinei treniruotei premija dingdavo visam laikui.
