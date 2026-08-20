@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=470">
+<link rel="stylesheet" href="styles.css?v=471">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v470</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v471</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3322,7 +3322,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="sa">
     <!-- 📣 v430: FB postų studija -->
     <div style="padding:8px 14px 0;">
-      <button onclick="openFbStudio()" style="width:100%;padding:11px;background:linear-gradient(90deg,#1877F2,#4293f5);color:#fff;border:none;border-radius:11px;font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📣 FB postų studija — mėnesio įrašai klubui</button>
+      <button onclick="openFbStudio()" style="width:100%;padding:11px;background:linear-gradient(90deg,#1877F2,#4293f5);color:#fff;border:none;border-radius:11px;font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📣 Postų studija — mėnesio įrašai ir suvestinė</button>
     </div>
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg> KOMANDA — trenerių + vaikų šviesoforai -->
     <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:10px 14px 5px;"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg> KOMANDA</div>
@@ -3386,10 +3386,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:10px 14px 5px;"><svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg> KLUBO LYDERIAI</div>
     <div style="padding:0 14px;" id="km-best-kids"><div style="text-align:center;color:var(--mut);padding:12px;font-size:12px;">Kraunama...</div></div>
 
-    <!-- 📲 Mėnesio suvestinės share kortelė -->
-    <div style="padding:11px 14px 0;">
-      <button class="btn" style="width:100%;margin:0;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;" onclick="openClubSummaryCard()"><svg class="ico" aria-hidden="true"><use href="#i-nuotrauka"></use></svg> Mėnesio suvestinės kortelė</button>
-    </div>
+    <!-- 📲 v471: „Mėnesio suvestinės kortelė" sujungta į Postų studiją (šablonas „Mėnesio suvestinė") -->
 
     <!-- Veiksmai -->
     <div style="padding:11px 14px 9px;display:flex;gap:8px;">
@@ -4499,7 +4496,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=470"></script>
+<script src="app.js?v=471"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

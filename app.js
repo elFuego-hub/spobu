@@ -4287,18 +4287,25 @@ async function openFbStudio() {
     const monthStartYmd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const _s = (r) => (r.status === 'fulfilled' ? (r.value?.data || []) : []);
     const emptyQ = Promise.resolve({ data: [] });
-    const [chsR, compsR, attR, consR] = await Promise.allSettled([
-      ids.length ? sb.from('challenge_submissions').select('kid_id, exp_gain, numeric_value, challenges(title, type, target_value, target_unit)').in('kid_id', ids).eq('status', 'approved').gte('reviewed_at', cut).limit(1000) : emptyQ,
+    // v471: VIENA duomenų logika visiems šablonams — mėnesio EXP iš 6 šaltinių su dedup
+    // (buvusios „Mėnesio suvestinės kortelės" skaičiavimas; anksčiau FB studija sumavo tik 2
+    // šaltinius ir dviejose kortelėse skaičiai galėjo NESUTAPTI).
+    const [chsR, compsR, attR, consR, progR, recsR, streakR, adjR, groupsR] = await Promise.allSettled([
+      ids.length ? sb.from('challenge_submissions').select('kid_id, challenge_id, exp_gain, numeric_value, challenges(title, type, target_value, target_unit)').in('kid_id', ids).eq('status', 'approved').gte('reviewed_at', cut).limit(1000) : emptyQ,
       ids.length ? sb.from('competition_results').select('kid_id, exp_gained, placement').in('kid_id', ids).eq('approval_status', 'approved').gte('approved_at', cut).limit(500) : emptyQ,
-      ids.length ? sb.from('attendance').select('kid_id, present').in('kid_id', ids).eq('present', true).gte('session_date', monthStartYmd).limit(3000) : emptyQ,
-      ids.length ? sb.from('kids').select('id, media_consent').in('id', ids) : emptyQ
+      ids.length ? sb.from('attendance').select('kid_id, present').in('kid_id', ids).gte('session_date', monthStartYmd).limit(3000) : emptyQ,
+      ids.length ? sb.from('kids').select('id, media_consent').in('id', ids) : emptyQ,
+      ids.length ? sb.from('challenge_progress').select('kid_id, challenge_id, exp_awarded').in('kid_id', ids).eq('is_completed', true).gte('completed_at', cut) : emptyQ,
+      ids.length ? sb.from('result_submissions').select('kid_id, exp_gain').in('kid_id', ids).eq('status', 'approved').gte('reviewed_at', cut) : emptyQ,
+      ids.length ? sb.from('streak_bonus_log').select('kid_id, exp_awarded').in('kid_id', ids).gte('created_at', cut) : emptyQ,
+      ids.length ? sb.from('kid_exp_adjustments').select('kid_id, exp_change').in('kid_id', ids).gte('created_at', cut) : emptyQ,
+      sb.from('groups').select('id, name').eq('club_id', currentClub.id)
     ]);
-    const chs = _s(chsR), comps = _s(compsR), att = _s(attR), cons = _s(consR);
+    const chs = _s(chsR), comps = _s(compsR), att = _s(attR), cons = _s(consR),
+          prog = _s(progR), recs = _s(recsR), streaks = _s(streakR), adjs = _s(adjR), groups = _s(groupsR);
     // Klubo kartojimų sumos (kaip tėvo _pfPdf agregatas, tik per visus vaikus)
     const agg = {};
-    const expByKid = {};
     chs.forEach(s => {
-      expByKid[s.kid_id] = (expByKid[s.kid_id] || 0) + (s.exp_gain || 0);
       const ch = s.challenges || {};
       let n = 0;
       if (ch.type === 'training' && (ch.target_value || 0) > 1) n = ch.target_value;
@@ -4309,7 +4316,26 @@ async function openFbStudio() {
       const key = name.toLowerCase() + '|' + unit.toLowerCase();
       (agg[key] = agg[key] || { name, unit, sum: 0 }).sum += n;
     });
-    comps.forEach(c => { expByKid[c.kid_id] = (expByKid[c.kid_id] || 0) + (c.exp_gained || 0); });
+    // Mėnesio EXP po vaiką — 6 šaltiniai; iššūkių dedup: progress nesumuojam, jei tas pats
+    // kid+challenge jau yra submissions (identiška buvusiai suvestinės kortelei)
+    const expByKid = {};
+    const addExp = (kid, v) => { expByKid[kid] = (expByKid[kid] || 0) + (Number(v) || 0); };
+    const seenCh = new Set(); chs.forEach(s => seenCh.add(s.kid_id + '|' + s.challenge_id));
+    chs.forEach(s => addExp(s.kid_id, s.exp_gain));
+    prog.forEach(p => { if (!seenCh.has(p.kid_id + '|' + p.challenge_id)) addExp(p.kid_id, p.exp_awarded); });
+    comps.forEach(c => addExp(c.kid_id, c.exp_gained));
+    recs.forEach(r => addExp(r.kid_id, r.exp_gain));
+    streaks.forEach(s => addExp(s.kid_id, s.exp_awarded));
+    adjs.forEach(a => addExp(a.kid_id, a.exp_change));
+    const totalExp = Object.values(expByKid).reduce((s, v) => s + v, 0);
+    // Lankomumas: visų žymų % (suvestinei) + apsilankymų skaičius (klubo skaičių šablonui)
+    const attPresent = att.filter(a => a.present).length;
+    const attPct = att.length ? Math.round(attPresent / att.length * 100) : null;
+    // Aktyviausia grupė pagal mėnesio EXP
+    const gNameFb = {}; groups.forEach(g => { gNameFb[g.id] = g.name || 'Grupė'; });
+    const kidGroupFb = {}; (kids || []).forEach(k => { kidGroupFb[k.id] = k.group_id || null; });
+    const gExpFb = {}; Object.entries(expByKid).forEach(([kid, v]) => { const g = kidGroupFb[kid]; if (g) gExpFb[g] = (gExpFb[g] || 0) + v; });
+    const topGFb = Object.entries(gExpFb).sort((a, b) => b[1] - a[1])[0] || null;
     const aggArr = Object.values(agg).sort((a, b) => b.sum - a.sum);
     const fmtN = (x) => (Math.round(x * 10) / 10).toLocaleString('lt-LT');
     const numsRows = aggArr.map(a => ({ name: a.name, val: fmtN(a.sum) + (a.unit ? ' ' + a.unit : ''), color: /km/.test(a.unit.toLowerCase()) ? '#4FC3F7' : '#FF7A33' }));
@@ -4326,7 +4352,11 @@ async function openFbStudio() {
         monthLabel: LT_GEN[now.getMonth()], year: now.getFullYear(),
         clubName: currentClub?.name || 'SPOBU klubas', clubLogo,
         kidsCount: ids.length, tasks: chs.length, medals,
-        attCount: att.length, numsRows, heroes, expByKid
+        attCount: attPresent, attPct, numsRows, heroes, expByKid,
+        // v471: suvestinės šablono duomenys (buvusi „Mėnesio suvestinės kortelė")
+        totalExp: Math.round(totalExp), goal: ids.length * 300, records: recs.length,
+        groupsCount: groups.length, sport: currentClub?.sports?.name || '',
+        topGroup: topGFb ? gNameFb[topGFb[0]] : null, topGroupExp: topGFb ? Math.round(topGFb[1]) : 0
       }
     };
     const body = `
@@ -4338,7 +4368,7 @@ async function openFbStudio() {
       <div style="font-size:10px;color:var(--mut);margin:10px 0 4px;">Posto tekstas (paspausk — nukopijuos):</div>
       <div id="fb-text" onclick="_fbCopyText()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:10px 12px;font-size:11.5px;line-height:1.55;cursor:pointer;white-space:pre-wrap;"></div>
       <button onclick="_fbShare()" id="fb-share-btn" style="width:100%;padding:13px;margin-top:10px;background:linear-gradient(90deg,#1877F2,#4293f5);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📣 Dalintis / atsisiųsti paveiksliuką</button>`;
-    _pfSheet('fb-studio-modal', '📣 FB POSTŲ STUDIJA', body);
+    _pfSheet('fb-studio-modal', '📣 POSTŲ STUDIJA', body);
     _fbRender();
   } catch (e) { console.error('[fb studio]', e); showToast(ico('klaida') + ' Nepavyko surinkti duomenų', 'error', 4000); }
 }
@@ -4347,7 +4377,7 @@ function _fbRender() {
   const st = _fbState; if (!st) return;
   const chip = (on) => `padding:6px 11px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;border:.5px solid ${on ? '#4293f5' : 'var(--bdr)'};background:${on ? 'rgba(24,119,242,.18)' : 'var(--card)'};color:${on ? '#6aa9f7' : 'var(--mut)'};`;
   const tplEl = document.getElementById('fb-tpls');
-  if (tplEl) tplEl.innerHTML = [['klubas', '🏛️ Klubo skaičiai'], ['karys', '🥇 Mėnesio karys'], ['kvietimas', '😏 Ar įveiktum?']].map(x => `<div onclick="_fbSet('tpl','${x[0]}')" style="${chip(st.tpl === x[0])}">${x[1]}</div>`).join('');
+  if (tplEl) tplEl.innerHTML = [['klubas', '🏛️ Klubo skaičiai'], ['suvestine', '📊 Mėnesio suvestinė'], ['karys', '🥇 Mėnesio karys'], ['kvietimas', '😏 Ar įveiktum?']].map(x => `<div onclick="_fbSet('tpl','${x[0]}')" style="${chip(st.tpl === x[0])}">${x[1]}</div>`).join('');
   const exEl = document.getElementById('fb-extra');
   if (exEl) {
     if (st.tpl === 'karys') {
@@ -4366,6 +4396,14 @@ function _fbRender() {
 function _fbHero(st) { return st.d.heroes.find(h => h.id === st.kidId) || st.d.heroes[0] || null; }
 function _fbHtml(st) {
   const esc = escapeHtml, d = st.d;
+  // 📊 v471: „Mėnesio suvestinė" — buvusi atskira kortelė, dabar studijos šablonas.
+  // Naudoja tą patį shareFrame + _clubSummaryBody, tik su bendrai surinktais duomenimis.
+  if (st.tpl === 'suvestine') {
+    const d2 = { monthLabel: d.monthLabel, clubName: d.clubName, sport: d.sport, groups: d.groupsCount,
+      exp: d.totalExp, goal: d.goal, kids: d.kidsCount, attPct: d.attPct, records: d.records,
+      topGroup: d.topGroup, topGroupExp: d.topGroupExp };
+    return `<div style="display:flex;justify-content:center;padding:24px;background:#12100e;"><div style="width:460px;">${shareFrame('club', _clubSummaryBody(d2), { clubLogo: d.clubLogo })}</div></div>`;
+  }
   const head = `${d.clubLogo ? `<img src="${d.clubLogo}" style="height:42px;max-width:220px;object-fit:contain;">` : ''}
     <div style="font-size:14px;letter-spacing:4px;color:rgba(255,255,255,.6);margin-top:6px;">${esc(d.clubName).toUpperCase()}</div>`;
   const foot = `<div style="margin-top:26px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);font-size:12px;letter-spacing:2px;color:rgba(255,255,255,.45);"><img src="brand/mark-white-128.png" style="height:18px;vertical-align:middle;margin-right:6px;">${d.year} ${esc(d.monthLabel)} · SPOBU</div>`;
@@ -4413,6 +4451,9 @@ function _fbHtml(st) {
 }
 function _fbPostText(st) {
   const d = st.d, mo = d.monthLabel.toLowerCase();
+  if (st.tpl === 'suvestine') {
+    return `${d.monthLabel[0]}${mo.slice(1)} mūsų klube 🥋\n${(d.totalExp || 0).toLocaleString('lt-LT')} EXP per mėnesį · ${d.kidsCount} ${_ltPl(d.kidsCount, 'vaikas', 'vaikai', 'vaikų')}${d.attPct != null ? ` · lankomumas ${d.attPct}%` : ''}${d.topGroup ? `\nAktyviausia grupė — ${d.topGroup} (+${(d.topGroupExp || 0).toLocaleString('lt-LT')} EXP)` : ''}\nDidžiuojamės kiekvienu! 💪\n#karate #vaikusportas #spobu`;
+  }
   if (st.tpl === 'karys') {
     const h = _fbHero(st);
     return h ? `${d.monthLabel[0]}${mo.slice(1)} ${_pfTier(h.exp).word.toLowerCase()} — ${h.name}! 🥋\n+${h.exp} EXP per mėnesį. Didžiuojamės!\n#karate #vaikusportas #spobu` : '';
@@ -14550,7 +14591,6 @@ async function _revertEventCard(){
 // ════════════════════════════════════════
 // 📲 KLUBO MĖNESIO SUVESTINĖS KORTELĖ (share, 1:1) — shareFrame('club')
 // ════════════════════════════════════════
-let _clubSumFile = null;
 
 // Lietuviškas grupių skaičiaus linksnis
 function _grpWord(n){ n = n || 0; if (n % 10 === 1 && n % 100 !== 11) return n + ' grupė'; if (n % 10 >= 2 && n % 10 <= 9 && !(n % 100 >= 11 && n % 100 <= 19)) return n + ' grupės'; return n + ' grupių'; }
@@ -14577,112 +14617,6 @@ function _clubSummaryBody(d){
       </div>
       ${d.topGroup ? `<div style="background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.35);border-radius:12px;padding:9px 13px;display:flex;align-items:center;justify-content:space-between;gap:8px;"><div style="font-size:11px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ico('trofejai')} Aktyviausia grupė: ${d.topGroup}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#FF7A33;flex:none;">+${(d.topGroupExp || 0).toLocaleString('lt-LT')}</div></div>` : ''}
     </div>`;
-}
-
-async function openClubSummaryCard(){
-  if (!currentClub?.id){ showToast(ico('klaida')+' Klubo info trūksta', 'error'); return; }
-  const old = document.getElementById('club-sum-modal'); if (old) old.remove();
-  const m = document.createElement('div');
-  m.id = 'club-sum-modal';
-  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:100002;align-items:center;justify-content:center;padding:18px;overflow-y:auto;';
-  m.innerHTML = `<div style="width:100%;max-width:380px;margin:auto;">
-    <div id="club-sum-card"><div style="border-radius:14px;background:#0e0e14;border:1px solid #26262f;padding:48px 20px;text-align:center;color:#cfcfd6;font-size:13px;">Kraunama…</div></div>
-    <div style="display:flex;gap:10px;margin-top:14px;">
-      <button id="club-sum-share" disabled onclick="_shareClubSumCard()" style="flex:1;border:none;border-radius:13px;padding:13px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;opacity:.5;">${ico('programele')} Dalintis</button>
-      <button id="club-sum-dl" disabled onclick="_downloadClubSumCard()" style="flex:1;border-radius:13px;padding:13px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:rgba(255,255,255,.1);color:#fff;border:.5px solid var(--bdr);opacity:.5;">${ico('zemyn')} Išsaugoti</button>
-    </div>
-    <button onclick="document.getElementById('club-sum-modal').remove()" style="width:100%;margin-top:8px;border-radius:13px;padding:10px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;background:transparent;color:#9a9aa5;border:.5px solid var(--bdr);">Uždaryti</button>
-  </div>`;
-  m.onclick = (e) => { if (e.target === m) m.remove(); };
-  document.body.appendChild(m);
-  try {
-    const now = new Date();
-    const cut = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const cutDate = cut.split('T')[0];
-    const LT = ['SAUSIO', 'VASARIO', 'KOVO', 'BALANDŽIO', 'GEGUŽĖS', 'BIRŽELIO', 'LIEPOS', 'RUGPJŪČIO', 'RUGSĖJO', 'SPALIO', 'LAPKRIČIO', 'GRUODŽIO'];
-    const [kidsAll, groupsRes, logo] = await Promise.all([
-      _getClubKids().catch(() => []),
-      sb.from('groups').select('id, name').eq('club_id', currentClub.id),
-      _getClubLogoDataUrl(currentClub.logo_url)
-    ]);
-    const kids = kidsAll || [];
-    const ids = kids.map(k => k.id);
-    const groups = groupsRes.data || [];
-    const gIds = groups.map(g => g.id);
-    const gName = {}; groups.forEach(g => { gName[g.id] = g.name || 'Grupė'; });
-    const kidGroup = {}; kids.forEach(k => { kidGroup[k.id] = k.group_id || null; });
-    // Mėnesio EXP — tie patys šaltiniai kaip tėvo feed'e, tik visam klubui
-    const _settle = (r) => (r.status === 'fulfilled' ? (r.value?.data || []) : []);
-    const [subsR, progR, compsR, recsR, streakR, adjR, attR] = await Promise.allSettled([
-      ids.length ? sb.from('challenge_submissions').select('kid_id, challenge_id, exp_gain').in('kid_id', ids).eq('status', 'approved').gte('reviewed_at', cut) : Promise.resolve({ data: [] }),
-      ids.length ? sb.from('challenge_progress').select('kid_id, challenge_id, exp_awarded').in('kid_id', ids).eq('is_completed', true).gte('completed_at', cut) : Promise.resolve({ data: [] }),
-      ids.length ? sb.from('competition_results').select('kid_id, exp_gained').in('kid_id', ids).eq('approval_status', 'approved').gte('approved_at', cut) : Promise.resolve({ data: [] }),
-      ids.length ? sb.from('result_submissions').select('kid_id, exp_gain').in('kid_id', ids).eq('status', 'approved').gte('reviewed_at', cut) : Promise.resolve({ data: [] }),
-      ids.length ? sb.from('streak_bonus_log').select('kid_id, exp_awarded').in('kid_id', ids).gte('created_at', cut) : Promise.resolve({ data: [] }),
-      ids.length ? sb.from('kid_exp_adjustments').select('kid_id, exp_change').in('kid_id', ids).gte('created_at', cut) : Promise.resolve({ data: [] }),
-      gIds.length ? sb.from('attendance').select('present').in('group_id', gIds).gte('session_date', cutDate) : Promise.resolve({ data: [] })
-    ]);
-    const subs = _settle(subsR), prog = _settle(progR), comps = _settle(compsR), recs = _settle(recsR), streaks = _settle(streakR), adjs = _settle(adjR), att = _settle(attR);
-    // Sumuojam EXP po vaiką (iššūkių dedup: progress nesumuojam, jei tas pats kid+challenge jau yra submissions)
-    const seenCh = new Set(); subs.forEach(s => seenCh.add(s.kid_id + '|' + s.challenge_id));
-    const expByKid = {};
-    const add = (kid, v) => { expByKid[kid] = (expByKid[kid] || 0) + (Number(v) || 0); };
-    subs.forEach(s => add(s.kid_id, s.exp_gain));
-    prog.forEach(p => { if (!seenCh.has(p.kid_id + '|' + p.challenge_id)) add(p.kid_id, p.exp_awarded); });
-    comps.forEach(c => add(c.kid_id, c.exp_gained));
-    recs.forEach(r => add(r.kid_id, r.exp_gain));
-    streaks.forEach(s => add(s.kid_id, s.exp_awarded));
-    adjs.forEach(a => add(a.kid_id, a.exp_change));
-    const totalExp = Object.values(expByKid).reduce((s, v) => s + v, 0);
-    // Aktyviausia grupė — pagal mėnesio EXP sumą
-    const gExp = {};
-    Object.entries(expByKid).forEach(([kid, v]) => { const g = kidGroup[kid]; if (g) gExp[g] = (gExp[g] || 0) + v; });
-    const topG = Object.entries(gExp).sort((a, b) => b[1] - a[1])[0] || null;
-    // Lankomumas % šį mėnesį
-    const attPct = att.length ? Math.round(att.filter(a => a.present).length / att.length * 100) : null;
-    const d = {
-      monthLabel: LT[now.getMonth()], clubName: currentClub.name || 'Klubas',
-      sport: currentClub.sports?.name || '', groups: groups.length,
-      exp: Math.round(totalExp), goal: ids.length * 300, kids: ids.length,
-      attPct, records: recs.length,
-      topGroup: topG ? gName[topG[0]] : null, topGroupExp: topG ? Math.round(topG[1]) : 0
-    };
-    const cardEl = document.getElementById('club-sum-card');
-    if (!cardEl) return;
-    cardEl.innerHTML = shareFrame('club', _clubSummaryBody(d), { clubLogo: logo });
-    // Iš anksto sugeneruojam paveikslėlį (navigator.share per gyvą user-gesture)
-    _clubSumFile = null;
-    try {
-      if (typeof html2canvas === 'function') {
-        try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
-        const canvas = await html2canvas(cardEl.firstElementChild, { backgroundColor: '#0b0b0f', scale: 3, useCORS: true, logging: false });
-        await new Promise(res => canvas.toBlob(b => { _clubSumFile = b ? new File([b], 'spobu-klubo-suvestine.png', { type: 'image/png' }) : null; res(); }, 'image/png'));
-      }
-    } catch (e) { console.warn('[club-sum] gen klaida:', e); }
-    const sh = document.getElementById('club-sum-share'); if (sh) { sh.disabled = false; sh.style.opacity = '1'; }
-    const dl = document.getElementById('club-sum-dl'); if (dl) { dl.disabled = false; dl.style.opacity = '1'; }
-  } catch (e) {
-    console.error('[club-sum]', e);
-    const cardEl = document.getElementById('club-sum-card');
-    if (cardEl) cardEl.innerHTML = `<div style="border-radius:14px;background:#15151c;border:1px solid #26262f;padding:30px 20px;text-align:center;color:#EF4444;font-size:12px;line-height:1.5;">Nepavyko paruošti suvestinės.<br>${(e.message || e || '')}</div>`;
-  }
-}
-
-function _downloadClubSumCard(){
-  if (!_clubSumFile) { showToast('Paveikslėlis dar ruošiamas — palauk sekundę', '', 2500); return; }
-  const url = URL.createObjectURL(_clubSumFile);
-  const a = document.createElement('a'); a.href = url; a.download = 'spobu-klubo-suvestine.png'; a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  showToast('Paveikslėlis išsaugotas ' + ico('issaugoti'), 'success', 3500);
-}
-
-async function _shareClubSumCard(){
-  if (_clubSumFile && navigator.canShare && navigator.canShare({ files: [_clubSumFile] })) {
-    try { await navigator.share({ files: [_clubSumFile], title: 'SPOBU' }); }
-    catch (e) { if (e && e.name === 'AbortError') return; _downloadClubSumCard(); }
-    return;
-  }
-  _downloadClubSumCard();
 }
 
 // ════════════════════════════════════════
