@@ -21939,12 +21939,13 @@ let _attState = null; // { groupId, date, group, kids, present:Set }
 // ════════════════════════════════════════════════════════════════════════════
 let _tpsState = null;
 
+// v467: nuotrauka nebėra atskiras šablonas — ji dedama prie BET KURIO (savininko sprendimas).
+// Visi trys pagrindiniai postai turi identišką struktūrą: antraštė · du skaičiai · pratimų sumos.
 const TPS_TPLS = [
-  { k:'photo',   t:'Grupės nuotrauka', hint:'Foto + šiandienos skaičiai' },
-  { k:'today',   t:'Šiandienos darbas', hint:'Be nuotraukos' },
-  { k:'full',    t:'Pilna sudėtis',     hint:'Kai atėjo visi' },
-  { k:'week',    t:'Grupės savaitė',    hint:'Savaitės suvestinė' },
-  { k:'month',   t:'Grupės mėnuo',      hint:'Mėnesio suvestinė' }
+  { k:'today',   t:'Šiandienos treniruotė', hint:'Dienos rezultatai' },
+  { k:'week',    t:'Savaitė',               hint:'Savaitės suvestinė' },
+  { k:'month',   t:'Mėnuo',                 hint:'Mėnesio suvestinė' },
+  { k:'full',    t:'Pilna sudėtis',         hint:'Kai atėjo visi' }
 ];
 
 // Iš trenerio profilio: jei viena grupė — atidarom iškart, jei kelios — leidžiam pasirinkti
@@ -21982,7 +21983,7 @@ async function openTrainerPostStudio(groupId){
     `<button onclick="_tpsSet('${t.k}')" data-tps="${t.k}" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:rgba(255,255,255,.85);font-size:10.5px;font-weight:700;padding:8px 13px;border-radius:99px;cursor:pointer;font-family:inherit;white-space:nowrap;">${escapeHtml(t.t)}</button>`
   ).join('');
   await _tpsLoadData();
-  _tpsSet('photo');
+  _tpsSet('today');
 }
 
 // Duomenys postams: šiandienos lankomumas, savaitės/mėnesio darbas
@@ -22070,22 +22071,40 @@ function _tpsBody(){
   const big = (n, l) => `<div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;color:#fff;">${n}</div><div style="font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.65);margin-top:3px;text-transform:uppercase;">${E(l)}</div></div>`;
   const row = (items) => `<div style="display:flex;justify-content:space-around;gap:10px;margin-top:20px;">${items.join('')}</div>`;
   const head = `<div style="font-size:13px;letter-spacing:3px;color:rgba(255,255,255,.6);text-transform:uppercase;">${E(d.groupName||'')}</div>`;
-  const LT = ['sekmadienis','pirmadienis','antradienis','trečiadienis','ketvirtadienis','penktadienis','šeštadienis'];
-  const dayLT = LT[new Date().getDay()];
+  // v466: savaitės diena tampa ANTRAŠTE („KETVIRTADIENIO TRENIRUOTĖ") — savininko sprendimas;
+  // atskiros dienos eilutės nebereikia, atsilaisvina vieta dar vienam pratimui.
+  const LT_KILM = ['sekmadienio','pirmadienio','antradienio','trečiadienio','ketvirtadienio','penktadienio','šeštadienio'];
+  const dayLT = LT_KILM[new Date().getDay()];
 
-  // 💪 v459: konkrečių pratimų sumos — būtent dėl jų atsiranda noras postinti kasdien
+  // 💪 v459/v466: konkrečių pratimų sumos. Išdėstymas ADAPTYVUS — treniruotėje gali būti
+  // ir 3, ir 10 pratimų, o kortelė yra kvadratas. Todėl kuo daugiau pratimų, tuo kompaktiškiau:
+  //   iki 3 — dideli, viena kolona · 4–8 — dvi kolonos · daugiau — dvi kolonos + „ir dar N".
   const totalsHtml = (list, label) => {
     if (!list || !list.length) return '';
-    return `<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14);">
-      <div style="font-size:9.5px;letter-spacing:2px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:9px;">${E(label)}</div>
-      ${list.map(t => `<div style="display:flex;align-items:baseline;justify-content:center;gap:7px;margin-bottom:5px;">
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:23px;line-height:1;color:#FF9E40;">${t.total.toLocaleString('lt-LT')}</span>
-        <span style="font-size:11.5px;color:rgba(255,255,255,.82);">${E(t.unit || '')} ${E(t.title)}</span>
-      </div>`).join('')}
+    const n = list.length;
+    const MAX = 8;                       // daugiau nebetelpa net dviem kolonomis
+    const shown = list.slice(0, MAX);
+    const rest  = n - shown.length;
+    const twoCol = n > 3;
+    const vSize  = n <= 3 ? 23 : (n <= 6 ? 19 : 16);   // skaičiaus dydis
+    const tSize  = n <= 3 ? 11.5 : (n <= 6 ? 10 : 9);  // pavadinimo dydis
+    const gap    = n <= 3 ? 5 : 4;
+
+    const item = t => `<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:${gap}px;min-width:0;">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:${vSize}px;line-height:1;color:#FF9E40;flex:none;">${t.total.toLocaleString('lt-LT')}</span>
+      <span style="font-size:${tSize}px;color:rgba(255,255,255,.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${E(t.unit || '')} ${E(t.title)}</span>
+    </div>`;
+
+    return `<div style="margin-top:${n > 6 ? 12 : 16}px;padding-top:${n > 6 ? 10 : 13}px;border-top:1px solid rgba(255,255,255,.14);">
+      <div style="font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:8px;">${E(label)}</div>
+      <div style="${twoCol ? 'display:grid;grid-template-columns:1fr 1fr;gap:0 10px;' : ''}">
+        ${shown.map(item).join('')}
+      </div>
+      ${rest > 0 ? `<div style="font-size:9px;color:rgba(255,255,255,.5);margin-top:5px;">ir dar ${rest} pratim${rest === 1 ? 'as' : (rest < 10 ? 'ai' : 'ų')}</div>` : ''}
     </div>`;
   };
 
-  if (s.tpl === 'photo' || s.tpl === 'today'){
+  if (s.tpl === 'today'){
     // v465: pirmiausia rodom ŠIOS dienos treniruotės rezultatus; jei jų dar nėra
     // (treneris nespėjo patvirtinti) — krentam į savaitės sumas, kad kortelė nebūtų tuščia.
     const hasToday = (d.todayTotals || []).length > 0;
@@ -22093,8 +22112,7 @@ function _tpsBody(){
     const label = hasToday ? 'šiandien nudirbta' : 'šią savaitę nudirbta';
     return `<div style="text-align:center;padding:8px 4px;">
       ${head}
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff;margin-top:8px;">TRENIRUOTĖ ĮVYKO</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;text-transform:capitalize;">${E(dayLT)}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.5px;color:#fff;margin-top:9px;text-transform:uppercase;">${E(dayLT)} TRENIRUOTĖ</div>
       ${row([ big(d.todayPresent || 0, 'dalyvavo'), big(hasToday ? (d.todayTotals.length) : (d.weekChallenges || 0), hasToday ? 'pratimai' : 'užduotys sav.') ])}
       ${totalsHtml(list, label)}
     </div>`;
@@ -22104,24 +22122,29 @@ function _tpsBody(){
       ${head}
       <div style="font-size:44px;margin-top:6px;">🔥</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:1px;color:#fff;margin-top:4px;">PILNA SUDĖTIS</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;">Šiandien atėjo visi ${d.kidsTotal || 0} — ačiū!</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;">${E(dayLT)} treniruotėje — visi ${d.kidsTotal || 0}. Ačiū!</div>
+      ${totalsHtml((d.todayTotals || []).length ? d.todayTotals : d.weekTotals, (d.todayTotals || []).length ? 'šiandien nudirbta' : 'šią savaitę nudirbta')}
     </div>`;
   }
+  // v467: savaitė ir mėnuo — IDENTIŠKA struktūra kaip dienos treniruotės (savininko sprendimas):
+  // antraštė · du dideli skaičiai · adaptyvus pratimų sąrašas.
   if (s.tpl === 'week'){
     return `<div style="text-align:center;padding:8px 4px;">
       ${head}
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff;margin-top:8px;">SAVAITĖS DARBAS</div>
-      ${row([ big(d.weekSessions || 0, 'treniruotės'), big(d.weekChallenges || 0, 'užduotys') ])}
-      ${totalsHtml(d.weekTotals, 'iš viso nudirbta')}
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.5px;color:#fff;margin-top:9px;">SAVAITĖS DARBAS</div>
+      ${row([ big(d.weekSessions || 0, 'treniruotės'), big((d.weekTotals || []).length, 'pratimai') ])}
+      ${totalsHtml(d.weekTotals, 'per savaitę nudirbta')}
     </div>`;
   }
-  // month
+  // month — antraštėje mėnesio pavadinimas, kaip dienos kortelėje savaitės diena
+  const MEN = ['sausio','vasario','kovo','balandžio','gegužės','birželio','liepos','rugpjūčio','rugsėjo','spalio','lapkričio','gruodžio'];
+  const menuo = MEN[new Date().getMonth()];
   return `<div style="text-align:center;padding:8px 4px;">
     ${head}
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff;margin-top:8px;">MĖNESIO SUVESTINĖ</div>
-    ${row([ big(d.monthSessions || 0, 'treniruotės'), big(d.monthChallenges || 0, 'užduotys'), big(d.kidsTotal || 0, 'vaikai') ])}
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.5px;color:#fff;margin-top:9px;text-transform:uppercase;">${E(menuo)} MĖNUO</div>
+    ${row([ big(d.monthSessions || 0, 'treniruotės'), big((d.monthTotals || []).length, 'pratimai') ])}
     ${totalsHtml(d.monthTotals, 'per mėnesį nudirbta')}
-    ${d.topName ? `<div style="margin-top:14px;font-size:12px;color:rgba(255,255,255,.75);">Darbščiausias: <b style="color:#FF9E40;">${E(d.topName)}</b></div>` : ''}
+    ${d.topName ? `<div style="margin-top:11px;font-size:11px;color:rgba(255,255,255,.7);">Darbščiausias: <b style="color:#FF9E40;">${E(d.topName)}</b></div>` : ''}
   </div>`;
 }
 
@@ -22132,7 +22155,9 @@ async function _tpsRender(){
     if (typeof html2canvas !== 'function'){ prev.innerHTML = '<div style="padding:30px;color:var(--mut);font-size:11px;">Peržiūra neprieinama</div>'; return; }
     const host = document.createElement('div');
     host.style.cssText = 'position:fixed;left:-9999px;top:0;width:360px;z-index:-1;';
-    host.innerHTML = shareFrame('club', _tpsBody(), { photo: (s.tpl === 'photo' ? s.photo : null), clubLogo: s.d?.logo || null, word: 'TRENIRUOTĖ' });
+    // v467: nuotrauka galioja VISIEMS šablonams, ne tik dienos kortelei
+    const _word = s.tpl === 'week' ? 'SAVAITĖ' : (s.tpl === 'month' ? 'MĖNUO' : 'TRENIRUOTĖ');
+    host.innerHTML = shareFrame('club', _tpsBody(), { photo: s.photo || null, clubLogo: s.d?.logo || null, word: _word });
     document.body.appendChild(host);
     try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
     const cv = await html2canvas(host.firstElementChild, { backgroundColor: '#0b0b0f', scale: 3, useCORS: true, logging: false });
@@ -22151,10 +22176,12 @@ async function _tpsSet(k){
     b.style.background = on ? 'rgba(255,122,51,.15)' : 'var(--card)';
     b.style.color = on ? '#FF9E40' : 'rgba(255,255,255,.85)';
   });
+  // v467: nuotraukos mygtukas rodomas VISADA — foto galima dėti prie bet kurios kortelės
   const pr = document.getElementById('tps-photo-row');
-  if (pr) pr.innerHTML = (k === 'photo')
-    ? `<button onclick="_tpsPickPhoto()" style="width:100%;background:var(--card);border:.5px dashed var(--bdr);color:rgba(255,255,255,.8);border-radius:11px;padding:11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">${ico('nuotrauka')} ${s.photo ? 'Keisti nuotrauką' : 'Pasirinkti grupės nuotrauką'}</button>`
-    : '';
+  if (pr) pr.innerHTML = `<div style="display:flex;gap:7px;">
+      <button onclick="_tpsPickPhoto()" style="flex:1;background:var(--card);border:.5px dashed var(--bdr);color:rgba(255,255,255,.8);border-radius:11px;padding:11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">${ico('nuotrauka')} ${s.photo ? 'Keisti nuotrauką' : 'Pridėti nuotrauką'}</button>
+      ${s.photo ? `<button onclick="_tpsClearPhoto()" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:11px;padding:11px 14px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">Be nuotraukos</button>` : ''}
+    </div>`;
   await _tpsRender();
 }
 
@@ -22163,11 +22190,13 @@ function _tpsPickPhoto(){
   inp.onchange = () => {
     const f = inp.files && inp.files[0]; if (!f) return;
     const r = new FileReader();
-    r.onload = async () => { _tpsState.photo = r.result; await _tpsSet('photo'); };
+    // v467: nuotrauka pridedama prie DABARTINIO šablono, koks jis bebūtų
+    r.onload = async () => { _tpsState.photo = r.result; await _tpsSet(_tpsState.tpl); };
     r.readAsDataURL(f);
   };
   inp.click();
 }
+async function _tpsClearPhoto(){ if (!_tpsState) return; _tpsState.photo = null; await _tpsSet(_tpsState.tpl); }
 
 async function _tpsShare(){
   const s = _tpsState; if (!s?.canvas){ showToast(ico('ispejimas')+' Palauk, ruošiama'); return; }
