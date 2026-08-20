@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=459">
+<link rel="stylesheet" href="styles.css?v=463">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v459</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v463</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3351,9 +3351,21 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
 
+    <!-- 📝 v455/v460: TRENERIŲ UŽRAŠAI KLUBUI — pagrindiniame lange, iškart po „Reikia dėmesio" -->
+    <div id="k-notes-card" class="cd" style="display:none;">
+      <div class="st" style="padding:0 0 8px;">📝 TRENERIŲ UŽRAŠAI · <span id="k-notes-count" style="color:var(--mut);font-size:11px;"></span></div>
+      <div id="k-notes-body"></div>
+    </div>
+
+    <!-- 💶 v452/v460: NARIO MOKESČIAI (rodoma tik kai klubas įjungęs fees_enabled) -->
+    <div id="k-fees-card" class="cd" style="display:none;">
+      <div class="st" style="padding:0 0 8px;">💶 NARIO MOKESČIAI · <span id="k-fees-month" style="color:var(--mut);font-size:11px;"></span></div>
+      <div id="k-fees-body"><div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
+    </div>
+
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-verslas"></use></svg> VERSLAS — bonusas + KPI (tik savininkui) -->
-    <div class="owner-only" style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:10px 14px 5px;"><svg class="ico" aria-hidden="true"><use href="#i-verslas"></use></svg> VERSLAS</div>
-    <div class="owner-only" style="padding:0 14px;">
+    <div class="owner-only" id="km-business-lbl" style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:10px 14px 5px;"><svg class="ico" aria-hidden="true"><use href="#i-verslas"></use></svg> VERSLAS</div>
+    <div class="owner-only" id="km-business-box" style="padding:0 14px;">
       <div class="cd" style="margin:0;padding:11px 12px;cursor:pointer;" onclick="nv('k',null,'k-stat');if(typeof switchClubAnalyticsTab==='function')switchClubAnalyticsTab('business');">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:9px;gap:6px;">
           <div style="min-width:0;"><div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:.5px;">KLUBO BONUSAS</div><div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--grn);" id="km-bonus">€0</div></div>
@@ -3426,17 +3438,9 @@ window.addEventListener('unhandledrejection', function(e) {
       <div id="k-groups-list" style="padding:0 16px 6px;"><div style="text-align:center;padding:18px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
     </div>
 
-    <!-- 💶 v452: NARIO MOKESČIAI (rodoma tik kai klubas įjungęs fees_enabled) -->
-    <div id="k-fees-card" class="cd" style="display:none;">
-      <div class="st" style="padding:0 0 8px;">💶 NARIO MOKESČIAI · <span id="k-fees-month" style="color:var(--mut);font-size:11px;"></span></div>
-      <div id="k-fees-body"><div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
-    </div>
-
-    <!-- 📝 v455: TRENERIŲ UŽRAŠAI KLUBUI (matoma vieta, ne tik varpelyje) -->
-    <div id="k-notes-card" class="cd" style="display:none;">
-      <div class="st" style="padding:0 0 8px;">📝 TRENERIŲ UŽRAŠAI · <span id="k-notes-count" style="color:var(--mut);font-size:11px;"></span></div>
-      <div id="k-notes-body"></div>
-    </div>
+    <!-- v460: mokesčių ir užrašų kortelės PERKELTOS į k-main (pagrindinį langą) —
+         čia jos kabojo TARP sub-tabų ir buvo matomos visuose trijuose (Grupės/Treneriai/Mokiniai),
+         nustumdamos trenerių ir registracijų sąrašus žemyn. -->
     <!-- TRENERIAI -->
     <div id="k-team-trainers" class="k-team-pane" style="display:none;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px;">
@@ -4160,6 +4164,9 @@ window.addEventListener('unhandledrejection', function(e) {
           <button onclick="composeMessageToKidParents(currentKidDetails?.id)" style="background:rgba(255,255,255,.2);border:.5px solid rgba(255,255,255,.3);color:white;padding:10px;border-radius:10px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">
             <svg class="ico" aria-hidden="true"><use href="#i-zinutes"></use></svg> RAŠYTI TĖVAMS
           </button>
+          <button id="kd-msg-kid-btn" onclick="composeMessageToKid(currentKidDetails?.id)" style="display:none;background:rgba(79,195,247,.18);border:.5px solid rgba(79,195,247,.45);color:#4FC3F7;padding:10px;border-radius:10px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">
+            <svg class="ico" aria-hidden="true"><use href="#i-zinutes"></use></svg> RAŠYTI VAIKUI
+          </button>
           <button id="kd-challenge-btn" onclick="kdCreatePersonalChallenge()" style="display:none;background:rgba(0,0,0,.25);border:.5px solid rgba(255,255,255,.3);color:white;padding:10px;border-radius:10px;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer;">
             <svg class="ico" aria-hidden="true"><use href="#i-tikslas"></use></svg> ASMENINIS IŠŠŪKIS
           </button>
@@ -4477,7 +4484,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=459"></script>
+<script src="app.js?v=463"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
