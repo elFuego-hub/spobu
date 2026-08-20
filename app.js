@@ -22013,8 +22013,8 @@ async function _tpsLoadData(){
         sb.from('attendance').select('kid_id, present').eq('group_id', s.groupId).eq('session_date', ymd(today)),
         sb.from('attendance').select('session_date').eq('group_id', s.groupId).gte('session_date', ymd(wkStart)),
         sb.from('attendance').select('session_date').eq('group_id', s.groupId).gte('session_date', ymd(moStart)),
-        sb.from('challenge_submissions').select('id, numeric_value, challenges(title, target_unit)').in('kid_id', kidIds).eq('status','approved').gte('created_at', wkStart.toISOString()),
-        sb.from('challenge_submissions').select('id, kid_id, numeric_value, challenges(title, target_unit)').in('kid_id', kidIds).eq('status','approved').gte('created_at', moStart.toISOString())
+        sb.from('challenge_submissions').select('id, numeric_value, challenges(title, target_unit, target_value)').in('kid_id', kidIds).eq('status','approved').gte('created_at', wkStart.toISOString()),
+        sb.from('challenge_submissions').select('id, kid_id, numeric_value, challenges(title, target_unit, target_value)').in('kid_id', kidIds).eq('status','approved').gte('created_at', moStart.toISOString())
       ]);
       const at = attT.data || [];
       d.todayHeld = at.length > 0;
@@ -22026,12 +22026,20 @@ async function _tpsLoadData(){
       d.monthExp = kids.reduce((sum,k) => sum + (k.total_exp || 0), 0);
       // 💪 v459: konkretūs skaičiai postui — „200 atsispaudimų, 100 pritūpimų"
       // Sumuojam patvirtintų iššūkių rezultatus pagal pratimą (pavadinimas + vienetas).
+      // v464: treniruotės iššūkiuose vaikas žymi tik „Atlikta" → numeric_value = 1,
+      // o tikrasis kiekis (15 atsispaudimų, 45 sek. planka) yra iššūkio TIKSLE.
+      // Todėl: jei pateikta reikšmė didesnė už 1 — imam ją (vaikas viršijo arba įvedė km),
+      // kitaip imam iššūkio tikslą. Antraip suma rodytų „3 kartai" vietoj „105 kartai".
       const _sum = (arr) => {
         const map = {};
         (arr || []).forEach(r => {
-          const n = Number(r.numeric_value); if (!n || !isFinite(n)) return;
+          const sub = Number(r.numeric_value);
+          const goal = Number(r.challenges?.target_value);
+          const n = (isFinite(sub) && sub > 1) ? sub : (isFinite(goal) && goal > 0 ? goal : sub);
+          if (!n || !isFinite(n)) return;
           const t = (r.challenges?.title || '').trim(); if (!t) return;
           const u = (r.challenges?.target_unit || '').trim();
+          if (u === 'atlikta') return;   // „atlikta/neatlikta" pratimų nesumuojam — nėra ko
           const key = t + '|' + u;
           map[key] = (map[key] || 0) + n;
         });
