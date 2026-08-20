@@ -21967,15 +21967,26 @@ async function _tpsLoadData(){
   const d = { clubName: currentClub?.name || '', logo: currentClub?.logo_url || null,
               groupName: s.group.name || 'Grupė', kidsTotal: kids.length,
               todayPresent: 0, todayHeld: false, weekSessions: 0, weekChallenges: 0,
-              monthSessions: 0, monthChallenges: 0, monthExp: 0, topName: null };
+              monthSessions: 0, monthChallenges: 0, monthExp: 0, topName: null,
+              weekTotals: [], monthTotals: [] };
+  // v459: treneriui currentClub neužpildomas — logotipą imam iš DB, kitaip kortelė būtų be jo
+  try {
+    if (!d.logo || !d.clubName) {
+      const cid = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || currentProfile?.club_id;
+      if (cid){
+        const { data: c } = await sb.from('clubs').select('name, logo_url').eq('id', cid).maybeSingle();
+        if (c){ d.clubName = d.clubName || c.name || ''; d.logo = d.logo || c.logo_url || null; }
+      }
+    }
+  } catch(e){ /* be logotipo kortelė vis tiek veikia */ }
   try {
     if (kidIds.length){
       const [attT, attW, attM, chW, chM] = await Promise.all([
         sb.from('attendance').select('kid_id, present').eq('group_id', s.groupId).eq('session_date', ymd(today)),
         sb.from('attendance').select('session_date').eq('group_id', s.groupId).gte('session_date', ymd(wkStart)),
         sb.from('attendance').select('session_date').eq('group_id', s.groupId).gte('session_date', ymd(moStart)),
-        sb.from('challenge_submissions').select('id').in('kid_id', kidIds).eq('status','approved').gte('created_at', wkStart.toISOString()),
-        sb.from('challenge_submissions').select('id, kid_id').in('kid_id', kidIds).eq('status','approved').gte('created_at', moStart.toISOString())
+        sb.from('challenge_submissions').select('id, numeric_value, challenges(title, target_unit)').in('kid_id', kidIds).eq('status','approved').gte('created_at', wkStart.toISOString()),
+        sb.from('challenge_submissions').select('id, kid_id, numeric_value, challenges(title, target_unit)').in('kid_id', kidIds).eq('status','approved').gte('created_at', moStart.toISOString())
       ]);
       const at = attT.data || [];
       d.todayHeld = at.length > 0;
@@ -21985,6 +21996,23 @@ async function _tpsLoadData(){
       d.weekChallenges = (chW.data||[]).length;
       d.monthChallenges = (chM.data||[]).length;
       d.monthExp = kids.reduce((sum,k) => sum + (k.total_exp || 0), 0);
+      // 💪 v459: konkretūs skaičiai postui — „200 atsispaudimų, 100 pritūpimų"
+      // Sumuojam patvirtintų iššūkių rezultatus pagal pratimą (pavadinimas + vienetas).
+      const _sum = (arr) => {
+        const map = {};
+        (arr || []).forEach(r => {
+          const n = Number(r.numeric_value); if (!n || !isFinite(n)) return;
+          const t = (r.challenges?.title || '').trim(); if (!t) return;
+          const u = (r.challenges?.target_unit || '').trim();
+          const key = t + '|' + u;
+          map[key] = (map[key] || 0) + n;
+        });
+        return Object.entries(map)
+          .map(([k, v]) => ({ title: k.split('|')[0], unit: k.split('|')[1] || '', total: Math.round(v) }))
+          .sort((a, b) => b.total - a.total).slice(0, 4);
+      };
+      d.weekTotals = _sum(chW.data);
+      d.monthTotals = _sum(chM.data);
       const byKid = {}; (chM.data||[]).forEach(r => { byKid[r.kid_id] = (byKid[r.kid_id]||0)+1; });
       const topId = Object.keys(byKid).sort((a,b) => byKid[b]-byKid[a])[0];
       const topKid = kids.find(k => k.id === topId);
@@ -22003,12 +22031,25 @@ function _tpsBody(){
   const LT = ['sekmadienis','pirmadienis','antradienis','trečiadienis','ketvirtadienis','penktadienis','šeštadienis'];
   const dayLT = LT[new Date().getDay()];
 
+  // 💪 v459: konkrečių pratimų sumos — būtent dėl jų atsiranda noras postinti kasdien
+  const totalsHtml = (list, label) => {
+    if (!list || !list.length) return '';
+    return `<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14);">
+      <div style="font-size:9.5px;letter-spacing:2px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:9px;">${E(label)}</div>
+      ${list.map(t => `<div style="display:flex;align-items:baseline;justify-content:center;gap:7px;margin-bottom:5px;">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:23px;line-height:1;color:#FF9E40;">${t.total.toLocaleString('lt-LT')}</span>
+        <span style="font-size:11.5px;color:rgba(255,255,255,.82);">${E(t.unit || '')} ${E(t.title)}</span>
+      </div>`).join('')}
+    </div>`;
+  };
+
   if (s.tpl === 'photo' || s.tpl === 'today'){
     return `<div style="text-align:center;padding:8px 4px;">
       ${head}
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff;margin-top:8px;">TRENIRUOTĖ ĮVYKO</div>
       <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;text-transform:capitalize;">${E(dayLT)}</div>
       ${row([ big(d.todayPresent || 0, 'dalyvavo'), big(d.weekChallenges || 0, 'užduotys sav.') ])}
+      ${totalsHtml(d.weekTotals, 'šią savaitę nudirbta')}
     </div>`;
   }
   if (s.tpl === 'full'){
@@ -22024,6 +22065,7 @@ function _tpsBody(){
       ${head}
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff;margin-top:8px;">SAVAITĖS DARBAS</div>
       ${row([ big(d.weekSessions || 0, 'treniruotės'), big(d.weekChallenges || 0, 'užduotys') ])}
+      ${totalsHtml(d.weekTotals, 'iš viso nudirbta')}
     </div>`;
   }
   // month
@@ -22031,7 +22073,8 @@ function _tpsBody(){
     ${head}
     <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff;margin-top:8px;">MĖNESIO SUVESTINĖ</div>
     ${row([ big(d.monthSessions || 0, 'treniruotės'), big(d.monthChallenges || 0, 'užduotys'), big(d.kidsTotal || 0, 'vaikai') ])}
-    ${d.topName ? `<div style="margin-top:18px;font-size:12px;color:rgba(255,255,255,.75);">Darbščiausias: <b style="color:#FF9E40;">${E(d.topName)}</b></div>` : ''}
+    ${totalsHtml(d.monthTotals, 'per mėnesį nudirbta')}
+    ${d.topName ? `<div style="margin-top:14px;font-size:12px;color:rgba(255,255,255,.75);">Darbščiausias: <b style="color:#FF9E40;">${E(d.topName)}</b></div>` : ''}
   </div>`;
 }
 
