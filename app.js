@@ -15181,15 +15181,12 @@ const CLUB_FLAG_DEFS = [
   { k:'camps_enabled', t:''+ico('stovykla')+' Stovyklos', d:'Stovyklos ir renginiai su dalyvavimu.', info:'Stovyklos — daugiadieniai renginiai su dalyvavimo žymėjimu (RSVP) ir neprivalomu EXP už sudalyvavimą.<br><br>Išjungus: nebegalėsi kurti stovyklų.' },
 { k:'kid_trainer_chat_enabled', t:''+ico('zinutes')+' Vaikų žinutės treneriui', d:'Vaikas gali parašyti savo treneriui. Numatyta: įjungta.', info:'Vaikų žinutės treneriui — vaikas gali parašyti SAVO treneriui: iš varpelio („Žinutės" tabo) arba nustatymuose prie trenerio vardo spausdamas „Rašyti". Treneris atsako įprastame žinučių lange.<br><br>Vaikai TARPUSAVYJE susirašinėti negali — tai užrakinta sistemos lygiu.<br><br>Išjungus: vaikai nebegalės pradėti pokalbio ar atsakinėti, treneriui esami pokalbiai lieka matomi.' },
 { k:'fees_enabled', t:''+ico('mokejimas')+' Nario mokesčio žymėjimas', d:'Treneris žymi, kas atnešė mėnesio mokestį. Numatyta: išjungta.', info:'Nario mokesčio žymėjimas — treneris grupės lange pažymi, kas sumokėjo šio mėnesio mokestį (tik varnelė, be sumų ir be banko duomenų). Nepažymėti rodomi kaip skolingi, su mėnesių skaičiumi; klubo lange matai visų grupių suvestinę.<br><br>Skola skaičiuojama nuo mėnesio, kurį įjungei funkciją — už ankstesnius mėnesius niekas skolingas neatrodys. Einamasis mėnuo įskaičiuojamas: kol treneris nepažymėjo, vaikas rodomas geltonai („šį mėn.") — tai dar ne skola, o priminimas. Raudonai — kai skola kaupiasi ne pirmą mėnesį.<br><br>SVARBU: tai mato TIK treneriai ir klubas. Tėvai ir vaikai šito nemato niekada.' },
-  { sec:'IŠŠŪKIŲ TIPAI' },
-  { k:'challenge_training_enabled', t:''+ico('treniruote')+' Treniruotės', d:'Užduotis per vieną treniruotę.', info:'Treniruotės iššūkis — užduotis, atliekama per konkrečią treniruotę (pvz. „šiandien 30 pritūpimų salėje").<br><br>Išjungus: tokio tipo iššūkių nebebus galima kurti.' },
-  { k:'challenge_weekly_enabled', t:''+ico('greitis')+' Savaitiniai', d:'Kartojasi kas savaitę.', info:'Savaitinis iššūkis — atsinaujina kas savaitę (pvz. „šią savaitę 100 atsispaudimų"). Tinka nuolatiniam aktyvumui palaikyti.<br><br>Išjungus: savaitinių iššūkių nebebus galima kurti.' },
-  { k:'challenge_monthly_enabled', t:''+ico('tikslas')+' Mėnesiniai', d:'Ilgesnis tikslas mėnesiui.', info:'Mėnesinis iššūkis — didesnis tikslas visam mėnesiui (pvz. „per mėnesį nubėk 50 km").<br><br>Išjungus: mėnesinių iššūkių nebebus galima kurti.' },
-  // v476: „Vienkartiniai" ir „Be termino" jungikliai IŠIMTI (savininko sprendimas 08-21) —
-  // šie tipai pašalinti iš kūrimo dar v406, jungikliai valdė tai, ko nebėra. Seni DB įrašai gyvena toliau.
-  { sec:'PAPILDOMOS' },
+  // v477 (savininko sprendimai 08-21): „IŠŠŪKIŲ TIPAI" sekcija IŠIMTA — treniruotės/savaitinių/
+  // mėnesinių jungiklių kaip optional nereikia (visada įjungti; „Vienkartiniai"/„Be termino"
+  // tipai pašalinti iš kūrimo dar v406). Nauji jungikliai — toje pačioje FUNKCIJŲ sekcijoje,
+  // be atskiros „PAPILDOMOS" (viskas viename sąraše).
   { k:'challenge_numbers_required', def:false, t:'🔢 Tik iššūkiai su skaičiais', d:'Savo pratimuose privalomas taikinys (rep/km/sek). Numatyta: išjungta.', info:'Įjungus — treneris, kurdamas savo pratimą, PRIVALĖS įvesti skaitinį taikinį (kartai, km, sekundės...). Varianto „be skaičiaus (atlikta/ne)" nebeliks — visi iššūkiai bus su suvedamais skaičiais.<br><br>Išjungus: treneris gali palikti taikinį tuščią, ir iššūkis žymimas tik „atlikta / neatlikta".' },
-  { k:'health_certs_enabled', def:false, t:'🏥 Sveikatos pažymų žymėjimas', d:'Treneris žymi, iki kada galioja vaiko pažyma. Numatyta: išjungta.', info:'Sveikatos pažymų žymėjimas — treneris grupės lange pažymi, iki kada galioja kiekvieno vaiko sportuojančiojo sveikatos pažyma. Geltona — baigiasi per 30 d., raudona — pasibaigusi arba nepažymėta. Klubo suvestinė — Analitika → Veikla.<br><br>SVARBU: tai mato TIK treneriai ir klubas. Tėvai ir vaikai šito nemato.' },
+  { k:'health_certs_enabled', def:false, t:'🏥 Sveikatos pažymų žymėjimas', d:'Žymima vaiko kortelėje, iki kada galioja pažyma. Numatyta: išjungta.', info:'Sveikatos pažymų žymėjimas — atsidaręs vaiko kortelę treneris ar klubas įrašo, iki kada galioja sportuojančiojo sveikatos pažyma. Geltona — baigiasi per 30 d., raudona — pasibaigusi arba nepažymėta. Klubo suvestinė — Analitika → Veikla.<br><br>SVARBU: tai mato TIK treneriai ir klubas. Tėvai ir vaikai šito nemato.' },
   { k:'license_fee_enabled', def:false, t:'💳 Metinės licencijos žymėjimas', d:'Kaip nario mokestis, tik metinis (federacijos licencija). Numatyta: išjungta.', info:'Metinės licencijos žymėjimas — treneris tame pačiame „Mėnesio mokesčiai" lange perjungia į „Licencija" ir pažymi, kas susimokėjo metinę federacijos licenciją.<br><br>Tik varnelė, be sumų. Mato tik treneriai ir klubas.' },
   { k:'trainer_posts_enabled', t:'📣 Trenerių postų studija', d:'Treneris gali kurtis dalinimosi korteles su grupės rezultatais. Numatyta: įjungta.', info:'Postų studija — treneris grupės lange pasidaro dalinimosi kortelę (dienos/savaitės/mėnesio rezultatai, galima pridėti nuotrauką).<br><br>Išjungus: mygtukas treneriams dingsta — viešina tik klubas per savo Postų studiją.' },
   { k:'birthdays_enabled', t:'🎂 Gimtadienių priminimai', d:'Artėjantys vaikų gimtadieniai varpelyje + sveikinimas poste. Numatyta: įjungta.', info:'Gimtadienių priminimai — artėjantys (per 7 d.) vaikų gimtadieniai rodomi trenerio ir klubo varpelyje, o trenerio dienos poste automatiškai pasveikinami tos dienos gimtadieniečiai (tik vardas).<br><br>Išjungus: priminimų ir sveikinimų nebus.' }
@@ -15354,7 +15351,7 @@ async function _submitChangePassword(){
 
 // Suskleidžiamos „grouped settings" sekcijos (accordion) — numatytai suskleista
 let _clubSecOpen = {};
-const CLUB_SEC_KEY = { 'FUNKCIJOS':'func', 'IŠŠŪKIŲ TIPAI':'types', 'PAPILDOMOS':'extra' };
+const CLUB_SEC_KEY = { 'FUNKCIJOS':'func' };   // v477: liko viena sekcija — viskas viename sąraše
 function toggleClubSettingsSection(key){
   _clubSecOpen[key] = !_clubSecOpen[key];
   const r = document.getElementById('cs-rows-' + key);
@@ -16283,7 +16280,7 @@ async function loadClubHealthSection(){
         ? `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:0 2px 5px;">REIKIA DĖMESIO · ${attention.length}</div>
            <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${attention.map(item).join('')}</div>`
         : '<div style="text-align:center;padding:14px;color:var(--grn);font-size:11.5px;font-weight:700;">Visų pažymos galioja 🎉</div>') +
-      `<div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Žymi treneriai grupės lange (🏥 Sveikatos pažymos). Tėvai ir vaikai šito nemato.</div>`;
+      `<div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Žymima vaiko kortelėje (Sveikatos info → 🏥 Sveikatos pažyma). Tėvai ir vaikai šito nemato.</div>`;
   } catch(e){ console.error('[club-health]', e); el.innerHTML = _secErr((e.message || '') + ' (ar paleistas server-B4b SQL?)'); }
 }
 
@@ -21940,8 +21937,6 @@ async function openGroupView(groupId, silent) {
 
     ${(typeof flagOn === 'function' && !flagOn('fees_enabled')) ? '' : `<button onclick="openFees('${gObj.id}')" style="${gvBtn}width:calc(100% - 32px);margin:0 16px 8px;background:linear-gradient(135deg,rgba(34,197,94,.16),rgba(34,197,94,.04));color:#4ade80;border:.5px solid rgba(34,197,94,.45);display:block;">${ico('mokejimas')} MĖNESIO MOKESČIAI${(typeof flagOnStrict === 'function' && flagOnStrict('license_fee_enabled')) ? ' / LICENCIJA' : ''}</button>`}
 
-    ${(typeof flagOnStrict === 'function' && flagOnStrict('health_certs_enabled')) ? `<button onclick="openHealthCerts('${gObj.id}')" style="${gvBtn}width:calc(100% - 32px);margin:0 16px 8px;background:linear-gradient(135deg,rgba(244,114,182,.14),rgba(244,114,182,.04));color:#f9a8d4;border:.5px solid rgba(244,114,182,.4);display:block;">🏥 SVEIKATOS PAŽYMOS</button>` : ''}
-
     ${(typeof flagOn === 'function' && !flagOn('trainer_posts_enabled')) ? '' : `<button onclick="openTrainerPostStudio('${gObj.id}')" style="${gvBtn}width:calc(100% - 32px);margin:0 16px 8px;background:linear-gradient(135deg,rgba(24,119,242,.18),rgba(66,147,245,.05));color:#7ab3ff;border:.5px solid rgba(66,147,245,.45);display:block;">${ico('nuotrauka')} POSTŲ STUDIJA</button>`}
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 16px 10px;">
@@ -22713,7 +22708,6 @@ async function _feeSetMode(mode){
 // Geltona — baigiasi per 30 d., raudona — pasibaigusi arba nepažymėta.
 // Mato TIK treneriai ir klubas (server-B4b-papildomos-2026-08-21.sql).
 // ════════════════════════════════════════════════════════════════════════════
-let _hcState = null;
 function _hcStatus(dateStr){
   if (!dateStr) return { col:'#EF4444', bg:'rgba(239,68,68,.14)', label:'nepažymėta' };
   const d = new Date(dateStr + 'T12:00:00'); const today = new Date(); today.setHours(0,0,0,0);
@@ -22721,74 +22715,6 @@ function _hcStatus(dateStr){
   if (diff < 0)  return { col:'#EF4444', bg:'rgba(239,68,68,.14)', label:'pasibaigusi' };
   if (diff <= 30) return { col:'#EAB308', bg:'rgba(234,179,8,.14)', label:'baigiasi po ' + diff + ' d.' };
   return { col:'#4ade80', bg:'rgba(34,197,94,.12)', label:'galioja iki ' + dateStr };
-}
-async function openHealthCerts(groupId){
-  const g = (trainerGroupsCache || []).find(x => x.id === groupId) || { id: groupId, name: 'Grupė' };
-  const kids = (allTrainerKids || []).filter(k => k.group_id === groupId);
-  if (!kids.length){ showToast(ico('ispejimas')+' Grupėje nėra vaikų', 'error'); return; }
-  let map = {};
-  try {
-    const { data, error } = await sb.from('kid_health_certs').select('kid_id, valid_until').in('kid_id', kids.map(k => k.id));
-    if (error) throw error;
-    (data || []).forEach(r => { map[r.kid_id] = r.valid_until; });
-  } catch(e){ showToast(ico('klaida')+' Nepavyko užkrauti (ar paleistas SQL?): ' + (e.message||''), 'error', 6000); return; }
-  _hcState = { groupId, group: g, kids, map };
-  const rows = kids.map(k => {
-    const nm = `${k.first_name || ''} ${k.last_name || ''}`.trim() || 'Vaikas';
-    const st = _hcStatus(map[k.id]);
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:.5px solid var(--bdr);">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12.5px;font-weight:700;color:white;">${escapeHtml(nm)}</div>
-        <div id="hc-st-${k.id}" style="font-size:9.5px;color:${st.col};margin-top:1px;">${st.label}</div>
-      </div>
-      <input type="date" id="hc-d-${k.id}" value="${map[k.id] || ''}" onchange="_hcPaint('${k.id}')" style="flex-shrink:0;width:135px;background:var(--card);border:.5px solid var(--bdr);border-radius:9px;padding:8px;color:#fff;font-size:12px;font-family:inherit;">
-    </div>`;
-  }).join('');
-  const old = document.getElementById('hc-modal'); if (old) old.remove();
-  const m = document.createElement('div'); m.id = 'hc-modal';
-  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100004;align-items:flex-end;justify-content:center;';
-  m.onclick = e => { if (e.target === m) m.remove(); };
-  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);position:sticky;top:0;background:var(--bg);z-index:1;">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1.4px;">🏥 SVEIKATOS PAŽYMOS</div>
-        <button onclick="document.getElementById('hc-modal').remove()" style="background:none;border:none;font-size:20px;color:var(--mut);cursor:pointer;">${ico('uzdaryti')}</button>
-      </div>
-      <div style="font-size:10.5px;color:var(--mut);margin-top:3px;">${escapeHtml(g.name || '')} · įrašyk, iki kada galioja pažyma</div>
-    </div>
-    <div style="padding:4px 16px 0;">${rows}</div>
-    <button id="hc-save" onclick="_hcSave()" style="width:calc(100% - 32px);margin:13px 16px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;padding:13px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">IŠSAUGOTI</button>
-    <div style="font-size:10px;color:var(--mut);text-align:center;padding:0 16px 18px;line-height:1.55;">Geltona — baigiasi per 30 d., raudona — pasibaigusi/nepažymėta.<br>Tėvai ir vaikai šito nemato. Klubo suvestinė — Analitika → Veikla.</div>
-  </div>`;
-  document.body.appendChild(m);
-}
-function _hcPaint(kidId){
-  const v = document.getElementById('hc-d-' + kidId)?.value || '';
-  const st = _hcStatus(v);
-  const el = document.getElementById('hc-st-' + kidId);
-  if (el){ el.style.color = st.col; el.textContent = st.label; }
-}
-async function _hcSave(){
-  const s = _hcState; if (!s) return;
-  const btn = document.getElementById('hc-save');
-  if (btn){ if (btn.dataset.busy) return; btn.dataset.busy = '1'; btn.disabled = true; btn.textContent = 'SAUGOMA...'; }
-  try {
-    const clubId = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || currentClub?.id || currentProfile?.club_id;
-    const up = [], del = [];
-    s.kids.forEach(k => {
-      const v = document.getElementById('hc-d-' + k.id)?.value || '';
-      const old = s.map[k.id] || '';
-      if (v && v !== old) up.push({ kid_id: k.id, club_id: clubId, valid_until: v, marked_by: currentUser.id });
-      else if (!v && old) del.push(k.id);
-    });
-    if (up.length){ const { error } = await sb.from('kid_health_certs').upsert(up, { onConflict: 'kid_id' }); if (error) throw error; }
-    if (del.length){ const { error } = await sb.from('kid_health_certs').delete().in('kid_id', del); if (error) throw error; }
-    showToast(ico('patvirtinta')+' Pažymos išsaugotos', 'success');
-    document.getElementById('hc-modal')?.remove();
-  } catch(e){
-    if (btn){ btn.disabled = false; btn.dataset.busy = ''; btn.textContent = 'IŠSAUGOTI'; }
-    showToast(ico('klaida')+' Nepavyko: ' + (e.message || ''), 'error', 6000);
-  }
 }
 
 // 🎂 v476: artėjantys gimtadieniai (per N d.; N=0 — tik šiandien). Metų sandūra apdorota.
@@ -26860,6 +26786,52 @@ async function renderKidHealthPanel(kid) {
   // Renderiname info — BENDRA funkcija su tėvų portalu (v395: dublikatas pašalintas).
   // renderHealthInfo pati grąžina ir tuščios būsenos tekstą, ir escapeHtml'ina reikšmes.
   display.innerHTML = renderHealthInfo(kid);
+
+  // 🏥 v477: sveikatos pažymos žymėjimas VAIKO KORTELĖJE (savininko sprendimas 08-21 —
+  // ne atskiru mygtuku grupės lange, jų ten per daug). Mato TIK treneris/klubas, kai įjungta.
+  const certRow = document.getElementById('kd-cert-row');
+  if (certRow){
+    const staff = ['trainer', 'club_admin'].includes(currentProfile?.role);
+    const on = typeof flagOnStrict === 'function' && flagOnStrict('health_certs_enabled');
+    if (staff && on){
+      certRow.style.display = '';
+      certRow.innerHTML = '<div style="font-size:10px;color:var(--mut);padding:8px 0 0;">Kraunama pažyma...</div>';
+      try {
+        const { data, error } = await sb.from('kid_health_certs').select('valid_until').eq('kid_id', kid.id).maybeSingle();
+        if (error) throw error;
+        const v = data?.valid_until || '';
+        const st = _hcStatus(v || null);
+        certRow.innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:.5px solid var(--bdr);">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:10.5px;color:var(--mut);font-weight:800;letter-spacing:.6px;">🏥 SVEIKATOS PAŽYMA</div>
+            <div id="kd-cert-st" style="font-size:10.5px;color:${st.col};margin-top:2px;font-weight:700;">${st.label}</div>
+          </div>
+          <input type="date" id="kd-cert-date" value="${v}" onchange="_kdCertSave('${kid.id}')" style="flex-shrink:0;width:135px;background:var(--card);border:.5px solid var(--bdr);border-radius:9px;padding:7px;color:#fff;font-size:12px;font-family:inherit;">
+        </div>
+        <div style="font-size:9px;color:var(--mut);margin-top:4px;">Įrašyk datą — išsisaugo iškart. Tėvai ir vaikai šito nemato.</div>`;
+      } catch(e){ certRow.style.display = 'none'; certRow.innerHTML = ''; console.warn('[kd-cert]', e); }
+    } else { certRow.style.display = 'none'; certRow.innerHTML = ''; }
+  }
+}
+
+// 🏥 v477: pažymos data išsaugoma iškart pakeitus (upsert; ištrynus datą — įrašas šalinamas)
+async function _kdCertSave(kidId){
+  const inp = document.getElementById('kd-cert-date'); if (!inp) return;
+  const v = inp.value || '';
+  try {
+    if (v){
+      const clubId = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || currentClub?.id || currentProfile?.club_id;
+      const { error } = await sb.from('kid_health_certs').upsert({ kid_id: kidId, club_id: clubId, valid_until: v, marked_by: currentUser.id }, { onConflict: 'kid_id' });
+      if (error) throw error;
+    } else {
+      const { error } = await sb.from('kid_health_certs').delete().eq('kid_id', kidId);
+      if (error) throw error;
+    }
+    const st = _hcStatus(v || null);
+    const el = document.getElementById('kd-cert-st');
+    if (el){ el.style.color = st.col; el.textContent = st.label; }
+    showToast(ico('patvirtinta') + ' Pažyma išsaugota', 'success', 2000);
+  } catch(e){ showToast(ico('klaida') + ' Nepavyko: ' + (e.message || ''), 'error', 5000); }
 }
 
 async function kdToggleHealthEdit() {
