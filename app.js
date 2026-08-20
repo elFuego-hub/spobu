@@ -14894,7 +14894,8 @@ async function _fetchClubNotifications(force){
         icon: '' + ico('dokumentas') + '',
         title: `${n.author_name}: užrašas (${kur})`,
         sub: (n.body || '').slice(0, 110),
-        time: n.created_at
+        time: n.created_at,
+        link: { screen: 'k-trainers', teamTab: 'groups' }   // v470: užrašai gyvena KLUBAS → Grupės
       });
     });
   } catch(e){ /* funkcijos dar gali nebūti — tylim */ }
@@ -15547,7 +15548,7 @@ async function loadClubAttendance(){
           return `<div style="display:flex;align-items:center;gap:9px;padding:9px 12px;border-top:.5px solid var(--bdr);"><span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;${red?'box-shadow:0 0 6px #EF4444;':''}"></span><div style="flex:1;min-width:0;font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.name}</div><div style="flex-shrink:0;text-align:right;"><div style="font-size:12px;font-weight:700;color:${col};">${x.streak} iš eilės</div><div style="font-size:9px;color:var(--mut);">${x.lastPresent?'paskutinį '+formatDateLT(x.lastPresent):'nė karto'}</div></div></div>`; }).join('')
       : '<div style="text-align:center;color:var(--grn);padding:14px;font-size:12px;">'+ico('gimtadienis')+' Visi lanko reguliariai</div>';
     const grpBars = groupRows.map(g=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;"><div style="flex:1;min-width:0;font-size:11px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.name}</div><div style="width:80px;height:8px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${g.pct}%;height:100%;background:${g.pct>=70?'#22C55E':g.pct>=50?'#EAB308':'#EF4444'};border-radius:5px;"></div></div><div style="width:32px;text-align:right;font-size:11px;color:#fff;">${g.pct}%</div></div>`).join('');
-    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">${ico('alertas')} NELANKANTYS — VERTA SUSISIEKTI</span>${streaks.length?`<span style="font-size:11px;font-weight:700;"><span class="dot dot-bad"></span> ${redN} 🟡 ${yelN}</span>`:''}</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${alertRows}</div><div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:12px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${overall>=70?'var(--grn)':overall>=50?'#EAB308':'#EF4444'};line-height:1;">${overall}%</div><div style="font-size:10px;color:var(--mut);">vidutinis lankomumas (60 d.)</div></div><div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:0 2px 6px;">PAGAL GRUPĘ</div>${grpBars}`;
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">${ico('alertas')} NELANKANTYS — VERTA SUSISIEKTI</span>${streaks.length?`<span style="font-size:11px;font-weight:700;"><span class="dot dot-bad"></span> ${redN} 🟡 ${yelN}</span>`:''}</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:14px;">${alertRows}</div><div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:12px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${overall>=70?'var(--grn)':overall>=50?'#EAB308':'#EF4444'};line-height:1;">${overall}%</div><div style="font-size:10px;color:var(--mut);">vidutinis lankomumas (60 d.)</div></div><div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;margin:0 2px 6px;">PAGAL GRUPĘ</div>${grpBars}<button onclick="exportClubAttendanceCsv()" class="btn btnd" style="width:100%;margin:12px 0 0;">${ico('pastas')} EKSPORTUOTI Į EXCEL (CSV)</button><div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Faile — visų vaikų lankomumas pagal datas (1=buvo, 0=nebuvo) + grupių % pagal dieną grafikui.</div>`;
   } catch(e){ console.error('[club-att]',e); el.innerHTML = _secErr(e.message); }
 }
 
@@ -16220,6 +16221,8 @@ function applyClubFlagGates(){
     _gateEl('tr-new-challenge-btn', flagOn('trainers_can_create_challenges'));
     _gateSel('button[onclick*="openCreateChallenge("]', flagOn('trainers_can_create_challenges'));
     // trainers_can_create_competitions — trenerio varžybų kūrimo mygtuko NĖRA (varžybos tik klubo) → nieko neslepiam
+    // 💶 v470: mokesčių sekcija analitikoje — tik kai klubas įjungęs fees_enabled
+    _gateEl('k-fees-sec', flagOn('fees_enabled'));
   } catch(e){ /* tylim */ }
 }
 
@@ -29234,8 +29237,47 @@ async function loadClubFeesCard(){
     <div style="height:7px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden;margin-bottom:4px;">
       <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#22C55E,#4ade80);"></div></div>`;
 
-    // v461 (B4): atskiriam „dar neatnešė už šį mėnesį" (normalu mėnesio pradžioje)
-    // nuo tikros skolos (2+ mėn.) — kitaip pirmą funkcijos dieną VISI atrodo raudonai skolingi.
+    // v470 (savininko sprendimas): pagrindiniame lange TIK BENDRI SKAIČIAI —
+    // detalus sąrašas ir Excel eksportas gyvena Analitika → Veikla → NARIO MOKESČIAI.
+    const senos = debtors.filter(r => r.debt_months > 1 || r.paid_current).length;   // 2+ mėn. arba senesnė skola
+    body.innerHTML = kpi +
+      `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px;font-size:11.5px;font-weight:700;">
+        <span style="color:#fff;">Dar neatnešė: <span style="color:${debtors.length?'#EAB308':'var(--grn)'};">${debtors.length}</span></span>
+        <span style="color:${senos?'#ff9c9c':'var(--mut)'};">Senesnė skola: ${senos}</span>
+      </div>` +
+      `<div style="font-size:10px;color:var(--br);text-align:center;margin-top:10px;font-weight:700;">Spausk — detalus sąrašas ir Excel eksportas analitikoje ›</div>`;
+  } catch(e){
+    console.warn('loadClubFeesCard', e);
+    body.innerHTML = `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nepavyko užkrauti (${escapeHtml((e.message||'').slice(0,60))})</div>`;
+  }
+}
+
+// 💶 v470: iš pagrindinio lango kortelės — tiesiai į Analitika → Veikla → NARIO MOKESČIAI (atidarytą)
+function openClubFeesAnalytics(){
+  nv('k', null, 'k-stat');
+  if (typeof switchClubAnalyticsTab === 'function') switchClubAnalyticsTab('activity');
+  const c = document.getElementById('k-fees-anal-content');
+  if (c && getComputedStyle(c).display === 'none') _toggleSec('k-fees-anal-content', 'k-fees-anal-chev', loadClubFeesSection);
+  else if (typeof loadClubFeesSection === 'function') loadClubFeesSection();
+  setTimeout(() => { document.getElementById('k-fees-sec')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
+}
+
+// 💶 v470: DETALUS mokesčių sąrašas Analitikoje (perkeltas iš pagrindinio lango kortelės)
+// + Excel eksportas pagal mėnesius. Geltona = tik einamasis mėnuo, raudona = kaupiasi skola.
+async function loadClubFeesSection(){
+  const el = document.getElementById('k-fees-anal-content'); if (!el || !currentClub?.id) return;
+  if (typeof flagOn === 'function' && !flagOn('fees_enabled')){
+    el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:18px;font-size:12px;">Funkcija išjungta. Įjunk: Profilis → Klubo nustatymai → Nario mokesčio žymėjimas.</div>';
+    return;
+  }
+  el.innerHTML = _SEC_LOAD;
+  try {
+    const { data, error } = await sb.rpc('club_fee_debts', { p_club: currentClub?.id || null });
+    if (error) throw error;
+    const rows = data || [];
+    const paid = rows.filter(r => r.paid_current).length;
+    const debtors = rows.filter(r => r.debt_months > 0);
+    const senos = debtors.filter(r => r.debt_months > 1 || r.paid_current).length;
     const list = debtors.length
       ? debtors.map(r => {
           const nm = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Vaikas';
@@ -29245,7 +29287,7 @@ async function loadClubFeesCard(){
           const bd = tikSis ? 'rgba(234,179,8,.45)' : 'rgba(239,68,68,.45)';
           const cl = tikSis ? '#EAB308' : '#ff9c9c';
           const lbl = tikSis ? 'šį mėn.' : (r.debt_months + ' mėn.');
-          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid var(--bdr);">
+          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:.5px solid var(--bdr);">
             <div style="flex:1;min-width:0;">
               <div style="font-size:12.5px;font-weight:700;color:white;">${escapeHtml(nm)}</div>
               <div style="font-size:9.5px;color:var(--mut);margin-top:1px;">${escapeHtml(r.group_name || 'be grupės')}${cur ? ' · neatnešė už šį mėnesį' : ''}</div>
@@ -29254,56 +29296,174 @@ async function loadClubFeesCard(){
           </div>`;
         }).join('')
       : '<div style="text-align:center;padding:16px;color:var(--grn);font-size:11.5px;font-weight:700;">Visi sumokėję — skolų nėra</div>';
-
-    const senos = debtors.filter(r => r.debt_months > 1 || r.paid_current).length;   // 2+ mėn. arba senesnė skola
-    body.innerHTML = kpi +
-      `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:14px 0 2px;">DAR NEATNEŠĖ · ${debtors.length}${senos?` <span style="color:#ff9c9c;">· iš jų ${senos} su senesne skola</span>`:''}</div>` +
-      list +
-      `<div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:10px;line-height:1.5;">Žymi treneriai grupės lange. Tėvai ir vaikai šito nemato.<br>Geltona = dar neatnešė už šį mėnesį (normalu mėnesio pradžioje), raudona = kaupiasi skola.</div>`;
-  } catch(e){
-    console.warn('loadClubFeesCard', e);
-    body.innerHTML = `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nepavyko užkrauti (${escapeHtml((e.message||'').slice(0,60))})</div>`;
-  }
+    el.innerHTML =
+      `<div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:10px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--grn);line-height:1;">${paid}/${rows.length}</div>
+        <div style="font-size:10px;color:var(--mut);">sumokėjo už ${_feeMonthLT(_feeMonthKey(new Date()))}</div>
+      </div>` +
+      `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:0 2px 5px;">DAR NEATNEŠĖ · ${debtors.length}${senos ? ` <span style="color:#ff9c9c;">· iš jų ${senos} su senesne skola</span>` : ''}</div>` +
+      `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${list}</div>` +
+      `<button onclick="exportClubFeesCsv()" class="btn btnd" style="width:100%;margin:12px 0 0;">${ico('pastas')} EKSPORTUOTI Į EXCEL (CSV)</button>` +
+      `<div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Faile — lentelė pagal mėnesius (nuo įjungimo): kas sumokėjo, kas ne.<br>Žymi treneriai grupės lange. Tėvai ir vaikai šito nemato.</div>`;
+  } catch(e){ console.error('[club-fees-sec]', e); el.innerHTML = _secErr(e.message); }
 }
 
-// 📝 v455: trenerių užrašai klubui — MATOMOJE vietoje, ne tik varpelyje
-// (savininko pastaba: „parašiau komentarą, bet klubo paskyroje nematau kur turėtų būti")
-async function loadClubNotesCard(){
-  const card = document.getElementById('k-notes-card');
-  if (!card) return;
+// 📊 v470: mokesčių Excel — CSV (UTF-8 su BOM, Excel atidaro tiesiogiai).
+// Eilutės: vaikai pagal grupes. Stulpeliai: mėnesiai nuo fees_start_month iki dabar.
+// Reikšmės: „Sumokėjo" / „NE" + skolos suma mėnesiais gale.
+async function exportClubFeesCsv(){
+  try {
+    const cid = currentClub?.id; if (!cid) return;
+    const start = clubFlags?.fees_start_month || _feeMonthKey(new Date());
+    const months = [];
+    let d = new Date(parseInt(start.split('-')[0], 10), parseInt(start.split('-')[1], 10) - 1, 1);
+    const now = new Date();
+    while (d <= now && months.length < 60){ months.push(_feeMonthKey(d)); d = new Date(d.getFullYear(), d.getMonth() + 1, 1); }
+    const [feesRes, kidsRes] = await Promise.all([
+      sb.from('member_fees').select('kid_id, period_key').eq('club_id', cid),
+      sb.rpc('club_fee_debts', { p_club: cid })
+    ]);
+    if (feesRes.error) throw feesRes.error;
+    if (kidsRes.error) throw kidsRes.error;
+    const paidSet = new Set((feesRes.data || []).map(f => f.kid_id + '|' + f.period_key));
+    const kids = (kidsRes.data || []).slice().sort((a, b) =>
+      (a.group_name || 'žžž').localeCompare(b.group_name || 'žžž', 'lt') || (a.first_name || '').localeCompare(b.first_name || '', 'lt'));
+    const q = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
+    let csv = 'Grupė,Vardas,Pavardė,' + months.map(m => q(_feeMonthLT(m))).join(',') + ',Skola (mėn.)\n';
+    kids.forEach(k => {
+      const cells = months.map(m => paidSet.has(k.kid_id + '|' + m) ? 'Sumokėjo' : 'NE');
+      csv += `${q(k.group_name || 'be grupės')},${q(k.first_name)},${q(k.last_name)},` + cells.join(',') + ',' + (k.debt_months || 0) + '\n';
+    });
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `nario_mokesciai_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast(ico('patvirtinta') + ' Eksportuota — atsidaro su Excel', 'success');
+  } catch(e){ console.error('[fees-csv]', e); showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko eksportuoti'), 'error'); }
+}
+
+// 📊 v470: lankomumo Excel — CSV (UTF-8 su BOM). Trys blokai viename faile:
+// 1) vaikai pagal grupes × treniruočių datos (1=buvo, 0=nebuvo, tuščia=nežymėta) + %,
+// 2) grupių suvestinė, 3) grupių lankomumas % pagal dieną — grafiko duomenys Excel'iui.
+async function exportClubAttendanceCsv(){
+  try {
+    const cid = currentClub?.id; if (!cid) return;
+    const { data: groups, error: gErr } = await sb.from('groups').select('id, name').eq('club_id', cid);
+    if (gErr) throw gErr;
+    const gName = {}; (groups || []).forEach(g => { gName[g.id] = g.name || 'Grupė'; });
+    const gIds = (groups || []).map(g => g.id);
+    if (!gIds.length){ showToast(ico('klaida') + ' Nėra grupių', 'error'); return; }
+    const { data: att, error } = await sb.from('attendance').select('group_id, kid_id, present, session_date').in('group_id', gIds).order('session_date');
+    if (error) throw error;
+    const rows = att || [];
+    if (!rows.length){ showToast(ico('klaida') + ' Lankomumas dar nežymėtas', 'error'); return; }
+    const dates = [...new Set(rows.map(r => r.session_date))].sort();
+    const kidIds = [...new Set(rows.map(r => r.kid_id))];
+    const { data: kd } = await sb.from('kids').select('id, first_name, last_name').in('id', kidIds);
+    const kInfo = {}; (kd || []).forEach(k => { kInfo[k.id] = k; });
+    const mark = {};   // kid|group|date → '1' / '0'
+    rows.forEach(r => { mark[r.kid_id + '|' + r.group_id + '|' + r.session_date] = r.present ? '1' : '0'; });
+    const pairs = [...new Set(rows.map(r => r.kid_id + '|' + r.group_id))].map(p => {
+      const [kid, grp] = p.split('|'); const k = kInfo[kid] || {};
+      return { kid, grp, gname: gName[grp] || 'Grupė', fn: k.first_name || 'Vaikas', ln: k.last_name || '' };
+    }).sort((a, b) => a.gname.localeCompare(b.gname, 'lt') || a.fn.localeCompare(b.fn, 'lt'));
+    const q = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
+    let csv = 'Grupė,Vardas,Pavardė,Lankomumas %,' + dates.join(',') + '\n';
+    pairs.forEach(p => {
+      let buvo = 0, viso = 0;
+      const cells = dates.map(dt => { const v = mark[p.kid + '|' + p.grp + '|' + dt]; if (v !== undefined){ viso++; if (v === '1') buvo++; } return v === undefined ? '' : v; });
+      const pct = viso ? Math.round(buvo / viso * 100) : '';
+      csv += `${q(p.gname)},${q(p.fn)},${q(p.ln)},${pct},` + cells.join(',') + '\n';
+    });
+    // 2) grupių suvestinė
+    csv += '\nGRUPIŲ SUVESTINĖ\nGrupė,Lankomumas %,Žymėtų įrašų\n';
+    const byG = {}; rows.forEach(r => { const o = byG[r.group_id] = byG[r.group_id] || { p: 0, t: 0 }; o.t++; if (r.present) o.p++; });
+    Object.entries(byG).sort((a, b) => (gName[a[0]] || '').localeCompare(gName[b[0]] || '', 'lt'))
+      .forEach(([gid, v]) => { csv += `${q(gName[gid] || 'Grupė')},${Math.round(v.p / v.t * 100)},${v.t}\n`; });
+    // 3) grafiko duomenys: grupės × dienos %
+    csv += '\nGRUPIŲ LANKOMUMAS % PAGAL DIENĄ (grafikui)\nGrupė,' + dates.join(',') + '\n';
+    const byGD = {}; rows.forEach(r => { const k = r.group_id + '|' + r.session_date; const o = byGD[k] = byGD[k] || { p: 0, t: 0 }; o.t++; if (r.present) o.p++; });
+    (groups || []).forEach(g => {
+      const cells = dates.map(dt => { const o = byGD[g.id + '|' + dt]; return o ? Math.round(o.p / o.t * 100) : ''; });
+      if (cells.some(c => c !== '')) csv += `${q(gName[g.id])},` + cells.join(',') + '\n';
+    });
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `lankomumas_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast(ico('patvirtinta') + ' Eksportuota — atsidaro su Excel', 'success');
+  } catch(e){ console.error('[att-csv]', e); showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko eksportuoti'), 'error'); }
+}
+
+// 📝 v455/v470: trenerių užrašai — juosta KLUBAS → Grupės tabe (savininko sprendimas 08-20:
+// „perkelti prie klubo ir grupių, kad ten matytų, jog žinučių yra, ir ant jų paspaustų").
+// Paspaudus juostą atsidaro pilnas sąrašas modale.
+let _clubNotesRows = null;
+async function loadClubNotesStrip(){
+  const strip = document.getElementById('k-notes-strip');
+  if (!strip) return;
+  const tEl = document.getElementById('k-notes-strip-title');
+  const pEl = document.getElementById('k-notes-strip-preview');
   try {
     const { data, error } = await sb.rpc('club_staff_notes', { p_days: 60 });
     if (error) throw error;
     const rows = data || [];
-    if (!rows.length){ card.style.display = 'none'; return; }
-    card.style.display = '';
-    const cEl = document.getElementById('k-notes-count');
-    if (cEl) cEl.textContent = rows.length + ' ' + _ltPl(rows.length, 'užrašas', 'užrašai', 'užrašų');
-    document.getElementById('k-notes-body').innerHTML = rows.slice(0, 8).map(n => {
-      const kur = n.kid_name ? ('apie ' + escapeHtml(n.kid_name)) : escapeHtml(n.group_name || 'klubui');
-      return `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 12px;margin-bottom:7px;">
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
-          <span style="font-size:9.5px;font-weight:800;color:#FF7A33;white-space:nowrap;">${escapeHtml(n.author_name || 'Treneris')}</span>
-          <span style="font-size:9.5px;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kur} · ${_noteTimeLT(n.created_at)}</span>
-        </div>
-        <div style="font-size:12px;color:rgba(255,255,255,.9);line-height:1.5;white-space:pre-wrap;">${escapeHtml(n.body)}</div>
-      </div>`;
-    }).join('');
+    _clubNotesRows = rows;
+    if (!rows.length){ strip.style.display = 'none'; return; }
+    strip.style.display = '';
+    if (tEl) tEl.textContent = 'TRENERIŲ UŽRAŠAI · ' + rows.length + ' ' + _ltPl(rows.length, 'užrašas', 'užrašai', 'užrašų');
+    const last = rows[0];
+    if (pEl) pEl.textContent = (last.author_name || 'Treneris') + ': ' + (last.body || '').replace(/\s+/g, ' ').slice(0, 80);
   } catch(e){
-    // v460 (B4): klaidos nebeslepiam tyliai — kitaip klubas niekada nesužinotų, kad
-    // trenerio užrašai neužsikrovė (atrodytų, kad jų tiesiog nėra).
-    console.warn('loadClubNotesCard', e);
-    card.style.display = '';
-    const cEl = document.getElementById('k-notes-count'); if (cEl) cEl.textContent = '';
-    const bEl = document.getElementById('k-notes-body');
-    if (bEl) bEl.innerHTML = `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Nepavyko užkrauti (${escapeHtml((e.message||'').slice(0,60))})</div>`;
+    // klaidos neslepiam (v460 pamoka) — kitaip klubas nesužinotų, kad užrašai neužsikrovė
+    console.warn('loadClubNotesStrip', e);
+    strip.style.display = '';
+    if (tEl) tEl.textContent = 'TRENERIŲ UŽRAŠAI';
+    if (pEl) pEl.textContent = 'Nepavyko užkrauti — atidaryk dar kartą';
+    _clubNotesRows = null;
   }
+}
+
+// 📝 v470: pilnas užrašų sąrašas modale (atsidaro paspaudus juostą)
+async function openClubNotesModal(){
+  let rows = _clubNotesRows;
+  if (!rows){ try { const { data } = await sb.rpc('club_staff_notes', { p_days: 60 }); rows = data || []; _clubNotesRows = rows; } catch(_){ rows = []; } }
+  document.getElementById('club-notes-modal')?.remove();
+  const m = document.createElement('div'); m.id = 'club-notes-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100004;align-items:flex-end;justify-content:center;';
+  m.onclick = e => { if (e.target === m) m.remove(); };
+  const body = rows.length ? rows.map(n => {
+    const kur = n.kid_name ? ('apie ' + escapeHtml(n.kid_name)) : escapeHtml(n.group_name || 'klubui');
+    return `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 12px;margin-bottom:7px;">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+        <span style="font-size:9.5px;font-weight:800;color:#FF7A33;white-space:nowrap;">${escapeHtml(n.author_name || 'Treneris')}</span>
+        <span style="font-size:9.5px;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kur} · ${_noteTimeLT(n.created_at)}</span>
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,.9);line-height:1.5;white-space:pre-wrap;">${escapeHtml(n.body)}</div>
+    </div>`;
+  }).join('') : '<div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Užrašų nėra.</div>';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">📝 TRENERIŲ UŽRAŠAI · 60 D.</div>
+      <button onclick="document.getElementById('club-notes-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
+    </div>
+    <div style="padding:14px 16px 20px;">${body}
+      <div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:8px;">Užrašus rašo treneriai savo grupės lange.</div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
 }
 
 async function loadClubMainDashboard(){
   if (!currentClub?.id) return;
   if (typeof loadClubFeesCard === 'function') loadClubFeesCard();
-  if (typeof loadClubNotesCard === 'function') loadClubNotesCard();
+  // v470: užrašų juosta gyvena KLUBAS → Grupės tabe — kraunama loadClubGroups() metu
   const cid = currentClub.id;
   const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el){ if(typeof v==='string' && v.indexOf('<svg')!==-1) el.innerHTML=v; else el.textContent=v; } };
   let clubKids = (typeof _getClubKids==='function') ? (await _getClubKids().catch(()=>[])) : [];
@@ -29429,6 +29589,7 @@ let _clubGroupsRankBy = 'overall';
 async function loadClubGroups(){
   const el = document.getElementById('k-groups-list');
   if (!el || !currentClub?.id) return;
+  if (typeof loadClubNotesStrip === 'function') loadClubNotesStrip();   // v470: užrašų juosta virš grupių
   try {
     const [gRes, tRes, catRes] = await Promise.all([
       sb.from('groups').select('id, name, color, training_days, train_time, schedule, trainer_id, assistant_trainer_ids, is_active').eq('club_id', currentClub.id),

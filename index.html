@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=469">
+<link rel="stylesheet" href="styles.css?v=470">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v469</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v470</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3351,14 +3351,9 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
 
-    <!-- 📝 v455/v460: TRENERIŲ UŽRAŠAI KLUBUI — pagrindiniame lange, iškart po „Reikia dėmesio" -->
-    <div id="k-notes-card" class="cd" style="display:none;">
-      <div class="st" style="padding:0 0 8px;">📝 TRENERIŲ UŽRAŠAI · <span id="k-notes-count" style="color:var(--mut);font-size:11px;"></span></div>
-      <div id="k-notes-body"></div>
-    </div>
-
-    <!-- 💶 v452/v460: NARIO MOKESČIAI (rodoma tik kai klubas įjungęs fees_enabled) -->
-    <div id="k-fees-card" class="cd" style="display:none;">
+    <!-- 💶 v470: NARIO MOKESČIAI — TIK bendri skaičiai; paspaudus → Analitika → Veikla (detalus sąrašas + Excel).
+         Užrašų kortelė perkelta į KLUBAS → Grupės (v470, savininko sprendimas). -->
+    <div id="k-fees-card" class="cd" style="display:none;cursor:pointer;" onclick="if(typeof openClubFeesAnalytics==='function')openClubFeesAnalytics()">
       <div class="st" style="padding:0 0 8px;">💶 NARIO MOKESČIAI · <span id="k-fees-month" style="color:var(--mut);font-size:11px;"></span></div>
       <div id="k-fees-body"><div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
     </div>
@@ -3434,6 +3429,17 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px;">
         <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.4px;"><svg class="ico" aria-hidden="true"><use href="#i-kalendorius"></use></svg> GRUPĖS</div>
         <button onclick="openClubGroupModal()" style="background:var(--br);border:none;color:#fff;font-size:11px;font-weight:800;padding:6px 12px;border-radius:99px;cursor:pointer;">+ Nauja grupė</button>
+      </div>
+      <!-- 📝 v470: trenerių užrašų juosta — matosi, kad žinučių YRA; paspaudus atsidaro sąrašas -->
+      <div id="k-notes-strip" style="display:none;margin:0 16px 10px;background:rgba(255,122,51,.08);border:.5px solid rgba(255,122,51,.35);border-radius:12px;padding:11px 13px;cursor:pointer;" onclick="if(typeof openClubNotesModal==='function')openClubNotesModal()">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:18px;flex-shrink:0;">📝</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:800;color:#FF7A33;" id="k-notes-strip-title">Trenerių užrašai</div>
+            <div style="font-size:10.5px;color:var(--mut);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="k-notes-strip-preview"></div>
+          </div>
+          <div style="font-size:15px;color:var(--mut);flex-shrink:0;">›</div>
+        </div>
       </div>
       <div id="k-groups-list" style="padding:0 16px 6px;"><div style="text-align:center;padding:18px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
     </div>
@@ -3653,6 +3659,15 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> VEIKLA -->
     <div id="k-anal-activity" class="k-anal-pane" style="display:none;">
+      <!-- 💶 v470: NARIO MOKESČIAI — detalus sąrašas + Excel eksportas (rodoma tik kai fees_enabled) -->
+      <div id="k-fees-sec">
+        <div onclick="_toggleSec('k-fees-anal-content','k-fees-anal-chev',loadClubFeesSection)" class="k-sec">
+          <div class="k-sec-ico" style="background:rgba(34,197,94,.15);">💶</div>
+          <div style="flex:1;min-width:0;"><div class="k-sec-tt">NARIO MOKESČIAI</div><div class="k-sec-ds">Kas dar neatnešė · Excel pagal mėnesius</div></div>
+          <span id="k-fees-anal-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
+        </div>
+        <div id="k-fees-anal-content" style="display:none;padding:0 16px 10px;"></div>
+      </div>
       <div onclick="_toggleSec('k-lank-content','k-lank-chev',loadClubAttendance)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(239,68,68,.15);"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">LANKOMUMAS</div><div class="k-sec-ds">Kas nelanko — verta susisiekti</div></div>
@@ -4484,7 +4499,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=469"></script>
+<script src="app.js?v=470"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
