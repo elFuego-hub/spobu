@@ -4348,6 +4348,7 @@ async function openFbStudio() {
     try { clubLogo = await _shareClubLogo(); } catch (_) {}
     _fbState = {
       tpl: 'klubas', kidId: heroes[0]?.id || null,
+      selEx: null,   // v472: pratimų pasirinkimas (Set su numsRows indeksais; null = auto)
       d: {
         monthLabel: LT_GEN[now.getMonth()], year: now.getFullYear(),
         clubName: currentClub?.name || 'SPOBU klubas', clubLogo,
@@ -4386,6 +4387,17 @@ function _fbRender() {
         ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">${hs.map(h => `<div onclick="_fbSet('kidId','${h.id}')" style="${chip(st.kidId === h.id)}">${escapeHtml(h.name)} · +${h.exp}</div>`).join('')}</div>
            <div style="font-size:9px;color:var(--mut);margin-top:4px;">Rodomi TIK vaikai su tėvų media sutikimu · kortelėje tik vardas</div>`
         : '<div style="font-size:10.5px;color:#EF4444;margin-top:6px;">Nėra vaikų su tėvų media sutikimu — kario posto skelbti negalima</div>';
+    } else if ((st.tpl === 'klubas' || st.tpl === 'kvietimas') && (st.d.numsRows || []).length > 3) {
+      // 🎛️ v472: adminas pats pasirenka, kurie pratimai eina į postą (max 3; Auto = pagal kodą)
+      const rows = st.d.numsRows;
+      const sel = st.selEx;
+      const isOn = i => sel ? sel.has(i) : i < 3;
+      exEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;margin-bottom:4px;">
+          <span style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:.8px;">PRATIMAI KORTELĖJE · ${sel ? sel.size : Math.min(3, rows.length)}/3</span>
+          ${sel ? `<span onclick="_fbExAuto()" style="font-size:10px;color:#6aa9f7;font-weight:700;cursor:pointer;">↺ Auto</span>` : ''}
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">${rows.slice(0, 20).map((r, i) =>
+          `<div onclick="_fbToggleEx(${i})" style="${chip(isOn(i))}">${escapeHtml(r.val)} ${escapeHtml(String(r.name || '').slice(0, 26))}</div>`).join('')}</div>`;
     } else exEl.innerHTML = '';
   }
   const prev = document.getElementById('fb-prev');
@@ -4394,6 +4406,23 @@ function _fbRender() {
   if (txtEl) txtEl.textContent = _fbPostText(st);
 }
 function _fbHero(st) { return st.d.heroes.find(h => h.id === st.kidId) || st.d.heroes[0] || null; }
+// 🎛️ v472: pratimų pasirinkimo pagalbininkai („Klubo skaičiai" + „Ar įveiktum?")
+function _fbSelRows(d){
+  const rows = d.numsRows || [];
+  const sel = _fbState?.selEx;
+  return sel ? rows.filter((_, i) => sel.has(i)) : rows.slice(0, 3);
+}
+function _fbToggleEx(i){
+  const st = _fbState; if (!st) return;
+  if (!st.selEx) st.selEx = new Set([0, 1, 2].filter(x => x < (st.d.numsRows || []).length));   // startas nuo auto top 3
+  if (st.selEx.has(i)) st.selEx.delete(i);
+  else {
+    if (st.selEx.size >= 3){ showToast(ico('ispejimas') + ' Kortelėje telpa 3 pratimai — pirma nuimk kurį nors', 'error', 3000); return; }
+    st.selEx.add(i);
+  }
+  _fbRender();
+}
+function _fbExAuto(){ if (_fbState){ _fbState.selEx = null; _fbRender(); } }
 function _fbHtml(st) {
   const esc = escapeHtml, d = st.d;
   // 📊 v471: „Mėnesio suvestinė" — buvusi atskira kortelė, dabar studijos šablonas.
@@ -4425,7 +4454,8 @@ function _fbHtml(st) {
     </div>`;
   }
   if (st.tpl === 'kvietimas') {
-    const facts = _cardFacts({ numsRows: d.numsRows }).slice(0, 3);
+    // v472: jei adminas pasirinko pratimus — faktai iš jų; auto — iš visų pagal „įspūdingumo" balą
+    const facts = _cardFacts({ numsRows: st.selEx ? _fbSelRows(d) : d.numsRows }).slice(0, 3);
     return `<div style="padding:44px 36px 26px;color:#fff;font-family:'Segoe UI',Arial,sans-serif;text-align:center;background:#0e1420;border:1px solid rgba(79,195,247,.35);">
       ${head}
       <div style="font-size:30px;font-weight:800;color:#4FC3F7;margin-top:24px;line-height:1.3;">AR ĮVEIKTUM<br>MŪSŲ VAIKUS? 😏</div>
@@ -4436,8 +4466,8 @@ function _fbHtml(st) {
       ${foot}
     </div>`;
   }
-  // klubas (numatytasis) — kolektyviniai skaičiai be vardų
-  const top = d.numsRows.slice(0, 3);
+  // klubas (numatytasis) — kolektyviniai skaičiai be vardų (v472: arba admino pasirinkti)
+  const top = _fbSelRows(d);
   return `<div style="padding:44px 36px 26px;color:#fff;font-family:'Segoe UI',Arial,sans-serif;text-align:center;background:#12100e;border:1px solid rgba(255,122,51,.35);">
     ${head}
     <div style="font-size:19px;letter-spacing:4px;color:#FF7A33;margin-top:22px;">MŪSŲ ${esc(d.monthLabel)} 💪</div>
@@ -4459,10 +4489,10 @@ function _fbPostText(st) {
     return h ? `${d.monthLabel[0]}${mo.slice(1)} ${_pfTier(h.exp).word.toLowerCase()} — ${h.name}! 🥋\n+${h.exp} EXP per mėnesį. Didžiuojamės!\n#karate #vaikusportas #spobu` : '';
   }
   if (st.tpl === 'kvietimas') {
-    const f = _cardFacts({ numsRows: d.numsRows })[0];
+    const f = _cardFacts({ numsRows: st.selEx ? _fbSelRows(d) : d.numsRows })[0];
     return `Ar įveiktum mūsų vaikus? 😏\n${f ? `Vien per ${mo}: ${f.big} ${String(f.name || '').toLowerCase()} — ${f.small}!` : `${d.kidsCount} vaikų kasdien auga mūsų salėje.`}\nAtvesk savo vaiką išbandyti — lauksim! 🥋\n#karate #vaikusportas #${(d.clubName || 'klubas').replace(/\s+/g, '').toLowerCase()}`;
   }
-  const top = d.numsRows[0];
+  const top = _fbSelRows(d)[0] || d.numsRows[0];
   return `Mūsų klubo ${mo} skaičiais 💪\n${top ? `${top.val} ${top.name.toLowerCase()}` : `${d.tasks} įveiktų užduočių`}${d.medals ? ` · ${d.medals} medaliai` : ''} · ${d.kidsCount} karžygių.\nDidžiuojamės kiekvienu! 🥋\n#karate #vaikusportas #spobu`;
 }
 function _fbCopyText() {
@@ -21901,7 +21931,7 @@ async function _tpsFromProfile(){
 async function openTrainerPostStudio(groupId){
   const g = (trainerGroupsCache || []).find(x => x.id === groupId);
   if (!g){ showToast(ico('ispejimas')+' Pirma atidaryk grupę', 'error'); return; }
-  _tpsState = { groupId, group: g, tpl: 'photo', photo: null, canvas: null, d: null };
+  _tpsState = { groupId, group: g, tpl: 'photo', photo: null, canvas: null, d: null, sel: {} };   // sel: v472 — pratimų pasirinkimas po šabloną (null/nėra = auto top 8)
   _pfSheet('tps-modal', '📣 POSTŲ STUDIJA', `
     <div style="font-size:11px;color:var(--mut);margin-bottom:10px;">${escapeHtml(g.name || 'Grupė')}</div>
     <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;" class="no-scrollbar" id="tps-tpls"></div>
@@ -21909,6 +21939,7 @@ async function openTrainerPostStudio(groupId){
       <div style="padding:40px;color:var(--mut);font-size:11px;">Ruošiama...</div>
     </div>
     <div id="tps-photo-row" style="margin-top:10px;"></div>
+    <div id="tps-ex-row" style="margin-top:10px;"></div>
     <div style="display:flex;gap:8px;margin-top:10px;">
       <button onclick="_tpsShare()" style="flex:1;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;padding:13px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('siusti')} Dalintis</button>
       <button onclick="_tpsDownload()" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:#fff;border-radius:11px;padding:13px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('zemyn')}</button>
@@ -21988,10 +22019,12 @@ async function _tpsLoadData(){
           // buvo duotas ne visai grupei (pvz. tik berniukams ar vienam vaikui)
           (whoBy[key] = whoBy[key] || new Set()).add(r.kid_id || r.id);
         });
+        // v472: nebekarpom ties 12 — pilnas sąrašas reikalingas pratimų PASIRINKIMUI
+        // (treneris pats žymi, kas eina į postą), o „ir dar N" dabar skaičiuoja tiksliai.
         return Object.entries(map)
           .map(([k, v]) => ({ title: k.split('|')[0], unit: k.split('|')[1] || '', total: Math.round(v),
                               kids: (whoBy[k] ? whoBy[k].size : 0) }))
-          .sort((a, b) => b.total - a.total).slice(0, 12);
+          .sort((a, b) => b.total - a.total).slice(0, 40);
       };
       d.weekTotals = _sum(chW.data);
       d.monthTotals = _sum(chM.data);
@@ -22028,10 +22061,15 @@ function _tpsBody(){
   // ir 3, ir 10 pratimų, o kortelė yra kvadratas. Todėl kuo daugiau pratimų, tuo kompaktiškiau:
   //   iki 3 — dideli, viena kolona · 4–8 — dvi kolonos · daugiau — dvi kolonos + „ir dar N".
   const totalsHtml = (list, label) => {
-    if (!list || !list.length) return '';
-    const n = list.length;
+    // v472: jei treneris PATS pasirinko pratimus (chip'ai po peržiūra) — rodom tik juos;
+    // be pasirinkimo — auto top 8 pagal sumą, kaip iki šiol.
+    const selSet = (s.sel || {})[s.tpl];
+    let pool = list || [];
+    if (selSet) pool = pool.filter(t => selSet.has(t.title + '|' + t.unit));
+    if (!pool.length) return '';
+    const n = pool.length;
     const MAX = 8;                       // daugiau nebetelpa net dviem kolonomis
-    const shown = list.slice(0, MAX);
+    const shown = pool.slice(0, MAX);
     const rest  = n - shown.length;
     const twoCol = n > 3;
     const vSize  = n <= 3 ? 23 : (n <= 6 ? 19 : 16);   // skaičiaus dydis
@@ -22137,6 +22175,7 @@ async function _tpsSet(k){
       <button onclick="_tpsPickPhoto()" style="flex:1;background:var(--card);border:.5px dashed var(--bdr);color:rgba(255,255,255,.8);border-radius:11px;padding:11px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">${ico('nuotrauka')} ${s.photo ? 'Keisti nuotrauką' : 'Pridėti nuotrauką'}</button>
       ${s.photo ? `<button onclick="_tpsClearPhoto()" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:11px;padding:11px 14px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">Be nuotraukos</button>` : ''}
     </div>`;
+  if (typeof _tpsRenderExRow === 'function') _tpsRenderExRow();   // v472: pratimų pasirinkimo chip'ai
   await _tpsRender();
 }
 
@@ -22152,6 +22191,54 @@ function _tpsPickPhoto(){
   inp.click();
 }
 async function _tpsClearPhoto(){ if (!_tpsState) return; _tpsState.photo = null; await _tpsSet(_tpsState.tpl); }
+
+// 🎛️ v472: PRATIMŲ PASIRINKIMAS — treneris pats žymi, kurie pratimai eina į postą
+// (savininko užsakymas 08-20). Numatyta „Auto" = top 8 pagal sumą; pasirinkimas
+// saugomas atskirai kiekvienam šablonui, kol atidaryta studija.
+function _tpsCurList(){
+  const s = _tpsState, d = s?.d || {};
+  if (s.tpl === 'week') return d.weekTotals || [];
+  if (s.tpl === 'month') return d.monthTotals || [];
+  return (d.todayTotals || []).length ? d.todayTotals : (d.weekTotals || []);   // today ir full — kaip kortelėje
+}
+function _tpsRenderExRow(){
+  const s = _tpsState; const el = document.getElementById('tps-ex-row');
+  if (!s || !el) return;
+  const list = _tpsCurList();
+  if (list.length < 2){ el.innerHTML = ''; return; }
+  const sel = (s.sel || {})[s.tpl] || null;
+  const isOn = (t, i) => sel ? sel.has(t.title + '|' + t.unit) : i < 8;
+  const chip = (on) => `padding:6px 10px;border-radius:99px;font-size:10.5px;font-weight:700;cursor:pointer;border:.5px solid ${on ? 'rgba(255,122,51,.55)' : 'var(--bdr)'};background:${on ? 'rgba(255,122,51,.15)' : 'var(--card)'};color:${on ? '#FF9E40' : 'var(--mut)'};white-space:nowrap;`;
+  const selN = sel ? sel.size : Math.min(8, list.length);
+  el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+      <span style="font-size:9.5px;color:var(--mut);font-weight:800;letter-spacing:.8px;">PRATIMAI KORTELĖJE · ${selN}/8</span>
+      ${sel ? `<span onclick="_tpsExAuto()" style="font-size:10px;color:var(--br);font-weight:700;cursor:pointer;">↺ Auto (top 8)</span>` : ''}
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;">${list.slice(0, 24).map((t, i) =>
+      `<div onclick="_tpsToggleEx(${i})" style="${chip(isOn(t, i))}">${t.total.toLocaleString('lt-LT')} ${escapeHtml((t.unit || '').slice(0, 12))} ${escapeHtml(t.title.slice(0, 26))}</div>`).join('')}
+    </div>`;
+}
+async function _tpsToggleEx(i){
+  const s = _tpsState; if (!s) return;
+  const list = _tpsCurList(); const it = list[i]; if (!it) return;
+  const key = it.title + '|' + it.unit;
+  s.sel = s.sel || {};
+  let set = s.sel[s.tpl];
+  if (!set){ set = new Set(list.slice(0, 8).map(t => t.title + '|' + t.unit)); s.sel[s.tpl] = set; }   // startas nuo auto top 8
+  if (set.has(key)) set.delete(key);
+  else {
+    if (set.size >= 8){ showToast(ico('ispejimas') + ' Kortelėje telpa iki 8 pratimų — pirma nuimk kurį nors', 'error', 3000); return; }
+    set.add(key);
+  }
+  _tpsRenderExRow();
+  await _tpsRender();
+}
+async function _tpsExAuto(){
+  const s = _tpsState; if (!s) return;
+  if (s.sel) delete s.sel[s.tpl];
+  _tpsRenderExRow();
+  await _tpsRender();
+}
 
 async function _tpsShare(){
   const s = _tpsState; if (!s?.canvas){ showToast(ico('ispejimas')+' Palauk, ruošiama'); return; }
