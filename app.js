@@ -22015,8 +22015,8 @@ async function _tpsLoadData(){
         sb.from('attendance').select('kid_id, present').eq('group_id', s.groupId).eq('session_date', ymd(today)),
         sb.from('attendance').select('session_date').eq('group_id', s.groupId).gte('session_date', ymd(wkStart)),
         sb.from('attendance').select('session_date').eq('group_id', s.groupId).gte('session_date', ymd(moStart)),
-        sb.from('challenge_submissions').select('id, numeric_value, created_at, challenges(title, target_unit, target_value)').in('kid_id', kidIds).eq('status','approved').gte('created_at', wkStart.toISOString()),
-        sb.from('challenge_submissions').select('id, kid_id, numeric_value, challenges(title, target_unit, target_value)').in('kid_id', kidIds).eq('status','approved').gte('created_at', moStart.toISOString())
+        sb.from('challenge_submissions').select('id, kid_id, numeric_value, created_at, challenges(title, type, target_unit, target_value)').in('kid_id', kidIds).eq('status','approved').gte('created_at', wkStart.toISOString()),
+        sb.from('challenge_submissions').select('id, kid_id, numeric_value, challenges(title, type, target_unit, target_value)').in('kid_id', kidIds).eq('status','approved').gte('created_at', moStart.toISOString())
       ]);
       const at = attT.data || [];
       d.todayHeld = at.length > 0;
@@ -22033,7 +22033,7 @@ async function _tpsLoadData(){
       // Todėl: jei pateikta reikšmė didesnė už 1 — imam ją (vaikas viršijo arba įvedė km),
       // kitaip imam iššūkio tikslą. Antraip suma rodytų „3 kartai" vietoj „105 kartai".
       const _sum = (arr) => {
-        const map = {};
+        const map = {}, whoBy = {};   // whoBy: kiek SKIRTINGŲ vaikų prisidėjo prie kiekvieno pratimo
         (arr || []).forEach(r => {
           const sub = Number(r.numeric_value);
           const goal = Number(r.challenges?.target_value);
@@ -22041,21 +22041,32 @@ async function _tpsLoadData(){
           if (!n || !isFinite(n)) return;
           const t = (r.challenges?.title || '').trim(); if (!t) return;
           const u = (r.challenges?.target_unit || '').trim();
-          if (u === 'atlikta') return;   // „atlikta/neatlikta" pratimų nesumuojam — nėra ko
+          // v468: nesumuojam „meta" iššūkių — jų vienetas nėra pratimo matas.
+          // Pvz. „Lankomumas — tobulas mėnuo (12 treniruotės)" duotų kortelėje „60 treniruotės",
+          // nors grupė tiek treniruočių neturėjo. Taip pat „atlikta/neatlikta" — nėra ko sumuoti.
+          if (['atlikta','treniruotės','treniruotes','dienos','savaitės','savaites','mėnesiai','menesiai'].includes(u.toLowerCase())) return;
           const key = t + '|' + u;
           map[key] = (map[key] || 0) + n;
+          // v469: skaičiuojam, kiek skirtingų vaikų prisidėjo — kad matytųsi, kai iššūkis
+          // buvo duotas ne visai grupei (pvz. tik berniukams ar vienam vaikui)
+          (whoBy[key] = whoBy[key] || new Set()).add(r.kid_id || r.id);
         });
         return Object.entries(map)
-          .map(([k, v]) => ({ title: k.split('|')[0], unit: k.split('|')[1] || '', total: Math.round(v) }))
-          .sort((a, b) => b.total - a.total).slice(0, 4);
+          .map(([k, v]) => ({ title: k.split('|')[0], unit: k.split('|')[1] || '', total: Math.round(v),
+                              kids: (whoBy[k] ? whoBy[k].size : 0) }))
+          .sort((a, b) => b.total - a.total).slice(0, 12);
       };
       d.weekTotals = _sum(chW.data);
       d.monthTotals = _sum(chM.data);
       // 🏋️ v465: TOS DIENOS treniruotės rezultatai — ką grupė nudirbo šiandien.
       // Imam pateikimus, patvirtintus/pateiktus šiandien (savininko klausimas: „kur
       // treneris gali pasidalinti treniruotės rezultatais").
+      // v468: DIENOS kortelė = tik tos dienos TRENIRUOTĖS iššūkiai (kas nudirbta salėje).
+      // Savaitiniai/mėnesiniai namų darbai, atlikti tą pačią dieną, į „šiandien nudirbta" nepatenka —
+      // jie matomi savaitės ir mėnesio kortelėse.
       const _ymd = ymd(today);
-      d.todayTotals = _sum((chW.data || []).filter(r => (r.created_at || '').slice(0,10) === _ymd));
+      d.todayTotals = _sum((chW.data || []).filter(r =>
+        (r.created_at || '').slice(0,10) === _ymd && r.challenges?.type === 'training'));
       const byKid = {}; (chM.data||[]).forEach(r => { byKid[r.kid_id] = (byKid[r.kid_id]||0)+1; });
       const topId = Object.keys(byKid).sort((a,b) => byKid[b]-byKid[a])[0];
       const topKid = kids.find(k => k.id === topId);
@@ -22090,13 +22101,20 @@ function _tpsBody(){
     const tSize  = n <= 3 ? 11.5 : (n <= 6 ? 10 : 9);  // pavadinimo dydis
     const gap    = n <= 3 ? 5 : 4;
 
-    const item = t => `<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:${gap}px;min-width:0;">
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:${vSize}px;line-height:1;color:#FF9E40;flex:none;">${t.total.toLocaleString('lt-LT')}</span>
-      <span style="font-size:${tSize}px;color:rgba(255,255,255,.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${E(t.unit || '')} ${E(t.title)}</span>
-    </div>`;
+    // v469: jei pratimą darė NE VISA grupė (iššūkis duotas tik daliai — berniukams,
+    // mergaitėms ar vienam vaikui), prie skaičiaus parodom, kiek vaikų prisidėjo.
+    const total = d.kidsTotal || 0;
+    const item = t => {
+      const part = (t.kids && total && t.kids < total) ? `<span style="font-size:${tSize - 1.5}px;color:rgba(255,255,255,.5);flex:none;">${t.kids} vaik.</span>` : '';
+      return `<div style="display:flex;align-items:baseline;justify-content:center;gap:5px;margin-bottom:${gap}px;min-width:0;">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:${vSize}px;line-height:1;color:#FF9E40;flex:none;">${t.total.toLocaleString('lt-LT')}</span>
+        <span style="font-size:${tSize}px;color:rgba(255,255,255,.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${E(t.unit || '')} ${E(t.title)}</span>
+        ${part}
+      </div>`;
+    };
 
     return `<div style="margin-top:${n > 6 ? 12 : 16}px;padding-top:${n > 6 ? 10 : 13}px;border-top:1px solid rgba(255,255,255,.14);">
-      <div style="font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:8px;">${E(label)}</div>
+      <div style="font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:8px;">${E(label)} · visa grupė</div>
       <div style="${twoCol ? 'display:grid;grid-template-columns:1fr 1fr;gap:0 10px;' : ''}">
         ${shown.map(item).join('')}
       </div>
