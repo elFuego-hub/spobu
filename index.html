@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=477">
+<link rel="stylesheet" href="styles.css?v=478">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v477</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v478</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3354,7 +3354,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- 💶 v470: NARIO MOKESČIAI — TIK bendri skaičiai; paspaudus → Analitika → Veikla (detalus sąrašas + Excel).
          Užrašų kortelė perkelta į KLUBAS → Grupės (v470, savininko sprendimas). -->
     <div id="k-fees-card" class="cd" style="display:none;cursor:pointer;" onclick="if(typeof openClubFeesAnalytics==='function')openClubFeesAnalytics()">
-      <div class="st" style="padding:0 0 8px;">💶 NARIO MOKESČIAI · <span id="k-fees-month" style="color:var(--mut);font-size:11px;"></span></div>
+      <div class="st" style="padding:0 0 8px;"><svg class="ico" aria-hidden="true"><use href="#i-mokejimas"></use></svg> NARIO MOKESČIAI · <span id="k-fees-month" style="color:var(--mut);font-size:11px;"></span></div>
       <div id="k-fees-body"><div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
     </div>
 
@@ -3659,7 +3659,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <!-- 💶 v470: NARIO MOKESČIAI — detalus sąrašas + Excel eksportas (rodoma tik kai fees_enabled) -->
       <div id="k-fees-sec">
         <div onclick="_toggleSec('k-fees-anal-content','k-fees-anal-chev',loadClubFeesSection)" class="k-sec">
-          <div class="k-sec-ico" style="background:rgba(34,197,94,.15);">💶</div>
+          <div class="k-sec-ico" style="background:rgba(34,197,94,.15);"><svg class="ico" aria-hidden="true"><use href="#i-mokejimas"></use></svg></div>
           <div style="flex:1;min-width:0;"><div class="k-sec-tt">NARIO MOKESČIAI</div><div class="k-sec-ds">Kas dar neatnešė · Excel pagal mėnesius</div></div>
           <span id="k-fees-anal-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
         </div>
@@ -3668,7 +3668,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <!-- 🏥 v476: SVEIKATOS PAŽYMOS (rodoma tik kai health_certs_enabled) -->
       <div id="k-health-sec" style="display:none;">
         <div onclick="_toggleSec('k-health-content','k-health-chev',loadClubHealthSection)" class="k-sec">
-          <div class="k-sec-ico" style="background:rgba(244,114,182,.15);">🏥</div>
+          <div class="k-sec-ico" style="background:rgba(244,114,182,.15);"><svg class="ico" aria-hidden="true"><use href="#i-sveikata"></use></svg></div>
           <div style="flex:1;min-width:0;"><div class="k-sec-tt">SVEIKATOS PAŽYMOS</div><div class="k-sec-ds">Kam baigiasi ar pasibaigusi</div></div>
           <span id="k-health-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
         </div>
@@ -4507,7 +4507,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=477"></script>
+<script src="app.js?v=478"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
