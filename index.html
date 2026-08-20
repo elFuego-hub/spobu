@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=453">
+<link rel="stylesheet" href="styles.css?v=454">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v453</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v454</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -4196,6 +4196,15 @@ window.addEventListener('unhandledrejection', function(e) {
           </div>
         </div>
       </div>
+
+      <!-- 📝 v454: TRENERIO UŽRAŠAI APIE VAIKĄ (tėvai ir vaikas šito nemato) -->
+      <div class="cd" id="kd-notes-card" style="margin-top:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:.6px;">UŽRAŠAI</div>
+          <button id="kd-note-add" style="background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);color:#FF7A33;font-size:10px;font-weight:800;padding:5px 11px;border-radius:99px;cursor:pointer;font-family:inherit;">+ Pridėti</button>
+        </div>
+        <div id="kd-notes"><div style="text-align:center;padding:12px;color:var(--mut);font-size:10.5px;">Kraunama...</div></div>
+      </div>
       
       <!-- SVEIKATOS INFO -->
       <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px;">
@@ -4428,7 +4437,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=453"></script>
+<script src="app.js?v=454"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

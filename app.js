@@ -14875,6 +14875,20 @@ async function _fetchClubNotifications(force){
 
   // KLUBAS: trenerių įvykiai (prisijungė/neaktyvus) + naujos registracijos + neaktyvūs vaikai. Ataskaitų notif NEREIKIA.
   const systemItems = [...trainerItems];
+  // 📝 v454: trenerių užrašai, adresuoti klubo administracijai — kad nepraslystų nepastebėti
+  try {
+    const { data: notes } = await sb.rpc('club_staff_notes', { p_days: 30 });
+    (notes || []).slice(0, 10).forEach(n => {
+      const kur = n.kid_name ? ('apie ' + n.kid_name) : (n.group_name || 'klubui');
+      systemItems.push({
+        id: 'note-' + n.id,
+        icon: '' + ico('dokumentas') + '',
+        title: `${n.author_name}: užrašas (${kur})`,
+        sub: (n.body || '').slice(0, 110),
+        time: n.created_at
+      });
+    });
+  } catch(e){ /* funkcijos dar gali nebūti — tylim */ }
   if (pendR && pendR.length){
     systemItems.push({ id:'reg-pending-'+pendR.length, icon:''+ico('laukia')+'', title:`${pendR.length} laukia registracijos`, sub:'Patvirtink naujų vaikų anketas', ts:pendR[0].created_at, link:{screen:'k-trainers',teamTab:'students'} });
   }
@@ -21828,6 +21842,13 @@ async function openGroupView(groupId, silent) {
       <button onclick="composeMessageToGroup('${gObj.id}', '${(gObj.name || '').replace(/'/g, "\\'")}')" style="${gvBtn}background:rgba(99,102,241,.12);color:#8b8df5;border:.5px solid rgba(99,102,241,.35);">${ico('zinutes')} PRANEŠIMAI</button>
     </div>
 
+    <!-- 📝 v454: grupės užrašai — pavadavimas, inventorius, pastabos klubui -->
+    <div class="st" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>${ico('dokumentas')} UŽRAŠAI</span>
+      <button onclick="openNoteComposer('group','${gObj.id}','gv-notes','Grupė: ${(gObj.name || '').replace(/'/g, "\\'")}')" style="background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.4);color:#FF7A33;font-size:10px;font-weight:800;padding:5px 11px;border-radius:99px;cursor:pointer;font-family:inherit;">+ Pridėti</button>
+    </div>
+    <div id="gv-notes" style="margin:0 16px 14px;"><div style="text-align:center;padding:12px;color:var(--mut);font-size:10.5px;">Kraunama...</div></div>
+
     <div class="st">VAIKAI ${Object.keys(pend).length ? `<span style="color:var(--br);font-size:11px;">· ${Object.values(pend).reduce((a, b) => a + b, 0)} laukia patvirtinimo</span>` : ''}</div>
     <div style="margin:0 16px 16px;display:flex;flex-direction:column;gap:6px;">
       ${kidRows || `<div style="text-align:center;padding:24px;color:var(--mut);font-size:11px;background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;">Grupė tuščia.<br>Vaikus į grupę priskiria <strong style="color:var(--grn);">klubas</strong>.</div>`}
@@ -21836,6 +21857,8 @@ async function openGroupView(groupId, silent) {
 
   // 💶 v452: skolų ženkliukai — kraunami atskirai, kad neuždelstų grupės atsidarymo
   if (typeof _feeLoadDebtChips === "function") _feeLoadDebtChips(groupId);
+  // 📝 v454: grupės užrašai
+  if (typeof loadNotes === "function") loadNotes('group', groupId, 'gv-notes');
 }
 
 // Atnaujina atidarytą grupės langą (po patvirtinimų / redagavimo)
@@ -21865,6 +21888,130 @@ function _attSchedLT(group){ return (group?.training_days||[]).filter(d=>d>=1&&d
 
 // — Trenerio žymėjimo langas —
 let _attState = null; // { groupId, date, group, kids, present:Set }
+
+// ════════════════════════════════════════════════════════════════════════════
+// 📝 TRENERIO UŽRAŠAI (v454) — prie grupės arba prie vaiko, su matomumo lygiu
+// private = tik aš · trainers = grupės treneriai (įsk. pavaduojantį) · club = klubui
+// Tėvai ir vaikai NEMATO (RLS). Bet BDAR: per užklausą tėvai turi teisę pamatyti —
+// todėl prie įvedimo lauko rašom aiškų priminimą.
+// ════════════════════════════════════════════════════════════════════════════
+const NOTE_VIS = {
+  private:  { t: 'Tik man',              ic: 'uzrakinta', c: '#8a8a93' },
+  trainers: { t: 'Grupės treneriams',    ic: 'grupe',     c: '#4FC3F7' },
+  club:     { t: 'Klubo administracijai', ic: 'klubas',   c: '#FF7A33' }
+};
+
+function _noteTimeLT(iso){
+  const d = new Date(iso), diff = Math.floor((Date.now() - d) / 1000);
+  if (diff < 3600) return 'prieš ' + Math.max(1, Math.floor(diff/60)) + ' min.';
+  if (diff < 86400) return 'prieš ' + Math.floor(diff/3600) + ' val.';
+  if (diff < 604800) return 'prieš ' + Math.floor(diff/86400) + ' d.';
+  return d.toLocaleDateString('lt-LT');
+}
+
+// Užrašų sąrašas — kviečiama iš grupės lango (groupId) arba vaiko kortelės (kidId)
+async function loadNotes(target, id, containerId){
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  try {
+    let q = sb.from('staff_notes').select('*').order('created_at', { ascending: false }).limit(20);
+    q = (target === 'group') ? q.eq('group_id', id) : q.eq('kid_id', id);
+    const { data, error } = await q;
+    if (error) throw error;
+    const rows = data || [];
+    const authorIds = [...new Set(rows.map(r => r.author_id))];
+    let names = {};
+    if (authorIds.length){
+      const { data: profs } = await sb.from('profiles').select('id, first_name, last_name').in('id', authorIds);
+      (profs || []).forEach(p => { names[p.id] = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Treneris'; });
+    }
+    el.innerHTML = rows.length ? rows.map(n => {
+      const v = NOTE_VIS[n.visibility] || NOTE_VIS.trainers;
+      const mine = n.author_id === currentUser.id;
+      return `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 12px;margin-bottom:7px;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+          <span style="font-size:9px;font-weight:800;color:${v.c};background:rgba(255,255,255,.05);border:.5px solid ${v.c}55;padding:2px 7px;border-radius:99px;white-space:nowrap;">${ico(v.ic)} ${v.t}</span>
+          <span style="font-size:9.5px;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(names[n.author_id] || 'Treneris')} · ${_noteTimeLT(n.created_at)}</span>
+          ${mine ? `<span onclick="deleteNote('${n.id}','${target}','${id}','${containerId}')" style="flex-shrink:0;cursor:pointer;color:var(--mut);font-size:12px;" title="Ištrinti">${ico('trinti')}</span>` : ''}
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,.9);line-height:1.5;white-space:pre-wrap;">${escapeHtml(n.body)}</div>
+      </div>`;
+    }).join('') : `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Užrašų dar nėra</div>`;
+  } catch(e){
+    console.warn('loadNotes', e);
+    el.innerHTML = `<div style="text-align:center;padding:12px;color:var(--mut);font-size:10.5px;">Nepavyko užkrauti užrašų</div>`;
+  }
+}
+
+function openNoteComposer(target, id, containerId, contextLabel){
+  const old = document.getElementById('note-modal'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'note-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100006;align-items:flex-end;justify-content:center;';
+  const opt = (k) => {
+    const v = NOTE_VIS[k];
+    return `<div onclick="_noteSetVis('${k}')" data-vis="${k}" style="flex:1;text-align:center;padding:9px 4px;border-radius:10px;font-size:10px;font-weight:800;cursor:pointer;border:.5px solid var(--bdr);background:var(--card);color:var(--mut);">${ico(v.ic)}<div style="margin-top:3px;">${v.t}</div></div>`;
+  };
+  m.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1.4px;">${ico('dokumentas')} NAUJAS UŽRAŠAS</div>
+        <button onclick="document.getElementById('note-modal').remove()" style="background:none;border:none;font-size:20px;color:var(--mut);cursor:pointer;">${ico('uzdaryti')}</button>
+      </div>
+      <div style="font-size:10.5px;color:var(--mut);margin-bottom:11px;">${escapeHtml(contextLabel || '')}</div>
+      <div style="font-size:9.5px;color:var(--mut);font-weight:800;letter-spacing:.8px;margin-bottom:6px;">KAS MATYS?</div>
+      <div id="note-vis-row" style="display:flex;gap:6px;margin-bottom:12px;">${opt('private')}${opt('trainers')}${opt('club')}</div>
+      <textarea id="note-body" class="inp" rows="4" maxlength="2000" placeholder="Pvz. Rytoj vietoj manęs veda Rūta — pradėkit nuo kata." style="width:100%;resize:vertical;font-family:inherit;margin-bottom:8px;"></textarea>
+      <div style="font-size:10px;color:#EAB308;background:rgba(234,179,8,.08);border:.5px solid rgba(234,179,8,.28);border-radius:9px;padding:8px 10px;line-height:1.5;margin-bottom:12px;">
+        ${ico('ispejimas')} Rašyk taip, lyg tėvai tai perskaitytų — pagal duomenų apsaugos taisykles jie turi teisę paprašyti parodyti, kas apie jų vaiką užrašyta.
+      </div>
+      <button id="note-save" onclick="saveNote('${target}','${id}','${containerId}')" style="width:100%;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;padding:13px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">IŠSAUGOTI</button>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+  _noteSetVis('trainers');
+}
+
+let _noteVis = 'trainers';
+function _noteSetVis(k){
+  _noteVis = k;
+  document.querySelectorAll('#note-vis-row [data-vis]').forEach(el => {
+    const on = el.dataset.vis === k; const v = NOTE_VIS[el.dataset.vis];
+    el.style.borderColor = on ? v.c : 'var(--bdr)';
+    el.style.background = on ? v.c + '22' : 'var(--card)';
+    el.style.color = on ? v.c : 'var(--mut)';
+  });
+}
+
+async function saveNote(target, id, containerId){
+  const body = (document.getElementById('note-body')?.value || '').trim();
+  if (!body){ showToast(ico('ispejimas')+' Parašyk užrašą'); return; }
+  const btn = document.getElementById('note-save');
+  if (btn){ if (btn.dataset.busy) return; btn.dataset.busy='1'; btn.disabled=true; btn.textContent='SAUGOMA...'; btn.style.opacity='.6'; }
+  try {
+    const clubId = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || currentClub?.id || currentProfile?.club_id;
+    const row = { club_id: clubId, author_id: currentUser.id, visibility: _noteVis, body };
+    if (target === 'group') row.group_id = id; else row.kid_id = id;
+    const { error } = await sb.from('staff_notes').insert(row);
+    if (error) throw error;
+    showToast(ico('patvirtinta')+' Užrašas išsaugotas', 'success');
+    document.getElementById('note-modal')?.remove();
+    loadNotes(target, id, containerId);
+  } catch(e){
+    if (btn){ btn.disabled=false; btn.dataset.busy=''; btn.style.opacity='1'; btn.textContent='IŠSAUGOTI'; }
+    showToast(ico('klaida')+' Nepavyko: '+(e.message||''), 'error', 6000);
+  }
+}
+
+async function deleteNote(noteId, target, id, containerId){
+  if (!(await appConfirm('Ištrinti šį užrašą?'))) return;
+  try {
+    const { error } = await sb.from('staff_notes').delete().eq('id', noteId);
+    if (error) throw error;
+    showToast(ico('atlikta')+' Ištrinta', 'success');
+    loadNotes(target, id, containerId);
+  } catch(e){ showToast(ico('klaida')+' '+(e.message||''), 'error'); }
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // 💶 NARIO MOKESČIO ŽYMĖJIMAS (v452) — trenerio draugo pasiūlyta funkcija
@@ -25611,6 +25758,14 @@ async function openKidDetailsModal(kidId) {
   
   // Sveikatos info, avarinis kontaktas, media sutikimas
   await renderKidHealthPanel(fullKid);
+
+  // 📝 v454: užrašai apie vaiką — matomi tik personalui (RLS), tėvams ir vaikui ne
+  try {
+    const _nm = `${fullKid?.first_name || ''} ${fullKid?.last_name || ''}`.trim() || 'Vaikas';
+    const _addBtn = document.getElementById('kd-note-add');
+    if (_addBtn) _addBtn.onclick = () => openNoteComposer('kid', fullKid.id, 'kd-notes', 'Vaikas: ' + _nm);
+    if (typeof loadNotes === 'function') loadNotes('kid', fullKid.id, 'kd-notes');
+  } catch(e){ console.warn('kid notes', e); }
   await loadKidEmergency(fullKid);
   await loadKidMedia(fullKid);
   
