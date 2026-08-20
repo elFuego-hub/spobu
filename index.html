@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=455">
+<link rel="stylesheet" href="styles.css?v=456">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v455</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v456</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -1613,7 +1613,31 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ═══════════════════════════════════ -->
 <!-- TRENERIO PASKYRA (sutrumpinta) -->
 <!-- ═══════════════════════════════════ -->
-<div id="ptr" style="display:none;"><div class="df"><div class="ds"><div class="ph">
+<div id="ptr" style="display:none;">
+  <!-- 💻 v456: TRENERIO DESKTOP ŠONINIS MENU — rodomas tik @media min-width 1024px -->
+  <aside id="tr-desktop-nav">
+    <div class="vdn-logo"><svg class="mark" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">SPOBU</span></div>
+    <div class="vdn-user">
+      <div id="trdn-avatar" class="vdn-av"></div>
+      <div class="vdn-user-info">
+        <div id="trdn-name" class="vdn-name">–</div>
+        <div id="trdn-sub" class="vdn-level">TRENERIS</div>
+      </div>
+    </div>
+    <nav class="vdn-nav">
+      <a class="vdn-item" data-sid="tr-main" onclick="nv('tr',null,'tr-main')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span> Pagrindinis</a>
+      <a class="vdn-item" data-sid="tr-groups" onclick="nv('tr',null,'tr-groups')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-grupe"></use><use href="#i-grupe"></use></svg></span> Grupės</a>
+      <a class="vdn-item" data-sid="tr-challenges" onclick="nv('tr',null,'tr-challenges')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-tikslas"></use><use href="#i-tikslas"></use></svg></span> Iššūkiai</a>
+      <a class="vdn-item" data-sid="tr-pat" onclick="nv('tr',null,'tr-pat')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-patvirtinta"></use><use href="#i-patvirtinta"></use></svg></span> Patvirtinti <span id="trdn-pat-badge" class="vdn-badge">0</span></a>
+      <a class="vdn-item" data-sid="tr-stat" onclick="nv('tr',null,'tr-stat')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-statistika"></use><use href="#i-statistika"></use></svg></span> Statistika</a>
+      <a class="vdn-item" data-sid="tr-prof" onclick="nv('tr',null,'tr-prof')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-profilis"></use><use href="#i-profilis"></use></svg></span> Profilis</a>
+    </nav>
+    <div class="vdn-bottom">
+      <button onclick="toggleTrainerNotifications()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> Pranešimai <span id="trdn-notif-badge" class="vdn-badge">0</span></button>
+      <button onclick="openTrainerSettings()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> Nustatymai</button>
+    </div>
+  </aside>
+  <div class="df"><div class="ds"><div class="ph">
 <div class="sc on" id="tr-main">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-signalas"></use></svg> <svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div class="sa">
@@ -4443,7 +4467,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=455"></script>
+<script src="app.js?v=456"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

@@ -21178,6 +21178,14 @@ async function getMyKidIds(onlyPrimary = false) {
 async function loadTrainerData() {
   if (!currentProfile) return;
   _myKidIdsMemo = {}; // ${ico('greitis')} šviežias getMyKidIds skaičiavimas šiam užkrovimui
+
+  // 💻 v456: desktop šoninio meniu vartotojo info (kaip vaiko/tėvų portaluose)
+  try {
+    const _nm = `${currentProfile.first_name || ''} ${currentProfile.last_name || ''}`.trim() || 'Treneris';
+    if (typeof applyAvatarById === 'function') applyAvatarById('trdn-avatar', currentProfile.avatar_url || null, (currentProfile.first_name || 'T')[0]);
+    const _n = document.getElementById('trdn-name'); if (_n) _n.textContent = _nm;
+    const _s = document.getElementById('trdn-sub'); if (_s) _s.textContent = currentClub?.name || 'TRENERIS';
+  } catch(e){}
   // ⚡ W1-6: trenerio klubo ID kešas resolveMyClubId()-ui (fone, neblokuoja starto)
   sb.from('trainers').select('invited_by_club_id').eq('id', currentUser.id).maybeSingle()
     .then(({ data }) => { window._trainerClubId = data?.invited_by_club_id || null; })
@@ -22004,10 +22012,7 @@ function openNoteComposer(target, id, containerId, contextLabel){
       </div>
       <div style="font-size:9.5px;color:var(--mut);font-weight:800;letter-spacing:.8px;margin-bottom:6px;">KAS MATYS?</div>
       <div id="note-vis-row" style="display:flex;gap:6px;margin-bottom:12px;">${opt('private')}${opt('trainers')}${opt('club')}</div>
-      <textarea id="note-body" class="inp" rows="4" maxlength="2000" placeholder="Pvz. Rytoj vietoj manęs veda Rūta — pradėkit nuo kata." style="width:100%;resize:vertical;font-family:inherit;margin-bottom:8px;"></textarea>
-      <div style="font-size:10px;color:#EAB308;background:rgba(234,179,8,.08);border:.5px solid rgba(234,179,8,.28);border-radius:9px;padding:8px 10px;line-height:1.5;margin-bottom:12px;">
-        ${ico('ispejimas')} Rašyk taip, lyg tėvai tai perskaitytų — pagal duomenų apsaugos taisykles jie turi teisę paprašyti parodyti, kas apie jų vaiką užrašyta.
-      </div>
+      <textarea id="note-body" class="inp" rows="4" maxlength="2000" placeholder="Pvz. Rytoj vietoj manęs veda Rūta — pradėkit nuo kata." style="width:100%;resize:vertical;font-family:inherit;margin-bottom:12px;"></textarea>
       <button id="note-save" onclick="saveNote('${target}','${id}','${containerId}')" style="width:100%;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;padding:13px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">IŠSAUGOTI</button>
     </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
@@ -23153,7 +23158,18 @@ let _trPatAllTab = 'career';
 const TR_PAT_TITLES = { career: ''+ico('treniruote')+' KELIAS', challenges: ''+ico('tikslas')+' IŠŠŪKIAI', competitions: ''+ico('medalis')+' VARŽYBOS', duels: ''+ico('dvikova')+' DVIKOVOS', forms: ''+ico('stovykla')+' STOVYKLOS' };
 
 // Bendras renderis: pagrindiniam tabe TOP 3 + DAUGIAU, pilnas sąrašas — sub-lange
+// 💻 v456: bendras laukiančių patvirtinimų skaičius desktop meniu ženkliukui
+function _trUpdatePatBadge(){
+  try {
+    const ids = ['tr-career-count','tr-challenges-count','tr-competitions-count','tr-duels-count','tr-forms-count'];
+    const total = ids.reduce((s,id) => s + (parseInt(document.getElementById(id)?.textContent, 10) || 0), 0);
+    const b = document.getElementById('trdn-pat-badge');
+    if (b) { b.textContent = total > 99 ? '99+' : total; b.classList.toggle('on', total > 0); }
+  } catch(e){}
+}
+
 function _trPatRenderTop(listId, tab, cardsArr, emptyHtml) {
+  setTimeout(_trUpdatePatBadge, 60);
   _trPatFullHtml[tab] = cardsArr.length ? cardsArr.join('') : emptyHtml;
   const list = document.getElementById(listId);
   if (list) {
@@ -24911,6 +24927,9 @@ function _updateTrainerNotifCounts() {
     badge.textContent = total > 99 ? '99+' : total;
     badge.style.display = total ? 'flex' : 'none';
   }
+  // 💻 v456: tas pats skaičius desktop šoniniame meniu
+  const _dn = document.getElementById('trdn-notif-badge');
+  if (_dn) { _dn.textContent = total > 99 ? '99+' : total; _dn.classList.toggle('on', total > 0); }
   // Badge'ai kitų trenerio ekranų headeriuose
   document.querySelectorAll('.trh-nbadge').forEach(b => {
     b.textContent = total > 99 ? '99+' : total;
@@ -34543,7 +34562,7 @@ function nv(p,el,sid){
   });
 
   // 💻 DESKTOP nav sinchronizacija
-  document.querySelectorAll('#v-desktop-nav .vdn-item, #a-desktop-nav .vdn-item, #k-desktop-nav .vdn-item, #t-desktop-nav .vdn-item').forEach(a => {
+  document.querySelectorAll('#v-desktop-nav .vdn-item, #a-desktop-nav .vdn-item, #k-desktop-nav .vdn-item, #t-desktop-nav .vdn-item, #tr-desktop-nav .vdn-item').forEach(a => {
     if (a.dataset.sid === sid) a.classList.add('on');
     else a.classList.remove('on');
   });
