@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=475">
+<link rel="stylesheet" href="styles.css?v=476">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v475</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v476</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3665,6 +3665,15 @@ window.addEventListener('unhandledrejection', function(e) {
         </div>
         <div id="k-fees-anal-content" style="display:none;padding:0 16px 10px;"></div>
       </div>
+      <!-- 🏥 v476: SVEIKATOS PAŽYMOS (rodoma tik kai health_certs_enabled) -->
+      <div id="k-health-sec" style="display:none;">
+        <div onclick="_toggleSec('k-health-content','k-health-chev',loadClubHealthSection)" class="k-sec">
+          <div class="k-sec-ico" style="background:rgba(244,114,182,.15);">🏥</div>
+          <div style="flex:1;min-width:0;"><div class="k-sec-tt">SVEIKATOS PAŽYMOS</div><div class="k-sec-ds">Kam baigiasi ar pasibaigusi</div></div>
+          <span id="k-health-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
+        </div>
+        <div id="k-health-content" style="display:none;padding:0 16px 10px;"></div>
+      </div>
       <div onclick="_toggleSec('k-lank-content','k-lank-chev',loadClubAttendance)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(239,68,68,.15);"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">LANKOMUMAS</div><div class="k-sec-ds">Kas nelanko — verta susisiekti</div></div>
@@ -4496,7 +4505,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=475"></script>
+<script src="app.js?v=476"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
