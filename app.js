@@ -21809,7 +21809,9 @@ async function openGroupView(groupId, silent) {
         <div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${k.first_name || 'Vaikas'} ${k.last_name || ''}</div>
         <div style="font-size:10.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${k.kyu || '10 kyu'} · ${(k.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
       ${chips.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;pointer-events:auto;">${chips.join('')}</div>` : ''}
-      <div id="fee-chip-${k.id}" style="margin-top:5px;pointer-events:none;"></div>
+      <div style="display:flex;gap:4px;align-items:center;margin-top:5px;pointer-events:none;">
+        <div id="fee-chip-${k.id}"></div><div id="note-chip-${k.id}"></div>
+      </div>
       </div>
       ${pend[k.id] ? `<div style="background:var(--br);color:white;font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0;box-shadow:0 0 8px rgba(255,77,0,.5);" title="Laukia patvirtinimo">${pend[k.id]}</div>` : ''}
       <button onclick="event.stopPropagation();openAssignExp('${k.id}')" style="background:transparent;color:#FF7A33;border:.5px solid rgba(255,77,0,.4);border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;" title="Skirti EXP">${ico('prideti')} EXP</button>
@@ -21857,8 +21859,9 @@ async function openGroupView(groupId, silent) {
 
   // 💶 v452: skolų ženkliukai — kraunami atskirai, kad neuždelstų grupės atsidarymo
   if (typeof _feeLoadDebtChips === "function") _feeLoadDebtChips(groupId);
-  // 📝 v454: grupės užrašai
+  // 📝 v454: grupės užrašai · v455: ženkliukai prie vaikų, kurie turi užrašų
   if (typeof loadNotes === "function") loadNotes('group', groupId, 'gv-notes');
+  if (typeof _notesLoadChips === "function") _notesLoadChips(null, kidsInGroup.map(k => k.id));
 }
 
 // Atnaujina atidarytą grupės langą (po patvirtinimų / redagavimo)
@@ -21901,12 +21904,48 @@ const NOTE_VIS = {
   club:     { t: 'Klubo administracijai', ic: 'klubas',   c: '#FF7A33' }
 };
 
+// 📋 v455: paruošti šablonai — kad treneriui nereikėtų galvoti, ką rašyti.
+// Paspaudus įrašo pradžią į lauką ir pasiūlo matomumo lygį; treneris papildo.
+const NOTE_TEMPLATES = {
+  group: [
+    { t: 'Pavadavimas',      body: 'Pavaduoja: \nData: \nKą daryti per treniruotę: ', vis: 'trainers' },
+    { t: 'Treniruotė neįvyks', body: 'Treniruotė neįvyks: \nPriežastis: ', vis: 'club' },
+    { t: 'Reikia inventoriaus', body: 'Grupei reikia: \nKam: ', vis: 'club' },
+    { t: 'Salės pakeitimas', body: 'Salė keičiasi: \nNuo kada: ', vis: 'trainers' },
+    { t: 'Pastaba grupei',   body: '', vis: 'trainers' }
+  ],
+  kid: [
+    { t: 'Nedalyvaus',       body: 'Nedalyvaus nuo: \niki: \nPriežastis: ', vis: 'trainers' },
+    { t: 'Trauma / sveikata', body: 'Ką reikia žinoti treniruojant: \nNuo kada: ', vis: 'trainers' },
+    { t: 'Pasikalbėta su tėvais', body: 'Data: \nDėl ko: \nKą sutarėm: ', vis: 'club' },
+    { t: 'Ruošiasi varžyboms', body: 'Varžybos: \nKą stiprinam: ', vis: 'trainers' },
+    { t: 'Pastaba apie vaiką', body: '', vis: 'trainers' }
+  ]
+};
+
 function _noteTimeLT(iso){
   const d = new Date(iso), diff = Math.floor((Date.now() - d) / 1000);
   if (diff < 3600) return 'prieš ' + Math.max(1, Math.floor(diff/60)) + ' min.';
   if (diff < 86400) return 'prieš ' + Math.floor(diff/3600) + ' val.';
   if (diff < 604800) return 'prieš ' + Math.floor(diff/86400) + ' d.';
   return d.toLocaleDateString('lt-LT');
+}
+
+// 📌 v455: ženkliukai — grupės sąraše ir grupės vaikų eilutėse matosi, kur yra užrašų
+// (savininko idėja: „ant tos grupės ar vaiko užsidegti gali ikonai")
+async function _notesLoadChips(groupIds, kidIds){
+  try {
+    const q = [];
+    if (groupIds && groupIds.length) q.push(sb.from('staff_notes').select('group_id').in('group_id', groupIds));
+    if (kidIds && kidIds.length)     q.push(sb.from('staff_notes').select('kid_id').in('kid_id', kidIds));
+    const res = await Promise.all(q);
+    const cnt = {};
+    res.forEach(r => (r.data || []).forEach(x => { const k = x.group_id || x.kid_id; if (k) cnt[k] = (cnt[k] || 0) + 1; }));
+    Object.keys(cnt).forEach(k => {
+      const el = document.getElementById('note-chip-' + k);
+      if (el) el.innerHTML = `<span style="background:rgba(255,122,51,.14);border:1px solid rgba(255,122,51,.45);color:#FF9E40;font-size:9px;font-weight:800;padding:2px 7px;border-radius:99px;white-space:nowrap;" title="Yra ${cnt[k]} užraš${cnt[k]===1?'as':'ai'}">${ico('dokumentas')} ${cnt[k]}</span>`;
+    });
+  } catch(e){ /* užrašai neprivalomi — tylim */ }
 }
 
 // Užrašų sąrašas — kviečiama iš grupės lango (groupId) arba vaiko kortelės (kidId)
@@ -21959,6 +21998,10 @@ function openNoteComposer(target, id, containerId, contextLabel){
         <button onclick="document.getElementById('note-modal').remove()" style="background:none;border:none;font-size:20px;color:var(--mut);cursor:pointer;">${ico('uzdaryti')}</button>
       </div>
       <div style="font-size:10.5px;color:var(--mut);margin-bottom:11px;">${escapeHtml(contextLabel || '')}</div>
+      <div style="font-size:9.5px;color:var(--mut);font-weight:800;letter-spacing:.8px;margin-bottom:6px;">PARUOŠTI ŠABLONAI</div>
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:7px;margin-bottom:11px;-webkit-overflow-scrolling:touch;" class="no-scrollbar">
+        ${(NOTE_TEMPLATES[target] || []).map((tp,i) => `<button onclick="_noteApplyTpl('${target}',${i})" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:rgba(255,255,255,.85);font-size:10.5px;font-weight:700;padding:7px 12px;border-radius:99px;cursor:pointer;font-family:inherit;white-space:nowrap;">${escapeHtml(tp.t)}</button>`).join('')}
+      </div>
       <div style="font-size:9.5px;color:var(--mut);font-weight:800;letter-spacing:.8px;margin-bottom:6px;">KAS MATYS?</div>
       <div id="note-vis-row" style="display:flex;gap:6px;margin-bottom:12px;">${opt('private')}${opt('trainers')}${opt('club')}</div>
       <textarea id="note-body" class="inp" rows="4" maxlength="2000" placeholder="Pvz. Rytoj vietoj manęs veda Rūta — pradėkit nuo kata." style="width:100%;resize:vertical;font-family:inherit;margin-bottom:8px;"></textarea>
@@ -21970,6 +22013,16 @@ function openNoteComposer(target, id, containerId, contextLabel){
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
   _noteSetVis('trainers');
+}
+
+// v455: šablonas įrašo pradžią ir parenka tinkamą matomumo lygį; kursorius — gale
+function _noteApplyTpl(target, i){
+  const tp = (NOTE_TEMPLATES[target] || [])[i]; if (!tp) return;
+  const ta = document.getElementById('note-body'); if (!ta) return;
+  ta.value = tp.body;
+  if (tp.vis) _noteSetVis(tp.vis);
+  ta.focus();
+  try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch(e){}
 }
 
 let _noteVis = 'trainers';
@@ -28820,9 +28873,36 @@ async function loadClubFeesCard(){
   }
 }
 
+// 📝 v455: trenerių užrašai klubui — MATOMOJE vietoje, ne tik varpelyje
+// (savininko pastaba: „parašiau komentarą, bet klubo paskyroje nematau kur turėtų būti")
+async function loadClubNotesCard(){
+  const card = document.getElementById('k-notes-card');
+  if (!card) return;
+  try {
+    const { data, error } = await sb.rpc('club_staff_notes', { p_days: 60 });
+    if (error) throw error;
+    const rows = data || [];
+    if (!rows.length){ card.style.display = 'none'; return; }
+    card.style.display = '';
+    const cEl = document.getElementById('k-notes-count');
+    if (cEl) cEl.textContent = rows.length + (rows.length === 1 ? ' užrašas' : ' užrašai');
+    document.getElementById('k-notes-body').innerHTML = rows.slice(0, 8).map(n => {
+      const kur = n.kid_name ? ('apie ' + escapeHtml(n.kid_name)) : escapeHtml(n.group_name || 'klubui');
+      return `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 12px;margin-bottom:7px;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+          <span style="font-size:9.5px;font-weight:800;color:#FF7A33;white-space:nowrap;">${escapeHtml(n.author_name || 'Treneris')}</span>
+          <span style="font-size:9.5px;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${kur} · ${_noteTimeLT(n.created_at)}</span>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,.9);line-height:1.5;white-space:pre-wrap;">${escapeHtml(n.body)}</div>
+      </div>`;
+    }).join('');
+  } catch(e){ card.style.display = 'none'; }
+}
+
 async function loadClubMainDashboard(){
   if (!currentClub?.id) return;
   if (typeof loadClubFeesCard === 'function') loadClubFeesCard();
+  if (typeof loadClubNotesCard === 'function') loadClubNotesCard();
   const cid = currentClub.id;
   const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el){ if(typeof v==='string' && v.indexOf('<svg')!==-1) el.innerHTML=v; else el.textContent=v; } };
   let clubKids = (typeof _getClubKids==='function') ? (await _getClubKids().catch(()=>[])) : [];
