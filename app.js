@@ -31491,7 +31491,9 @@ async function katWizardInit(prefill) {
     type: null, selected: [], diff: 'medium', nPrev: 0, nPrevLoaded: false,
     recos: null, recoInfo: null, catFilter: null, busy: false,
     itemOpts: {}, // ✏️ v406: per-pratimo override'ai {token: {desc, target, unit, diff, targetBoys, targetGirls}}
-    showReps: false // 🔢 v409: treniruotės pratimams rodyti pakartojimų skaičių (bendra taisyklė, default NE)
+    // 🔢 v409: treniruotės pratimams rodyti pakartojimų skaičių (bendra taisyklė, default NE).
+    // v480: kai klubas nustatė „Tik iššūkiai su skaičiais" — priverstinai TAIP.
+    showReps: (typeof flagOnStrict === 'function' && flagOnStrict('challenge_numbers_required'))
   };
   // Auditorijos kešas valomas kas atidarymą (grupės sudėtis galėjo pasikeisti)
   Object.keys(_katAudKidsCache).forEach(k => delete _katAudKidsCache[k]);
@@ -31592,7 +31594,7 @@ async function katSetType(tp) {
   katState.type = tp;
   katState.selected = [];
   katState.itemOpts = {}; // v406: override'ai galioja vienam skyrimui
-  katState.showReps = false; // v409: kiekio taisyklė nustatoma iš naujo kiekvienam tipui
+  katState.showReps = (typeof flagOnStrict === 'function' && flagOnStrict('challenge_numbers_required')); // v409/v480: kiekio taisyklė iš naujo kiekvienam tipui; klubui reikalaujant skaičių — visada TAIP
   katState.catFilter = null;
   katState.nPrevLoaded = false;
   katRenderAll();
@@ -31603,6 +31605,11 @@ function katSetDiff(d) { katState.diff = d; katRenderAll(); }
 // 🔢 v409: bendra treniruotės pakartojimų taisyklė (jungiklis prieš pratimų pasirinkimą).
 // Perjungus — išvalom rankinius target override'us, kad pasiūlymai persiskaičiuotų švariai.
 function katSetShowReps(on) {
+  // 🔢 v480: klubui nustačius „Tik iššūkiai su skaičiais" — „atlikta/ne" nebegalima
+  if (!on && typeof flagOnStrict === 'function' && flagOnStrict('challenge_numbers_required')){
+    showToast('🔢 Klubas nustatė: visi pratimai su skaičiais — „atlikta/ne" išjungta', 'error', 3500);
+    return;
+  }
   katState.showReps = !!on;
   Object.values(katState.itemOpts || {}).forEach(o => { delete o.target; delete o.targetBoys; delete o.targetGirls; });
   katRenderAll();
@@ -31903,8 +31910,15 @@ function katRenderEx() {
   }).join('');
 
   const hiddenCount = katHiddenSet().size;
-  // 🔢 v409: BENDRA taisyklė treniruotės pratimams — su pakartojimais ar „atlikta/ne"
-  const repsToggle = s.type !== 'training' ? '' : `
+  // 🔢 v409: BENDRA taisyklė treniruotės pratimams — su pakartojimais ar „atlikta/ne".
+  // v480: klubui nustačius „Tik iššūkiai su skaičiais" — pasirinkimas IŠNYKSTA (savininko
+  // pastaba: vėliava neveikė, nes šis žingsnis liko), lieka informacinė juosta.
+  const _repsReq = typeof flagOnStrict === 'function' && flagOnStrict('challenge_numbers_required');
+  if (_repsReq && !s.showReps) s.showReps = true;   // apsauga nuo likusios senos būsenos
+  const repsToggle = s.type !== 'training' ? '' : (_repsReq ? `
+    <div style="background:rgba(34,197,94,.08);border:.5px solid rgba(34,197,94,.4);border-radius:10px;padding:9px 11px;margin-bottom:8px;font-size:10px;color:var(--text);line-height:1.45;">
+      🔢 Visi pratimai — <b>su pakartojimais</b>: kiekvienam bus pasiūlytas kartų skaičius pagal amžių ir sunkumą (gali keisti ✏️). <span style="color:var(--mut);">Klubo nustatymas — „atlikta/ne" išjungta.</span>
+    </div>` : `
     <div style="background:var(--card);border:.5px solid ${s.showReps ? 'rgba(34,197,94,.45)' : 'var(--bdr)'};border-radius:10px;padding:9px 11px;margin-bottom:8px;">
       <div style="font-size:10px;font-weight:800;color:var(--text);letter-spacing:.3px;margin-bottom:5px;">KAIP NURODYSI KIEKĮ?</div>
       <div style="display:flex;gap:6px;">
@@ -31914,7 +31928,7 @@ function katRenderEx() {
       <div style="font-size:9px;color:var(--mut);margin-top:5px;line-height:1.4;">${s.showReps
         ? 'Kiekvienam pratimui bus pasiūlytas kartų skaičius pagal amžių ir sunkumą — gali keisti ✏️. <b style="color:#4FC3F7;">Tėvai mato tikslą</b>, tad rekomenduojam šį variantą.'
         : 'Pratimai bus be skaičiaus („atlikta/ne") — kiekius pasakysi salėje. Greita, bet tėvai nematys konkretaus tikslo. <b style="color:#4FC3F7;">Rekomenduojam su pakartojimais</b>, jei žinai skaičius.'}</div>
-    </div>`;
+    </div>`);
   w.innerHTML = `
     <label class="lbl">3. PRATIMAI <span style="color:${s.selected.length ? 'var(--grn)' : 'var(--mut)'};font-weight:800;">(${s.type === 'training' ? s.selected.length : s.selected.length + '/' + limit})</span></label>
     ${repsToggle}
