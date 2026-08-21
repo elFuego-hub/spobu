@@ -15049,7 +15049,14 @@ function _renderClubMsgTab(list, items){
   const toggle = `<div style="display:flex;gap:6px;margin-bottom:10px;">
     <button onclick="_setClubMsgSub('unread')" style="flex:1;${chip(_clubMsgSub==='unread')}padding:8px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;"><span class="dot dot-bad"></span> Neperskaityti${unreadItems.length?' ('+unreadItems.length+')':''}</button>
     <button onclick="_setClubMsgSub('all')" style="flex:1;${chip(_clubMsgSub==='all')}padding:8px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;">${ico('zinutes')} Pokalbiai</button>
-  </div>`;
+  </div>`
+  // 📨 v484: SPOBU palaikymo įėjimas ir varpelyje (savininko pastaba „nematau kur rašyti
+  // platformai" — natūraliausia ieškoti čia, o pin buvo tik pilname žinučių lange)
+  + `<div onclick="var _s=document.getElementById('kh-notif-section');if(_s)_s.style.display='none';_openSpobuThread()" style="display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,122,51,.05));border:.5px solid rgba(255,77,0,.45);border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer;">
+      <img src="brand/mark-white-128.png" style="width:24px;height:24px;flex-shrink:0;" alt="">
+      <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:800;color:#fff;">SPOBU palaikymas</div><div style="font-size:10px;color:var(--mut);">Rašyk platformai — atsakysim čia pat</div></div>
+      <div style="font-size:14px;color:var(--mut);flex-shrink:0;">›</div>
+    </div>`;
   if (!shown.length){
     list.innerHTML = toggle + `<div style="text-align:center;padding:24px 16px;color:var(--mut);font-size:11px;">${_clubMsgSub==='unread'?'Neperskaitytų žinučių nėra '+ico('teisingumas')+'':'Pokalbių dar nėra'}<div style="margin-top:12px;"><button onclick="clubOpenMessages()" style="background:rgba(99,102,241,.15);color:#818cf8;border:.5px solid rgba(99,102,241,.4);padding:9px 16px;border-radius:99px;font-size:12px;font-weight:800;cursor:pointer;">${ico('zinutes')} Atidaryti visas žinutes</button></div></div>`;
     return;
