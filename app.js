@@ -14899,6 +14899,13 @@ async function _fetchClubNotifications(force){
       });
     });
   } catch(e){ /* funkcijos dar gali nebūti — tylim */ }
+  // 📰 v483: SPOBU naujienos klubo varpelyje (30 d.)
+  try {
+    const { data: nws } = await sb.from('platform_news').select('id, title, body, created_at').gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(5);
+    (nws || []).forEach(n => {
+      systemItems.push({ id: 'pnews-' + n.id, icon: '📰', title: 'SPOBU: ' + n.title, sub: (n.body || '').slice(0, 110), time: n.created_at });
+    });
+  } catch(e){ /* lentelės dar gali nebūti — tylim */ }
   // 🎂 v476: artėjantys gimtadieniai klubo varpelyje (7 d.)
   try {
     if (typeof flagOn !== 'function' || flagOn('birthdays_enabled')){
@@ -29004,6 +29011,69 @@ async function loadAdminPlatform(){
       ${a.details ? `<div class="aerr-meta">${_aaiEsc(JSON.stringify(a.details).slice(0, 70))}</div>` : ''}
     </div>`).join('') : '<div style="text-align:center;padding:10px;color:var(--mut);font-size:11px;">Veiksmų dar nėra</div>';
   }
+  if (typeof _loadAdminNewsBlock === 'function') _loadAdminNewsBlock();   // 📰 v483: komunikacija su klubais
+}
+
+// 📰 v483: SPOBU ↔ klubai — naujienų siuntimas + tiesioginės gijos (admin platformos skiltis)
+async function _loadAdminNewsBlock(){
+  const el = document.getElementById('ap-news'); if (!el) return;
+  let clubs = [];
+  try { const { data } = await sb.from('clubs').select('id, name').order('name'); clubs = data || []; } catch(_){}
+  let last = [];
+  try { const { data } = await sb.from('platform_news').select('id, title, target_club, created_at').order('created_at', { ascending: false }).limit(5); last = data || []; } catch(_){}
+  const cName = {}; clubs.forEach(c => { cName[c.id] = c.name; });
+  const opts = `<option value="">Visiems klubams</option>` + clubs.map(c => `<option value="${c.id}">${_aaiEsc(c.name)}</option>`).join('');
+  el.innerHTML = `
+    <div style="font-size:12px;font-weight:800;margin-bottom:6px;">📰 Naujiena klubams</div>
+    <select class="inp" id="ap-news-club" style="margin:0 0 8px;width:100%;padding:7px;">${opts}</select>
+    <input class="inp" id="ap-news-title" placeholder="Antraštė (pvz. „Nauja funkcija: rinkliavos")" style="margin:0 0 8px;">
+    <textarea class="inp" id="ap-news-body" rows="3" placeholder="Tekstas — klubai pamatys pagrindiniame lange ir varpelyje..." style="margin:0 0 8px;resize:vertical;"></textarea>
+    <button class="btn btng" style="width:100%;margin:0 0 8px;" onclick="sendPlatformNews()">${ico('siusti')} Paskelbti + push klubams</button>
+    ${last.length ? `<div style="font-size:10px;color:var(--mut);margin:4px 0 8px;">${last.map(n => `• ${_aaiEsc(n.title)} <span style="opacity:.6;">(${n.target_club ? _aaiEsc(cName[n.target_club] || 'klubas') : 'visiems'} · ${new Date(n.created_at).toLocaleDateString('lt-LT')})</span> <span onclick="deletePlatformNews('${n.id}')" style="color:#EF4444;cursor:pointer;">${ico('trinti')}</span>`).join('<br>')}</div>` : ''}
+    <div style="border-top:.5px solid var(--bdr);padding-top:10px;margin-top:4px;">
+      <div style="font-size:12px;font-weight:800;margin-bottom:6px;">💬 Tiesioginė gija su klubu</div>
+      <div style="display:flex;gap:8px;">
+        <select class="inp" id="ap-thread-club" style="flex:1;margin:0;padding:7px;">${clubs.map(c => `<option value="${c.id}">${_aaiEsc(c.name)}</option>`).join('')}</select>
+        <button class="aerr-tool" onclick="_adminOpenClubThread()">${ico('zinutes')} Atidaryti</button>
+      </div>
+      <div class="aerr-meta" style="margin-top:6px;white-space:normal;">Gija matoma klubo Žinutėse („SPOBU palaikymas"). Push abiem pusėm — automatinis.</div>
+    </div>`;
+}
+async function sendPlatformNews(){
+  const title = (document.getElementById('ap-news-title')?.value || '').trim();
+  const body = (document.getElementById('ap-news-body')?.value || '').trim();
+  const club = document.getElementById('ap-news-club')?.value || null;
+  if (title.length < 3 || body.length < 3){ showToast(ico('klaida') + ' Įvesk antraštę ir tekstą', 'error'); return; }
+  try {
+    const { error } = await sb.from('platform_news').insert({ title: title.slice(0, 120), body: body.slice(0, 2000), target_club: club || null, created_by: currentUser.id });
+    if (error) throw error;
+    // Push klubo pusei: savininkai + vadybininkai (pasirinkto klubo arba visų)
+    try {
+      let q = sb.from('clubs').select('id, admin_profile_id');
+      if (club) q = q.eq('id', club);
+      const { data: cs } = await q;
+      const ids = (cs || []).map(c => c.admin_profile_id);
+      try { let mq = sb.from('club_managers').select('profile_id, club_id'); if (club) mq = mq.eq('club_id', club); const { data: ms } = await mq; (ms || []).forEach(m => ids.push(m.profile_id)); } catch(_){}
+      _pushToUsers(ids, '📰 SPOBU: ' + title, body.slice(0, 120), '/');
+    } catch(_){}
+    showToast(ico('patvirtinta') + ' Paskelbta' + (club ? '' : ' visiems klubams') + ' + push išsiųstas', 'success', 4000);
+    document.getElementById('ap-news-title').value = ''; document.getElementById('ap-news-body').value = '';
+    _loadAdminNewsBlock();
+  } catch(e){ showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko (ar paleistas server-B4e SQL?)'), 'error', 6000); }
+}
+async function deletePlatformNews(id){
+  if (!(await appConfirm('Ištrinti šią naujieną? Klubai jos nebematys.'))) return;
+  try {
+    const { error } = await sb.from('platform_news').delete().eq('id', id);
+    if (error) throw error;
+    showToast(ico('patvirtinta') + ' Ištrinta', 'success');
+    _loadAdminNewsBlock();
+  } catch(e){ showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); }
+}
+function _adminOpenClubThread(){
+  const club = document.getElementById('ap-thread-club')?.value;
+  if (!club){ showToast(ico('klaida') + ' Pasirink klubą', 'error'); return; }
+  _openSpobuThread(club);
 }
 
 async function savePlatformSetting(key, val){
@@ -29877,9 +29947,57 @@ async function openClubNotesModal(){
   document.body.appendChild(m);
 }
 
+// 📰 v483: SPOBU naujienos klubui — kortelė pagrindiniame lange (paskutinė naujiena + NAUJA badge)
+let _clubNewsCache = null;
+function _clubNewsSeenKey(){ return 'spobu_news_seen_' + (currentClub?.id || ''); }
+async function loadClubNewsCard(){
+  const card = document.getElementById('k-news-card');
+  if (!card) return;
+  try {
+    const { data, error } = await sb.from('platform_news').select('id, title, body, created_at').order('created_at', { ascending: false }).limit(20);
+    if (error) throw error;
+    _clubNewsCache = data || [];
+    if (!_clubNewsCache.length){ card.style.display = 'none'; return; }
+    card.style.display = '';
+    const last = _clubNewsCache[0];
+    const seen = localStorage.getItem(_clubNewsSeenKey()) || '';
+    const badge = document.getElementById('k-news-badge');
+    if (badge) badge.style.display = (last.created_at > seen) ? '' : 'none';
+    document.getElementById('k-news-body').innerHTML = `
+      <div style="font-size:13px;font-weight:800;color:#fff;">${escapeHtml(last.title)}</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.8);line-height:1.5;margin-top:4px;">${escapeHtml((last.body || '').slice(0, 160))}${(last.body || '').length > 160 ? '…' : ''}</div>
+      <div style="font-size:9.5px;color:var(--mut);margin-top:6px;">${formatDateLT(last.created_at)}${_clubNewsCache.length > 1 ? ` · spausk — visos naujienos (${_clubNewsCache.length})` : ''}</div>`;
+  } catch(e){ card.style.display = 'none'; }   // lentelės dar gali nebūti (SQL nepaleistas) — tylim
+}
+async function openClubNewsModal(){
+  let rows = _clubNewsCache;
+  if (!rows){ try { const { data } = await sb.from('platform_news').select('id, title, body, created_at').order('created_at', { ascending: false }).limit(20); rows = data || []; } catch(_){ rows = []; } }
+  try { if (rows.length) { localStorage.setItem(_clubNewsSeenKey(), rows[0].created_at); const b = document.getElementById('k-news-badge'); if (b) b.style.display = 'none'; } } catch(_){}
+  document.getElementById('club-news-modal')?.remove();
+  const m = document.createElement('div'); m.id = 'club-news-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100004;align-items:flex-end;justify-content:center;';
+  m.onclick = e => { if (e.target === m) m.remove(); };
+  const body = rows.length ? rows.map(n => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px 14px;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:800;color:#fff;">${escapeHtml(n.title)}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.85);line-height:1.55;margin-top:5px;white-space:pre-wrap;">${escapeHtml(n.body || '')}</div>
+      <div style="font-size:9.5px;color:var(--mut);margin-top:6px;">${formatDateLT(n.created_at)}</div>
+    </div>`).join('') : '<div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Naujienų nėra.</div>';
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;display:flex;align-items:center;gap:8px;"><img src="brand/mark-white-128.png" style="width:20px;height:20px;" alt=""> SPOBU NAUJIENOS</div>
+      <button onclick="document.getElementById('club-news-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
+    </div>
+    <div style="padding:14px 16px 20px;">${body}
+      <div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:6px;">Turi klausimą? Žinutės → SPOBU palaikymas — atsakysim gijoje.</div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
 async function loadClubMainDashboard(){
   if (!currentClub?.id) return;
   if (typeof loadClubFeesCard === 'function') loadClubFeesCard();
+  if (typeof loadClubNewsCard === 'function') loadClubNewsCard();   // 📰 v483: SPOBU naujienos
   // v470: užrašų juosta gyvena KLUBAS → Grupės tabe — kraunama loadClubGroups() metu
   const cid = currentClub.id;
   const setTxt = (id,v)=>{ const el=document.getElementById(id); if(el){ if(typeof v==='string' && v.indexOf('<svg')!==-1) el.innerHTML=v; else el.textContent=v; } };
@@ -37010,6 +37128,7 @@ function openMessages() {
   if (currentProfile?.role === 'trainer') targetPortal = 'ptr';
   else if (currentProfile?.role === 'club_admin') targetPortal = 'pk';
   else if (currentProfile?.role === 'kid') targetPortal = 'pv'; // 💬 vaiko chat (kid_trainer_chat_enabled vėliava)
+  else if (currentProfile?.role === 'admin') targetPortal = 'pa'; // 📨 v483: SPOBU ↔ klubų gijos admin portale
   else targetPortal = 'pt';
   
   // 1. Slėpti VISUS kitus portalus
@@ -37104,6 +37223,31 @@ function loadMoreConversations() {
 }
 
 // UŽKRAUTI POKALBIŲ SĄRAŠĄ
+// 📨 v483: SPOBU ↔ klubo gija — atidaro (arba sukuria per RPC) nuolatinį pokalbį su platforma
+async function _openSpobuThread(clubId){
+  try {
+    const { data, error } = await sb.rpc('ensure_spobu_conversation', clubId ? { p_club: clubId } : {});
+    if (error) throw error;
+    if (!data) throw new Error('negrąžintas pokalbis');
+    if (typeof openMessages === 'function') openMessages();
+    setTimeout(() => openConversation(data), 150);
+  } catch(e){
+    console.error('[spobu-thread]', e);
+    showToast(ico('klaida') + ' Nepavyko atidaryti SPOBU gijos: ' + (e.message || '') + ' (ar paleistas server-B4e SQL?)', 'error', 6000);
+  }
+}
+// Prisegta SPOBU eilutė klubo pokalbių sąrašo viršuje
+function _spobuPinHtml(){
+  return `<div onclick="_openSpobuThread()" style="display:flex;align-items:center;gap:11px;background:linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,122,51,.05));border:.5px solid rgba(255,77,0,.45);border-radius:14px;padding:12px 14px;margin-bottom:10px;cursor:pointer;">
+    <img src="brand/mark-white-128.png" style="width:30px;height:30px;flex-shrink:0;" alt="">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:800;color:#fff;">SPOBU palaikymas</div>
+      <div style="font-size:10.5px;color:var(--mut);margin-top:1px;">Rašyk platformai — atsakysim čia pat</div>
+    </div>
+    <div style="font-size:15px;color:var(--mut);flex-shrink:0;">›</div>
+  </div>`;
+}
+
 async function loadConversationsList() {
   console.log('🔵 loadConversationsList() called');
   const container = document.getElementById('msg-conversations-list');
@@ -37137,6 +37281,7 @@ async function loadConversationsList() {
   
   if (!memberships || memberships.length === 0) {
     container.innerHTML = `
+      ${currentProfile?.role === 'club_admin' ? _spobuPinHtml() : ''}
       <div style="text-align:center;padding:40px 20px;color:var(--mut);">
         <div style="font-size:48px;margin-bottom:14px;">${ico('zinutes')}</div>
         <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Dar nėra žinučių</div>
@@ -37324,7 +37469,8 @@ async function loadConversationsList() {
     footer = `<div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Viskas — ${totalCount} pokalbių</div>`;
   }
   
-  container.innerHTML = html + footer;
+  // 📨 v483: klubo rolei viršuje visada prisegta SPOBU palaikymo eilutė
+  container.innerHTML = (currentProfile?.role === 'club_admin' ? _spobuPinHtml() : '') + html + footer;
 }
 function formatMessageTime(ts) {
   if (!ts) return '';

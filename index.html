@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=482">
+<link rel="stylesheet" href="styles.css?v=483">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v482</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v483</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3351,6 +3351,12 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
 
+    <!-- 📰 v483: SPOBU NAUJIENOS klubui (platform_news; rodoma tik kai yra naujienų) -->
+    <div id="k-news-card" class="cd" style="display:none;cursor:pointer;" onclick="if(typeof openClubNewsModal==='function')openClubNewsModal()">
+      <div class="st" style="padding:0 0 8px;display:flex;align-items:center;gap:8px;"><img src="brand/mark-white-128.png" style="width:16px;height:16px;" alt=""> SPOBU NAUJIENOS <span id="k-news-badge" style="display:none;background:var(--br);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:99px;">NAUJA</span></div>
+      <div id="k-news-body"></div>
+    </div>
+
     <!-- 💶 v470: NARIO MOKESČIAI — TIK bendri skaičiai; paspaudus → Analitika → Veikla (detalus sąrašas + Excel).
          Užrašų kortelė perkelta į KLUBAS → Grupės (v470, savininko sprendimas). -->
     <div id="k-fees-card" class="cd" style="display:none;cursor:pointer;" onclick="if(typeof openClubFeesAnalytics==='function')openClubFeesAnalytics()">
@@ -4136,6 +4142,9 @@ window.addEventListener('unhandledrejection', function(e) {
         <div class="cd" id="ap-status" style="padding:12px 14px;"><div style="text-align:center;padding:10px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
         <div class="st">GLOBALUS SKELBIMAS</div>
         <div class="cd" id="ap-ann" style="padding:12px 14px;"></div>
+        <!-- 📰 v483: SPOBU ↔ klubai — naujienos + tiesioginės gijos -->
+        <div class="st">KOMUNIKACIJA SU KLUBAIS</div>
+        <div class="cd" id="ap-news" style="padding:12px 14px;"><div style="text-align:center;padding:10px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
         <div class="st">NUORODOS</div>
         <div class="cd" style="padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;">
           <button class="aerr-tool" onclick="nv('a',null,'a-fin')"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg> Kainodara</button>
@@ -4509,7 +4518,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=482"></script>
+<script src="app.js?v=483"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
