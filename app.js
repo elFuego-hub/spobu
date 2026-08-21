@@ -16260,6 +16260,7 @@ function applyClubFlagGates(){
 }
 
 // 🏥 v476: klubo sveikatos pažymų suvestinė (Analitika → Veikla)
+let _hcSecOpen = false;   // v482: „REIKIA DĖMESIO" sąrašo išskleidimas (5 + Rodyti visus)
 async function loadClubHealthSection(){
   const el = document.getElementById('k-health-content'); if (!el || !currentClub?.id) return;
   el.innerHTML = _SEC_LOAD;
@@ -16281,6 +16282,8 @@ async function loadClubHealthSection(){
         <span style="flex-shrink:0;background:${r.st.bg};border:1px solid ${r.st.col}55;color:${r.st.col};font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;">${r.st.label}</span>
       </div>`;
     const attention = [...bad, ...soon];
+    window._hcListMore = function(){ _hcSecOpen = true; loadClubHealthSection(); };
+    window._hcListLess = function(){ _hcSecOpen = false; loadClubHealthSection(); };
     el.innerHTML =
       `<div style="display:flex;gap:8px;margin-bottom:10px;">
         <div style="flex:1;background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:10px 8px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#4ade80;">${ok}</div><div style="font-size:8.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;">Galioja</div></div>
@@ -16289,7 +16292,7 @@ async function loadClubHealthSection(){
       </div>` +
       (attention.length
         ? `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:0 2px 5px;">REIKIA DĖMESIO · ${attention.length}</div>
-           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${attention.map(item).join('')}</div>`
+           <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${_secListCollapse(attention, item, _hcSecOpen, '_hcListMore', '_hcListLess')}</div>`
         : '<div style="text-align:center;padding:14px;color:var(--grn);font-size:11.5px;font-weight:700;">Visų pažymos galioja 🎉</div>') +
       `<div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Žymima vaiko kortelėje (Sveikatos info → 🏥 Sveikatos pažyma). Tėvai ir vaikai šito nemato.</div>`;
   } catch(e){ console.error('[club-health]', e); el.innerHTML = _secErr((e.message || '') + ' (ar paleistas server-B4b SQL?)'); }
@@ -29593,7 +29596,22 @@ async function _feeTypeArchive(id, title){
   } catch(e){ showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); }
 }
 let _feesSecPeriod = 'month';   // v481: 'month' | 'FT-<id>' — kurį periodą rodo klubo sekcija
-function _feesSecPick(g){ _feesSecGroup = g; _feesSecRender(); }
+let _feesSecListOpen = false;   // v482: ilgo sąrašo išskleidimas (rodoma 5 + „Rodyti visus")
+function _feesSecPick(g){ _feesSecGroup = g; _feesSecListOpen = false; _feesSecRender(); }
+function _feesSecListMore(){ _feesSecListOpen = true; _feesSecRender(); }
+function _feesSecListLess(){ _feesSecListOpen = false; _feesSecRender(); }
+// v482 (savininko pastaba: „kai bus 1000 žmonių, ištemps sąrašą"): rodom 5 eilutes,
+// likusias atskleidžia „Rodyti visus (N)" — bendras helperis klubo sekcijų sąrašams.
+function _secListCollapse(arr, renderRow, open, moreFn, lessFn){
+  const LIM = 5;
+  const isOpen = open || arr.length <= LIM;
+  const shown = isOpen ? arr : arr.slice(0, LIM);
+  let h = shown.map(renderRow).join('');
+  const btn = (fn, txt) => `<div onclick="${fn}()" style="text-align:center;padding:10px;border-top:.5px solid var(--bdr);font-size:11px;font-weight:800;color:var(--br);cursor:pointer;">${txt}</div>`;
+  if (!isOpen) h += btn(moreFn, `▾ Rodyti visus (${arr.length})`);
+  else if (arr.length > LIM) h += btn(lessFn, '▴ Rodyti mažiau');
+  return h;
+}
 function _feesSecRender(){
   const el = document.getElementById('k-fees-anal-content'); if (!el) return;
   const all = _feesSecCache || [];
@@ -29628,7 +29646,7 @@ function _feesSecRender(){
       </div>`;
     headerHtml = `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:0 2px 5px;">DAR NEATNEŠĖ · ${debtors.length}${senos ? ` <span style="color:#ff9c9c;">· iš jų ${senos} su senesne skola</span>` : ''}</div>`;
     listHtml = debtors.length
-      ? debtors.map(r => {
+      ? _secListCollapse(debtors, r => {
           const nm = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Vaikas';
           const cur = !r.paid_current;
           const tikSis = (r.debt_months === 1 && cur);   // skolingas tik už einamąjį mėnesį
@@ -29643,7 +29661,7 @@ function _feesSecRender(){
             </div>
             <span style="flex-shrink:0;background:${bg};border:1px solid ${bd};color:${cl};font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;">${lbl}</span>
           </div>`;
-        }).join('')
+        }, _feesSecListOpen, '_feesSecListMore', '_feesSecListLess')
       : '<div style="text-align:center;padding:16px;color:var(--grn);font-size:11.5px;font-weight:700;">Visi sumokėję — skolų nėra</div>';
   } else {
     // RINKLIAVOS vaizdas — be termino: baigiasi tada, kai klubas ją archyvuoja.
@@ -29661,7 +29679,7 @@ function _feesSecRender(){
       </div>`;
     headerHtml = `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:0 2px 5px;">DAR NEATNEŠĖ · ${unpaid.length}</div>`;
     listHtml = unpaid.length
-      ? unpaid.map(r => {
+      ? _secListCollapse(unpaid, r => {
           const nm = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Vaikas';
           return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:.5px solid var(--bdr);">
             <div style="flex:1;min-width:0;">
@@ -29670,7 +29688,7 @@ function _feesSecRender(){
             </div>
             <span style="flex-shrink:0;background:rgba(234,179,8,.14);border:1px solid rgba(234,179,8,.45);color:#EAB308;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;">neatnešė</span>
           </div>`;
-        }).join('')
+        }, _feesSecListOpen, '_feesSecListMore', '_feesSecListLess')
       : `<div style="text-align:center;padding:16px;color:var(--grn);font-size:11.5px;font-weight:700;">Visi sumokėjo 🎉<div style="font-size:9.5px;color:var(--mut);font-weight:400;margin-top:4px;">Rinkliava baigta — gali ją archyvuoti (mygtukas viršuje). Žymos ir Excel istorija išliks.</div></div>`;
   }
   el.innerHTML = perChipsHtml + chipsHtml + summaryHtml + headerHtml +
@@ -29678,7 +29696,7 @@ function _feesSecRender(){
     `<button onclick="exportClubFeesCsv()" class="btn btnd" style="width:100%;margin:12px 0 0;">${ico('pastas')} EKSPORTUOTI Į EXCEL (CSV)</button>` +
     `<div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Faile — VISOS grupės: mėnesiai (nuo įjungimo) + rinkliavų stulpeliai.<br>Žymi treneriai grupės lange. Tėvai ir vaikai šito nemato.</div>`;
 }
-function _feesSecSetPeriod(p){ _feesSecPeriod = p; _feesSecRender(); }
+function _feesSecSetPeriod(p){ _feesSecPeriod = p; _feesSecListOpen = false; _feesSecRender(); }
 
 // 📄 v474: Supabase grąžina max 1000 eilučių per užklausą — dideliam klubui eksportas
 // tyliai nutrūktų (dalis vaikų atrodytų nežymėti/nesumokėję). Traukiam puslapiais iki galo.
