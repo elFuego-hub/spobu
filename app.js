@@ -29551,6 +29551,7 @@ async function loadClubFeesSection(){
     if (error) throw error;
     _feesSecCache = data || [];
     _feesSecGroup = 'all';
+    _feesSecPeriod = 'month';   // v481: atidarius sekciją — visada nuo mėnesinio vaizdo
     // v478: klubo rinkliavos + jų žymos (period_key 'FT-<id>')
     _feesSecTypes = []; _feesSecTypePaid = {};
     if (typeof flagOnStrict === 'function' && flagOnStrict('license_fee_enabled')){
@@ -29591,10 +29592,7 @@ async function _feeTypeArchive(id, title){
     loadClubFeesSection();
   } catch(e){ showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); }
 }
-function _feeTypeToggleList(id){
-  const el = document.getElementById('ft-unpaid-' + id);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
+let _feesSecPeriod = 'month';   // v481: 'month' | 'FT-<id>' — kurį periodą rodo klubo sekcija
 function _feesSecPick(g){ _feesSecGroup = g; _feesSecRender(); }
 function _feesSecRender(){
   const el = document.getElementById('k-fees-anal-content'); if (!el) return;
@@ -29609,66 +29607,78 @@ function _feesSecRender(){
         <div onclick="_feesSecPick('all')" style="${chip(_feesSecGroup === 'all')}">Visos · ${all.length}</div>
         ${gList.map(g => `<div onclick="_feesSecPick('${g.id}')" style="${chip(_feesSecGroup === g.id)}">${escapeHtml(g.name)} · ${g.n}</div>`).join('')}
       </div>` : '';
+  // v481 (savininko pastaba 08-21): rinkliava — PASIRENKAMAS PERIODAS šalia „Mėnesinis",
+  // jos vaizdas — ta pati sąrašo išklotinė kaip nario mokesčio (ne vardų virtinė).
+  const _lfOn = typeof flagOnStrict === 'function' && flagOnStrict('license_fee_enabled');
+  if (_feesSecPeriod !== 'month' && !(_feesSecTypes || []).some(t => 'FT-' + t.id === _feesSecPeriod)) _feesSecPeriod = 'month';
+  const perChipsHtml = _lfOn ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+      <div onclick="_feesSecSetPeriod('month')" style="${chip(_feesSecPeriod === 'month')}">Mėnesinis</div>
+      ${(_feesSecTypes || []).map(t => `<div onclick="_feesSecSetPeriod('FT-${t.id}')" style="${chip(_feesSecPeriod === 'FT-' + t.id)}">${escapeHtml(t.title)}</div>`).join('')}
+      <div onclick="_feeTypeCreate()" style="${chip(false)}color:var(--br);border-color:rgba(255,77,0,.4);">+ Nauja rinkliava</div>
+    </div>` : '';
   const rows = _feesSecGroup === 'all' ? all : all.filter(r => (r.group_id || 'none') === _feesSecGroup);
-  const paid = rows.filter(r => r.paid_current).length;
-  const debtors = rows.filter(r => r.debt_months > 0);
-  const senos = debtors.filter(r => r.debt_months > 1 || r.paid_current).length;
-  const list = debtors.length
-    ? debtors.map(r => {
-        const nm = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Vaikas';
-        const cur = !r.paid_current;
-        const tikSis = (r.debt_months === 1 && cur);   // skolingas tik už einamąjį mėnesį
-        const bg = tikSis ? 'rgba(234,179,8,.14)' : 'rgba(239,68,68,.14)';
-        const bd = tikSis ? 'rgba(234,179,8,.45)' : 'rgba(239,68,68,.45)';
-        const cl = tikSis ? '#EAB308' : '#ff9c9c';
-        const lbl = tikSis ? 'šį mėn.' : (r.debt_months + ' mėn.');
-        return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:.5px solid var(--bdr);">
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12.5px;font-weight:700;color:white;">${escapeHtml(nm)}</div>
-            <div style="font-size:9.5px;color:var(--mut);margin-top:1px;">${escapeHtml(r.group_name || 'be grupės')}${cur ? ' · neatnešė už šį mėnesį' : ''}</div>
-          </div>
-          <span style="flex-shrink:0;background:${bg};border:1px solid ${bd};color:${cl};font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;">${lbl}</span>
-        </div>`;
-      }).join('')
-    : '<div style="text-align:center;padding:16px;color:var(--grn);font-size:11.5px;font-weight:700;">Visi sumokėję — skolų nėra</div>';
-  // v478: RINKLIAVOS — klubo kuriamos (visų grupių mastu, grupės filtras joms netaikomas)
-  let ftHtml = '';
-  if (typeof flagOnStrict === 'function' && flagOnStrict('license_fee_enabled')){
-    const kidsAll = all;
-    const ftRows = (_feesSecTypes || []).map(t => {
-      const paidSet = _feesSecTypePaid['FT-' + t.id] || new Set();
-      const unpaid = kidsAll.filter(r => !paidSet.has(r.kid_id));
-      const safeT = String(t.title || '').replace(/'/g, "\\'");
-      return `<div style="padding:9px 12px;border-top:.5px solid var(--bdr);">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div onclick="_feeTypeToggleList('${t.id}')" style="flex:1;min-width:0;cursor:pointer;">
-            <div style="font-size:12.5px;font-weight:700;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.title)}</div>
-            <div style="font-size:9.5px;color:${unpaid.length ? '#EAB308' : 'var(--grn)'};margin-top:1px;">${kidsAll.length - unpaid.length}/${kidsAll.length} sumokėjo${unpaid.length ? ' · rodyti kas ne ▾' : ''}</div>
-          </div>
-          <button onclick="_feeTypeArchive('${t.id}','${escapeHtml(safeT)}')" title="Archyvuoti" style="flex-shrink:0;background:transparent;border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:12px;">${ico('archyvas')}</button>
-        </div>
-        ${unpaid.length ? `<div id="ft-unpaid-${t.id}" style="display:none;font-size:10.5px;color:var(--mut);margin-top:6px;line-height:1.6;">${unpaid.map(r => escapeHtml(`${r.first_name || ''} ${r.last_name || ''}`.trim())).join(' · ')}</div>` : ''}
+  let summaryHtml, headerHtml, listHtml;
+  if (_feesSecPeriod === 'month'){
+    const paid = rows.filter(r => r.paid_current).length;
+    const debtors = rows.filter(r => r.debt_months > 0);
+    const senos = debtors.filter(r => r.debt_months > 1 || r.paid_current).length;
+    summaryHtml = `<div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:10px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--grn);line-height:1;">${paid}/${rows.length}</div>
+        <div style="font-size:10px;color:var(--mut);">sumokėjo už ${_feeMonthLT(_feeMonthKey(new Date()))}</div>
       </div>`;
-    }).join('');
-    ftHtml = `<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 2px 5px;">
-        <span style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;">RINKLIAVOS · ${(_feesSecTypes || []).length}</span>
-        <span onclick="_feeTypeCreate()" style="font-size:10.5px;color:var(--br);font-weight:800;cursor:pointer;">+ Nauja rinkliava</span>
-      </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">
-        ${ftRows || '<div style="padding:12px;text-align:center;color:var(--mut);font-size:11px;">Dar nėra rinkliavų. Sukurk — treneriai ją ras „Mėnesio mokesčių" lange.</div>'}
+    headerHtml = `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:0 2px 5px;">DAR NEATNEŠĖ · ${debtors.length}${senos ? ` <span style="color:#ff9c9c;">· iš jų ${senos} su senesne skola</span>` : ''}</div>`;
+    listHtml = debtors.length
+      ? debtors.map(r => {
+          const nm = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Vaikas';
+          const cur = !r.paid_current;
+          const tikSis = (r.debt_months === 1 && cur);   // skolingas tik už einamąjį mėnesį
+          const bg = tikSis ? 'rgba(234,179,8,.14)' : 'rgba(239,68,68,.14)';
+          const bd = tikSis ? 'rgba(234,179,8,.45)' : 'rgba(239,68,68,.45)';
+          const cl = tikSis ? '#EAB308' : '#ff9c9c';
+          const lbl = tikSis ? 'šį mėn.' : (r.debt_months + ' mėn.');
+          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:.5px solid var(--bdr);">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12.5px;font-weight:700;color:white;">${escapeHtml(nm)}</div>
+              <div style="font-size:9.5px;color:var(--mut);margin-top:1px;">${escapeHtml(r.group_name || 'be grupės')}${cur ? ' · neatnešė už šį mėnesį' : ''}</div>
+            </div>
+            <span style="flex-shrink:0;background:${bg};border:1px solid ${bd};color:${cl};font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;">${lbl}</span>
+          </div>`;
+        }).join('')
+      : '<div style="text-align:center;padding:16px;color:var(--grn);font-size:11.5px;font-weight:700;">Visi sumokėję — skolų nėra</div>';
+  } else {
+    // RINKLIAVOS vaizdas — be termino: baigiasi tada, kai klubas ją archyvuoja.
+    // Kai visi surinko — žalia būsena su pasiūlymu archyvuoti (automatiškai nearchyvuojam,
+    // nes vėliau gali prisijungti naujas vaikas).
+    const ft = (_feesSecTypes || []).find(t => 'FT-' + t.id === _feesSecPeriod);
+    const paidSet = _feesSecTypePaid[_feesSecPeriod] || new Set();
+    const unpaid = rows.filter(r => !paidSet.has(r.kid_id));
+    const paidN = rows.length - unpaid.length;
+    const safeT = String(ft?.title || '').replace(/'/g, "\\'");
+    summaryHtml = `<div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:10px;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:${unpaid.length ? 'var(--grn)' : '#4ade80'};line-height:1;">${paidN}/${rows.length}</div>
+        <div style="flex:1;min-width:0;font-size:10px;color:var(--mut);">sumokėjo · ${escapeHtml(ft?.title || 'Rinkliava')}</div>
+        <button onclick="_feeTypeArchive('${ft?.id}','${escapeHtml(safeT)}')" title="Archyvuoti rinkliavą" style="flex-shrink:0;background:transparent;border:.5px solid var(--bdr);color:var(--mut);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:11px;font-family:inherit;">${ico('archyvas')} Archyvuoti</button>
       </div>`;
+    headerHtml = `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:0 2px 5px;">DAR NEATNEŠĖ · ${unpaid.length}</div>`;
+    listHtml = unpaid.length
+      ? unpaid.map(r => {
+          const nm = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Vaikas';
+          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:.5px solid var(--bdr);">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12.5px;font-weight:700;color:white;">${escapeHtml(nm)}</div>
+              <div style="font-size:9.5px;color:var(--mut);margin-top:1px;">${escapeHtml(r.group_name || 'be grupės')}</div>
+            </div>
+            <span style="flex-shrink:0;background:rgba(234,179,8,.14);border:1px solid rgba(234,179,8,.45);color:#EAB308;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;">neatnešė</span>
+          </div>`;
+        }).join('')
+      : `<div style="text-align:center;padding:16px;color:var(--grn);font-size:11.5px;font-weight:700;">Visi sumokėjo 🎉<div style="font-size:9.5px;color:var(--mut);font-weight:400;margin-top:4px;">Rinkliava baigta — gali ją archyvuoti (mygtukas viršuje). Žymos ir Excel istorija išliks.</div></div>`;
   }
-  el.innerHTML = chipsHtml +
-    `<div style="display:flex;gap:10px;align-items:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 14px;margin-bottom:10px;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--grn);line-height:1;">${paid}/${rows.length}</div>
-      <div style="font-size:10px;color:var(--mut);">sumokėjo už ${_feeMonthLT(_feeMonthKey(new Date()))}</div>
-    </div>` +
-    `<div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin:0 2px 5px;">DAR NEATNEŠĖ · ${debtors.length}${senos ? ` <span style="color:#ff9c9c;">· iš jų ${senos} su senesne skola</span>` : ''}</div>` +
-    `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${list}</div>` +
-    ftHtml +
+  el.innerHTML = perChipsHtml + chipsHtml + summaryHtml + headerHtml +
+    `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;overflow:hidden;">${listHtml}</div>` +
     `<button onclick="exportClubFeesCsv()" class="btn btnd" style="width:100%;margin:12px 0 0;">${ico('pastas')} EKSPORTUOTI Į EXCEL (CSV)</button>` +
     `<div style="font-size:9.5px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Faile — VISOS grupės: mėnesiai (nuo įjungimo) + rinkliavų stulpeliai.<br>Žymi treneriai grupės lange. Tėvai ir vaikai šito nemato.</div>`;
 }
+function _feesSecSetPeriod(p){ _feesSecPeriod = p; _feesSecRender(); }
 
 // 📄 v474: Supabase grąžina max 1000 eilučių per užklausą — dideliam klubui eksportas
 // tyliai nutrūktų (dalis vaikų atrodytų nežymėti/nesumokėję). Traukiam puslapiais iki galo.
