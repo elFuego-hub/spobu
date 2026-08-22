@@ -14559,14 +14559,16 @@ async function _buildEventCardData(type, id){
     const results = rs || []; const total = results.length;
     if (type === 'belt'){
       const passed = results.filter(r => r.approval_status === 'approved').length;
-      return { club, logo, icon:''+ico('dirzas')+'', typeLabel:'Diržų egzaminas', title:c.title, dateStr:formatDateLT(c.event_date), accent:'#C8A24B',
-        stats:[{big:total,small:'Laikė'},{big:passed,small:'Išlaikė'}], extraLine: passed ? `${passed} nauji diržai užtarnauti! ${ico('gimtadienis')}` : '' };
+      // v488: posto kortelėje TIK emoji — html2canvas nepiešia appso SVG sprite'ų
+      // (ico() ikonos paveiksliuke dingdavo: liko pliki „1 0 0" be medalių, be viršaus ikonos)
+      return { club, logo, icon:'🥋', typeLabel:'Diržų egzaminas', title:c.title, dateStr:formatDateLT(c.event_date), accent:'#C8A24B',
+        stats:[{big:total,small:'Laikė'},{big:passed,small:'Išlaikė'}], extraLine: passed ? `${passed} nauji diržai užtarnauti! 🎉` : '' };
     }
     const appr = results.filter(r => r.approval_status === 'approved');
     const gg = appr.filter(r => r.placement===1).length, ss = appr.filter(r => r.placement===2).length, bb = appr.filter(r => r.placement===3).length;
     const medals = gg+ss+bb;
-    return { club, logo, icon:''+ico('medalis')+'', typeLabel:'Varžybos', title:c.title, dateStr:formatDateLT(c.event_date), accent:'#FF6A00',
-      stats:[{big:total,small:'Dalyviai'},{big:medals,small:'Medaliai'}], extraLine: medals ? `${ico('medalis')} ${gg}   ${ico('medalis')} ${ss}   ${ico('medalis')} ${bb}` : '' };
+    return { club, logo, icon:'🥇', typeLabel:'Varžybos', title:c.title, dateStr:formatDateLT(c.event_date), accent:'#FF6A00',
+      stats:[{big:total,small:'Dalyviai'},{big:medals,small:'Medaliai'}], extraLine: medals ? `🥇 ${gg}   🥈 ${ss}   🥉 ${bb}` : '' };
   }
   if (type === 'camps'){
     const { data: c } = await sb.from('club_events').select('*').eq('id', id).single();
@@ -14574,8 +14576,8 @@ async function _buildEventCardData(type, id){
     const { data: rs } = await sb.from('club_event_rsvp').select('status, attended').eq('event_id', id);
     const att = (rs||[]).filter(r => r.attended).length; const going = (rs||[]).filter(r => r.status !== 'not_going').length;
     const range = (c.ends_on && c.ends_on !== c.starts_on) ? `${formatDateLT(c.starts_on)} – ${formatDateLT(c.ends_on)}` : formatDateLT(c.starts_on);
-    return { club, logo, icon:''+ico('stovykla')+'', typeLabel:'Stovykla', title:c.title, dateStr:range, accent:'#22C55E',
-      stats:[{big: att||going, small: att?'Dalyvavo':'Dalyvaus'}], extraLine:'Ačiū visiems! '+ico('jega')+'' };
+    return { club, logo, icon:'⛺', typeLabel:'Stovykla', title:c.title, dateStr:range, accent:'#22C55E',
+      stats:[{big: att||going, small: att?'Dalyvavo':'Dalyvaus'}], extraLine:'Ačiū visiems! 💪' };
   }
   if (type === 'gc'){
     const { data: c } = await sb.from('club_challenges').select('*').eq('id', id).single();
@@ -14586,11 +14588,11 @@ async function _buildEventCardData(type, id){
       const rows = (st||[]).slice().sort((a,b)=>(a.rnk||0)-(b.rnk||0));
       if (rows.length){
         total = rows.reduce((a,r)=>a+(+r.total_val||0),0);
-        const med = [''+ico('medalis')+'',''+ico('medalis')+'',''+ico('medalis')+''];
+        const med = ['🥇','🥈','🥉'];
         podium = rows.slice(0,3).map((r,i)=>`${med[i]} ${r.g_name||'Grupė'}`).join('   ');
       }
     } catch(e){}
-    return { club, logo, icon:''+ico('trofejai')+'', typeLabel:'Grupių iššūkis', title:c.title, dateStr: c.ends_on?formatDateLT(c.ends_on):'', accent:'#EAB308',
+    return { club, logo, icon:'🏆', typeLabel:'Grupių iššūkis', title:c.title, dateStr: c.ends_on?formatDateLT(c.ends_on):'', accent:'#EAB308',
       stats:[{big: total||'—', small: (typeof _gcMetricLabel==='function'?_gcMetricLabel(c):'Rezultatas')}], extraLine: podium };
   }
   return null;
