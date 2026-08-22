@@ -16693,6 +16693,29 @@ async function loadClubGroupChallenges(){
 
 async function openCreateClubChallenge(){
   const old = document.getElementById('club-gc-modal'); if(old) old.remove();
+  // 📚 v486 (savininko pastaba): pratimų KATALOGAS kaip pas trenerį — paspaudus chip'ą
+  // užsipildo pratimas/vienetas/metrika. Šaltiniai: katalogo savaitiniai+mėnesiniai seed'ai
+  // (tik kiekiniai — kartai/km/sek) + šio klubo trenerių sukurti šablonai.
+  let _gcCat = [];
+  try {
+    const seen = new Set();
+    const add = (name, unit, icon) => {
+      const u = String(unit || '').toLowerCase();
+      if (!name || !['kartai','km','sek','sek.','min'].includes(u)) return;   // meta (atlikta/treniruotės) — ne šiam iššūkiui
+      const k = name.toLowerCase(); if (seen.has(k)) return; seen.add(k);
+      _gcCat.push({ name, unit: u === 'km' ? 'km' : (u === 'kartai' ? 'kartų' : u), icon: icon || '⭐', metric: u === 'km' ? 'km' : 'reps' });
+    };
+    // Klasika grupių maratonams (katalogo treniruotės pratimai yra „atlikta/ne" tipo — čia reikia kiekinių)
+    [['Atsispaudimai','kartai','💪'],['Pritūpimai','kartai','🦵'],['Pilvo presas','kartai','🔥'],
+     ['Šuoliukai per virvutę','kartai','🤸'],['Planka','sek','🧱'],['Įtraukimai','kartai','🏋️']]
+      .forEach(c => add(c[0], c[1], c[2]));
+    [...(typeof KAT_WEEKLY_SEED !== 'undefined' ? KAT_WEEKLY_SEED : []), ...(typeof KAT_MONTHLY_SEED !== 'undefined' ? KAT_MONTHLY_SEED : [])]
+      .forEach(s => { if (!s.fx && !s.learn) add(s.name, s.unit, s.icon); });
+    try {
+      const { data: tpls } = await sb.from('trainer_exercise_templates').select('name, unit, icon').eq('club_id', currentClub.id).eq('is_active', true).limit(50);
+      (tpls || []).forEach(t => add(t.name, t.unit, t.icon));
+    } catch(_){ /* lentelės gali nebūti / RLS — tada tik katalogo seed'ai */ }
+  } catch(_){}
   // Klubo grupės — dalyvaujančioms pasirinkti (multi-select)
   const { data: _grps } = await sb.from('groups').select('id, name').eq('club_id', currentClub.id).order('name');
   const groupsHtml = (_grps && _grps.length)
@@ -16717,6 +16740,10 @@ async function openCreateClubChallenge(){
         <option value="attendance">📋 Lankomumas (auto iš treniruočių)</option>
       </select>
       <div id="gc-reps-fields">
+        ${_gcCat.length ? `<label class="lbl">PASIRINK IŠ KATALOGO <span style="color:var(--mut);font-weight:400;">(arba įrašyk ranka žemiau)</span></label>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">
+          ${_gcCat.map(c => `<div onclick="_gcPickCat(this)" data-name="${escapeHtml(c.name)}" data-unit="${escapeHtml(c.unit)}" data-metric="${c.metric}" style="padding:6px 11px;border-radius:99px;font-size:10.5px;font-weight:700;cursor:pointer;border:.5px solid var(--bdr);background:var(--card);color:rgba(255,255,255,.85);white-space:nowrap;">${c.icon} ${escapeHtml(c.name)}</div>`).join('')}
+        </div>` : ''}
         <label class="lbl">PRATIMAS / MATAVIMAS</label>
         <input class="inp" id="gc-exlabel" placeholder="pvz. Atsispaudimai" style="margin-bottom:12px;">
         <label class="lbl">VIENETAS</label>
@@ -16732,6 +16759,21 @@ async function openCreateClubChallenge(){
     </div>
   </div>`;
   document.body.appendChild(m);
+}
+
+// 📚 v486: katalogo chip'as → užpildo pratimą/vienetą/metriką ir pažymi pasirinkimą
+function _gcPickCat(el){
+  const ex = document.getElementById('gc-exlabel'), un = document.getElementById('gc-unit'), me = document.getElementById('gc-metric');
+  if (ex) ex.value = el.dataset.name || '';
+  if (un) un.value = el.dataset.unit || '';
+  if (me && el.dataset.metric){ me.value = el.dataset.metric; const rf = document.getElementById('gc-reps-fields'); if (rf) rf.style.display = 'block'; }
+  el.parentElement.querySelectorAll('[data-name]').forEach(c => { c.style.borderColor = 'var(--bdr)'; c.style.background = 'var(--card)'; c.style.color = 'rgba(255,255,255,.85)'; });
+  el.style.borderColor = 'rgba(255,77,0,.55)'; el.style.background = 'rgba(255,77,0,.15)'; el.style.color = '#FF9E40';
+  const t = document.getElementById('gc-title');
+  if (t && !t.value.trim()){
+    const M = ['Sausio','Vasario','Kovo','Balandžio','Gegužės','Birželio','Liepos','Rugpjūčio','Rugsėjo','Spalio','Lapkričio','Gruodžio'];
+    t.value = M[new Date().getMonth()] + ' ' + (el.dataset.name || '').toLowerCase() + ' iššūkis';   // pasiūlymas — klubas gali perrašyti
+  }
 }
 
 async function submitNewClubChallenge(){
