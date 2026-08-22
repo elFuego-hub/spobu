@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=489">
+<link rel="stylesheet" href="styles.css?v=491">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v489</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v491</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3569,6 +3569,31 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> Apžvalgų sekcijos perkeltos į Analitiką (k-stat) -->
 
+    <!-- 📣 v490: kodėl dalintis postais — matoma ir vadybininkui (ne owner-only) -->
+    <div class="cd" style="padding:0;overflow:hidden;">
+      <div onclick="var b=document.getElementById('k-share-why');var c=document.getElementById('k-share-chev');var h=b.style.display==='none';b.style.display=h?'block':'none';c.style.transform='rotate('+(h?'90':'0')+'deg)'" style="display:flex;align-items:center;gap:11px;padding:13px 14px;cursor:pointer;">
+        <div style="width:34px;height:34px;border-radius:10px;background:rgba(24,119,242,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📣</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:800;color:#fff;">Postai = klubo augimas</div>
+          <div style="font-size:10.5px;color:var(--mut);margin-top:1px;">Kodėl verta dalintis ir skatinti tėvus dalintis</div>
+        </div>
+        <span id="k-share-chev" style="font-size:10px;color:var(--mut);transition:transform .2s;"><svg class="ico" aria-hidden="true"><use href="#i-leisti"></use></svg></span>
+      </div>
+      <div id="k-share-why" style="display:none;padding:0 14px 14px;font-size:12px;color:rgba(255,255,255,.85);line-height:1.65;">
+        Kiekvienas postas — <b>nemokama klubo reklama</b> tiksliausiai auditorijai: tavo miesto tėvams.
+        <div style="margin-top:9px;">
+          <b style="color:#FF9E40;">🏆 Rezultatai kalba.</b> Tėvai renkasi klubą pagal tai, ką mato — medaliai, stovyklos ir vaikų progresas įtikina labiau nei bet kokia reklama.<br><br>
+          <b style="color:#FF9E40;">👨‍👩‍👧 Tėvų tinklas.</b> Kai tėvai pasidalina vaiko pasiekimo kortele, ją pamato jų draugai — šeimos su vaikais, kurios dar ieško būrelio.<br><br>
+          <b style="color:#FF9E40;">🔁 Sniego gniūžtė.</b> Treneris dalinasi treniruotės postu, klubas — renginių, tėvai — vaiko kortelėmis. Keli postai per savaitę = šimtai peržiūrų be jokio biudžeto.<br><br>
+          <b style="color:#FF9E40;">🥇 Vaikų motyvacija.</b> Vaikai, kurių darbas matomas, stengiasi labiau — o jų progresas tampa kitu postu.<br><br>
+          <b style="color:#FF9E40;">⭐ SPOBU padauginimas.</b> Pažymėk poste SPOBU paskyrą — geriausiais klubų postais dalinamės savo kanale, ir tavo klubą pamato auditorija už tavo miesto ribų.
+        </div>
+        <div style="margin-top:10px;background:rgba(24,119,242,.08);border:.5px solid rgba(24,119,242,.35);border-radius:10px;padding:9px 11px;font-size:11px;color:var(--mut);">
+          <b style="color:#6aa9f7;">Praktiškai:</b> 2–3 postai per savaitę — dienos treniruotė (treneris), renginio rezultatai ar mėnesio suvestinė (klubas). Viskas pasigamina per 30 sekundžių Postų studijoje.
+        </div>
+      </div>
+    </div>
+
     <div class="st owner-only" id="k-settings-anchor"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> KLUBO NUSTATYMAI</div>
     <div class="owner-only" style="font-size:11px;color:var(--mut);padding:0 18px 4px;line-height:1.4;">Pasimodeliuok klubą pagal save — įjunk/išjunk funkcijas savo vaikams, treneriams ir tėvams.</div>
     <div class="owner-only" style="padding:0 16px;" id="k-prof-settings">
@@ -4518,7 +4543,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=489"></script>
+<script src="app.js?v=491"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

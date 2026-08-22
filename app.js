@@ -4392,7 +4392,8 @@ async function openFbStudio() {
       </div>
       <div style="font-size:10px;color:var(--mut);margin:10px 0 4px;">Posto tekstas (paspausk — nukopijuos):</div>
       <div id="fb-text" onclick="_fbCopyText()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:10px 12px;font-size:11.5px;line-height:1.55;cursor:pointer;white-space:pre-wrap;"></div>
-      <button onclick="_fbShare()" id="fb-share-btn" style="width:100%;padding:13px;margin-top:10px;background:linear-gradient(90deg,#1877F2,#4293f5);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📣 Dalintis / atsisiųsti paveiksliuką</button>`;
+      <button onclick="_fbShare()" id="fb-share-btn" style="width:100%;padding:13px;margin-top:10px;background:linear-gradient(90deg,#1877F2,#4293f5);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📣 Dalintis / atsisiųsti paveiksliuką</button>
+      <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">⭐ Pažymėk poste SPOBU paskyrą — geriausiais klubų postais dalinamės savo kanale.</div>`;
     _pfSheet('fb-studio-modal', '📣 POSTŲ STUDIJA', body);
     if (typeof _fbRestoreSel === 'function') _fbRestoreSel();   // v475: atkuriam įsimintą pasirinkimą
     _fbRender();
@@ -14628,7 +14629,7 @@ function _showCardModal(canvas){
         <button onclick="_pickEventPhoto()" style="flex:1;background:rgba(255,106,0,.12);color:#FF7A33;border:.5px solid rgba(255,106,0,.45);padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">${ico('nuotrauka')} Su sava nuotrauka</button>
         <button onclick="_revertEventCard()" style="flex:1;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:11px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">${ico('atgal')}️ Grynas grafikas</button>
       </div>
-      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:14px;">„${ico('nuotrauka')} Su sava nuotrauka" uždeda klubo statistiką (medaliai ir kt.) ant tavo komandos nuotraukos — kaip Strava. Skaičiai be vaikų vardų.</div>
+      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:14px;">„${ico('nuotrauka')} Su sava nuotrauka" uždeda klubo statistiką (medaliai ir kt.) ant tavo komandos nuotraukos — kaip Strava. Skaičiai be vaikų vardų.<br>⭐ Pažymėk poste SPOBU paskyrą — geriausiais klubų postais dalinamės savo kanale.</div>
       ${canShare ? `<button onclick="_shareEventCard()" class="btn btng" style="width:100%;margin:0 0 8px;">${ico('siusti')} Pasidalinti</button>` : ''}
       <button onclick="_downloadEventCard()" style="width:100%;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">${ico('zemyn')} Atsisiųsti paveiksliuką</button>
       <button onclick="_copyEventCard()" style="width:100%;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">${ico('dokumentas')} Kopijuoti paveiksliuką</button>
@@ -14924,6 +14925,17 @@ async function _fetchClubNotifications(force){
       });
     });
   } catch(e){ /* funkcijos dar gali nebūti — tylim */ }
+  // 📣 v491 (savininko užsakymas): SAVAITĖS POSTO priminimas — pen./šešt./sekm.
+  // Ritmo kabliukas: dalinimasis tampa įpročiu, ne atsitiktinumu. Paspaudus — Postų studija.
+  try {
+    const wd = new Date().getDay();   // 5=pen, 6=šešt, 0=sekm
+    if (wd === 5 || wd === 6 || wd === 0){
+      const mon = new Date(); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+      systemItems.push({ id: 'wkpost-' + mon.toISOString().slice(0, 10), icon: '📣',
+        title: 'Savaitės postas dar laukia', sub: 'Grupės šią savaitę padirbėjo — pasidalink rezultatais Postų studijoje',
+        time: new Date().toISOString(), link: { fn: 'fbstudio' } });
+    }
+  } catch(e){ /* tylim */ }
   // 📰 v483: SPOBU naujienos klubo varpelyje (30 d.)
   try {
     const { data: nws } = await sb.from('platform_news').select('id, title, body, created_at').gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(5);
@@ -15114,6 +15126,7 @@ function clubNotifClick(tab, id, convId){
   const it = (clubNotifications?.[tab]||[]).find(x=>x.id===id);
   if (it && it.link){
     const s = document.getElementById('kh-notif-section'); if(s) s.style.display='none';
+    if (it.link.fn === 'fbstudio'){ if (typeof openFbStudio === 'function') openFbStudio(); return; }   // v491: savaitės posto priminimas → studija
     if (typeof nv==='function') nv('k', null, it.link.screen);
     if (it.link.teamTab && typeof switchClubTeamTab==='function') switchClubTeamTab(it.link.teamTab);
     if (it.link.evTab && typeof switchClubEventsTab==='function') switchClubEventsTab(it.link.evTab);
@@ -22160,7 +22173,7 @@ async function openTrainerPostStudio(groupId){
       <button onclick="_tpsShare()" style="flex:1;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;padding:13px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('siusti')} Dalintis</button>
       <button onclick="_tpsDownload()" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:#fff;border-radius:11px;padding:13px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('zemyn')}</button>
     </div>
-    <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:9px;line-height:1.5;">Postą gali siųsti į grupės pokalbį tėvams arba dėti į klubo socialinius tinklus.</div>
+    <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:9px;line-height:1.5;">Postą gali siųsti į grupės pokalbį tėvams arba dėti į klubo socialinius tinklus.<br>⭐ Pažymėk SPOBU paskyrą — geriausiais postais dalinamės savo kanale.</div>
   `);
   const tplEl = document.getElementById('tps-tpls');
   if (tplEl) tplEl.innerHTML = TPS_TPLS.map(t =>
@@ -25552,6 +25565,26 @@ async function _fetchTrainerNotifications(force) {
 
   trainerNotifications = {
     system: dedupeById([
+      // 📣 v491: savaitės posto priminimas treneriui (pen.–sekm., kai studija leidžiama)
+      ...(await (async () => {
+        try {
+          const wd = new Date().getDay();
+          if (wd !== 5 && wd !== 6 && wd !== 0) return [];
+          if (typeof flagOn === 'function' && !flagOn('trainer_posts_enabled')) return [];
+          const mon = new Date(); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+          const monISO = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()).toISOString();
+          let n = 0;
+          if (myKidIds.length){
+            const { count } = await sb.from('challenge_submissions').select('id', { count: 'exact', head: true })
+              .in('kid_id', myKidIds).eq('status', 'approved').gte('created_at', monISO);
+            n = count || 0;
+          }
+          return [{ id: 'wkpost-' + monISO.slice(0, 10), icon: '📣',
+            title: 'Savaitės postas dar laukia',
+            sub: (n ? `Vaikai šią savaitę atliko ${n} užduočių — ` : 'Grupė padirbėjo — ') + 'pasidalink per grupės POSTŲ STUDIJĄ',
+            ts: new Date().toISOString() }];
+        } catch(e){ return []; }
+      })()),
       // 🎂 v476: artėjantys gimtadieniai (7 d.) — kai klubas neišjungė birthdays_enabled
       ...((typeof flagOn !== 'function' || flagOn('birthdays_enabled'))
         ? _upcomingBdays(allTrainerKids || [], 7).map(b => ({ id: 'bday-' + b.id + '-' + b.dateKey, icon: '🎂',
