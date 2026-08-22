@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPOBU treneriui — kas tai ir kaip bandysim</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color:#1a1a1a; background:#fff; padding:24px; max-width:800px; margin:0 auto; font-size:13px; line-height:1.5; }
+  .hdr { background:linear-gradient(135deg,#FF4D00,#FF7A33); color:#fff; border-radius:14px; padding:18px 22px; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .hdr h1 { font-size:24px; letter-spacing:2px; }
+  .hdr .sub { font-size:12px; opacity:.95; }
+  .qr { width:86px; height:86px; background:#fff; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#999; font-size:10px; text-align:center; }
+  .box { border:2px solid #FF4D00; border-radius:12px; padding:12px 16px; margin-bottom:12px; }
+  .box.gray { border-color:#ddd; }
+  h2 { font-size:14px; color:#FF4D00; margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; }
+  h3 { font-size:12px; margin:8px 0 3px; }
+  ol, ul { padding-left:20px; } li { margin-bottom:3px; }
+  .imp { background:#FFF3ED; border-radius:8px; padding:8px 12px; margin-top:8px; font-weight:700; }
+  .cols { display:flex; gap:12px; } .cols > div { flex:1; }
+  .ftr { text-align:center; color:#888; font-size:11px; margin-top:14px; }
+  b.url { color:#FF4D00; }
+  .tag { display:inline-block; background:#1a1a1a; color:#fff; border-radius:6px; padding:1px 8px; font-size:11px; font-weight:700; }
+  .lvl { border-left:4px solid #FF4D00; padding-left:10px; margin:8px 0; }
+  @media print { body { padding:8mm; } .hdr, .imp, .tag { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <h1>SPOBU</h1>
+    <div class="sub">Kas tai ir kaip bandysim · treneriui</div>
+    <div class="sub" style="margin-top:6px;font-size:15px;font-weight:800;">app.spobu.lt</div>
+  </div>
+  <div class="qr"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADcAQMAAAAhlF3CAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABS0lEQVRYheWYPXLEIAyFlaGgzBE4CkfDR/NROIJLF5590R+JdyfZPpIKj83nhgdPQhC9iwGNiz7AX33yo9oQZii4yWzrVQCysbNeqkDPBDtwVFEI4B+bQH1PCFUheQ8OeenB3pj0mRK6HR4kSaHhoF+8Eh16YlQ49jZZoZ/EmAQ+xdjp7/jfUEU4bN76cdTTBUkEN7YAznLpUYB4J0Ag5YK+9wUCu/xY8fAkGQi61cvl1V4LgHqhJ4L8aEshgXz2NbWQBw7sokr53hpmh5UwkkDNCV4FqUOOAp4kZyyoA2oHGWgG6dbpZIFqAT3yeJ40a2SBK4rJItYgaf2IYsFhk1Y7wFJAveW+JFBX3Aofr75URFeoZ4LdGn9RaCNqyw5AQgjrAOZq/CNDq4K6KV6vgIJDs0O5H3nw4pXw0La/3vdpN+CVAk9ZMzh8F19PZJD7txwpcAAAAABJRU5ErkJggg==" alt="QR į app.spobu.lt" style="width:100%;height:100%;border-radius:10px;"></div>
+</div>
+
+<div class="box">
+  <h2>Kas tai vaikui — kodėl jie įsitrauks</h2>
+  SPOBU vaiko sportą paverčia žaidimo karjera, kurioje viskas uždirbama REALIU darbu: už treniruotes,
+  iššūkius ir rekordus vaikas gauna <b>EXP</b>, kelia <b>lygį</b>, augina <b>serijas</b> (kaip „streak"
+  žaidimuose), mato šventes ekrane už kiekvieną pasiekimą. Svarbiausia — <b>nė vieno EXP vaikas negali
+  pasiskirti pats</b>: viskas eina per tavo patvirtinimą, tai taškai turi tikrą vertę ir vaikai tai jaučia.
+</div>
+
+<div class="box">
+  <h2>Ką pamatys tėvai</h2>
+  Tėvai turi savo portalą: vaiko tikslai ir jų eiga, naujienų juosta (kiekvienas tavo patvirtinimas
+  virsta žinute tėvams — „įveikė iššūkį +12 EXP"), lankomumas, rekordai, tavo žinutės. Tėvas pirmą
+  kartą realiai <b>mato, kas vyksta treniruotėse ir tarp jų</b> — be jokio papildomo darbo tau:
+  viską, ką pažymi, tėvai pamato automatiškai.
+</div>
+
+<div class="box gray">
+  <h2>📵 Vaikas be telefono? Ne problema</h2>
+  Logika paprasta: <b>viską, kas vyksta salėje, žymi TU</b> — lankomumą, elgesio EXP, Kelio
+  rekordus („Skirti EXP") — o <b>tėvai viską mato savo paskyroje</b> (tėvo rolė — stebėtojo:
+  jis mato ir palaiko, bet pats už vaiką nepateikinėja). Vaiko progresas, EXP ir serijos
+  kaupiasi lygiai taip pat — jis nieko nepraranda. Savarankiškiems pateikimams (iššūkiai
+  namuose) reikia vaiko prisijungimo — jį galima naudoti ir tėvų telefone, o vaikui gavus
+  savo — visa sukaupta karjera jau lauks jo. Taip įtrauki (ir išlaikai!) ir tuos vaikus,
+  kurie kitaip liktų už borto.
+</div>
+
+<div class="box gray">
+  <h2>Startas — klubo paskyros darbai (eilės tvarka svarbi!)</h2>
+  <ol>
+    <li><b>Klubo paskyrą</b> sukuria ir tau perduoda Ugnius — su ja valdai grupes, trenerius
+      ir tvirtini tėvų anketas</li>
+    <li><b>Sukurk trenerių paskyras</b> — savo ir kolegos (dirbat juk dviese): Treneriai →
+      pridėk el. paštą → ateina laiškas → susikuria slaptažodį. Trenerių paskyros reikalingos
+      PRIEŠ kuriant grupes — grupei priskirsi trenerį</li>
+    <li><b>Sukurk grupes</b> (skiltis „Grupės" → NAUJA GRUPĖ): pavadinimas, spalva,
+      <b>pagrindinis treneris</b>, <b>asistentai</b> (kolega gali būti asistentu tavo grupėje
+      ir atvirkščiai — abu žymėsit) ir <b>treniruočių dienos bei laikai</b></li>
+    <li><b>Tėvų anketos:</b> tėvams išsiuntus laišką su klubo kodu, jos kris į skiltį
+      „LAUKIA PATVIRTINIMO" → spausk „✓ Tvirtinti" ir <b>iškart pasirink grupę</b>
+      (arba „Tik patvirtinti be grupės" — priskirsi vėliau iš sąrašo „BE GRUPĖS").
+      Netinkamą anketą gali atmesti su priežastimi</li>
+    <li>⚠️ <b>14+ vaikai gali registruotis patys</b> — jų anketos pažymėtos „14+ PATS":
+      tvirtink tik pažinodamas vaiką iš salės</li>
+    <li>Įsidiek į telefoną: <b>iPhone</b> — Safari → Bendrinti ⬆ → „Add to Home Screen";
+      <b>Android</b> — Chrome → ⋮ → „Įdiegti programą"; įsijunk pranešimus (Nustatymai ⚙)</li>
+  </ol>
+  <div class="imp">🎮 Prieš bandant su vaikais — gausi TESTINES paskyras (vaiko/tėvo/trenerio) pažaisti demo klube: pasižiūrėk vaiko akimis, kaip atrodo EXP šventė, pateik iššūkį, patvirtink jį treneriu. [prisijungimus duos Ugnius]</div>
+</div>
+
+<div class="box">
+  <h2>🔥 Pirma treniruotė — 2 minutės pristatymui vaikams</h2>
+  Tėvai laišką jau gavę, dalis užsiregistravusi — dabar uždegimo momentas salėje:
+  <ol>
+    <li><b>Parodyk gyvai</b> per savo telefoną (ar testinę vaiko paskyrą): EXP šventę, lygį, seriją —
+      vieną ekraną, ne ekskursiją</li>
+    <li><b>Pasakyk paprastai:</b> „Nuo šiandien už treniruotes, iššūkius ir rekordus gaunat taškus
+      ir keliat lygį — kaip žaidime, tik čia viskas užsidirbama salėje ir kieme, ne telefone"</li>
+    <li><b>Tą pačią treniruotę pažymėk lankomumą ir skirk pirmą elgesio EXP</b> — kas turi paskyrą,
+      pamatys šventę dar tą vakarą (o namie parodys tėvams)</li>
+    <li>Kas paskyros dar neturi: „pasakykit tėvams — laiškas jų pašte" — antra banga ateis pati</li>
+  </ol>
+</div>
+
+<div class="box pb">
+  <h2>Kasdienis darbas — lankomumas ir treniruotės</h2>
+  Treniruotės dienos ritmas paprastas ir visas telpa PO treniruotės (per pačią treniruotę
+  telefono liesti nereikia):
+  <ol>
+    <li><b>Lankomumas</b> — pažymi, kas dalyvavo (~30 sek). Tai variklis: nuo lankomumo sukasi
+      vaikų serijos ir bonusai, o tu kaupi lankomumo istoriją</li>
+    <li><b>Pateikimų tvirtinimas</b> — vaikai bus pasižymėję treniruočių iššūkius, pateikę
+      savaitinių įrodymus: peržiūri ir patvirtini arba grąžini su pastaba (2–5 min)</li>
+    <li><b>Elgesio EXP</b> — kas nusipelnė (stengėsi, padėjo draugui) ar prasižengė: vaiko
+      kortelėje paruošti mygtukai su dydžiais, tau tik priežastis — ji nukeliauja tėvams į juostą</li>
+  </ol>
+  <div class="imp">👨‍👩‍👧 Iš tėvų pusės visa tai virsta vaiko <b>dienoraščiu</b>: kiekviena treniruotė,
+  iššūkis ir EXP — matomi jų juostoje, o mėnesio pabaigoje tėvai gauna <b>mėnesio suvestinę</b>.
+  Kuo reguliariau žymi, tuo labiau tėvai įsitraukę — jie pirmą kartą mato vaiko sportą iš vidaus.</div>
+  <div class="lvl">
+    <h3>⭐ GEROJI PRAKTIKA — pilnas variklis</h3>
+    <ul>
+      <li>Lankomumas po <b>kiekvienos</b> treniruotės — be išimčių, tai serijų pagrindas</li>
+      <li>Treniruočių iššūkiai aktyvūs nuolat, <b>su sunkumo lygiais parinktais iš anksto</b> —
+        vaikas treniruotėje jau žino savo tikslą (pvz., 20 atsispaudimų), tau per treniruotę
+        skaičiuoti nieko nereikia — po jos tik patvirtini</li>
+      <li>Pakartojimų tikslus dėk ten, kur svarbu rekordams ir statistikai — vaikai matys
+        savo augimą skaičiais</li>
+      <li>Elgesio EXP bent porą kartų per savaitę pastebėtiems — tėvai juostoje mato,
+        kad treneris MATO jų vaiką (tėvams tai auksas)</li>
+      <li>Pateikimus tvirtini tą pačią ar kitą dieną</li>
+    </ul>
+  </div>
+  <div class="lvl" style="border-left-color:#999;">
+    <h3>✔️ PATENKINAMA PRAKTIKA — minimumas, kad sistema gyvuotų</h3>
+    <ul>
+      <li>Lankomumas — <b>visada</b> (šito praleisti negalima, be jo vaikams nutrūksta serijos)</li>
+      <li>Iššūkiai <b>be pakartojimų skaičiavimo</b> — tik žyma „atsispaudimus darė":
+        įvykdyta/neįvykdyta, vaikas EXP ir seriją vis tiek gauna</li>
+      <li>Pateikimų patvirtinimas bent kas 2 dienas</li>
+    </ul>
+    Net ir šito minimumo užtenka, kad vaikai matytų progresą ir sistema suktųsi.
+  </div>
+  Visa kita — tavo stilius: <b>dirbk kaip tau patogu</b>, per laiką susirasi savo būdą (gali kurti
+  ir visai savus iššūkius). Jei pamatysi, kaip būtų greičiau ar patogiau — pasakyk: bandymo metu
+  koreguojam ir patį appsą.
+</div>
+
+<div class="box gray">
+  <h2>Iššūkių logika — keturi horizontai</h2>
+  <div class="imp" style="margin-bottom:8px;">👥 Skirtingoms grupėms — skirtingi tikslai: iššūkius
+  kuri kiekvienai grupei atskirai pagal jos lygį (jaunesniems mažesni pakartojimai, vyresniems
+  didesni). O KELIO pakopos prie vaiko amžiaus ir lyties prisitaiko automatiškai — ten nieko
+  derinti nereikia.</div>
+  <h3>🥋 TRENIRUOČIŲ — kasdieniai, salėje</h3>
+  Maži iššūkiai kiekvienai treniruotei: atsispaudimai, pritūpimai, technikos elementai — su
+  pakartojimų tikslu arba be jo (žr. aukščiau). Vaikai pasižymi įvykdę, tu patvirtini;
+  už reguliarumą kaupiasi treniruočių serijos su bonusais.
+  <h3>📅 SAVAITINIAI — fizinis aktyvumas tarp treniruočių</h3>
+  Ilgesnio nuotolio tikslai: bėgimas, ėjimas, km kiekiai. Vaikas pateikia įrodymą (pvz., <b>Stravos
+  ar žingsniamačio ekrano nuotrauką</b>), tu peržiūri ir patvirtini. Tikslas — auginti fizinį krūvį
+  už salės ribų; už reguliarumą kaupiasi savaičių serijos su bonusais.
+  <h3>🎯 MĖNESINIAI — technika</h3>
+  Čia daugiausia laisvės: kojų smūgių technika, diržo (kata) technika, lankstumas — formuluoji pagal
+  savo grupės lygį, vertini pats salėje. Gali skirti visai grupei arba konkrečiam vaikui.
+  <h3>🏔 ILGALAIKIS — KELIAS (karjera)</h3>
+  Karjeros pratimų pakopos pagal amžių ir lytį: pritūpimai, atsispaudimai ir kt. Vaikas gerina savo
+  rekordus ir <b>mato save statistikoje</b> — lygiai, reitingai, „kur aš esu". Bandymo tikslas per
+  4–6 sav.: kiekvienas vaikas pagerina bent kelis savo rekordus ir tai pamato.
+</div>
+
+<div class="box gray">
+  <h2>Varžybos ir įvykiai — kaip veikia</h2>
+  Varžybas, diržų laikymus ir grupių iššūkį kursi per <b>klubo paskyrą</b> (bandyme turėsi abi):
+  <h3>🏆 Varžybos — pilnas ratas (kas kurią paskyrą naudoja)</h3>
+  <ol>
+    <li><span class="tag">KLUBO</span> Sukuri varžybas (tipas — kumite / kata / diržo egzaminas,
+      pavadinimas, data) → <b>pranešimą „Naujos varžybos!" gauna visas klubas</b></li>
+    <li><span class="tag" style="background:#FF4D00;">VAIKAI</span> iš anksto pažymi
+      <b>„Ketinu dalyvauti"</b> arba „Nedalyvausiu" — dar prieš varžybas matai planuojamų
+      dalyvių sąrašą, be popierių ir žinučių rinkimo</li>
+    <li><span class="tag" style="background:#FF4D00;">VAIKAI</span> varžyboms praėjus
+      <b>patys pateikia savo rezultatą</b>: „Dalyvavau" → vieta, kovų laimėta/pralaimėta</li>
+    <li><span class="tag">TRENERIO</span> pateikimas atkeliauja į tvirtinimus („Treneris tikrina")
+      — patvirtini arba grąžini pataisyti (vaikas mato priežastį ir gali pateikti iš naujo)</li>
+    <li>Patvirtinus: vaikui medalio šventė + EXP, o klubui kaupiasi <b>varžybų statistika
+      įvairiais pjūviais</b> — kas dalyvauja, kas laimi, kaip auga grupės</li>
+  </ol>
+  <span class="tag">TRENERIO</span> Jei vaikas rezultato nepateikia — gali įrašyti ir pats
+  per „Skirti EXP → Varžybos".
+  <h3>🥋 Diržų laikymai</h3>
+  <span class="tag">KLUBO</span> kuria kaip varžybų tipą „Diržo egzaminas" — toliau tas pats ratas:
+  pranešimas klubui, ketinimai, vaiko pateikimas („Išlaikiau" + naujas kyu),
+  <span class="tag">TRENERIO</span> patvirtinimas. Patvirtinus vaiko diržas pasikeičia
+  profilyje, o klubas mato <b>diržų statistiką</b>: kiek kokio amžiaus ir lyties vaikų turi
+  kokį diržą — visas klubo lygio žemėlapis vienoje vietoje.
+  <h3>⚔️ Grupių iššūkis — komandinė kova</h3>
+  <span class="tag">KLUBO</span> paskyroje pasirenki grupes ir bendrą tikslą: būrelis prieš būrelį,
+  vaikai kovoja už komandą įvairiose rungtyse, nugalėtojų grupė švenčia kartu. Komandinio darbo
+  variklis — silpnesni tempiami, nes kiekvieno indėlis matosi bendrame progrese.
+</div>
+
+<div class="box">
+  <h2>🤺 Dvikovos — azartas tarp vaikų</h2>
+  Jų kurti nereikia — viskas vyksta tarp vaikų: <b>vaikas iškviečia draugą 1 prieš 1 iššūkiui</b>
+  (atsispaudimai, bėgimas, sutarta rungtis) → varžovas gauna iškvietimą → <b>abu atlieka</b> →
+  rezultatas atkeliauja tau į tvirtinimus → patvirtinus <b>nugalėtojas gauna daugiau EXP</b>,
+  o abiem kaupiasi pergalių/pralaimėjimų santykis profilyje.
+  <div class="cols" style="margin-top:6px;">
+    <div>
+      <h3>Ką gauna vaikas</h3>
+      Tikrą priežastį stengtis ŠIANDIEN — ne „kada nors diržui", o „prieš Joną šią savaitę".
+      Asmeninė kovinė statistika (W/L) kaip tikro sportininko — ir noras revanšo.
+    </div>
+    <div>
+      <h3>Ką gauni tu</h3>
+      Vaikai varžosi ir tarp treniruočių be jokio tavo varymo — motyvacija sukasi pati.
+      O tu matai, kas su kuo realiai lygus — lengviau poruoti pagal lygį, ne akies matu.
+    </div>
+  </div>
+  <div class="imp" style="margin-top:8px;">Rezultatą tvirtini tik tu — dvikovos lieka sportu, ne kiemo ginču. (Jei grupei per anksti — dvikovas galima klubo nustatymuose išjungti.)</div>
+</div>
+
+<div class="box">
+  <h2>📣 Postų studija — treniruotė virsta postu per 1 min</h2>
+  Pagrindiniame lange yra <b>POSTŲ STUDIJA</b>: pasirenki dieną / savaitę / mėnesį — ji pati
+  surenka grupės skaičius (kiek vaikų, kiek pratimų, kokie rekordai), sudeda į gražią kortelę
+  su klubo logo ir paruošia tekstą. Gali uždėti ant savo treniruotės nuotraukos. Belieka
+  pasidalinti į klubo FB/IG ar tėvų grupę.
+  <div class="imp">Ritmas paprastas: po treniruotės pažymėjai lankomumą → studija → pasidalinai.
+  Tėvams tai „mano vaikas šiandien dirbo", klubui — gyva reklama. Penktadienį varpelis primins,
+  jei savaitės postas dar nepaskelbtas. ⭐ Pažymėk poste SPOBU — geriausiais dalinamės SPOBU kanale.</div>
+</div>
+
+<div class="box">
+  <h2>Kas iš to klubui — duomenys ir CRM</h2>
+  Viskas, ką žymi kasdien, virsta klubo vaizdu vienoje vietoje:
+  <ul>
+    <li><b>Grupės ir narystė</b> — tėvų anketos, laukiančiųjų sąrašas, grupių sąrašai be popierių</li>
+    <li><b>Lankomumo istorija</b> — kas vaikšto, kas dingsta (matai anksčiau, nei tėvas pasako „mes išeinam")</li>
+    <li><b>Aktyvumo statistika pagal grupes</b> — EXP, iššūkiai, tėvų prisijungimai: matai, kurios šeimos įsitraukę, o kurias verta pakalbinti</li>
+    <li><b>Žinutės iš appso</b> — rašai tėvui ar visai grupei (skelbimai) — nebereikia atskirų
+      grupių chatuose. (Vaikų žinutės treneriui — atskira funkcija, pagal nutylėjimą <b>išjungta</b>;
+      jei norėsi, įjungsi klubo Nustatymuose → „Vaikų žinutės treneriui")</li>
+  </ul>
+  Po 4–6 savaičių visa tai — <b>skaičiai klubo savininkui</b>: ne „atrodo veikia", o telemetrija.
+</div>
+
+<div class="cols">
+  <div class="box gray">
+    <h2>Techniškai — trumpai</h2>
+    Veikia naršyklėje (<b class="url">app.spobu.lt</b>) ir įsidiegia kaip programėlė iOS/Android —
+    be App Store, be diegimų klubui. Duomenys ES serveriuose, prieigos griežtai pagal roles
+    (treneris mato tik savo klubo vaikus). Pagalba: <b>info@spobu.lt</b>
+  </div>
+  <div class="box">
+    <h2>Vaikų duomenys — 5 taisyklės</h2>
+    <ul style="font-size:12px;">
+      <li>Duomenys — tik treniruočių darbui, niekam nerodyti</li>
+      <li>Sveikatos pastabos — tik saugiai treniruotei</li>
+      <li>Foto/video — tik su tėvų sutikimu (žyma prie vaiko)</li>
+      <li>Telefonas užrakintas, slaptažodis tik tavo</li>
+      <li>Kas ne taip — iškart info@spobu.lt</li>
+    </ul>
+  </div>
+</div>
+
+<div class="imp">⏱ Vienintelis rimtas susitarimas: vaikų pateikimus patvirtink <b>bent kas 2 dienas</b> (5–10 min telefone). Visa EXP ekonomika laikosi ant tavo patvirtinimų — jei jie kabo, vaikai nusivilia ir nustoja pildyti.</div>
+
+<div class="ftr">Spobu · app.spobu.lt · prieš startą — 30 min demo skambutis su Ugniumi · info@spobu.lt</div>
+
+</body>
+</html>

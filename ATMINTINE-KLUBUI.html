@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPOBU atmintinė klubo administratoriui</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color:#1a1a1a; background:#fff; padding:24px; max-width:800px; margin:0 auto; font-size:13px; line-height:1.5; }
+  .hdr { background:linear-gradient(135deg,#FF4D00,#FF7A33); color:#fff; border-radius:14px; padding:18px 22px; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .hdr h1 { font-size:24px; letter-spacing:2px; }
+  .hdr .sub { font-size:12px; opacity:.95; }
+  .qr { width:86px; height:86px; background:#fff; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#999; font-size:10px; text-align:center; }
+  .box { border:2px solid #FF4D00; border-radius:12px; padding:12px 16px; margin-bottom:12px; }
+  .box.gray { border-color:#ddd; }
+  h2 { font-size:14px; color:#FF4D00; margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; }
+  h3 { font-size:12.5px; margin:8px 0 3px; }
+  ol, ul { padding-left:20px; } li { margin-bottom:4px; }
+  .imp { background:#FFF3ED; border-radius:8px; padding:8px 12px; margin-top:8px; font-weight:700; }
+  .cols { display:flex; gap:12px; } .cols > div { flex:1; }
+  .ftr { text-align:center; color:#888; font-size:11px; margin-top:14px; }
+  b.url { color:#FF4D00; }
+  .tag { display:inline-block; background:#1a1a1a; color:#fff; font-size:10px; font-weight:800; padding:2px 7px; border-radius:99px; letter-spacing:.5px; }
+  @media print { body { padding:8mm; } .hdr, .imp, .tag { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <h1>SPOBU</h1>
+    <div class="sub">Atmintinė klubo administratoriui · klubo valdymas vienoje vietoje</div>
+    <div class="sub" style="margin-top:6px;font-size:15px;font-weight:800;">app.spobu.lt</div>
+  </div>
+  <div class="qr"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADcAQMAAAAhlF3CAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABS0lEQVRYheWYPXLEIAyFlaGgzBE4CkfDR/NROIJLF5590R+JdyfZPpIKj83nhgdPQhC9iwGNiz7AX33yo9oQZii4yWzrVQCysbNeqkDPBDtwVFEI4B+bQH1PCFUheQ8OeenB3pj0mRK6HR4kSaHhoF+8Eh16YlQ49jZZoZ/EmAQ+xdjp7/jfUEU4bN76cdTTBUkEN7YAznLpUYB4J0Ag5YK+9wUCu/xY8fAkGQi61cvl1V4LgHqhJ4L8aEshgXz2NbWQBw7sokr53hpmh5UwkkDNCV4FqUOOAp4kZyyoA2oHGWgG6dbpZIFqAT3yeJ40a2SBK4rJItYgaf2IYsFhk1Y7wFJAveW+JFBX3Aofr75URFeoZ4LdGn9RaCNqyw5AQgjrAOZq/CNDq4K6KV6vgIJDs0O5H3nw4pXw0La/3vdpN+CVAk9ZMzh8F19PZJD7txwpcAAAAABJRU5ErkJggg==" alt="QR į app.spobu.lt" style="width:100%;height:100%;border-radius:10px;"></div>
+</div>
+
+<div class="box">
+  <h2>1. Startas — teisinga eilės tvarka (yra ir vediklis!)</h2>
+  Profilis → <b>Klubo nustatymai</b> turi <b>„Pradžios vediklį"</b> — jis veda per šiuos žingsnius.
+  Eilės tvarka svarbi, nes grupei reikia trenerio, o anketai — grupės:
+  <ol>
+    <li><b>Treneriai</b> — pridėk trenerio el. paštą → jam ateis laiškas su slaptažodžio nustatymu</li>
+    <li><b>Grupės</b> — pavadinimas, spalva, <b>pagrindinis treneris</b>, asistentai, treniruočių
+      dienos ir laikai (nuo jų skaičiuojasi lankomumas ir serijos)</li>
+    <li><b>Klubo kodas</b> — Profilis → Klubo nustatymai → <b>KLUBO KODAS</b> (jei tuščia —
+      „Generuoti kodą"). Šitą kodą tėvai įrašo pildydami anketą — perduok jį treneriams ir į tėvų laišką</li>
+    <li><b>Tėvų anketos</b> — kris į KLUBAS → Auklėtiniai → <b>LAUKIA PATVIRTINIMO</b>:
+      spausk „Tvirtinti" ir iškart priskirk grupę (arba „be grupės" — priskirsi vėliau).
+      Netinkamą gali atmesti su priežastimi. Anketos su žyma <b>„14+ PATS"</b> — vaikas registravosi
+      pats: tvirtink tik pažįstamą iš salės</li>
+  </ol>
+</div>
+
+<div class="box gray">
+  <h2>2. Kasdienis ritmas (5 min per dieną)</h2>
+  <ul>
+    <li><b>Varpelis 🔔</b> — viskas svarbiausia viename sraute: naujos anketos, trenerių užrašai
+      klubui, gimtadieniai, SPOBU naujienos ir savaitgalio priminimas apie postą</li>
+    <li><b>Pagrindinis langas</b> — laukiančios registracijos, skolų suvestinė, klubo pulsas</li>
+    <li><b>Analitika → Veikla</b> — mokesčių išklotinė pagal mėnesius, lankomumo Excel eksportai
+      su grupių grafikais</li>
+  </ul>
+</div>
+
+<div class="box gray">
+  <h2>3. Renginiai — varžybos, diržų egzaminai, stovyklos</h2>
+  Skiltis <b>Renginiai</b>: sukuri įvykį (tipas, pavadinimas, data) → <b>visas klubas gauna
+  pranešimą</b> → vaikai žymi „Ketinu dalyvauti" → po renginio vaikai pateikia rezultatus,
+  treneriai tvirtina → klubui kaupiasi varžybų ir diržų statistika visais pjūviais.
+  <h3>⚔️ Grupių iššūkis</h3>
+  Komandinė kova grupė prieš grupę: pasirenki grupes, tikslą iš katalogo (arba savo) ir terminą —
+  vaikai kovoja už komandą, bendras progresas matosi visiems. Pasibaigus — nugalėtojų šventė
+  ir <b>gatavas postas</b> apie rezultatus.
+</div>
+
+<div class="box">
+  <h2>4. Postai = klubo augimas (2–3 postai per savaitę)</h2>
+  Kiekvienas postas su vaikų rezultatais — tai klubo reklama, kurią tėvai dalinasi patys.
+  Viskas jau paruošta, tereikia spausti:
+  <ul>
+    <li><b>POSTŲ STUDIJA</b> pagrindiniame lange — savaitės / mėnesio suvestinės su tikrais
+      skaičiais, pasirenki pratimus, gauni gražią kortelę ir tekstą</li>
+    <li><b>Renginio postas</b> — pasibaigus varžyboms / egzaminui / stovyklai / grupių iššūkiui:
+      mygtukas prie renginio arba chip'ai studijoje</li>
+    <li>Treneriai turi savo studiją (dienos / savaitės postai po treniruočių)</li>
+    <li>Penktadienį–sekmadienį varpelis primins, jei savaitės postas dar nepaskelbtas</li>
+  </ul>
+  <div class="imp">⭐ Pažymėk SPOBU paskyrą poste — geriausiais postais dalinamės SPOBU kanale,
+  tai papildoma auditorija klubui. Kodėl verta — Profilis → „Postai = klubo augimas".</div>
+</div>
+
+<div class="box gray pb">
+  <h2>5. Funkcijos — pasimodeliuok klubą pagal save</h2>
+  Profilis → Klubo nustatymai → <b>FUNKCIJOS</b>: visi jungikliai vienoje vietoje. Svarbiausi:
+  <ul>
+    <li><b>Nario mokesčio žymėjimas</b> — treneris žymi varnele, skolininkų suvestinė klube</li>
+    <li><b>Klubo rinkliavos</b> — pats susikuri mokestį (pvz., budo pasas, stovykla), treneris
+      žymi kas surinkta; baigiasi archyvavimu</li>
+    <li><b>Sveikatos pažymos</b> — žymimos vaiko kortelėje, suvestinė Analitika → Veikla</li>
+    <li><b>Gimtadieniai</b> — varpelyje ir dienos posto sveikinimuose</li>
+    <li><b>Trenerių postų studija</b>, <b>vaikų žinutės treneriui</b>, <b>dvikovos</b>,
+      privalomi skaičiai iššūkiuose — įjungi/išjungi pagal savo tvarką</li>
+  </ul>
+  Ten pat — <b>klubo logotipas</b> (matysis postuose ir programėlėje).
+</div>
+
+<div class="box gray">
+  <h2>6. Trenerių prieiga prie klubo paskyros</h2>
+  Profilis → <b>Trenerių prieiga</b>: gali suteikti savo treneriui teisę tvarkyti klubo paskyrą
+  <b>iš jo paties trenerio paskyros</b> (jis įeina per savo ⚙ nustatymus, viršuje mato mėlyną
+  juostą „Administruoji klubą"). Klubo slaptažodžio jam duoti nereikia — prieigą bet kada atšauki.
+</div>
+
+<div class="cols">
+  <div class="box gray">
+    <h2>7. Ryšys su SPOBU</h2>
+    Žinutėse visada rasi giją <b>„SPOBU palaikymas"</b> — rašyk bet kokiu klausimu, atsakymas
+    ateis su push. SPOBU naujienos apie naujas funkcijas — kortelėje pagrindiniame lange
+    ir varpelyje. El. paštu: <b>info@spobu.lt</b>
+  </div>
+  <div class="box">
+    <h2>Vaikų duomenys</h2>
+    <ul style="font-size:12px;">
+      <li>Duomenys — tik klubo darbui, niekam neperduodami</li>
+      <li>Foto/video — tik su tėvų sutikimu (žyma prie vaiko)</li>
+      <li>Prieigos griežtai pagal roles — treneris mato tik savo klubą</li>
+      <li>Kas ne taip — iškart info@spobu.lt</li>
+    </ul>
+  </div>
+</div>
+
+<div class="ftr">Spobu · app.spobu.lt · Privatumo politika ir naudojimo taisyklės — programėlės prisijungimo ekrane</div>
+
+</body>
+</html>

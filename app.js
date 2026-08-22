@@ -1435,6 +1435,19 @@ async function openParentSettings() {
             <div style="font-size:18px;color:#8B5CF6;">›</div>
           </div>
         </div>
+        <!-- 📄 v498 (E1): atmintinė appse — diegimo instrukcija antram tėvui + QR, spausdinama -->
+        <div style="padding:0 16px 14px;">
+          <a href="ATMINTINE-TEVAMS.html" target="_blank" rel="noopener" style="text-decoration:none;display:block;">
+            <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+              <div style="font-size:24px;">${ico('dokumentas')}</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:800;color:white;">Atmintinė tėvams (1 psl.)</div>
+                <div style="font-size:10px;color:var(--mut);margin-top:2px;line-height:1.4;">Kaip įsidiegti telefone (parodyk antram tėvui!) · registracija · pranešimai</div>
+              </div>
+              <div style="font-size:18px;color:var(--mut);">›</div>
+            </div>
+          </a>
+        </div>
         <div style="padding:6px 16px 20px;">
           <button onclick="appConfirm('Ar tikrai atsijungti?').then(function(ok){if(ok){document.getElementById('parent-settings-modal').remove();doLogout();}})" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#8B5CF6);color:white;border:none;border-radius:14px;font-size:13px;font-weight:800;letter-spacing:1px;cursor:pointer;text-transform:uppercase;box-shadow:0 4px 12px rgba(99,102,241,.3);font-family:inherit;">🚪 ATSIJUNGTI</button>
         </div>
@@ -15306,6 +15319,11 @@ function openClubAccountMenu(){
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
       <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;padding:10px 2px 6px;">TEISINIAI IR PAGALBA</div>
+      <a href="ATMINTINE-KLUBUI.html" target="_blank" rel="noopener" style="text-decoration:none;display:block;"><div style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">${ico('dokumentas')}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Atmintinė administratoriui</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Startas, ritmas, renginiai, postai, funkcijos — 2 psl., spausdinama</div></div>
+        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
+      </div></a>
       <a href="privatumo-politika.html" target="_blank" rel="noopener" style="text-decoration:none;display:block;"><div style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('dokumentas')}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Privatumo politika</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Kaip tvarkomi duomenys</div></div>
@@ -26052,6 +26070,19 @@ async function openTrainerSettings() {
             </div>
             <div style="font-size:18px;color:var(--mut);">›</div>
           </div>
+        </div>
+        <!-- 📄 v498 (E3): trenerio atmintinė appse -->
+        <div style="padding:8px 16px 0;">
+          <a href="ATMINTINE-TRENERIUI.html" target="_blank" rel="noopener" style="text-decoration:none;display:block;">
+            <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+              <div style="font-size:28px;">${ico('dokumentas')}</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:800;color:white;">Trenerio atmintinė</div>
+                <div style="font-size:11px;color:var(--mut);margin-top:2px;">Kasdienis ritmas, iššūkių logika, postų studija, geroji praktika</div>
+              </div>
+              <div style="font-size:18px;color:var(--mut);">›</div>
+            </div>
+          </a>
         </div>
 
         <!-- ATSIJUNGTI -->
