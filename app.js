@@ -20797,14 +20797,39 @@ function renderClubFiltersUI(tabType) {
   return html;
 }
 
+// 🎯 v485: iš klubo lyderių kortelės — į VISĄ STATISTIKĄ, atverčiant ir išryškinant tą vaiką
+function openClubStatToKid(kidId){
+  window._statFocusKid = kidId;
+  nv('k', null, 'k-fullstat');
+}
+function _statApplyFocus(){
+  const kid = window._statFocusKid; if (!kid) return;
+  window._statFocusKid = null;
+  setTimeout(() => {
+    const row = document.querySelector(`[data-statkid="${kid}"]`);
+    if (!row) return;
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    row.style.transition = 'box-shadow .3s, background .3s';
+    row.style.boxShadow = '0 0 0 2px var(--br)';
+    row.style.background = 'rgba(255,77,0,.12)';
+    setTimeout(() => { row.style.boxShadow = ''; row.style.background = 'var(--bg)'; }, 2600);
+  }, 120);
+}
+
 // Render klubo leaderboard'as (be paryškinimo, be anonimų) + PUSLAPIAVIMAS
 async function renderClubLeaderboard(entries, scoreLabel) {
   if (!entries || entries.length === 0) {
     return '<div class="cd" style="padding:30px;text-align:center;color:var(--mut);font-size:12px;">Pagal šiuos filtrus nėra rezultatų</div>';
   }
-  
+
   entries.sort((a, b) => (b.score || 0) - (a.score || 0));
-  
+
+  // 🎯 v485: jei atėjom iš lyderių kortelės — atsiverčiam puslapį, kuriame tas vaikas
+  if (window._statFocusKid){
+    const fi = entries.findIndex(e => e.kidId === window._statFocusKid);
+    if (fi >= 0) clubStatPage = Math.floor(fi / STAT_PAGE_SIZE) + 1;
+  }
+
   // Paginacija
   const totalPages = Math.ceil(entries.length / STAT_PAGE_SIZE);
   const currentPage = Math.min(clubStatPage, totalPages);
@@ -20832,7 +20857,7 @@ async function renderClubLeaderboard(entries, scoreLabel) {
     const medal = rank === 1 ? ''+ico('medalis')+'' : rank === 2 ? ''+ico('medalis')+'' : rank === 3 ? ''+ico('medalis')+'' : '';
 
     return `
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:4px;">
+      <div data-statkid="${e.kidId}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:4px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);min-width:32px;">${medal || '#' + rank}</div>
         <div style="width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;${avUrl ? `background-image:url('${avUrl}');background-size:cover;background-position:center;` : 'background:rgba(255,255,255,.12);'}">${avUrl ? '' : (realName?.[0] || '?').toUpperCase()}</div>
         <div style="flex:1;min-width:0;">
@@ -20945,6 +20970,7 @@ async function loadClubOverallStat() {
   const filtersHtml = renderClubFiltersUI('overall');
   const leaderHtml = await renderClubLeaderboard(entries, 'EXP');
   container.innerHTML = filtersHtml + leaderHtml;
+  if (typeof _statApplyFocus === 'function') _statApplyFocus();   // v485: išryškinam vaiką iš lyderių kortelės
 }
 
 async function loadClubSkillsStat() {
@@ -26648,9 +26674,12 @@ async function loadKidTrainers(kidId) {
       const labelText = isPrimary ? 'PAGRINDINIS' : 'PAVADUOJANTIS';
       const labelColor = isPrimary ? 'var(--br)' : 'var(--mut)';
       
-      // Pavaduojančius klubas gali pašalinti
-      const removeBtn = (isClubAdmin && !isPrimary) 
-        ? `<button onclick="kdRemoveTrainer('${t.id}', '${name.replace(/'/g, "\\'")}')" style="background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;flex-shrink:0;">${ico('uzdaryti')} Pašalinti</button>` 
+      // Pavaduojančius klubas gali pašalinti; PAGRINDINĮ — pakeisti (v485, savininko pastaba #4:
+      // „kodėl nėra varianto pagrindinį trenerį pakeisti?" — veda į klubo valdymo modalą su trenerio select'u)
+      const removeBtn = (isClubAdmin && !isPrimary)
+        ? `<button onclick="kdRemoveTrainer('${t.id}', '${name.replace(/'/g, "\\'")}')" style="background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;flex-shrink:0;">${ico('uzdaryti')} Pašalinti</button>`
+        : (isClubAdmin && isPrimary)
+        ? `<button onclick="openClubKidManage('${kidId}')" style="background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.35);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;flex-shrink:0;">${ico('sukeisti')} Keisti</button>`
         : '';
       
       return `
@@ -30119,8 +30148,10 @@ async function loadClubMainDashboard(){
     const ids=top.map(e=>e.kidId);
     const { data: kd }=await sb.from('kids').select('id, first_name, last_name').in('id', ids);
     const nm={}; (kd||[]).forEach(k=>{ nm[k.id]=`${k.first_name||'Vaikas'} ${(k.last_name||'').charAt(0)}${k.last_name?'.':''}`.trim(); });
-    const medal=[''+ico('medalis')+'',''+ico('medalis')+'',''+ico('medalis')+''];
-    el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(${top.length},1fr);gap:8px;">`+top.map((e,i)=>`<div class="cd" style="margin:0;text-align:center;padding:10px 6px;cursor:pointer;" onclick="if(typeof openClubKidManage==='function')openClubKidManage('${e.kidId}')"><div style="font-size:16px;">${medal[i]}</div><div style="font-size:11px;font-weight:800;color:#fff;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nm[e.kidId]||'—'}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--br);">${Math.round(e.score||0).toLocaleString('lt-LT')}</div></div>`).join('')+`</div>`;
+    // v485 (savininko pastabos): 1) didesnės ikonos/šriftai — mažų galima nepastebėti;
+    // 2) paspaudus vaiką — į VISĄ STATISTIKĄ su to vaiko eilutės išryškinimu (buvo admin-override modalas)
+    const medCol=['#FFD700','#C0C0C0','#CD7F32'];
+    el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(${top.length},1fr);gap:8px;">`+top.map((e,i)=>`<div class="cd" style="margin:0;text-align:center;padding:14px 8px;cursor:pointer;" onclick="if(typeof openClubStatToKid==='function')openClubStatToKid('${e.kidId}')"><div style="font-size:28px;line-height:1;color:${medCol[i]};"><svg class="ico" style="width:28px;height:28px;" aria-hidden="true"><use href="#i-medalis"></use></svg></div><div style="font-size:12.5px;font-weight:800;color:#fff;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nm[e.kidId]||'—'}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:21px;color:var(--br);margin-top:2px;">${Math.round(e.score||0).toLocaleString('lt-LT')}</div><div style="font-size:8.5px;color:var(--mut);letter-spacing:.6px;">EXP</div></div>`).join('')+`</div>`;
   } catch(e){ console.warn('[km-best]',e); } })();
 }
 
@@ -30196,7 +30227,7 @@ function renderClubGroupsRanked(){
     const rankColor = i===0?'#FFD700':i===1?'#C0C0C0':i===2?'#CD7F32':'var(--mut)';
     const col = g.color || '#FF4D00';
     const top3 = i < 3;
-    return `<div onclick="openClubGroupModal('${g.id}')" style="background:linear-gradient(135deg, ${col}1f, var(--card) 58%);border:.5px solid ${col}44;border-radius:16px;padding:12px 14px;margin-bottom:10px;cursor:pointer;position:relative;overflow:hidden;display:flex;align-items:center;gap:11px;">
+    return `<div onclick="openClubGroupPreview('${g.id}')" style="background:linear-gradient(135deg, ${col}1f, var(--card) 58%);border:.5px solid ${col}44;border-radius:16px;padding:12px 14px;margin-bottom:10px;cursor:pointer;position:relative;overflow:hidden;display:flex;align-items:center;gap:11px;">
       <div style="position:absolute;top:-26px;right:-26px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle, ${col}26, transparent 70%);pointer-events:none;"></div>
       <div style="width:28px;height:28px;border-radius:50%;background:${top3?rankColor:'var(--bg)'};${top3?'':'border:.5px solid var(--bdr);'}display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:${top3?'#1a1a1a':'var(--mut)'};flex-shrink:0;position:relative;">${i+1}</div>
       <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg, ${col}, ${col}aa);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:#fff;flex-shrink:0;box-shadow:0 2px 10px ${col}55;position:relative;">${(g.name||'?').charAt(0).toUpperCase()}</div>
@@ -30273,6 +30304,81 @@ async function _clubRemoveKidFromGroup(kidId, groupId){
     showToast(ico('atlikta')+' Pašalintas','success');
     _loadGroupKids(groupId); loadClubGroups();
   } catch(e){ console.error('[rm-kid-group]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
+}
+
+// 👀 v485 (savininko pastaba #3): paspaudus grupę — PERŽIŪRA kaip trenerio grupės lange
+// (vaikai su EXP ir ženkliukais), o redagavimas — per mygtuką, kuris atidaro senąjį modalą.
+async function openClubGroupPreview(groupId){
+  if (!currentClub?.id) return;
+  const old = document.getElementById('club-group-preview'); if (old) old.remove();
+  const m = document.createElement('div'); m.id = 'club-group-preview';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+  m.onclick = e => { if (e.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div id="cgp-body"><div style="text-align:center;padding:40px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
+  </div>`;
+  document.body.appendChild(m);
+  try {
+    const [gRes, kRes, tRes] = await Promise.all([
+      sb.from('groups').select('*').eq('id', groupId).single(),
+      sb.from('kids').select('id, first_name, last_name, total_exp, kyu, avatar_url, media_consent, has_phone, kid_phone, has_health_info, health_allergies, health_medications, health_conditions').eq('group_id', groupId).order('total_exp', { ascending: false }),
+      sb.from('trainers').select('id, profiles!inner(first_name,last_name)').eq('invited_by_club_id', currentClub.id)
+    ]);
+    const g = gRes.data; if (!g){ m.remove(); showToast(ico('klaida')+' Grupė nerasta','error'); return; }
+    const kids = kRes.data || [];
+    const tName = {}; (tRes.data||[]).forEach(t => { tName[t.id] = `${t.profiles.first_name||''} ${t.profiles.last_name||''}`.trim() || 'Treneris'; });
+    const col = g.color || '#FF4D00';
+    let sched = null; try { sched = g.schedule ? JSON.parse(g.schedule) : null; } catch(_){}
+    const schedTxt = (Array.isArray(sched) && sched.length)
+      ? sched.map(x => (CLUB_DAY_SHORT[x.day] || x.day) + ' ' + (x.time || '')).join(' · ')
+      : (g.train_time ? g.train_time : 'Tvarkaraštis nenustatytas');
+    const asst = (g.assistant_trainer_ids || []).map(id => tName[id]).filter(Boolean);
+    const totalExp = kids.reduce((s, k) => s + (k.total_exp || 0), 0);
+    const chip = (col2, txt, title) => `<span title="${title||''}" style="display:inline-flex;align-items:center;gap:3px;background:${col2}1f;border:.5px solid ${col2}55;color:${col2};font-size:8.5px;font-weight:800;padding:2px 7px;border-radius:99px;white-space:nowrap;">${txt}</span>`;
+    const rows = kids.length ? kids.map(k => {
+      const hasHealth = k.has_health_info || k.health_allergies || k.health_medications || k.health_conditions;
+      const chips = [];
+      if (hasHealth) chips.push(chip('#f87171', ico('sveikata')+' sveikata', 'Yra sveikatos pastabų — žr. vaiko kortelę'));
+      if (!k.media_consent) chips.push(chip('#94a3b8', ico('nuotrauka')+' nefilmuoti', 'Tėvai neleidžia fotografuoti/filmuoti'));
+      if (!k.has_phone && !k.kid_phone) chips.push(chip('#60a5fa', ico('programele')+' žymi treneris', 'Vaikas neturi telefono'));
+      return `<div onclick="document.getElementById('club-group-preview').remove();openKidDetailsModal('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;margin-bottom:7px;cursor:pointer;">
+        <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:14px;${k.avatar_url ? `background-image:url('${k.avatar_url}');background-size:cover;background-position:center;` : `background:${col};`}">${k.avatar_url ? '' : (k.first_name?.[0] || '?')}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(`${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim())}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;">${escapeHtml(k.kyu || '10 kyu')} · ${(k.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
+          ${chips.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${chips.join('')}</div>` : ''}
+        </div>
+        <div style="font-size:14px;color:var(--mut);flex-shrink:0;">›</div>
+      </div>`;
+    }).join('') : '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Grupėje dar nėra vaikų.</div>';
+    document.getElementById('cgp-body').innerHTML = `
+      <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+          <div style="width:14px;height:14px;border-radius:50%;background:${col};flex-shrink:0;"></div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(g.name || 'Grupė')}</div>
+        </div>
+        <button onclick="document.getElementById('club-group-preview').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;flex-shrink:0;">${ico('uzdaryti')}</button>
+      </div>
+      <div style="padding:14px 16px 20px;">
+        <div style="background:linear-gradient(135deg, ${col}22, ${col}08);border:1px solid ${col}55;border-radius:14px;padding:12px 14px;margin-bottom:12px;">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mut);">
+            <span style="color:${col};font-weight:800;">${ico('kalendorius')} ${escapeHtml(schedTxt)}</span>
+            <span>${ico('dirzas')} ${escapeHtml(g.trainer_id ? (tName[g.trainer_id] || 'Treneris') : 'be trenerio')}${asst.length ? ' · pav.: ' + escapeHtml(asst.join(', ')) : ''}</span>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--mut);">
+            <span>${ico('grupe')} ${kids.length} ${kids.length === 1 ? 'narys' : (kids.length % 10 >= 2 && kids.length % 10 <= 9 && !(kids.length % 100 >= 11 && kids.length % 100 <= 19) ? 'nariai' : 'narių')}</span>
+            <span>${ico('greitis')} ${totalExp.toLocaleString('lt-LT')} EXP</span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('club-group-preview').remove();openClubGroupModal('${groupId}')" style="width:100%;background:rgba(255,77,0,.12);color:var(--br);border:.5px solid rgba(255,77,0,.4);border-radius:12px;padding:11px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:12px;">${ico('redaguoti')} REDAGUOTI GRUPĘ</button>
+        <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1.2px;margin:0 2px 7px;">VAIKAI · ${kids.length}</div>
+        ${rows}
+      </div>`;
+  } catch(e){
+    console.error('[club-group-preview]', e);
+    const b = document.getElementById('cgp-body');
+    if (b) b.innerHTML = `<div style="text-align:center;padding:30px;color:#EF4444;font-size:12px;">Klaida: ${escapeHtml(e.message || '')}</div>`;
+  }
 }
 
 async function openClubGroupModal(groupId){
@@ -30888,6 +30994,11 @@ async function saveClubKidManage(kidId){
   }
   showToast(ico('patvirtinta')+' Atnaujinta','success');
   document.getElementById('club-kidmanage-modal')?.remove();
+  // v485: jei vaiko kortelė atidaryta fone — atnaujinam trenerių bloką, kad „Keisti" rezultatas matytųsi iškart
+  try {
+    const kdm = document.getElementById('kid-details-modal');
+    if (kdm && kdm.style.display !== 'none' && typeof loadKidTrainers === 'function') loadKidTrainers(kidId);
+  } catch(_){}
 }
 
 // ════════════════════════════════════════
