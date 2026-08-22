@@ -28274,8 +28274,10 @@ async function loadAdminAnalytics(){
     // v495: _fetchAll su order — .limit(20000) realiai grąžindavo 1000 NEDETERMINISTINE tvarka
     // (DAU/WAU/MAU ir retention tapdavo atsitiktiniai); + role stulpelis piloto „Tėvų WAU" metrikai (F5b)
     safe(_fetchAll(() => sb.from('user_activity').select('user_id, day, role').gte('day', since56).order('day', { ascending: false })).then(rows => ({ data: rows }))),
-    // v495 (F5b): trenerių patvirtinimai per 7 d. — piloto sprendimo metrika
-    safe(sb.from('challenge_submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved').gte('reviewed_at', new Date(Date.now() - 7 * 864e5).toISOString()))
+    // v495 (F5b): trenerių patvirtinimai per 7 d. — piloto sprendimo metrika.
+    // v497: pagal created_at, NE reviewed_at — auto-patvirtinimo srautai reviewed_at nepildo
+    // (gyvai: 15 savaitės approved, visi reviewed_at NULL → plytelė rodė 0)
+    safe(sb.from('challenge_submissions').select('id', { count: 'exact', head: true }).eq('status', 'approved').gte('created_at', new Date(Date.now() - 7 * 864e5).toISOString()))
   ]);
   if (ns.error && fu.error){
     kEl.innerHTML = '<div class="cd" style="margin:0;grid-column:1/-1;padding:16px;text-align:center;color:var(--mut);font-size:12px;">Paleisk server-admin-analitika.sql</div>';
