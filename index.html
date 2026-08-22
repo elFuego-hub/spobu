@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=492">
+<link rel="stylesheet" href="styles.css?v=496">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v492</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v496</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3834,7 +3834,8 @@ window.addEventListener('unhandledrejection', function(e) {
           <button onclick="toggleAdminNotifications()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 16px 4px;">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:10px 16px 4px;">
+        <button class="notif-tab" data-tab="messages" onclick="switchAdminNotifTab('messages')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-zinutes"></use></svg></span><span>Žinutės <span id="ah-notif-count-messages" style="opacity:.7;"></span></span></button>
         <button class="notif-tab" data-tab="errors" onclick="switchAdminNotifTab('errors')" style="background:rgba(255,77,0,.15);color:#FF7A33;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-alertas"></use></svg></span><span>Klaidos <span id="ah-notif-count-errors" style="opacity:.7;"></span></span></button>
         <button class="notif-tab" data-tab="purchases" onclick="switchAdminNotifTab('purchases')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-pinigai"></use></svg></span><span>Pirkimai <span id="ah-notif-count-purchases" style="opacity:.7;"></span></span></button>
         <button class="notif-tab" data-tab="feedback" onclick="switchAdminNotifTab('feedback')" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;"><span><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-gauta"></use></svg></span><span>Atsiliep. <span id="ah-notif-count-feedback" style="opacity:.7;"></span></span></button>
@@ -4170,6 +4171,9 @@ window.addEventListener('unhandledrejection', function(e) {
         <!-- 📰 v483: SPOBU ↔ klubai — naujienos + tiesioginės gijos -->
         <div class="st">KOMUNIKACIJA SU KLUBAIS</div>
         <div class="cd" id="ap-news" style="padding:12px 14px;"><div style="text-align:center;padding:10px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
+        <!-- ⏱️ v493 (B5): pg_cron rutinų gyvybė — server-B5-cron-health SQL -->
+        <div class="st">CRON RUTINOS</div>
+        <div class="cd" id="ap-cron" style="padding:8px 14px;"><div style="text-align:center;padding:10px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
         <div class="st">NUORODOS</div>
         <div class="cd" style="padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;">
           <button class="aerr-tool" onclick="nv('a',null,'a-fin')"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg> Kainodara</button>
@@ -4543,7 +4547,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=492"></script>
+<script src="app.js?v=496"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
