@@ -26164,12 +26164,28 @@ async function toggleTrainerPushPref(key) {
 function _applyClubLogo(url){
   const box = document.getElementById('k-logo-box');
   const letter = document.getElementById('k-prof-avatar');
+  const side = document.getElementById('kdn-avatar');   // v492: šoninio meniu burbuliukas irgi rodo logo
   if (url) {
     if (box) box.style.backgroundImage = `url("${url}")`;
     if (letter) letter.style.display = 'none';
+    if (side){
+      // logo dažnai stačiakampis ant balto fono — contain + baltas fonas, ne cover (nenukirpti)
+      side.style.backgroundImage = `url("${url}")`;
+      side.style.backgroundColor = '#fff';
+      side.style.backgroundSize = 'contain';
+      side.style.backgroundRepeat = 'no-repeat';
+      side.textContent = '';
+    }
   } else {
     if (box) box.style.backgroundImage = '';
     if (letter) letter.style.display = '';
+    if (side){
+      side.style.backgroundImage = '';
+      side.style.backgroundColor = '';
+      side.style.backgroundSize = '';
+      side.style.backgroundRepeat = '';
+      side.textContent = (typeof currentClub !== 'undefined' && currentClub?.name?.[0]?.toUpperCase()) || 'K';
+    }
   }
 }
 async function uploadClubLogo(inputEl) {
