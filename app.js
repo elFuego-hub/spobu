@@ -29456,6 +29456,7 @@ function exitClubManagerMode(){
   _clubManagerMode = false;
   document.body.classList.remove('club-manager-mode');
   document.getElementById('club-mgr-bar')?.remove();
+  const pk = document.getElementById('pk'); if (pk) pk.style.marginTop = '';   // v489: atstatom nustūmimą
   op('tr');
 }
 // Tik klubo savininkui — vadybininkui blokuojam (trynimas, trenerio šalinimas ir kt.)
@@ -29463,9 +29464,16 @@ function _ownerOnly(){ if (_clubManagerMode){ if(typeof showToast==='function') 
 function _showClubManagerBar(){
   document.getElementById('club-mgr-bar')?.remove();
   const b = document.createElement('div'); b.id='club-mgr-bar';
-  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:100010;background:#1D4ED8;color:#fff;font-size:12px;font-weight:800;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.4);';
+  // v489 (savininko pastaba iš telefono): juosta dengdavo klubo header mygtukus.
+  // Fix: (1) juostai — safe-area padding (iPhone notch/laikrodis), (2) klubo portalas
+  // nustumiamas žemyn per IŠMATUOTĄ juostos aukštį (atstatoma išeinant).
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:100010;background:#1D4ED8;color:#fff;font-size:12px;font-weight:800;padding:calc(env(safe-area-inset-top, 0px) + 6px) 12px 6px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.4);';
   b.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ico('raktas')} Administruoji: ${_managedClub?.name||'Klubas'}</span><button onclick="exitClubManagerMode()" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;margin-left:8px;">${ico('atgal')} Grįžti į trenerį</button>`;
   document.body.appendChild(b);
+  requestAnimationFrame(() => {
+    const pk = document.getElementById('pk');
+    if (pk && b.offsetHeight){ pk.style.marginTop = b.offsetHeight + 'px'; }
+  });
 }
 
 // ── Savininkas: vadybininkų (trenerių su prieiga) valdymas ──
