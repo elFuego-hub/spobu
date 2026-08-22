@@ -4346,8 +4346,25 @@ async function openFbStudio() {
     const LT_GEN = ['SAUSIO', 'VASARIO', 'KOVO', 'BALANDŽIO', 'GEGUŽĖS', 'BIRŽELIO', 'LIEPOS', 'RUGPJŪČIO', 'RUGSĖJO', 'SPALIO', 'LAPKRIČIO', 'GRUODŽIO'];
     let clubLogo = null;
     try { clubLogo = await _shareClubLogo(); } catch (_) {}
+    // 📢 v487 (savininko sprendimas): RENGINIŲ POSTAI studijoje — pasibaigę per 60 d.
+    // renginiai kaip chip'ai; paspaudus atsidaro esamas renginio posto generatorius.
+    // Mygtukai renginių kortelėse LIEKA (antras įėjimas, ne perkėlimas).
+    let _fbEvents = [];
+    try {
+      const cut60 = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      const [cR, eR, gR] = await Promise.all([
+        sb.from('competitions').select('id, title, competition_type, event_date').eq('club_id', currentClub.id).lt('event_date', today).gte('event_date', cut60).order('event_date', { ascending: false }).limit(10),
+        sb.from('club_events').select('id, title, starts_on').eq('club_id', currentClub.id).lt('starts_on', today).gte('starts_on', cut60).order('starts_on', { ascending: false }).limit(10),
+        sb.from('club_challenges').select('id, title, ends_on').eq('club_id', currentClub.id).eq('is_active', false).gte('ends_on', cut60).order('ends_on', { ascending: false }).limit(10)
+      ]);
+      (cR.data || []).forEach(c => _fbEvents.push({ t: c.competition_type === 'belt_test' ? 'belt' : 'comp', id: c.id, title: c.title, icon: c.competition_type === 'belt_test' ? '🥋' : '🥇' }));
+      (eR.data || []).forEach(c => _fbEvents.push({ t: 'camps', id: c.id, title: c.title, icon: '⛺' }));
+      (gR.data || []).forEach(c => _fbEvents.push({ t: 'gc', id: c.id, title: c.title, icon: '🏆' }));
+    } catch(_){}
     _fbState = {
       tpl: 'klubas', kidId: heroes[0]?.id || null,
+      events: _fbEvents,
       selEx: null,   // v472: pratimų pasirinkimas (Set su numsRows indeksais; null = auto)
       exOpen: false, // v475: ar išskleistas pilnas chip'ų sąrašas
       d: {
@@ -4363,6 +4380,12 @@ async function openFbStudio() {
     };
     const body = `
       <div style="display:flex;gap:6px;flex-wrap:wrap;" id="fb-tpls"></div>
+      ${_fbEvents.length ? `<div style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:.8px;margin:10px 0 5px;">RENGINIŲ POSTAI · pasibaigę per 60 d.</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        ${_fbEvents.slice(0, 6).map(e => `<div onclick="openEventPostCard('${e.t}','${e.id}')" style="padding:6px 11px;border-radius:99px;font-size:10.5px;font-weight:700;cursor:pointer;border:.5px solid rgba(255,106,0,.45);background:rgba(255,106,0,.10);color:#FF9E40;white-space:nowrap;max-width:210px;overflow:hidden;text-overflow:ellipsis;">${e.icon} ${escapeHtml(e.title)}</div>`).join('')}
+        ${_fbEvents.length > 6 ? `<div id="fb-ev-rest" style="display:none;gap:5px;flex-wrap:wrap;">${_fbEvents.slice(6).map(e => `<div onclick="openEventPostCard('${e.t}','${e.id}')" style="padding:6px 11px;border-radius:99px;font-size:10.5px;font-weight:700;cursor:pointer;border:.5px solid rgba(255,106,0,.45);background:rgba(255,106,0,.10);color:#FF9E40;white-space:nowrap;max-width:210px;overflow:hidden;text-overflow:ellipsis;">${e.icon} ${escapeHtml(e.title)}</div>`).join('')}</div>
+        <div onclick="const r=document.getElementById('fb-ev-rest');if(r){r.style.display='flex';this.remove();}" style="padding:6px 11px;border-radius:99px;font-size:10.5px;font-weight:700;cursor:pointer;border:.5px solid var(--bdr);background:var(--card);color:var(--mut);">▾ Rodyti visus (${_fbEvents.length})</div>` : ''}
+      </div>` : ''}
       <div id="fb-extra"></div>
       <div style="margin-top:10px;display:flex;justify-content:center;background:rgba(255,255,255,.03);border-radius:12px;padding:8px;overflow:hidden;">
         <div id="fb-prev" style="width:720px;zoom:.4;border-radius:14px;overflow:hidden;"></div>
