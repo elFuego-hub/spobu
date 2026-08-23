@@ -26201,9 +26201,9 @@ function _applyClubLogo(url){
     if (box) box.style.backgroundImage = `url("${url}")`;
     if (letter) letter.style.display = 'none';
     if (side){
-      // logo dažnai stačiakampis ant balto fono — contain + baltas fonas, ne cover (nenukirpti)
+      // logo stačiakampis — contain, ne cover (nenukirpti). Fonas paliekamas tamsus (.vdn-av),
+      // nes klubo logo Spobu standartas = šviesus permatomu fonu (share kortelės irgi tamsios).
       side.style.backgroundImage = `url("${url}")`;
-      side.style.backgroundColor = '#fff';
       side.style.backgroundSize = 'contain';
       side.style.backgroundRepeat = 'no-repeat';
       side.textContent = '';
