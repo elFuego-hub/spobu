@@ -314,10 +314,10 @@ body.full-mobile-preview #tr-desktop-nav { display: none !important; }
 /* 💻 DESKTOP LAYOUT — TĖVAI (body.portal-t): sidebar + centruotas turinys (kaip vaiko portale) */
 #t-desktop-nav { display: none; }
 body.full-mobile-preview #t-desktop-nav { display: none !important; }
-/* Versijos ženkliukas prisijungus NERODOMAS (savininko „clean app" 08-19) — lieka tik login ekrane
-   ir admin rolei (diagnostika). textContent lieka DOM'e — feedback pranešimai versiją prideda toliau. */
-body.portal-t #app-version, body.portal-v #app-version,
-body.portal-tr #app-version, body.portal-k #app-version { display: none !important; }
+/* Versijos ženkliukas NERODOMAS niekur, įsk. login/registraciją (savininko sprendimas 08-24) —
+   lieka tik admin rolei (diagnostika). textContent lieka DOM'e — telemetrija/feedback versiją skaito toliau. */
+#app-version { display: none !important; }
+body.portal-a #app-version { display: block !important; }
 @media (min-width: 1024px) {
   body.am.portal-t:not(.full-mobile-preview) { padding: 0 !important; }
   body.am.portal-t:not(.full-mobile-preview) #pt { display: grid !important; grid-template-columns: 260px 1fr; height: 100vh; overflow: hidden; }
