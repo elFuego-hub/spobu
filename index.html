@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=500">
+<link rel="stylesheet" href="styles.css?v=502">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v500</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v502</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2588,7 +2588,8 @@ window.addEventListener('unhandledrejection', function(e) {
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:#FF7A33;font-weight:900;">✓</span> Gili progreso statistika ir istorija</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:#FF7A33;font-weight:900;">✓</span> Mėnesio suvestinės, percentiliai, reitingai</li>
       </ul>
-      <div style="margin-top:10px;background:rgba(0,0,0,.3);border:.5px dashed var(--bdr);border-radius:10px;padding:9px 11px;font-size:10.5px;color:var(--mut);">📄 <b style="color:#d6d6dd;">AI diagnostika ir namų planas</b> — kai vaikas sukaups pirmuosius duomenis, gausite pranešimą su dovana 😉</div>
+      <!-- v502: pažadas „gausite pranešimą su dovana" pašalintas — kreditų dalinimo terminas
+           dar nenuspręstas, tad tėvams nieko nežadam. Grąžinti galima tada, kai bus sprendimas. -->
     </div>
 
     <div id="shop-plans-full">
@@ -2659,7 +2660,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="st" id="shop-onetime-title">PERKI VIENĄ KARTĄ</div>
 
     <!-- AI ataskaita -->
-    <div style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;">
+    <div id="shop-card-report" style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></div>
         <div style="flex:1;min-width:0;">
@@ -2675,7 +2676,7 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
 
     <!-- Namų planas -->
-    <div style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;">
+    <div id="shop-card-home" style="margin:0 16px 10px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 13px;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg></div>
         <div style="flex:1;min-width:0;">
@@ -4547,7 +4548,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=500"></script>
+<script src="app.js?v=502"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

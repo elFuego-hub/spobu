@@ -4878,7 +4878,8 @@ function _shopTrialScrub(m, key){
     if (credits > 0) {
       btn.outerHTML = '<button onclick="document.getElementById(\'report-info-modal\').remove(); redeemReport();" class="btn btng" style="width:100%;padding:14px;font-size:14px;font-weight:800;">'+ico('zvaigzde')+' Užsisakyti ataskaitą</button>';
     } else {
-      btn.outerHTML = '<div style="text-align:center;background:rgba(0,0,0,.25);border:.5px dashed var(--bdr);border-radius:10px;padding:12px;font-size:11px;color:var(--mut);">🎁 Bus padovanota bandymo eigoje — gausite pranešimą</div>';
+      // v502: be pažado — terminas nenuspręstas (buvo „Bus padovanota bandymo eigoje — gausite pranešimą")
+      btn.outerHTML = '<div style="text-align:center;background:rgba(0,0,0,.25);border:.5px dashed var(--bdr);border-radius:10px;padding:12px;font-size:11px;color:var(--mut);">Bandymo laikotarpiu ši funkcija neprieinama</div>';
     }
   }
 }
@@ -5008,7 +5009,8 @@ function _setShopCard(key, credits, redeemFn, buyFn, priceLabel){
     if (credits > 0) {
       act.innerHTML = '<button onclick="' + redeemFn + '" style="width:100%;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">'+ico('zvaigzde')+' Užsisakyti</button>' + histLink;
     } else {
-      act.innerHTML = '<div style="text-align:center;background:rgba(0,0,0,.25);border:.5px dashed var(--bdr);border-radius:10px;padding:9px;font-size:10.5px;color:var(--mut);">🎁 Bus padovanota bandymo eigoje</div>' + histLink;
+      // v502: kortelė šiuo atveju jau paslėpta (applyShopTrialMode) — tekstas be pažado kaip atsarga
+      act.innerHTML = '<div style="text-align:center;background:rgba(0,0,0,.25);border:.5px dashed var(--bdr);border-radius:10px;padding:9px;font-size:10.5px;color:var(--mut);">Bandymo laikotarpiu neprieinama</div>' + histLink;
     }
     return;
   }
@@ -5031,11 +5033,25 @@ function applyShopTrialMode(e){
   const full = document.getElementById('shop-plans-full');
   const trial = document.getElementById('shop-trial-block');
   const title = document.getElementById('shop-onetime-title');
-  const summer = document.getElementById('shop-card-summer');
+  const ent = e || {};
   if (full) full.style.display = SHOP_TRIAL_MODE ? 'none' : '';
   if (trial) trial.style.display = SHOP_TRIAL_MODE ? '' : 'none';
   if (title) title.textContent = SHOP_TRIAL_MODE ? 'JŪSŲ KREDITAI' : 'PERKI VIENĄ KARTĄ';
-  if (summer) summer.style.display = (SHOP_TRIAL_MODE && !((e||{}).summer_credits > 0)) ? 'none' : '';
+  // 🎁 v502: bandymo režime kortelė BE kredito slepiama — anksčiau jos vietoje buvo rodomas
+  // pažadas „Bus padovanota bandymo eigoje". Kreditų dalinimo terminas nenuspręstas, tad
+  // tėvui nerodom nei kainos, nei pažado: funkcijos tiesiog nėra, kol kreditas nesuteiktas.
+  // (Vasaros kortelė taip elgėsi jau nuo v439 — dabar ta pati taisyklė visoms trims.)
+  const cards = [['shop-card-report', ent.report_credits], ['shop-card-home', ent.homeplan_credits],
+                 ['shop-card-summer', ent.summer_credits]];
+  let anyVisible = false;
+  cards.forEach(([id, credits]) => {
+    const el = document.getElementById(id); if (!el) return;
+    const hide = SHOP_TRIAL_MODE && !(credits > 0);
+    el.style.display = hide ? 'none' : '';
+    if (!hide) anyVisible = true;
+  });
+  // Jei bandymo režime nematoma nė viena kortelė — slepiam ir antraštę, kad neliktų tuščios sekcijos
+  if (title) title.style.display = (SHOP_TRIAL_MODE && !anyVisible) ? 'none' : '';
 }
 // 🎁 v439: kreditų DOVANOS pop-up (S2 dviejų žingsnių planas) — parodomas VIENĄ kartą vaikui,
 // kai bandymo režime tėvo aktyvus vaikas turi kreditų (dovana suteikiama admin/SQL ~4–6 sav.).
@@ -8203,6 +8219,15 @@ function rwPrev(currentScreen) {
   rwShowScreen(currentScreen - 1);
 }
 
+// v501: tinklo kvietimas su laiko riba — be jos pakibęs fetch (VPN, prastas ryšys,
+// Supabase strigimas) palikdavo mygtuką „KURIAMA..." amžinai be jokios klaidos.
+function _rwTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Serveris neatsako (' + label + '). Patikrink interneto ryšį ir bandyk dar kartą — jei el. paštas jau užregistruotas, tiesiog prisijunk.')), ms))
+  ]);
+}
+
 async function rwSubmit() {
   const errEl = document.getElementById('reg-err');
   errEl.style.display = 'none';
@@ -8223,8 +8248,8 @@ async function rwSubmit() {
   // naujas tėvas welcome nebematytų NIEKADA (taip daro ir 14+ kelias)
   window._suppressAuthChange = true;
   try {
-    // 1. Sukuriam pending invitation TĖVAMS
-    const { error: parentInvError } = await sb.from('pending_invitations').insert({
+    // 1. Sukuriam pending invitation TĖVAMS (v501: su 20 s riba — žr. _rwTimeout)
+    const { error: parentInvError } = await _rwTimeout(sb.from('pending_invitations').insert({
       email: rwData.parent_email,
       role: 'parent',
       invited_by: null,
@@ -8232,18 +8257,18 @@ async function rwSubmit() {
       last_name: rwData.lname,
       phone: rwData.phone,
       status: 'pending'
-    });
+    }), 20000, 'kvietimas');
     
     if (parentInvError) {
       console.error('Parent invitation error:', parentInvError);
       throw new Error('Tėvų registracija: ' + parentInvError.message);
     }
     
-    // 2. signUp tėvams
-    const { data: parentSignUp, error: parentSignUpError } = await sb.auth.signUp({
+    // 2. signUp tėvams (v501: su 20 s riba)
+    const { data: parentSignUp, error: parentSignUpError } = await _rwTimeout(sb.auth.signUp({
       email: rwData.parent_email,
       password: rwData.parent_pass
-    });
+    }), 20000, 'paskyra');
     
     if (parentSignUpError) {
       if (parentSignUpError.message.includes('already')) {
@@ -8252,10 +8277,11 @@ async function rwSubmit() {
       throw parentSignUpError;
     }
     
-    // 📜 Sutikimų žurnalas — politika+taisyklės (+marketingas). BŪTINAI prieš signOut (RLS reikia sesijos)
+    // 📜 Sutikimų žurnalas — politika+taisyklės (+marketingas). BŪTINAI prieš signOut (RLS reikia sesijos).
+    // v501: paskyra jau sukurta — žurnalo/profilio strigimas nebegali „pakarti" viso srauto (10 s riba + praryjam)
     if (parentSignUp?.user?.id) {
-      await logConsent('privacy_terms', { user_id: parentSignUp.user.id, source: 'parent_wizard' });
-      if (marketingConsent) await logConsent('marketing', { user_id: parentSignUp.user.id, source: 'parent_wizard' });
+      await _rwTimeout(logConsent('privacy_terms', { user_id: parentSignUp.user.id, source: 'parent_wizard' }), 10000, 'sutikimai').catch(() => {});
+      if (marketingConsent) await _rwTimeout(logConsent('marketing', { user_id: parentSignUp.user.id, source: 'parent_wizard' }), 10000, 'sutikimai').catch(() => {});
     }
 
     // 3. Jei marketing pažymėta - atnaujinam profile (jis sukuriamas trigger'iu po signUp)
@@ -8263,10 +8289,11 @@ async function rwSubmit() {
       // Šiek tiek palaukiam kad trigger sukurtų profile
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const { error: marketingErr } = await sb.from('profiles')
+      const { error: marketingErr } = await _rwTimeout(sb.from('profiles')
         .update({ marketing_consent: true })
-        .eq('id', parentSignUp.user.id);
-      
+        .eq('id', parentSignUp.user.id), 10000, 'profilis')
+        .catch(e => ({ error: e }));   // v501: strigimas čia — nekritinis, registracija jau įvyko
+
       if (marketingErr) {
         console.warn('⚠️ Marketing consent neišsaugotas (pabandysim vėliau):', marketingErr);
         // Saugom į localStorage – kai prisijungs, atnaujinsim
@@ -8279,7 +8306,8 @@ async function rwSubmit() {
     }
     
     // 4. Atsijungiam (kad tėvai galėtų prisijungti rankiniu būdu)
-    await sb.auth.signOut();
+    // v501: signOut strigimas (navigator.locks/tinklas) nebeslopina sėkmės ekrano — paskyra jau yra
+    await _rwTimeout(sb.auth.signOut(), 10000, 'atsijungimas').catch(() => {});
     window._suppressAuthChange = false;
 
     // 5. Sėkmė
