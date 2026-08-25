@@ -205,7 +205,7 @@ async function init() {
     currentUser = session.user;
     await afterLogin();
   } else {
-    showLogin();
+    showWelcome();   // v500: pradzios ekranas (welcome-hero) vietoj plikos login formos
   }
   document.getElementById('loading').style.display = 'none';
 
@@ -940,7 +940,8 @@ async function openParentRequestsModal(){
   } catch(e){}
   const tl = { report: [''+ico('dokumentas')+'', 'AI diagnostika'], homeplan: [''+ico('treniruote')+'', 'Namų planas'], summer: [''+ico('vasara')+'', 'Vasaros programa'] };
   // 🛍️ v446: bandymo režime kainos nerodomos (paskutinis kainos leak'as iš 08-18 audito)
-  const priceOf = k => (typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? 'bandymo metu dovanų' : ((typeof PRICES !== 'undefined' && PRICES[k] != null) ? (+PRICES[k]).toFixed(2) + ' €' : '');
+  // v503: bandymo režime — be „dovanų" (kreditų dalinimo terminas nenuspręstas, žr. v502)
+  const priceOf = k => (typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? 'bandymo laikotarpiu neprieinama' : ((typeof PRICES !== 'undefined' && PRICES[k] != null) ? (+PRICES[k]).toFixed(2) + ' €' : '');
   const old = document.getElementById('parent-preq-modal'); if (old) old.remove();
   const m = document.createElement('div'); m.id = 'parent-preq-modal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100005;align-items:center;justify-content:center;padding:20px;';
@@ -36045,7 +36046,7 @@ function op(id){
   if (loadingEl) loadingEl.style.display = 'none';
   
   // KRITIŠKAI SVARBU: pirmiausia paslėpti VISUS portal'us ir auth ekranus
-  ['auth-login','auth-register','auth-forgot','ps'].forEach(eid => {
+  ['auth-welcome','auth-login','auth-register','auth-forgot','ps'].forEach(eid => {
     const el = document.getElementById(eid);
     if (el) el.style.display = 'none';
   });
@@ -36727,6 +36728,24 @@ function replayRingFill(ringId) {
 // ════════════════════════════════════════
 // AUTH UI
 // ════════════════════════════════════════
+// v500: pradzios (welcome) ekranas neprisijungusiems - hero + besikeiciantis sporto zodis
+const WLC_WORDS = ['KARATISTAI','KREPŠININKAI','FUTBOLININKAI'];
+let _wlcTimer = null, _wlcIdx = 0;
+function showWelcome(){
+  hideAll();
+  const el = document.getElementById('auth-welcome');
+  if (!el) { showLogin(); return; }   // apsauga jei HTML dar be welcome bloko
+  el.style.display = '';
+  if (!_wlcTimer && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    _wlcTimer = setInterval(() => {
+      const w = document.getElementById('wlc-word');
+      if (!w) return;
+      _wlcIdx = (_wlcIdx + 1) % WLC_WORDS.length;
+      w.classList.add('wlc-out');
+      setTimeout(() => { w.textContent = WLC_WORDS[_wlcIdx]; w.classList.remove('wlc-out'); }, 280);
+    }, 2600);
+  }
+}
 function showLogin(){
   hideAll();document.getElementById('auth-login').style.display='';
 }
@@ -36740,7 +36759,7 @@ function showForgot(){
   hideAll();document.getElementById('auth-forgot').style.display='';
 }
 function hideAll(){
-  ['auth-login','auth-register','auth-forgot','ps'].forEach(id=>{
+  ['auth-welcome','auth-login','auth-register','auth-forgot','ps'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
   Object.values(portals).forEach(p=>{const el=document.getElementById(p);if(el)el.style.display='none';});

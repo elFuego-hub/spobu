@@ -618,3 +618,32 @@ body.portal-v{--ico-accent:var(--br);}
 /* Mobilios nav ikonos: neaktyvus = muted, aktyvus = akcentinė (label spalvą atkartoja) */
 .ni .ic{color:var(--mut);}
 .ni.on .ic{color:var(--br);}
+
+/* ================================================================
+   🏁 v500: PRADZIOS (WELCOME) EKRANAS neprisijungusiems
+   Hero paveikslas (welcome-hero.jpg) + realus UI ant tamsios zonos
+   ================================================================ */
+#auth-welcome{padding:0;justify-content:flex-start;align-items:center;background:#0A0A0A;}
+.wlc{width:min(480px,100%);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;}
+.wlc-hero{position:relative;width:100%;flex:none;}
+.wlc-hero img{display:block;width:100%;max-height:58vh;object-fit:cover;object-position:center top;}
+.wlc-fade{position:absolute;inset:auto 0 -1px 0;height:46%;background:linear-gradient(to bottom,rgba(10,10,10,0),rgba(10,10,10,.55) 55%,#0A0A0A);pointer-events:none;}
+.wlc-logo{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;filter:drop-shadow(0 1px 6px rgba(0,0,0,.55));}
+.wlc-logo .mark{font-size:26px;}
+.wlc-logo .wordmark{font-size:20px;letter-spacing:4px;color:#fff;}
+.wlc-body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:0 28px calc(20px + env(safe-area-inset-bottom,0px));margin-top:-8px;}
+.wlc-kicker{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:6px;color:#B9B4AC;line-height:1.1;}
+.wlc-word{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:2px;color:var(--br);line-height:1.05;min-height:1.05em;opacity:1;transform:translateY(0);transition:opacity .28s ease,transform .28s ease;}
+.wlc-word.wlc-out{opacity:0;transform:translateY(10px);}
+.wlc-sub{font-size:13px;font-weight:800;letter-spacing:1.5px;color:#C9C4BC;text-transform:uppercase;margin:10px 0 22px;}
+.wlc-btn{margin:0 0 10px;letter-spacing:2px;}
+.wlc-ghost{width:100%;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.30);border-radius:99px;padding:13px;font-size:14px;font-weight:900;letter-spacing:2px;cursor:pointer;font-family:'Nunito',sans-serif;}
+.wlc-foot{text-align:center;font-size:12px;font-weight:800;letter-spacing:2px;color:var(--mut);margin-top:16px;}
+@media (min-width:768px){
+  .wlc{min-height:auto;margin:4vh 0;border-radius:24px;overflow:hidden;border:.5px solid var(--bdr);box-shadow:0 24px 80px rgba(0,0,0,.5);}
+  .wlc-hero img{max-height:52vh;}
+  .wlc-body{padding-bottom:26px;}
+}
+@media (prefers-reduced-motion: reduce){
+  .wlc-word{transition:none;}
+}
