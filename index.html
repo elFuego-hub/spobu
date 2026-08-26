@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=504">
+<link rel="stylesheet" href="styles.css?v=505">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v504</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v505</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -313,6 +313,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <div class="auth-wrap" id="auth-login" style="display:none;">
   <div class="auth-box">
+    <button class="auth-back" onclick="showWelcome()" aria-label="Atgal į pradžią">← ATGAL</button>
     <div class="auth-logo"><svg class="mark" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">SPOBU</span></div>
     <div class="auth-sub">Būk geresnis nei vakar</div>
     <div class="auth-title">PRISIJUNGTI</div>
@@ -344,6 +345,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- AUTH: REGISTER WIZARD - TĖVAI (3 ekranai) -->
 <div class="auth-wrap" id="auth-register" style="display:none;">
   <div class="auth-box" style="max-height:90vh;overflow-y:auto;">
+    <button class="auth-back" onclick="showWelcome()" aria-label="Atgal į pradžią">← ATGAL</button>
     <div class="auth-logo"><svg class="mark" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">SPOBU</span></div>
     
     <!-- Progress indicator -->
@@ -463,6 +465,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- AUTH: FORGOT -->
 <div class="auth-wrap" id="auth-forgot" style="display:none;">
   <div class="auth-box">
+    <button class="auth-back" onclick="showLogin()" aria-label="Atgal į prisijungimą">← ATGAL</button>
     <div class="auth-logo"><svg class="mark" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">SPOBU</span></div>
     <div class="auth-title">ATSTATYTI SLAPTAŽODĮ</div>
     <div class="ok-msg" id="forgot-ok">Laiškas išsiųstas! Patikrink el. paštą.</div>
@@ -4567,7 +4570,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=504"></script>
+<script src="app.js?v=505"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

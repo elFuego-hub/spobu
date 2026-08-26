@@ -631,8 +631,8 @@ body.portal-v{--ico-accent:var(--br);}
 .wlc-logo{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;align-items:center;justify-content:center;gap:8px;filter:drop-shadow(0 1px 6px rgba(0,0,0,.55));}
 .wlc-logo .mark{font-size:26px;}
 .wlc-logo .wordmark{font-size:20px;letter-spacing:4px;color:#fff;}
-.wlc-body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:0 28px calc(20px + env(safe-area-inset-bottom,0px));margin-top:-8px;}
-.wlc-kicker{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:6px;color:#B9B4AC;line-height:1.1;}
+.wlc-body{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 28px calc(20px + env(safe-area-inset-bottom,0px));background:#0A0A0A;}
+.wlc-kicker{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:6px;color:#B9B4AC;line-height:1.25;padding-top:2px;}
 .wlc-word{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:2px;color:var(--br);line-height:1.05;min-height:1.05em;opacity:1;transform:translateY(0);transition:opacity .28s ease,transform .28s ease;}
 .wlc-word.wlc-out{opacity:0;transform:translateY(10px);}
 .wlc-sub{font-size:13px;font-weight:800;letter-spacing:1.5px;color:#C9C4BC;text-transform:uppercase;margin:10px 0 22px;}
@@ -647,3 +647,7 @@ body.portal-v{--ico-accent:var(--br);}
 @media (prefers-reduced-motion: reduce){
   .wlc-word{transition:none;}
 }
+
+/* v505: „ATGAL" mygtukas auth ekranuose (grizti i pradzios ekrana) */
+.auth-back{display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;color:var(--mut);font-family:'Nunito',sans-serif;font-size:11px;font-weight:900;letter-spacing:1.5px;cursor:pointer;padding:0 0 14px;margin:0;}
+.auth-back:hover{color:var(--txt);}
