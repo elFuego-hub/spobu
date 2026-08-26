@@ -1333,12 +1333,16 @@ async function loadParentData() {
 }
 
 function loadParentMarketingToggle() {
+  // 📬 v512: konteineris gyvena „Duomenys ir paskyra" modale — jei modalas neatidarytas, tyliai išeinam
+  // (anksčiau čia krisdavo „Cannot set properties of null").
+  const el = document.getElementById('t-marketing-toggle');
+  if (!el) return;
   const consent = !!currentProfile?.marketing_consent;
   const icon = consent ? ''+ico('patvirtinta')+'' : ''+ico('isjungta')+'';
   const text = consent ? 'Sutikta' : 'Nesutikta';
   const color = consent ? 'var(--grn)' : '#EF4444';
-  
-  document.getElementById('t-marketing-toggle').innerHTML = `
+
+  el.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;padding:8px;background:${consent ? 'rgba(34,197,94,.08)' : 'rgba(239,68,68,.08)'};border-radius:8px;border:.5px solid ${color};margin-bottom:10px;">
       <div style="font-size:22px;">${icon}</div>
       <div style="flex:1;">
@@ -1349,7 +1353,7 @@ function loadParentMarketingToggle() {
       </div>
     </div>
     <button onclick="parentToggleMarketing()" style="width:100%;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">
-      ${consent ? ''+ico('isjungta')+' ATSISAKYTI MARKETINGO' : ''+ico('patvirtinta')+' SUTIKTI GAUTI MARKETING'}
+      ${consent ? ''+ico('isjungta')+' ATSISAKYTI PASIŪLYMŲ' : ''+ico('patvirtinta')+' SUTIKTI GAUTI PASIŪLYMUS'}
     </button>
   `;
 }
@@ -1373,10 +1377,11 @@ async function parentToggleMarketing() {
   if (!data || data.length === 0) { showToast(ico('klaida')+' Nepavyko atnaujinti', 'error', 5000); return; }
   
   currentProfile.marketing_consent = newConsent;
-  showToast(newConsent ? ico('patvirtinta')+' Sutikta gauti marketing' : ico('isjungta')+' Atsisakyta marketing', 'success');
+  showToast(newConsent ? ico('patvirtinta')+' Sutikta gauti pasiūlymus' : ico('isjungta')+' Atsisakyta pasiūlymų', 'success');
   loadParentMarketingToggle();
   // Atnaujinti pagrindinio lango duomenis (mini-kortelės, vaikų preview, naujausias pranešimas)
-  loadParentMain();
+  // 📬 v512: modalas bendras tėvui, treneriui ir klubui — loadParentMain tik tėvui
+  if (currentProfile.role === 'parent' && typeof loadParentMain === 'function') loadParentMain();
 }
 
 // ════════════════════════════════════════
@@ -1614,6 +1619,14 @@ function openDataAccountModal() {
   m.innerHTML = `
     <div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:20px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:6px;">${ico('dokumentas')} DUOMENYS IR PASKYRA</div>
+      <!-- 📬 v512: rinkodaros sutikimo jungiklis. loadParentMarketingToggle/parentToggleMarketing
+           kode buvo nuo seno, bet konteinerio #t-marketing-toggle index.html NEBUVO, o vienintelė
+           vieta, kur jos kviestos (loadParentProfile), nebuvo kviečiama iš niekur. Rezultatas —
+           sutikimą duoti buvo galima (registracijos varnelė), o atšaukti programėlėje NEBUVO KAIP.
+           BDAR reikalauja, kad atšaukti būtų taip pat lengva, kaip duoti. Modalas bendras tėvui,
+           treneriui ir klubui — sutikimas yra profiles lentelėje, tad tinka visiems trims. -->
+      <div id="t-marketing-toggle"></div>
+      <div style="height:1px;background:var(--bdr);margin:14px 0;"></div>
       <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:14px;">Pasirink prašymą — jis keliaus administratoriui, atsakymą gausi „Mano žinutėse" (ir el. paštu, jei reikės failų).</div>
       <button onclick="submitDataRequest('eksportas', this)" style="width:100%;margin-bottom:8px;padding:13px;background:var(--card);border:.5px solid var(--bdr);color:white;border-radius:12px;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:10px;"><span style="font-size:18px;">${ico('dokumentas')}</span> Gauti savo duomenų kopiją (GDPR)</button>
       <button onclick="submitDataRequest('istrynimas', this)" style="width:100%;margin-bottom:12px;padding:13px;background:rgba(239,68,68,.08);border:.5px solid rgba(239,68,68,.3);color:#EF4444;border-radius:12px;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:10px;"><span style="font-size:18px;">${ico('trinti')}</span> Prašyti ištrinti paskyrą</button>
@@ -1622,6 +1635,7 @@ function openDataAccountModal() {
     </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
   document.body.appendChild(m);
+  try { loadParentMarketingToggle(); } catch(e) { console.warn('marketing toggle', e); } // 📬 v512
 }
 
 async function submitDataRequest(kind, btn) {
@@ -2555,11 +2569,33 @@ let _careerCatsCache = null;
 async function getCareerCategories() {
   if (_careerCatsCache) return _careerCatsCache;
   try {
-    const { data } = await sb.from('career_categories').select('*');
+    // 📂 v512: pridėtas .order('sort_order') — dalis vartotojų (loadCategories, loadBadges)
+    // rėmėsi rikiavimu, tad kešas turi grąžinti tą pačią tvarką, kokią duodavo jų sava užklausa.
+    const { data } = await sb.from('career_categories').select('*').order('sort_order');
     _careerCatsCache = data || [];
   } catch (e) { _careerCatsCache = null; }  // #1: klaidos NEcacheinam ([] būtų truthy → įstrigtų visai sesijai)
   return _careerCatsCache;
 }
+
+// 📊 v512: vaiko EXP per kategoriją (kid_records). Kraunant vaiko pagrindinį ekraną tą PAČIĄ
+// užklausą darė keturios funkcijos iš eilės — loadCategories, updateProfileCounts, loadBadges,
+// checkForNewAchievements — kiekviena atskiru tinklo ratu (žr. RADINIAI-04 P1: 59 užklausos).
+// TTL sąmoningai trumpas: statCacheGet šiame projekte buvo VISAI atjungtas, nes po streak bonusų
+// rodė pasenusį EXP. 3 s pakanka vienam ekrano krovimui ir per trumpa, kad žmogus spėtų ką nors
+// pakeisti. loadKidData papildomai išvalo kešą pradžioje, tad kiekvienas krovimas — šviežias.
+let _kidCatRecsCache = null;              // { kidId, rows, at }
+const KID_CAT_RECS_TTL = 3000;
+async function getKidCatRecords(kidId) {
+  if (!kidId) return [];
+  const c = _kidCatRecsCache;
+  if (c && c.kidId === kidId && (Date.now() - c.at) < KID_CAT_RECS_TTL) return c.rows;
+  const { data, error } = await sb.from('kid_records')
+    .select('category_id, category_exp, medal').eq('kid_id', kidId);
+  if (error || !data) return [];          // klaidos NEcacheinam (kaip getCareerCategories)
+  _kidCatRecsCache = { kidId, rows: data, at: Date.now() };
+  return data;
+}
+function clearKidCatRecords(){ _kidCatRecsCache = null; }
 
 // ❌/⏳ Tėvo home: vaiko anketos būsenos juosta (rejected → taisyti; pending → laukia klubo)
 function _renderParentApprovalBanner(k){
@@ -8556,6 +8592,7 @@ async function loadKidData() {
 
   // Išvalom statistikos cache (kad rodytų fresh duomenis - po streak bonusų)
   if (typeof statCacheClear === 'function') statCacheClear();
+  if (typeof clearKidCatRecords === 'function') clearKidCatRecords(); // 📊 v512: kiekvienas krovimas — šviežias EXP
 
   // Perkrauname currentKid iš DB (per user_id, nes kids.id != auth.users.id)
   const kidId = currentKid?.id || currentUser.id;
@@ -9986,20 +10023,17 @@ function triggerConfetti() {
 
 
 async function loadCategories() {
-  // 1. Gaunam visas kategorijas
-  const { data: cats, error } = await sb.from('career_categories')
-    .select('*').order('sort_order').limit(7);
+  // 1. Gaunam visas kategorijas (v512: iš sesijos kešo, ne nauja užklausa)
+  const cats = await getCareerCategories();
 
-  if (error || !cats || cats.length === 0) {
+  if (!cats || cats.length === 0) {
     document.getElementById('v-categories-list').innerHTML =
       '<div style="padding:20px;text-align:center;color:var(--mut);grid-column:span 2;">Kategorijų nerasta duomenų bazėje</div>';
     return;
   }
 
-  // 2. Gaunam vaiko EXP per kategoriją iš kid_records
-  const { data: records } = await sb.from('kid_records')
-    .select('category_id, category_exp, medal')
-    .eq('kid_id', currentKid?.id || currentUser.id);
+  // 2. Gaunam vaiko EXP per kategoriją iš kid_records (v512: bendras kešas su badge'ais)
+  const records = await getKidCatRecords(currentKid?.id || currentUser.id);
 
   // Suskaičiuojam EXP suma per kategoriją
   const expByCategory = {};
@@ -11223,11 +11257,9 @@ async function updateProfileCounts() {
   
   // 🏅 SKILL BADGES - pagal career_categories EXP
   try {
-    const { data: cats } = await sb.from('career_categories').select('id, name');
-    const { data: catRecords } = await sb.from('kid_records')
-      .select('category_id, category_exp')
-      .eq('kid_id', currentKid.id);
-    
+    const cats = await getCareerCategories();                        // v512: sesijos kešas
+    const catRecords = await getKidCatRecords(currentKid.id);        // v512: bendras kešas
+
     let master = 0, gold = 0, silver = 0, bronze = 0;
     const badgesList = [];
     
@@ -11418,10 +11450,8 @@ async function openBadgesModal(kidId, kidName) {
   if (!isOwn) {
     b = { master: 0, gold: 0, silver: 0, bronze: 0, list: [] };
     try {
-      const { data: cats } = await sb.from('career_categories').select('id, name');
-      const { data: catRecords } = await sb.from('kid_records')
-        .select('category_id, category_exp')
-        .eq('kid_id', targetKidId);
+      const cats = await getCareerCategories();                      // v512: sesijos kešas
+      const catRecords = await getKidCatRecords(targetKidId);        // v512: kešas raktuojamas pagal kid_id
       if (cats && catRecords) {
         const catExp = {};
         catRecords.forEach(r => { catExp[r.category_id] = (catExp[r.category_id] || 0) + (r.category_exp || 0); });
@@ -11719,15 +11749,12 @@ function getTierFromExp(exp) {
 }
 
 async function loadBadges() {
-  // Visos kategorijos
-  const { data: cats } = await sb.from('career_categories')
-    .select('*').order('sort_order').limit(7);
+  // Visos kategorijos (v512: sesijos kešas)
+  const cats = await getCareerCategories();
   if (!cats?.length) return;
 
-  // EXP per kategoriją
-  const { data: records } = await sb.from('kid_records')
-    .select('category_id, category_exp')
-    .eq('kid_id', currentKid?.id || currentUser.id);
+  // EXP per kategoriją (v512: bendras kešas)
+  const records = await getKidCatRecords(currentKid?.id || currentUser.id);
 
   const expByCategory = {};
   (records || []).forEach(r => {
@@ -13029,13 +13056,10 @@ function showStreakBonusPopup(bonus, submissionInfo, onClose) {
 async function checkForNewAchievements() {
   const kidId = currentKid?.id || currentUser?.id;
   if (!kidId) return;
-  const { data: cats } = await sb.from('career_categories')
-    .select('id, name').limit(7);
+  const cats = await getCareerCategories();          // v512: sesijos kešas
   if (!cats?.length) return;
 
-  const { data: records } = await sb.from('kid_records')
-    .select('category_id, category_exp')
-    .eq('kid_id', kidId);
+  const records = await getKidCatRecords(kidId);     // v512: bendras kešas
 
   const expByCategory = {};
   (records || []).forEach(r => {
