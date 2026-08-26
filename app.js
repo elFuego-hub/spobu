@@ -5363,7 +5363,14 @@ function _parentKidTier(k){
 }
 function applyParentTierGating(){
   const k = parentActiveKid;
-  const free = !k || _parentKidTier(k) === 'free';
+  // 🎁 v510: bandymo režimu tėvui NEBERAKINAM — vaiko gate'as (app.js ~5316) tokią išimtį
+  // turėjo nuo pradžių, tėvo pamiršo. Piloto vaikai kid_entitlements eilutės neturi, tad
+  // _parentKidTier() jiems visada grąžina 'free' → tėvo statistika ir srautas būtų buvę
+  // užrakinti VISAM LAIKUI, nors parduotuvės bandymo blokas skelbia „VISKAS ĮJUNGTA" ir
+  // vardija būtent statistiką kaip įtrauktą. Kartu dingsta ir „Užsisakyti Premium" kortelė,
+  // vedusi į parduotuvę, kur bandymo metu planų nusipirkti neįmanoma.
+  const _trial = (typeof SHOP_TRIAL_MODE !== 'undefined') && SHOP_TRIAL_MODE;
+  const free = !_trial && (!k || _parentKidTier(k) === 'free');
   gateElement('tk-stats-gate', free, _PG_STATS);
   gateScreen('t-feed', free, _PG_PARENT);
 }
