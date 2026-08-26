@@ -603,6 +603,10 @@ const SUPPORT_EMAIL = 'info@spobu.lt';   // reali dėžutė nuo 2026-08-18 (iv.l
 // 🎁 v439: parduotuvės BANDYMO REŽIMAS — planai su kainomis paslėpti (kainodara neskelbiama iki
 // mokėjimų įjungimo). Sausį su payments_live → pakeisti į false, pilnas langas grįžta pats.
 const SHOP_TRIAL_MODE = true;
+// 🎁 v507 DOVANŲ VARTAI: kreditų dovanos pop-up NERODOMAS, kol savininkas nepasakys.
+// Net jei DB (demo/test skriptai) turi kreditų — tėvas jokios „dovanos" nemato.
+// Įjungimas — tik ši eilutė į true (daugiau niekur keisti nereikia).
+const GIFTS_ENABLED = false;
 // 🔗 v438 (B1-01): set-password.html adresas SANTYKINAI nuo esamos vietos — veikia ir app.spobu.lt
 // šaknyje, ir sename elfuego-hub.github.io/spobu/ kelyje (buvo užkietinta /spobu/ → 404 naujame domene)
 function _setPasswordUrl(){ return new URL('set-password.html', window.location.href).href; }
@@ -5130,6 +5134,7 @@ function applyShopTrialMode(e){
 // kai bandymo režime tėvo aktyvus vaikas turi kreditų (dovana suteikiama admin/SQL ~4–6 sav.).
 async function maybeShowCreditGiftPopup(){
   try {
+    if (!GIFTS_ENABLED) return; // 🎁 v507: dovanu vartai uzdaryti
     if (!SHOP_TRIAL_MODE || currentProfile?.role !== 'parent') return;
     const k = parentActiveKid;
     if (!k?.id) return;

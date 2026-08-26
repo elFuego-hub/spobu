@@ -1,0 +1,605 @@
+// ══ SPOBU ico() helperis (4 etapo 0 partija) — įklijuoti app.js viršuje ══
+// ico('varzybos')                  → mono ikona tekste
+// ico('issukiai','ico-xl ico-duo') → didelė duotone (vaiko nav)
+// ico('medalis','ico-gold')        → auksinis medalis
+// ico('trinti','', 'Ištrinti')     → savarankiška ikona su aria-label
+function ico(name, cls = '', label = ''){
+  const a = label ? 'role="img" aria-label="' + label + '"' : 'aria-hidden="true"';
+  const duo = cls.indexOf('ico-duo') !== -1 ? '<use class="duo" href="#i-' + name + '"/>' : '';
+  return '<svg class="ico' + (cls ? ' ' + cls : '') + '" ' + a + '>' + duo + '<use href="#i-' + name + '"/></svg>';
+}
+
+// Emoji→ikona (DB įrašytos kategorijų/pratimų emoji) + pakopos ikona
+const EMOJI_ICO = {'💪':'jega','🏃':'istverme','🥋':'kata','🤸':'lankstumas','⚡':'sprintas','🎓':'seminaras','🧘':'seiza','⚖️':'seiza','🎭':'spyris','🔬':'mokslas','🎯':'tikslas','🏆':'trofejai','🥇':'medalis','🥈':'medalis','🥉':'medalis','🔥':'streak','📊':'statistika','⭐':'zvaigzde','👑':'premium','⚔️':'dvikova','🌱':'augimas','🐉':'ninja','📅':'kalendorius'};
+function emojiToIco(v){ if(!v) return ico('tikslas'); if(typeof v==='string' && v.indexOf('<svg')!==-1) return v; const k=(v+'').trim(); if(EMOJI_ICO[k]) return ico(EMOJI_ICO[k]); return v; }
+const STAGE_ICO = {'Naujokas':'augimas','Pažengęs':'jega','Patyręs':'kata','Ekspertas':'dvikova','Čempionas':'trofejai','Legenda':'premium','Drakonas':'ninja','Šlovės salė':'zvaigzde'};
+function stageIco(stageName){ return ico(STAGE_ICO[stageName] || 'augimas'); }
+
+// SPOBU — share kortelių rėmelis. VIENA funkcija visoms penkioms kortelėms.
+// Modelis 1c (formatas kinta) + co-branding 2c (viena juosta su skirtuku).
+// Nulis tinklo užklausų: ženklas yra base64 PNG, nes html2canvas praleidžia inline SVG.
+
+const SPOBU_MARK_W = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAO8klEQVR4AeydB5AlRRnHb0UorbLKcJgKLANqAYpaRRAleCKS04EREAVJKkEMHBwiqKAigijIgSgiCCgiyUMRFEWCCRQjJkwEBRRFAbUK6vz94O3W7e7bfdP9umd6Zt/V913PznR//YX/mzfT4XuPmDf6N6c9MALAnA7/vHkjAIwAMMc9MMfNH90BRgCY4x6Y4+bPqTvAsmXL5sMHwEvhW+EHeuyx57w2fy5hYs4AgEAfTWDvgD8Obw2vAq/QY48957U7enW51F0at6zzACCYa8LXY/Bi2IBTzErWWWwbeM1Za3bgYqcB0Avg5cRpbTiUbHN5T0Zo29bU7zQAiMKZsLd3iiiyrTKiGrehUWcBwCfX73w/xcPGYe2erGHlFNm+kwAgYD7JL0ro8UU9mQlFliGqkwDAtbvAPsxRJCFlKTOJsJKEdBUAm2Vwcg6ZGdQME9lVALwozA2VaueQWanjlJWmyuoqAJ4y1dAEf+eQmUCt4UR0FQDDeWUOte4qAP6aIYY5ZGZQM0xkVwFwY5gbKtXOIbNSxzkrdRUADv+m9lsOmal1DJbXVQCcjScehFORspSZSl4xcjoJgLGxsb/j4WPgVHRMT2YqecXI6SQA9C4BO4zyBnhYuqEna1g5jbafqfPOAqBn8G6Ut8GxZFtlxLYvvl2nAcAn95dEwCHcmDuBbTbryUBMN6nTADBkBhBeh+PT4GXwILLOabaBBdCg+q2+3nkAGB2mcnel3AkegweRdXaizRsGVezC9c4DgEAeQKDOgp8AVyXrnknbg6o2aGu9TgOAAB5BYFzpSxFFxyPDlUVRjdvQqLMAIHAnEIAj4WHJFcKnDCuk1PadAwCBXwF2IeeBCZ2+DzLPh1dMKLMWUYM66RQACNATMfgiOMcDnA+RV9DH05HfGeoMAAjMc4nKhfA2cC56GYIvpa8XU3aCOgGAXkAuJSIbwLnpeXRwEX26lYzDdlPrAUAgtiQE34GfDddFLg8TBK0fJm41AAj+zkT8q/BKcN30SDr8HDq8g7K11FoA4Pi34fUS5uiPQ5cPoksrqZUAwOGH4+2T4FLoUHT6VCnKhOjROgDg6OMx8P1wabQXun25FKWq6tEaAODcMfgMDCt5fH5HdLwKdkIJVcunVgAAhzo5cyXufCNcOm2Mgj9H51Upi6fiAYAjfb37IZ5cALeFzCxyA7qvV7rCRQMAB66LA2+CnwW3jZ6Ewtdhw0LKYqlYAOA4l3L9AM/5vk3RSnJb+QXY4itrkQYUCQAc9jq89XW4K3QSNhU5VlAcAHDUW4j6uXAd5JqBj9XREX04VuC6RA7LoaIAQPCPwjUnw3XQYWNjYweNjY05lHtoHR3Sx57Y6Iwlh3koVGoxAMAxLuJwM0eoDTH19ybwE7dkjj+MkDfDddAO2OrkVR19DeyjCADgkG+jaY5FHIidRgsJ+LRbMedOp+a2cB20ETYXseS8UQDghMfBf8DjLrSgyEr/QPqGBNoVQxxOJ64t5azv7n+jzE1rYPudsFPLufuaUX5jAMDwZ6KVmzifQZmbfkcH6xPgaylnJeo46CQI6viEuoTtdnyRIp/hrHbNdLERAPQM/j1K1dH/9+lnPQL7G8pKRF3vSi+lsl9NFFnJeYPr8UldXz+TjKkjAJM6xFBX8Ji8edL5TH8sJZh+8r39B3VBu3vgl9PoPLgOugTf7FtHR8v3USsAega6gmd5HXIdn0EAh/5UIeO1KFjX2oMl+KjWqe7aAIBhvnYtwZl10LEEbvdUHSFrf2S9F66DDsdXnwntKLZ+LQDAoM+jYF2DLQcTsIPpLykh8wMI3Aeug/bAZ1+ro6PsAMAQBz3qyrO7O4E6NpfjkO2yr1flkj9F7hb47qdTziX/MysAMOCPaLwRnJv+TQfbECBXDHGYj+jDZV+b0MM9cG5aCx/elbOTLABA6cfCJlqoYxuVINuUwLgxJKevJmTT17f4w8Gr31LmppX1JeyYQfK+kgMARddCy3/CdZBpXDYhIK4bqKO/iT7o8yf88Qp44OASdVKQo4YvTCFoeRlJAdALfvbvrZ4BJm5cQCActOmdqreg71vocXO4rhm+G/Hx0+gvGSUFAFp9A66DzsH5m8P31tHZbH2gw33wjtSpK4eAXz90l4aSAQBkmobFdXBpNJtZyok4vK63ipm1mHIFnVzI4ljHlCvJ/1wNX7uQ5SHBw/6XBAAo5Pe+iZiG1WdQ+yNxtDl/BtVr5Dq6uZ7hXTV0fiA+TzKBlAQAGLwhnJv2x8Hvy93JsPLR8Thk7AHnpk1TdJAKAFukUGYGGf/h/M44tq7xeLobjtD1s0jYAb4fzkVFAWC7TFbeitwdcGhdi0TpLg2h88VI8oPhOAWHyakoAPw6uXnz5vmevR2O9HUvg/j8ItH9anoxZU2OcQoXuSB+OEr1FZAaAO4D3BYH/ng485pvjQ2/QAu/Di6jTElJRiFTAcDVPamM+xKCtsZxDrJw2H7Clr9ghSA4hzIVFXUHSDV1uQRnvQb+byov9ZPDK5RLs6+hvAt2iPVqSgPUr3qSc9j0P9jxiyQPsyjlAlaK4SjJHQDD/J4+dThV5h2FnLcOKWNgcwLt5hOHbs0otjINnGTxNfbC3jVO5SNsdHHJsKt+TkWOPh9a0SQA6Gnh+2/s1KU7dEz70hOVpyDAn0SygzUUfekw6mQf0iV45jB+e18NBp/Ux/p6cM0KNZIBAKN8KPE2GvLzahqzG22TDW32s5mgPgr2VbLKHWY8Lexj+slKdQ6bTWJtmjl9UFWsD5R+Rerrqm1mrZcMAPaCUddRugCkyqfIr4wNaOMcAs3yEIF/KpLdDOKOYw4rkWlhl9J2tUq1Iyv1bPerSF8MkuI6wZfQJulS9aQA0AIUvBd2YsRf6TiEc+MzhL4qXsLfftqdyduXesmQjNxpRAAfyurJBadsKYLIBR8mg8yaFlYfwPuimTqeSOkD9fgTvv7yrvUC6uwJu/KJKukoOQDGVUNZf23Ln1t7JcfS6vy3Pez3fZIHmPG++pUE3wc7P/nu8ulXpcq551NJEGxFmZXwy+XwAfBW8HNgSX/5ZvSzXJ1nA0AuhavIJfjuB/gmdc0vRDEUuXfvYmT6fT2UoBIbdw4ABMpMYt46U6aPNU1NEWlhU4OoUwAg+L5a5VwZ3Oq0sP3A0xkAEHwHV+pI92KqlypP7f38Xdy5TgCA4Pv0HDOQ5Hz9fRFR2Zs+3R8Q0bSsJq0GAEFYCXbb2X4Rbv0TbXxVlWNWFo+nhX00clpLrQUAgX8yXneK1QkWDoPI7enr8J51E/wrWgoC8whwGESmhXVvf9YBoyCNAiu3EgAEf3XsdEOG+/c5DKLLCPq68EQaGI7vhtdHylfgUDIt7LXoJBhC2zZev3UAwNFm7nBgJOZTdxaBNkFFX8dzzaVtJovqe32Wk96NrkS3kOHmWcTVd6lVAMDB/lCTn3zfy0O9dDwBHjiYQx3TxZk2LlS+aWHPRcd3hjasUj9XndYAAMeaRi52EcShBLZyYKhrLgMTSMb4/aPo+qGYhk20aQUAcKibQUwkGeOjvQho8CeaNo4pxG52OQSdp+UijFE+d5viAYAjzczh3HmoLx6kgUvKP00ZRYDAH6Uya/kDEQJMC3tBRLtamxQNAILvp/49ER65kzYbE0DX5nMYT8i4gtZOCd9OGUoLscEMKaHtaqtfJABw2gqwCx/83g91hj8wsRGBc3FKaNu+9ZH1Iy44vexeBQ6D6KG0sNizYlCrmioXBwAc5SJNF4q4ICPUDdfQwFVGlZNCUr8SAQJHC9XJO0KlNstVWoPj27CtjqyodFWdigIADvIHoF1DbxrZ6lY8XPNiguQnPzgp5MPNB/+PfJNH+kzgs8HgBpNrCOybsdFxjMlXGvyrGADgGEfiXDbm+3SoS04nOC5IDW0XVZ++fDvwLSG0vf521PDVVRvmrqdCufsYKJ/gOzr33YEV+1cwKaSDN/2vZjoLCBwncLwgpofzsPnAmIap2zQOABxh8sXY9LGLCETypJBVnUzfji/sXbX+lHonYPtHppyr/c9GAYADjsbiKkvIqTaN9iAAjTsQHRzwib2lvxsfOJ09zbi6TjQGAAx3P8DiCENNQefOYZMwRDRP3wQQnI9UU8bdTRlKu+CLpImfQhRoBAAY7OCID1Ihulr3Zv7bAofHzgnQPA+hk1vaBYHrC0I7WYBPHL8IbTd0/VoBgJH+ALQZM9w9FKq8SRbcUBKzcCO0r6j6gMBtcW7wEOChMlbHP+5WrjUmtXWGcfPxiOPzMeljXfnjBhPvAIgplwDBn9HOaWu/FjgMIncrP4Cvavvh6VoAgEHusHEFjj+PEuQRKp+NU7eE/8VxKwhd3R7ng2HM6mF9dAs+c/4hu73ZAYAhfhpcwRNjzCdwZsyzQkxfydugu3v+fFWMkf09fLcwpmFIm6wAwAA3icY+sB2BA4sYLAlx6NS62OBgUexYxQX4MGbF81Q1Zvw7GwBQ/Eh6PRmOof1wnBs9YtoW1wZb/BGLPSMVOxFfxg42DewyCwBQ+E30bBYMiiAyKeTrcZiZPIIall4Zm9zfb1LpmI0op+JTnymSm5kFAGjpjBlFEJkU0u3QXwhq1aLKgMDcRD4TObUcqvnOoQ2q1M8FAN+Fq/Q/XseFFgY/Zq59XEYrSkBwFYpuD7s5haIyLahcM6BiLgB4K6+qhiNoBt9VN1XbtLoeIPCtyOnrEMC7jzG53bkAUPUWZ1JI08G6Ty+5cSULBAS3oZ8g+CLlBM1ykDIZ50Q3uQBQJY3ZKTjBjFcxD0UTBrT5APvvh91NtKSCHVV8WkHM5CpZAIBR5uZZNLmrSX8dTR3HCCadnKt/4AsTQTk1PpMLFlNHn850Pfp8FgCoDQo7V++Tq4o7hestz0WbC7kWs9RbsZ3lnk8c+dNHLkF3atnchrtyLdtOo2wAMFIofi5swB9PuSrsok0B4eURT/EA/rkI1kerUM6H/aGMmAWoUyTP/GdWAMzc7ehKKR4YAaCUSDSkxwgADTm+lG5HACgkEk2pMQJAU54vpN8RAAoJRFNqjADQlOcL6XcEgEIC0ZQaIwA05flC+h0BoJBANKXGCABNeb6QfkcAaDgQTXf/fwAAAP//ofuSyAAAAAZJREFUAwBVfwE9VG/GwwAAAABJRU5ErkJggg==';
+
+const SPOBU_MARK_O = 'data:image/png;base64,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';
+
+const SPOBU_TAGLINE = 'Būk geresnis nei vakar';
+const SPOBU_URL     = 'spobu.lt';
+
+// Auditorijos žymeklis: 1 žodis + 1 tonas. Naujam žymekliui — tik nauja eilutė čia.
+const SHARE_BADGES = {
+  kid:       { word: 'PASIEKIMAS', bg: '#FF4D00', fg: '#fff'    },
+  parent:    { word: null,         bg: '#FFD700', fg: '#1a0a00' },  // word = mėnesio etiketė
+  challenge: { word: 'IŠŠŪKIS',    bg: '#0EA5E9', fg: '#fff'    },
+  club:      { word: 'SUVESTINĖ',  bg: '#22C55E', fg: '#fff'    },
+  event:     { word: 'RENGINYS',   bg: '#A855F7', fg: '#fff'    }
+};
+
+// Formatas: 4:5 asmeniniam turiniui, 1:1 institucijos turiniui. Trečio nėra.
+const SHARE_RATIO = { kid: '4/5', parent: '4/5', challenge: '4/5', club: '1/1', event: '1/1' };
+
+// kind    — SHARE_BADGES raktas
+// inner   — kortelės vidus (laisvas)
+// opts    — { scale, word, photo, clubLogo }
+//           scale: 1 = ekrano peržiūra, 3 = eksportas (1080px plotis)
+//           clubLogo: data URL iš _getClubLogoDataUrl(); null = juostoje tik SPOBU
+function shareFrame(kind, inner, opts) {
+  const o = opts || {};
+  const k = SHARE_BADGES[kind] || SHARE_BADGES.kid;
+  const s = o.scale || 1;
+  const px = n => Math.round(n * s) + 'px';
+  const word = o.word || k.word;
+  const photo = o.photo || null;
+
+  const bg = photo
+    ? "background-image:url('" + photo + "');background-size:cover;background-position:center;"
+    : 'background:linear-gradient(165deg,#15151c,#0b0b0f 55%);';
+
+  const scrim = photo
+    ? '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.62),rgba(0,0,0,.28) 42%,rgba(10,10,10,.94));"></div>'
+    : '';
+
+  const badge = word
+    ? '<div style="font-size:' + px(8) + ';font-weight:800;letter-spacing:' + px(.8) + ';white-space:nowrap;color:' + k.fg + ';background:' + k.bg + ';padding:' + px(4) + ' ' + px(9) + ';border-radius:99px;">' + word + '</div>'
+    : '';
+
+  // Juosta: SPOBU · skirtukas · klubo logo. Nėra logo — nėra skirtuko.
+  const divider = o.clubLogo
+    ? '<div style="width:' + px(1) + ';height:' + px(26) + ';background:rgba(255,255,255,.24);flex:none;"></div>' +
+      '<img src="' + o.clubLogo + '" alt="" style="height:' + px(24) + ';width:auto;max-width:' + px(80) + ';display:block;flex:none;">'
+    : '';
+
+  return '' +
+  '<div style="position:relative;width:100%;aspect-ratio:' + (SHARE_RATIO[kind] || '4/5') + ';border-radius:' + px(14) + ';overflow:hidden;border:' + px(1) + ' solid #26262f;display:flex;flex-direction:column;' + bg + '">' +
+    scrim +
+    '<div style="position:relative;display:flex;justify-content:flex-end;align-items:center;padding:' + px(10) + ' ' + px(12) + ';flex:none;">' + badge + '</div>' +
+    '<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;">' + inner + '</div>' +
+    '<div style="position:relative;background:rgba(0,0,0,.4);border-top:' + px(.5) + ' solid #26262f;padding:' + px(10) + ' ' + px(12) + ';flex:none;display:flex;align-items:center;justify-content:space-between;gap:' + px(10) + ';">' +
+      '<div style="display:flex;align-items:center;gap:' + px(10) + ';">' +
+        '<img src="' + SPOBU_MARK_W + '" alt="" style="width:' + px(22) + ';height:' + px(22) + ';display:block;flex:none;">' +
+        '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:' + px(21) + ';letter-spacing:' + px(2.8) + ';color:#fff;line-height:1;">SPOBU</span>' +
+        divider +
+      '</div>' +
+      '<div style="font-size:' + px(9) + ';color:#9a9aa5;text-align:right;line-height:1.35;white-space:nowrap;">' + SPOBU_TAGLINE + '<br>' + SPOBU_URL + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+// 🏢 Klubo logo share kortelėms pagal rolę (resolveMyClubId → clubs.logo_url → data URL).
+// Grąžina null jei logo nėra — tada juostoje tik SPOBU, be skirtuko.
+async function _shareClubLogo(){
+  try {
+    if (typeof currentClub !== 'undefined' && currentClub?.logo_url) return await _getClubLogoDataUrl(currentClub.logo_url);
+    const cid = (typeof resolveMyClubId === 'function') ? resolveMyClubId() : null;
+    if (!cid || !sb) return null;
+    if (_shareClubLogo._c && _shareClubLogo._c.cid === cid) return _shareClubLogo._c.v;
+    const { data } = await sb.from('clubs').select('logo_url').eq('id', cid).maybeSingle();
+    const v = data?.logo_url ? await _getClubLogoDataUrl(data.logo_url) : null;
+    _shareClubLogo._c = { cid, v };
+    return v;
+  } catch(e){ return null; }
+}
+
+
+// ════════════════════════════════════════════════════════
+// SUPABASE KONFIGŪRACIJA
+// SVARBU: pakeisk šiuos raktus savo Supabase projekto raktais!
+// ════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://uowhoqqchrxksffdwkcq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvd2hvcXFjaHJ4a3NmZmR3a2NxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMTcwMzQsImV4cCI6MjA5Mjc5MzAzNH0.igHddvnGfcgpyc2Q--Vdfsy4MM3JlrN4g4Nuj3ypbPM';
+// SVARBU: sb bus inicializuotas tik kai Supabase CDN užsikraus (žiūrėk init() funkciją)
+let sb = null;
+
+// 🔔 PUSH NOTIFICATIONS konfigūracija
+const VAPID_PUBLIC_KEY = 'BL3D0SftiziKKe0FC4kp3rkY6waYK1UNQVs8isOYRby6m9yEiOnbEM-RxoxOm2rHZKQbDn5y_89_BRUPEUehaio';
+const PUSH_FUNCTION_URL = SUPABASE_URL + '/functions/v1/clever-processor';
+
+// ════════════════════════════════════════
+// GLOBALI BŪSENA
+// ════════════════════════════════════════
+let currentUser = null;
+let currentProfile = null;
+let currentKid = null;
+let rejectTargetId = null;
+
+// Mobile preview toggle (matomas tik desktop'e)
+function toggleMobilePreview() {
+  document.body.classList.toggle('full-mobile-preview');
+  const btn = document.getElementById('mobile-preview-toggle');
+  if (btn) {
+    if (document.body.classList.contains('full-mobile-preview')) {
+      btn.textContent = '🖥️ DESKTOP';
+      btn.style.background = 'rgba(34,197,94,.2)';
+      btn.style.color = 'var(--grn)';
+      btn.style.borderColor = 'var(--grn)';
+    } else {
+      btn.textContent = '📱 PILNAS MOBILE';
+      btn.style.background = 'rgba(255,77,0,.2)';
+      btn.style.color = 'var(--br)';
+      btn.style.borderColor = 'var(--br)';
+    }
+  }
+}
+
+// Slėpti mygtuką ant tikro mobile (kur viewport jau mažas)
+if (window.innerWidth <= 500) {
+  setTimeout(() => {
+    const btn = document.getElementById('mobile-preview-toggle');
+    if (btn) btn.style.display = 'none';
+  }, 100);
+}
+
+// ════════════════════════════════════════
+// INICIALIZACIJA
+// ════════════════════════════════════════
+async function init() {
+  // 1) Pirmiausia palaukti kol Supabase CDN užsikrauna
+  try {
+    await window.supabaseReady;
+  } catch (e) {
+    console.error('Supabase nepavyko užkrauti:', e);
+    // Klaida jau parodyta ant ekrano per error handler'į
+    document.getElementById('loading').style.display = 'none';
+    return;
+  }
+  
+  // 2) Tik dabar inicializuojam klientą
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log('✅ Supabase klientas sukurtas');
+  
+  // 🧹 Išvalom SENĄ kešą (jei senas SW buvo įsikešavęs index.html — kad nematytume pasenusios versijos)
+  // Mūsų sw.js NIEKO nekešuoja, tad caches saugu trinti.
+  try { if (window.caches && caches.keys) caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(() => {}); } catch (_) {}
+
+  // 🧹 VIENKARTINIS seno Service Worker pašalinimas (v158): senas SW rodė „naujas pranešimas iš Spobu"
+  // ir neatsinaujindavo. Pašalinam VISUS → registruojam naują (v4, skaito tikrą antraštę).
+  // Po šito reikia VIENĄ kartą iš naujo įjungti push (⚙️ → 🔔 Išbandyti push), nes prenumerata persikuria.
+  try {
+    if ('serviceWorker' in navigator && !localStorage.getItem('spobu_sw_reset_v158')) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        Promise.all((regs || []).map(r => r.unregister().catch(() => {}))).then(() => {
+          localStorage.setItem('spobu_sw_reset_v158', '1');
+          registerServiceWorker();
+        });
+      }).catch(() => registerServiceWorker());
+    } else {
+      registerServiceWorker();
+    }
+  } catch (_) { registerServiceWorker(); }
+
+  // 🔄 Automatinis versijos tikrinimas — kad naujausia versija užsikrautų be rankinio kešo valymo
+  setTimeout(() => { if (typeof checkForNewVersion === 'function') checkForNewVersion(); }, 4000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && typeof checkForNewVersion === 'function') checkForNewVersion();
+  });
+
+  // 🖱️ PC: horizontalus slinkimas tabams/filtrams (overflow eilutės su .no-scrollbar)
+  setTimeout(() => { try { document.querySelectorAll('.no-scrollbar').forEach(_enableDragScroll); } catch (_) {} }, 800);
+
+  // 🔍 Pritaikyti išsaugotą vaizdo dydį
+  if (typeof applyAppZoom === 'function') applyAppZoom();
+  
+  // 3) Patikrinti ar vartotojas jau prisijungęs
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await afterLogin();
+  } else {
+    showWelcome();   // v500: pradzios ekranas (welcome-hero) vietoj plikos login formos
+  }
+  document.getElementById('loading').style.display = 'none';
+
+  // Realaus laiko prisijungimas
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (window._suppressAuthChange) return;  // 🔑 kviečiant trenerį (signUp auto-loginina) — nekeisti klubo sesijos
+    if (event === 'SIGNED_IN' && session) {
+      // ⚡ W1-2 auth storm: Supabase re-emit'ina SIGNED_IN per tab focus/token refresh —
+      // pilnas afterLogin() TIK kai keičiasi vartotojas arba app dar neinicijuotas
+      if (window._appInitedUserId && session.user?.id === window._appInitedUserId) {
+        currentUser = session.user; // atnaujinta sesija — be re-init
+        return;
+      }
+      currentUser = session.user;
+      await afterLogin();
+    } else if (event === 'SIGNED_OUT') {
+      window._appInitedUserId = null;
+      // #11: account-switch be reload — išvalom realtime kanalus + flag'us + būseną
+      try { if (sb && sb.removeAllChannels) sb.removeAllChannels(); } catch (e) {}
+      _kidChannelsSubscribed = false;
+      _parentChannelsSubscribed = false;
+      try { _adminChannelsSubscribed = false; } catch (e) {}   // v496: kitaip po account-switch adminas liktų be realtime (LIVE LED meluotų)
+      if (window._msgBadgeInterval) { clearInterval(window._msgBadgeInterval); window._msgBadgeInterval = null; }
+      currentUser = null;
+      currentProfile = null;
+      currentKid = null;
+      currentClub = null; // PR-06: pasenęs klubas nepersineša (kitaip insert'ai eitų su senu club_id)
+      _kidTier = null; // ⚡ W1-5: kito vaiko tier nepersineša per account-switch
+      try { _celebQueue.length = 0; _celebShowing = false; } catch (e) {} // ⚡ W3-4: šventimų eilė išvaloma
+      try { _parentPopupQueue.length = 0; _parentPopupShowing = false; } catch (e) {} // PR-04: tėvo pranešimų eilė
+      try { _clubManagerMode = false; _managedClub = null; } catch (e) {} // PR-04: admino „administruoju klubą" režimas
+      // ⚡ W2-9 (F4-01): uždaryti visus atidarytus modalus/overlay — kito vartotojo PII
+      // negali likti ekrane po atsijungimo. Statiniai modalai TIK paslepiami (bus perpanaudoti).
+      try {
+        document.querySelectorAll('[id$="-modal"], .modal-overlay').forEach(m => {
+          if (m.id === 'toast') return;
+          m.style.display = 'none';
+        });
+        // PR-04: statiniai .mo/.amo modalai (kcmo, ccmo, exo, amo, crmo…) atidaromi
+        // klase 'open' — juos uždarom TIK klasės nuėmimu (inline display:none juos
+        // sulaužytų visam laikui, nes .mo.open{display:flex} nebenugalėtų inline stiliaus).
+        document.querySelectorAll('.mo.open, .amo.open').forEach(m => m.classList.remove('open'));
+        // PR-04: reparentintos varpelio/skelbimų sekcijos + pending ekranas — tik paslepiami
+        ['v-announcements-section', 'trh-notif-section', 'kh-notif-section', 'ah-notif-section',
+         'pending-approval-screen'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+        ['app-dialog-overlay', 'ch-trainer-pick', 'camp-trainer-pick', 'club-acct-menu',
+         // PR-04: dinaminiai fixed overlay be „-modal" galūnės — kūrėjai atkuria iš naujo
+         'parent-kid-switcher', 'parent-notif-popup', 'duel-challenge-popup', 'settings-submodal',
+         'club-notif-prefs', 'club-roles-guide', 'adm-club-edit', 'club-mgr-bar', 'club-onboard',
+         'trial-bug-fab', 'gift-popup',
+         'att-share-hint', 'tps-modal', 'fee-modal', 'note-modal'].forEach(id => { // 🐞🎁 v442/v465: bandymo FAB, dovanų popup ir naujų langų valymas
+          const el = document.getElementById(id);
+          if (el) el.remove(); // dinaminiai — kūrėjai juos atkuria iš naujo
+        });
+      } catch (e) {}
+      showLogin();
+    }
+  });
+}
+
+async function showPendingApprovalScreen(profile) {
+  // Slėpiame visus portal'us
+  hideAll();
+  // F-12c: hideAll nepaslepia portalo apvalkalo — jei portalas buvo atidarytas
+  // anksčiau, liktų #sw juosta ir am/portal-* body klasės (kaip „profilis
+  // nerastas" šaka tai daro per showLogin kelią)
+  const _sw = document.getElementById('sw'); if (_sw) _sw.style.display = 'none';
+  document.body.classList.remove('am');
+  ['portal-v','portal-t','portal-tr','portal-k','portal-a'].forEach(c => document.body.classList.remove(c));
+
+  // Sukuriame pending ekraną
+  let pendingDiv = document.getElementById('pending-approval-screen');
+  if (!pendingDiv) {
+    pendingDiv = document.createElement('div');
+    pendingDiv.id = 'pending-approval-screen';
+    pendingDiv.className = 'auth-wrap';
+    pendingDiv.style.display = 'flex';
+    pendingDiv.innerHTML = `
+      <div class="auth-box" style="text-align:center;">
+        <div class="auth-logo"><svg class="mark" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">SPOBU</span></div>
+        <div style="font-size:80px;margin:20px 0;">${ico('laukia')}</div>
+        <div class="auth-title" style="margin-bottom:14px;">LAUKIA PATVIRTINIMO</div>
+        <div style="font-size:14px;color:var(--mut);line-height:1.6;margin-bottom:20px;text-align:left;">
+          Tavo paskyra sukurta sėkmingai!<br><br>
+          ${ico('dirzas')} <strong>Klubas</strong> gavo pranešimą apie tavo registraciją ir greitai patvirtins paskyrą.<br><br>
+          ${ico('pastas')} Apie patvirtinimą informuosime per paštą: <span style="color:var(--br);">${currentUser.email}</span><br><br>
+          Atvyk vėliau!
+        </div>
+        <button class="btn-auth" onclick="checkApprovalStatus()">${ico('atnaujinti')} PATIKRINTI BŪKLĘ</button>
+        <div style="margin-top:12px;">
+          <button class="btn-link" onclick="doLogout()">Atsijungti</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(pendingDiv);
+  }
+  pendingDiv.style.display = 'flex';
+  // v506: pasižymim, kad šis vartotojas laukė — patvirtinus parodysim sveikinimą,
+  // net jei jis tuo metu bus uždaręs programą ir prisijungs vėliau
+  try { localStorage.setItem(_apprKey(), '1'); } catch(_){}
+  _apprStart();   // ekranas pats aptiks patvirtinimą (kas 20 s + grįžus į programą)
+}
+
+// ── v506: PATVIRTINIMO APTIKIMAS ────────────────────────────────────────────
+// Anksčiau laukimo ekranas buvo „negyvas": klubas patvirtindavo, o vaikas/tėvas
+// to nesužinodavo, kol pats nepaspausdavo „PATIKRINTI BŪKLĘ". O prisijungus
+// vėliau (jau patvirtintam) nebūdavo JOKIO pranešimo, kad paskyra aktyvi.
+// Dabar: 1) ekranas pats tikrina kas 20 s ir grįžus į programą,
+//        2) po patvirtinimo rodomas sveikinimo pop-up (žr. showApprovedPopup).
+function _apprKey(){ return 'spobu_was_pending_' + (currentUser?.id || ''); }
+let _apprTimer = null;
+
+function _apprStop(){
+  if (_apprTimer) { clearInterval(_apprTimer); _apprTimer = null; }
+  document.removeEventListener('visibilitychange', _apprOnVisible);
+}
+function _apprOnVisible(){
+  if (!document.hidden) checkApprovalStatus(true);   // grįžo į programą — tikrinam iškart
+}
+function _apprStart(){
+  if (_apprTimer) return;
+  _apprTimer = setInterval(() => checkApprovalStatus(true), 20000);
+  document.addEventListener('visibilitychange', _apprOnVisible);
+}
+
+// silent=true — fone (be „vis dar laukia" toast'o); silent=false — paspaudus mygtuką
+async function checkApprovalStatus(silent) {
+  // Ekranas uždarytas (atsijungė ar jau įleistas) — fono tikrinimas nebereikalingas
+  const scr = document.getElementById('pending-approval-screen');
+  if (silent && (!currentUser || !scr || scr.style.display === 'none')) { _apprStop(); return; }
+
+  let profile = null;
+  try {
+    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    profile = data;
+  } catch(e) {
+    if (!silent) showToast(ico('klaida')+' Nepavyko patikrinti — bandyk dar kartą', 'error');
+    return;   // fone tyliai praleidžiam (ryšio triktis)
+  }
+
+  if (profile && profile.status === 'active') {
+    _apprStop();
+    if (scr) scr.style.display = 'none';
+    await afterLogin();   // pop-up parodys pats afterLogin pabaigoje (pagal _apprKey vėliavėlę)
+  } else if (profile && profile.status === 'suspended') {
+    _apprStop();
+    try { localStorage.removeItem(_apprKey()); } catch(_){}
+    showToast(ico('klaida')+' Paskyra atmesta');
+    await sb.auth.signOut();
+  } else if (!silent) {
+    showToast(''+ico('laukia')+' Vis dar laukia patvirtinimo');
+  }
+}
+
+// 🎉 Sveikinimas po klubo patvirtinimo — rodomas VIENĄ kartą (vėliavėlė _apprKey)
+function showApprovedPopup(role){
+  try {
+    const old = document.getElementById('approved-modal'); if (old) old.remove();
+    const isKid = role === 'kid';
+    const title = isKid ? 'PASKYRA PATVIRTINTA!' : 'PASKYRA PATVIRTINTA!';
+    const text = isKid
+      ? 'Klubas patvirtino tavo registraciją. Nuo šiol gali rinkti EXP, priimti iššūkius ir matyti savo pažangą.'
+      : 'Klubas patvirtino jūsų registraciją. Nuo šiol matysite vaiko pažangą, lankomumą ir klubo pranešimus.';
+    const m = document.createElement('div'); m.id = 'approved-modal';
+    m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100003;align-items:center;justify-content:center;padding:20px;';
+    m.onclick = (e) => { if (e.target === m) m.remove(); };
+    m.innerHTML = `<div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid var(--bdr);border-radius:22px;overflow:hidden;animation:slideUp .3s ease-out;">
+      <div style="padding:26px 22px 8px;text-align:center;">
+        <div style="font-size:52px;line-height:1;">${ico('patvirtinta')}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:27px;letter-spacing:1.5px;color:var(--grn);line-height:1.1;margin-top:12px;">${title}</div>
+      </div>
+      <div style="padding:10px 22px 6px;font-size:13px;color:#cbd2da;line-height:1.6;text-align:center;">${text}</div>
+      <div style="padding:16px 20px 22px;">
+        <button onclick="document.getElementById('approved-modal')?.remove()" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-size:14px;font-weight:800;letter-spacing:1px;cursor:pointer;font-family:inherit;">PRADĖTI ${ico('dirzas')}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(m);
+  } catch(e){ console.warn('showApprovedPopup:', e); }
+}
+
+// ════════════════════════════════════════
+// 🌐 BENDRAS KODAS (AD-SHARED): telemetrija (B1) + kainos (C5) + ping (D1) +
+// „Mano žinutės" (F3) + platformos juostos (H1-H2). Veikia VISOMS rolėms.
+// ════════════════════════════════════════
+
+// ── 🛡️ Saugus localStorage masyvo skaitymas (3.1 #3): sugadintas įrašas grąžina [] ir
+//    išsivalo, vietoj amžino JSON.parse crash tam vartotojui ──
+function lsGetArr(key){
+  try {
+    const v = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch(e){
+    try { localStorage.removeItem(key); } catch(_){}
+    return [];
+  }
+}
+
+// ── C5: kainos iš DB (prices lentelė; fallback — esamos reikšmės) ──
+let PRICES = { report: 9.99, homeplan: 19.99, summer: 29.99, subscription_annual: 41.94 };
+async function loadPrices(){
+  try {
+    const { data } = await sb.from('prices').select('key, amount_eur');
+    (data || []).forEach(r => { if (r.key && r.amount_eur != null) PRICES[r.key] = +r.amount_eur; });
+  } catch(e){}
+  _applyPricesToUI();
+}
+function _applyPricesToUI(){
+  try {
+    const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    const setH = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; }; // ⚡ W1-1: SVG ikonoms (turinys — tik app konstantos)
+    const f = v => (Math.round(v * 100) / 100).toFixed(2) + '€';
+    set('ps-annual-v', f(PRICES.subscription_annual));
+    setH('ps-rep-l', `${ico('dokumentas')} 3 ataskaitos (3 × ${f(PRICES.report)})`);
+    set('ps-rep-v', f(PRICES.report * 3));
+    setH('ps-home-l', `${ico('treniruote')} 3 namų planai (3 × ${f(PRICES.homeplan)})`);
+    set('ps-home-v', f(PRICES.homeplan * 3));
+    set('ps-sum-v', f(PRICES.summer));
+    set('ps-total-v', f(PRICES.subscription_annual + PRICES.report * 3 + PRICES.homeplan * 3 + PRICES.summer));
+  } catch(e){}
+}
+
+// ── D1: dienos aktyvumo ping (DAU/WAU/MAU + retention; user_activity lentelė) ──
+async function pingActivity(){
+  try {
+    if (!currentUser?.id) return;
+    const day = new Date().toISOString().slice(0, 10);
+    const key = 'spobu_ping_' + currentUser.id;
+    if (localStorage.getItem(key) === day) return;
+    localStorage.setItem(key, day);
+    await sb.from('user_activity').upsert(
+      { user_id: currentUser.id, day, role: (typeof currentProfile !== 'undefined' && currentProfile?.role) || null },
+      { onConflict: 'user_id,day', ignoreDuplicates: true });
+  } catch(e){}
+}
+
+// ── B1: klaidų telemetrija → client_errors (flood apsauga: 10/sesija, 1/min per hash) ──
+let _errSessCount = 0;
+const _errLastByHash = {};
+function _spobuHash(s){ let h = 0; for (let i = 0; i < s.length; i++){ h = ((h << 5) - h + s.charCodeAt(i)) | 0; } return 'e' + Math.abs(h); }
+async function _spobuLogError(message, source, lineno, colno, stack, ts){
+  try {
+    if (typeof sb === 'undefined') return;   // sb dar nesukurtas — kaupia HEAD buferis
+    if (_errSessCount >= 10) return;
+    const msg = String(message || '').slice(0, 300);
+    if (!msg || /ResizeObserver|Script error\.?$/.test(msg)) return;
+    const hash = _spobuHash(msg + '|' + String(source || '').split('/').pop() + '|' + (lineno || ''));
+    const now = Date.now();
+    if (_errLastByHash[hash] && now - _errLastByHash[hash] < 60000) return;
+    _errLastByHash[hash] = now; _errSessCount++;
+    // 🐛 A-09 fix (2026-08-02): klaidos iš NEPRISIJUNGUSIO (login/registracija) nebedingsta —
+    // siunčiamos kaip role='anon' su user_id NULL (RLS: client_errors_insert_anon, server-fix-anon-telemetrija.sql).
+    // Anksčiau jos laukdavo login ir būdavo priskiriamos TAM, kas prisijungs (neteisinga rolė/žmogus/laikas).
+    const uid = (typeof currentUser !== 'undefined' && currentUser?.id) || null;
+    await sb.from('client_errors').insert({
+      err_hash: hash, message: msg, source: String(source || '').slice(0, 200),
+      lineno: lineno || null, colno: colno || null, stack: String(stack || '').slice(0, 2000),
+      url: (location.hash || location.pathname || '').slice(0, 150),
+      app_version: document.getElementById('app-version')?.textContent || null,
+      role: (typeof currentProfile !== 'undefined' && currentProfile?.role) || (uid ? null : 'anon'),
+      user_id: uid, ua: navigator.userAgent.slice(0, 180),
+      occurred_at: new Date(ts || Date.now()).toISOString()   // tikras įvykio laikas (buferio atveju ≠ insert laikas)
+    });
+  } catch(e){}
+}
+async function _flushEarlyErrors(){
+  try {
+    const buf = window._earlyErrors || [];
+    window._spobuBuffErr = function(){};   // nuo dabar siunčia tiesioginiai listeneriai
+    for (const e of buf.splice(0, 10)) await _spobuLogError(e.message, e.source, e.lineno, e.colno, e.stack, e.ts);
+  } catch(e){}
+}
+window.addEventListener('error', function(e){ _spobuLogError(e.message, e.filename, e.lineno, e.colno, e.error && e.error.stack); });
+window.addEventListener('unhandledrejection', function(e){ _spobuLogError('Promise: ' + (e.reason?.message || e.reason), '', null, null, e.reason && e.reason.stack); });
+// A-09: buferį išsiunčiam iš karto (anon), nebelaukiam login — setTimeout(0), kad visi let/const jau būtų deklaruoti
+setTimeout(function(){ _flushEarlyErrors(); }, 0);
+
+// ── F3: „Mano žinutės" — savo feedback + SPOBU atsakymai (visų rolių Pagalboje) ──
+async function _checkFeedbackReplies(){
+  try {
+    if (!currentUser?.id) return;
+    const { data } = await sb.from('feedback').select('replied_at').eq('user_id', currentUser.id)
+      .not('admin_reply', 'is', null).order('replied_at', { ascending: false }).limit(1);
+    const last = data && data[0] && data[0].replied_at;
+    if (!last) return;
+    if (localStorage.getItem('spobu_fb_reply_seen_' + currentUser.id) === last) return;
+    showToast(''+ico('pastas')+' Gavai atsakymą iš SPOBU — Pagalba → „Mano žinutės"', 'success', 6000);
+  } catch(e){}
+}
+async function openMyMessages(){
+  const old = document.getElementById('my-msgs-modal'); if (old) old.remove();
+  let rows = [];
+  try {
+    const { data } = await sb.from('feedback').select('type, message, status, admin_reply, replied_at, created_at')
+      .eq('user_id', currentUser?.id).order('created_at', { ascending: false }).limit(15);
+    rows = data || [];
+  } catch(e){}
+  try {
+    const last = rows.filter(r => r.replied_at).map(r => r.replied_at).sort().pop();
+    if (last && currentUser?.id) localStorage.setItem('spobu_fb_reply_seen_' + currentUser.id, last);
+  } catch(e){}
+  const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const m = document.createElement('div'); m.id = 'my-msgs-modal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:85vh;overflow-y:auto;animation:slideUp .3s ease-out;">
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;">${ico('pastas')} MANO ŽINUTĖS</div>
+      <button onclick="document.getElementById('my-msgs-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
+    </div>
+    <div style="padding:14px 18px 26px;">
+      ${rows.length ? rows.map(r => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:8px;">
+        <div style="font-size:12px;color:white;line-height:1.5;">${r.type === 'bug' ? ''+ico('bug')+'' : ''+ico('zinutes')+''} ${esc(r.message)}</div>
+        <div style="font-size:9.5px;color:var(--mut);margin-top:3px;">${new Date(r.created_at).toLocaleString('lt-LT')}</div>
+        ${r.admin_reply
+          ? `<div style="margin-top:8px;background:rgba(34,197,94,.08);border-left:3px solid var(--grn);border-radius:0 8px 8px 0;padding:8px 10px;font-size:12px;color:#d8f5df;line-height:1.5;">${ico('atgal')} <b>SPOBU:</b> ${esc(r.admin_reply)}</div>`
+          : `<div style="margin-top:6px;font-size:10px;color:var(--mut);">${ico('laukia')} Laukia atsakymo</div>`}
+      </div>`).join('') : '<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Žinučių dar nesiuntei.<br>Rašyk per „Pranešti problemą" — atsakymą rasi čia.</div>'}
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+// ── H1-H2: platformos juostos (maintenance / skelbimas / min. versija) ──
+async function loadPlatformGuards(){
+  try {
+    const { data } = await sb.from('platform_settings').select('key, value');
+    const map = {}; (data || []).forEach(r => { map[r.key] = r.value; });
+    window._platformSettings = map;
+  } catch(e){ window._platformSettings = {}; }
+}
+function applyPlatformGuards(role){
+  try {
+    const s = window._platformSettings || {};
+    // 🔧 Maintenance — ne-admin mato užsklandą ir toliau nekraunama
+    if (s.maintenance_mode === true && role !== 'admin'){
+      const d = document.createElement('div');
+      d.id = 'maintenance-overlay';
+      d.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#0b0b0f;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;';
+      d.innerHTML = `<div><div style="font-size:56px;margin-bottom:14px;">${ico('irankiai')}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:white;">VYKSTA ATNAUJINIMAS</div>
+        <div style="font-size:13px;color:#898781;margin-top:8px;line-height:1.6;">SPOBU tuoj grįš — pabandyk po kelių minučių.<br>OSU! ${ico('dirzas')}</div></div>`;
+      document.body.appendChild(d);
+      return false;
+    }
+    // 📢 Globalus skelbimas (uždaromas; seen pagal turinį)
+    const ann = s.global_announcement;
+    if (ann && ann.text){
+      const hash = 'a' + String(ann.text).length + '_' + String(ann.text).slice(0, 24).replace(/[^\w]/g, '');   // v494: tik saugūs simboliai — hash keliauja į onclick atributą
+      if (localStorage.getItem('spobu_ann_seen') !== hash && !document.getElementById('global-ann-bar')){
+        const warn = ann.type === 'warning';
+        const b = document.createElement('div');
+        b.id = 'global-ann-bar';
+        b.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:100005;max-width:560px;width:calc(100% - 24px);margin-top:6px;background:' + (warn ? 'rgba(64,34,6,.97)' : 'rgba(8,36,52,.97)') + ';border:1px solid ' + (warn ? '#fab219' : '#3987e5') + ';border-radius:12px;padding:10px 38px 10px 14px;font-size:12.5px;color:white;line-height:1.5;box-shadow:0 8px 30px rgba(0,0,0,.5);';
+        b.innerHTML = (warn ? ''+ico('ispejimas')+' ' : ''+ico('skelbimas')+' ') + String(ann.text).replace(/&/g, '&amp;').replace(/</g, '&lt;') +
+          `<button onclick="localStorage.setItem('spobu_ann_seen','${hash}');document.getElementById('global-ann-bar').remove()" style="position:absolute;top:6px;right:8px;background:transparent;border:none;color:#c3c2b7;font-size:16px;cursor:pointer;">${ico('uzdaryti')}</button>`;
+        document.body.appendChild(b);
+      }
+    }
+    // 🔄 Min. versija — sena programa gauna atnaujinimo juostą
+    const minV = (typeof s.min_app_version === 'string') ? parseInt(s.min_app_version.replace(/\D/g, ''), 10) : null;
+    const curV = parseInt((document.getElementById('app-version')?.textContent || '').replace(/\D/g, ''), 10);
+    if (minV && curV && curV < minV && !document.getElementById('minver-bar')){
+      const u = document.createElement('div');
+      u.id = 'minver-bar';
+      u.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:100006;background:rgba(38,16,2,.97);border:1px solid #FF7A33;border-radius:12px;padding:10px 14px;font-size:12.5px;color:white;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);';
+      u.innerHTML = ''+ico('atnaujinti')+' Yra nauja SPOBU versija <button onclick="location.reload(true)" style="background:#FF4D00;border:none;color:white;border-radius:8px;padding:6px 12px;font-weight:800;cursor:pointer;">Atnaujinti</button>';
+      document.body.appendChild(u);
+    }
+  } catch(e){}
+  return true;
+}
+
+// ════════════════════════════════════════
+// 🧍 14+ SAVARANKIŠKUMAS (PA): registracija be tėvų + tėvo kodas + „prašyti tėvų"
+// (server-paaugliai.sql; platformos vėliava — Admin → Platforma, klubo — jo nustatymuose)
+// ════════════════════════════════════════
+
+// Login mygtuko matomumas pagal platformos vėliavą (anon skaito TIK šį raktą)
+async function _checkSelfSignupFlag(){
+  try {
+    if (typeof sb === 'undefined' || !sb) return;
+    const { data } = await sb.from('platform_settings').select('value').eq('key', 'self_signup_14_enabled').maybeSingle();
+    const el = document.getElementById('kid-selfreg-entry');
+    if (el) el.style.display = (data && data.value === true) ? 'block' : 'none';
+  } catch(e){}
+}
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfSignupFlag, 1500); });
+
+// ── 📜 Sutikimų žurnalas (server-consents.sql) — BDAR įrodymas: kas/kada/kokia versija ──
+const POLICY_VERSION = 'v1.1';   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
+const SUPPORT_EMAIL = 'info@spobu.lt';   // reali dėžutė nuo 2026-08-18 (iv.lt catch-all persiuntimas)
+// 🎁 v439: parduotuvės BANDYMO REŽIMAS — planai su kainomis paslėpti (kainodara neskelbiama iki
+// mokėjimų įjungimo). Sausį su payments_live → pakeisti į false, pilnas langas grįžta pats.
+const SHOP_TRIAL_MODE = true;
