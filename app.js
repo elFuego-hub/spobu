@@ -294,8 +294,8 @@ async function showPendingApprovalScreen(profile) {
         <div style="font-size:14px;color:var(--mut);line-height:1.6;margin-bottom:20px;text-align:left;">
           Tavo paskyra sukurta sėkmingai!<br><br>
           ${ico('dirzas')} <strong>Klubas</strong> gavo pranešimą apie tavo registraciją ir greitai patvirtins paskyrą.<br><br>
-          ${ico('pastas')} Apie patvirtinimą informuosime per paštą: <span style="color:var(--br);">${currentUser.email}</span><br><br>
-          Atvyk vėliau!
+          ${ico('atnaujinti')} <strong>Patvirtinus šis ekranas pasikeis pats</strong> — palik programėlę atidarytą arba užsuk vėliau.<br><br>
+          ${ico('pastas')} Apie patvirtinimą parašysime ir el. paštu: <span style="color:var(--br);">${currentUser.email}</span>
         </div>
         <button class="btn-auth" onclick="checkApprovalStatus()">${ico('atnaujinti')} PATIKRINTI BŪKLĘ</button>
         <div style="margin-top:12px;">
