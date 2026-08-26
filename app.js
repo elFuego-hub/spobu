@@ -306,24 +306,87 @@ async function showPendingApprovalScreen(profile) {
     document.body.appendChild(pendingDiv);
   }
   pendingDiv.style.display = 'flex';
+  // v506: pasižymim, kad šis vartotojas laukė — patvirtinus parodysim sveikinimą,
+  // net jei jis tuo metu bus uždaręs programą ir prisijungs vėliau
+  try { localStorage.setItem(_apprKey(), '1'); } catch(_){}
+  _apprStart();   // ekranas pats aptiks patvirtinimą (kas 20 s + grįžus į programą)
 }
 
-async function checkApprovalStatus() {
-  const { data: profile } = await sb.from('profiles')
-    .select('*')
-    .eq('id', currentUser.id)
-    .single();
-  
+// ── v506: PATVIRTINIMO APTIKIMAS ────────────────────────────────────────────
+// Anksčiau laukimo ekranas buvo „negyvas": klubas patvirtindavo, o vaikas/tėvas
+// to nesužinodavo, kol pats nepaspausdavo „PATIKRINTI BŪKLĘ". O prisijungus
+// vėliau (jau patvirtintam) nebūdavo JOKIO pranešimo, kad paskyra aktyvi.
+// Dabar: 1) ekranas pats tikrina kas 20 s ir grįžus į programą,
+//        2) po patvirtinimo rodomas sveikinimo pop-up (žr. showApprovedPopup).
+function _apprKey(){ return 'spobu_was_pending_' + (currentUser?.id || ''); }
+let _apprTimer = null;
+
+function _apprStop(){
+  if (_apprTimer) { clearInterval(_apprTimer); _apprTimer = null; }
+  document.removeEventListener('visibilitychange', _apprOnVisible);
+}
+function _apprOnVisible(){
+  if (!document.hidden) checkApprovalStatus(true);   // grįžo į programą — tikrinam iškart
+}
+function _apprStart(){
+  if (_apprTimer) return;
+  _apprTimer = setInterval(() => checkApprovalStatus(true), 20000);
+  document.addEventListener('visibilitychange', _apprOnVisible);
+}
+
+// silent=true — fone (be „vis dar laukia" toast'o); silent=false — paspaudus mygtuką
+async function checkApprovalStatus(silent) {
+  // Ekranas uždarytas (atsijungė ar jau įleistas) — fono tikrinimas nebereikalingas
+  const scr = document.getElementById('pending-approval-screen');
+  if (silent && (!currentUser || !scr || scr.style.display === 'none')) { _apprStop(); return; }
+
+  let profile = null;
+  try {
+    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    profile = data;
+  } catch(e) {
+    if (!silent) showToast(ico('klaida')+' Nepavyko patikrinti — bandyk dar kartą', 'error');
+    return;   // fone tyliai praleidžiam (ryšio triktis)
+  }
+
   if (profile && profile.status === 'active') {
-    showToast(ico('atlikta')+' Paskyra patvirtinta!');
-    document.getElementById('pending-approval-screen').style.display = 'none';
-    await afterLogin(); // Iš naujo paleisti
+    _apprStop();
+    if (scr) scr.style.display = 'none';
+    await afterLogin();   // pop-up parodys pats afterLogin pabaigoje (pagal _apprKey vėliavėlę)
   } else if (profile && profile.status === 'suspended') {
+    _apprStop();
+    try { localStorage.removeItem(_apprKey()); } catch(_){}
     showToast(ico('klaida')+' Paskyra atmesta');
     await sb.auth.signOut();
-  } else {
+  } else if (!silent) {
     showToast(''+ico('laukia')+' Vis dar laukia patvirtinimo');
   }
+}
+
+// 🎉 Sveikinimas po klubo patvirtinimo — rodomas VIENĄ kartą (vėliavėlė _apprKey)
+function showApprovedPopup(role){
+  try {
+    const old = document.getElementById('approved-modal'); if (old) old.remove();
+    const isKid = role === 'kid';
+    const title = isKid ? 'PASKYRA PATVIRTINTA!' : 'PASKYRA PATVIRTINTA!';
+    const text = isKid
+      ? 'Klubas patvirtino tavo registraciją. Nuo šiol gali rinkti EXP, priimti iššūkius ir matyti savo pažangą.'
+      : 'Klubas patvirtino jūsų registraciją. Nuo šiol matysite vaiko pažangą, lankomumą ir klubo pranešimus.';
+    const m = document.createElement('div'); m.id = 'approved-modal';
+    m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100003;align-items:center;justify-content:center;padding:20px;';
+    m.onclick = (e) => { if (e.target === m) m.remove(); };
+    m.innerHTML = `<div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid var(--bdr);border-radius:22px;overflow:hidden;animation:slideUp .3s ease-out;">
+      <div style="padding:26px 22px 8px;text-align:center;">
+        <div style="font-size:52px;line-height:1;">${ico('patvirtinta')}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:27px;letter-spacing:1.5px;color:var(--grn);line-height:1.1;margin-top:12px;">${title}</div>
+      </div>
+      <div style="padding:10px 22px 6px;font-size:13px;color:#cbd2da;line-height:1.6;text-align:center;">${text}</div>
+      <div style="padding:16px 20px 22px;">
+        <button onclick="document.getElementById('approved-modal')?.remove()" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-size:14px;font-weight:800;letter-spacing:1px;cursor:pointer;font-family:inherit;">PRADĖTI ${ico('dirzas')}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(m);
+  } catch(e){ console.warn('showApprovedPopup:', e); }
 }
 
 // ════════════════════════════════════════
@@ -1208,6 +1271,15 @@ async function afterLogin() {
       // 🎁 v439: kreditų dovanos pop-up (bandymo režimas; rodo kartą, kai vaikas gavo kreditus)
       setTimeout(() => { if (typeof maybeShowCreditGiftPopup === 'function') maybeShowCreditGiftPopup(); }, 3200);
     }
+    // 🎉 v506: ką tik patvirtinta paskyra (vaikas/tėvas laukė) — sveikinimo pop-up.
+    // Rodom po portalo atsidarymo, kad kristų ant jau įkrauto namų ekrano.
+    try {
+      if (localStorage.getItem(_apprKey()) === '1' && (profile.role === 'kid' || profile.role === 'parent')) {
+        localStorage.removeItem(_apprKey());
+        setTimeout(() => showApprovedPopup(profile.role), 900);
+      }
+    } catch(_){}
+
     applyClubFlagGates(); // ${ico('atsijungti')} paslėpti išjungtas funkcijas (visi portalai)
     if (typeof applyTrialBugFab === 'function') applyTrialBugFab(); // 🐞 v442: bandymo „Klaida?" mygtukas
     setTimeout(() => { if (typeof reRegisterPushAfterLogin === 'function') reRegisterPushAfterLogin(); }, 2500); // 🔔 v436: push endpoint → paskutinis prisijungęs (šeima viename telefone)
