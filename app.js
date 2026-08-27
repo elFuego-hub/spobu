@@ -2248,44 +2248,8 @@ async function loadParentMainLatestAnnouncement(annMemberships) {
     </div>`;
 }
 
-// ════════════════════════════════════════
-// 👤 TĖVO PROFILIS
-// ════════════════════════════════════════
-async function loadParentProfile() {
-  if (!currentProfile) return;
-  const name = `${currentProfile.first_name || ''} ${currentProfile.last_name || ''}`.trim().toUpperCase();
-  const nameEl = document.getElementById('t-prof-name'); if (nameEl) nameEl.textContent = name || '–';
-  const avEl = document.getElementById('t-prof-avatar'); if (avEl) avEl.textContent = (currentProfile.first_name?.[0] || 'T').toUpperCase();
-  const emailEl = document.getElementById('t-prof-email'); if (emailEl) emailEl.textContent = currentUser?.email || '–';
-  const phoneEl = document.getElementById('t-prof-phone'); if (phoneEl) phoneEl.textContent = currentProfile.phone || '–';
-
-  // Klubo info
-  if (currentProfile.club_id) {
-    const { data: club } = await sb.from('clubs').select('name, city').eq('id', currentProfile.club_id).maybeSingle();
-    const clubEl = document.getElementById('t-prof-club');
-    if (clubEl) clubEl.textContent = club ? `${club.name}${club.city ? ' · ' + club.city : ''}` : 'Nepriskirta';
-  }
-
-  // Statistikos: vaikai, bendras EXP, aukš. lygis
-  const { data: links } = await sb.from('kid_parent_links').select('kid_id').eq('parent_id', currentProfile.id);
-  const kidIds = (links || []).map(l => l.kid_id);
-  if (kidIds.length === 0) {
-    document.getElementById('t-prof-total-exp').textContent = '0';
-    document.getElementById('t-prof-max-level').textContent = '0';
-    return;
-  }
-  const { data: kids } = await sb.from('kids').select('total_exp').in('id', kidIds);
-  const totalExp = (kids || []).reduce((s, k) => s + (k.total_exp || 0), 0);
-  const maxExp = (kids || []).reduce((m, k) => Math.max(m, k.total_exp || 0), 0);
-  const maxLevel = (typeof getStageInfo === 'function') ? getStageInfo(maxExp).globalLevel : 1;
-  document.getElementById('t-prof-total-exp').textContent = totalExp.toLocaleString('lt-LT');
-  document.getElementById('t-prof-max-level').textContent = maxLevel;
-
-  // Marketing toggle
-  loadParentMarketingToggle();
-  // Atnaujinti pagrindinio lango duomenis (mini-kortelės, vaikų preview, naujausias pranešimas)
-  loadParentMain();
-}
+// D3 (v517): loadParentProfile IŠTRINTA — negyva (nė vieno kvietimo; RADINIAI-05).
+// Gyvi jos darbai daromi kitur: marketing toggle — app.js ~1638, mini-kortelės — loadParentMain.
 
 // 📢 Klubo pranešimų pilnas sąrašas (perkraunamas iš loadAnnouncements per renderį,
 // bet jei norisi atskirti — galima padaryti naują container). Dabar palieka tą patį
@@ -8526,6 +8490,15 @@ function _resetErrLt(msg){
 }
 
 async function doLogout() {
+  // D5 (v517): išvalom paskyros būseną — bendrame įrenginyje kaupėsi visų prisijungusiųjų pėdsakai.
+  // spobu_welcome_seen_ ir spobu_ping_ paliekami sąmoningai (welcome ekranas negrįžta; DAU žymė).
+  try {
+    const drop = ['spobu_kid_', 'spobu_tier_', 'spobu_cat_tiers_', 'spobu_moment_'];
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && drop.some(p => key.startsWith(p))) localStorage.removeItem(key);
+    }
+  } catch (e) {}
   await sb.auth.signOut();
   showToast('Atsijungta', 'success');
   // A-01: vien signOut nepaslepia aktyvaus portalo — jis lieka DOM'e po login ekranu
@@ -8873,9 +8846,6 @@ async function loadKidData() {
   
   // Detektuoti naujus medalius (1, 2, 3 vieta)
   detectNewMedals();
-  
-  // Detektuoti naujus įveiktus iššūkius
-  detectNewChallenges();
 
   // Anonimiškumo display (read-only)
   const anonIcon = document.getElementById('v-anon-icon');
@@ -8895,9 +8865,6 @@ async function loadKidData() {
 
   // Iššūkiai
   await loadChallenges().catch(e => console.error('loadChallenges:', e));
-
-  // Leaderboard
-  await loadLeaderboard().catch(e => console.error('loadLeaderboard:', e));
 
   // Prenumerata
   try { loadSubscriptionCard(); } catch(e) { console.error('loadSubscriptionCard:', e); }
@@ -9983,64 +9950,8 @@ window.testParticipation = function() {
   showParticipationCelebration('Vilniaus taurė 2026', 30, 5);
 };
 
-// ════════════════════════════════════════
-// Auto-detect naujų įveiktų iššūkių
-// ════════════════════════════════════════
-async function detectNewChallenges() {
-  // ⚠️ NEBEAKTYVUS (2026-07-10): ši funkcija skaitė iš `challenge_completions`, kurios DB NĖRA (404).
-  //   Iššūkių įveikimo šventimą PILNAI tvarko checkForNewApprovedSubmissions (per challenge_submissions).
-  //   No-op: pašalina 404 console spam ir K-54 dvigubą kvietimą per resume (loadKidData + handleAppResume).
-  return;
-  /* eslint-disable no-unreachable */
-  if (!currentKid?.id) return;
-
-  const lsKey = `spobu_kid_${currentKid.id}_lastChallengeId`;
-  
-  const { data: completions } = await sb.from('challenge_completions')
-    .select('id, challenge_id, completed_at, exp_earned, approved_at')
-    .eq('kid_id', currentKid.id)
-    .eq('approval_status', 'approved')
-    .order('approved_at', { ascending: false })
-    .limit(5);
-  
-  console.log('🔵 [challenges] gautų:', completions?.length || 0);
-  
-  if (!completions || completions.length === 0) return;
-  
-  const lastKnownChallengeId = localStorage.getItem(lsKey);
-  
-  if (!lastKnownChallengeId) {
-    localStorage.setItem(lsKey, completions[0].id);
-    return;
-  }
-  
-  const lastIdx = completions.findIndex(c => c.id === lastKnownChallengeId);
-  const newCompletions = lastIdx === -1 
-    ? completions.slice(0, 1) 
-    : completions.slice(0, lastIdx);
-  
-  if (newCompletions.length === 0) return;
-  
-  localStorage.setItem(lsKey, completions[0].id);
-  
-  const challengeIds = newCompletions.map(c => c.challenge_id);
-  const { data: challenges } = await sb.from('challenges')
-    .select('id, title')
-    .in('id', challengeIds);
-  
-  const challengesMap = {};
-  (challenges || []).forEach(c => { challengesMap[c.id] = c; });
-  
-  newCompletions.forEach((comp, idx) => {
-    setTimeout(() => {
-      const ch = challengesMap[comp.challenge_id];
-      showChallengeCelebration(
-        ch?.title || 'Iššūkis',
-        comp.exp_earned || 0
-      );
-    }, 2000 + idx * 500);
-  });
-}
+// D4 (v517): detectNewChallenges IŠTRINTA — nuo 2026-07-10 buvo no-op: skaitė iš
+// `challenge_completions`, kurios DB NĖRA. Šventimą pilnai tvarko checkForNewApprovedSubmissions.
 
 // Confetti animacija (tikras CSS sparkle)
 function triggerConfetti() {
@@ -16783,8 +16694,10 @@ async function submitNewCamp(editId){
 async function deleteCamp(id, title){
   if (_ownerOnly()) return;
   if (!(await appConfirm(`Ištrinti stovyklą "${title}"?\n\nVisi dalyvių įrašai bus ištrinti.`))) return;
-  const { error } = await sb.from('club_events').delete().eq('id', id);
+  const { data, error } = await sb.from('club_events').delete().eq('id', id).select('id');
   if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
+  // D6 (v517): 0 ištrintų eilučių (RLS neleido / jau ištrinta) nebeapsimeta sėkme
+  if (!data || data.length === 0){ showToast(ico('ispejimas')+' Ištrinti nepavyko — įrašas nerastas arba neleidžiama','error',4000); loadClubCamps(); return; }
   showToast(ico('patvirtinta')+' Ištrinta','success');
   loadClubCamps();
 }
@@ -17134,8 +17047,10 @@ async function finalizeClubChallengeUI(id, title){
 async function deleteClubChallenge(id, title){
   if (_ownerOnly()) return;
   if (!(await appConfirm(`Ištrinti iššūkį "${title}"?\n\nVisi rezultatai bus ištrinti.`))) return;
-  const { error } = await sb.from('club_challenges').delete().eq('id', id);
+  const { data, error } = await sb.from('club_challenges').delete().eq('id', id).select('id');
   if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
+  // D6 (v517): 0 ištrintų eilučių (RLS neleido / jau ištrinta) nebeapsimeta sėkme
+  if (!data || data.length === 0){ showToast(ico('ispejimas')+' Ištrinti nepavyko — įrašas nerastas arba neleidžiama','error',4000); loadClubGroupChallenges(); return; }
   showToast(ico('patvirtinta')+' Ištrinta','success');
   loadClubGroupChallenges();
 }
@@ -17211,9 +17126,11 @@ async function deleteCompetition(id, title) {
   if (_ownerOnly()) return;
   if (!(await appConfirm(`Ar tikrai ištrinti "${title}"?\n\nVisi pateikti rezultatai bus IŠTRINTI!`))) return;
   
-  const { error } = await sb.from('competitions').delete().eq('id', id);
+  const { data, error } = await sb.from('competitions').delete().eq('id', id).select('id');
   if (error) { showToast(ico('klaida')+' ' + _userError(error), 'error'); return; }
-  
+  // D6 (v517): 0 ištrintų eilučių (RLS neleido / jau ištrinta) nebeapsimeta sėkme
+  if (!data || data.length === 0) { showToast(ico('ispejimas')+' Ištrinti nepavyko — įrašas nerastas arba neleidžiama', 'error', 4000); await loadClubCompetitions(); return; }
+
   showToast(ico('patvirtinta')+' Varžybos ištrintos', 'success');
   await loadClubCompetitions();
 }
@@ -21318,37 +21235,8 @@ async function loadClubCompetitionsStat() {
 }
 
 
-async function loadLeaderboard() {
-  // Gauti top 10 pagal EXP tame pačiame klube
-  const { data: top } = await sb.from('kids')
-    .select('id, total_exp, current_level, is_anonymous, profiles(first_name,last_name)')
-    .eq('profiles.club_id', currentProfile?.club_id)
-    .order('total_exp', {ascending:false})
-    .limit(10);
-
-  if (!top) return;
-
-  const medals = [''+ico('medalis')+'',''+ico('medalis')+'',''+ico('medalis')+''];
-  let myRank = 0;
-  const html = top.map((k,i) => {
-    const isMe = k.id === currentUser.id;
-    if (isMe) myRank = i+1;
-    const displayName = (k.is_anonymous && !isMe) ? 'Anonimas' :
-      `${k.profiles?.first_name||''} ${k.profiles?.last_name?.[0]||''}.`;
-    const medal = medals[i] || `${i+1}`;
-    return `<div class="li" style="${isMe?'background:rgba(255,77,0,.08);border-radius:12px;padding:10px;border:.5px dashed rgba(255,77,0,.3);':''}">
-      <div class="lr ${i<3?'r'+(i+1):''}">${medal}</div>
-      <div style="width:30px;height:30px;border-radius:50%;background:${isMe?'var(--br)':'var(--bg)'};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:${isMe?'white':'var(--mut)'};">${k.profiles?.first_name?.[0]||'?'}</div>
-      <div style="flex:1;font-size:13px;font-weight:800;${isMe?'color:var(--br);':''}">${displayName}${isMe?' (Tu)':''}</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);">${(k.total_exp||0).toLocaleString()}</div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('v-leaderboard').innerHTML = html;
-  document.getElementById('v-rank-num').textContent = `#${myRank||'–'}`;
-  document.getElementById('v-rank-total').textContent = `iš ${top.length}`;
-  document.getElementById('v-stat-exp').textContent = `${(currentKid?.total_exp||0).toLocaleString()} EXP`;
-}
+// D1 (v517): loadLeaderboard IŠTRINTA — buvo visiškai negyva: užklausa visada lūžo PGRST201
+// (kids↔profiles embed be tiesioginio FK), o rašė į #v-leaderboard, kurio index.html nebėra.
 
 // ⚡ W3-5 (F1-04): vaikas atšaukia savo KLAIDINGĄ pending pateikimą (delete tik savo + tik pending).
 // Serveryje reikalinga RLS delete politika — server-w35-kid-cancel-pending.sql.
@@ -21520,9 +21408,16 @@ async function toggleAnon() {
   // Vaiko UI'je toggle pašalintas - bet funkcija paliekama saugumui
   const tg = document.getElementById('v-anon-toggle');
   if (!tg) return; // Nėra mygtuko - vaikai nebevaldo
+  // D6 (v517): be currentKid atsarginis currentUser.id lygintų auth id su kids.id — tyliai 0 eilučių
+  if (!currentKid?.id) return;
   const newVal = !tg.classList.contains('on');
   tg.classList.toggle('on');
-  await sb.from('kids').update({is_anonymous: newVal}).eq('id', currentKid?.id || currentUser.id);
+  const { data, error } = await sb.from('kids').update({is_anonymous: newVal}).eq('id', currentKid.id).select('id');
+  if (error || !data || data.length === 0) {
+    tg.classList.toggle('on');
+    showToast(ico('klaida')+' Nepavyko pakeisti', 'error');
+    return;
+  }
   showToast(newVal ? ''+ico('profilis')+' Anoniminis' : ''+ico('zyma')+' Vardas rodomas', 'success');
 }
 
@@ -35419,7 +35314,7 @@ function subscribeKidNotifications() {
       _addSeen('ch', sub.id);
       // ⛔ Generinio žalio NEBERODOM. Tinkamą grįžtamąjį ryšį parodo
       // checkForNewApprovedSubmissions: tarpinis toast / tipo popup / įveikimo šventė
-      // per _celebQueue (PR-05; detectNewChallenges yra miręs — challenge_completions DB nėra).
+      // per _celebQueue (PR-05; detectNewChallenges ištrinta v517 — challenge_completions DB nėra).
       await loadKidData();
       if (typeof checkForNewApprovedSubmissions === 'function') checkForNewApprovedSubmissions();
       if (typeof checkForNewRejectedSubmissions === 'function') checkForNewRejectedSubmissions(); // 🔄 v400: gyvas atmetimas
@@ -36478,10 +36373,6 @@ async function handleAppResume() {
     if (currentProfile?.role === 'kid' && typeof checkForNewRejectedSubmissions === 'function') {
       checkForNewRejectedSubmissions();
     }
-    if (currentProfile?.role === 'kid' && typeof detectNewChallenges === 'function') {
-      detectNewChallenges();
-    }
-
     // 👨‍👩‍👧 TĖVAI: perregistruoti kanalus + atnaujinti ekraną + praleisti įvykiai
     if (currentProfile?.role === 'parent') {
       if (typeof resubscribeParentChannels === 'function') await resubscribeParentChannels();
@@ -36639,7 +36530,7 @@ async function showMissedEvents() {
       _addSeen(ev.sk, ev.id); // pažymėti matytu IŠKART (kad nepasikartotų)
 
       if (ev.type === 'challenge') {
-        // ⛔ Žalio NEBERODOM — tarpinį/pilną parodo checkForNewApprovedSubmissions + detectNewChallenges (atsibudus)
+        // ⛔ Žalio NEBERODOM — tarpinį/pilną parodo checkForNewApprovedSubmissions (atsibudus)
       } else if (ev.type === 'competition') {
         // ⛔ Žalio NEBERODOM — varžybų medalio/dalyvavimo šventę parodo detectNewMedals (žemiau, atsibudus)
       } else if (ev.type === 'exercise') {
