@@ -38047,6 +38047,9 @@ function _safeUrl(u){ return encodeURI(String(u || '')).replace(/['"()<>]/g, '')
 // (jie jau lietuviški) praleidžiami nepaliesti. Detalės visada lieka konsolėje.
 function _userError(e){
   const m = String((e && e.message) || e || '');
+  // B1: vartotojui parodyta klaida keliauja ir į client_errors telemetriją (žalia žinutė, ne lietuviškas vertimas).
+  // Flood apsauga — _spobuLogError viduje (tas pats hash ≤1/min, ≤10/sesiją). Stack be e.stack = kvietimo vieta.
+  try { if (m) _spobuLogError(m, 'userError', null, null, (e && e.stack) || String(new Error().stack || '')); } catch (err) {}
   if (!m) return 'Nepavyko. Bandyk dar kartą';
   if (/duplicate key|violates unique/i.test(m))            return 'Tai jau pateikta — laukia patvirtinimo';
   if (/row-level security|permission denied/i.test(m))     return 'Neturi teisės šiam veiksmui';
