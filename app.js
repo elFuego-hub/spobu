@@ -2248,7 +2248,7 @@ async function loadParentMainLatestAnnouncement(annMemberships) {
     </div>`;
 }
 
-// D3 (v517): loadParentProfile IŠTRINTA — negyva (nė vieno kvietimo; RADINIAI-05).
+// D3 (v518): loadParentProfile IŠTRINTA — negyva (nė vieno kvietimo; RADINIAI-05).
 // Gyvi jos darbai daromi kitur: marketing toggle — app.js ~1638, mini-kortelės — loadParentMain.
 
 // 📢 Klubo pranešimų pilnas sąrašas (perkraunamas iš loadAnnouncements per renderį,
@@ -8490,7 +8490,7 @@ function _resetErrLt(msg){
 }
 
 async function doLogout() {
-  // D5 (v517): išvalom paskyros būseną — bendrame įrenginyje kaupėsi visų prisijungusiųjų pėdsakai.
+  // D5 (v518): išvalom paskyros būseną — bendrame įrenginyje kaupėsi visų prisijungusiųjų pėdsakai.
   // spobu_welcome_seen_ ir spobu_ping_ paliekami sąmoningai (welcome ekranas negrįžta; DAU žymė).
   try {
     const drop = ['spobu_kid_', 'spobu_tier_', 'spobu_cat_tiers_', 'spobu_moment_'];
@@ -9950,7 +9950,7 @@ window.testParticipation = function() {
   showParticipationCelebration('Vilniaus taurė 2026', 30, 5);
 };
 
-// D4 (v517): detectNewChallenges IŠTRINTA — nuo 2026-07-10 buvo no-op: skaitė iš
+// D4 (v518): detectNewChallenges IŠTRINTA — nuo 2026-07-10 buvo no-op: skaitė iš
 // `challenge_completions`, kurios DB NĖRA. Šventimą pilnai tvarko checkForNewApprovedSubmissions.
 
 // Confetti animacija (tikras CSS sparkle)
@@ -16696,7 +16696,7 @@ async function deleteCamp(id, title){
   if (!(await appConfirm(`Ištrinti stovyklą "${title}"?\n\nVisi dalyvių įrašai bus ištrinti.`))) return;
   const { data, error } = await sb.from('club_events').delete().eq('id', id).select('id');
   if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
-  // D6 (v517): 0 ištrintų eilučių (RLS neleido / jau ištrinta) nebeapsimeta sėkme
+  // D6 (v518): 0 ištrintų eilučių (RLS neleido / jau ištrinta) nebeapsimeta sėkme
   if (!data || data.length === 0){ showToast(ico('ispejimas')+' Ištrinti nepavyko — įrašas nerastas arba neleidžiama','error',4000); loadClubCamps(); return; }
   showToast(ico('patvirtinta')+' Ištrinta','success');
   loadClubCamps();
@@ -17049,7 +17049,7 @@ async function deleteClubChallenge(id, title){
   if (!(await appConfirm(`Ištrinti iššūkį "${title}"?\n\nVisi rezultatai bus ištrinti.`))) return;
   const { data, error } = await sb.from('club_challenges').delete().eq('id', id).select('id');
   if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
-  // D6 (v517): 0 ištrintų eilučių (RLS neleido / jau ištrinta) nebeapsimeta sėkme
+  // D6 (v518): 0 ištrintų eilučių (RLS neleido / jau ištrinta) nebeapsimeta sėkme
   if (!data || data.length === 0){ showToast(ico('ispejimas')+' Ištrinti nepavyko — įrašas nerastas arba neleidžiama','error',4000); loadClubGroupChallenges(); return; }
   showToast(ico('patvirtinta')+' Ištrinta','success');
   loadClubGroupChallenges();
@@ -17128,7 +17128,7 @@ async function deleteCompetition(id, title) {
   
   const { data, error } = await sb.from('competitions').delete().eq('id', id).select('id');
   if (error) { showToast(ico('klaida')+' ' + _userError(error), 'error'); return; }
-  // D6 (v517): 0 ištrintų eilučių (RLS neleido / jau ištrinta) nebeapsimeta sėkme
+  // D6 (v518): 0 ištrintų eilučių (RLS neleido / jau ištrinta) nebeapsimeta sėkme
   if (!data || data.length === 0) { showToast(ico('ispejimas')+' Ištrinti nepavyko — įrašas nerastas arba neleidžiama', 'error', 4000); await loadClubCompetitions(); return; }
 
   showToast(ico('patvirtinta')+' Varžybos ištrintos', 'success');
@@ -21235,7 +21235,7 @@ async function loadClubCompetitionsStat() {
 }
 
 
-// D1 (v517): loadLeaderboard IŠTRINTA — buvo visiškai negyva: užklausa visada lūžo PGRST201
+// D1 (v518): loadLeaderboard IŠTRINTA — buvo visiškai negyva: užklausa visada lūžo PGRST201
 // (kids↔profiles embed be tiesioginio FK), o rašė į #v-leaderboard, kurio index.html nebėra.
 
 // ⚡ W3-5 (F1-04): vaikas atšaukia savo KLAIDINGĄ pending pateikimą (delete tik savo + tik pending).
@@ -21408,7 +21408,7 @@ async function toggleAnon() {
   // Vaiko UI'je toggle pašalintas - bet funkcija paliekama saugumui
   const tg = document.getElementById('v-anon-toggle');
   if (!tg) return; // Nėra mygtuko - vaikai nebevaldo
-  // D6 (v517): be currentKid atsarginis currentUser.id lygintų auth id su kids.id — tyliai 0 eilučių
+  // D6 (v518): be currentKid atsarginis currentUser.id lygintų auth id su kids.id — tyliai 0 eilučių
   if (!currentKid?.id) return;
   const newVal = !tg.classList.contains('on');
   tg.classList.toggle('on');
@@ -31191,15 +31191,9 @@ function openTrainerManage(tid, name, code){
   document.body.appendChild(m);
 }
 
-async function saveTrainerEdit(tid){
-  const code = document.getElementById('trm-code').value.trim();
-  const { data, error } = await sb.from('trainers').update({ trainer_code: code }).eq('id', tid).select('id');   // v460: .select() — kad matytume FAKTĄ, ne tik klaidos nebuvimą
-  if (error){ showToast(ico('klaida')+' '+error.message,'error'); return; }
-  if (!(data||[]).length){ showToast(ico('klaida')+' Nepavyko išsaugoti — neturi teisių keisti šio trenerio','error',5000); return; }
-  showToast(ico('patvirtinta')+' Išsaugota','success');
-  document.getElementById('club-trmanage-modal')?.remove();
-  loadClubTrainers();
-}
+// D2 (v518): saveTrainerEdit IŠTRINTA — nė vieno kvietimo, o jos laukas #trm-code modale
+// nebeegzistuoja (modalas perdarytas į suspend/remove). trainer_code dabar tik rodomas,
+// neredaguojamas. Prireikus grąžinti — git istorijoje iki v516.
 
 async function suspendTrainer(tid, name){
   if (_ownerOnly()) return;
@@ -35314,7 +35308,7 @@ function subscribeKidNotifications() {
       _addSeen('ch', sub.id);
       // ⛔ Generinio žalio NEBERODOM. Tinkamą grįžtamąjį ryšį parodo
       // checkForNewApprovedSubmissions: tarpinis toast / tipo popup / įveikimo šventė
-      // per _celebQueue (PR-05; detectNewChallenges ištrinta v517 — challenge_completions DB nėra).
+      // per _celebQueue (PR-05; detectNewChallenges ištrinta v518 — challenge_completions DB nėra).
       await loadKidData();
       if (typeof checkForNewApprovedSubmissions === 'function') checkForNewApprovedSubmissions();
       if (typeof checkForNewRejectedSubmissions === 'function') checkForNewRejectedSubmissions(); // 🔄 v400: gyvas atmetimas
@@ -36813,12 +36807,8 @@ function hideAll(){
   });
   Object.values(portals).forEach(p=>{const el=document.getElementById(p);if(el)el.style.display='none';});
 }
-function selectRole(el,role){
-  el.closest('.cd,div').querySelectorAll('.ch').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on');
-  document.getElementById('reg-role').value=role;
-  document.getElementById('parent-consent').style.display=role==='kid'?'flex':'none';
-}
+// D2 (v518): selectRole IŠTRINTA — nė vieno kvietimo, o #reg-role elemento index.html nebėra
+// (sena registracija pakeista anketos vedliu; iškviesta funkcija net lūžtų ant null.value).
 
 // ════════════════════════════════════════
 // PAGALBINĖS
