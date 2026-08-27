@@ -3411,12 +3411,15 @@ function _showMonthCardData(idx) {
 async function _snapshotMonth(c, narrative) {
   try {
     const k = c.kid;
-    await sb.from('monthly_reports').upsert({
+    const row = {
       kid_id: k.id, year: c.year, month: (c.month || (new Date().getMonth() + 1)),
       month_label: c.monthLabel, exp: c.exp, challenges: c.challenges,
-      records: c.records, medals: c.medals, narrative: narrative || null,
+      records: c.records, medals: c.medals,
       kyu: k.kyu || null, total_exp: k.total_exp || 0, updated_at: new Date().toISOString()
-    }, { onConflict: 'kid_id,year,month' });
+    };
+    // B4: narrative rašomas tik kai paduotas — feed'o kvietimas be jo neištrina modalo įrašyto teksto
+    if (narrative) row.narrative = narrative;
+    await sb.from('monthly_reports').upsert(row, { onConflict: 'kid_id,year,month' });
   } catch (e) { console.warn('snapshot month', e); }
 }
 
@@ -3628,6 +3631,9 @@ async function loadParentKidFeed() {
     if (items.length === 0 && !attRows.length) { list.innerHTML = '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:24px;text-align:center;"><div style="font-size:34px;margin-bottom:8px;">'+ico('pastas')+'</div><div style="font-size:12px;color:var(--mut);">Dar nėra pasiekimų šį mėnesį</div><div style="font-size:10px;color:var(--mut);margin-top:5px;line-height:1.5;">Čia atsiras vaiko medaliai, įveikti iššūkiai ir nauji rekordai</div></div>'; return; }
     // 📲 Mėnesio kortelei (dalinimasis) — išsaugom šio mėnesio statistiką
     _pmCard = { kid: k, name: (k.first_name || 'VAIKAS'), monthLabel, month: (now.getMonth() + 1), year: now.getFullYear(), exp: monthExp, challenges: chCount, records: recCount, medals: medalCount, wonComps: items.filter(i => i.kind === 'comp' && i.won), att: _attStats ? { wPres: _attStats.weekPresent, wSch: _attStats.weekScheduled, mPres: _attStats.monthPresent, mSch: _attStats.monthScheduled } : null };
+    // B4: snapshot'as atnaujinamas jau kraunant feed'ą, ne tik atidarius kortelę —
+    // 12 mėn. juostelė ir metų lentyna nebeberodo pasenusių einamojo mėnesio skaičių
+    _snapshotMonth(_pmCard, null);
 
     // ═══ 📔 DIENORAŠTIS (v413, savininko GO) — dienų sąrašas + mėnesio skaičiai ═══
     // 1) Grupavimas pagal kalendorinę dieną (lokalus laikas) + lankomumo dienos
