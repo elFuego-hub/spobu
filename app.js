@@ -3420,6 +3420,51 @@ async function _snapshotMonth(c, narrative) {
   } catch (e) { console.warn('snapshot month', e); }
 }
 
+// ── B5: html2canvas izoliuotame iframe ──────────────────────────────────────
+// html2canvas klonuoja VISĄ elemento ownerDocument, o appso dokumentas turi 6–7k
+// elementų — todėl net tuščio div piešimas trunka 5–25 s (auga su DOM; RADINIAI-04).
+// Mažame iframe dokumente tas pats piešimas ~1 s, išvestis pikselių lygiu identiška.
+// Į iframe nukopijuojami stiliai (link+style) ir temos klasės, tada elemento klonas;
+// laukiam stilių, šriftų ir paveikslėlių. Klaidos atveju — senas kelias (lėtas, bet veikia).
+async function _h2cIsolated(el, opts){
+  let ifr = null;
+  try {
+    const rect = el.getBoundingClientRect();
+    const w = Math.ceil(rect.width) || el.scrollWidth || 720;
+    const h = Math.ceil(rect.height) || el.scrollHeight || 720;
+    ifr = document.createElement('iframe');
+    ifr.setAttribute('aria-hidden', 'true');
+    ifr.style.cssText = `position:fixed;left:-10000px;top:0;width:${w}px;height:${h}px;border:0;visibility:hidden;pointer-events:none;`;
+    document.body.appendChild(ifr);
+    const idoc = ifr.contentDocument;
+    idoc.documentElement.className = document.documentElement.className;
+    idoc.body.className = document.body.className;
+    idoc.body.style.margin = '0';
+    idoc.body.style.background = 'transparent';
+    const waits = [];
+    document.querySelectorAll('link[rel="stylesheet"], style').forEach(n => {
+      const c = idoc.importNode(n, true);
+      if (c.tagName === 'LINK') waits.push(new Promise(r => { c.onload = r; c.onerror = r; setTimeout(r, 1500); }));
+      idoc.head.appendChild(c);
+    });
+    // Kloną paliekam natūraliam layout'ui — plotį diktuoja iframe body (containing block).
+    // style.width čia rašyti NEGALIMA: content-box atveju border-box plotis w išpūstų elementą.
+    idoc.body.style.width = w + 'px';
+    const clone = idoc.importNode(el, true);
+    idoc.body.appendChild(clone);
+    await Promise.all(waits);
+    try { if (idoc.fonts && idoc.fonts.ready) await idoc.fonts.ready; } catch(e){}
+    await Promise.all([...clone.querySelectorAll('img')].map(im =>
+      (im.complete && im.naturalWidth) ? null : new Promise(r => { im.onload = r; im.onerror = r; setTimeout(r, 2500); })));
+    return await html2canvas(clone, opts);
+  } catch(e){
+    console.warn('_h2cIsolated fallback:', e);
+    return await html2canvas(el, opts);
+  } finally {
+    if (ifr) ifr.remove();
+  }
+}
+
 // Sugeneruoti paveikslėlį iš kortelės ir atidaryti telefono dalinimąsi (atsarginė — atsisiuntimas)
 async function shareMonthCard() {
   const card = document.getElementById('month-card');
@@ -3427,7 +3472,7 @@ async function shareMonthCard() {
   if (typeof html2canvas !== 'function') { showToast('Pasidaryk ekrano nuotrauką ir dalinkis '+ico('nuotrauka')+'', '', 4000); return; }
   showToast('Ruošiama kortelė…', '', 2000);
   try {
-    const canvas = await html2canvas(card, { backgroundColor: '#0b0b0f', scale: 2, useCORS: true, logging: false });
+    const canvas = await _h2cIsolated(card, { backgroundColor: '#0b0b0f', scale: 2, useCORS: true, logging: false });
     canvas.toBlob(async (blob) => {
       if (!blob) { showToast('Nepavyko sukurti paveikslėlio', 'error'); return; }
       const file = new File([blob], 'spobu-menesio-kortele.png', { type: 'image/png' });
@@ -4037,7 +4082,7 @@ async function _pfPdfShare() {
     host.style.cssText = `position:absolute;left:-10000px;top:0;width:720px;background:${tbg};`;
     host.innerHTML = _pfShareHtml(m);
     document.body.appendChild(host);
-    const cv = await html2canvas(host, { scale: 2, useCORS: true, backgroundColor: tbg, logging: false });
+    const cv = await _h2cIsolated(host, { scale: 2, useCORS: true, backgroundColor: tbg, logging: false });
     host.remove(); host = null;
     const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
     const files = blob ? [new File([blob], `SPOBU-${String(m.name || 'ataskaita')}.jpg`, { type: 'image/jpeg' })] : [];
@@ -4341,7 +4386,7 @@ async function _cardShare() {
     host.style.cssText = `position:absolute;left:-10000px;top:0;width:720px;background:${st.tier.bg};`;
     host.innerHTML = _cardHtml(st);
     document.body.appendChild(host);
-    const cv = await html2canvas(host, { scale: 2, useCORS: true, backgroundColor: st.tier.bg, logging: false });
+    const cv = await _h2cIsolated(host, { scale: 2, useCORS: true, backgroundColor: st.tier.bg, logging: false });
     host.remove(); host = null;
     const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
     const files = blob ? [new File([blob], `SPOBU-${String(st.p.name || 'kortele')}-${st.m}.jpg`, { type: 'image/jpeg' })] : [];
@@ -4701,7 +4746,7 @@ async function _fbShare() {
     host.style.cssText = 'position:absolute;left:-10000px;top:0;width:720px;background:#12100e;';
     host.innerHTML = _fbHtml(st);
     document.body.appendChild(host);
-    const cv = await html2canvas(host, { scale: 2, useCORS: true, backgroundColor: '#12100e', logging: false });
+    const cv = await _h2cIsolated(host, { scale: 2, useCORS: true, backgroundColor: '#12100e', logging: false });
     host.remove(); host = null;
     const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
     const files = blob ? [new File([blob], `SPOBU-FB-${st.tpl}.jpg`, { type: 'image/jpeg' })] : [];
@@ -14693,7 +14738,7 @@ async function _renderEventCardCanvas(d, photoDataUrl){
   document.body.appendChild(host);
   try {
     try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
-    return await html2canvas(host.firstElementChild, { backgroundColor: '#0b0b0f', scale: 3, useCORS: true, logging: false });
+    return await _h2cIsolated(host.firstElementChild, { backgroundColor: '#0b0b0f', scale: 3, useCORS: true, logging: false });
   } finally { host.remove(); }
 }
 
@@ -22332,7 +22377,7 @@ async function openTrainerPostStudio(groupId){
     `<button onclick="_tpsSet('${t.k}')" data-tps="${t.k}" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:rgba(255,255,255,.85);font-size:10.5px;font-weight:700;padding:8px 13px;border-radius:99px;cursor:pointer;font-family:inherit;white-space:nowrap;">${escapeHtml(t.t)}</button>`
   ).join('');
   await _tpsLoadData();
-  _tpsSet('today');
+  await _tpsSet('today');   // B5 šalutinis: be await funkcija grįždavo anksčiau, nei ekrane atsirasdavo peržiūra
 }
 
 // Duomenys postams: šiandienos lankomumas, savaitės/mėnesio darbas
@@ -22539,7 +22584,7 @@ async function _tpsRender(){
     host.innerHTML = shareFrame('club', _tpsBody(), { photo: s.photo || null, clubLogo: s.d?.logo || null, word: _word });
     document.body.appendChild(host);
     try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
-    const cv = await html2canvas(host.firstElementChild, { backgroundColor: '#0b0b0f', scale: 3, useCORS: true, logging: false });
+    const cv = await _h2cIsolated(host.firstElementChild, { backgroundColor: '#0b0b0f', scale: 3, useCORS: true, logging: false });
     host.remove();
     s.canvas = cv;
     prev.innerHTML = `<img src="${cv.toDataURL('image/png')}" style="width:100%;max-width:300px;border-radius:10px;display:block;">`;
@@ -23871,7 +23916,7 @@ async function openChallengeShareCard(challengeId) {
     try {
       if (typeof html2canvas === 'function') {
         try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
-        const canvas = await html2canvas(cardEl, { backgroundColor: '#0b0b0f', scale: 2, useCORS: true, logging: false });
+        const canvas = await _h2cIsolated(cardEl, { backgroundColor: '#0b0b0f', scale: 2, useCORS: true, logging: false });
         await new Promise(res => canvas.toBlob(b => { _chShareFile = b ? new File([b], 'spobu-issukis.png', { type: 'image/png' }) : null; res(); }, 'image/png'));
         console.log('[ch-share] paveikslėlis paruoštas iš anksto:', !!_chShareFile);
       }
@@ -23916,7 +23961,7 @@ async function shareChallengeCardImg() {
   if (!card || typeof html2canvas !== 'function') { showToast('Pasidaryk ekrano nuotrauką '+ico('nuotrauka')+'', '', 4000); return; }
   showToast('Ruošiama…', '', 1500);
   try {
-    const canvas = await html2canvas(card, { backgroundColor: '#0b0b0f', scale: 2, useCORS: true, logging: false });
+    const canvas = await _h2cIsolated(card, { backgroundColor: '#0b0b0f', scale: 2, useCORS: true, logging: false });
     canvas.toBlob(b => {
       if (!b) { showToast('Nepavyko sukurti paveikslėlio', 'error'); return; }
       const url = URL.createObjectURL(b);
@@ -39992,7 +40037,7 @@ async function _kidShareAction(kind) {
   if (!card || typeof html2canvas !== 'function') { showToast(ico('klaida')+' Nepavyko paruošti kortelės', 'error'); return; }
   showToast(''+ico('laukia')+' Ruošiama...', 'info', 1500);
   try {
-    const canvas = await html2canvas(card, { useCORS: true, scale: 3, backgroundColor: null, logging: false });
+    const canvas = await _h2cIsolated(card, { useCORS: true, scale: 3, backgroundColor: null, logging: false });
     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
     if (!blob) throw new Error('Nepavyko sukurti paveikslo');
     const fileName = 'spobu-pasiekimas.png';
