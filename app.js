@@ -1348,7 +1348,7 @@ function loadParentMarketingToggle() {
       <div style="flex:1;">
         <div style="font-weight:700;color:${color};font-size:13px;">${ico('pastas')} Pasiūlymai ir naujienos: ${text}</div>
         <div style="font-size:11px;color:var(--mut);margin-top:2px;">
-          ${consent ? 'Spobu siųs pasiūlymus, akcijas ir naujienas' : 'Nemarketinginiai pranešimai negaunami'}
+          ${consent ? 'Spobu siųs pasiūlymus, akcijas ir naujienas' : 'Rinkodaros pranešimų negausite'}
         </div>
       </div>
     </div>
@@ -2083,7 +2083,7 @@ async function loadParentMain() {
   // ⚡ NAŠUMAS: klubas + vaikų sk. + žinutės + pranešimai — lygiagrečiai (nepriklausomi)
   const [clubR, kidsCountR, membersR, annR] = await Promise.allSettled([
     currentProfile.club_id ? sb.from('clubs').select('name, city').eq('id', currentProfile.club_id).maybeSingle() : Promise.resolve({ data: null }),
-    sb.from('kid_parent_links').select('id', { count: 'exact', head: true }).eq('parent_id', currentProfile.id),
+    sb.from('kid_parent_links').select('kid_id', { count: 'exact', head: true }).eq('parent_id', currentProfile.id),
     sb.from('conversation_members').select('last_read_at, conversations(last_message_at, last_message_sender_id)').eq('user_id', currentProfile.id),
     sb.from('conversation_members').select('last_read_at, conversations!inner(id, type, last_message_at)').eq('user_id', currentProfile.id).eq('conversations.type', 'announcement')
   ]);
@@ -10480,26 +10480,18 @@ async function renderMyDuels() {
   // Surinkti vardus
   {
     const kidIds = [...new Set(duels.flatMap(d => [d.challenger_id, d.opponent_id]))];
-    const { data: kids } = await sb.from('kids')
-      .select('id, user_id, is_anonymous, avatar_url')
-      .in('id', kidIds);
-    const userIds = (kids || []).map(k => k.user_id);
-    const { data: profs } = await sb.from('profiles')
-      .select('id, first_name, last_name')
-      .in('id', userIds);
+    // Vardai per _fetchKidNameMap (kids.first_name → profiles; user_id=null nekrečia užklausos);
+    // kids užklausa lieka tik avatarui. Dvikova tarp savo grupės — anonimiškumas negalioja.
+    const [kidsRes, nameMap] = await Promise.all([
+      sb.from('kids').select('id, is_anonymous, avatar_url').in('id', kidIds),
+      _fetchKidNameMap(kidIds)
+    ]);
+    const kids = kidsRes.data;
 
     const kidMap = {};
     (kids || []).forEach(k => { kidMap[k.id] = k; });
-    const profMap = {};
-    (profs || []).forEach(p => { profMap[p.id] = p; });
 
-    const getKidName = (kidId) => {
-      const k = kidMap[kidId];
-      if (!k) return 'Vaikas';
-      // Dvikova tarp savo grupės - anonimiškumas negalioja
-      const p = profMap[k.user_id];
-      return p ? `${p.first_name || ''} ${(p.last_name || '').charAt(0)}${p.last_name ? '.' : ''}`.trim() : 'Vaikas';
-    };
+    const getKidName = (kidId) => nameMap[kidId] || 'Vaikas';
     // Mažas varžovo avataro burbuliukas (nuotrauka arba inicialas)
     const getKidAvatarDot = (kidId) => {
       const k = kidMap[kidId];
@@ -25657,7 +25649,7 @@ async function _fetchTrainerNotifications(force) {
     sb.from('result_submissions').select('id, kid_id, created_at, exercises(name)')
       .eq('trainer_id', currentUser.id).eq('status', 'pending')
       .order('created_at', { ascending: false }).limit(20),
-    myKidIds.length ? sb.from('kids').select('id, first_name, last_name, created_at, profiles(first_name, last_name)')
+    myKidIds.length ? sb.from('kids').select('id, first_name, last_name, created_at')
       .in('id', myKidIds).eq('approval_status', 'pending')
       .order('created_at', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
     myKidIds.length ? sb.from('challenge_submissions').select('id, kid_id, created_at, challenges(title, icon, type, instructions)')
