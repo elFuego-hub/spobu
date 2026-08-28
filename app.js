@@ -21807,14 +21807,25 @@ async function loadPendingSubmissions() {
 async function approveSubmission(subId) {
   const el = document.getElementById(`sub-${subId}`);
   if (el) { if (el.dataset.busy) return; el.dataset.busy = '1'; el.style.opacity = '.3'; el.style.pointerEvents = 'none'; } // blokuoti dvigubą paspaudimą
-  const { error } = await sb.rpc('approve_submission', {
+  const { data, error } = await sb.rpc('approve_submission', {
     submission_id: subId, trainer: currentUser.id
   });
   if (error) {
     if (el) { el.style.opacity = ''; el.style.pointerEvents = ''; delete el.dataset.busy; }
     showToast(ico('klaida')+' ' + _userError(error), 'error'); return;
   }
-  showToast(ico('patvirtinta')+' Patvirtinta! EXP priskaičiuota', 'success');
+  // v519 (A5): RPC dabar grąžina `applied` ir tikrąjį `exp_gain` — nebemeluojam,
+  // kad EXP priskaičiuota, kai jos nebuvo (rezultatas nepagerintas arba jau patvirtinta).
+  const gain = (data && typeof data.exp_gain === 'number') ? data.exp_gain : null;
+  if (data && data.applied === false) {
+    showToast(ico('patvirtinta')+' Šis pateikimas jau buvo patvirtintas', 'success');
+  } else if (gain === 0) {
+    showToast(ico('patvirtinta')+' Patvirtinta! Rekordas įrašytas (EXP už šį pratimą jau maksimalus)', 'success');
+  } else if (gain !== null) {
+    showToast(ico('patvirtinta')+' Patvirtinta! +' + gain + ' EXP', 'success');
+  } else {
+    showToast(ico('patvirtinta')+' Patvirtinta!', 'success');
+  }
   loadPendingSubmissions();
   _refreshTrhPending(); // PR-02
 }
@@ -34841,20 +34852,27 @@ async function rejectChallengeSetBulk(cardId, idsCsv) {
 async function approveChallengeSubmission(subId) {
   const el = document.getElementById(`csub-${subId}`);
   if (el) { if (el.dataset.busy) return; el.dataset.busy = '1'; el.style.opacity = '.3'; el.style.pointerEvents = 'none'; }
-  const { error } = await sb.from('challenge_submissions')
+  const { data, error } = await sb.from('challenge_submissions')
     .update({
       status: 'approved',
       reviewed_at: new Date().toISOString()
     })
     .eq('id', subId)
-    .eq('status', 'pending'); // tik jei dar pending — apsauga nuo dvigubo EXP
+    .eq('status', 'pending') // tik jei dar pending — apsauga nuo dvigubo EXP
+    .select('id, exp_gain');  // v519: be `.select()` nebūtų matyti, ar eilutė iš viso pasikeitė
 
   if (error) {
     if (el) { el.style.opacity = ''; el.style.pointerEvents = ''; delete el.dataset.busy; }
     showToast(ico('klaida')+' ' + _userError(error), 'error');
     return;
   }
-  showToast(ico('patvirtinta')+' Patvirtinta! EXP priskaičiuota', 'success');
+  // v519 (A5 šeima): 0 eilučių = kažkas jau patvirtino (kitas treneris arba pakartotinis kvietimas)
+  if (!data || data.length === 0) {
+    showToast(ico('patvirtinta')+' Šis pateikimas jau buvo patvirtintas', 'success');
+  } else {
+    const g = data[0] && typeof data[0].exp_gain === 'number' ? data[0].exp_gain : null;
+    showToast(ico('patvirtinta')+' Patvirtinta!' + (g ? ' +' + g + ' EXP' : ''), 'success');
+  }
   loadPendingChallengeSubmissions();
   _refreshTrhPending(); // PR-02
 }
