@@ -4743,6 +4743,12 @@ async function maybeAskKidMoment() {
     const now = new Date();
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     if (now.getDate() < lastDay - 6) return; // tik paskutinę savaitę
+    // 🆕 v521: neklausiam to, kuris šio mėnesio dar neturi ką papasakoti.
+    // Anksčiau ką tik sukurtam vaikui modalas iššokdavo iškart (jei mėnesio pabaiga),
+    // ir vienintelis siūlomas variantas būdavo bendrinis „Stipriai padirbėjau visą mėnesį".
+    if ((currentKid.approval_status || 'approved') !== 'approved') return;      // anketa dar nepatvirtinta
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (currentKid.created_at && new Date(currentKid.created_at) >= monthStart) return; // prisijungė šį mėnesį
     const key = `spobu_moment_${currentKid.id}_${now.getFullYear()}-${now.getMonth() + 1}`;
     if (localStorage.getItem(key)) return;
     const cut = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
