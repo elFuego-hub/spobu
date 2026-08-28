@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=519">
+<link rel="stylesheet" href="styles.css?v=520">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v519</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v520</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -1994,10 +1994,14 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- TRENERIS – GRUPĖS -->
 <div class="sc" id="tr-groups">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 6px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">MANO GRUPĖS</div>
-    <div style="display:flex;gap:6px;align-items:center;">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">MANO GRUPĖS</div>
+    <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openTrInfo('groups')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleTrainerNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+        <div class="trh-nbadge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
+      </div>
+      <div onclick="openTrainerSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa" id="tr-groups-content">
@@ -4570,7 +4574,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=519"></script>
+<script src="app.js?v=520"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
