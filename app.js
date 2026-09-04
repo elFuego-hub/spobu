@@ -24581,7 +24581,7 @@ function openTrInfo(which) {
       title = ''+ico('pagalba')+' IŠŠŪKIAI';
       html = intro('Iššūkiai motyvuoja vaikus tarp treniruočių. Sukuri → vaikas atlieka ir pateikia → tu patvirtini → vaikas gauna EXP.') +
         row(''+ico('kalendorius')+'', 'Savaitės / mėnesio', 'Terminuoti tikslai. Mėnesiui — didesnis, ilgesnis uždavinys; savaitei — mažesnis.') +
-        row(''+ico('nuolatinis')+'', 'Nuolatinis', 'Galioja visą laiką.') +
+        row(''+ico('treniruote')+'', 'Treniruotės', 'Užduotis vienai treniruotei — atliekama ir patvirtinama treniruotės dieną.') +
         row(''+ico('tikslas')+'', 'Grupei arba vaikui', 'Skelbk visai grupei arba konkrečiam mokiniui.') +
         row(''+ico('programele')+'', 'Pasidalink', 'Pasibaigusio iššūkio rezultatų kortelę gali pasidalinti socialiniuose tinkluose.') +
         `<div style="font-size:11px;font-weight:800;color:#FF7A33;letter-spacing:.5px;margin:14px 0 4px;">${ico('pagalba')} PAVYZDŽIAI — TIK TAI, KĄ GALI PATIKRINTI</div>
@@ -24589,7 +24589,7 @@ function openTrInfo(which) {
          <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.9;">
            <b style="color:#fff;">${ico('kalendorius')} Savaitei (mažesni):</b> 150 atsispaudimų · 100 pritūpimų · nubėk 5 km · ateik į visas treniruotes<br>
            <b style="color:#fff;">${ico('kalendorius')} Mėnesiui (dideli):</b> nubėk 10 km · 500 atsispaudimų · planka 90 s · ištobulink naują kata · nepraleisk nė vienos treniruotės<br>
-           <b style="color:#fff;">${ico('tikslas')} Vienkartiniai (galioja metus):</b> 50 atsispaudimų be sustojimo · planka 2 min · 50 mawashi-geri be sustojimo · naujas sprinto rekordas
+           <b style="color:#fff;">${ico('treniruote')} Treniruotei (trumpi):</b> 30 atsispaudimų · planka 60 s · 20 mawashi-geri be sustojimo · 10 min šuolių per šokdynę
          </div>`;
       break;
     case 'pat':
@@ -24688,7 +24688,7 @@ function openKidInfo(which) {
       title = ''+ico('pagalba')+' IŠŠŪKIAI';
       html = intro('Treneris skiria iššūkius — užduotis, kurias atlikęs gauni EXP.') +
         row(''+ico('tikslas')+'', 'Kaip veikia', 'Matai iššūkį → atlieki → pažymi rezultatą → treneris patvirtina → gauni EXP.') +
-        row(''+ico('kalendorius')+'', 'Trukmė', 'Vieni trunka savaitę, kiti mėnesį, kai kurie nuolatiniai. Ilgesni — didesni tikslai.') +
+        row(''+ico('kalendorius')+'', 'Trukmė', 'Vieni skirti vienai treniruotei, kiti trunka savaitę ar mėnesį. Ilgesni — didesni tikslai.') +
         row(''+ico('namai')+'', 'Kam tai', 'Padeda treniruotis ir tarp pamokų, namuose. Tu pats augini savo kovotoją.') +
         row(''+ico('ranka')+'', 'Sąžiningai', 'Pažymėk tik tai, ką tikrai padarei — treneris peržiūri kiekvieną pateikimą.');
       break;
@@ -34060,6 +34060,11 @@ async function loadTrainerOwnChallenges() {
   ['training', 'weekly', 'monthly', 'one_time', 'permanent'].forEach(t => {
     const el = document.getElementById('trch-type-' + t);
     if (el) el.textContent = _typeCounts[t] || 0;
+  });
+  // v522: Vienkartinis/Nuolatinis iš kūrimo pašalinti (v406) — kortelės rodomos TIK jei dar yra senų aktyvių to tipo
+  ['one_time', 'permanent'].forEach(t => {
+    const cell = document.getElementById('trch-cell-' + t);
+    if (cell) cell.style.display = (_typeCounts[t] || 0) > 0 ? '' : 'none';
   });
   if (typeof renderTrchGroupFilter === 'function') renderTrchGroupFilter();
 

@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=521">
+<link rel="stylesheet" href="styles.css?v=522">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v521</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v522</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -1867,7 +1867,8 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> PAGAL TIPUS · AKTYVŪS (spalvos identiškos vaiko v-ish kortelėms) -->
     <div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:4px 16px 6px;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> PAGAL TIPUS · AKTYVŪS</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:0 12px 8px;">
+    <!-- v522: Vienkart./Nuolat. kortelės paslėptos (tipai iš kūrimo pašalinti v406) — rodomos TIK jei treneris dar turi senų aktyvių to tipo iššūkių (pildo loadMyChallenges) -->
+    <div style="display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:5px;padding:0 12px 8px;">
       <div style="background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,77,0,.04));border:.5px solid rgba(255,77,0,.35);border-radius:10px;padding:7px 4px;text-align:center;">
         <div style="font-size:18px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#FF4D00;line-height:1;" id="trch-type-training">0</div>
@@ -1883,12 +1884,12 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#BA68C8;line-height:1;" id="trch-type-monthly">0</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Mėnes.</div>
       </div>
-      <div style="background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,215,0,.04));border:.5px solid rgba(255,215,0,.35);border-radius:10px;padding:7px 4px;text-align:center;">
+      <div style="background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,215,0,.04));border:.5px solid rgba(255,215,0,.35);border-radius:10px;padding:7px 4px;text-align:center;display:none;" id="trch-cell-one_time">
         <div style="font-size:18px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#FFD700;line-height:1;" id="trch-type-one_time">0</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Vienkart.</div>
       </div>
-      <div style="background:linear-gradient(135deg,rgba(102,187,106,.12),rgba(102,187,106,.04));border:.5px solid rgba(102,187,106,.35);border-radius:10px;padding:7px 4px;text-align:center;">
+      <div style="background:linear-gradient(135deg,rgba(102,187,106,.12),rgba(102,187,106,.04));border:.5px solid rgba(102,187,106,.35);border-radius:10px;padding:7px 4px;text-align:center;display:none;" id="trch-cell-permanent">
         <div style="font-size:18px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-nuolatinis"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#66BB6A;line-height:1;" id="trch-type-permanent">0</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;line-height:1.1;">Nuolat.</div>
@@ -4574,7 +4575,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=521"></script>
+<script src="app.js?v=522"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
