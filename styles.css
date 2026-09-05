@@ -316,7 +316,6 @@ body.full-mobile-preview #tr-desktop-nav { display: none !important; }
 body.full-mobile-preview #t-desktop-nav { display: none !important; }
 /* Versijos ženkliukas NERODOMAS niekur, įsk. login/registraciją (savininko sprendimas 08-24) —
    lieka tik admin rolei (diagnostika). textContent lieka DOM'e — telemetrija/feedback versiją skaito toliau. */
-/* v525 deploy testas baigtas (savininkas patvirtino 09-04) — v526 vėl paslėpta, lieka tik admin. */
 #app-version { display: none !important; }
 body.portal-a #app-version { display: block !important; }
 @media (min-width: 1024px) {
