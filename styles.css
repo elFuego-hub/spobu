@@ -651,3 +651,15 @@ body.portal-v{--ico-accent:var(--br);}
 /* v505: „ATGAL" mygtukas auth ekranuose (grizti i pradzios ekrana) */
 .auth-back{display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;color:var(--mut);font-family:'Nunito',sans-serif;font-size:11px;font-weight:900;letter-spacing:1.5px;cursor:pointer;padding:0 0 14px;margin:0;}
 .auth-back:hover{color:var(--txt);}
+
+/* ===== MODULIS: planas (v528) — menesio planai: korteles, zenkliukai, chip'ai, eilutes ===== */
+.pl-card{background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px 14px;margin-bottom:8px;}
+.pl-badge{font-size:9px;font-weight:800;letter-spacing:.8px;padding:3px 8px;border-radius:99px;flex-shrink:0;white-space:nowrap;}
+.pl-badge.draft{background:rgba(255,255,255,.08);color:var(--mut);}
+.pl-badge.active{background:rgba(34,197,94,.15);color:var(--grn);}
+.pl-badge.archived{background:rgba(255,255,255,.05);color:var(--mut);opacity:.7;}
+.pl-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 11px;border-radius:99px;border:.5px solid var(--bdr);background:transparent;color:var(--mut);font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.pl-chip.on{background:rgba(255,77,0,.15);color:var(--br);border-color:rgba(255,77,0,.4);}
+.pl-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border:.5px solid var(--bdr);border-radius:10px;margin-bottom:5px;cursor:pointer;}
+.pl-row.on{background:rgba(255,77,0,.1);border-color:rgba(255,77,0,.4);}
+/* ===== /MODULIS ===== */

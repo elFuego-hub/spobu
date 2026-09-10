@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=527">
+<link rel="stylesheet" href="styles.css?v=533">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v527</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v533</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -1072,7 +1072,10 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="text-align:right;font-size:9px;color:rgba(255,255,255,.8);font-weight:700;margin-top:3px;" id="v-next-txt"></div>
       </div>
     </div>
-    
+    <!-- ===== MODULIS: planas — vaiko kortelė „Mūsų mėnesio tikslas" (v532) ===== -->
+    <div id="pl-kid-card" style="display:none;margin:10px 16px 0;"></div>
+    <!-- ===== /MODULIS ===== -->
+
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> PRANEŠIMAI MODAL - pilnas ekranas -->
     <div style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.85);align-items:flex-end;justify-content:center;" id="v-announcements-section">
       <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
@@ -2005,6 +2008,13 @@ window.addEventListener('unhandledrejection', function(e) {
       <div onclick="openTrainerSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
+  <!-- ===== MODULIS: planas — įėjimas iš grupių ekrano (v528) ===== -->
+  <div onclick="Planas.openTrainer()" style="margin:2px 16px 6px;background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:10px 13px;cursor:pointer;display:flex;align-items:center;gap:10px;">
+    <div style="font-size:18px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg></div>
+    <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;color:#FF7A33;">Mėnesio planai</div><div style="font-size:10.5px;color:var(--mut);margin-top:1px;">Grupės tikslas + savaičių treniruotės iš katalogo</div></div>
+    <div style="font-size:15px;color:var(--mut);flex-shrink:0;">›</div>
+  </div>
+  <!-- ===== /MODULIS ===== -->
   <div class="sa" id="tr-groups-content">
     <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
   </div>
@@ -2252,6 +2262,24 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
+<!-- ===== MODULIS: planas — trenerio ekranas MĖNESIO PLANAI (v528) ===== -->
+<div class="sc" id="tr-planas">
+  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
+  <div class="tb"><div class="bb" onclick="nv('tr',null,'tr-groups')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">MĖNESIO PLANAI</div>
+  <div style="width:36px;"></div></div>
+  <div class="sa" id="pl-tr-content">
+    <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('tr',this,'tr-groups')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupės</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+<!-- ===== /MODULIS ===== -->
+
 <!-- TRENERIS – GRUPĖS PILNO EKRANO LANGAS (fixed, vidinis scroll, nav lieka) -->
 <div class="sc" id="tr-group-view">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
@@ -2390,6 +2418,9 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-klaida"></use></svg>/<svg class="ico" aria-hidden="true"><use href="#i-laukia"></use></svg> Anketos būsenos juosta (rejected/pending) — pildoma loadParentKidMain -->
     <div id="tk-approval-banner" style="display:none;margin:10px 16px 0;"></div>
+    <!-- ===== MODULIS: planas — tėvų kortelė „Šio mėnesio tikslas" (v529) ===== -->
+    <div id="pl-parent-card" style="display:none;margin:10px 16px 0;"></div>
+    <!-- ===== /MODULIS ===== -->
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> STREAKAI -->
     <div style="display:flex;gap:6px;padding:0 16px;margin-top:10px;">
@@ -3453,6 +3484,9 @@ window.addEventListener('unhandledrejection', function(e) {
     <button class="k-team-tab on" data-tab="groups" onclick="switchClubTeamTab('groups')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-kalendorius"></use></svg> Grupės</button>
     <button class="k-team-tab" data-tab="trainers" onclick="switchClubTeamTab('trainers')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-treneris"></use></svg> Treneriai</button>
     <button class="k-team-tab" data-tab="students" onclick="switchClubTeamTab('students')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-mokiniai"></use></svg> Mokiniai</button>
+    <!-- ===== MODULIS: planas — klubo sub-tabas (v528) ===== -->
+    <button class="k-team-tab" data-tab="planas" onclick="switchClubTeamTab('planas')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-treniruote"></use></svg> Planai</button>
+    <!-- ===== /MODULIS ===== -->
   </div>
   <div class="sa">
     <!-- GRUPĖS -->
@@ -3497,6 +3531,11 @@ window.addEventListener('unhandledrejection', function(e) {
       <div id="k-students-list" style="padding:0 16px;"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
       <div id="k-inactive-list" style="padding:0 16px;display:none;"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
     </div>
+    <!-- ===== MODULIS: planas — klubo PLANAI panelė (v528) ===== -->
+    <div id="k-team-planas" class="k-team-pane" style="display:none;">
+      <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <!-- ===== /MODULIS ===== -->
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -4575,7 +4614,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=527"></script>
+<script src="app.js?v=533"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
