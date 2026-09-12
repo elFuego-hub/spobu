@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=533">
+<link rel="stylesheet" href="styles.css?v=554">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v533</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v554</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -675,6 +675,11 @@ window.addEventListener('unhandledrejection', function(e) {
     <input class="inp" type="text" id="kc-location" placeholder="Pvz. Vilnius, Sporto rūmai" maxlength="100" style="margin-bottom:14px;">
     
     <!-- REGISTRACIJOS NUORODA -->
+    <!-- MODULIS: Kal (v542, V2 6 etapas) — registracijos terminas ir mokestis (savininko sprendimas 09-11; server-PERTVARKA-6a) -->
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1;"><label class="lbl">REGISTRACIJA IKI <span style="color:var(--mut);font-weight:400;">(neprivaloma)</span></label><input class="inp" type="date" id="kc-deadline" style="margin-bottom:14px;"></div>
+      <div style="flex:1;"><label class="lbl">MOKESTIS <span style="color:var(--mut);font-weight:400;">(informacinis)</span></label><input class="inp" type="text" id="kc-price" placeholder="pvz. 15 €" maxlength="60" style="margin-bottom:14px;"></div>
+    </div>
     <label class="lbl">REGISTRACIJOS NUORODA <span style="color:var(--mut);font-weight:400;">(neprivaloma)</span></label>
     <input class="inp" type="url" id="kc-url" placeholder="https://..." style="margin-bottom:14px;">
     
@@ -1226,7 +1231,63 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
+<!-- ===== MODULIS: Kal — vaiko KALENDORIUS v-kal (v538, V2 4 etapas) ===== -->
+<!-- Turinį generuoja Kal.kid.render(). Nav „Iššūkiai" → „Kalendorius" perrašoma vykdymo metu (Kal.applyNav), tik su plans_enabled. -->
+<div class="sc" id="v-kal">
+  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">KALENDORIUS</div>
+    <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openKidAttendance()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Lankomumas"><svg class="ico" aria-hidden="true"><use href="#i-lankomumas"></use></svg></div>
+      <div onclick="toggleNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg></div>
+      <div onclick="openKidSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+    </div>
+  </div>
+  <div class="sa" id="kal-v-content">
+    <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-issukiai"></use><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-varzybos"></use><use href="#i-varzybos"></use></svg></span><span class="lb">Varžybos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-profilis"></use><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+<!-- ===== /MODULIS ===== -->
+
 <!-- KARJERA -->
+<!-- ===== MODULIS: Kal — vaiko GRUPĖ v-grupe (v549, V2 8 etapas) ===== -->
+<!-- Blokai perkeliami vykdymo metu (Kal.applyNav8): v-group-challenge-card (iš v-main), v-ish-duels + v-ish-gc-section (iš v-ish),
+     v-prof-teammates (iš v-prof). Tik su plans_enabled — išjungus jungiklį langas nepasiekiamas, blokai lieka senose vietose. -->
+<div class="sc" id="v-grupe">
+  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">GRUPĖ</div>
+    <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="toggleNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg></div>
+      <div onclick="openKidSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+    </div>
+  </div>
+  <div class="sa" id="kal-v-grupe">
+    <div class="st" id="kal-v-grupe-gc-t"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-trofejai"></use></svg>GRUPĖS DVIKOVOS IR IŠŠŪKIAI</div>
+    <div id="kal-v-grupe-gc"></div>
+    <div id="kal-v-grupe-duels" style="margin-top:6px;"></div>
+    <div class="kal-empty" id="kal-v-grupe-empty" style="display:none;">Šiuo metu grupės dvikovų nėra — treneris arba klubas jas paskelbia kalendoriuje.</div>
+    <div class="st" style="margin-top:8px;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-bendradarbiavimas"></use></svg>KOMANDOS DRAUGAI</div>
+    <div id="kal-v-grupe-team"></div>
+    <div style="height:12px;"></div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-kar')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-ish')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-issukiai"></use><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-comp')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-varzybos"></use><use href="#i-varzybos"></use></svg></span><span class="lb">Varžybos</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('v',this,'v-prof')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-profilis"></use><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+<!-- ===== /MODULIS ===== -->
+
 <div class="sc" id="v-kar">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 6px;">
@@ -1620,6 +1681,8 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
     
+    <!-- MODULIS: Strava (v552, V2 7b) — Strava kortelė vaiko profilyje (pildo Strava.render, tik su plans_enabled) -->
+    <div id="stv-v-card" style="display:none;"></div>
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-bendradarbiavimas"></use></svg> KOMANDOS DRAUGAI -->
     <div id="v-prof-teammates" style="margin:6px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;overflow:hidden;">
       <div style="padding:14px;text-align:center;color:var(--mut);font-size:10px;">Kraunama...</div>
@@ -1964,6 +2027,8 @@ window.addEventListener('unhandledrejection', function(e) {
       <div class="tab" onclick="switchTrTab(this,'competitions')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'duels')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dvikova"></use></svg> Dvikovos <span id="tr-duels-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'forms')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-stovykla"></use></svg> Stovyklos <span id="tr-forms-count" style="opacity:.6;">0</span></div>
+      <!-- MODULIS: planas v2 (v536) — nepatvirtintos treniruotės; rodo Kal.applyNav() tik su plans_enabled -->
+      <div class="tab" id="tr-plans-tab" style="display:none;" onclick="switchTrTab(this,'plans')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-treniruote"></use></svg> Treniruotės <span id="tr-plans-count" style="opacity:.6;">0</span></div>
     </div>
     <!-- Karjeros pateikimai -->
     <div id="tr-submissions-list">
@@ -1982,6 +2047,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
     <!-- Anketos / naujos registracijos (paslėptos pradžioje) -->
+    <div id="tr-plans-list" style="display:none;"></div><!-- MODULIS: planas v2 (v536) -->
     <div id="tr-forms-list" style="display:none;">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
@@ -2280,6 +2346,24 @@ window.addEventListener('unhandledrejection', function(e) {
 </div>
 <!-- ===== /MODULIS ===== -->
 
+<!-- ===== MODULIS: Kal — trenerio KALENDORIUS (v535, V2 2 etapas) ===== -->
+<!-- Turinį (antraštė, grupių čipsai, tinklelis, plytelės, ŠIANDIEN, iššūkiai) generuoja Kal.render(). -->
+<!-- Nav mygtukas „Iššūkiai" → „Kalendorius" perrašomas vykdymo metu (Kal.applyNav), tik su plans_enabled. -->
+<div class="sc" id="tr-kal">
+  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
+  <div class="sa" id="kal-tr-content">
+    <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupės</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('tr',this,'tr-challenges')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+<!-- ===== /MODULIS ===== -->
+
 <!-- TRENERIS – GRUPĖS PILNO EKRANO LANGAS (fixed, vidinis scroll, nav lieka) -->
 <div class="sc" id="tr-group-view">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
@@ -2388,6 +2472,11 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
   </div>
   <div class="sa">
+    <!-- ===== MODULIS: Kal — tėvų KALENDORIUS t-main viduje (v541, V2 5 etapas). Turinį generuoja Kal.parent.render();
+         rodomas tik su plans_enabled (Kal.parent.mount), tada senas turinys #tk-legacy slepiamas. Tab'o etiketė lieka „Pagrindinis" iki 8 etapo. ===== -->
+    <div id="kal-t-content" style="display:none;"></div>
+    <!-- ===== /MODULIS ===== -->
+    <div id="tk-legacy">
 
     <!-- ORANGE HERO (vaiko stadijos gradientas) -->
     <div class="hero" id="tk-hero" onclick="nv('t',null,'t-prof')" style="--acc:var(--br);background:linear-gradient(135deg,var(--br),var(--br2));position:relative;overflow:hidden;cursor:pointer;padding:15px 16px;margin:0 16px;transition:background .6s ease;border:.5px solid rgba(255,255,255,.14);box-shadow:0 14px 36px rgba(0,0,0,.4);">
@@ -2501,6 +2590,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="tk-pending-list" style="margin:0 16px 8px;">
       <div style="text-align:center;padding:8px;color:var(--mut);font-size:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;">Nėra laukiančių pateikimų</div>
     </div>
+    </div><!-- /tk-legacy -->
   </div>
   <!-- BNAV apačioje -->
   <div class="bn2">
@@ -2850,6 +2940,15 @@ window.addEventListener('unhandledrejection', function(e) {
         <div id="tk-prof-challenges" style="font-size:8px;color:var(--mut);margin-top:3px;">0 įveikta</div>
       </div>
     </div>
+    <!-- ===== MODULIS: Kal — tėvų profilio eilutės (v541, V2 5 etapas): statistika ir reitingai persikelia čia iš Pagrindinio; rodoma tik su plans_enabled ===== -->
+    <div id="kal-t-prof" style="display:none;margin:0 12px 10px;">
+      <div class="kal-card" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;border-color:rgba(255,77,0,.35);" onclick="openParentKidStats()"><div class="kal-cta-ic" style="width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.16);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Visa statistika</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Sezonas · įgūdžiai · iššūkiai · varžybos</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
+      <div class="kal-card" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;border-color:rgba(255,77,0,.35);" onclick="openParentKidStats('overall')"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.16);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Reitingai</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Vaiko kategorija · EXP, varžybos, iššūkiai, TOP įgūdis</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
+      <div class="kal-card" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;" onclick="openParentKidStats('competitions')"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:var(--mut);flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Varžybų rekordas</div><div id="kal-t-prof-rec" style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">—</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
+      <div class="kal-card" style="margin:0;cursor:pointer;display:flex;align-items:center;gap:11px;" onclick="openParentKidSwitcher()"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:var(--mut);flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Vaikai</div><div id="kal-t-prof-kids" style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">—</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
+      <div id="stv-t-row" style="display:none;"></div><!-- MODULIS: Strava (v552, V2 7b) — Strava kortelė tėvų profilyje -->
+    </div>
+    <!-- ===== /MODULIS ===== -->
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -3409,6 +3508,9 @@ window.addEventListener('unhandledrejection', function(e) {
         <div id="km-attention" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
       </div>
     </div>
+    <!-- ===== MODULIS: Kal — klubo Pagrindinio PLANAI / REIKIA DĖMESIO / ŠIANDIEN (v542, V2 6 etapas); pildo Kal.club.main(), tik su plans_enabled ===== -->
+    <div id="kal-k-main" style="display:none;"></div>
+    <!-- ===== /MODULIS ===== -->
 
     <!-- 📰 v483: SPOBU NAUJIENOS klubui (platform_news; rodoma tik kai yra naujienų) -->
     <div id="k-news-card" class="cd" style="display:none;cursor:pointer;" onclick="if(typeof openClubNewsModal==='function')openClubNewsModal()">
@@ -3611,6 +3713,26 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
+<!-- ===== MODULIS: Kal — klubo KALENDORIUS k-kal (v542, V2 6 etapas). Turinį generuoja Kal.club.render(). Nav „Renginiai" → „Kalendorius" perrašoma vykdymo metu (Kal.applyNav), tik su plans_enabled; k-events lieka pasiekiamas iš „Visi renginiai". ===== -->
+<div class="sc" id="k-kal">
+  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 4px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">KALENDORIUS</div>
+    <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
+      <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg></div>
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+    </div>
+  </div>
+  <div class="sa" id="kal-k-content"><div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div></div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('k',this,'k-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-trainers')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Klubas</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('k',this,'k-events')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-kalendorius"></use></svg></span><span class="lb">Renginiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('k',this,'k-stat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></span><span class="lb">Analitika</span><div class="nd"></div></div><div class="ni" onclick="nv('k',this,'k-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+<!-- ===== /MODULIS ===== -->
+
 <div class="sc" id="k-prof">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 6px;">
@@ -3774,6 +3896,16 @@ window.addEventListener('unhandledrejection', function(e) {
         </div>
         <div id="k-health-content" style="display:none;padding:0 16px 10px;"></div>
       </div>
+      <!-- ===== MODULIS: Kal — Analitika PLANAI (v542, V2 6 etapas); rodoma tik su plans_enabled (Kal.applyNav) ===== -->
+      <div id="kal-k-anal-sec" style="display:none;">
+        <div onclick="_toggleSec('kal-k-anal','kal-k-anal-chev',()=>Kal.club.analytics())" class="k-sec">
+          <div class="k-sec-ico" style="background:rgba(168,85,247,.15);"><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg></div>
+          <div style="flex:1;min-width:0;"><div class="k-sec-tt">PLANAI</div><div class="k-sec-ds">Kiek mėnesio treniruočių patvirtinta į priekį</div></div>
+          <span id="kal-k-anal-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
+        </div>
+        <div id="kal-k-anal" style="display:none;padding:0 16px 10px;"></div>
+      </div>
+      <!-- ===== /MODULIS ===== -->
       <div onclick="_toggleSec('k-lank-content','k-lank-chev',loadClubAttendance)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(239,68,68,.15);"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">LANKOMUMAS</div><div class="k-sec-ds">Kas nelanko — verta susisiekti</div></div>
@@ -4614,7 +4746,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=533"></script>
+<script src="app.js?v=554"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

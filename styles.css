@@ -663,3 +663,107 @@ body.portal-v{--ico-accent:var(--br);}
 .pl-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border:.5px solid var(--bdr);border-radius:10px;margin-bottom:5px;cursor:pointer;}
 .pl-row.on{background:rgba(255,77,0,.1);border-color:rgba(255,77,0,.4);}
 /* ===== /MODULIS ===== */
+
+/* ===== MODULIS: Kal (v535) — kalendorius: tinklelis, plyteles, korteles, pastangu mygtukai ===== */
+.kal-head{display:flex;align-items:flex-end;justify-content:space-between;padding:10px 16px 6px;}
+.kal-mon{font-family:'Bebas Neue',sans-serif;font-size:25px;letter-spacing:2px;line-height:1;}
+.kal-sub{font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;}
+.kal-hbtn{display:flex;gap:6px;}
+.kal-hbtn button{width:34px;height:34px;border-radius:50%;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+.kal-chips{display:flex;gap:6px;padding:0 16px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.kal-chips::-webkit-scrollbar{display:none;}
+.kal-grid{margin:0 16px 9px;background:var(--card);border:.5px solid var(--bdr);border-radius:18px;padding:9px 11px 7px;}
+.kal-dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));text-align:center;font-size:9.5px;font-weight:900;color:var(--mut);letter-spacing:1px;margin-bottom:6px;}
+.kal-cells{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;}
+.kal-d{aspect-ratio:1/0.80;border-radius:11px;background:rgba(255,255,255,.025);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;cursor:pointer;}
+.kal-d.e{background:transparent;cursor:default;}
+.kal-d b{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;}
+.kal-d u{position:absolute;bottom:4px;display:flex;gap:3px;text-decoration:none;}
+.kal-d u i{width:5px;height:5px;border-radius:50%;display:block;}
+.kal-d.today b{width:22px;height:22px;border-radius:50%;background:#FF4D00;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px rgba(255,77,0,.18);}
+.kal-d.w:after{content:'';position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%;background:#FF7A33;}
+.kal-d.ev-comp{background:rgba(168,85,247,.18);box-shadow:inset 0 0 0 1px rgba(168,85,247,.55);}
+.kal-d.ev-camp{background:rgba(59,130,246,.18);box-shadow:inset 0 0 0 1px rgba(59,130,246,.55);}
+.kal-d.ev-belt{background:rgba(255,215,0,.12);box-shadow:inset 0 0 0 1px rgba(255,215,0,.5);}
+.kal-d.ev-belt:before{content:'T';position:absolute;top:3px;left:5px;font-size:8px;font-weight:900;color:#FFD700;}
+.kal-leg{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px;font-size:9.5px;font-weight:800;color:var(--mut);align-items:center;}
+.kal-leg span{display:flex;align-items:center;gap:4px;}
+.kal-leg i{width:5px;height:5px;border-radius:50%;display:block;}
+.kal-tiles{display:flex;gap:9px;margin:0 16px 9px;}
+.kal-tile{flex:1;min-width:0;background:var(--card);border:.5px solid var(--bdr);border-radius:16px;padding:10px 12px;position:relative;cursor:pointer;}
+.kal-tile.ev-comp{border-color:rgba(168,85,247,.4);}
+.kal-tile.ev-camp{border-color:rgba(59,130,246,.4);}
+.kal-tile.ev-belt{border-color:rgba(255,215,0,.4);}
+.kal-tile.ev-ok{border-color:rgba(34,197,94,.4);}
+.kal-tile .tt{font-size:9px;font-weight:900;letter-spacing:.8px;color:var(--mut);}
+.kal-tile .tn{font-size:12.5px;font-weight:900;margin-top:4px;line-height:1.25;}
+.kal-tile .tc{font-size:10px;color:var(--mut);font-weight:700;margin-top:4px;line-height:1.3;}
+.kal-tile .bdg{position:absolute;top:-6px;right:8px;background:#FF4D00;color:#fff;font-size:9px;font-weight:900;padding:2px 8px;border-radius:99px;}
+.kal-bar{height:4px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:6px;overflow:hidden;}
+.kal-bar span{display:block;height:100%;background:#FF4D00;}
+.kal-cta{margin:0 16px 11px;display:flex;align-items:center;gap:11px;background:linear-gradient(150deg,rgba(255,77,0,.22),var(--card) 70%);border:.5px solid rgba(255,77,0,.4);border-radius:18px;padding:9px 14px;cursor:pointer;}
+.kal-cta .ic{width:32px;height:32px;border-radius:10px;background:rgba(255,77,0,.2);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;}
+.kal-sec{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--mut);padding:6px 16px;}
+.kal-card{background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:9px 12px;margin:0 16px 6px;}
+.kal-card.ev-comp{border-left:3px solid #A855F7;}
+.kal-card.ev-camp{border-left:3px solid #3B82F6;}
+.kal-card.ev-belt{border-left:3px solid #FFD700;}
+.kal-empty{margin:0 16px 8px;padding:14px;text-align:center;color:var(--mut);font-size:11.5px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;}
+.kal-tag{font-size:8.5px;font-weight:900;letter-spacing:.6px;padding:2px 7px;border-radius:99px;white-space:nowrap;margin-left:4px;}
+.kal-tag.mut{background:rgba(255,255,255,.06);color:var(--mut);}
+.kal-tag.ai{background:rgba(255,77,0,.16);color:#FF7A33;}
+.kal-tag.ok{background:rgba(34,197,94,.15);color:var(--grn);}
+.kal-acts{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap;}
+.kal-b{font-size:11px;font-weight:800;padding:7px 12px;border-radius:99px;background:rgba(255,255,255,.05);border:.5px solid var(--bdr);color:var(--txt);cursor:pointer;}
+.kal-b.o{background:rgba(255,77,0,.15);border-color:rgba(255,77,0,.45);color:#FF7A33;}
+.kal-b.g{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.45);color:var(--grn);}
+/* pastangu mygtukai lankomumo modale (design-treneris/_body_po.html) */
+.att-pick{display:flex;gap:4px;flex-shrink:0;}
+.att-pick span{font-size:9.5px;font-weight:900;padding:5px 8px;border-radius:99px;background:rgba(255,255,255,.05);border:.5px solid var(--bdr);color:var(--mut);cursor:pointer;white-space:nowrap;}
+.att-pick .max.on{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.55);color:#22C55E;}
+.att-pick .ok.on{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:var(--txt);}
+.att-pick .light.on{background:rgba(79,195,247,.18);border-color:rgba(79,195,247,.5);color:#4FC3F7;}
+/* vaiko kalendoriaus langeliai (v538, design-tevai/_kid_cal_css.txt): buvo = zalias + EXP, busima = juosta, renginiai = spalva + zyma */
+.kal-v-d{aspect-ratio:1/0.92;border-radius:11px;background:rgba(255,255,255,.025);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;position:relative;cursor:pointer;}
+.kal-v-d.e{background:transparent;cursor:default;}
+.kal-v-d .bar{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:15px;height:3px;border-radius:2px;background:#FF4D00;}
+.kal-v-d .tag{font-size:8px;font-weight:900;line-height:1;}
+.kal-v-d .tag.ev{color:var(--mut);}
+.kal-v-d.was{background:rgba(34,197,94,.16);color:#22C55E;}
+.kal-v-d.miss{color:var(--mut);}
+.kal-v-d.miss > span:first-child{text-decoration:line-through;opacity:.6;}
+.kal-v-d.today > span:first-child{width:24px;height:24px;border-radius:50%;background:#FF4D00;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px rgba(255,77,0,.18);}
+.kal-v-d.ev-comp{background:rgba(168,85,247,.16);box-shadow:inset 0 0 0 1px rgba(168,85,247,.45);}
+.kal-v-d.ev-comp .tag.ev{color:#A855F7;}
+.kal-v-d.ev-camp{background:rgba(59,130,246,.18);box-shadow:inset 0 0 0 1px rgba(59,130,246,.5);}
+.kal-v-d.ev-camp .tag.ev{color:#3B82F6;}
+.kal-v-d.ev-belt{background:rgba(255,215,0,.12);box-shadow:inset 0 0 0 1px rgba(255,215,0,.45);}
+.kal-v-d.ev-belt .tag.ev{color:#FFD700;}
+.kal-v-d.was.ev-comp,.kal-v-d.was.ev-camp,.kal-v-d.was.ev-belt{background:rgba(34,197,94,.16);}
+/* ===== /MODULIS ===== */
+
+/* ===== MODULIS: planas v2 (v536) — vedlys, etapas, koreguoti, mainai ===== */
+.pl-steps{display:flex;gap:5px;padding:4px 18px 6px;}
+.pl-steps i{flex:1;height:4px;border-radius:99px;background:rgba(255,255,255,.08);}
+.pl-steps i.on{background:#FF4D00;}
+.pl-q{font-size:13px;font-weight:900;padding:6px 16px 7px;}
+.pl-qh{font-size:10.5px;color:var(--mut);font-weight:700;padding:0 16px 8px;line-height:1.4;margin-top:-4px;}
+.pl-rec{margin:0 16px 13px;background:rgba(168,85,247,.09);border:.5px solid rgba(168,85,247,.4);border-radius:14px;padding:10px 13px;}
+.pl-stage{margin:0 16px 8px;background:var(--card);border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:11px 13px;display:flex;align-items:center;gap:10px;}
+.pl-opt{display:flex;align-items:center;gap:10px;margin:0 16px 5px;padding:9px 13px;border-radius:14px;background:var(--card);border:.5px solid var(--bdr);cursor:pointer;}
+.pl-opt.on{border-color:rgba(255,77,0,.5);background:rgba(255,77,0,.07);}
+.pl-opt .box,.box{width:20px;height:20px;border-radius:7px;border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:11px;}
+.pl-opt .box.on,.box.on{background:#FF4D00;border-color:#FF4D00;}
+.pl-opt .t{font-size:12.5px;font-weight:900;}
+.pl-opt .s{font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;line-height:1.35;}
+.pl-hero{margin:0 16px 12px;border-radius:18px;padding:13px 15px;background:linear-gradient(155deg,rgba(255,77,0,.22),var(--card) 68%);border:.5px solid rgba(255,77,0,.3);}
+.pl-hero .tt{font-size:9.5px;font-weight:900;letter-spacing:1.4px;color:#FF7A33;}
+.pl-cta{width:100%;background:#FF4D00;color:#fff;border:none;border-radius:99px;padding:14px;text-align:center;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;}
+.pl-cta.g{background:#22C55E;}
+.pl-bar{height:5px;border-radius:99px;background:rgba(255,255,255,.09);margin-top:7px;overflow:hidden;display:flex;gap:1px;}
+.pl-bar span{display:block;height:100%;}
+.pl-blk{display:flex;gap:9px;align-items:flex-start;margin:0 16px 7px;padding:9px 11px;border-radius:14px;background:var(--card);border:.5px solid var(--bdr);}
+.pl-blk.locked{border-color:rgba(255,77,0,.35);}
+.pl-ty{font-size:8.5px;font-weight:900;letter-spacing:.8px;padding:3px 7px;border-radius:99px;border:.5px solid;background:rgba(255,255,255,.04);}
+.pl-blk input:focus,.pl-blk textarea:focus{outline:none;border-bottom:.5px solid var(--br);}
+/* ===== /MODULIS ===== */
