@@ -1724,7 +1724,8 @@ function openParentHelpModal() {
   // SUPPORT_EMAIL — globalus const (viršuje, prie POLICY_VERSION)
   // v443: mailto nuorodos pakeistos contactSupport() / openParentReportModal srautais
   const faq = [
-    ['Kaip matau vaiko progresą?', 'Pagrindiniame lange — vaiko hero, reitingai, artimiausios varžybos. „Kelias" — statistika pagal kategorijas. „Pasiekimai" — naujausi medaliai, iššūkiai ir rekordai.'],
+    ['Kaip matau vaiko progresą?', 'Kalendoriuje — kada buvo, kiek EXP ir pastangų kiekvieną dieną (spauskite dieną). „Kelias" — statistika pagal kategorijas. „Pasiekimai" — naujausi medaliai, iššūkiai ir rekordai.'],
+    ['Kas yra pastangos ir automatiniai iššūkiai?', 'Po treniruotės treneris įvertina pastangas: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP (matote, jei klubas įjungęs). Lankomumo, varžybų, egzamino ir Strava iššūkiai užsiskaito patys, kitus vaikas pateikia, treneris tvirtina.'],
     ['Kodėl negaliu pateikti rezultatų?', 'Tu esi stebėtojas — pateikti iššūkius/rezultatus gali tik pats vaikas savo paskyroje. Tu matai progresą ir palaikai.'],
     ['Kaip pridėti antrą vaiką?', 'Paspausk avatarą viršuje → „Pridėti vaiką" ir užpildyk anketą — ją patvirtins klubas. Jei vaikas jau turi SPOBU paskyrą, paprašyk jo kodo ir spausk „Su kodu".'],
     ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsas turi būti įdiegtas į pradžios ekraną ir duotas pranešimų leidimas.'],
@@ -1839,14 +1840,17 @@ function openHelpModal(who) {
   const FAQ = {
     trainer: [
       ['Iš kur atsiranda grupės ir vaikai?', 'Grupes kuria ir vaikus priskiria KLUBAS. Tu matai tau priskirtas grupes (kaip pagrindinis treneris arba asistentas) ir valdai jų kasdienybę.'],
-      ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai pratimų rekordus, iššūkius, varžybas ir dvikovas. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
+      ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai pratimų rekordus, rankinius iššūkius, varžybas ir dvikovas. Lankomumo, varžybų, egzamino ir Strava iššūkiai užsiskaito patys — jų tvirtinti nereikia. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
+      ['Kaip veikia planai ir kalendorius?', 'Kalendorius — pradinis langas. „Planuoti treniruotes": 10–15 min klausimų, AI paruošia etapą; kiekvieną treniruotę patvirtini tu (kol nepatvirtinta, vaikai nemato). Dienos lapas: lankomumas, pastangos, blokai.'],
+      ['Kas yra pastangos?', 'Žymėdamas lankomumą kiekvienam vaikui parenki: iš visų jėgų (+20 EXP) · gerai (+14) · lengviau (+8). Numatyta „gerai" — žymėk tik išimtis. Vaikas ir tėvai (jei klubas įjungęs) tai mato.'],
       ['Kaip skirti iššūkį?', 'Grupės lange „'+ico('tikslas')+' IŠŠŪKIS GRUPEI" arba paspaudęs vaiką — asmeninį iššūkį. Siūlyk tik tai, ką gali patikrinti.'],
-      ['Kaip žymiu lankomumą?', 'Grupės lange „'+ico('lankomumas')+' ŽYMĖTI LANKOMUMĄ". Pilna savaitė → +15 EXP vaikui, pilnas mėnuo → +100.'],
+      ['Kaip žymiu lankomumą?', 'Kalendoriuje spausk dieną → „Pažymėti lankomumą" (data jau įrašyta) arba Grupės lange „'+ico('lankomumas')+' ŽYMĖTI LANKOMUMĄ". Pilna savaitė → +15 EXP vaikui, pilnas mėnuo → +100.'],
       ['Kur matau pratimų normatyvus?', 'Antraštėje spausk '+ico('jega')+' — matysi rėžius ('+ico('medalis')+''+ico('medalis')+''+ico('medalis')+''+ico('trofejai')+') pagal lytį ir amžių.'],
       ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsą reikia įsidėti į pradžios ekraną.']
     ],
     kid: [
-      ['Kaip gaunu EXP ir keliu lygį?', 'Atlik pratimus Kelio lange, įveik trenerio iššūkius, dalyvauk varžybose ir lankyk treniruotes. Treneris patvirtina — ir EXP auga!'],
+      ['Kaip gaunu EXP ir keliu lygį?', 'Lankyk treniruotes ir stenkis — treneris įvertina pastangas (iš visų jėgų +20 · gerai +14 · lengviau +8). Įveik iššūkius, gerink rekordus Kelio lange, dalyvauk varžybose. Viską matai Kalendoriuje.'],
+      ['Kurie iššūkiai skaičiuojasi patys?', 'Lankomumo, varžybų, diržo egzamino ir Strava (bėgimas, dviratis, ėjimas su GPS). Prie jų — žyma „skaičiuojama automatiškai". Kitus pateiki pats, treneris patvirtina.'],
       ['Kaip pateikiu rezultatą?', '„Kelias" lange pasirink sritį ir pratimą, įrašyk naują rekordą. Treneris jį patvirtins.'],
       ['Kas yra dvikova?', '1 prieš 1 iššūkis draugui (atsispaudimai, bėgimas...). Iškviesk draugą, abu atlikit, treneris patvirtina — nugalėtojas gauna daugiau EXP!'],
       ['Kodėl mano lygis žemas?', 'Lygis auga nuo surinkto EXP — kuo daugiau treniruojiesi, atlieki iššūkių ir gerini rekordus, tuo greičiau kyla. Reitinguose lyginamas tik su savo amžiaus ir lyties draugais. OSU! '+ico('dirzas')+''],
@@ -1915,44 +1919,47 @@ function openHelpModal(who) {
 // 👋 WELCOME MODALAS — pasveikinimas po pirmo prisijungimo (vaikas/tėvas/treneris/klubas; admin — ne)
 // Raktas spobu_welcome_seen_<userId> saugo matytą versiją; pakėlus WELCOME_VERSION rodys visiems iš naujo.
 // ════════════════════════════════════════
-const WELCOME_VERSION = 'v1';
+const WELCOME_VERSION = 'v2';   // v559: V2 (kalendorius, planai, pastangos, automatiniai iššūkiai) — rodoma visiems iš naujo
 function _welcomeKey(){ return 'spobu_welcome_seen_' + (currentUser?.id || ''); }
 const WELCOME_CONTENT = {
   kid: {
     icon: 'dirzas', title: 'SVEIKAS ATVYKĘS Į SPOBU!', cta: 'PRADĖTI!', foot: 'OSU!',
     items: [
-      ['augimas',    '<b style="color:white;">KELIAS</b> — atlik pratimus, rink EXP ir kilk lygiais'],
-      ['dvikova',    '<b style="color:white;">Iššūkiai ir dvikovos</b> — varžykis su draugais ir siek rekordų'],
-      ['zenkliukai', '<b style="color:white;">Diržai ir ženkliukai</b> — visas tavo progresas vienoje vietoje'],
-      ['bug',        'Tai pirmoji SPOBU versija. Radai klaidą? Spausk <b style="color:white;">🐞</b> mygtuką kampe — parašysi mums'],
-      ['pagalba',    'Jei kažkas neveikia ar nesupranti — pasakyk tėvams arba treneriui']
+      ['kalendorius', '<b style="color:white;">Kalendorius</b>tavo treniruotės, renginiai ir EXP kiekvienai dienai. Šiandien: ką darysim ir ką pasiimti'],
+      ['jega',        '<b style="color:white;">Pastangos</b>po treniruotės treneris įvertina: iš visų jėgų <b style="color:white;">+20</b> · gerai +14 · lengviau +8 EXP'],
+      ['tikslas',     '<b style="color:white;">Iššūkiai</b>lankomumo, varžybų, egzamino ir Strava iššūkiai skaičiuojasi patys, kitus tvirtina treneris'],
+      ['augimas',     '<b style="color:white;">Kelias</b>pratimai, rekordai, lygiai. Diržas ir kanji — tavo etapas'],
+      ['bug',         'Radai klaidą? Spausk <b style="color:white;">🐞</b> mygtuką kampe — parašysi mums']
     ]
   },
   parent: {
     icon: 'dirzas', title: 'SVEIKI ATVYKĘ Į SPOBU!', cta: 'PRADĖTI',
     items: [
-      ['vaikas',     'SPOBU — vaiko sporto motyvacijos programėlė: progresas, iššūkiai, diržai ir AI įžvalgos'],
-      ['premium',    'Esate <b style="color:white;">pirmieji bandytojai</b> — jums <b style="color:white;">viskas įjungta nemokamai</b>: ir vaiko žaidimas, ir gili statistika, ir AI įžvalgos'],
-      ['bug',        'Tai pradinė versija — tobuliname kasdien. Radę klaidą: Pagalba → „Pranešti problemą". Atsakymą gausite ten pat („Mano žinutės")'],
-      ['pranesimai', 'Įjunk push pranešimus nustatymuose — nepraleisi trenerio žinučių']
+      ['kalendorius', '<b style="color:white;">Kalendorius</b>vaiko treniruotės, ar buvo, kiek pastangų įdėjo, kas laukia. Spauskite dieną — visos detalės'],
+      ['vaikas',      'Keli vaikai? Perjunkite čipsais kalendoriaus viršuje'],
+      ['tikslas',     'EXP ir iššūkiai — dalis skaičiuojasi automatiškai (lankomumas, varžybos, Strava), kitus tvirtina treneris'],
+      ['premium',     'Esate <b style="color:white;">pirmieji bandytojai</b> — jums <b style="color:white;">viskas įjungta nemokamai</b>'],
+      ['bug',         'Radę klaidą: Pagalba → „Pranešti problemą". Atsakymą gausite ten pat („Mano žinutės")']
     ]
   },
   trainer: {
     icon: 'treneris', title: 'SVEIKAS, TRENERI!', cta: 'PRADĖTI',
     items: [
-      ['grupe',       'Tavo grupės, lankomumas, rezultatų tvirtinimas ir vaikų progresas — vienoje vietoje'],
-      ['startas',     'Pirmi žingsniai: pasitikrink grupes → žymėk lankomumą → tvirtink pateiktus rezultatus'],
-      ['teisingumas', 'Tavo patvirtinimai formuoja vaikų statistiką — vertink sąžiningai'],
-      ['bug',         'Pradinė versija: radęs klaidą — Pagalba → „Pranešti problemą"']
+      ['kalendorius', '<b style="color:white;">Kalendorius</b>pradinis langas: grupės pagal tvarkaraštį, nepažymėtos dienos švyti, dienos lapas su lankomumu'],
+      ['prideti',     '<b style="color:white;">Planuoti treniruotes</b>10–15 min klausimų, AI paruošia etapą; tu patvirtini, vaikai mato'],
+      ['jega',        '<b style="color:white;">Pastangos</b>žymėdamas lankomumą įvertink: iš visų jėgų · gerai · lengviau (20 / 14 / 8 EXP)'],
+      ['tikslas',     '<b style="color:white;">Iššūkiai</b>pasiūlyk iš plano; lankomumo, varžybų, egzamino ir Strava iššūkiai tvirtinasi patys, rankinius tvirtini tu'],
+      ['bug',         'Radęs klaidą — Pagalba → „Pranešti problemą"']
     ]
   },
   club_admin: {
     icon: 'klubas', title: 'SVEIKI! ČIA JŪSŲ KLUBO CENTRAS', cta: 'PRADĖTI',
     items: [
-      ['mokiniai',   'Nariai, grupės, treneriai, renginiai ir klubo funkcijų įjungimas/išjungimas'],
-      ['startas',    'Pradžios vediklis (Nustatymuose) padės paruošti klubą: grupė → treneris → vaikai'],
-      ['nustatymai', 'Jūs valdote, kurios funkcijos veikia jūsų klube (pvz., vaikų žinutės treneriui)'],
-      ['bug',        'Pradinė versija: pastabas siųskite per Pagalba → „Pranešti problemą"']
+      ['kalendorius', '<b style="color:white;">Kalendorius</b>visų grupių treniruotės, nepatvirtinti planai, renginiai; „Naujas renginys" vienoje vietoje'],
+      ['mokiniai',    'Nariai, grupės, treneriai, registracijos — Klubo skiltyje'],
+      ['nustatymai',  'Jungikliai Profilyje: planai, treneriai kuria planus, pastangos tėvams, Strava automatinis tvirtinimas'],
+      ['startas',     'Pradžios vediklis (Nustatymuose): grupė → treneris → vaikai'],
+      ['bug',         'Pastabas siųskite per Pagalba → „Pranešti problemą"']
     ]
   }
 };
@@ -1968,25 +1975,19 @@ function maybeShowWelcome(role, force){
       if (document.getElementById('ageup-modal') || document.getElementById('club-onboard')) return;
     }
     const old = document.getElementById('welcome-modal'); if (old) old.remove();
-    const rows = cfg.items.map(it => `<div style="display:flex;align-items:flex-start;gap:12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:8px;">
-      <div style="font-size:22px;flex-shrink:0;line-height:1.2;">${ico(it[0])}</div>
-      <div style="font-size:12.5px;color:#cbd2da;line-height:1.55;">${it[1]}</div>
-    </div>`).join('');
-    const m = document.createElement('div'); m.id = 'welcome-modal';
-    m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:center;justify-content:center;padding:20px;';
-    m.onclick = (e) => { if (e.target === m) _welcomeClose(); };
-    m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border:.5px solid var(--bdr);border-radius:22px;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-      <div style="padding:22px 20px 6px;text-align:center;">
-        <div style="font-size:46px;line-height:1;">${ico(cfg.icon)}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1.5px;color:white;line-height:1.1;margin-top:10px;">${cfg.title}</div>
-      </div>
-      <div style="padding:14px 18px 4px;">${rows}</div>
-      <div style="padding:8px 18px 20px;">
-        <button onclick="_welcomeClose()" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF8000);border:none;color:white;border-radius:12px;font-size:14px;font-weight:800;letter-spacing:1px;cursor:pointer;font-family:inherit;">${cfg.cta}</button>
-        ${cfg.foot ? `<div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--mut);margin-top:12px;">${cfg.foot} ${ico('dirzas')}</div>` : ''}
-      </div>
-    </div>`;
-    document.body.appendChild(m);
+    const rows = cfg.items.map(it => `<div class="hlp-row"><div class="ic">${ico(it[0])}</div><div class="tx">${it[1]}</div></div>`).join('');
+    const body = `<div style="text-align:center;padding:2px 18px 8px;"><div style="font-size:42px;line-height:1;">${ico(cfg.icon)}</div></div><div style="padding:0 18px;">${rows}</div>${cfg.foot ? `<div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--mut);margin-top:10px;">${cfg.foot} ${ico('dirzas')}</div>` : ''}`;
+    const foot = `<button class="pl-cta" style="width:100%;" onclick="_welcomeClose()">${cfg.cta}</button>`;
+    let m;
+    if (typeof Planas !== 'undefined' && Planas.sheet) {   // v559: tas pats lapas kaip visur (kalendorius v2)
+      m = Planas.sheet('welcome-modal', cfg.title, body, foot, { z: 100002, noClose: true });
+      const x = m.querySelector('.kal-x'); if (x) x.onclick = _welcomeClose;
+    } else {
+      m = document.createElement('div'); m.id = 'welcome-modal';
+      m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
+      m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;padding:18px 0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1.5px;text-align:center;">${cfg.title}</div>${body}<div style="padding:8px 18px 0;">${foot}</div></div>`;
+      document.body.appendChild(m);
+    }
   } catch(e){ console.warn('maybeShowWelcome:', e); }
 }
 
@@ -15343,6 +15344,7 @@ function openClubInfo(screen){
   const T = {
     main: [''+ico('klubas')+' KLUBO PAGRINDINIS', 'Čia matai klubo apžvalgą: trenerių ir vaikų skaičių, žinutes ir greitus veiksmus. Viršuje — '+ico('pagalba')+' info, '+ico('pranesimai')+' pranešimai, '+ico('nustatymai')+' nustatymai.'],
     events: [''+ico('kalendorius')+' RENGINIAI', 'Kurk ir valdyk varžybas, diržų laikymą, stovyklas ir bendrus grupių iššūkius — viskas vienoje vietoje.'],
+    kal: [''+ico('kalendorius')+' KALENDORIUS', 'Visų grupių treniruotės pagal tvarkaraštį (kvadratėliai — grupių spalvos, čipsai filtruoja). Oranžinis taškelis — treniruotė be patvirtinto plano; švytinti diena — praėjusi be pažymėto lankomumo. Dienos lape matai trenerį, gali patvirtinti planą arba priminti treneriui. „Naujas renginys" — varžybos, stovykla, seminaras, diržo testas; renginių sąrašas apačioje — mato visi. Jungikliai (Profilis → nustatymai): planai, treneriai kuria planus, pastangos tėvams, Strava automatinis tvirtinimas.'],
     trainers: [''+ico('dirzas')+' TRENERIAI', 'Matai visus klubo trenerius, jų aktyvumą (🟢🟡🔴), gali redaguoti, perkelti vaikus ar pašalinti trenerį.'],
     team: [''+ico('grupe')+' KLUBAS', 'Čia tvarkai klubo komandą trijuose skirtukuose:<br><br>'+ico('kalendorius')+' <b>Grupės</b> — kuri grupes, priskiri joms trenerį (ir asistentus) bei treniruočių laikus, dedi vaikus į grupes. Vaiko treneris išvedamas iš jo grupės.<br><br>'+ico('dirzas')+' <b>Treneriai</b> — visi klubo treneriai, jų aktyvumas (🟢🟡🔴) ir EXP reitingas; gali valdyti, sustabdyti ar pašalinti.<br><br>'+ico('mokiniai')+' <b>Mokiniai</b> — „Registracijos" (tvirtini arba atmeti naujų vaikų anketas) ir „Neaktyvūs" (vaikai, nustoję lankyti — verta susisiekti).'],
     stat: [''+ico('statistika')+' ANALITIKA', 'Gili klubo statistika: diržai, medaliai, amžiai, lankomumas, apyvarta ir reitingai.'],
@@ -24666,21 +24668,21 @@ function _trNormRender() {
 
 // 💡 Trenerio langų gidas — kiekvienas langas turi lemputę su paaiškinimu
 function openTrInfo(which) {
-  const row = (ic, t, d) => `<div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
-      <div style="font-size:18px;flex:none;line-height:1.3;">${ic}</div>
-      <div style="font-size:12.5px;line-height:1.5;"><b style="color:#fff;">${t}</b><br><span style="color:var(--mut);">${d}</span></div>
-    </div>`;
-  const intro = (txt) => `<div style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:14px;">${txt}</div>`;
+  const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b>${t}</b>${d}</div></div>`;   // v559: kalendorius v2 stilius
+  const intro = (txt) => `<div class="hlp-intro">${txt}</div>`;
   let title = '', html = '';
   switch (which) {
     case 'main':
-      title = ''+ico('pagalba')+' PAGRINDINIS';
-      html = intro('Greita dienos apžvalga.') +
-        row(''+ico('dirzas')+'', 'Tavo lygis', 'Hero rodo tavo trenerio etapą ir lygį — auga už patvirtinimus ir sukurtus iššūkius.') +
-        row(''+ico('kalendorius')+'', 'Šiandienos treniruotės', 'Grupės, kurios treniruojasi šiandien pagal tvarkaraštį.') +
-        row(''+ico('trofejai')+'', 'Geriausi vaikai', 'Tavo aktyviausi mokiniai pagal EXP.') +
-        row(''+ico('laukia')+'', 'Laukia patvirtinimo', 'Vaikų pateikti rezultatai, kuriuos reikia patvirtinti.') +
-        row(''+ico('jega')+'', 'Normatyvai', 'Antraštės mygtukas — pratimų rėžiai pagal amžių ir lytį. Paspaudus ant pratimo matai techniką: kaip atliekamas teisingai ir kokius pakartojimus užskaityti.');
+    case 'kal':
+      title = ''+ico('pagalba')+' KALENDORIUS';
+      html = intro('Tavo pradinis langas — mėnuo su visomis grupėmis. Viskas, ką reikia padaryti, matosi iš karto.') +
+        row('<i style="width:10px;height:10px;border-radius:2px;background:#A855F7;display:block;"></i>', 'Kvadratėliai', 'Kiek grupių tą dieną treniruojasi (spalva — grupės). Čipsai viršuje filtruoja grupę.') +
+        row(''+ico('ispejimas')+'', 'Švytinti diena', 'Praėjusi treniruotė be pažymėto lankomumo. Juosta po tinkleliu — spustelk ir pažymėk iš dienos lapo.') +
+        row(''+ico('jega')+'', 'Pastangos', 'Žymėdamas lankomumą įvertink kiekvieną: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP. Vaikas ir tėvai tai mato.') +
+        row(''+ico('prideti')+'', 'Planuoti treniruotes', '10–15 min klausimų — AI paruošia visą etapą su „kodėl". Tu patvirtini kiekvieną treniruotę; kol nepatvirtinta, vaikai jos nemato.') +
+        row(''+ico('tikslas')+'', 'Iššūkiai', 'Plytelės apačioje — progresas ir kiek laukia tvirtinimo. Nėra iššūkių? „Pasiūlyti iš plano" — iš etapo turinio, EXP pagal kreivę.') +
+        row(''+ico('kalendorius')+'', 'Renginiai', 'Varžybos (violetinė), stovyklos (mėlyna), diržo testai (auksinė). Artimiausias — su dienų skaičiumi.') +
+        row(''+ico('jega')+'', 'Normatyvai', 'Profilyje — pratimų rėžiai pagal amžių ir lytį.');
       break;
     case 'groups':
       title = ''+ico('pagalba')+' GRUPĖS';
@@ -24689,28 +24691,23 @@ function openTrInfo(which) {
       html = intro('Čia matai savo grupes ir jų vaikus. Grupes kuria, tvarkaraštį nustato ir vaikus priskiria KLUBAS — jei kažko trūksta, kreipkis į klubą.') +
         row(''+ico('profilis')+'', 'Grupės sudėtis', 'Matai savo grupes — ir tas, kur esi pagrindinis treneris, ir tas, kur pavaduoji.') +
         row(''+ico('ranka')+'', 'Paspausk ant vaiko', 'Atsidaro vaiko kortelė: duomenys, el. paštas, tėvai, sveikata, laukiantys patvirtinimai. Gali skirti EXP, asmeninį iššūkį ar EXP už elgesį.') +
-        row(''+ico('lankomumas')+'', 'Lankomumas', 'Žymėk, kas atėjo. Pilna savaitė → +15 EXP, pilnas mėnuo → +100.') +
+        row(''+ico('lankomumas')+'', 'Lankomumas', 'Žymėk, kas atėjo, ir įvertink pastangas (20 / 14 / 8 EXP). Patogiausia — iš Kalendoriaus dienos lapo. Pilna savaitė → +15 EXP, pilnas mėnuo → +100.') +
         row(''+ico('tikslas')+'', 'Grupės iššūkis', 'Vienu paspaudimu skelbk iššūkį visai grupei.') +
         row(''+ico('zinutes')+'', 'Pranešimai', 'Rašyk žinutę visai grupei.');
       break;
     case 'challenges':
       title = ''+ico('pagalba')+' IŠŠŪKIAI';
-      html = intro('Iššūkiai motyvuoja vaikus tarp treniruočių. Sukuri → vaikas atlieka ir pateikia → tu patvirtini → vaikas gauna EXP.') +
-        row(''+ico('kalendorius')+'', 'Savaitės / mėnesio', 'Terminuoti tikslai. Mėnesiui — didesnis, ilgesnis uždavinys; savaitei — mažesnis.') +
-        row(''+ico('treniruote')+'', 'Treniruotės', 'Užduotis vienai treniruotei — atliekama ir patvirtinama treniruotės dieną.') +
-        row(''+ico('tikslas')+'', 'Grupei arba vaikui', 'Skelbk visai grupei arba konkrečiam mokiniui.') +
-        row(''+ico('programele')+'', 'Pasidalink', 'Pasibaigusio iššūkio rezultatų kortelę gali pasidalinti socialiniuose tinkluose.') +
-        `<div style="font-size:11px;font-weight:800;color:#FF7A33;letter-spacing:.5px;margin:14px 0 4px;">${ico('pagalba')} PAVYZDŽIAI — TIK TAI, KĄ GALI PATIKRINTI</div>
-         <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:8px;">Matuojama treniruotėje, per Strava ar pateiktą rezultatą. Tikslo dydis — pagal trukmę.</div>
-         <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.9;">
-           <b style="color:#fff;">${ico('kalendorius')} Savaitei (mažesni):</b> 150 atsispaudimų · 100 pritūpimų · nubėk 5 km · ateik į visas treniruotes<br>
-           <b style="color:#fff;">${ico('kalendorius')} Mėnesiui (dideli):</b> nubėk 10 km · 500 atsispaudimų · planka 90 s · ištobulink naują kata · nepraleisk nė vienos treniruotės<br>
-           <b style="color:#fff;">${ico('treniruote')} Treniruotei (trumpi):</b> 30 atsispaudimų · planka 60 s · 20 mawashi-geri be sustojimo · 10 min šuolių per šokdynę
-         </div>`;
+      html = intro('Iššūkiai motyvuoja vaikus tarp treniruočių. Dalis tvirtinasi patys, kitus tvirtini tu.') +
+        row(''+ico('atnaujinti')+'', 'Automatiniai', 'Lankomumas, varžybų rezultatas, diržo egzaminas, Strava bėgimas / dviratis / ėjimas — užsiskaito iš sistemos duomenų, vaikas nieko nesiunčia.') +
+        row(''+ico('tikslas')+'', 'Rankiniai', 'Vaikas atlieka ir pateikia → tu patvirtini „Patvirtinti" lange arba iššūkio suvestinėje → EXP.') +
+        row(''+ico('prideti')+'', 'Iš plano', 'Kalendoriuje „Pasiūlyti iš plano" — iššūkiai iš etapo turinio, EXP pagal kreivę, grupei vienu paspaudimu.') +
+        row(''+ico('kalendorius')+'', 'Savaitės / mėnesio / treniruotės', 'Terminuoti tikslai: mėnesiui — didesnis, savaitei — mažesnis, treniruotei — atliekama ir patvirtinama tą dieną.') +
+        row(''+ico('vieta')+'', 'Strava', 'Kai vaikas susieja Strava, bėgimo iššūkiai užsiskaito patys. Rankiniai Strava įrašai (be GPS) nesiskaito — apsauga nuo sukčiavimo.') +
+        row(''+ico('programele')+'', 'Pasidalink', 'Pasibaigusio iššūkio rezultatų kortelę gali pasidalinti.');
       break;
     case 'pat':
       title = ''+ico('pagalba')+' PATVIRTINIMAI';
-      html = intro('Čia tvirtini, ką pateikė vaikai ir tėvai. Patvirtinus — EXP priskiriamas automatiškai. Gali filtruoti pagal grupę.') +
+      html = intro('Čia tvirtini, ką pateikė vaikai ir tėvai. Patvirtinus — EXP priskiriamas automatiškai. Automatiniai iššūkiai (lankomumas, varžybos, egzaminas, Strava) čia nepatenka — jie užsiskaito patys. Gali filtruoti pagal grupę.') +
         row(''+ico('tikslas')+'', 'Kelias', 'Nauji pratimų rekordai.') +
         row(''+ico('jega')+'', 'Iššūkiai', 'Atlikti iššūkiai.') +
         row(''+ico('zenkliukai')+'', 'Varžybos', 'Varžybų rezultatai ir medaliai.') +
@@ -24734,22 +24731,20 @@ function openTrInfo(which) {
 
 // 💡 Tėvų langų gidas — kiekvienas langas (be Karjeros, kur jau yra) turi lemputę
 function openParentInfo(which) {
-  const row = (ic, t, d) => `<div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
-      <div style="font-size:18px;flex:none;line-height:1.3;">${ic}</div>
-      <div style="font-size:12.5px;line-height:1.5;"><b style="color:#fff;">${t}</b><br><span style="color:var(--mut);">${d}</span></div>
-    </div>`;
-  const intro = (txt) => `<div style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:14px;">${txt}</div>`;
+  const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b>${t}</b>${d}</div></div>`;   // v559: kalendorius v2 stilius
+  const intro = (txt) => `<div class="hlp-intro">${txt}</div>`;
   let title = '', html = '';
   switch (which) {
     case 'main':
-      title = ''+ico('pagalba')+' PAGRINDINIS';
-      html = intro('Tavo vaiko progreso apžvalga.') +
-        row(''+ico('dirzas')+'', 'Lygis ir etapas', 'Vaiko EXP, lygis (1–99) ir etapas — auga už pratimus, iššūkius ir varžybas.') +
-        row(''+ico('streak')+'', 'Serijos (streak)', 'Kasdienio aktyvumo ruožai.') +
-        row(''+ico('trofejai')+'', 'Reitingai', 'Vaiko vieta tarp bendraamžių klube.') +
-        row(''+ico('tikslas')+'', 'Savaitės iššūkis', 'Aktualus trenerio paskelbtas iššūkis.') +
-        row(''+ico('kalendorius')+'', 'Artimiausias įvykis', 'Kitos varžybos ar renginys.') +
-        row(''+ico('atnaujinti')+'', 'Keisti vaiką', 'Jei turite kelis vaikus — burbulas viršuje dešinėje.');
+    case 'kal':
+      title = ''+ico('pagalba')+' KALENDORIUS';
+      html = intro('Vaiko mėnuo vienu žvilgsniu: kada buvo, kiek pastangų įdėjo, kas laukia.') +
+        row('<i style="width:10px;height:10px;border-radius:2px;background:#22C55E;display:block;"></i>', 'Žalia diena su +EXP', 'Vaikas buvo treniruotėje; skaičius — tos dienos EXP. Perbrauktas skaičius — treniruotė buvo, vaiko nebuvo.') +
+        row(''+ico('jega')+'', 'Pastangos', 'Treneris po treniruotės įvertina: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP. Suvestinė mėnesiui — po tinkleliu, detalės — dienos lape.') +
+        row(''+ico('treniruote')+'', 'Šiandien', 'Oranžinė kortelė — šiandienos treniruotė: tema, kodėl ir ką pasiimti. Rodoma, kai treneris ją patvirtina.') +
+        row(''+ico('varzybos')+'', 'Varžybos', 'Violetinė diena — varžybos. Kortelėje „Ar dalyvaus?" — atsakykite už vaiką iki 14 m.; vaikas ir treneris matys.') +
+        row(''+ico('atnaujinti')+'', 'Keli vaikai', 'Čipsai kalendoriaus viršuje perjungia vaiką.') +
+        row(''+ico('ranka')+'', 'Spauskite dieną', 'Dienos lapas: EXP išskaidymas, pastangos, treniruotės eiga blokais.');
       break;
     case 'feed':
       title = ''+ico('pagalba')+' PASIEKIMAI';
@@ -24757,7 +24752,7 @@ function openParentInfo(which) {
         row(''+ico('grafikas')+'', 'Rekordai', 'Nauji pratimų rekordai.') +
         row(''+ico('jega')+'', 'Iššūkiai', 'Vaiko įveikti iššūkiai.') +
         row(''+ico('zenkliukai')+'', 'Medaliai', 'Varžybų rezultatai.') +
-        row(''+ico('patinka')+'', 'Pagyrimai', 'Trenerio skirtas EXP už elgesį/pastangas.') +
+        row(''+ico('patinka')+'', 'Pagyrimai ir pastangos', 'Trenerio skirtas EXP už elgesį ir pastangų įvertis po kiekvienos treniruotės.') +
         row(''+ico('lankomumas')+'', 'Lankomumas', 'Treniruočių lankymas ir savaitės/mėnesio premijos.') +
         row(''+ico('programele')+'', 'Dalintis', 'Mėnesio pasiekimų kortelę galite pasidalinti.');
       break;
@@ -24784,29 +24779,44 @@ function openParentInfo(which) {
 
 // 💡 Vaiko langų gidas — platesni, vaikams suprantami paaiškinimai + Osu dvasia
 function openKidInfo(which) {
-  const row = (ic, t, d) => `<div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
-      <div style="font-size:18px;flex:none;line-height:1.3;">${ic}</div>
-      <div style="font-size:12.5px;line-height:1.55;"><b style="color:#fff;">${t}</b><br><span style="color:var(--mut);">${d}</span></div>
-    </div>`;
-  const intro = (txt) => `<div style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:14px;">${txt}</div>`;
+  const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b>${t}</b>${d}</div></div>`;   // v559: kalendorius v2 stilius
+  const intro = (txt) => `<div class="hlp-intro">${txt}</div>`;
   let title = '', html = '';
   switch (which) {
     case 'main':
       title = ''+ico('pagalba')+' PAGRINDINIS';
-      html = intro('Tavo namų ekranas — viskas apie tave vienoje vietoje.') +
+      html = intro('Tavo namų ekranas — viskas apie tave vienoje vietoje. Treniruotes ir dienas žiūrėk Kalendoriuje.') +
         row(''+ico('dirzas')+'', 'Tavo lygis ir kanji', 'Skaičius viduryje — tavo lygis (1–99). Žiedas aplink pildosi link kito lygio. Kanji ženklas — tavo etapas (Naujokas → … → Sensėjus).') +
-        row(''+ico('greitis')+'', 'EXP taškai', 'Gauni juos už pratimus, iššūkius, varžybas ir treniruočių lankymą. Daugiau EXP → aukštesnis lygis.') +
-        row(''+ico('streak')+'', 'Serija (streak)', 'Kiek dienų iš eilės buvai aktyvus. Stenkis jos nenutraukti!') +
+        row(''+ico('greitis')+'', 'EXP taškai', 'Gauni juos už treniruotes ir pastangas jose, iššūkius, pratimų rekordus ir varžybas. Daugiau EXP → aukštesnis lygis.') +
+        row(''+ico('streak')+'', 'Serija (streak)', 'Kiek treniruočių iš eilės buvai. Stenkis jos nenutraukti!') +
         row(''+ico('trofejai')+'', 'Reitingai', 'Tavo vieta tarp BENDRAAMŽIŲ — lyginiesi su panašiais į tave, ne su vyresniais.') +
-        row(''+ico('lankomumas')+'', 'Lankomumas', 'Mygtukas viršuje — matyk, kaip lankai treniruotes. Už pilną savaitę ir mėnesį gauni papildomą EXP.');
+        row(''+ico('kalendorius')+'', 'Kalendorius', 'Apatinėje juostoje — ten matai, kada buvai, kiek EXP gavai ir kas laukia.');
+      break;
+    case 'kal':
+      title = ''+ico('pagalba')+' KALENDORIUS';
+      html = intro('Tavo mėnuo vienu žvilgsniu: treniruotės, renginiai ir EXP kiekvienai dienai.') +
+        row('<i style="width:10px;height:10px;border-radius:2px;background:#22C55E;display:block;"></i>', 'Žalia diena su +EXP', 'Buvai treniruotėje. Skaičius po data — kiek EXP tą dieną gavai.') +
+        row('<i style="width:14px;height:3px;border-radius:2px;background:#FF4D00;display:block;"></i>', 'Oranžinis brūkšnys', 'Būsima treniruotė. Perbrauktas skaičius — treniruotė buvo, bet tavęs nebuvo.') +
+        row(''+ico('jega')+'', 'Pastangos', 'Po treniruotės treneris įvertina: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP. Matai dienos lape.') +
+        row(''+ico('varzybos')+'', 'Spalvotos dienos', 'Violetinė — varžybos, mėlyna — stovykla ar seminaras, auksinė — diržo testas. Paspausk — pamatysi detales ir ar dalyvausi.') +
+        row(''+ico('treniruote')+'', 'Šiandien', 'Oranžinė kortelė — šiandienos treniruotė: ką darysim, kodėl ir ką pasiimti. Kai treneris patvirtina, matai visą eigą.') +
+        row(''+ico('ranka')+'', 'Spausk dieną', 'Atsidaro dienos lapas: EXP išskaidymas, pastangos, treniruotės blokai su trukmėmis.');
+      break;
+    case 'grupe':
+      title = ''+ico('pagalba')+' GRUPĖ';
+      html = intro('Tavo komanda — grupės draugai, dvikovos ir grupių iššūkiai.') +
+        row(''+ico('dvikova')+'', 'Dvikova', '1 prieš 1 su komandos draugu: abu atliekate, treneris patvirtina. Pergalė +50 · lygiosios +35 · už dalyvavimą EXP visada.') +
+        row(''+ico('tikslas')+'', 'Grupių iššūkiai', 'Klubo paskelbtos grupių varžytuvės — visa grupė renka taškus kartu.') +
+        row(''+ico('grupe')+'', 'Komandos draugai', 'Kas treniruojasi su tavimi ir kaip jiems sekasi.');
       break;
     case 'ish':
       title = ''+ico('pagalba')+' IŠŠŪKIAI';
-      html = intro('Treneris skiria iššūkius — užduotis, kurias atlikęs gauni EXP.') +
-        row(''+ico('tikslas')+'', 'Kaip veikia', 'Matai iššūkį → atlieki → pažymi rezultatą → treneris patvirtina → gauni EXP.') +
+      html = intro('Treneris skiria iššūkius — užduotis, kurias atlikęs gauni EXP. Aktyvius matai ir Kalendoriuje.') +
+        row(''+ico('atnaujinti')+'', 'Skaičiuojasi patys', 'Lankomumo, varžybų, diržo egzamino ir Strava iššūkiai užsiskaito automatiškai — nieko siųsti nereikia, žyma „skaičiuojama automatiškai".') +
+        row(''+ico('tikslas')+'', 'Rankiniai', 'Kitus atlieki → pažymi rezultatą → treneris patvirtina → gauni EXP. Išmokimo iššūkiai: spausk „Pasiruošiau", treneris patikrins treniruotėje.') +
+        row(''+ico('vieta')+'', 'Strava', 'Bėgimo, dviračio ir ėjimo iššūkiams susiek Strava (Profilis) — veiklos su GPS užsiskaitys pačios. Rankiniai Strava įrašai nesiskaito.') +
         row(''+ico('kalendorius')+'', 'Trukmė', 'Vieni skirti vienai treniruotei, kiti trunka savaitę ar mėnesį. Ilgesni — didesni tikslai.') +
-        row(''+ico('namai')+'', 'Kam tai', 'Padeda treniruotis ir tarp pamokų, namuose. Tu pats augini savo kovotoją.') +
-        row(''+ico('ranka')+'', 'Sąžiningai', 'Pažymėk tik tai, ką tikrai padarei — treneris peržiūri kiekvieną pateikimą.');
+        row(''+ico('ranka')+'', 'Sąžiningai', 'Pažymėk tik tai, ką tikrai padarei — treneris peržiūri kiekvieną rankinį pateikimą.');
       break;
     case 'comp':
       title = ''+ico('pagalba')+' VARŽYBOS';
@@ -40546,27 +40556,21 @@ async function loadKidSettingsDetails() {
 // ════════════════════════════════════════
 
 function openInfoSubmodal(title, contentHtml) {
-  // Bendras helper'is sub-modaliams
+  // Bendras helper'is sub-modaliams — v559: per Planas.sheet (.kal-sheet.pl), tas pats id ir uždarymas remove()
   const existingModal = document.getElementById('settings-submodal');
   if (existingModal) existingModal.remove();
-  
+  if (typeof Planas !== 'undefined' && Planas.sheet) { Planas.sheet('settings-submodal', title, `<div style="padding:0 18px;">${contentHtml}</div>`, '', { z: 99999 }); return; }
   const modal = document.createElement('div');
   modal.id = 'settings-submodal';
   modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;align-items:flex-end;justify-content:center;padding:0;';
   modal.innerHTML = `
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
-      <!-- Header -->
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:12px;background:var(--bg);">
-        <button onclick="document.getElementById('settings-submodal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:white;padding:0;line-height:1;">‹</button>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;flex:1;">${title}</div>
         <button onclick="document.getElementById('settings-submodal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--mut);padding:0;">${ico('uzdaryti')}</button>
       </div>
-      <!-- Content -->
-      <div style="flex:1;overflow-y:auto;padding:16px 20px;">
-        ${contentHtml}
-      </div>
-    </div>
-  `;
+      <div style="flex:1;overflow-y:auto;padding:16px 20px;">${contentHtml}</div>
+    </div>`;
   document.body.appendChild(modal);
 }
 
@@ -42899,7 +42903,7 @@ const Kal = {
     const chips = `<div class="kal-chips"><span class="kal-chip${this.st.sel === 'all' ? ' on' : ''}" onclick="Kal.pick('all')">Visos</span>${(this.st.groups || []).map(gr => `<span class="kal-chip${this.st.sel === gr.id ? ' on' : ''}" onclick="Kal.pick('${gr.id}')"><i style="background:${this.col(gr.color)};"></i>${this.esc(gr.name)}</span>`).join('')}</div>`;
     const ng = this.st.groups.length;
     const head = `<div class="kal-head"><div style="min-width:0;"><div class="kal-mon">${this.MON[r.m - 1].toUpperCase()} <i>${String(r.y).slice(2)}</i></div><div class="kal-sub"><span>${ng} ${_ltPl(ng, 'grupė', 'grupės', 'grupių')}</span><s>/</s><span>${mine.length} ${_ltPl(mine.length, 'treniruotė', 'treniruotės', 'treniruočių')}</span></div></div>
-      <div class="kal-hbtn"><button onclick="toggleTrainerNotifications()" title="Pranešimai">${ico('pranesimai')}</button><button onclick="Kal.shift(-1)" title="Ankstesnis mėnuo">${ico('atgal')}</button><button onclick="Kal.shift(1)" title="Kitas mėnuo">${ico('toliau')}</button></div></div>`;
+      <div class="kal-hbtn"><button onclick="openTrInfo('kal')" title="Apie šį langą">${ico('pagalba')}</button><button onclick="toggleTrainerNotifications()" title="Pranešimai">${ico('pranesimai')}</button><button onclick="Kal.shift(-1)" title="Ankstesnis mėnuo">${ico('atgal')}</button><button onclick="Kal.shift(1)" title="Kitas mėnuo">${ico('toliau')}</button></div></div>`;
     const canPlan = typeof flagOn === 'function' && flagOn('trainers_can_create_plans') && typeof Planas !== 'undefined';
     const hasPlan = (this.st.sessions || []).some(s => s.session_id);
     const cta = !canPlan ? '' : (hasPlan

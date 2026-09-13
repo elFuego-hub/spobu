@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=558">
+<link rel="stylesheet" href="styles.css?v=559">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v558</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v559</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -1238,6 +1238,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">KALENDORIUS</div>
     <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openKidInfo('kal')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
       <div onclick="openKidAttendance()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Lankomumas"><svg class="ico" aria-hidden="true"><use href="#i-lankomumas"></use></svg></div>
       <div onclick="toggleNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg></div>
       <div onclick="openKidSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
@@ -3719,6 +3720,7 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 4px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">KALENDORIUS</div>
     <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
+      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubInfo('kal')" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
       <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleClubNotifications()" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg></div>
       <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openClubAccountMenu()" title="Nustatymai"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
@@ -4746,7 +4748,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=558"></script>
+<script src="app.js?v=559"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

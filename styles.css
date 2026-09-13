@@ -877,6 +877,17 @@ body.portal-v{--ico-accent:var(--br);}
 .kal-sheet.pl .foot{padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:.5px solid var(--bdr);flex-shrink:0;background:var(--bg);}
 .kal-sheet .sh .bk{cursor:pointer;color:var(--mut);display:flex;width:34px;height:34px;align-items:center;justify-content:center;flex-shrink:0;margin-left:-8px;}
 .kal-ev-row > .ico{width:16px;height:16px;color:var(--mut);flex-shrink:0;}
+/* ── 3 paketas (v559): pagalbos / pasveikinimo eilutės lape ── */
+.hlp-intro{font-size:12.5px;color:var(--mut);line-height:1.55;font-weight:700;padding:0 0 12px;}
+.hlp-row{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:.5px solid var(--hair);}
+.hlp-row:first-of-type{border-top:0;}
+.hlp-row .ic{width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.14);color:#FF7A33;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;}
+.hlp-row .ic .ico{width:18px;height:18px;}
+.hlp-row .tx{flex:1;min-width:0;font-size:12.5px;line-height:1.5;color:#cbd2da;}
+.hlp-row .tx b{color:var(--txt);font-weight:900;}
+.hlp-row .tx > b:first-child{display:block;margin-bottom:2px;}
+.hlp-row .tx > b:only-child{margin-bottom:0;}
+
 /* judesio ribos */
 @media (prefers-reduced-motion:reduce){
   .kal-d.today b,.kal-v-d.today b,.kal-d.nomark:before,.kal-warn{animation:none!important;}
