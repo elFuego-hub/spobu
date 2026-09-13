@@ -1925,17 +1925,17 @@ const WELCOME_CONTENT = {
   kid: {
     icon: 'dirzas', title: 'SVEIKAS ATVYKĘS Į SPOBU!', cta: 'PRADĖTI!', foot: 'OSU!',
     items: [
-      ['kalendorius', '<b style="color:white;">Kalendorius</b>tavo treniruotės, renginiai ir EXP kiekvienai dienai. Šiandien: ką darysim ir ką pasiimti'],
-      ['jega',        '<b style="color:white;">Pastangos</b>po treniruotės treneris įvertina: iš visų jėgų <b style="color:white;">+20</b> · gerai +14 · lengviau +8 EXP'],
-      ['tikslas',     '<b style="color:white;">Iššūkiai</b>lankomumo, varžybų, egzamino ir Strava iššūkiai skaičiuojasi patys, kitus tvirtina treneris'],
-      ['augimas',     '<b style="color:white;">Kelias</b>pratimai, rekordai, lygiai. Diržas ir kanji — tavo etapas'],
+      ['kalendorius', '<b class="t">Kalendorius</b>tavo treniruotės, renginiai ir EXP kiekvienai dienai. Šiandien: ką darysim ir ką pasiimti'],
+      ['jega',        '<b class="t">Pastangos</b>po treniruotės treneris įvertina: iš visų jėgų <b style="color:white;">+20</b> · gerai +14 · lengviau +8 EXP'],
+      ['tikslas',     '<b class="t">Iššūkiai</b>lankomumo, varžybų, egzamino ir Strava iššūkiai skaičiuojasi patys, kitus tvirtina treneris'],
+      ['augimas',     '<b class="t">Kelias</b>pratimai, rekordai, lygiai. Diržas ir kanji — tavo etapas'],
       ['bug',         'Radai klaidą? Spausk <b style="color:white;">🐞</b> mygtuką kampe — parašysi mums']
     ]
   },
   parent: {
     icon: 'dirzas', title: 'SVEIKI ATVYKĘ Į SPOBU!', cta: 'PRADĖTI',
     items: [
-      ['kalendorius', '<b style="color:white;">Kalendorius</b>vaiko treniruotės, ar buvo, kiek pastangų įdėjo, kas laukia. Spauskite dieną — visos detalės'],
+      ['kalendorius', '<b class="t">Kalendorius</b>vaiko treniruotės, ar buvo, kiek pastangų įdėjo, kas laukia. Spauskite dieną — visos detalės'],
       ['vaikas',      'Keli vaikai? Perjunkite čipsais kalendoriaus viršuje'],
       ['tikslas',     'EXP ir iššūkiai — dalis skaičiuojasi automatiškai (lankomumas, varžybos, Strava), kitus tvirtina treneris'],
       ['premium',     'Esate <b style="color:white;">pirmieji bandytojai</b> — jums <b style="color:white;">viskas įjungta nemokamai</b>'],
@@ -1945,17 +1945,17 @@ const WELCOME_CONTENT = {
   trainer: {
     icon: 'treneris', title: 'SVEIKAS, TRENERI!', cta: 'PRADĖTI',
     items: [
-      ['kalendorius', '<b style="color:white;">Kalendorius</b>pradinis langas: grupės pagal tvarkaraštį, nepažymėtos dienos švyti, dienos lapas su lankomumu'],
-      ['prideti',     '<b style="color:white;">Planuoti treniruotes</b>10–15 min klausimų, AI paruošia etapą; tu patvirtini, vaikai mato'],
-      ['jega',        '<b style="color:white;">Pastangos</b>žymėdamas lankomumą įvertink: iš visų jėgų · gerai · lengviau (20 / 14 / 8 EXP)'],
-      ['tikslas',     '<b style="color:white;">Iššūkiai</b>pasiūlyk iš plano; lankomumo, varžybų, egzamino ir Strava iššūkiai tvirtinasi patys, rankinius tvirtini tu'],
+      ['kalendorius', '<b class="t">Kalendorius</b>pradinis langas: grupės pagal tvarkaraštį, nepažymėtos dienos švyti, dienos lapas su lankomumu'],
+      ['prideti',     '<b class="t">Planuoti treniruotes</b>10–15 min klausimų, AI paruošia etapą; tu patvirtini, vaikai mato'],
+      ['jega',        '<b class="t">Pastangos</b>žymėdamas lankomumą įvertink: iš visų jėgų · gerai · lengviau (20 / 14 / 8 EXP)'],
+      ['tikslas',     '<b class="t">Iššūkiai</b>pasiūlyk iš plano; lankomumo, varžybų, egzamino ir Strava iššūkiai tvirtinasi patys, rankinius tvirtini tu'],
       ['bug',         'Radęs klaidą — Pagalba → „Pranešti problemą"']
     ]
   },
   club_admin: {
     icon: 'klubas', title: 'SVEIKI! ČIA JŪSŲ KLUBO CENTRAS', cta: 'PRADĖTI',
     items: [
-      ['kalendorius', '<b style="color:white;">Kalendorius</b>visų grupių treniruotės, nepatvirtinti planai, renginiai; „Naujas renginys" vienoje vietoje'],
+      ['kalendorius', '<b class="t">Kalendorius</b>visų grupių treniruotės, nepatvirtinti planai, renginiai; „Naujas renginys" vienoje vietoje'],
       ['mokiniai',    'Nariai, grupės, treneriai, registracijos — Klubo skiltyje'],
       ['nustatymai',  'Jungikliai Profilyje: planai, treneriai kuria planus, pastangos tėvams, Strava automatinis tvirtinimas'],
       ['startas',     'Pradžios vediklis (Nustatymuose): grupė → treneris → vaikai'],
@@ -24668,7 +24668,7 @@ function _trNormRender() {
 
 // 💡 Trenerio langų gidas — kiekvienas langas turi lemputę su paaiškinimu
 function openTrInfo(which) {
-  const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b>${t}</b>${d}</div></div>`;   // v559: kalendorius v2 stilius
+  const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b class="t">${t}</b>${d}</div></div>`;   // v559: kalendorius v2 stilius
   const intro = (txt) => `<div class="hlp-intro">${txt}</div>`;
   let title = '', html = '';
   switch (which) {
@@ -24731,7 +24731,7 @@ function openTrInfo(which) {
 
 // 💡 Tėvų langų gidas — kiekvienas langas (be Karjeros, kur jau yra) turi lemputę
 function openParentInfo(which) {
-  const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b>${t}</b>${d}</div></div>`;   // v559: kalendorius v2 stilius
+  const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b class="t">${t}</b>${d}</div></div>`;   // v559: kalendorius v2 stilius
   const intro = (txt) => `<div class="hlp-intro">${txt}</div>`;
   let title = '', html = '';
   switch (which) {
@@ -24779,7 +24779,7 @@ function openParentInfo(which) {
 
 // 💡 Vaiko langų gidas — platesni, vaikams suprantami paaiškinimai + Osu dvasia
 function openKidInfo(which) {
-  const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b>${t}</b>${d}</div></div>`;   // v559: kalendorius v2 stilius
+  const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b class="t">${t}</b>${d}</div></div>`;   // v559: kalendorius v2 stilius
   const intro = (txt) => `<div class="hlp-intro">${txt}</div>`;
   let title = '', html = '';
   switch (which) {

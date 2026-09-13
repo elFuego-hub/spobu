@@ -885,8 +885,8 @@ body.portal-v{--ico-accent:var(--br);}
 .hlp-row .ic .ico{width:18px;height:18px;}
 .hlp-row .tx{flex:1;min-width:0;font-size:12.5px;line-height:1.5;color:#cbd2da;}
 .hlp-row .tx b{color:var(--txt);font-weight:900;}
-.hlp-row .tx > b:first-child{display:block;margin-bottom:2px;}
-.hlp-row .tx > b:only-child{margin-bottom:0;}
+.hlp-row .tx b.t{display:block;margin-bottom:2px;}
+.hlp-row .tx b.t:only-child{margin-bottom:0;}
 
 /* judesio ribos */
 @media (prefers-reduced-motion:reduce){
