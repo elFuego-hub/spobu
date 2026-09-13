@@ -855,6 +855,27 @@ body.portal-v{--ico-accent:var(--br);}
 .kal-ev-row .bd{flex:1;min-width:0;}
 .kal-ev-row .nm{font-size:12.5px;font-weight:900;}
 .kal-ev-row .mt{font-family:'Nunito',system-ui,sans-serif;font-size:10px;font-weight:700;color:var(--mut);margin-top:2px;margin-bottom:0;letter-spacing:0;}
+/* ── 2 paketas (v557): filtravimas, tėvų vaikų čipsai, PASTANGOS suvestinė, Planas/Iss lapai per .kal-sheet.pl ── */
+.kal-d b{transition:color .2s var(--ease);}
+.kal-grid.filt .kal-d u i{opacity:0;transform:scale(.4);}
+.kal-kids{display:flex;gap:6px;padding:8px 18px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.kal-kids::-webkit-scrollbar{display:none;}
+.kal-kids .kal-chip{gap:7px;font-size:12px;padding:0 14px 0 8px;}
+.kal-kids .kal-chip i{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:10px;font-style:normal;font-weight:900;}
+.kal-kids .kal-chip.on i{background:rgba(0,0,0,.22);}
+.kal-eff{margin:0 18px 10px;display:flex;gap:8px;}
+.kal-eff > div{flex:1;min-width:0;background:var(--card);border:.5px solid var(--bdr);border-radius:16px;padding:9px 11px;}
+.kal-eff b{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;font-weight:400;display:block;}
+.kal-eff i{font-style:normal;font-size:9px;font-weight:900;letter-spacing:.6px;color:var(--mut);margin-top:3px;display:block;}
+.kal-sheet.pl{height:auto;max-height:94vh;}
+.kal-sheet.pl .sh{position:relative;padding:18px 18px 10px;align-items:center;}
+.kal-sheet.pl .sh .grab{position:absolute;top:8px;left:50%;transform:translateX(-50%);margin:0;}
+.kal-sheet.pl .sh b{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kal-sheet.pl .sh i{text-transform:none;letter-spacing:0;font-size:10.5px;font-weight:700;color:var(--mut);}
+.kal-sheet.pl .body{padding:12px 0 14px;}
+.kal-sheet.pl .foot{padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:.5px solid var(--bdr);flex-shrink:0;background:var(--bg);}
+.kal-sheet .sh .bk{cursor:pointer;color:var(--mut);display:flex;width:34px;height:34px;align-items:center;justify-content:center;flex-shrink:0;margin-left:-8px;}
+.kal-ev-row > .ico{width:16px;height:16px;color:var(--mut);flex-shrink:0;}
 /* judesio ribos */
 @media (prefers-reduced-motion:reduce){
   .kal-d.today b,.kal-v-d.today b,.kal-d.nomark:before,.kal-warn{animation:none!important;}

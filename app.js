@@ -42080,22 +42080,26 @@ Object.assign(Planas, {
   dateLT(ds) { if (!ds) return ''; const d = this.d(ds); return `${this.MONTHS[d.getMonth()]} ${d.getDate()}`; },
   dowLT(ds) { if (!ds) return ''; const d = this.d(ds); return this.DAYS[(d.getDay() + 6) % 7]; },
   sheet(id, title, bodyHtml, footHtml, opts) {
+    // v557 (kalendorius v2, 2 paketas): tas pats vaizdas kaip Kal.sheetOpen — .kal-dim fonas + .kal-sheet.pl su spyruokle; DOM kontraktas nesikeičia
     const o = opts || {};
     document.getElementById(id)?.remove();
-    const m = document.createElement('div'); m.id = id;
-    m.style.cssText = `display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:${o.z || 100004};align-items:flex-end;justify-content:center;`;
+    const m = document.createElement('div'); m.id = id; m.className = 'kal-dim';
+    m.style.cssText = `z-index:${o.z || 100004};`;
     m.onclick = (e) => { if (e.target === m && !o.noClose) m.remove(); };
-    m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:94vh;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
-      <div style="padding:13px 18px 9px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;gap:10px;flex-shrink:0;">
-        ${o.back ? `<div onclick="${o.back}" style="cursor:pointer;color:var(--mut);display:flex;">${ico('atgal')}</div>` : ''}
-        <div style="flex:1;min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>${o.sub ? `<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:3px;">${o.sub}</div>` : ''}</div>
+    m.innerHTML = `<div class="kal-sheet pl" style="z-index:${(o.z || 100004) + 1};">
+      <div class="sh"><div class="grab"></div>
+        ${o.back ? `<div class="bk" onclick="${o.back}">${ico('atgal')}</div>` : ''}
+        <div style="flex:1;min-width:0;"><b>${title}</b>${o.sub ? `<i>${o.sub}</i>` : ''}</div>
         ${o.right || ''}
-        <button onclick="document.getElementById('${id}').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;flex-shrink:0;">${ico('uzdaryti')}</button>
+        <button class="kal-x" onclick="document.getElementById('${id}').remove()" title="Uždaryti">${ico('uzdaryti')}</button>
       </div>
-      <div id="${id}-body" style="flex:1;min-height:0;overflow-y:auto;padding:12px 0 14px;">${bodyHtml}</div>
-      ${footHtml ? `<div id="${id}-foot" style="padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:.5px solid var(--bdr);flex-shrink:0;background:var(--bg);">${footHtml}</div>` : ''}
+      <div id="${id}-body" class="body">${bodyHtml}</div>
+      ${footHtml ? `<div id="${id}-foot" class="foot">${footHtml}</div>` : ''}
     </div>`;
     document.body.appendChild(m);
+    const sh = m.firstElementChild; void sh.offsetHeight;
+    const rm = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (rm) { m.classList.add('on'); sh.classList.add('on'); } else setTimeout(() => { m.classList.add('on'); sh.classList.add('on'); }, 16);
     return m;
   },
   async invokePlan(body) {
@@ -42625,7 +42629,7 @@ const Kal = {
     const rm = this.reduced();
     root.querySelectorAll('.kal-bar span[data-w]').forEach(sp => { if (rm) { sp.style.width = sp.dataset.w + '%'; return; } void sp.offsetWidth; setTimeout(() => { sp.style.width = sp.dataset.w + '%'; }, 16); });
     root.querySelectorAll('[data-count]').forEach(el => this.countUp(el, Number(el.dataset.count) || 0, rm));
-    root.querySelectorAll('.kal-grid.out-l,.kal-grid.out-r').forEach(g => { void g.offsetWidth; setTimeout(() => g.classList.remove('out-l', 'out-r'), 16); });
+    root.querySelectorAll('.kal-grid.out-l,.kal-grid.out-r,.kal-grid.filt').forEach(g => { void g.offsetWidth; setTimeout(() => g.classList.remove('out-l', 'out-r', 'filt'), 16); });
   },
   countUp(el, n, rm) {
     if (rm || n <= 0 || n > 99999) { el.textContent = String(n); return; }
@@ -42814,7 +42818,8 @@ const Kal = {
     }
     const legend = (this.st.groups || []).map(gr => `<span><i style="background:${this.col(gr.color)};"></i>${this.esc(gr.name)}</span>`).join('')
       + '<span style="color:#FF7A33;"><i style="background:#FF7A33;border-radius:50%;"></i>nepatvirtinta</span>';
-    const anim = this.st.dir ? (this.st.dir > 0 ? ' out-r' : ' out-l') : '';
+    const anim = (this.st.dir ? (this.st.dir > 0 ? ' out-r' : ' out-l') : '') + (this.st.filt ? ' filt' : '');
+    this.st.filt = false;
     return `<div class="kal-grid${anim}">
       <div class="kal-dow">${this.DOW.map(x => `<span>${x}</span>`).join('')}</div>
       <div class="kal-cells">${cells}</div>
@@ -42900,7 +42905,8 @@ const Kal = {
     const cta = !canPlan ? '' : (hasPlan
       ? `<div class="kal-cta" onclick="Planas.openWizard()"><div class="ic">${ico('prideti')}</div><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Planuoti treniruotes</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">10–15 min klausimų — AI paruoš visą etapą</div></div>${ico('toliau')}</div>`
       : `<div class="kal-empty plan"><div class="ic">${ico('prideti')}</div><b>PLANO DAR NĖRA</b><i>Atsakyk į 10–15 min klausimų — AI paruoš visą etapą, tu tik patvirtinsi.</i><span class="kal-b o" onclick="Planas.openWizard()">Planuoti treniruotes</span></div>`);
-    c.innerHTML = head + chips + this.gridHtml() + this.warnHtml(today) + this.nextHtml(today) + cta + this.todayHtml(today) + this.chHtml();
+    const evBlock = (this.st.events || []).length >= 3 ? this.evListHtml(today) : this.nextHtml(today);   // v557: perkrautam mėnesiui — sąrašas vietoj vienos eilutės
+    c.innerHTML = head + chips + this.gridHtml() + this.warnHtml(today) + evBlock + cta + this.todayHtml(today) + this.chHtml();
     this.st.dir = 0;
     this.afterRender(c);
   },
@@ -42942,9 +42948,16 @@ const Kal = {
     }
     return head + `<div class="kal-rows">${evs.map(ev => this.evRowHtml(ev)).join('')}${ses.map(s => this.rowHtml(s, today)).join('<hr>')}</div>`;
   },
-  evRowHtml(ev) {
+  evRowHtml(ev, today) {
     const col = this.evCol(ev);
-    return `<div class="kal-ev-row" onclick="Kal.openDay('${ev.date}')"><div class="d" style="color:${col};">${Number(String(ev.date).slice(8))}${ev.endDate && ev.endDate !== ev.date ? '–' + Number(String(ev.endDate).slice(8)) : ''}</div><div class="gr" style="background:${col};"></div><div class="bd"><div class="nm">${this.esc(ev.title)}</div><div class="mt">${this.esc(ev.label)}${ev.location ? ' · ' + this.esc(ev.location) : ''}</div></div></div>`;
+    const past = today && String(ev.endDate || ev.date) < today;
+    return `<div class="kal-ev-row"${past ? ' style="opacity:.55;"' : ''} onclick="Kal.openDay('${ev.date}')"><div class="d" style="color:${col};">${Number(String(ev.date).slice(8))}${ev.endDate && ev.endDate !== ev.date ? '–' + Number(String(ev.endDate).slice(8)) : ''}</div><div class="gr" style="background:${col};"></div><div class="bd"><div class="nm">${this.esc(ev.title)}</div><div class="mt">${this.esc(ev.label)}${ev.location ? ' · ' + this.esc(ev.location) : ''}${ev.deadline ? ' · registracija iki ' + this.esc(ev.deadline) : ''}</div></div>${ico('toliau')}</div>`;
+  },
+  // mėnuo su daug renginių (≥3): sąrašas po tinkleliu vietoj vienos „ARTIMIAUSIAS" eilutės
+  evListHtml(today) {
+    const evs = (this.st.events || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date))); if (!evs.length) return '';
+    const r = this.range(this.st.ym);
+    return `<div class="kal-sec" style="padding-top:10px;"><b>RENGINIAI</b><em>${this.MONA[r.m - 1]}</em><span></span></div><div class="kal-ev-rows">${evs.map(ev => this.evRowHtml(ev, today)).join('')}</div>`;
   },
   evCardHtml(ev) {
     return `<div class="kal-card ${ev.cls}"><div style="font-size:13px;font-weight:900;">${this.esc(ev.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${this.esc(ev.label)} · ${this.esc(ev.date)}${ev.endDate && ev.endDate !== ev.date ? ' – ' + this.esc(ev.endDate) : ''}${ev.location ? ' · ' + this.esc(ev.location) : ''}</div>${(ev.deadline || ev.price) ? `<div style="display:flex;gap:12px;margin-top:6px;font-size:10.5px;font-weight:800;color:var(--mut);">${ev.deadline ? `<span>Registracija iki <b style="color:#FF7A33;">${this.esc(ev.deadline)}</b></span>` : ''}${ev.price ? `<span>Mokestis <b style="color:var(--txt);">${this.esc(ev.price)}</b></span>` : ''}</div>` : ''}</div>`;
@@ -43057,7 +43070,7 @@ const Kal = {
   },
 
   // ── VEIKSMAI ──
-  pick(gid) { this.st.sel = gid; this.render(); },
+  pick(gid) { this.st.sel = gid; this.st.filt = true; this.render(); },   // v557: taškai persidėlioja (.kal-grid.filt)
   shift(delta) {
     const r = this.range(this.st.ym);
     const d = new Date(r.y, r.m - 1 + delta, 1);
@@ -43351,9 +43364,18 @@ Object.assign(Kal, {
       const expRow = `<div class="kal-exp-row"><span>EXP ${K.MONA[r.m - 1]}</span><span><b data-count="${Math.max(0, monthExp)}">0</b><em>EXP</em></span></div>`;
       const anim = this.st.dir ? (this.st.dir > 0 ? ' out-r' : ' out-l') : '';
       const grid = `<div class="kal-grid${anim}"><div class="kal-dow">${K.DOW.map(x => `<span>${x}</span>`).join('')}</div><div class="kal-cells">${cells}</div>${legend}${expRow}</div>`;
-      c.innerHTML = head + grid + this.todayHtml(today) + this.compHtml(today) + this.etapasBtn() + this.chHtml();
+      c.innerHTML = this.kidsHtml() + head + grid + this.effHtml(r) + this.todayHtml(today) + this.compHtml(today) + this.etapasBtn() + this.chHtml();
       this.st.dir = 0;
       K.afterRender(c);
+    },
+    kidsHtml() { return ''; },   // tėvams — vaikų čipsai (Kal.parent)
+    // PASTANGOS šį mėnesį: kiek treniruočių „iš visų jėgų" (20) · „gerai" (14) · „lengviau" (8) — iš EXP eilučių, tik su jungikliu
+    effHtml(r) {
+      if (!this.effortVisible()) return '';
+      const K = this.K; let mx = 0, ok = 0, lt = 0;
+      Object.keys(this.st.exp || {}).forEach(ds => { if (!String(ds).startsWith(this.st.ym)) return; (this.st.exp[ds] || []).forEach(x => { if (x.kind !== 'effort') return; if (x.exp >= K.EFF.max.exp) mx++; else if (x.exp >= K.EFF.ok.exp) ok++; else if (x.exp > 0) lt++; }); });
+      if (!mx && !ok && !lt) return '';
+      return `<div class="kal-sec" style="padding-top:10px;"><b>PASTANGOS</b><em>${K.MONA[r.m - 1]}</em><span></span></div><div class="kal-eff"><div><b style="color:${K.EFF.max.c};">${mx}</b><i>IŠ VISŲ JĖGŲ</i></div><div><b>${ok}</b><i>GERAI</i></div><div><b style="color:${K.EFF.light.c};">${lt}</b><i>LENGVIAU</i></div></div>`;
     },
     todayHtml(today) {
       const K = this.K; const ses = this.sesOn(today); const evs = this.evOn(today);
@@ -43481,19 +43503,13 @@ Object.assign(Kal, {
       const weeks = {}; all.filter(s => s.session_id).forEach(s => { const w = Math.floor((K.dt(s.date) - K.dt(p?.period_start || s.date)) / (7 * 86400000)) + 1; (weeks[w] = weeks[w] || []).push(s); });
       const wk = Object.keys(weeks).sort((a, b) => a - b).map(w => { const arr = weeks[w]; const from = arr[0].date, to = arr[arr.length - 1].date; const was = arr.filter(s => s.present > 0).length, held = arr.filter(s => s.total > 0).length; const exp = arr.reduce((n, s) => n + this.dayExp(s.date), 0); const now = from <= today && today <= to; const titles = arr.filter(s => s.status === 'confirmed' && s.title).map(s => K.esc(s.title)).join(', ');
         return `<div class="kal-card" style="border-left:3px solid ${to < today ? '#22C55E' : (now ? '#FF4D00' : 'var(--bdr)')};"><div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">${w}-a · ${K.esc(from.slice(5))} – ${K.esc(to.slice(5))}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${titles || (arr.some(s => s.status === 'confirmed') ? '' : 'treneris dar ruošia')}${held ? ` · ${this.T.wasN} ${was} iš ${held}` : ''}${exp ? ` · +${exp} EXP` : ''}</div></div>${to < today ? '<span class="kal-tag ok">✓</span>' : (now ? '<span class="kal-tag ai">DABAR</span>' : '')}</div></div>`; }).join('');
-      document.getElementById('kal-v-etapas')?.remove();
-      const m = document.createElement('div'); m.id = 'kal-v-etapas';
-      m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:flex-end;justify-content:center;';
-      m.onclick = (e) => { if (e.target === m) m.remove(); };
-      m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-        <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="flex:1;min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1.2px;">${p ? K.esc(p.title) : 'ETAPAS'}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:3px;">${p ? `${K.esc(p.group_name || '')} · ${K.esc(String(p.period_start).slice(5))} – ${K.esc(String(p.period_end).slice(5))}` : ''}</div></div><button onclick="document.getElementById('kal-v-etapas').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
-        <div style="padding:14px 0 20px;">
+      const body = `
           ${p ? `<div class="pl-hero"><div class="tt">${this.T.goal}</div><div style="font-size:12.5px;line-height:1.45;margin-top:6px;${p.goal_parents ? '' : 'color:var(--mut);'}">${p.goal_parents ? K.esc(p.goal_parents) : 'Treneris tikslo dar neįrašė — bet treniruotės jau suplanuotos.'}</div>${(p.focus_areas || []).length ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;">${p.focus_areas.map(f => `<span class="pl-chip on" style="cursor:default;padding:3px 9px;font-size:10px;">${K.esc(f)}</span>`).join('')}</div>` : ''}</div>` : '<div class="kal-empty">Aktyvaus etapo dar nėra.</div>'}
           ${wk ? '<div class="kal-sec">SAVAITĖS</div>' + wk : ''}
-          ${this.chHtml().replace('kal-sec">IŠŠŪKIAI', 'kal-sec">ŠIO ETAPO IŠŠŪKIAI')}
+          ${this.chHtml().replace('<b>IŠŠŪKIAI</b>', '<b>ŠIO ETAPO IŠŠŪKIAI</b>')}
           <div style="font-size:10.5px;color:var(--mut);text-align:center;padding:6px 24px 0;line-height:1.45;">Treniruotes treneris planuoja ir patvirtina į priekį — ${this.T.seeAll}.</div>
-        </div></div>`;
-      document.body.appendChild(m);
+      `;
+      K.sheetOpen('kal-v-etapas', `<div style="min-width:0;"><b>${p ? K.esc(p.title) : 'ETAPAS'}</b><i>${p ? `${K.esc(p.group_name || '')} · ${K.esc(String(p.period_start).slice(5))} – ${K.esc(String(p.period_end).slice(5))}` : ''}</i></div><button class="kal-x" onclick="Kal.sheetClose('kal-v-etapas')" title="Uždaryti">${ico('uzdaryti')}</button>`, body);
     },
   },
 });
@@ -43514,6 +43530,12 @@ Kal.parent = Object.assign(Object.create(Kal.kid), {
   kid() { return (typeof parentActiveKid !== 'undefined' && parentActiveKid) ? parentActiveKid : null; },
   name() { return this.kid()?.first_name || 'Vaikas'; },
   effortVisible() { return typeof flagOnStrict === 'function' && flagOnStrict('effort_visible_to_parents'); },
+  // v557: vaikų čipsai kalendoriaus viršuje (kai vaikų > 1) — tas pats parentSelectKid kelias
+  kidsHtml() {
+    const ks = (typeof parentKids !== 'undefined' && Array.isArray(parentKids)) ? parentKids : []; if (ks.length < 2) return '';
+    const cur = this.kid()?.id; const K = this.K;
+    return `<div class="kal-kids">${ks.map(k => `<span class="kal-chip${k.id === cur ? ' on' : ''}" onclick="parentSelectKid('${k.id}')"><i>${K.esc(String(k.first_name || '?').slice(0, 1).toUpperCase())}</i>${K.esc(k.first_name || 'Vaikas')}</span>`).join('')}</div>`;
+  },
 
   // t-main: jungiklis įjungtas → senas turinys slepiamas, kalendorius rodomas; išjungtas — atvirkščiai (kviečia loadParentKidMain)
   mount() {
@@ -43655,7 +43677,7 @@ Object.assign(Kal, {
         <div style="text-align:center;width:30px;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:19px;line-height:1;color:${colr};">${d.getDate()}</div><div style="font-size:8.5px;font-weight:900;color:var(--mut);">${K.DNOM[K.dayNo(ev.date) - 1].slice(0, 4).toUpperCase()}.</div></div>
         <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">${K.esc(ev.title)}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${sub}</div></div>${ico('toliau')}</div>`;
     },
-    pick(id) { this.st.sel = id; this.K.st.sel = id; this.render(); },
+    pick(id) { this.st.sel = id; this.K.st.sel = id; this.K.st.filt = true; this.render(); },
     shift(d) { const r = this.K.range(this.st.ym); const x = new Date(r.y, r.m - 1 + d, 1); this.st.ym = `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}`; this.K.st.dir = d; const g = document.querySelector('#kal-k-content .kal-grid'); if (g && !this.K.reduced()) g.classList.add(d > 0 ? 'out-l' : 'out-r'); this.reload(); },
 
     // dienos lapas: visos grupės su būsena + „Patvirtinti" (plan_session_confirm leidžia klubo adminui) + renginiai
@@ -43895,7 +43917,8 @@ const Iss = {
   // Kalendoriaus plytelė, kai trenerio aktyvių iššūkių nėra
   emptyTile() {
     if (!this.on()) return '';
-    return `<div class="kal-sec">IŠŠŪKIAI</div><div class="kal-tiles"><div class="kal-tile" onclick="Iss.plan.openLatest()"><div class="tt">PAGAL PLANĄ</div><div class="tn">Pasiūlyti iššūkius</div><div class="tc">Iš etapo turinio · EXP pagal kreivę</div></div></div>`;
+    // v557 (kalendorius v2): tuščia būsena — pasiūlyti iš plano arba sukurti ranka
+    return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span></div><div class="kal-empty"><b>Aktyvių iššūkių nėra</b><i>Pasiūlyk iš etapo turinio (EXP pagal kreivę) arba sukurk savaitės iššūkį grupei</i><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="kal-b o" onclick="Iss.plan.openLatest()">Pasiūlyti iš plano</span>${typeof openCreateChallenge === 'function' ? '<span class="kal-b" onclick="openCreateChallenge()">+ Iššūkis</span>' : ''}</div></div>`;
   },
 
   // ─────────────────────────── PASIŪLYMAI IŠ PLANO ───────────────────────────
