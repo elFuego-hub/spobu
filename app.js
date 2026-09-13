@@ -42089,7 +42089,7 @@ Object.assign(Planas, {
     m.innerHTML = `<div class="kal-sheet pl" style="z-index:${(o.z || 100004) + 1};">
       <div class="sh"><div class="grab"></div>
         ${o.back ? `<div class="bk" onclick="${o.back}">${ico('atgal')}</div>` : ''}
-        <div style="flex:1;min-width:0;"><b>${title}</b>${o.sub ? `<i>${o.sub}</i>` : ''}</div>
+        <div style="flex:1;min-width:0;"><b>${title}</b><i>${o.sub || ''}</i></div>
         ${o.right || ''}
         <button class="kal-x" onclick="document.getElementById('${id}').remove()" title="Uždaryti">${ico('uzdaryti')}</button>
       </div>
@@ -42176,7 +42176,7 @@ Object.assign(Planas, {
     const g = this.groupById(w.groupId); const n = this.wizCount();
     const head = document.querySelector('#pl-wiz .sc, #pl-wiz > div > div:first-child');
     const titles = ['kam ir kada', 'rėmai', 'kaip tu treniruoji', 'peržiūrėk ir patvirtink'];
-    if (head) head.querySelector('div[style*="Bebas"]').textContent = w.step === 1 ? 'PLANUOTI TRENIRUOTES' : (w.step === 4 ? `AI PARUOŠĖ ${w.sessions.length}` : `ETAPAS · ${(g.name || '').toUpperCase()}`);
+    if (head) { const t = head.querySelector('b, div[style*="Bebas"]'); if (t) t.textContent = w.step === 1 ? 'PLANUOTI TRENIRUOTES' : (w.step === 4 ? `AI PARUOŠĖ ${w.sessions.length}` : `ETAPAS · ${(g.name || '').toUpperCase()}`); }   // v558: naujame lape antraštė yra <b>
     const dots = `<div class="pl-steps">${[1, 2, 3, 4].map(i => `<i class="${i <= w.step ? 'on' : ''}"></i>`).join('')}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;padding:0 18px 8px;">${w.step} žingsnis iš 4 · ${titles[w.step - 1]}</div>`;
     const chip = (on, oc, txt, extra) => `<span class="pl-chip${on ? ' on' : ''}" style="flex:1;justify-content:center;padding:9px 6px;${extra || ''}" onclick="${oc}">${txt}</span>`;
     let html = dots, cta = '';
@@ -44076,7 +44076,7 @@ const Iss = {
     },
     render() {
       const s = this.st; const body = document.getElementById('iss-sheet-body'); if (!body) return;
-      const sub = document.querySelector('#iss-sheet > div > div:first-child div[style*="font-size:10.5px"]'); if (sub) sub.textContent = `${s.group?.name || ''} · ${s.plan?.title || ''}`;
+      const sub = document.querySelector('#iss-sheet > div > div:first-child i, #iss-sheet > div > div:first-child div[style*="font-size:10.5px"]'); if (sub) sub.textContent = `${s.group?.name || ''} · ${s.plan?.title || ''}`;
       const rows = {}; ['weekly', 'monthly'].forEach(t => Object.assign(rows, this.calc(t)));
       const nSel = s.sug.filter(x => s.sel[x.id]).length;
       const sec = (type) => {
@@ -44213,8 +44213,8 @@ const Iss = {
       n.none = n.all - n.done - n.wait;
       const left = ch.expires_at ? Math.max(0, Math.ceil((new Date(ch.expires_at) - Date.now()) / 86400000)) : null;
       const auto = (typeof AutoTvirt !== 'undefined') && AutoTvirt.isAuto(ch);
-      const head = document.querySelector('#iss-sum > div > div:first-child div[style*="Bebas"]'); if (head) head.textContent = (ch.type === 'weekly' ? 'SAVAITĖS IŠŠŪKIS' : ch.type === 'monthly' ? 'MĖNESIO IŠŠŪKIS' : 'IŠŠŪKIS');
-      const subEl = document.querySelector('#iss-sum > div > div:first-child div[style*="font-size:10.5px"]');
+      const head = document.querySelector('#iss-sum > div > div:first-child b, #iss-sum > div > div:first-child div[style*="Bebas"]'); if (head) head.textContent = (ch.type === 'weekly' ? 'SAVAITĖS IŠŠŪKIS' : ch.type === 'monthly' ? 'MĖNESIO IŠŠŪKIS' : 'IŠŠŪKIS');
+      const subEl = document.querySelector('#iss-sum > div > div:first-child i, #iss-sum > div > div:first-child div[style*="font-size:10.5px"]');
       if (subEl) subEl.textContent = `${ch.title}${ch.target_value ? ` · ${ch.target_value} ${ch.target_unit || ''}` : ''}${left != null ? ` · liko ${left} d.` : ''}`;
       const cnt = (v, l, c, bg) => `<div style="flex:1;background:${bg || 'var(--card)'};border:.5px solid ${c ? c + '66' : 'var(--bdr)'};border-radius:14px;padding:10px 11px;text-align:center;"><div style="font-size:18px;font-weight:900;line-height:1;color:${c || 'var(--txt)'};">${v}</div><div style="font-size:9.5px;font-weight:800;color:var(--mut);margin-top:4px;">${l}</div></div>`;
       const chip = (k, l, v) => `<span class="pl-chip${s.tab === k ? ' on' : ''}" style="padding:7px 12px;font-size:11px;" onclick="Iss.sum.tab('${k}')">${l} · ${v}</span>`;
