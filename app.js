@@ -42298,6 +42298,12 @@ Object.assign(Planas, {
       showToast(ico('laukia') + (mode === 'template' ? ' Sudedu šabloną…' : ` AI ruošia ${n} ${_ltPl(n, 'treniruotę', 'treniruotes', 'treniruočių')} — iki 2 min…`), 'success', 6000);
       const res = await this.invokePlan(mode === 'template' ? { plan_id: w.planId, mode: 'template' } : { plan_id: w.planId });
       w.fallback = !!res.fallback;
+      // v569: edge ruošia po 8 treniruotes per kvietimą (Supabase wall-clock riba nutraukdavo 2-ą dalį — 16 sesijų etapo pusė likdavo tuščia); tęsiam tik TUŠČIAS
+      for (let rem = res.remaining || 0, guard = 0; rem > 0 && guard < 6; guard++) {
+        showToast(ico('laukia') + ` AI ruošia toliau — liko ${rem}…`, 'success', 6000);
+        const r2 = await this.invokePlan(mode === 'template' ? { plan_id: w.planId, mode: 'template', only_empty: true } : { plan_id: w.planId, only_empty: true });
+        if (r2.fallback) w.fallback = true; rem = r2.remaining || 0;
+      }
       const [pR, sR] = await Promise.all([
         sb.from('training_plans').select('id, title, goal_parents, focus_areas, status, period_start, period_end, duration_min, detail_level').eq('id', w.planId).maybeSingle(),
         sb.from('training_plan_sessions').select(this.V2_SESS_COLS).eq('plan_id', w.planId).order('session_date').order('starts_at'),
@@ -42393,18 +42399,39 @@ Object.assign(Planas, {
     </div>`;
   },
   async regenPlan(planId) {
-    if (!(await appConfirm('Paruošti šio etapo treniruotes su AI? Esami juodraščiai bus perrašyti (užrakinti blokai liks).'))) return;
-    showToast(ico('laukia') + ' AI ruošia — iki 2 min…', 'success', 6000);
-    try { const r = await this.invokePlan({ plan_id: planId }); showToast((r.fallback ? ico('ispejimas') + ' AI nepavyko — šablonas' : ico('atlikta') + ' Paruošta: ' + (r.generated || 0)), r.fallback ? 'error' : 'success'); this.openEtapas(planId); }
+    // v569: tuščios treniruotės (etapo pusė be turinio po nutrūkusio generavimo) pildomos PIRMIAUSIA ir nieko kito neliečia
+    const { data: ss } = await sb.from('training_plan_sessions').select('id, status, blocks').eq('plan_id', planId);
+    const empty = (ss || []).filter(x => x.status === 'draft' && !(Array.isArray(x.blocks) && x.blocks.length)).length;
+    let onlyEmpty = false;
+    if (empty > 0) onlyEmpty = await appConfirm(`Paruošti su AI ${empty} ${_ltPl(empty, 'tuščią treniruotę', 'tuščias treniruotes', 'tuščių treniruočių')}? Kitos lieka kaip yra.`);
+    if (!onlyEmpty && !(await appConfirm('Perdaryti su AI VISAS šio etapo juodraščio treniruotes? Užrakinti blokai liks.'))) return;
+    showToast(ico('laukia') + ' AI ruošia — po 8 treniruotes, iki 2 min kiekvienai daliai…', 'success', 6000);
+    try {
+      let gen = 0, fb = false, rem = 1, skip = 0;
+      for (let guard = 0; rem > 0 && guard < 6; guard++) {
+        const r = await this.invokePlan(onlyEmpty ? { plan_id: planId, only_empty: true } : { plan_id: planId, skip });
+        gen += r.generated || 0; fb = fb || !!r.fallback; rem = r.remaining || 0; skip += 8;
+        if (rem) showToast(ico('laukia') + ` AI ruošia toliau — liko ${rem}…`, 'success', 6000);
+      }
+      showToast((fb ? ico('ispejimas') + ' AI nepavyko daliai — šablonas' : ico('atlikta') + ' Paruošta: ' + gen), fb ? 'error' : 'success'); this.openEtapas(planId);
+    }
     catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 6000); }
   },
 
   // ═══ APRAŠYMAS (tas pats komponentas vaikui/tėvui — Kal.renderSession su role) ═══
+  async aprAI(sessId) {
+    const { data: s } = await sb.from('training_plan_sessions').select('plan_id').eq('id', sessId).maybeSingle(); if (!s) return;
+    showToast(ico('laukia') + ' AI ruošia treniruotę — iki 1 min…', 'success', 5000);
+    try { const r = await this.invokePlan({ plan_id: s.plan_id, session_id: sessId }); showToast(r.fallback ? ico('ispejimas') + ' AI nepavyko — šablonas' : ico('atlikta') + ' Paruošta — peržiūrėk ir patvirtink', r.fallback ? 'error' : 'success', 5000); }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 6000); }
+    this.st.events = null; this.openApr(sessId);
+  },
   async openApr(sessId) {
     try {
       const s = await this.loadSess(sessId); const p = s.training_plans || {};
       const canEdit = this.canEdit() && p.status !== 'archived';
-      const foot = canEdit ? `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">${s.status === 'confirmed' ? 'Šitą tekstą mato vaikai ir tėvai.' : 'Kol nepatvirtinta, vaikai šios treniruotės nemato.'}</div><div style="display:flex;gap:7px;">${s.status !== 'confirmed' ? `<button class="pl-cta g" style="flex:1;" onclick="Planas.confirmSession('${s.id}',()=>Planas.openApr('${s.id}'))">Patvirtinti</button>` : ''}<button class="pl-cta" style="flex:${s.status !== 'confirmed' ? '0 0 auto' : '1'};background:rgba(255,255,255,.06);color:var(--txt);padding:13px 18px;" onclick="document.getElementById('pl-apr').remove();Planas.openEdit('${s.id}')">Koreguoti</button></div>` : '';
+      const empty = !(Array.isArray(s.blocks) && s.blocks.length);   // v569: turinio nėra (nutrūkęs generavimas) → pirma AI, ne „Patvirtinti"
+      const foot = canEdit ? `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">${s.status === 'confirmed' ? 'Šitą tekstą mato vaikai ir tėvai.' : (empty ? 'Turinio dar nėra — paruošk su AI arba sudėk blokus ranka.' : 'Kol nepatvirtinta, vaikai šios treniruotės nemato.')}</div><div style="display:flex;gap:7px;">${empty ? `<button class="pl-cta" style="flex:1;background:rgba(168,85,247,.18);color:#c084fc;border:.5px solid rgba(168,85,247,.5);" onclick="Planas.aprAI('${s.id}')">${ico('ai')} Paruošti su AI</button>` : (s.status !== 'confirmed' ? `<button class="pl-cta g" style="flex:1;" onclick="Planas.confirmSession('${s.id}',()=>Planas.openApr('${s.id}'))">Patvirtinti</button>` : '')}<button class="pl-cta" style="flex:1;background:rgba(255,255,255,.06);color:var(--txt);" onclick="document.getElementById('pl-apr').remove();Planas.openEdit('${s.id}')">Koreguoti</button></div>` : '';
       this.sheet('pl-apr', this.esc(s.title || 'Treniruotė'), Kal.renderSession(s, { role: this.role() === 'club_admin' ? 'club_admin' : 'trainer', plan: p, group: this.groupById(s.group_id) }), foot,
         { sub: `${this.dateLT(s.session_date)} · ${this.dowLT(s.session_date).toLowerCase()}${s.starts_at ? ' ' + String(s.starts_at).slice(0, 5) : ''} · ${s.duration_min || p.duration_min || 60} min`, right: Kal.statusTag({ session_id: s.id, status: s.status }) });
     } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); }
