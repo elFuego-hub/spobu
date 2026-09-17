@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=565">
+<link rel="stylesheet" href="styles.css?v=566">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v565</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v566</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2361,6 +2361,29 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupės</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('tr',this,'tr-challenges')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+<!-- ===== /MODULIS ===== -->
+
+<!-- ===== MODULIS: Tren (v566) — trenerio langas „Treniruotės" (kita treniruotė · etapai · rekomendacija · katalogas · AI); pildo Tren.mount('trainer') ===== -->
+<div class="sc" id="tr-tren">
+  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">TRENIRUOTĖS</div>
+    <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="Tren.mount('trainer')" title="Atnaujinti" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mut);"><svg class="ico" aria-hidden="true"><use href="#i-atnaujinti"></use></svg></div>
+      <div onclick="toggleTrainerNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg></div>
+    </div>
+  </div>
+  <div class="sa" id="tren-tr">
+    <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('tr',this,'tr-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-groups')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupės</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
@@ -4750,7 +4773,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=565"></script>
+<script src="app.js?v=566"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

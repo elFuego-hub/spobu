@@ -31021,7 +31021,7 @@ function switchClubTeamTab(tab){
   if (tab==='students' && typeof switchClubStudentsTab==='function') switchClubStudentsTab('reg');
   else if (tab==='groups' && typeof loadClubGroups==='function') loadClubGroups();
   else if (tab==='trainers' && typeof loadClubTrainers==='function') loadClubTrainers();
-  else if (tab==='planas' && typeof Planas!=='undefined') Planas.loadAdmin();   // MODULIS: planas (v528)
+  else if (tab==='planas' && typeof Planas!=='undefined') Planas.loadAdmin().then(() => { if (typeof Tren !== 'undefined') Tren.mount('club_admin'); });   // MODULIS: planas (v528) + Tren (v566)
 }
 
 // 🎒 MOKINIAI: nepriskirti prie grupės + laukia anketos patvirtinimo
@@ -36391,8 +36391,8 @@ function nv(p,el,sid){
   if (sid === 'tr-stat' && typeof loadTrainerOverallStat === 'function') {
     loadTrainerOverallStat();
   }
+  if (sid === 'tr-tren' && typeof Tren !== 'undefined') Tren.mount('trainer');   // MODULIS: Tren (v566) — treniruočių langas
   if (sid === 'tr-prof') {
-    if (typeof Planas !== 'undefined' && Planas.libCard) Planas.libCard();   // MODULIS: planas papkė (v565) — kortelė „Mano blokai"
     if (typeof renderTrainerProfile === 'function') renderTrainerProfile();
     if (typeof loadTrainerProfileStats === 'function') loadTrainerProfileStats();
   }
@@ -43218,6 +43218,7 @@ const Kal = {
       dn.querySelectorAll('use').forEach(u => u.setAttribute('href', '#i-kalendorius'));
       [...dn.childNodes].forEach(x => { if (x.nodeType === 3 && x.textContent.trim()) x.textContent = ' Kalendorius'; });
     }
+    if (typeof Tren !== 'undefined') Tren.nav();   // MODULIS: Tren (v566) — skirtukas „Treniruotės" po Kalendoriaus
     this.applyNav8();
   },
 
@@ -43241,7 +43242,14 @@ const Kal = {
     if (tdn) { tdn.querySelector('.vdn-item[data-sid="tr-main"]')?.remove(); const k = tdn.querySelector('.vdn-item[data-sid="tr-kal"]'); if (k && k.parentElement.firstElementChild !== k) k.parentElement.insertBefore(k, k.parentElement.firstElementChild); }
     document.querySelectorAll(`#ptr [onclick="g('tr','tr-main')"]`).forEach(b => b.setAttribute('onclick', "g('tr','tr-kal')"));
     const prof = document.querySelector('#tr-prof .sa'); const trp = document.getElementById('trp-hero'); const hero = document.getElementById('trh-hero');
-    if (hero && prof && trp && !prof.contains(hero)) { hero.removeAttribute('onclick'); hero.style.cursor = 'default'; hero.style.margin = '0 12px 6px'; trp.insertAdjacentElement('afterend', hero); }
+    // v566: dubliavimo nėra — iš trh-hero į trp-hero (po ikona) keliami TIK „dar N tšk.", progreso juosta ir 3 KPI (id'ai lieka — loaderiai tie patys); likęs „Sveiki" blokas išimamas
+    if (hero && trp && !document.getElementById('trp-kpi')) {
+      const box = document.createElement('div'); box.id = 'trp-kpi'; box.style.cssText = 'position:relative;z-index:1;margin:8px 6px 0;';
+      const nx = hero.querySelector('#trh-next-txt'); if (nx) { nx.style.cssText = 'display:block;font-size:8px;color:rgba(255,255,255,.8);font-weight:700;text-align:center;margin-bottom:5px;letter-spacing:.3px;'; box.appendChild(nx); }
+      const bar = hero.querySelector('#trh-lvl-bar'); const row = bar && bar.parentElement && bar.parentElement.parentElement; if (row) { row.style.marginTop = '0'; box.appendChild(row); }
+      const kpi = hero.querySelector('div[style*="1fr 1fr 1fr"]'); if (kpi) { kpi.style.marginTop = '8px'; box.appendChild(kpi); }
+      trp.appendChild(box); hero.remove();
+    }
     if (prof && trp && !document.getElementById('kal-tr-norm')) {
       const norm = document.createElement('div'); norm.id = 'kal-tr-norm'; norm.className = 'kal-card'; norm.style.cssText = 'margin:0 12px 6px;cursor:pointer;'; norm.setAttribute('onclick', 'openTrainerNormatyvai()');
       norm.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">Pratimų normatyvai</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Kiek kartų pagal amžių ir lytį — vaikams ir tėvams</div></div>${ico('toliau')}</div>`;
@@ -44469,7 +44477,10 @@ const Postai = {
   dash(s) { return String(s || '').replace(/\s*—\s*/g, ' — ').replace(/\s+/g, ' ').trim(); },
   dmon(d) { const m = (typeof Kal !== 'undefined' && Kal.MONG) ? Kal.MONG[d.getMonth()].toLowerCase() : ''; return `${d.getDate()} ${m.slice(0, 4)}.`; },
   titleOf() { const s = this.st; if (!s) return ''; return s.title ? this.dash(s.title) : `${this.KILM[s.now.getDay()]} treniruotė`; },
-  textOf() { const s = this.st; if (!s) return ''; const g = s.group.name || 'Grupė'; return s.title ? `${g} šiandien: ${this.dash(s.title)} 🥋` : `${g}: ${this.KILM[s.now.getDay()]} treniruotė 🥋`; },
+  textOf() { const s = this.st; if (!s) return ''; const g = s.group.name || 'Grupė'; const t = s.title ? this.dash(s.title) : `${this.KILM[s.now.getDay()]} treniruotė`; if (s.target === 'group') return s.title ? `${g} šiandien: ${t} 🥋` : `${g}: ${t} 🥋`; return `${s.clubName ? s.clubName + ' · ' : ''}${g}: ${t} 🥋\n#karate #vaikusportas #spobu`; },
+  TARGETS: [['group', 'Grupei', 'tėvų pokalbis'], ['fb', 'Facebook', '+ klubas, #žymos'], ['ig', 'Instagram', '+ klubas, #žymos']],
+  targetsHtml() { const s = this.st; return `<div id="pst-targets" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">${this.TARGETS.map(([k, t, sub]) => `<div onclick="Postai.setTarget('${k}')" style="text-align:center;border:.5px solid ${s.target === k ? '#FF7A33' : 'var(--bdr)'};background:${s.target === k ? 'rgba(255,122,51,.12)' : 'var(--card)'};color:${s.target === k ? '#FF9E40' : 'rgba(255,255,255,.85)'};border-radius:11px;padding:8px 4px;font-size:11px;font-weight:800;cursor:pointer;">${t}<div style="font-size:9px;color:var(--mut);font-weight:700;margin-top:2px;">${sub}</div></div>`).join('')}</div>`; },
+  setTarget(k) { const s = this.st; if (!s) return; s.target = k; const tg = document.getElementById('pst-targets'); if (tg) tg.outerHTML = this.targetsHtml(); const inp = document.getElementById('pst-text'); if (inp) inp.value = this.textOf(); },
 
   // Lapas: peržiūra · nuotrauka · viena eilutė · Siųsti. opts.auto — atidaryta automatiškai po lankomumo
   async open(groupId, opts) {
@@ -44478,13 +44489,13 @@ const Postai = {
     const g = (typeof trainerGroupsCache !== 'undefined' ? (trainerGroupsCache || []) : []).find(x => x.id === groupId);
     if (!g) { if (!(opts && opts.auto)) showToast(ico('ispejimas') + ' Pirma atidaryk grupę', 'error'); return; }
     document.getElementById('att-share-hint')?.remove();
-    this.st = { groupId, group: g, now: new Date(), title: null, logo: null, photo: null, canvas: null, busy: false, auto: !!(opts && opts.auto) };
-    Planas.sheet('pst-mini', 'POSTAS Į GRUPĘ', `
+    this.st = { groupId, group: g, now: new Date(), title: null, logo: null, clubName: '', photo: null, canvas: null, busy: false, auto: !!(opts && opts.auto), target: 'group' };
+    Planas.sheet('pst-mini', 'POSTAS', `
       <div style="padding:0 16px 6px;font-size:11px;color:var(--mut);">${this.esc(g.name || '')}${this.st.auto ? ' · lankomumas pažymėtas — pasidalink su tėvais' : ''}</div>
       <div id="pst-prev" style="margin:0 16px;background:#12100e;border-radius:14px;padding:8px;display:flex;justify-content:center;overflow:hidden;"><div style="padding:40px;color:var(--mut);font-size:11px;">Ruošiama…</div></div>
       <div id="pst-photo-row" style="margin:10px 16px 0;"></div>
       <div style="margin:10px 16px 0;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;color:var(--mut);margin-bottom:5px;">ŽINUTĖ · viena eilutė</div><input id="pst-text" class="inp" maxlength="140" style="margin:0;font-size:12px;" value=""></div>`,
-      `<button class="pl-cta" onclick="Postai.share()">${ico('siusti')} Siųsti į grupę</button>
+      `${this.targetsHtml()}<button class="pl-cta" onclick="Postai.share()">${ico('siusti')} Dalintis</button>
        <div style="text-align:center;margin-top:8px;"><span onclick="Postai.download()" style="font-size:10.5px;color:var(--mut);cursor:pointer;text-decoration:underline;">Atsisiųsti paveikslą</span></div>`,
       { z: 100006 });
     this.photoRow();
@@ -44495,10 +44506,13 @@ const Postai = {
   async load() {
     const s = this.st; if (!s) return;
     try {
-      const [ses, logo] = await Promise.all([
+      const cid = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || currentProfile?.club_id || null;
+      const [ses, logo, club] = await Promise.all([
         sb.from('training_plan_sessions').select('title, session_date, training_plans!inner(status)').eq('group_id', s.groupId).eq('session_date', this.ymd(s.now)).eq('status', 'confirmed').eq('training_plans.status', 'active').limit(1),
         typeof _shareClubLogo === 'function' ? _shareClubLogo() : Promise.resolve(null),
+        cid ? sb.from('clubs').select('name').eq('id', cid).maybeSingle() : Promise.resolve({ data: null }),
       ]);
+      s.clubName = (club && club.data && club.data.name) || (typeof currentClub !== 'undefined' && currentClub && currentClub.name) || '';
       if (ses.error) console.warn('[postai] sesija', ses.error.message);
       s.title = (ses.data && ses.data[0] && ses.data[0].title) || null;
       s.logo = logo || null;
@@ -44556,11 +44570,211 @@ const Postai = {
     try {
       const blob = await new Promise(res => s.canvas.toBlob(res, 'image/png'));
       const file = new File([blob], 'spobu-treniruote.png', { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share(text ? { files: [file], text, title: 'SPOBU' } : { files: [file], title: 'SPOBU' }); document.getElementById('pst-mini')?.remove(); }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share(text ? { files: [file], text, title: 'SPOBU' } : { files: [file], title: 'SPOBU' }); document.getElementById('pst-mini')?.remove(); if (text && s.target !== 'group') showToast(ico('atlikta') + ' Tekstas nukopijuotas — įklijuok į įrašą, jei programa jo neįdėjo', 'success', 4000); }
       else { this.download(); if (text) showToast(ico('atlikta') + ' Paveikslas atsisiųstas, žinutė nukopijuota', 'success', 4000); }
     } catch (e) { if (e && e.name !== 'AbortError') this.download(); }
   },
   download() { const s = this.st; if (!s || !s.canvas) return; const a = document.createElement('a'); a.href = s.canvas.toDataURL('image/png'); a.download = 'spobu-treniruote.png'; a.click(); showToast(ico('atlikta') + ' Atsisiųsta'); },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: Tren =====
+// v566 (2026-09-18, savininko maketas A „Trenerio treniruočių langas", claude.ai/artifact/3z5ztVhyVnT8oyMA4Dfiir): viena vieta
+// treneriui susiplanuoti ir keisti treniruotes — KITA TRENIRUOTĖ (patvirtinti · koreguoti · AI perdaryti) → AKTYVŪS ETAPAI
+// (eiga, treniruotės, iššūkiai, kitas etapas) → KLUBO REKOMENDACIJA → KATALOGAS (numatytieji + savi, „+ Naujas blokas",
+// „AI: pasiūlyk 3") → AI PASTEBĖJO (ką kartoji — siūlo išsaugoti; be AI kvietimo). Treneriui — naujas apatinis skirtukas
+// `tr-tren` (Kal.applyNav įterpia į visas .bn2 kopijas ir desktop nav), klubo adminui — sub-tabo „Planai" viršus (Tren.mount
+// 'club_admin' po Planas.loadAdmin). Naudoja tik esamus Planas / Iss / Kal kelius; rašo tik trainer_blocks (savi blokai).
+// EXP ir lankomumo neliečia. Taisyklė 7: viena vardų erdvė `Tren`, DOM prefiksas `tren-`, jokių naujų globalių.
+const Tren = {
+  st: { role: 'trainer', kind: 'pair', groups: [], plans: [], counts: {}, upcoming: [], recs: [], lib: null, seen: [], ai: [], aiBusy: false, busy: false },
+  KINDS: ['warmup', 'physical', 'technique', 'pair', 'stretch'],
+  DOW2: ['Sk', 'Pr', 'An', 'Tr', 'Kt', 'Pn', 'Št'],
+  GAL: ['sekmadienį', 'pirmadienį', 'antradienį', 'trečiadienį', 'ketvirtadienį', 'penktadienį', 'šeštadienį'],
+  on() { return typeof Kal !== 'undefined' && Kal.on(); },
+  esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); },
+  ymd(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; },
+  today() { return this.ymd(new Date()); },
+  dt(s) { return new Date(String(s) + 'T12:00:00'); },
+  addDays(s, n) { const d = this.dt(s); d.setDate(d.getDate() + n); return this.ymd(d); },
+  days(a, b) { return Math.round((this.dt(b) - this.dt(a)) / 86400000); },
+  dmon(s) { const d = this.dt(s); return `${d.getDate()} ${(Kal.MONG[d.getMonth()] || '').toLowerCase().slice(0, 4)}.`; },
+  canEdit() { return typeof Planas !== 'undefined' && Planas.canEdit() && (this.st.role !== 'trainer' || typeof flagOn !== 'function' || flagOn('trainers_can_create_plans')); },
+  // konteineris: treneriui — ekranas tr-tren; adminui — pirmas #k-team-planas vaikas (Planas.loadList perrašo pane'ą, todėl įterpiam po jo)
+  cid() {
+    if (this.st.role === 'club_admin') { const pane = document.getElementById('k-team-planas'); if (!pane) return null; let c = document.getElementById('tren-k'); if (!c) { c = document.createElement('div'); c.id = 'tren-k'; pane.insertBefore(c, pane.firstChild); } return c; }
+    return document.getElementById('tren-tr');
+  },
+  async mount(role) {
+    const c = this.cid(); if (!c) return;
+    if (!this.on()) { c.innerHTML = ''; return; }
+    this.st.role = role || 'trainer';
+    c.innerHTML = '<div class="kal-empty"><b>Kraunama…</b></div>';
+    try { await this.load(); this.render(); }
+    catch (e) { console.warn('[tren]', e); c.innerHTML = `<div class="kal-empty"><b>Nepavyko užkrauti</b><i>${this.esc(e.message || '')}</i></div>`; }
+  },
+  async load() {
+    Planas.st.role = this.st.role === 'club_admin' ? 'club_admin' : 'trainer';
+    if (!Planas.st.container) Planas.st.container = this.st.role === 'club_admin' ? 'k-team-planas' : 'pl-tr-content';
+    await Planas.loadGroups(); this.st.groups = Planas.st.groups;
+    const gids = this.st.groups.map(g => g.id), today = this.today(), to = this.addDays(today, 14), from60 = this.addDays(today, -60), clubId = Planas.clubId();
+    if (!gids.length) { this.st.plans = []; this.st.upcoming = []; this.st.recs = []; this.st.seen = []; this.st.lib = await Planas.loadLib(this.st.kind); return; }
+    const [plR, upR, hsR, recR, mineR] = await Promise.all([
+      sb.from('training_plans').select('id, group_id, title, status, period_start, period_end, kind, competitions!training_plans_competition_id_fkey(title, event_date)').in('group_id', gids).in('status', ['active', 'draft']).order('period_start', { ascending: false }).limit(40),
+      sb.from('training_plan_sessions').select('id, plan_id, group_id, session_date, starts_at, duration_min, title, blocks, status').in('group_id', gids).gte('session_date', today).lte('session_date', to).order('session_date').order('starts_at').limit(60),
+      sb.from('training_plan_sessions').select('plan_id, session_date, status, blocks').in('group_id', gids).gte('session_date', from60).lte('session_date', this.addDays(today, 92)).limit(600),
+      clubId ? sb.from('group_recommendations').select('id, group_id, period_label, text, include_in_ai, created_at').eq('club_id', clubId).order('created_at', { ascending: false }).limit(5) : Promise.resolve({ data: [] }),
+      clubId ? sb.from('trainer_blocks').select('title').eq('club_id', clubId).eq('is_active', true).limit(300) : Promise.resolve({ data: [] }),
+    ]);
+    [plR, upR, hsR, recR, mineR].forEach(r => { if (r && r.error) console.warn('[tren]', r.error.message); });
+    this.st.plans = plR.data || [];
+    const counts = {}; (hsR.data || []).forEach(s => { const c = counts[s.plan_id] || (counts[s.plan_id] = { all: 0, conf: 0, done: 0 }); c.all++; if (s.status === 'confirmed') { c.conf++; if (s.session_date <= today) c.done++; } });
+    this.st.counts = counts;
+    const activeIds = new Set(this.st.plans.filter(p => p.status === 'active').map(p => p.id));
+    const nowHm = new Date().toTimeString().slice(0, 5);
+    this.st.upcoming = (upR.data || []).filter(s => activeIds.has(s.plan_id) && (s.session_date > today || (s.session_date === today && Kal.hhmm(s.starts_at) > nowHm)));
+    this.st.recs = (recR.data || []).filter(r => !r.group_id || gids.includes(r.group_id));
+    // AI PASTEBĖJO — pasikartojantys blokai be papkės nuorodos (block_id) patvirtintose treniruotėse per 60 d., kurių pavadinimo papkėje dar nėra
+    const mine = new Set((mineR.data || []).map(b => String(b.title || '').toLowerCase()));
+    const freq = {};
+    (hsR.data || []).filter(s => s.status === 'confirmed' && s.session_date <= today).forEach(s => (Array.isArray(s.blocks) ? s.blocks : []).forEach(b => { if (!b || !b.title || b.block_id || !this.KINDS.includes(b.type)) return; const k = String(b.title).toLowerCase(); if (mine.has(k)) return; (freq[k] = freq[k] || { n: 0, b }).n++; }));
+    this.st.seen = Object.values(freq).filter(x => x.n >= 2).sort((a, b) => b.n - a.n).slice(0, 3);
+    this.st.lib = await Planas.loadLib(this.st.kind);
+  },
+  gname(id) { return (this.st.groups.find(g => g.id === id) || {}).name || ''; },
+  planOf(id) { return this.st.plans.find(p => p.id === id) || null; },
+  evDays(p) { const d = p && p.competitions && p.competitions.event_date ? this.days(this.today(), p.competitions.event_date) : null; return d != null && d >= 0 ? d : null; },
+  weekOf(p) { if (!p) return null; const n = Math.max(1, Math.ceil((this.days(p.period_start, p.period_end) + 1) / 7)); const k = Math.min(n, Math.max(1, Math.floor(this.days(p.period_start, this.today()) / 7) + 1)); return { k, n }; },
+  btn(fn, label, cls) { return `<span class="kal-b${cls ? ' ' + cls : ''}" onclick="${fn}">${label}</span>`; },
+  render() {
+    const c = this.cid(); if (!c) return;
+    const s = this.st, today = this.today(), edit = this.canEdit();
+    // ── KITA TRENIRUOTĖ ──
+    const n = s.upcoming[0]; let next;
+    if (n) {
+      const p = this.planOf(n.plan_id), rel = this.days(today, n.session_date), ev = this.evDays(p);
+      const when = rel === 0 ? 'ŠIANDIEN' : (rel === 1 ? 'RYTOJ' : this.DOW2[this.dt(n.session_date).getDay()] + ' ' + this.dmon(n.session_date));
+      const conf = n.status === 'confirmed';
+      next = `<div class="kal-card" style="border-color:rgba(255,77,0,.45);background:linear-gradient(135deg,rgba(255,77,0,.14),rgba(255,122,51,.03));">
+        <div style="font-size:13.5px;font-weight:900;"><span style="color:var(--br);">${when}</span> ${Kal.hhmm(n.starts_at)} · ${this.esc(n.title || 'Treniruotė')}${conf ? '' : ' <span class="kal-tag">JUODRAŠTIS</span>'}</div>
+        <div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${this.esc(this.gname(n.group_id))} · ${n.duration_min || 60} min · ${(Array.isArray(n.blocks) ? n.blocks : []).length} blokai${ev != null ? ` · ${ev} d. iki varžybų` : ''}${conf ? ' · vaikai mato' : ' · vaikai dar nemato'}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;">${!conf && edit ? this.btn(`Tren.confirm('${n.id}')`, ico('atlikta') + ' Patvirtinti', 'o') : ''}${edit ? this.btn(`Tren.edit('${n.id}')`, 'Koreguoti') : ''}${edit ? this.btn(`Tren.ai('${n.id}')`, ico('ai') + ' AI perdaryti') : ''}</div>
+      </div>`;
+    } else next = `<div class="kal-empty"><b>Artimiausių 14 dienų treniruočių nėra</b><i>${edit ? 'Sukurk etapą — vedlys paruoš treniruotes iš tavo blokų' : 'Etapą kuria treneris arba klubas'}</i></div>`;
+    // ── ETAPAI ──
+    const active = s.plans.filter(p => p.status === 'active'), drafts = s.plans.filter(p => p.status === 'draft');
+    const withPlan = new Set(active.map(p => p.group_id));
+    const etapas = p => {
+      const cnt = s.counts[p.id] || { all: 0, conf: 0, done: 0 }, w = this.weekOf(p), ev = this.evDays(p);
+      const left = this.days(today, p.period_end);
+      const st = p.status === 'draft' ? ['JUODRAŠTIS', 'var(--mut)'] : (left <= 3 ? ['SUVESTINĖ', 'var(--grn)'] : (w && w.k === 1 ? ['STARTAS', 'var(--br)'] : ['EIGA', 'var(--mut)']));
+      const pct = cnt.all ? Math.round(cnt.done * 100 / cnt.all) : 0;
+      return `<div class="kal-card" style="cursor:pointer;" onclick="Planas.openEtapas('${p.id}')">
+        <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.esc(this.gname(p.group_id))} · ${this.esc(String(p.title || '').replace(/\s*—\s*/g, ' — '))}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${w ? `${w.k} sav. iš ${w.n} · ` : ''}${cnt.done} iš ${cnt.all} treniruočių įvykę · ${cnt.conf} patvirtinta${ev != null ? ` · ${this.esc(p.competitions.title)} ${p.competitions.event_date.slice(5).replace('-', '-')}` : ''}</div></div><span class="kal-tag" style="color:${st[1]};border-color:${st[1]};">${st[0]}</span></div>
+        <div class="kal-bar" style="margin-top:8px;"><span style="width:${pct}%;"></span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;" onclick="event.stopPropagation()">${this.btn(`Planas.openEtapas('${p.id}')`, 'Visos treniruotės')}${typeof Iss !== 'undefined' && p.status === 'active' ? this.btn(`Iss.plan.open('${p.id}')`, 'Iššūkiai') : ''}${edit && p.status === 'active' ? this.btn(`Planas.openWizard({ groupId: '${p.group_id}', afterPlanId: '${p.id}' })`, left <= 7 ? ico('prideti') + ' Planuoti kitą etapą' : 'Kitas etapas (kopija)', left <= 7 ? 'o' : '') : ''}</div>
+      </div>`;
+    };
+    const noPlan = s.groups.filter(g => !withPlan.has(g.id)).map(g => `<div class="kal-card" style="border-style:dashed;"><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${this.esc(g.name)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;">Aktyvaus etapo nėra — vaikai kalendoriuje mato tik laiką</div></div>${edit ? this.btn(`Planas.openWizard({ groupId: '${g.id}' })`, ico('prideti') + ' Planuoti etapą', 'o') : ''}</div></div>`).join('');
+    // ── REKOMENDACIJA ──
+    const recs = s.recs.slice(0, 2).map(r => `<div class="kal-card"><div style="font-size:13px;font-weight:900;line-height:1.4;">„${this.esc(String(r.text || '').slice(0, 220))}"</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${this.esc(r.period_label || '')}${r.group_id ? ' · ' + this.esc(this.gname(r.group_id)) : ' · visoms grupėms'}${r.include_in_ai ? ' · įtraukta į AI planus ✓' : ''}</div></div>`).join('');
+    // ── KATALOGAS ──
+    const lib = s.lib || { defs: [], mine: [], hiddenIds: [] };
+    const chips = this.KINDS.map(k => `<span class="kal-b${s.kind === k ? ' o' : ''}" onclick="Tren.setKind('${k}')" style="flex:none;">${Planas.tyLt(k)}</span>`).join('');
+    const rows = [...lib.mine.map(b => ({ b, mine: true })), ...lib.defs.map(b => ({ b, mine: false }))];
+    const rowHtml = r => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:.5px solid var(--bdr);font-size:12px;font-weight:800;"><span style="width:7px;height:7px;border-radius:50%;background:${Planas.tyCol(s.kind)};flex:none;"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.esc(r.b.title)}${r.mine ? ' <span class="kal-tag" style="color:var(--br);border-color:var(--br);">TAVO</span>' : (r.b.age_group && r.b.age_group !== 'all' ? ` <span class="kal-tag">${r.b.age_group === 'young' ? '6–9 m.' : '10+ m.'}</span>` : '')}</span><span style="font-size:10.5px;color:var(--mut);font-weight:700;flex:none;">${r.b.minutes} min</span></div>`;
+    const activeForAi = active[0] || null;
+    const aiCards = s.ai.map((a, i) => `<div class="kal-card" style="border-color:rgba(168,85,247,.4);background:rgba(168,85,247,.06);"><div style="font-size:13px;font-weight:900;">${this.esc(a.title)} <span class="kal-tag ai">AI</span></div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${a.minutes} min${a.text ? ' · ' + this.esc(String(a.text).slice(0, 140)) : ''}</div><div style="display:flex;gap:6px;margin-top:8px;">${this.btn(`Tren.addAi(${i})`, ico('atlikta') + ' Į katalogą', 'o')}${this.btn(`Tren.dropAi(${i})`, 'Ne')}</div></div>`).join('');
+    const seen = s.seen.map((x, i) => `<div class="kal-card"><div style="font-size:13px;font-weight:900;">„${this.esc(x.b.title)}" naudojai ${x.n} kartus</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${Planas.tyLt(x.b.type)} · ${x.b.minutes} min · įrašyti į katalogą kaip tavo bloką?</div><div style="display:flex;gap:6px;margin-top:8px;">${this.btn(`Tren.seenSave(${i})`, ico('atlikta') + ' Taip', 'o')}${this.btn(`Tren.seenDrop(${i})`, 'Vėliau')}</div></div>`).join('');
+    c.innerHTML = `
+      <div class="kal-sec"><b>KITA TRENIRUOTĖ</b><span>${s.upcoming.length > 1 ? `dar ${s.upcoming.length - 1} per 14 d.` : ''}</span></div>${next}
+      <div class="kal-sec"><b>AKTYVŪS ETAPAI</b><span>${active.length}${drafts.length ? ` · ${drafts.length} juodr.` : ''}</span></div>${active.map(etapas).join('')}${drafts.map(etapas).join('')}${noPlan || (active.length || drafts.length ? '' : '<div class="kal-empty"><b>Grupių nėra</b></div>')}
+      ${recs ? `<div class="kal-sec"><b>KLUBO REKOMENDACIJA</b><span></span></div>${recs}` : (s.role === 'club_admin' ? `<div class="kal-sec"><b>KLUBO REKOMENDACIJA</b><span></span></div><div class="kal-empty"><b>Rekomendacijos dar nėra</b><i>Rašoma iš klubo kalendoriaus — treneriai ir AI planai ją matys čia</i></div>` : '')}
+      <div class="kal-sec"><b>KATALOGAS</b><span>${lib.defs.length + lib.mine.length} ${Planas.tyLt(s.kind).toLowerCase()}${lib.hiddenIds.length ? ` · ${lib.hiddenIds.length} paslėpta` : ''}</span></div>
+      <div style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;" class="no-scrollbar">${chips}</div>
+      <div class="kal-card">${rows.length ? rows.slice(0, 6).map(rowHtml).join('') : '<div style="font-size:11px;color:var(--mut);font-weight:700;">Šioje srityje blokų nėra — sukurk savo arba paprašyk AI.</div>'}${rows.length > 6 ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Visi ${rows.length} · paslėpti / trinti →</div>` : (rows.length ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Tvarkyti (paslėpti / trinti) →</div>` : '')}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;">${edit ? this.btn('Tren.newBlock()', ico('prideti') + ' Naujas blokas', 'o') : ''}${edit && activeForAi ? this.btn('Tren.aiSuggest()', ico('ai') + (s.aiBusy ? ' AI galvoja…' : ' AI: pasiūlyk 3')) : (edit ? `<span style="font-size:10.5px;color:var(--mut);font-weight:700;align-self:center;">AI pasiūlymai — kai bus aktyvus etapas</span>` : '')}</div>
+      </div>${aiCards}
+      ${seen ? `<div class="kal-sec"><b>AI PASTEBĖJO</b><span>iš tavo treniruočių</span></div>${seen}` : ''}`;
+    if (typeof Kal !== 'undefined' && Kal.afterRender) Kal.afterRender(c);
+  },
+  // ── veiksmai ──
+  async reload() { try { await this.load(); this.render(); } catch (e) { console.warn('[tren]', e); } },
+  async confirm(id) { await Planas.confirmSession(id, () => Tren.reload()); },
+  async edit(id) { await Planas.openEdit(id); },
+  async ai(id) {
+    const n = this.st.upcoming.find(x => x.id === id); if (!n) return;
+    const extra = await appPrompt('Ko AI turėtų laikytis perdarant? (nebūtina — pvz. „daugiau kumite, be šuolių")', ''); if (extra === null) return;
+    showToast(ico('laukia') + ' AI perdaro treniruotę — iki 1 min…', 'success', 5000);
+    try { const r = await Planas.invokePlan({ plan_id: n.plan_id, session_id: id, instruction: String(extra || '').slice(0, 500) }); showToast(r.fallback ? ico('ispejimas') + ' AI nepavyko — liko šablonas' : ico('atlikta') + ' AI perdarė — peržiūrėk ir patvirtink', r.fallback ? 'error' : 'success', 5000); }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 6000); }
+    this.reload();
+  },
+  async setKind(k) { if (!this.KINDS.includes(k)) return; this.st.kind = k; this.st.ai = []; this.st.lib = await Planas.loadLib(k); this.render(); },
+  // Naujas savas blokas — 4 laukai, į trainer_blocks (source 'trainer')
+  newBlock() {
+    const s = this.st;
+    Planas.sheet('tren-nb', 'NAUJAS BLOKAS', `
+      <div style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 10px;" class="no-scrollbar">${this.KINDS.map(k => `<span class="kal-b${s.kind === k ? ' o' : ''}" data-k="${k}" onclick="Tren.nbKind('${k}')" style="flex:none;">${Planas.tyLt(k)}</span>`).join('')}</div>
+      <div style="padding:0 16px;"><div class="pl-q" style="padding:0 0 4px;">Pavadinimas</div><input id="tren-nb-title" class="inp" style="margin:0 0 10px;" maxlength="80" placeholder="pvz. Kriaušė + „šešėlis" su rotacija">
+      <div style="display:flex;gap:8px;"><div style="flex:1;"><div class="pl-q" style="padding:0 0 4px;">Minutės</div><input id="tren-nb-min" class="inp" type="number" min="1" max="120" step="5" value="10" style="margin:0 0 10px;"></div><div style="flex:2;"><div class="pl-q" style="padding:0 0 4px;">Kam</div><div style="display:flex;gap:6px;padding-top:6px;"><span class="kal-b o" data-age="all" onclick="Tren.nbAge('all')">Visiems</span><span class="kal-b" data-age="young" onclick="Tren.nbAge('young')">6–9 m.</span><span class="kal-b" data-age="older" onclick="Tren.nbAge('older')">10+ m.</span></div></div></div>
+      <div class="pl-q" style="padding:0 0 4px;">Ką ir kaip (1–2 sakiniai)</div><textarea id="tren-nb-text" class="inp" maxlength="300" style="margin:0;min-height:64px;resize:vertical;" placeholder="Partneris laiko kriaušę 1 min, kitas dirba serijomis; po raundo — 30 s „šešėlio". Poros keičiasi."></textarea></div>`,
+      `<button class="pl-cta" onclick="Tren.nbSave()">Išsaugoti į katalogą</button>`, { z: 100006 });
+    s.nb = { kind: s.kind, age: 'all' };
+  },
+  nbKind(k) { const s = this.st; s.nb.kind = k; document.querySelectorAll('#tren-nb [data-k]').forEach(el => el.classList.toggle('o', el.dataset.k === k)); },
+  nbAge(a) { const s = this.st; s.nb.age = a; document.querySelectorAll('#tren-nb [data-age]').forEach(el => el.classList.toggle('o', el.dataset.age === a)); },
+  async nbSave() {
+    const s = this.st, title = (document.getElementById('tren-nb-title')?.value || '').trim(), min = parseInt(document.getElementById('tren-nb-min')?.value) || 0, text = (document.getElementById('tren-nb-text')?.value || '').trim();
+    if (!title) { showToast(ico('ispejimas') + ' Įrašyk pavadinimą', 'error'); return; }
+    if (min < 1 || min > 120) { showToast(ico('ispejimas') + ' Minutės 1–120', 'error'); return; }
+    const ageTxt = s.nb.age === 'young' ? ' (6–9 m.)' : (s.nb.age === 'older' ? ' (10+ m.)' : '');
+    const r = await sb.from('trainer_blocks').insert({ club_id: Planas.clubId(), trainer_id: currentUser?.id, kind: s.nb.kind, title: (title + ageTxt).slice(0, 80), minutes: min, text: text || null, exercise_ids: [], source: 'trainer' }).select('id').single();
+    if (r.error) { showToast(ico('klaida') + ' ' + r.error.message, 'error', 6000); return; }
+    document.getElementById('tren-nb')?.remove();
+    showToast(ico('atlikta') + ' Blokas kataloge', 'success');
+    if (s.nb.kind !== s.kind) s.kind = s.nb.kind;
+    this.st.lib = await Planas.loadLib(s.kind); this.render();
+  },
+  // AI: 3 blokai šiai sričiai pagal aktyvų etapą (edge suggest_block be session_id — kontekstas etapas + grupė)
+  async aiSuggest() {
+    const s = this.st; if (s.aiBusy) return;
+    const p = s.plans.find(x => x.status === 'active'); if (!p) { showToast(ico('ispejimas') + ' Pirma sukurk aktyvų etapą', 'error'); return; }
+    s.aiBusy = true; this.render();
+    try { const r = await Planas.invokePlan({ plan_id: p.id, suggest_block: { type: s.kind, n: 3 } }); s.ai = Array.isArray(r.blocks) ? r.blocks : (r.block ? [r.block] : []); if (r.fallback) showToast(ico('ispejimas') + ' AI nepasiekiamas — pasiūlymas iš šablono', 'error'); }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 6000); }
+    s.aiBusy = false; this.render();
+  },
+  async addAi(i) {
+    const s = this.st, a = s.ai[i]; if (!a) return;
+    const r = await sb.from('trainer_blocks').insert({ club_id: Planas.clubId(), trainer_id: currentUser?.id, kind: s.kind, title: String(a.title || '').slice(0, 80), minutes: parseInt(a.minutes) || 10, text: a.text ? String(a.text).slice(0, 300) : null, exercise_ids: Array.isArray(a.exercise_ids) ? a.exercise_ids : [], source: 'ai' }).select('id').single();
+    if (r.error) { showToast(ico('klaida') + ' ' + r.error.message, 'error', 6000); return; }
+    s.ai.splice(i, 1); showToast(ico('atlikta') + ' Blokas kataloge', 'success'); s.lib = await Planas.loadLib(s.kind); this.render();
+  },
+  dropAi(i) { this.st.ai.splice(i, 1); this.render(); },
+  async seenSave(i) {
+    const s = this.st, x = s.seen[i]; if (!x) return; const b = x.b;
+    const r = await sb.from('trainer_blocks').insert({ club_id: Planas.clubId(), trainer_id: currentUser?.id, kind: b.type, title: String(b.title).slice(0, 80), minutes: parseInt(b.minutes) || 10, text: b.text ? String(b.text).slice(0, 300) : null, exercise_ids: Array.isArray(b.exercise_ids) ? b.exercise_ids : [], source: 'ai' }).select('id').single();
+    if (r.error) { showToast(ico('klaida') + ' ' + r.error.message, 'error', 6000); return; }
+    s.seen.splice(i, 1); showToast(ico('atlikta') + ' Blokas kataloge', 'success'); if (b.type === s.kind) s.lib = await Planas.loadLib(s.kind); this.render();
+  },
+  seenDrop(i) { this.st.seen.splice(i, 1); this.render(); },
+  // Nav: naujas skirtukas „Treniruotės" po Kalendoriaus visose trenerio .bn2 kopijose + desktop meniu (kviečia Kal.applyNav)
+  nav() {
+    document.querySelectorAll('#ptr .bn2').forEach(nav => {
+      if (nav.querySelector('.ni[onclick*="tr-tren"]')) return;
+      const kal = [...nav.querySelectorAll('.ni')].find(n => (n.getAttribute('onclick') || '').indexOf("'tr-kal'") !== -1); if (!kal) return;
+      const el = kal.cloneNode(true); el.classList.remove('on'); el.setAttribute('onclick', "nv('tr',this,'tr-tren')");
+      el.querySelectorAll('.ic use').forEach(u => u.setAttribute('href', '#i-treniruote')); const lb = el.querySelector('.lb'); if (lb) lb.textContent = 'Treniruotės';
+      kal.insertAdjacentElement('afterend', el);
+    });
+    const dn = document.querySelector('#tr-desktop-nav .vdn-item[data-sid="tr-kal"]');
+    if (dn && !document.querySelector('#tr-desktop-nav .vdn-item[data-sid="tr-tren"]')) {
+      const el = dn.cloneNode(true); el.classList.remove('on'); el.dataset.sid = 'tr-tren'; el.setAttribute('onclick', "nv('tr',null,'tr-tren')");
+      el.querySelectorAll('use').forEach(u => u.setAttribute('href', '#i-treniruote')); [...el.childNodes].forEach(x => { if (x.nodeType === 3 && x.textContent.trim()) x.textContent = ' Treniruotės'; });
+      dn.insertAdjacentElement('afterend', el);
+    }
+  },
 };
 // ===== /MODULIS =====
 
