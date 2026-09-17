@@ -36392,6 +36392,7 @@ function nv(p,el,sid){
     loadTrainerOverallStat();
   }
   if (sid === 'tr-prof') {
+    if (typeof Planas !== 'undefined' && Planas.libCard) Planas.libCard();   // MODULIS: planas papkė (v565) — kortelė „Mano blokai"
     if (typeof renderTrainerProfile === 'function') renderTrainerProfile();
     if (typeof loadTrainerProfileStats === 'function') loadTrainerProfileStats();
   }
@@ -42497,61 +42498,121 @@ Object.assign(Planas, {
     } catch (err) { showToast(ico('klaida') + ' ' + (err.message || ''), 'error', 6000); }
   },
 
-  // ═══ MAINAI (tavo blokai · klubo katalogas · AI) ═══
+  // ═══ MAINAI + PAPKĖ (numatytieji · tavo blokai · klubo katalogas · AI) — B paketas v565 (2026-09-17) ═══
+  // Papkė = platformos NUMATYTIEJI blokai (trainer_block_defaults, 50, su amžiaus žyma; treneris gali paslėpti SAU per
+  // trainer_block_hidden) + savi blokai (trainer_blocks, trainer_id = aš — trinti). AI — 3 variantai vienu kvietimu (edge
+  // suggest_block n:3), kiekvieną galima išsaugoti į papkę. Biblioteka be treniruotės (profilio kortelė „Mano blokai") — tas
+  // pats lapas su lib:true (be katalogo, be AI, be pritaikymo). Sprendimai: savininkas 2026-09-16/17 (klubo numatytieji +
+  // „paslėpti sau", UI variantas b). Tik trainer_block_hidden / trainer_blocks rašymas — EXP ir lankomumo neliečia.
+  AGE_LT: { young: '6–9 m.', older: '10+ m.' },
+  libClub() { const e = this.st.edit; return (e && (e.p.club_id || (this.groupById(e.s.group_id) || {}).club_id)) || this.clubId(); },
+  async loadLib(type) {
+    const uid = currentUser?.id;
+    const [dR, hR, mR] = await Promise.all([
+      sb.from('trainer_block_defaults').select('id, kind, title, minutes, text, exercise_ids, age_group, sort_order').eq('is_active', true).eq('kind', type).order('sort_order').limit(60),
+      sb.from('trainer_block_hidden').select('default_id').eq('trainer_id', uid).limit(500),
+      sb.from('trainer_blocks').select('id, kind, title, minutes, text, exercise_ids, use_count, trainer_id').eq('club_id', this.libClub()).eq('is_active', true).eq('kind', type).order('use_count', { ascending: false }).limit(30),
+    ]);
+    [dR, hR, mR].forEach(r => { if (r.error) console.warn('[planas-lib]', r.error.message); });
+    const hidden = new Set((hR.data || []).map(x => x.default_id));
+    const all = dR.data || [];
+    return { defs: all.filter(d => !hidden.has(d.id)), hiddenIds: all.filter(d => hidden.has(d.id)).map(d => d.id), mine: mR.data || [] };
+  },
   async openSwap(idx, type) {
     const e = this.st.edit; if (!e) return;
-    this.st.swap = { idx, type, pick: null, all: false, ai: null, aiBusy: false, mine: [], cat: [], saveMine: false };
-    const g = this.groupById(e.s.group_id);
+    this.st.swap = { idx, type, pick: null, all: false, ai: [], aiBusy: false, defs: [], hiddenIds: [], mine: [], cat: [], saveMine: false, lib: false };
     try {
-      const [mR, cat] = await Promise.all([
-        sb.from('trainer_blocks').select('id, kind, title, minutes, text, exercise_ids, use_count, trainer_id').eq('club_id', e.p.club_id || g.club_id || this.clubId()).eq('is_active', true).eq('kind', type).order('use_count', { ascending: false }).limit(30),
-        this.loadCatalog().catch(() => ({ items: [], cats: [] })),
-      ]);
-      this.st.swap.mine = mR.data || [];
+      const [lib, cat] = await Promise.all([this.loadLib(type), this.loadCatalog().catch(() => ({ items: [], cats: [] }))]);
+      Object.assign(this.st.swap, lib);
       const want = { warmup: ['greitis', 'lankstumas', 'ištvermė'], physical: ['jėga', 'ištvermė'], technique: ['technika', 'karate'], pair: ['technika', 'karate'], stretch: ['lankstumas'] }[type] || [];
       const catName = {}; (cat.cats || []).forEach(c => { catName[c.id] = (c.name || '').toLowerCase(); });
       this.st.swap.cat = (cat.items || []).filter(i => i.src === 'db' && want.some(w => (catName[i.catId] || '').includes(w))).slice(0, 40);
     } catch (err) { console.warn('[planas-swap]', err); }
-    this.sheet('pl-swap', (idx == null ? 'PRIDĖTI · ' : 'PAKEISTI · ') + this.tyLt(type).toUpperCase(), '', '', { z: 100006 });
+    this.sheet('pl-swap', (idx == null ? 'PRIDĖTI · ' : 'PAKEISTI · ') + this.tyLt(type).toUpperCase(), '', '<div></div>', { z: 100006 });   // foot tuščias → Planas.sheet jo nekuria (v557 klaida: CTA „Pakeisti bloką" nerodytas)
     this.renderSwap();
   },
+  // Biblioteka iš profilio („Mano blokai"): sričių čipsai, sąrašas be pritaikymo į treniruotę
+  async openLib(type) {
+    type = this.V2_TYPES[type] ? type : 'warmup';
+    this.st.swap = { idx: null, type, pick: null, all: false, ai: [], aiBusy: false, defs: [], hiddenIds: [], mine: [], cat: [], saveMine: false, lib: true };
+    try { Object.assign(this.st.swap, await this.loadLib(type)); } catch (err) { console.warn('[planas-lib]', err); }
+    if (!document.getElementById('pl-swap')) this.sheet('pl-swap', 'MANO BLOKAI', '', '<div></div>', { z: 100006 });
+    this.renderSwap();
+  },
+  libCard() {
+    const row = document.getElementById('pl-lib-row'); if (!row) return;
+    if (!this.v2On()) { row.style.display = 'none'; return; }
+    row.style.display = '';
+    row.innerHTML = `<div class="kal-card" style="margin:0;cursor:pointer;display:flex;align-items:center;gap:11px;" onclick="Planas.openLib('warmup')"><div style="width:34px;height:34px;border-radius:10px;background:rgba(168,85,247,.14);display:flex;align-items:center;justify-content:center;color:#A855F7;flex:none;">${ico('treniruote')}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Mano blokai</div><div style="font-size:10.5px;color:var(--mut);">Papkė treniruotėms: numatytieji + tavo išsaugoti, pagal sritį</div></div><span style="color:var(--mut);font-size:18px;">›</span></div>`;
+  },
+  cutTxt(t, n) { t = String(t || ''); return t.length > n ? t.slice(0, n - 1).trim() + '…' : t; },
   renderSwap() {
     const w = this.st.swap; const e = this.st.edit; const body = document.getElementById('pl-swap-body'); const foot = document.getElementById('pl-swap-foot'); if (!w || !body) return;
-    const cur = w.idx != null ? e.blocks[w.idx] : null;
-    const opt = (key, on, t, s, extra) => `<div class="pl-opt${on ? ' on' : ''}" style="${extra || ''}" onclick="Planas.swapPick('${key}')"><div class="box${on ? ' on' : ''}">${on ? ico('atlikta') : ''}</div><div style="flex:1;min-width:0;"><div class="t">${t}</div><div class="s">${s}</div></div></div>`;
-    body.innerHTML = `<div class="kal-sec" style="padding-bottom:7px;">TAVO BLOKAI · ${w.mine.length}</div>
-      ${w.mine.length ? w.mine.map(b => opt('m:' + b.id, w.pick === 'm:' + b.id, this.esc(b.title), `${b.minutes} min · naudota ${b.use_count || 0}×${cur && cur.block_id === b.id ? ' · dabartinis' : ''}`)).join('') : '<div style="padding:0 16px 10px;font-size:11px;color:var(--mut);">Dar neturi išsaugotų šio tipo blokų — pažymėk „išsaugoti kaip savo" apačioje.</div>'}
-      <div class="kal-sec" style="padding-bottom:7px;">KLUBO KATALOGAS · ${w.cat.length}</div>
+    const cur = !w.lib && w.idx != null && e ? e.blocks[w.idx] : null;
+    const me = currentUser?.id;
+    const opt = (key, on, t, s, extra, act) => `<div class="pl-opt${on ? ' on' : ''}" style="${extra || ''}" onclick="Planas.swapPick('${key}')">${w.lib ? '' : `<div class="box${on ? ' on' : ''}">${on ? ico('atlikta') : ''}</div>`}<div style="flex:1;min-width:0;"><div class="t">${t}</div><div class="s">${s}</div></div>${act || ''}</div>`;
+    const x = (fn, title, col) => `<span onclick="event.stopPropagation();${fn}" title="${title}" style="flex:none;padding:6px;color:${col || 'var(--mut)'};cursor:pointer;">${ico('trinti')}</span>`;
+    const age = d => d.age_group && d.age_group !== 'all' ? ` <span class="kal-tag" style="font-size:8px;">${this.AGE_LT[d.age_group] || ''}</span>` : '';
+    const tabs = w.lib ? `<div style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 10px;" class="no-scrollbar">${Object.keys(this.V2_TYPES).map(k => `<span class="kal-b${w.type === k ? ' o' : ''}" onclick="Planas.openLib('${k}')" style="flex:none;">${this.tyLt(k)}</span>`).join('')}</div>` : '';
+    body.innerHTML = `${tabs}<div class="kal-sec" style="padding-bottom:7px;">NUMATYTIEJI · ${w.defs.length}</div>
+      ${w.defs.length ? w.defs.map(d => opt('d:' + d.id, w.pick === 'd:' + d.id, this.esc(d.title) + age(d), `${d.minutes} min${d.text ? ' · ' + this.esc(this.cutTxt(d.text, 70)) : ''}`, '', x(`Planas.hideDef('${d.id}')`, 'Paslėpti sau'))).join('') : '<div style="padding:0 16px 10px;font-size:11px;color:var(--mut);">Visi numatytieji paslėpti.</div>'}
+      ${w.hiddenIds.length ? `<div style="padding:0 16px 10px;"><span class="kal-b" onclick="Planas.unhideAll()">Rodyti paslėptus (${w.hiddenIds.length})</span></div>` : ''}
+      <div class="kal-sec" style="padding-bottom:7px;">TAVO BLOKAI · ${w.mine.length}</div>
+      ${w.mine.length ? w.mine.map(b => opt('m:' + b.id, w.pick === 'm:' + b.id, this.esc(b.title), `${b.minutes} min · naudota ${b.use_count || 0}×${cur && cur.block_id === b.id ? ' · dabartinis' : ''}`, '', b.trainer_id === me ? x(`Planas.delMine('${b.id}')`, 'Trinti', '#EF4444') : '')).join('') : '<div style="padding:0 16px 10px;font-size:11px;color:var(--mut);">Dar neturi savų šio tipo blokų — treniruotės koregavime pažymėk „išsaugoti į papkę".</div>'}
+      ${w.lib ? '' : `<div class="kal-sec" style="padding-bottom:7px;">KLUBO KATALOGAS · ${w.cat.length}</div>
       ${w.cat.length ? w.cat.map(i => opt('c:' + i.id, w.pick === 'c:' + i.id, this.esc(i.name), `${this.esc(i.unit || '')} · katalogas`)).join('') : '<div style="padding:0 16px 10px;font-size:11px;color:var(--mut);">Kataloge šio tipo pratimų nėra.</div>'}
       <div class="kal-sec" style="padding-bottom:7px;">AI SIŪLO ŠIAI DIENAI</div>
-      ${w.ai ? opt('ai', w.pick === 'ai', this.esc(w.ai.title) + ' <span class="kal-tag ai">AI</span>', this.esc(w.ai.text || (w.ai.minutes + ' min')), 'border-color:rgba(168,85,247,.4);background:rgba(168,85,247,.07);') : `<div style="padding:0 16px 10px;"><span class="kal-b" style="color:#A855F7;background:rgba(168,85,247,.14);border-color:rgba(168,85,247,.4);" onclick="Planas.swapAI()">${ico('ai')} ${w.aiBusy ? 'AI galvoja…' : 'Paklausti AI'}</span></div>`}`;
-    if (foot) foot.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding-bottom:8px;cursor:pointer;" onclick="Planas.swapToggle('all')"><div class="box${w.all ? ' on' : ''}" style="width:19px;height:19px;border-radius:6px;">${w.all ? ico('atlikta') : ''}</div><span style="font-size:11.5px;font-weight:800;">Pakeisti ir visose kitose šio etapo treniruotėse <b style="color:var(--br);">(${Math.max(0, (e.nAll || 1) - 1)})</b></span></div>
-      ${w.pick && !w.pick.startsWith('m:') ? `<div style="display:flex;align-items:center;gap:10px;padding-bottom:8px;cursor:pointer;" onclick="Planas.swapToggle('saveMine')"><div class="box${w.saveMine ? ' on' : ''}" style="width:19px;height:19px;border-radius:6px;">${w.saveMine ? ico('atlikta') : ''}</div><span style="font-size:11.5px;font-weight:800;">Išsaugoti kaip savo bloką (kitam kartui)</span></div>` : ''}
+      ${w.ai.length ? w.ai.map((a, i) => opt('ai:' + i, w.pick === 'ai:' + i, this.esc(a.title) + ' <span class="kal-tag ai">AI</span>', this.esc(a.text || (a.minutes + ' min')), 'border-color:rgba(168,85,247,.4);background:rgba(168,85,247,.07);')).join('') : ''}
+      <div style="padding:0 16px 10px;"><span class="kal-b" style="color:#A855F7;background:rgba(168,85,247,.14);border-color:rgba(168,85,247,.4);" onclick="Planas.swapAI()">${ico('ai')} ${w.aiBusy ? 'AI galvoja…' : (w.ai.length ? 'Dar 3 variantai' : 'Paklausti AI — 3 variantai')}</span></div>`}`;
+    if (!foot) return;
+    if (w.lib) { foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;line-height:1.4;">Į treniruotę blokai dedami jos koregavime → „Pakeisti". Čia — peržiūra, paslėpti sau, trinti savus.</div>`; return; }
+    foot.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding-bottom:8px;cursor:pointer;" onclick="Planas.swapToggle('all')"><div class="box${w.all ? ' on' : ''}" style="width:19px;height:19px;border-radius:6px;">${w.all ? ico('atlikta') : ''}</div><span style="font-size:11.5px;font-weight:800;">Pakeisti ir visose kitose šio etapo treniruotėse <b style="color:var(--br);">(${Math.max(0, (e.nAll || 1) - 1)})</b></span></div>
+      ${w.pick && !String(w.pick).startsWith('m:') ? `<div style="display:flex;align-items:center;gap:10px;padding-bottom:8px;cursor:pointer;" onclick="Planas.swapToggle('saveMine')"><div class="box${w.saveMine ? ' on' : ''}" style="width:19px;height:19px;border-radius:6px;">${w.saveMine ? ico('atlikta') : ''}</div><span style="font-size:11.5px;font-weight:800;">Išsaugoti į papkę kaip savo bloką</span></div>` : ''}
       <button class="pl-cta" ${w.pick ? '' : 'disabled style="opacity:.45;"'} onclick="Planas.swapApply()">${w.idx == null ? 'Pridėti bloką' : 'Pakeisti bloką'}</button>`;
   },
-  swapPick(key) { this.st.swap.pick = key; this.renderSwap(); },
+  swapPick(key) { if (this.st.swap.lib) return; this.st.swap.pick = key; this.renderSwap(); },
   swapToggle(k) { this.st.swap[k] = !this.st.swap[k]; this.renderSwap(); },
+  async hideDef(id) {
+    const w = this.st.swap; if (!w) return;
+    const { error } = await sb.from('trainer_block_hidden').insert({ trainer_id: currentUser?.id, default_id: id });
+    if (error) { showToast(ico('klaida') + ' ' + error.message, 'error', 5000); return; }
+    Object.assign(w, await this.loadLib(w.type)); if (w.pick === 'd:' + id) w.pick = null; this.renderSwap();
+  },
+  async unhideAll() {
+    const w = this.st.swap; if (!w || !w.hiddenIds.length) return;
+    const { error } = await sb.from('trainer_block_hidden').delete().eq('trainer_id', currentUser?.id).in('default_id', w.hiddenIds);
+    if (error) { showToast(ico('klaida') + ' ' + error.message, 'error', 5000); return; }
+    Object.assign(w, await this.loadLib(w.type)); this.renderSwap();
+  },
+  async delMine(id) {
+    const w = this.st.swap; if (!w) return;
+    if (!(await appConfirm('Ištrinti šį bloką iš papkės? Treniruotėse, kur jis jau įdėtas, liks.'))) return;
+    const { data, error } = await sb.from('trainer_blocks').delete().eq('id', id).select('id');
+    if (error || !(data || []).length) { showToast(ico('klaida') + ' ' + (error ? error.message : 'Nepavyko ištrinti'), 'error', 5000); return; }
+    Object.assign(w, await this.loadLib(w.type)); if (w.pick === 'm:' + id) w.pick = null; this.renderSwap();
+  },
   async swapAI() {
-    const w = this.st.swap; const e = this.st.edit; if (!w || w.aiBusy) return;
+    const w = this.st.swap; const e = this.st.edit; if (!w || w.aiBusy || w.lib || !e) return;
     w.aiBusy = true; this.renderSwap();
-    try { const r = await this.invokePlan({ plan_id: e.s.plan_id, suggest_block: { session_id: e.s.id, type: w.type } }); w.ai = r.block || null; if (r.fallback) showToast(ico('ispejimas') + ' AI nepasiekiamas — pasiūlymas iš šablono', 'error'); }
+    try { const r = await this.invokePlan({ plan_id: e.s.plan_id, suggest_block: { session_id: e.s.id, type: w.type, n: 3 } }); w.ai = Array.isArray(r.blocks) && r.blocks.length ? r.blocks : (r.block ? [r.block] : []); if (r.fallback) showToast(ico('ispejimas') + ' AI nepasiekiamas — pasiūlymas iš šablono', 'error'); }
     catch (err) { showToast(ico('klaida') + ' ' + (err.message || ''), 'error', 5000); }
     w.aiBusy = false; this.renderSwap();
   },
   swapBlock() {
     const w = this.st.swap; const e = this.st.edit; const cur = w.idx != null ? e.blocks[w.idx] : null;
     const min = cur ? (parseInt(cur.minutes) || 10) : ({ warmup: 10, physical: 15, technique: 15, pair: 10, stretch: 10 }[w.type] || 10);
-    if (w.pick === 'ai' && w.ai) return { type: w.type, minutes: parseInt(w.ai.minutes) || min, title: String(w.ai.title || '').slice(0, 80), text: String(w.ai.text || '').slice(0, 300), exercise_ids: Array.isArray(w.ai.exercise_ids) ? w.ai.exercise_ids : [], block_id: null, locked: true };
-    if ((w.pick || '').startsWith('m:')) { const b = w.mine.find(x => 'm:' + x.id === w.pick); if (b) return { type: w.type, minutes: b.minutes || min, title: b.title, text: b.text || '', exercise_ids: b.exercise_ids || [], block_id: b.id, locked: true }; }
-    if ((w.pick || '').startsWith('c:')) { const i = w.cat.find(x => 'c:' + x.id === w.pick); if (i) return { type: w.type, minutes: min, title: i.name.slice(0, 80), text: '', exercise_ids: [i.id], block_id: null, locked: true }; }
+    const p = String(w.pick || '');
+    if (p.startsWith('ai:')) { const a = w.ai[parseInt(p.slice(3))]; if (a) return { type: w.type, minutes: parseInt(a.minutes) || min, title: String(a.title || '').slice(0, 80), text: String(a.text || '').slice(0, 300), exercise_ids: Array.isArray(a.exercise_ids) ? a.exercise_ids : [], block_id: null, locked: true }; }
+    if (p.startsWith('d:')) { const d = w.defs.find(x => 'd:' + x.id === p); if (d) return { type: w.type, minutes: d.minutes || min, title: d.title, text: d.text || '', exercise_ids: d.exercise_ids || [], block_id: null, locked: true }; }
+    if (p.startsWith('m:')) { const b = w.mine.find(x => 'm:' + x.id === p); if (b) return { type: w.type, minutes: b.minutes || min, title: b.title, text: b.text || '', exercise_ids: b.exercise_ids || [], block_id: b.id, locked: true }; }
+    if (p.startsWith('c:')) { const i = w.cat.find(x => 'c:' + x.id === p); if (i) return { type: w.type, minutes: min, title: i.name.slice(0, 80), text: '', exercise_ids: [i.id], block_id: null, locked: true }; }
     return null;
   },
   async swapApply() {
     const w = this.st.swap; const e = this.st.edit; const b = this.swapBlock(); if (!b) return;
     try {
       if (w.saveMine) {
-        const g = this.groupById(e.s.group_id);
-        const r = await sb.from('trainer_blocks').insert({ club_id: e.p.club_id || g.club_id || this.clubId(), trainer_id: currentUser?.id, kind: w.type, title: b.title, minutes: b.minutes, text: b.text || null, exercise_ids: b.exercise_ids || [], source: w.pick === 'ai' ? 'ai' : 'catalog' }).select('id').single();
+        const r = await sb.from('trainer_blocks').insert({ club_id: this.libClub(), trainer_id: currentUser?.id, kind: w.type, title: b.title, minutes: b.minutes, text: b.text || null, exercise_ids: b.exercise_ids || [], source: String(w.pick).startsWith('ai:') ? 'ai' : 'catalog' }).select('id').single();
         if (r.error) console.warn('[planas-swap-save]', r.error); else b.block_id = r.data.id;
       }
       if (w.idx != null) e.blocks[w.idx] = b; else { const si = e.blocks.findIndex(x => x.type === 'stretch'); if (si >= 0 && w.type !== 'stretch') e.blocks.splice(si, 0, b); else e.blocks.push(b); }
