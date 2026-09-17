@@ -43218,7 +43218,6 @@ const Kal = {
       dn.querySelectorAll('use').forEach(u => u.setAttribute('href', '#i-kalendorius'));
       [...dn.childNodes].forEach(x => { if (x.nodeType === 3 && x.textContent.trim()) x.textContent = ' Kalendorius'; });
     }
-    if (typeof Tren !== 'undefined') Tren.nav();   // MODULIS: Tren (v566) — skirtukas „Treniruotės" po Kalendoriaus
     this.applyNav8();
   },
 
@@ -43248,7 +43247,7 @@ const Kal = {
       const nx = hero.querySelector('#trh-next-txt'); if (nx) { nx.style.cssText = 'display:block;font-size:8px;color:rgba(255,255,255,.8);font-weight:700;text-align:center;margin-bottom:5px;letter-spacing:.3px;'; box.appendChild(nx); }
       const bar = hero.querySelector('#trh-lvl-bar'); const row = bar && bar.parentElement && bar.parentElement.parentElement; if (row) { row.style.marginTop = '0'; box.appendChild(row); }
       const kpi = hero.querySelector('div[style*="1fr 1fr 1fr"]'); if (kpi) { kpi.style.marginTop = '8px'; box.appendChild(kpi); }
-      trp.appendChild(box); hero.remove();
+      trp.appendChild(box); hero.style.display = 'none';   // ne remove — _renderTrainerMainHero pildo KPI tik radęs #trh-hero
     }
     if (prof && trp && !document.getElementById('kal-tr-norm')) {
       const norm = document.createElement('div'); norm.id = 'kal-tr-norm'; norm.className = 'kal-card'; norm.style.cssText = 'margin:0 12px 6px;cursor:pointer;'; norm.setAttribute('onclick', 'openTrainerNormatyvai()');
@@ -43258,6 +43257,7 @@ const Kal = {
     const best = document.getElementById('trh-best-comp')?.closest('div[style*="repeat(4,1fr)"]'); const stat = document.querySelector('#tr-stat .sa');
     if (best && stat && !stat.contains(best)) { const title = best.previousElementSibling; stat.insertBefore(best, stat.firstElementChild); if (title && title.classList.contains('st')) stat.insertBefore(title, best); best.style.marginBottom = '10px'; }
     if (currentProfile?.role === 'trainer') { const m = document.getElementById('tr-main'); if (m && m.classList.contains('on')) nv('tr', null, 'tr-kal'); }   // pradinis langas — kalendorius
+    if (typeof Tren !== 'undefined') Tren.nav();   // MODULIS: Tren (v566) — skirtukas „Treniruotės" iškart po Kalendoriaus (po perstatymo)
     // VAIKAS
     document.querySelectorAll('#pv .bn2').forEach(nav => {
       nav.querySelectorAll('.ni').forEach(n => {
@@ -44477,7 +44477,7 @@ const Postai = {
   dash(s) { return String(s || '').replace(/\s*—\s*/g, ' — ').replace(/\s+/g, ' ').trim(); },
   dmon(d) { const m = (typeof Kal !== 'undefined' && Kal.MONG) ? Kal.MONG[d.getMonth()].toLowerCase() : ''; return `${d.getDate()} ${m.slice(0, 4)}.`; },
   titleOf() { const s = this.st; if (!s) return ''; return s.title ? this.dash(s.title) : `${this.KILM[s.now.getDay()]} treniruotė`; },
-  textOf() { const s = this.st; if (!s) return ''; const g = s.group.name || 'Grupė'; const t = s.title ? this.dash(s.title) : `${this.KILM[s.now.getDay()]} treniruotė`; if (s.target === 'group') return s.title ? `${g} šiandien: ${t} 🥋` : `${g}: ${t} 🥋`; return `${s.clubName ? s.clubName + ' · ' : ''}${g}: ${t} 🥋\n#karate #vaikusportas #spobu`; },
+  textOf() { const s = this.st; if (!s) return ''; const g = s.group.name || 'Grupė'; const t = s.title ? this.dash(s.title) : `${this.KILM[s.now.getDay()]} treniruotė`; if (s.target === 'group') return s.title ? `${g} šiandien: ${t} 🥋` : `${g}: ${t} 🥋`; return `${s.clubName ? s.clubName + ' · ' : ''}${g}: ${t} 🥋 #karate #vaikusportas #spobu`; },
   TARGETS: [['group', 'Grupei', 'tėvų pokalbis'], ['fb', 'Facebook', '+ klubas, #žymos'], ['ig', 'Instagram', '+ klubas, #žymos']],
   targetsHtml() { const s = this.st; return `<div id="pst-targets" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">${this.TARGETS.map(([k, t, sub]) => `<div onclick="Postai.setTarget('${k}')" style="text-align:center;border:.5px solid ${s.target === k ? '#FF7A33' : 'var(--bdr)'};background:${s.target === k ? 'rgba(255,122,51,.12)' : 'var(--card)'};color:${s.target === k ? '#FF9E40' : 'rgba(255,255,255,.85)'};border-radius:11px;padding:8px 4px;font-size:11px;font-weight:800;cursor:pointer;">${t}<div style="font-size:9px;color:var(--mut);font-weight:700;margin-top:2px;">${sub}</div></div>`).join('')}</div>`; },
   setTarget(k) { const s = this.st; if (!s) return; s.target = k; const tg = document.getElementById('pst-targets'); if (tg) tg.outerHTML = this.targetsHtml(); const inp = document.getElementById('pst-text'); if (inp) inp.value = this.textOf(); },
