@@ -42385,7 +42385,7 @@ Object.assign(Planas, {
       <div class="kal-sec">TVIRTINIMAS</div>
       <div class="kal-card" style="border-left:3px solid #A855F7;"><div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;"><div style="font-size:13.5px;font-weight:900;">${ss.some(s => (s.blocks || []).length) ? 'Paruoštos ' + ss.length + ' ' + _ltPl(ss.length, 'treniruotė', 'treniruotės', 'treniruočių') : ss.length + ' treniruotės be turinio'}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">Patvirtinta ${conf}${lastConf ? ' · vaikai mato iki ' + this.fmtDate(lastConf) : ''}${p.status !== 'active' ? ' · etapas dar neaktyvus' : ''}</div></div>${wait ? `<span class="kal-tag ai">${wait} LAUKIA</span>` : `<span class="kal-tag ok">VISOS</span>`}</div>
         <div class="kal-bar" style="margin-top:10px;"><span style="width:${ss.length ? Math.round(conf * 100 / ss.length) : 0}%;"></span></div>
-        ${canEdit && wait ? `<div class="kal-acts"><span class="kal-b g" onclick="Planas.confirmAll('${p.id}').then(ok=>ok&&Planas.openEtapas('${p.id}'))">Patvirtinti visą etapą</span></div>` : ''}</div>
+        ${canEdit && wait ? `<div class="kal-acts"><span class="kal-b g" onclick="Planas.confirmAll('${p.id}').then(ok=>ok&&Tren.etapas('${p.id}'))">Patvirtinti visą etapą</span></div>` : ''}</div>
       ${canEdit && typeof Iss !== 'undefined' ? Iss.etapasCard(p) : ''}
       <div class="kal-sec" style="padding-top:4px;">TRENIRUOTĖS</div>${wk || '<div class="kal-empty">Treniruočių nėra.</div>'}
       ${canEdit ? `<div class="kal-card" style="border:.5px dashed var(--bdr);cursor:pointer;" onclick="Planas.openWizard({groupId:'${p.group_id}',ps:'${nextPs}',afterPlanId:'${p.id}'})"><div style="display:flex;align-items:center;gap:9px;color:var(--mut);">${ico('prideti')}<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:900;color:var(--txt);">Pridėti kitą etapą</div><div style="font-size:10.5px;font-weight:700;margin-top:2px;">nuo ${this.fmtDate(nextPs)} · kitas tikslas</div></div></div></div>` : ''}
@@ -42969,7 +42969,7 @@ const Kal = {
       <div class="kal-hbtn"><button onclick="openTrInfo('kal')" title="Apie šį langą">${ico('pagalba')}</button><button onclick="toggleTrainerNotifications()" title="Pranešimai">${ico('pranesimai')}</button><button onclick="Kal.shift(-1)" title="Ankstesnis mėnuo">${ico('atgal')}</button><button onclick="Kal.shift(1)" title="Kitas mėnuo">${ico('toliau')}</button></div></div>`;
     const canPlan = typeof flagOn === 'function' && flagOn('trainers_can_create_plans') && typeof Planas !== 'undefined';
     const hasPlan = (this.st.sessions || []).some(s => s.session_id);
-    const cta = !canPlan ? '' : (hasPlan
+    const cta = (!canPlan || typeof Tren !== 'undefined') ? '' : (hasPlan   // v568: „Planuoti treniruotes" persikėlė į skirtuką Treniruotės (savininkas 09-18)
       ? `<div class="kal-cta" onclick="Planas.openWizard()"><div class="ic">${ico('prideti')}</div><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Planuoti treniruotes</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">10–15 min klausimų — AI paruoš visą etapą</div></div>${ico('toliau')}</div>`
       : `<div class="kal-empty plan"><div class="ic">${ico('prideti')}</div><b>PLANO DAR NĖRA</b><i>Atsakyk į 10–15 min klausimų — AI paruoš visą etapą, tu tik patvirtinsi.</i><span class="kal-b o" onclick="Planas.openWizard()">Planuoti treniruotes</span></div>`);
     const evBlock = (this.st.events || []).length >= 3 ? this.evListHtml(today) : this.nextHtml(today);   // v557: perkrautam mėnesiui — sąrašas vietoj vienos eilutės
@@ -42984,7 +42984,18 @@ const Kal = {
     const from = this.ymd(new Date(Date.now() - 14 * 86400000));
     const days = {};
     (this.st.sessions || []).filter(s => (this.st.sel === 'all' || s.group_id === this.st.sel) && s.date < today && s.date >= from && String(s.date).startsWith(this.st.ym)).forEach(s => { (days[s.date] = days[s.date] || []).push(s); });
-    return Object.keys(days).filter(ds => !days[ds].some(s => s.total > 0)).sort();
+    const seen = this.nomarkSeen();
+    return Object.keys(days).filter(ds => !seen.has(ds) && !days[ds].some(s => s.total > 0)).sort();
+  },
+  // v568 (savininkas 09-18): „treneris tada dar nebuvo" — įspėjimą galima uždaryti kaip perskaitytą; saugoma localStorage (per trenerį, per įrenginį)
+  nomarkKey() { return 'spobu_kal_nomark_seen_' + (currentUser?.id || ''); },
+  nomarkSeen() { try { return new Set(JSON.parse(localStorage.getItem(this.nomarkKey()) || '[]')); } catch (_e) { return new Set(); } },
+  nomarkDismiss() {
+    const nd = this.nomarkDays(this.ymd(new Date())); if (!nd.length) return;
+    const s = this.nomarkSeen(); nd.forEach(d => s.add(d));
+    try { localStorage.setItem(this.nomarkKey(), JSON.stringify([...s].slice(-200))); } catch (_e) { }
+    showToast(ico('atlikta') + ' Supratau — šių dienų nebeprimins (lankomumą vis tiek gali pažymėti kalendoriuje)', 'success', 4000);
+    this.render();
   },
   warnHtml(today) {
     const nd = this.nomarkDays(today);
@@ -42993,6 +43004,7 @@ const Kal = {
     if (nd.length) {
       const last = nd[nd.length - 1];
       h += `<div class="kal-warn" onclick="Kal.openDay('${last}')"><i>${nd.length}</i><div style="flex:1;min-width:0;"><div class="t1">${nd.length} ${_ltPl(nd.length, 'diena', 'dienos', 'dienų')} be pažymėto lankomumo</div><div class="t2">${this.DNOM[this.dayNo(last) - 1]}, ${Number(last.slice(8))} ${this.MONG[Number(last.slice(5, 7)) - 1].toLowerCase()} — spustelk ir pažymėk</div></div>${ico('toliau')}</div>`;
+      h += `<div style="text-align:right;margin:4px 18px 0;"><span class="kal-b" onclick="Kal.nomarkDismiss()" style="font-size:10.5px;">Supratau, nežymiu — nebepriminti</span></div>`;
     }
     if (nk) h += `<div class="kal-warn ok" onclick="nv('tr',null,'tr-groups')"><i>${nk}</i><div style="flex:1;min-width:0;"><div class="t1">${nk === 1 ? 'Naujas vaikas laukia' : 'Nauji vaikai laukia'} patvirtinimo</div><div class="t2">Grupės → patvirtinti</div></div>${ico('toliau')}</div>`;
     return h;
@@ -44669,10 +44681,10 @@ const Tren = {
       const left = this.days(today, p.period_end);
       const st = p.status === 'draft' ? ['JUODRAŠTIS', 'var(--mut)'] : (left <= 3 ? ['SUVESTINĖ', 'var(--grn)'] : (w && w.k === 1 ? ['STARTAS', 'var(--br)'] : ['EIGA', 'var(--mut)']));
       const pct = cnt.all ? Math.round(cnt.done * 100 / cnt.all) : 0;
-      return `<div class="kal-card" style="cursor:pointer;" onclick="Planas.openEtapas('${p.id}')">
+      return `<div class="kal-card" style="cursor:pointer;" onclick="Tren.etapas('${p.id}')">
         <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.esc(this.gname(p.group_id))} · ${this.esc(String(p.title || '').replace(/\s*—\s*/g, ' — '))}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${w ? `${w.k} sav. iš ${w.n} · ` : ''}${cnt.done} iš ${cnt.all} treniruočių įvykę · ${cnt.conf} patvirtinta${ev != null ? ` · ${this.esc(p.competitions.title)} ${p.competitions.event_date.slice(5).replace('-', '-')}` : ''}</div></div><span class="kal-tag" style="color:${st[1]};border-color:${st[1]};">${st[0]}</span></div>
         <div class="kal-bar" style="margin-top:8px;"><span style="width:${pct}%;"></span></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;" onclick="event.stopPropagation()">${this.btn(`Planas.openEtapas('${p.id}')`, 'Visos treniruotės')}${typeof Iss !== 'undefined' && p.status === 'active' ? this.btn(`Iss.plan.open('${p.id}')`, 'Iššūkiai') : ''}${edit && p.status === 'active' ? this.btn(`Planas.openWizard({ groupId: '${p.group_id}', afterPlanId: '${p.id}' })`, left <= 7 ? ico('prideti') + ' Planuoti kitą etapą' : 'Kitas etapas (kopija)', left <= 7 ? 'o' : '') : ''}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;" onclick="event.stopPropagation()">${this.btn(`Tren.etapas('${p.id}')`, 'Visos treniruotės')}${typeof Iss !== 'undefined' && p.status === 'active' ? this.btn(`Iss.plan.open('${p.id}')`, 'Iššūkiai') : ''}${edit && p.status === 'active' ? this.btn(`Planas.openWizard({ groupId: '${p.group_id}', afterPlanId: '${p.id}' })`, left <= 7 ? ico('prideti') + ' Planuoti kitą etapą' : 'Kitas etapas (kopija)', left <= 7 ? 'o' : '') : ''}</div>
       </div>`;
     };
     const noPlan = s.groups.filter(g => !withPlan.has(g.id)).map(g => `<div class="kal-card" style="border-style:dashed;"><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${this.esc(g.name)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;">Aktyvaus etapo nėra — vaikai kalendoriuje mato tik laiką</div></div>${edit ? this.btn(`Planas.openWizard({ groupId: '${g.id}' })`, ico('prideti') + ' Planuoti etapą', 'o') : ''}</div></div>`).join('');
@@ -44688,7 +44700,7 @@ const Tren = {
     const seen = s.seen.map((x, i) => `<div class="kal-card"><div style="font-size:13px;font-weight:900;">„${this.esc(x.b.title)}" naudojai ${x.n} kartus</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${Planas.tyLt(x.b.type)} · ${x.b.minutes} min · įrašyti į katalogą kaip tavo bloką?</div><div style="display:flex;gap:6px;margin-top:8px;">${this.btn(`Tren.seenSave(${i})`, ico('atlikta') + ' Taip', 'o')}${this.btn(`Tren.seenDrop(${i})`, 'Vėliau')}</div></div>`).join('');
     c.innerHTML = `
       <div class="kal-sec"><b>KITA TRENIRUOTĖ</b><span>${s.upcoming.length > 1 ? `dar ${s.upcoming.length - 1} per 14 d.` : ''}</span></div>${next}
-      <div class="kal-sec"><b>AKTYVŪS ETAPAI</b><span>${active.length}${drafts.length ? ` · ${drafts.length} juodr.` : ''}</span></div>${active.map(etapas).join('')}${drafts.map(etapas).join('')}${noPlan || (active.length || drafts.length ? '' : '<div class="kal-empty"><b>Grupių nėra</b></div>')}
+      <div class="kal-sec"><b>AKTYVŪS ETAPAI</b><span${edit ? ' onclick="Planas.openWizard()" style="cursor:pointer;color:var(--br);"' : ''}>${edit ? ico('prideti') + ' Planuoti treniruotes' : `${active.length}${drafts.length ? ` · ${drafts.length} juodr.` : ''}`}</span></div>${edit && !active.length && !drafts.length ? `<div class="kal-empty plan"><div class="ic">${ico('prideti')}</div><b>PLANO DAR NĖRA</b><i>Atsakyk į 10–15 min klausimų — AI paruoš visą etapą, tu tik patvirtinsi.</i><span class="kal-b o" onclick="Planas.openWizard()">Planuoti treniruotes</span></div>` : ''}${active.map(etapas).join('')}${drafts.map(etapas).join('')}${noPlan || (active.length || drafts.length ? '' : '<div class="kal-empty"><b>Grupių nėra</b></div>')}
       ${recs ? `<div class="kal-sec"><b>KLUBO REKOMENDACIJA</b><span></span></div>${recs}` : (s.role === 'club_admin' ? `<div class="kal-sec"><b>KLUBO REKOMENDACIJA</b><span></span></div><div class="kal-empty"><b>Rekomendacijos dar nėra</b><i>Rašoma iš klubo kalendoriaus — treneriai ir AI planai ją matys čia</i></div>` : '')}
       <div class="kal-sec"><b>KATALOGAS</b><span>${lib.defs.length + lib.mine.length} ${Planas.tyLt(s.kind).toLowerCase()}${lib.hiddenIds.length ? ` · ${lib.hiddenIds.length} paslėpta` : ''}</span></div>
       <div style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;" class="no-scrollbar">${chips}</div>
@@ -44700,6 +44712,13 @@ const Tren = {
   },
   // ── veiksmai ──
   async reload() { try { await this.load(); this.render(); } catch (e) { console.warn('[tren]', e); } },
+  // Etapo treniruotės (patvirtinti / koreguoti kiekvieną): treneriui — ekranas tr-planas (g(), ne nv() — nv kviestų loadTrainer ir sąrašas perrašytų etapą), adminui — ta pati Planai pane'a
+  async etapas(planId) {
+    Planas.st.role = this.st.role === 'club_admin' ? 'club_admin' : 'trainer';
+    if (this.st.role !== 'club_admin') { Planas.st.container = 'pl-tr-content'; g('tr', 'tr-planas'); _activeSid = 'tr-planas'; document.querySelectorAll('#ptr .bn2 .ni').forEach(x => x.classList.toggle('on', (x.getAttribute('onclick') || '').indexOf("'tr-tren'") !== -1)); }
+    else Planas.st.container = 'k-team-planas';
+    await Planas.openEtapas(planId);
+  },
   async confirm(id) { await Planas.confirmSession(id, () => Tren.reload()); },
   async edit(id) { await Planas.openEdit(id); },
   async ai(id) {
