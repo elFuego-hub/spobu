@@ -1544,7 +1544,7 @@ async function openParentSettings() {
           <a href="https://spobu.lt" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">spobu.lt</a>
         </div>
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
-          SPOBU v1.0 · © 2026
+          SPOBU ${document.getElementById('app-version')?.textContent || 'v1.0'} · © 2026
         </div>
       </div>
     `;
@@ -1843,10 +1843,10 @@ function openHelpModal(who) {
       ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai pratimų rekordus, rankinius iššūkius, varžybas ir dvikovas. Lankomumo, varžybų, egzamino ir Strava iššūkiai užsiskaito patys — jų tvirtinti nereikia. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
       ['Kaip veikia planai ir kalendorius?', 'Kalendorius — pradinis langas. „Planuoti treniruotes": 10–15 min klausimų, AI paruošia etapą; kiekvieną treniruotę patvirtini tu (kol nepatvirtinta, vaikai nemato). Dienos lapas: lankomumas, pastangos, blokai.'],
       ['Kas yra pastangos?', 'Žymėdamas lankomumą kiekvienam vaikui parenki: iš visų jėgų (+20 EXP) · gerai (+14) · lengviau (+8). Numatyta „gerai" — žymėk tik išimtis. Vaikas ir tėvai (jei klubas įjungęs) tai mato.'],
-      ['Kaip skirti iššūkį?', 'Grupės lange „'+ico('tikslas')+' IŠŠŪKIS GRUPEI" arba paspaudęs vaiką — asmeninį iššūkį. Siūlyk tik tai, ką gali patikrinti.'],
+      ['Kaip skirti iššūkį?', 'Grupių lange kortelės mygtukas „Iššūkis" arba Kalendoriuje / Treniruotėse prie grupės „+". Savaitės iššūkiai (bėgimas, ėjimas, dviratis, plaukimas, treniruotė) užsiskaito per Strava patys; mėnesio pasiekimus (kata, spyriai) pažymi „Išmoko" suvestinėje. Paspaudęs vaiką — asmeninį.'],
       ['Kaip žymiu lankomumą?', 'Kalendoriuje spausk dieną → „Pažymėti lankomumą" (data jau įrašyta) arba Grupės lange „'+ico('lankomumas')+' ŽYMĖTI LANKOMUMĄ". Pilna savaitė → +15 EXP vaikui, pilnas mėnuo → +100.'],
-      ['Kur matau pratimų normatyvus?', 'Antraštėje spausk '+ico('jega')+' — matysi rėžius ('+ico('medalis')+''+ico('medalis')+''+ico('medalis')+''+ico('trofejai')+') pagal lytį ir amžių.'],
-      ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsą reikia įsidėti į pradžios ekraną.']
+      ['Kur matau pratimų normatyvus?', 'Profilio lange kortelė „Normatyvai" — rėžiai ('+ico('medalis')+''+ico('medalis')+''+ico('medalis')+''+ico('trofejai')+') pagal lytį ir amžių.'],
+      ['Negaunu push pranešimų?', 'Nustatymuose „Pranešimai į telefoną" įjunk bent vieną tipą — pirmas įjungimas užregistruoja telefoną. iPhone: appsą reikia įsidėti į pradžios ekraną.']
     ],
     kid: [
       ['Kaip gaunu EXP ir keliu lygį?', 'Lankyk treniruotes ir stenkis — treneris įvertina pastangas (iš visų jėgų +20 · gerai +14 · lengviau +8). Įveik iššūkius, gerink rekordus Kelio lange, dalyvauk varžybose. Viską matai Kalendoriuje.'],
@@ -26234,6 +26234,7 @@ async function openTrainerSettings() {
               Tavo patvirtinimai formuoja vaikų <b style="color:white;">statistiką ir reitingus</b>. Tai labai atsakingas darbas:<br><br>
               • Tikrink rezultatus <b style="color:white;">atidžiai</b> — tvirtink tik tai, kas realiai pasiekta.<br>
               • Visiems vaikams taikyk <b style="color:white;">vienodus standartus</b> — kiekvienas turi turėti lygias galimybes.<br>
+              • Pastangos (iš visų jėgų · gerai · lengviau) — <b style="color:white;">tas pats matas visiems</b>; numatyta „gerai", žymėk tik išimtis.<br>
               • Jei vienam tvirtini „pro pirštus", o kitą vertini griežtai — statistika tampa <b style="color:white;">neteisinga ir nesąžininga</b> kitų vaikų atžvilgiu.<br>
               • Tikslūs duomenys = teisingi reitingai = motyvuoti vaikai. ${ico('dirzas')}
             </div>
@@ -26264,17 +26265,18 @@ async function openTrainerSettings() {
             <div style="font-size:28px;">${ico('mokslas')}</div>
             <div style="flex:1;">
               <div style="font-size:13px;font-weight:800;color:white;">Kaip naudotis (treneriui)</div>
-              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Patvirtinimai, grupės, iššūkiai, lygiai</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Kalendorius, treniruotės, grupės, patvirtinimai, taškai</div>
             </div>
             <div style="font-size:18px;color:var(--mut);">›</div>
           </button>
           <div id="trs-help-body" style="display:none;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:14px;padding:14px;font-size:11px;color:rgba(255,255,255,.85);line-height:1.7;">
-            <b>${ico('namai')} Pagrindinis</b> — tavo lygis, šiandienos treniruotės, naujausi laukiantys patvirtinimai.<br>
-            <b>${ico('grupe')} Grupės</b> — spausk grupę → pilnas vaizdas su vaikais; oranžinis skaičius prie vaiko = laukia patvirtinimo.<br>
-            <b>${ico('tikslas')} Iššūkiai</b> — kurk grupei, berniukams/mergaitėms ar vienam vaikui. Tipų spalvos kaip vaikų appse.<br>
-            <b>${ico('patvirtinta')} Patvirtinimai</b> — kelias / iššūkiai / varžybos / dvikovos. Patvirtinus vaikas iškart gauna EXP.<br>
-            <b>${ico('pranesimai')} Varpelis</b> — nauji pateikimai ir žinutės. Paspaudus nukelia tiesiai į patvirtinimą.<br>
-            <b>${ico('dirzas')} Lygiai</b> — kiekvienas patvirtinimas ir sukurtas iššūkis = +1 taškas tavo kelyje iki Sensėjaus.
+            <b>${ico('kalendorius')} Kalendorius</b> — pradinis langas: treniruotės pagal dienas, iššūkiai pagal grupes, pavadavimai. Dienos lapas — lankomumas su pastangomis ir treniruotės blokai.<br>
+            <b>${ico('treniruote')} Treniruotės</b> — etapo planas ir „Patvirtinti paruoštas", atsiliepimas „Kaip pavyko?" po treniruotės, AI taisyklės, pratimų papkė.<br>
+            <b>${ico('grupe')} Grupės</b> — grupių reitingas pagal rodiklį; kortelėje Žinutė · Lankomumas · Iššūkis; naujų vaikų anketų tvirtinimas.<br>
+            <b>${ico('patvirtinta')} Patvirtinti</b> — rekordai, rankiniai iššūkiai, varžybos. Savaitės Strava iššūkiai užsiskaito patys, mėnesio pasiekimus (kata, spyriai) žymi „Išmoko".<br>
+            <b>${ico('profilis')} Profilis</b> — lygis ir taškai, normatyvai, vaikų statistika, klubo grupių reitingas.<br>
+            <b>${ico('pranesimai')} Varpelis</b> — žinutės, nauji pateikimai, priminimai apie nepažymėtą lankomumą.<br>
+            <b>${ico('dirzas')} Taškai</b> — pažymėta ar patvirtinta treniruotė, atsiliepimas, sukurtas iššūkis, rankinis patvirtinimas = +1 tavo kelyje iki Sensėjaus.
           </div>
 
           <button onclick="openInstallAppModal()" style="background:linear-gradient(135deg, rgba(255,77,0,.12), rgba(255,128,0,.04));border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
@@ -26295,11 +26297,12 @@ async function openTrainerSettings() {
             <div style="font-size:18px;color:var(--mut);">›</div>
           </button>
           <div id="trs-points-body" style="display:none;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:14px;padding:14px;font-size:11px;color:rgba(255,255,255,.85);line-height:1.8;">
-            ${ico('patvirtinta')} Patvirtintas vaiko rezultatas (kelias) — <b style="color:var(--grn);">+1 tšk.</b><br>
-            ${ico('tikslas')} Patvirtintas vaiko iššūkis — <b style="color:var(--grn);">+1 tšk.</b><br>
-            ${ico('trofejai')} Patvirtintas varžybų rezultatas — <b style="color:var(--grn);">+1 tšk.</b><br>
+            ${ico('lankomumas')} Pažymėta treniruotė (lankomumas + pastangos) — <b style="color:var(--grn);">+1 tšk.</b><br>
+            ${ico('treniruote')} Patvirtinta treniruotė iš plano — <b style="color:var(--grn);">+1 tšk.</b><br>
+            ${ico('zinutes')} Atsiliepimas po treniruotės („Kaip pavyko?") — <b style="color:var(--grn);">+1 tšk.</b><br>
             ${ico('zvaigzde')} Sukurtas iššūkis — <b style="color:var(--br);">+1 tšk.</b><br>
-            <span style="color:var(--mut);font-size:10px;">Iš viso 99 lygiai, aukščiausias — Sensėjus (30 000 tšk.). Aktyviai dirbant su pilnu klubu pasiekiamas per kelerius metus — tikras meistro kelias.</span>
+            ${ico('patvirtinta')} Rankinis patvirtinimas — rekordas, iššūkis „Išmoko / Atliko", varžybos — <b style="color:var(--grn);">+1 tšk.</b><br>
+            <span style="color:var(--mut);font-size:10px;">Automatiniai patvirtinimai (Strava, lankomumas, varžybos) taškų neduoda — juos atlieka sistema. Iš viso 99 lygiai, aukščiausias — Sensėjus (30 000 tšk.). Aktyviai dirbant su pilnu klubu pasiekiamas per kelerius metus — tikras meistro kelias.</span>
           </div>
 
           <button onclick="trSetAcc('trs-stages-body')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
@@ -26314,6 +26317,18 @@ async function openTrainerSettings() {
             ${stagesRows}
           </div>
         </div>
+
+        ${(typeof Kal !== 'undefined' && Kal.on && Kal.on() && typeof Atsil !== 'undefined') ? `<!-- v592: AI taisyklės (MODULIS: Atsil) -->
+        <div style="padding:8px 16px 0;">
+          <div onclick="Atsil.goPrefs()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+            <div style="font-size:28px;">${ico('mokslas')}</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:white;">AI taisyklės treniruotėms</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Ko AI turi laikytis kurdamas tavo treniruotes · Treniruočių lange</div>
+            </div>
+            <div style="font-size:18px;color:var(--mut);">›</div>
+          </div>
+        </div>` : ''}
 
         <!-- 🔒 KEISTI SLAPTAŽODĮ -->
         <div style="padding:8px 16px 0;">
@@ -26350,19 +26365,7 @@ async function openTrainerSettings() {
             <div style="font-size:18px;color:var(--mut);">›</div>
           </div>
         </div>
-        <!-- 📄 v498 (E3): trenerio atmintinė appse -->
-        <div style="padding:8px 16px 0;">
-          <a href="ATMINTINE-TRENERIUI.html" target="_blank" rel="noopener" style="text-decoration:none;display:block;">
-            <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
-              <div style="font-size:28px;">${ico('dokumentas')}</div>
-              <div style="flex:1;">
-                <div style="font-size:13px;font-weight:800;color:white;">Trenerio atmintinė</div>
-                <div style="font-size:11px;color:var(--mut);margin-top:2px;">Kasdienis ritmas, iššūkių logika, postų studija, geroji praktika</div>
-              </div>
-              <div style="font-size:18px;color:var(--mut);">›</div>
-            </div>
-          </a>
-        </div>
+        <!-- v592: „Trenerio atmintinė" (ATMINTINE-TRENERIUI.html, turinys iki V2) paslėpta, kol dokumentas neperrašytas pagal V2 -->
 
         <!-- ATSIJUNGTI -->
         <div style="padding:6px 16px 20px;">
@@ -26375,7 +26378,7 @@ async function openTrainerSettings() {
           <a href="https://spobu.lt" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">spobu.lt</a>
         </div>
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
-          SPOBU v1.0 · © 2026
+          SPOBU ${document.getElementById('app-version')?.textContent || 'v1.0'} · © 2026
         </div>
       </div>
     `;
@@ -26633,7 +26636,7 @@ async function loadTrainerLevel() {
     const myKidIds = await getMyKidIds(false);
 
     // 5 count užklausos lygiagrečiai (head:true — be eilučių, tik skaičiai)
-    const [rs, cs, cr, ch, ak] = await Promise.all([
+    const [rs, cs, cr, ch, ak, v2] = await Promise.all([
       sb.from('result_submissions').select('id', { count: 'exact', head: true })
         .eq('trainer_id', currentUser.id).eq('status', 'approved'),
       myKidIds.length ? sb.from('challenge_submissions').select('id', { count: 'exact', head: true })
@@ -26643,14 +26646,19 @@ async function loadTrainerLevel() {
       sb.from('challenges').select('id', { count: 'exact', head: true })
         .eq('trainer_id', currentUser.id).is('parent_challenge_id', null),
       myKidIds.length ? sb.from('kids').select('id', { count: 'exact', head: true })
-        .in('id', myKidIds).eq('approval_status', 'approved') : Promise.resolve({ count: 0 })
+        .in('id', myKidIds).eq('approval_status', 'approved') : Promise.resolve({ count: 0 }),
+      sb.rpc('trainer_points_v2').then(r => (r && !r.error && r.data && r.data[0]) ? r.data[0] : null, () => null)   // v592: V2 formulė serveryje (be automatinių patvirtinimų; + treniruotės, atsiliepimai)
     ]);
 
     trainerApprovedTotal = (rs.count || 0) + (cs.count || 0) + (cr.count || 0);
     trainerCreatedTotal = ch.count || 0;
     trainerActiveKidsCount = ak.count || 0;
-    trainerPoints = trainerApprovedTotal + trainerCreatedTotal; // +1 patvirtinimas, +1 iššūkis
+    trainerPoints = trainerApprovedTotal + trainerCreatedTotal; // +1 patvirtinimas, +1 iššūkis (formulė iki v592 — atsarginė, jei RPC nepasiekiamas)
+    if (v2) {   // v592: rankiniai patvirtinimai + sukurti iššūkiai + pažymėtos/patvirtintos treniruotės + atsiliepimai (server-TRENERIO-TASKAI-v2)
+      trainerApprovedTotal = v2.approved || 0; trainerCreatedTotal = v2.created || 0; trainerPoints = v2.points || 0;
+    }
     trainerLevelInfo = getTrainerStageInfo(trainerPoints);
+    if (trainerLevelInfo && v2) trainerLevelInfo.v2 = v2;
 
     _renderTrainerMainHero();
     // (v117) _renderTrainerStatHero nebekviečiamas — tr-stat hero perkeltas į pagrindinį
@@ -40464,7 +40472,7 @@ async function openKidSettings() {
           <a href="https://spobu.lt" target="_blank" rel="noopener" style="font-size:11px;color:var(--mut);text-decoration:underline;">spobu.lt</a>
         </div>
         <div style="text-align:center;padding:10px 16px 20px;font-size:9px;color:var(--mut);">
-          SPOBU v1.0 · © 2026
+          SPOBU ${document.getElementById('app-version')?.textContent || 'v1.0'} · © 2026
         </div>
       </div>
     `;
@@ -45283,6 +45291,12 @@ const Atsil = {
     } catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 6000); s.busy = false; this.render(); }
   },
   // Treniruočių langas — „AI MOKOSI IŠ TAVĘS"
+  // v592: iš Nustatymų → Treniruočių lango taisyklių kortelė
+  goPrefs() {
+    document.getElementById('trainer-settings-modal')?.remove();
+    nv('tr', null, 'tr-tren');
+    let n = 0; const t = setInterval(() => { const e = document.getElementById('ats-new'); if (e || ++n > 30) { clearInterval(t); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }, 200);
+  },
   trenHtml() {
     const s = this.st, fb = s.fb || [], n = { good: 0, ok: 0, bad: 0 }; fb.forEach(f => { if (n[f.rating] != null) n[f.rating]++; });
     const bad = {}; fb.forEach(f => (f.blocks || []).forEach(b => { if (b && b.verdict) { const k = b.title || b.type; bad[k] = (bad[k] || 0) + 1; } }));
