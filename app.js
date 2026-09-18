@@ -43144,15 +43144,19 @@ const Kal = {
   async loadChallenges(limit) {
     const uid = currentUser?.id; if (!uid) return [];
     const nowIso = new Date().toISOString();
+    // v575: grupės iššūkio „parent" visada is_active=false (paslėptas šablonas, katAssign) — filtras is_active=true jį išmesdavo, todėl grupei
+    // skirti iššūkiai plytelėse NIEKADA nesirodė (savininkas 09-18: „sukūriau, bet nerodo"). Parent imamas, jei pats aktyvus ARBA turi aktyvių kopijų.
     const { data: parents } = await sb.from('challenges')
-      .select('id, title, type, expires_at, target_audience, group_id, target_kid_id, verify_kind')
-      .eq('trainer_id', uid).eq('is_active', true).is('parent_challenge_id', null)
+      .select('id, title, type, expires_at, target_audience, group_id, target_kid_id, verify_kind, is_active')
+      .eq('trainer_id', uid).is('parent_challenge_id', null)
       .or(`expires_at.is.null,expires_at.gte.${nowIso}`)
-      .order('expires_at', { ascending: true, nullsFirst: false }).limit(limit || 2);   // v570: Treniruočių langas prašo daugiau (kalendoriaus plytelėms — 2)
-    const ps = parents || []; if (!ps.length) return [];
+      .order('expires_at', { ascending: true, nullsFirst: false }).limit(60);
+    const all = parents || []; if (!all.length) return [];
+    const { data: childs } = await sb.from('challenges').select('id, parent_challenge_id, is_active').in('parent_challenge_id', all.map(p => p.id)).limit(1000);
+    const kidsOf = {}; (childs || []).forEach(k => { if (k.is_active) (kidsOf[k.parent_challenge_id] = kidsOf[k.parent_challenge_id] || []).push(k.id); });
+    const ps = all.filter(p => p.is_active || (kidsOf[p.id] || []).length).slice(0, limit || 2);   // v570: Treniruočių langas prašo daugiau (plytelėms — 2)
+    if (!ps.length) return [];
     const pids = ps.map(p => p.id);
-    const { data: childs } = await sb.from('challenges').select('id, parent_challenge_id').in('parent_challenge_id', pids).limit(500);
-    const kidsOf = {}; (childs || []).forEach(k => (kidsOf[k.parent_challenge_id] = kidsOf[k.parent_challenge_id] || []).push(k.id));
     const allIds = [...pids, ...(childs || []).map(k => k.id)];
     const { data: subs } = await sb.from('challenge_submissions').select('challenge_id, status').in('challenge_id', allIds).limit(3000);
     const byCh = {}; (subs || []).forEach(s => {
@@ -44078,9 +44082,9 @@ const Iss = {
     async loadGroup(g) {
       const [kR, aR] = await Promise.all([
         sb.from('kids').select('id, first_name, last_name, gender, group_id, birth_date, birth_year').eq('group_id', g.id).eq('approval_status', 'approved').order('first_name').limit(200),
-        sb.from('challenges').select('type').eq('trainer_id', currentUser?.id).eq('group_id', g.id).eq('is_active', true).is('parent_challenge_id', null).gt('expires_at', new Date().toISOString()).limit(20),
+        sb.from('challenges').select('id, type, parent_challenge_id').eq('trainer_id', currentUser?.id).eq('group_id', g.id).eq('is_active', true).gt('expires_at', new Date().toISOString()).limit(500),   // v575: aktyvios kopijos (parent visada neaktyvus) — skaičiuojam pagal parent
       ]);
-      const nPrev = { weekly: 0, monthly: 0 }; (aR.data || []).forEach(c => { if (nPrev[c.type] != null) nPrev[c.type]++; });
+      const nPrev = { weekly: 0, monthly: 0 }, seenP = new Set(); (aR.data || []).forEach(c => { const key = c.parent_challenge_id || c.id; if (seenP.has(key) || nPrev[c.type] == null) return; seenP.add(key); nPrev[c.type]++; });
       Object.assign(this.st, { group: g, kids: kR.data || [], nPrev, tgt: {}, excl: {}, exclOpen: null });
     },
     sub() { const s = this.st; return s.group ? `${s.group.name || ''} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')}` : ''; },
