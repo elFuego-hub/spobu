@@ -23250,7 +23250,10 @@ async function _attConfirm(){
     // 📣 v465: iškart pasiūlom pasidalinti treniruote — treneris dar telefone, momentas karštas
     try {
       const _gid = _attState.groupId;
-      if (typeof Postai !== 'undefined' && Postai.on()) { setTimeout(() => Postai.open(_gid, { auto: true }), 700); } else   // MODULIS: Postai (v564) — V2: iš karto paruošta kortelė, ne užuomina
+      const _adate = _attState.date;
+      const _post = () => { if (typeof Postai !== 'undefined' && Postai.on()) Postai.open(_gid, { auto: true }); };
+      if (typeof Atsil !== 'undefined' && Atsil.on()) { setTimeout(() => Atsil.afterAttendance(_gid, _adate, _post), 700); }   // MODULIS: Atsil (v584) — „Kaip pavyko?" → tada postas
+      else if (typeof Postai !== 'undefined' && Postai.on()) { setTimeout(() => Postai.open(_gid, { auto: true }), 700); } else   // MODULIS: Postai (v564) — V2: iš karto paruošta kortelė, ne užuomina
       setTimeout(() => {
         if (document.getElementById('tps-modal')) return;
         const t = document.createElement('div');
@@ -43041,6 +43044,7 @@ const Kal = {
         this.loadChallenges(60).catch(() => [])   // v576: visi — sekcija grupuoja pagal grupę
       ]);
       this.st.sessions = ses; this.st.events = evs; this.st.ch = ch;
+      if (typeof Atsil !== 'undefined' && Atsil.on()) { try { await Atsil.load(); } catch (_e) { } }   // MODULIS: Atsil (v584) — 👍/😐/👎 prie praėjusių treniruočių
       this.render();
     } catch (e) {
       console.error('[kal-tr]', e);
@@ -43155,6 +43159,7 @@ const Kal = {
     } else {
       if (att) acts.push(markBtn(true));
       if (s.session_id && typeof Planas !== 'undefined') acts.push(`<span class="kal-b" onclick="event.stopPropagation();Planas.openApr('${s.session_id}')">Atidaryti</span>`);
+      if (past && s.session_id && s.status === 'confirmed' && typeof Atsil !== 'undefined' && Atsil.on()) acts.push(`<span class="kal-b" onclick="event.stopPropagation();Atsil.open('${s.session_id}')">${Atsil.label(s.session_id)}</span>`);   // MODULIS: Atsil (v584)
     }
     const meta = [];
     if (kids) meta.push(`${kids} ${_ltPl(kids, 'vaikas', 'vaikai', 'vaikų')}`);
@@ -44902,6 +44907,7 @@ const Tren = {
     this.st.seen = Object.values(freq).filter(x => x.n >= 2).sort((a, b) => b.n - a.n).slice(0, 3);
     this.st.lib = await Planas.loadLib(this.st.kind);
     // v570: aktyvūs iššūkiai (tie patys skaičiai kaip kalendoriaus plytelės) — tik trenerio savi (Kal.loadChallenges: trainer_id = aš)
+    if (typeof Atsil !== 'undefined' && this.st.role !== 'club_admin') { try { await Atsil.load(); } catch (_e) { } }   // MODULIS: Atsil (v584)
     this.st.ch = []; try { if (this.st.role !== 'club_admin') this.st.ch = (await Kal.loadChallenges(60)).filter(c => !c.group_id || gids.includes(c.group_id)); } catch (_e) { }
   },
   chToggle(gid) { this.st.chOpen = this.st.chOpen === gid ? null : gid; this.render(); },   // v576: grupės eilutė išskleidžia jos iššūkius
@@ -44968,6 +44974,7 @@ const Tren = {
       <div class="kal-card">${rows.length ? rows.slice(0, 6).map(rowHtml).join('') : '<div style="font-size:11px;color:var(--mut);font-weight:700;">Šioje srityje blokų nėra — sukurk savo arba paprašyk AI.</div>'}${rows.length > 6 ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Visi ${rows.length} · paslėpti / trinti →</div>` : (rows.length ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Tvarkyti (paslėpti / trinti) →</div>` : '')}
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;">${edit ? this.btn('Tren.newBlock()', ico('prideti') + ' Naujas blokas', 'o') : ''}${edit && activeForAi ? this.btn('Tren.aiSuggest()', ico('ai') + (s.aiBusy ? ' AI galvoja…' : ' AI: pasiūlyk 3')) : (edit ? `<span style="font-size:10.5px;color:var(--mut);font-weight:700;align-self:center;">AI pasiūlymai — kai bus aktyvus etapas</span>` : '')}</div>
       </div>${aiCards}
+      ${typeof Atsil !== 'undefined' && s.role !== 'club_admin' ? Atsil.trenHtml() : ''}
       ${seen ? `<div class="kal-sec"><b>AI PASTEBĖJO</b><span>iš tavo treniruočių</span></div>${seen}` : ''}`;
     if (typeof Kal !== 'undefined' && Kal.afterRender) Kal.afterRender(c);
   },
@@ -45174,6 +45181,113 @@ const Grup = {
     s.busy = false;
     if (typeof loadNewKids === 'function') { try { loadNewKids(); } catch (_e) { } }
     if (typeof loadTrainerGroups === 'function') loadTrainerGroups();
+  },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: Atsil =====
+// v584 (F2, savininko sprendimas 09-18 „svarbiausia — feedback'ai, kad AI gerai kurtų"): trenerio atsiliepimai treniruotėms.
+// Po lankomumo pažymėjimo (prieš postą) — „KAIP PAVYKO?" 👍 / 😐 / 👎; prie 😐/👎 — po bloką kodėl (per sunku · per lengva ·
+// nuobodu · per ilgas · neaiškus); tekstas „ką keistum" ir jungiklis „taikyti visada" → nuolatinė taisyklė AI (trainer_prefs).
+// Lentelės: session_feedback (1 per treniruotę ir trenerį), trainer_prefs. Edge generate-plan skaito paskutinius atsiliepimus ir
+// aktyvias taisykles (PROMPT_VERSION 2026-09-18.1). Treniruotėse kortelė „AI MOKOSI IŠ TAVĘS" — statistika, taisyklės (+/✕).
+// Dienos lape praėjusiai patvirtintai treniruotei — mygtukas „Kaip pavyko?" / 👍 / 😐 / 👎. Viena vardų erdvė `Atsil`, DOM `ats-`.
+const Atsil = {
+  st: { prefs: [], fb: [], sess: null, next: null, exId: null, rating: null, verdicts: {}, text: '', rule: false, busy: false },
+  VERD: [['hard', 'Per sunku'], ['easy', 'Per lengva'], ['boring', 'Nuobodu'], ['long', 'Per ilgas'], ['unclear', 'Neaiškus']],
+  R: { good: ['👍', 'Gerai'], ok: ['😐', 'Taip sau'], bad: ['👎', 'Blogai'] },
+  on() { return typeof Kal !== 'undefined' && Kal.on(); },
+  esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); },
+  async load() {
+    const uid = currentUser?.id; if (!uid) return;
+    const [pR, fR] = await Promise.all([
+      sb.from('trainer_prefs').select('id, text, source, created_at').eq('trainer_id', uid).eq('is_active', true).order('created_at', { ascending: false }).limit(30),
+      sb.from('session_feedback').select('id, session_id, rating, blocks, text, created_at').eq('trainer_id', uid).order('created_at', { ascending: false }).limit(60),
+    ]);
+    this.st.prefs = pR.data || []; this.st.fb = fR.data || [];
+  },
+  label(sessId) { const f = (this.st.fb || []).find(x => x.session_id === sessId); return f ? `${this.R[f.rating]?.[0] || ''} Atsiliepimas` : 'Kaip pavyko?'; },
+  // po lankomumo: patvirtinta plano treniruotė tą dieną ir dar be atsiliepimo → lapas; kitaip — iškart toliau (postas)
+  async afterAttendance(gid, date, next) {
+    try {
+      const { data: s } = await sb.from('training_plan_sessions').select('id, title, blocks, session_date, status, group_id').eq('group_id', gid).eq('session_date', date).eq('status', 'confirmed').limit(1).maybeSingle();
+      if (!s) { if (next) next(); return; }
+      const { data: ex } = await sb.from('session_feedback').select('id').eq('session_id', s.id).eq('trainer_id', currentUser.id).maybeSingle();
+      if (ex) { if (next) next(); return; }
+      this.openSess(s, next);
+    } catch (_e) { if (next) next(); }
+  },
+  async open(sessId) {
+    const { data: s } = await sb.from('training_plan_sessions').select('id, title, blocks, session_date, status, group_id').eq('id', sessId).maybeSingle();
+    if (!s) { showToast('Treniruotė nerasta', 'error'); return; }
+    this.openSess(s, null);
+  },
+  async openSess(s, next) {
+    const { data: ex } = await sb.from('session_feedback').select('id, rating, blocks, text').eq('session_id', s.id).eq('trainer_id', currentUser.id).maybeSingle();
+    Object.assign(this.st, { sess: s, next, exId: ex?.id || null, rating: ex?.rating || null, verdicts: {}, text: ex?.text || '', rule: false, busy: false });
+    (ex?.blocks || []).forEach(b => { if (b && b.verdict != null && b.i != null) this.st.verdicts[b.i] = b.verdict; });
+    Planas.sheet('ats', 'KAIP PAVYKO?', '', '<div></div>', { z: 100007, sub: `${s.title || 'Treniruotė'} · ${String(s.session_date || '').slice(5)}` });
+    this.render();
+  },
+  close() { const el = document.getElementById('ats'); if (el) el.remove(); },
+  setRating(r) { this.st.rating = r; this.render(); },
+  setVerdict(i, v) { const cur = this.st.verdicts[i]; if (cur === v) delete this.st.verdicts[i]; else this.st.verdicts[i] = v; this.render(); },
+  render() {
+    const s = this.st, body = document.getElementById('ats-body'), foot = document.getElementById('ats-foot'); if (!body || !s.sess) return;
+    const blocks = Array.isArray(s.sess.blocks) ? s.sess.blocks : [];
+    const rb = Object.keys(this.R).map(k => `<div class="kal-card" style="flex:1;margin:0;text-align:center;cursor:pointer;padding:12px 6px;${s.rating === k ? 'border-color:var(--br);background:rgba(255,77,0,.1);' : ''}" onclick="Atsil.setRating('${k}')"><div style="font-size:26px;line-height:1;">${this.R[k][0]}</div><div style="font-size:11px;font-weight:900;margin-top:5px;">${this.R[k][1]}</div></div>`).join('');
+    const showBlocks = s.rating === 'ok' || s.rating === 'bad';
+    const bl = showBlocks && blocks.length ? `<div class="kal-sec" style="padding-bottom:6px;"><b>KURIS BLOKAS NEVEIKĖ?</b><span>neprivaloma</span></div>` + blocks.map((b, i) => `<div class="kal-card" style="padding:9px 11px;"><div style="font-size:12.5px;font-weight:900;">${this.esc(b.title || (typeof Planas !== 'undefined' ? Planas.tyLt(b.type) : b.type))} <span style="font-size:10.5px;color:var(--mut);font-weight:700;">· ${b.minutes || 0} min</span></div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;">${this.VERD.map(([v, l]) => `<span class="kal-b${s.verdicts[i] === v ? ' o' : ''}" style="padding:5px 9px;font-size:10.5px;" onclick="Atsil.setVerdict(${i},'${v}')">${l}</span>`).join('')}</div></div>`).join('') : '';
+    const txt = `<div class="kal-sec" style="padding-bottom:6px;"><b>KĄ KEISTUM?</b><span>tavo pasiūlymas AI</span></div>
+      <div style="padding:0 16px;"><textarea id="ats-text" class="inp" rows="3" maxlength="600" placeholder="pvz. mažiau stovėjimo eilėje, daugiau žaidimų su spyriais; kumite poros pagal ūgį" style="width:100%;margin:0;font-family:inherit;font-size:12.5px;" oninput="Atsil.st.text=this.value">${this.esc(s.text)}</textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;font-size:11.5px;font-weight:800;cursor:pointer;"><input type="checkbox" ${s.rule ? 'checked' : ''} onchange="Atsil.st.rule=this.checked" style="width:16px;height:16px;"> Taikyti visada — AI laikysis to kiekviename etape (taisyklė)</label></div>
+      <div style="font-size:10.5px;color:var(--mut);padding:4px 18px 10px;line-height:1.4;">Atsiliepimą mato tik tu ir klubas. AI jį naudoja ruošdamas kitas šios ir kitų grupių treniruotes.</div>`;
+    body.innerHTML = `<div style="display:flex;gap:7px;padding:2px 16px 10px;">${rb}</div>${bl}${txt}`;
+    if (foot) foot.innerHTML = `<div style="display:flex;gap:7px;"><button class="pl-cta g" style="flex:1;" ${s.rating && !s.busy ? '' : 'disabled style="flex:1;opacity:.45;"'} onclick="Atsil.save()">${s.busy ? 'Saugoma…' : 'Išsaugoti'}</button><button class="pl-cta" style="flex:0 0 auto;background:rgba(255,255,255,.06);color:var(--txt);padding:13px 16px;" onclick="Atsil.skip()">${s.exId ? 'Uždaryti' : 'Praleisti'}</button></div>`;
+  },
+  skip() { const next = this.st.next; this.st.next = null; this.close(); if (next) next(); },
+  async save() {
+    const s = this.st; if (!s.sess || !s.rating || s.busy) return; s.busy = true; this.render();
+    try {
+      const blocks = (Array.isArray(s.sess.blocks) ? s.sess.blocks : []).map((b, i) => s.verdicts[i] ? { i, title: b.title || '', type: b.type || '', block_id: b.block_id || null, verdict: s.verdicts[i] } : null).filter(Boolean);
+      const text = String(s.text || '').trim().slice(0, 600) || null;
+      const { error } = await sb.from('session_feedback').upsert({ session_id: s.sess.id, group_id: s.sess.group_id, trainer_id: currentUser.id, rating: s.rating, text, blocks, updated_at: new Date().toISOString() }, { onConflict: 'session_id,trainer_id' });
+      if (error) throw error;
+      if (s.rule && text && text.length >= 3) {
+        const { error: pErr } = await sb.from('trainer_prefs').insert({ trainer_id: currentUser.id, club_id: currentProfile?.club_id || null, text: text.slice(0, 300), source: 'feedback', session_id: s.sess.id });
+        if (pErr) console.warn('[atsil] pref', pErr.message);
+      }
+      showToast(ico('patvirtinta') + (s.rule && text ? ' Ačiū — įrašyta ir kaip taisyklė AI' : ' Ačiū — AI atsižvelgs'), 'success', 3500);
+      const next = s.next; s.next = null; this.close();
+      try { await this.load(); } catch (_e) { }
+      if (typeof Tren !== 'undefined' && document.getElementById('tr-tren')?.classList.contains('on')) Tren.render();
+      if (typeof Kal !== 'undefined' && Kal.st.day && document.getElementById('kal-sheet')) Kal.openDay(Kal.st.day);
+      if (next) next();
+    } catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 6000); s.busy = false; this.render(); }
+  },
+  // Treniruočių langas — „AI MOKOSI IŠ TAVĘS"
+  trenHtml() {
+    const s = this.st, fb = s.fb || [], n = { good: 0, ok: 0, bad: 0 }; fb.forEach(f => { if (n[f.rating] != null) n[f.rating]++; });
+    const bad = {}; fb.forEach(f => (f.blocks || []).forEach(b => { if (b && b.verdict) { const k = b.title || b.type; bad[k] = (bad[k] || 0) + 1; } }));
+    const worst = Object.entries(bad).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    return `<div class="kal-sec"><b>AI MOKOSI IŠ TAVĘS</b><span>${fb.length ? `${fb.length} ${_ltPl(fb.length, 'atsiliepimas', 'atsiliepimai', 'atsiliepimų')}` : ''}</span></div>
+      <div class="kal-card">
+        <div style="display:flex;gap:6px;">${['good', 'ok', 'bad'].map(k => `<div style="flex:1;text-align:center;"><div style="font-size:18px;line-height:1;">${this.R[k][0]}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;margin-top:3px;">${n[k]}</div></div>`).join('')}<div style="flex:2;font-size:10.5px;color:var(--mut);font-weight:700;line-height:1.4;align-self:center;">${fb.length ? (worst.length ? 'Dažniausiai neveikė: ' + worst.map(([k, c]) => `${this.esc(k)} (${c})`).join(', ') : 'Blokų pastabų nėra') : 'Po treniruotės pažymėjus lankomumą paklausiu „Kaip pavyko?" — iš to AI mokosi.'}</div></div>
+        <div style="font-size:9.5px;font-weight:900;letter-spacing:1.2px;color:var(--mut);margin-top:10px;">TAISYKLĖS AI · ${s.prefs.length}</div>
+        ${s.prefs.length ? s.prefs.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:.5px solid var(--bdr);font-size:12px;font-weight:700;"><span style="flex:1;min-width:0;">${this.esc(p.text)}</span>${p.source === 'feedback' ? '<span class="kal-tag mut">IŠ ATSILIEPIMO</span>' : ''}<span onclick="Atsil.delPref('${p.id}')" style="cursor:pointer;color:var(--mut);padding:2px 6px;">${ico('uzdaryti')}</span></div>`).join('') : '<div style="font-size:11px;color:var(--mut);font-weight:700;padding:6px 0;">Dar nėra. Įrašyk, ko AI turi laikytis visada — pvz. „apšilimas visada su kamuoliu", „kumite tik nuo 8 kyu".</div>'}
+        <div style="display:flex;gap:6px;margin-top:8px;"><input id="ats-new" class="inp" maxlength="300" placeholder="Nauja taisyklė AI…" style="flex:1;margin:0;font-size:12px;" onkeydown="if(event.key==='Enter')Atsil.addPref()"><span class="kal-b o" style="flex:none;" onclick="Atsil.addPref()">${ico('prideti')}</span></div>
+      </div>`;
+  },
+  async addPref() {
+    const el = document.getElementById('ats-new'); const text = String(el?.value || '').trim(); if (text.length < 3) { showToast('Įrašyk taisyklę (bent 3 ženklai)', 'error'); return; }
+    const { error } = await sb.from('trainer_prefs').insert({ trainer_id: currentUser.id, club_id: currentProfile?.club_id || null, text: text.slice(0, 300), source: 'manual' });
+    if (error) { showToast(ico('klaida') + ' ' + (error.message || ''), 'error', 5000); return; }
+    showToast(ico('patvirtinta') + ' Taisyklė įrašyta — AI jos laikysis', 'success'); try { await this.load(); } catch (_e) { } if (typeof Tren !== 'undefined') Tren.render();
+  },
+  async delPref(id) {
+    const { error } = await sb.from('trainer_prefs').update({ is_active: false }).eq('id', id).eq('trainer_id', currentUser.id);
+    if (error) { showToast(ico('klaida') + ' ' + (error.message || ''), 'error', 5000); return; }
+    try { await this.load(); } catch (_e) { } if (typeof Tren !== 'undefined') Tren.render();
   },
 };
 // ===== /MODULIS =====
