@@ -44068,7 +44068,7 @@ const Iss = {
         let gid = prefill && prefill.groupId;
         if (!gid && prefill && prefill.kidId) { const { data: k } = await sb.from('kids').select('group_id').eq('id', prefill.kidId).maybeSingle(); gid = k && k.group_id; }
         const g = Planas.st.groups.find(x => x.id === gid) || Planas.st.groups[0]; if (!g) { showToast('Neturi aktyvių grupių', 'error'); return; }
-        this.st = { group: null, kids: [], type: (prefill && prefill.type === 'monthly') ? 'monthly' : 'weekly', sel: {}, tgt: {}, busy: false, nPrev: { weekly: 0, monthly: 0 } };
+        this.st = { group: null, kids: [], type: (prefill && prefill.type === 'monthly') ? 'monthly' : 'weekly', sel: {}, tgt: {}, excl: {}, exclOpen: null, busy: false, nPrev: { weekly: 0, monthly: 0 } };
         await this.loadGroup(g);
         Iss.sheet('iss-new', 'NAUJAS IŠŠŪKIS', '', '<div></div>', { z: 100006, sub: this.sub() });
         this.render();
@@ -44077,11 +44077,11 @@ const Iss = {
     // v573 (savininkas: „kodėl nėra kokiai grupei priskirti"): grupės čipsai lape — persijungus pasikeičia vaikai, aktyvių skaičius ir numatyti taikiniai
     async loadGroup(g) {
       const [kR, aR] = await Promise.all([
-        sb.from('kids').select('id, gender, group_id, birth_date, birth_year').eq('group_id', g.id).eq('approval_status', 'approved').limit(200),
+        sb.from('kids').select('id, first_name, last_name, gender, group_id, birth_date, birth_year').eq('group_id', g.id).eq('approval_status', 'approved').order('first_name').limit(200),
         sb.from('challenges').select('type').eq('trainer_id', currentUser?.id).eq('group_id', g.id).eq('is_active', true).is('parent_challenge_id', null).gt('expires_at', new Date().toISOString()).limit(20),
       ]);
       const nPrev = { weekly: 0, monthly: 0 }; (aR.data || []).forEach(c => { if (nPrev[c.type] != null) nPrev[c.type]++; });
-      Object.assign(this.st, { group: g, kids: kR.data || [], nPrev, tgt: {} });
+      Object.assign(this.st, { group: g, kids: kR.data || [], nPrev, tgt: {}, excl: {}, exclOpen: null });
     },
     sub() { const s = this.st; return s.group ? `${s.group.name || ''} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')}` : ''; },
     async setGroup(gid) {
@@ -44093,17 +44093,26 @@ const Iss = {
     target(it) { const t = this.st.tgt[it.key]; if (t != null) return t; return katSeedTarget(it, katAgeBandIdx(this.st.kids), 'medium'); },   // numatytas — pagal grupės amžiaus juostą (base[banda]), kaip katalogo vedlyje
     step(key, d) { const it = this.items(this.st.type).find(i => i.key === key); if (!it || it.learn) return; const cur = this.target(it); const inc = it.unit === 'min' ? 0.5 : 1; const min = it.unit === 'min' ? 3 : 1; this.st.tgt[key] = Math.max(min, Math.round((cur + d * inc) * 10) / 10); this.render(); },
     toggle(key) { this.st.sel[key] = !this.st.sel[key]; this.render(); },
-    setType(t) { this.st.type = t === 'monthly' ? 'monthly' : 'weekly'; this.st.sel = {}; this.st.tgt = {}; this.render(); },
+    setType(t) { this.st.type = t === 'monthly' ? 'monthly' : 'weekly'; this.st.sel = {}; this.st.tgt = {}; this.st.excl = {}; this.st.exclOpen = null; this.render(); },
+    // v574 (B variantas): pasiekimą skirti ne visiems — išbraukti vaikus (pvz. jau moka spyrį); išbrauktas kopijos negauna ir iššūkio nemato
+    exclOpen(key) { this.st.exclOpen = this.st.exclOpen === key ? null : key; this.render(); },
+    exclToggle(key, kid) { const ex = this.st.excl[key] = this.st.excl[key] || {}; ex[kid] = !ex[kid]; this.render(); },
+    kidsFor(it) { const s = this.st, ex = s.excl[it.key] || {}; return it.learn ? s.kids.filter(k => !ex[k.id]) : s.kids; },
     render() {
       const s = this.st, body = document.getElementById('iss-new-body'), foot = document.getElementById('iss-new-foot'); if (!body) return;
       const items = this.items(s.type), n = Object.values(s.sel).filter(Boolean).length, cap = (typeof KAT_MAX_BY_TYPE !== 'undefined' && KAT_MAX_BY_TYPE[s.type]) || 3, left = Math.max(0, cap - (s.nPrev[s.type] || 0));
       const mon = s.type === 'monthly';
       const tgtHtml = it => it.learn ? '' : `<div style="display:flex;align-items:center;gap:3px;flex:none;" onclick="event.stopPropagation()"><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',-1)">−</span><b style="font-family:'Bebas Neue',sans-serif;font-size:16px;min-width:56px;text-align:center;">${this.target(it)} ${Iss.esc(it.unit)}</b><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',1)">+</span></div>`;
       const groups = Planas.st.groups || [];
-      const gChips = groups.length > 1 ? `<div class="no-scrollbar" style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;">${groups.map(g => `<span class="kal-b${s.group && g.id === s.group.id ? ' o' : ''}" style="flex:none;" onclick="Iss.create.setGroup('${g.id}')">${Iss.esc(g.name || 'Grupė')}</span>`).join('')}</div>` : '';
+      const gChips = groups.length ? `<div class="no-scrollbar" style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;">${groups.map(g => `<span class="kal-b${s.group && g.id === s.group.id ? ' o' : ''}" style="flex:none;" onclick="Iss.create.setGroup('${g.id}')">${Iss.esc(g.name || 'Grupė')}</span>`).join('')}</div>` : '';
       body.innerHTML = `${gChips}<div style="display:flex;gap:6px;padding:0 16px 10px;">${[['weekly', 'Savaitės · Strava'], ['monthly', 'Mėnesio · Pasiekimai']].map(([k, t]) => `<span class="kal-b${s.type === k ? ' o' : ''}" style="flex:1;text-align:center;" onclick="Iss.create.setType('${k}')">${t}</span>`).join('')}</div>
         <div class="kal-sec" style="padding-bottom:7px;">${mon ? 'PASIEKIMAI · ŽYMI TRENERIS' : 'STRAVA · UŽSKAITO PATI'} <span>${left ? `galima dar ${left}` : 'riba pasiekta'}</span></div>
-        ${items.map(it => `<div class="pl-opt${s.sel[it.key] ? ' on' : ''}" onclick="Iss.create.toggle('${it.key}')"><div class="box${s.sel[it.key] ? ' on' : ''}">${s.sel[it.key] ? ico('atlikta') : ''}</div><div style="flex:1;min-width:0;"><div class="t">${it.icon || ''} ${Iss.esc(it.name)}</div><div class="s">${Iss.esc(it.desc || '')}</div></div>${tgtHtml(it)}</div>`).join('')}
+        ${items.map(it => {
+          const on = !!s.sel[it.key], ex = s.excl[it.key] || {}, nEx = s.kids.filter(k => ex[k.id]).length, nm = k => Iss.esc(`${k.first_name || ''} ${(k.last_name || '')[0] || ''}`.trim() || 'Vaikas');
+          const exLink = on && it.learn && s.kids.length > 1 ? `<div style="margin-top:4px;"><span onclick="event.stopPropagation();Iss.create.exclOpen('${it.key}')" style="font-size:10.5px;font-weight:800;color:var(--br);cursor:pointer;">${s.exclOpen === it.key ? 'Suskleisti' : (nEx ? `Skirta ${s.kids.length - nEx} iš ${s.kids.length} · keisti` : 'Ne visiems…')}</span></div>` : '';
+          const exList = on && it.learn && s.exclOpen === it.key ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin:-1px 16px 8px 46px;">${s.kids.map(k => `<span class="kal-b${ex[k.id] ? '' : ' o'}" style="padding:5px 10px;font-size:10.5px;${ex[k.id] ? 'opacity:.5;text-decoration:line-through;' : ''}" onclick="Iss.create.exclToggle('${it.key}','${k.id}')">${nm(k)}</span>`).join('')}<div style="width:100%;font-size:10px;color:var(--mut);font-weight:700;">Paspausk vardą — išbrauksi (pvz. jau moka). Išbrauktas šio iššūkio nemato.</div></div>` : '';
+          return `<div class="pl-opt${on ? ' on' : ''}" onclick="Iss.create.toggle('${it.key}')"><div class="box${on ? ' on' : ''}">${on ? ico('atlikta') : ''}</div><div style="flex:1;min-width:0;"><div class="t">${it.icon || ''} ${Iss.esc(it.name)}</div><div class="s">${Iss.esc(it.desc || '')}</div>${exLink}</div>${tgtHtml(it)}</div>${exList}`;
+        }).join('')}
         <div style="padding:4px 16px 10px;font-size:10.5px;color:var(--mut);line-height:1.45;">${mon
           ? `${ico('ispejimas')} Kai vaikas išmoko — iššūkio suvestinėje (kalendoriaus plytelė arba Treniruotės → Iššūkiai) paspausk „Išmoko" prie vardo: EXP išsiunčiama iškart. Vaikas gali ir pats pateikti „parodžiau" — tada patvirtini.`
           : `${ico('ispejimas')} Užskaito pati, kai vaikas prijungęs Strava (Profilis → Strava). Neprijungusiems rodoma užuomina „Susiek Strava" ir jie pateikia ranka — tvirtini tu. Rankiniai Strava įrašai neužskaitomi. Iki 14 m. Strava jungia tėvas savo paskyra.`}</div>`;
@@ -44117,9 +44126,18 @@ const Iss = {
         // trenerio parinktas taikinys galioja VISIEMS (targetBoys = targetGirls → viena banga, ne ♂/♀ dvi su juostos skaičiais); learn — taikinys 1
         const opts = {}; items.forEach(it => { if (it.learn) return; const t = this.target(it); opts['k:' + it.key] = { target: t, targetBoys: t, targetGirls: t }; });
         // tas pats kelias kaip Iss.plan.assign → katAssign (parent + kopijos, verify_kind/meta, [kat:]/[learn] žymos, istorija)
-        katState = { aud: 'group', groupId: s.group.id, kidId: null, kids: s.kids, bandIdx: katAgeBandIdx(s.kids), bandAuto: true, type: s.type, selected: items.map(it => 'k:' + it.key), diff: 'medium', nPrev: s.nPrev[s.type] || 0, nPrevLoaded: true, recos: null, recoInfo: null, catFilter: null, busy: false, itemOpts: opts, showReps: false, extraItems: [], planSessionId: null };
-        await katAssign();
-        if (!(katState.okRows > 0)) { s.busy = false; this.render(); return; }   // katAssign klaidą parodė pats (toast) ir grįžo be okRows — lapas lieka
+        // v574: elementai su išbrauktais vaikais skiriami atskirai savo poaibiui (kaip Iss.plan.batch); nPrev auga, kad EXP kreivė sutaptų
+        let done = 0, nPrev = s.nPrev[s.type] || 0;
+        const run = async (list, kids) => {
+          if (!list.length) return;
+          if (!kids.length) { showToast(`${ico('ispejimas')} ${Iss.esc(list[0].name)}: visi išbraukti — nepaskirta`, 'error', 4000); return; }
+          katState = { aud: 'group', groupId: s.group.id, kidId: null, kids, bandIdx: katAgeBandIdx(kids), bandAuto: true, type: s.type, selected: list.map(it => 'k:' + it.key), diff: 'medium', nPrev, nPrevLoaded: true, recos: null, recoInfo: null, catFilter: null, busy: false, itemOpts: opts, showReps: false, extraItems: [], planSessionId: null, okRows: 0 };
+          await katAssign();
+          const ok = katState.okRows || 0; done += ok; nPrev += ok;
+        };
+        await run(items.filter(it => this.kidsFor(it).length === s.kids.length), s.kids);
+        for (const it of items.filter(it => this.kidsFor(it).length !== s.kids.length)) await run([it], this.kidsFor(it));
+        if (!done) { s.busy = false; this.render(); return; }   // katAssign klaidą parodė pats (toast) — lapas lieka
         document.getElementById('iss-new')?.remove();
         if (typeof Kal !== 'undefined' && document.getElementById('tr-kal')?.classList.contains('on')) Kal.reload();
         if (typeof Tren !== 'undefined' && document.getElementById('tr-tren')?.classList.contains('on')) Tren.reload();
