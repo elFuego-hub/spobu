@@ -32076,13 +32076,6 @@ const KAT_WEEKLY_SEED = [
 // Mėnesiniai (diržo kelio logika): fx — be sunkumo (mult=1); learn — taikinys 1, sunkumas keičia tik EXP
 const KAT_MONTHLY_SEED = [
   { key: 'm1_lankomumas', name: 'Lankomumas — tobulas mėnuo', cat: 'lankomumas', unit: 'treniruotės', fx: true, base: [8, 10, 12], check: 'coach', content: 'attendance', icon: '📋', desc: 'Ateik į visas mėnesio treniruotes' },
-  // v570 (iššūkiai v2): mėnesio Strava variantai — tie patys tipai, didesni taikiniai
-  { key: 'm20_begimas', name: 'Bėgimas', cat: 'ištvermė', unit: 'km', base: [12, 25, 40], check: 'strava', content: 'distance', icon: '🏃', desc: 'Bėgimas per mėnesį — skaičiuoja Strava' },
-  { key: 'm25_greitas_km', name: 'Greitas kilometras', cat: 'greitis', unit: 'min', fx: true, base: [7, 6, 5], check: 'strava', content: 'distance', icon: '⚡', desc: 'Geriausias 1 km laikas bėgime per mėnesį (ne daugiau) — skaičiuoja Strava' },
-  { key: 'm21_ejimas', name: 'Ėjimas / žygis', cat: 'ištvermė', unit: 'km', base: [30, 45, 60], check: 'strava', content: 'distance', icon: '🚶', desc: 'Ėjimas ir žygiai per mėnesį — skaičiuoja Strava' },
-  { key: 'm22_dviratis', name: 'Dviratis', cat: 'ištvermė', unit: 'km', base: [30, 60, 100], check: 'strava', content: 'distance', icon: '🚴', desc: 'Dviratis per mėnesį — skaičiuoja Strava' },
-  { key: 'm23_plaukimas', name: 'Plaukimas', cat: 'ištvermė', unit: 'kartai', base: [3, 5, 8], check: 'strava', content: 'distance', icon: '🏊', desc: 'Plaukimo treniruotės per mėnesį (≥ 10 min) — Strava „Swim"' },
-  { key: 'm24_treniruote', name: 'Papildoma treniruotė', cat: 'ištvermė', unit: 'kartai', base: [3, 5, 8], check: 'strava', content: 'distance', icon: '⏱️', desc: 'Bet kokia Strava veikla ≥ 30 min per mėnesį' },
   { key: 'm2_kata', name: 'Naujo diržo KATA', cat: 'kova', learn: true, check: 'coach', content: 'achievement', icon: '🥋', desc: 'Išmok naujo diržo katą — parodyk treneriui treniruotėje' },
   { key: 'm3_technikos', name: 'Naujo diržo TECHNIKOS', cat: 'technika', learn: true, check: 'coach', content: 'achievement', icon: '🥋', desc: 'Išmok programos technikas be klaidos — parodyk treneriui' },
   { key: 'm4_zodynas', name: 'Naujo diržo JAPONIŠKAS ŽODYNAS', cat: 'technika', learn: true, check: 'coach', content: 'achievement', icon: '🗣️', desc: 'Išmok diržo programos žodyną — treneris apklaus žodžiu' },
@@ -41329,12 +41322,12 @@ const AutoTvirt = {
   MAP: { 'k:m1_lankomumas': 'attendance', 'k:m6_varzybos': 'competition', 'k:m7_egzaminas': 'belt_test',
          'k:s2_begimas': 'strava_distance', 'k:s3_dviratis': 'strava_distance', 'k:s4_ejimas': 'strava_distance',   // V2 7b (v552): Strava rūšys — serveris strava-sync
          'k:s7_greitas_km': 'strava_distance', 'k:s8_plaukimas': 'strava_workout', 'k:s9_treniruote': 'strava_workout',   // v570: iššūkiai v2 — metrika (best_1k / count+min_minutes) per META → verify_meta, rūšis lieka DB check'o ribose
-         'k:m20_begimas': 'strava_distance', 'k:m21_ejimas': 'strava_distance', 'k:m22_dviratis': 'strava_distance', 'k:m25_greitas_km': 'strava_distance', 'k:m23_plaukimas': 'strava_workout', 'k:m24_treniruote': 'strava_workout' },
+         },
   SPORTS: { 'k:s2_begimas': ['Run', 'TrailRun', 'VirtualRun'], 'k:s3_dviratis': ['Ride', 'GravelRide', 'MountainBikeRide', 'VirtualRide', 'EBikeRide'], 'k:s4_ejimas': ['Walk', 'Hike'],
             'k:s7_greitas_km': ['Run', 'TrailRun', 'VirtualRun'], 'k:s8_plaukimas': ['Swim'], 'k:s9_treniruote': ['*'],
-            'k:m20_begimas': ['Run', 'TrailRun', 'VirtualRun'], 'k:m25_greitas_km': ['Run', 'TrailRun', 'VirtualRun'], 'k:m21_ejimas': ['Walk', 'Hike'], 'k:m22_dviratis': ['Ride', 'GravelRide', 'MountainBikeRide', 'VirtualRide', 'EBikeRide'], 'k:m23_plaukimas': ['Swim'], 'k:m24_treniruote': ['*'] },
+            },
   // v570: metrika serveriui — best_1k (geriausias 1 km laikas, min.), count su min_minutes (veiklų skaičius), kitaip km
-  META: { 'k:s7_greitas_km': { strava_metric: 'best_1k' }, 'k:m25_greitas_km': { strava_metric: 'best_1k' }, 'k:s8_plaukimas': { strava_metric: 'count', min_minutes: 10 }, 'k:m23_plaukimas': { strava_metric: 'count', min_minutes: 10 }, 'k:s9_treniruote': { strava_metric: 'count', min_minutes: 30 }, 'k:m24_treniruote': { strava_metric: 'count', min_minutes: 30 } },
+  META: { 'k:s7_greitas_km': { strava_metric: 'best_1k' }, 'k:s8_plaukimas': { strava_metric: 'count', min_minutes: 10 }, 'k:s9_treniruote': { strava_metric: 'count', min_minutes: 30 } },
   verifyMeta(token) { return this.SPORTS[token] ? Object.assign({ strava_sports: this.SPORTS[token] }, this.META[token] || {}) : null; },
   LABEL: { attendance: 'iš lankomumo', competition: 'iš varžybų rezultatų', belt_test: 'iš egzamino rezultato', strava_distance: 'iš Strava', strava_workout: 'iš Strava' },
   verifyKind(token) { return this.MAP[token] || 'coach'; },
@@ -42247,7 +42240,7 @@ Object.assign(Planas, {
         ${w.fallback ? `<div style="margin:0 16px 10px;padding:9px 12px;border-radius:12px;background:rgba(255,215,0,.1);border:.5px solid rgba(255,215,0,.4);font-size:11px;line-height:1.4;">${ico('ispejimas')} AI atsakymas netiko arba nebuvo pasiekiamas — treniruotės sudėtos pagal šabloną iš tavo blokų ir katalogo. Gali koreguoti kiekvieną arba paprašyti AI perdaryti.</div>` : ''}
         <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 16px 8px;"><div style="font-size:10px;font-weight:900;letter-spacing:1.4px;color:var(--mut);">TRENIRUOTĖS</div><div style="font-size:11px;font-weight:800;color:var(--br);">Spausk, kad pamatytum visą</div></div>
         ${w.sessions.map((s, i) => `<div class="kal-card" style="cursor:pointer;" onclick="Planas.openApr('${s.id}')"><div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">${i + 1} · ${this.fmtDate(s.session_date)} · ${this.esc(s.title || 'Treniruotė')}</div><div style="font-size:11px;color:var(--mut);margin-top:2px;line-height:1.4;">${(s.blocks || []).map(b => this.esc(b.title)).join(', ') || '—'}</div></div>${ico('toliau')}</div></div>`).join('')}`;
-      cta = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;line-height:1.4;">Patvirtink visą etapą iš karto: <b>vaikai ir tėvai matys treniruotes į priekį</b>.</div><button class="pl-cta g" onclick="Planas.wizConfirmAll()">Patvirtinti visas ${w.sessions.length}</button><div style="text-align:center;margin-top:8px;"><span onclick="document.getElementById('pl-wiz').remove();Planas.openEtapas('${w.planId}')" style="font-size:10.5px;color:var(--mut);cursor:pointer;text-decoration:underline;">Vėliau — peržiūrėsiu po vieną</span>${typeof Iss !== 'undefined' ? ` · <span onclick="Iss.plan.open('${w.planId}')" style="font-size:10.5px;color:#22C55E;cursor:pointer;text-decoration:underline;">Iššūkiai pagal planą</span>` : ''}</div>`;
+      cta = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;line-height:1.4;">Patvirtink visą etapą iš karto: <b>vaikai ir tėvai matys treniruotes į priekį</b>.</div><button class="pl-cta g" onclick="Planas.wizConfirmAll()">Patvirtinti visas ${w.sessions.length}</button><div style="text-align:center;margin-top:8px;"><span onclick="document.getElementById('pl-wiz').remove();Planas.openEtapas('${w.planId}')" style="font-size:10.5px;color:var(--mut);cursor:pointer;text-decoration:underline;">Vėliau — peržiūrėsiu po vieną</span></div>`;
     }
     body.innerHTML = html; body.scrollTop = 0;
     if (foot) foot.innerHTML = cta; else { const f = document.createElement('div'); f.id = 'pl-wiz-foot'; f.style.cssText = 'padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:.5px solid var(--bdr);flex-shrink:0;background:var(--bg);'; f.innerHTML = cta; body.parentElement.appendChild(f); }
@@ -44042,15 +44035,15 @@ const Iss = {
   // Etapo lange (Planas.renderEtapas) — kortelė „Iššūkiai pagal planą"
   etapasCard(p) {
     if (!this.on() || !p || p.status === 'archived') return '';
-    const done = p.ai_context && p.ai_context.challenges ? p.ai_context.challenges : null;
+    // v572: be AI pasiūlymų — tiesiai į naują iššūkį (savaitės Strava / mėnesio pasiekimai)
     return `<div class="kal-sec" style="padding-top:4px;">IŠŠŪKIAI</div>
-      <div class="kal-card" style="border-left:3px solid #22C55E;cursor:pointer;" onclick="Iss.plan.open('${p.id}')"><div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Iššūkiai pagal planą</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${done && done.count ? `Paskirta ${done.count} · ${this.md(done.at)} · pasiūlyti dar` : 'AI pasiūlys savaitės ir mėnesio iššūkius pagal etapo turinį — EXP skaičiuoja Spobu'}</div></div>${ico('toliau')}</div></div>`;
+      <div class="kal-card" style="border-left:3px solid #22C55E;cursor:pointer;" onclick="Iss.create.open({ groupId: '${p.group_id || ''}' })"><div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Naujas iššūkis grupei</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">Savaitės — Strava užskaito pati · Mėnesio — pasiekimai (kata, spyriai), žymi treneris</div></div>${ico('toliau')}</div></div>`;
   },
   // Kalendoriaus plytelė, kai trenerio aktyvių iššūkių nėra
   emptyTile() {
     if (!this.on()) return '';
     // v557 (kalendorius v2): tuščia būsena — pasiūlyti iš plano arba sukurti ranka
-    return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span></div><div class="kal-empty"><b>Aktyvių iššūkių nėra</b><i>Pasiūlyk iš etapo turinio (EXP pagal kreivę) arba sukurk savaitės iššūkį grupei</i><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="kal-b o" onclick="Iss.plan.openLatest()">Pasiūlyti iš plano</span>${typeof openCreateChallenge === 'function' ? '<span class="kal-b" onclick="openCreateChallenge()">+ Iššūkis</span>' : ''}</div></div>`;
+    return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span></div><div class="kal-empty"><b>Aktyvių iššūkių nėra</b><i>Savaitės — Strava užskaito pati · Mėnesio — pasiekimai, žymi treneris</i><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="kal-b o" onclick="Iss.create.open()">${ico('prideti')} Naujas iššūkis</span></div></div>`;
   },
 
   // ─────────────────────────── NAUJAS IŠŠŪKIS v2 (tik automatiniai — Strava) ───────────────────────────
@@ -44061,8 +44054,10 @@ const Iss = {
   // iššūkis" lentelė V2 klube nebeatidaroma (openCreateChallenge peradresuoja čia).
   create: {
     st: { group: null, kids: [], type: 'weekly', sel: {}, tgt: {}, busy: false, nPrev: { weekly: 0, monthly: 0 } },
+    // v572 (savininko A variantas 09-18): SAVAITĖ = judėjimas — Strava užskaito pati; MĖNUO = ko išmokai — katalogo `learn` pasiekimai
+    // (kata, technikos, žodynas, spyriai), žymi treneris suvestinėje (Iss.sum.mark) arba vaikas pateikia „parodžiau". Persidengimo nėra.
     W: ['s2_begimas', 's7_greitas_km', 's4_ejimas', 's3_dviratis', 's8_plaukimas', 's9_treniruote'],
-    M: ['m20_begimas', 'm25_greitas_km', 'm21_ejimas', 'm22_dviratis', 'm23_plaukimas', 'm24_treniruote'],
+    M: ['m2_kata', 'm3_technikos', 'm4_zodynas', 'm9_mae_geri', 'm10_mawashi', 'm11_yoko_geri', 'm12_ushiro', 'm13_ushiro_maw', 'm14_hiza_geri'],
     items(type) { const keys = type === 'monthly' ? this.M : this.W; const seed = type === 'monthly' ? KAT_MONTHLY_SEED : KAT_WEEKLY_SEED; return keys.map(k => seed.find(i => i.key === k)).filter(Boolean); },
     async open(prefill) {
       if (!Iss.on()) return;
@@ -44078,32 +44073,36 @@ const Iss = {
           sb.from('challenges').select('type').eq('trainer_id', currentUser?.id).eq('group_id', g.id).eq('is_active', true).is('parent_challenge_id', null).gt('expires_at', new Date().toISOString()).limit(20),
         ]);
         const nPrev = { weekly: 0, monthly: 0 }; (aR.data || []).forEach(c => { if (nPrev[c.type] != null) nPrev[c.type]++; });
-        this.st = { group: g, kids: kR.data || [], type: 'weekly', sel: {}, tgt: {}, busy: false, nPrev };
+        this.st = { group: g, kids: kR.data || [], type: (prefill && prefill.type === 'monthly') ? 'monthly' : 'weekly', sel: {}, tgt: {}, busy: false, nPrev };
         Iss.sheet('iss-new', 'NAUJAS IŠŠŪKIS · ' + Iss.esc(String(g.name || '').toUpperCase()), '', '<div></div>', { z: 100006 });
         this.render();
       } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 6000); }
     },
     target(it) { const t = this.st.tgt[it.key]; if (t != null) return t; return katSeedTarget(it, katAgeBandIdx(this.st.kids), 'medium'); },   // numatytas — pagal grupės amžiaus juostą (base[banda]), kaip katalogo vedlyje
-    step(key, d) { const it = this.items(this.st.type).find(i => i.key === key); if (!it) return; const cur = this.target(it); const inc = it.unit === 'min' ? 0.5 : 1; const min = it.unit === 'min' ? 3 : 1; this.st.tgt[key] = Math.max(min, Math.round((cur + d * inc) * 10) / 10); this.render(); },
+    step(key, d) { const it = this.items(this.st.type).find(i => i.key === key); if (!it || it.learn) return; const cur = this.target(it); const inc = it.unit === 'min' ? 0.5 : 1; const min = it.unit === 'min' ? 3 : 1; this.st.tgt[key] = Math.max(min, Math.round((cur + d * inc) * 10) / 10); this.render(); },
     toggle(key) { this.st.sel[key] = !this.st.sel[key]; this.render(); },
     setType(t) { this.st.type = t === 'monthly' ? 'monthly' : 'weekly'; this.st.sel = {}; this.st.tgt = {}; this.render(); },
     render() {
       const s = this.st, body = document.getElementById('iss-new-body'), foot = document.getElementById('iss-new-foot'); if (!body) return;
       const items = this.items(s.type), n = Object.values(s.sel).filter(Boolean).length, cap = (typeof KAT_MAX_BY_TYPE !== 'undefined' && KAT_MAX_BY_TYPE[s.type]) || 3, left = Math.max(0, cap - (s.nPrev[s.type] || 0));
-      body.innerHTML = `<div style="display:flex;gap:6px;padding:0 16px 10px;">${[['weekly', 'Savaitės · 7 d.'], ['monthly', 'Mėnesio']].map(([k, t]) => `<span class="kal-b${s.type === k ? ' o' : ''}" style="flex:1;text-align:center;" onclick="Iss.create.setType('${k}')">${t}</span>`).join('')}</div>
-        <div class="kal-sec" style="padding-bottom:7px;">STRAVA · UŽSKAITO PATI <span>${left ? `galima dar ${left}` : 'riba pasiekta'}</span></div>
-        ${items.map(it => `<div class="pl-opt${s.sel[it.key] ? ' on' : ''}" onclick="Iss.create.toggle('${it.key}')"><div class="box${s.sel[it.key] ? ' on' : ''}">${s.sel[it.key] ? ico('atlikta') : ''}</div><div style="flex:1;min-width:0;"><div class="t">${it.icon || ''} ${Iss.esc(it.name)}</div><div class="s">${Iss.esc(it.desc || '')}</div></div><div style="display:flex;align-items:center;gap:3px;flex:none;" onclick="event.stopPropagation()"><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',-1)">−</span><b style="font-family:'Bebas Neue',sans-serif;font-size:16px;min-width:56px;text-align:center;">${this.target(it)} ${Iss.esc(it.unit)}</b><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',1)">+</span></div></div>`).join('')}
-        <div style="padding:4px 16px 10px;font-size:10.5px;color:var(--mut);line-height:1.45;">${ico('ispejimas')} Užskaito pati, kai vaikas prijungęs Strava (Profilis → Strava). Neprijungusiems rodoma užuomina „Susiek Strava" ir jie pateikia ranka — tvirtini tu. Rankiniai Strava įrašai neužskaitomi. Iki 14 m. Strava jungia tėvas savo paskyra.</div>`;
-      if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">EXP pagal katalogo kreivę · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${s.type === 'weekly' ? 'sekmadienio' : 'mėnesio pabaigos'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti grupei${n ? ' · ' + n : ''}`}</button>`;
+      const mon = s.type === 'monthly';
+      const tgtHtml = it => it.learn ? '' : `<div style="display:flex;align-items:center;gap:3px;flex:none;" onclick="event.stopPropagation()"><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',-1)">−</span><b style="font-family:'Bebas Neue',sans-serif;font-size:16px;min-width:56px;text-align:center;">${this.target(it)} ${Iss.esc(it.unit)}</b><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',1)">+</span></div>`;
+      body.innerHTML = `<div style="display:flex;gap:6px;padding:0 16px 10px;">${[['weekly', 'Savaitės · Strava'], ['monthly', 'Mėnesio · Pasiekimai']].map(([k, t]) => `<span class="kal-b${s.type === k ? ' o' : ''}" style="flex:1;text-align:center;" onclick="Iss.create.setType('${k}')">${t}</span>`).join('')}</div>
+        <div class="kal-sec" style="padding-bottom:7px;">${mon ? 'PASIEKIMAI · ŽYMI TRENERIS' : 'STRAVA · UŽSKAITO PATI'} <span>${left ? `galima dar ${left}` : 'riba pasiekta'}</span></div>
+        ${items.map(it => `<div class="pl-opt${s.sel[it.key] ? ' on' : ''}" onclick="Iss.create.toggle('${it.key}')"><div class="box${s.sel[it.key] ? ' on' : ''}">${s.sel[it.key] ? ico('atlikta') : ''}</div><div style="flex:1;min-width:0;"><div class="t">${it.icon || ''} ${Iss.esc(it.name)}</div><div class="s">${Iss.esc(it.desc || '')}</div></div>${tgtHtml(it)}</div>`).join('')}
+        <div style="padding:4px 16px 10px;font-size:10.5px;color:var(--mut);line-height:1.45;">${mon
+          ? `${ico('ispejimas')} Kai vaikas išmoko — iššūkio suvestinėje (kalendoriaus plytelė arba Treniruotės → Iššūkiai) paspausk „Išmoko" prie vardo: EXP išsiunčiama iškart. Vaikas gali ir pats pateikti „parodžiau" — tada patvirtini.`
+          : `${ico('ispejimas')} Užskaito pati, kai vaikas prijungęs Strava (Profilis → Strava). Neprijungusiems rodoma užuomina „Susiek Strava" ir jie pateikia ranka — tvirtini tu. Rankiniai Strava įrašai neužskaitomi. Iki 14 m. Strava jungia tėvas savo paskyra.`}</div>`;
+      if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">EXP pagal katalogo kreivę · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${mon ? 'mėnesio pabaigos' : 'sekmadienio'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti grupei${n ? ' · ' + n : ''}`}</button>`;
     },
     async assign() {
       const s = this.st; if (s.busy) return; const items = this.items(s.type).filter(it => s.sel[it.key]); if (!items.length) return;
       if (!s.kids.length) { showToast('Grupėje nėra patvirtintų vaikų', 'error'); return; }
       s.busy = true; this.render();
       try {
-        // trenerio parinktas taikinys galioja VISIEMS (targetBoys = targetGirls → viena banga, ne ♂/♀ dvi su juostos skaičiais)
-        const opts = {}; items.forEach(it => { const t = this.target(it); opts['k:' + it.key] = { target: t, targetBoys: t, targetGirls: t }; });
-        // tas pats kelias kaip Iss.plan.assign → katAssign (parent + kopijos, verify_kind/meta, [kat:] žymos, istorija)
+        // trenerio parinktas taikinys galioja VISIEMS (targetBoys = targetGirls → viena banga, ne ♂/♀ dvi su juostos skaičiais); learn — taikinys 1
+        const opts = {}; items.forEach(it => { if (it.learn) return; const t = this.target(it); opts['k:' + it.key] = { target: t, targetBoys: t, targetGirls: t }; });
+        // tas pats kelias kaip Iss.plan.assign → katAssign (parent + kopijos, verify_kind/meta, [kat:]/[learn] žymos, istorija)
         katState = { aud: 'group', groupId: s.group.id, kidId: null, kids: s.kids, bandIdx: katAgeBandIdx(s.kids), bandAuto: true, type: s.type, selected: items.map(it => 'k:' + it.key), diff: 'medium', nPrev: s.nPrev[s.type] || 0, nPrevLoaded: true, recos: null, recoInfo: null, catFilter: null, busy: false, itemOpts: opts, showReps: false, extraItems: [], planSessionId: null };
         await katAssign();
         if (!(katState.okRows > 0)) { s.busy = false; this.render(); return; }   // katAssign klaidą parodė pats (toast) ir grįžo be okRows — lapas lieka
@@ -44347,7 +44346,7 @@ const Iss = {
     async open(id) {
       this.st.id = id; this.st.tab = 'wait'; this.st.rows = []; this.st.ch = null;
       Iss.sheet('iss-sum', 'SUVESTINĖ', '<div class="kal-empty">Kraunama…</div>', '', { sub: 'Kraunama…' });
-      try { await this.load(); this.render(); }
+      try { await this.load(); if (!this.st.rows.some(r => r.state === 'wait') && this.st.rows.some(r => r.state === 'none')) this.st.tab = 'none'; this.render(); }   // v572: nėra laukiančių → rodyti, kas dar neatliko (pasiekimams žymėti)
       catch (e) { console.error('[Iss.sum]', e); const b = document.getElementById('iss-sum-body'); if (b) b.innerHTML = `<div class="kal-empty" style="color:#EF4444;">Klaida: ${Iss.esc(e.message || '')}</div>`; }
     },
     async load() {
@@ -44366,6 +44365,7 @@ const Iss = {
         else if (a === 'boys_in_group') el = el.filter(k => k.group_id === ch.group_id && k.gender === 'male'); else if (a === 'girls_in_group') el = el.filter(k => k.group_id === ch.group_id && k.gender === 'female');
         el.forEach(k => { chIdByKid[k.id] = ch.id; });
       }
+      this.st.chOf = chIdByKid;   // v572: vaiko kopijos id — Iss.sum.mark
       const kidIds = Object.keys(chIdByKid); const allIds = [...new Set([ch.id, ...Object.values(chIdByKid)])];
       const [subsR, progR, names, kidsR] = await Promise.all([
         sb.from('challenge_submissions').select('id, challenge_id, kid_id, status, value, numeric_value, created_at, reviewed_at, rejection_reason, exp_gain, auto_approved, source').in('challenge_id', allIds).order('created_at', { ascending: false }).limit(1000),
@@ -44406,6 +44406,8 @@ const Iss = {
       n.none = n.all - n.done - n.wait;
       const left = ch.expires_at ? Math.max(0, Math.ceil((new Date(ch.expires_at) - Date.now()) / 86400000)) : null;
       const auto = (typeof AutoTvirt !== 'undefined') && AutoTvirt.isAuto(ch);
+      // v572: trenerio tikrinamas vienkartinis iššūkis (pasiekimas: kata/spyris…) — treneris pažymi pats, be vaiko pateikimo
+      const manual = !auto && !ch.allow_partial, learnCh = typeof katIsLearn === 'function' && katIsLearn(ch.instructions);
       const head = document.querySelector('#iss-sum > div > div:first-child b, #iss-sum > div > div:first-child div[style*="Bebas"]'); if (head) head.textContent = (ch.type === 'weekly' ? 'SAVAITĖS IŠŠŪKIS' : ch.type === 'monthly' ? 'MĖNESIO IŠŠŪKIS' : 'IŠŠŪKIS');
       const subEl = document.querySelector('#iss-sum > div > div:first-child i, #iss-sum > div > div:first-child div[style*="font-size:10.5px"]');
       if (subEl) subEl.textContent = `${ch.title}${ch.target_value ? ` · ${ch.target_value} ${ch.target_unit || ''}` : ''}${left != null ? ` · liko ${left} d.` : ''}`;
@@ -44413,7 +44415,7 @@ const Iss = {
       const chip = (k, l, v) => `<span class="pl-chip${s.tab === k ? ' on' : ''}" style="padding:7px 12px;font-size:11px;" onclick="Iss.sum.tab('${k}')">${l} · ${v}</span>`;
       const list = s.rows.filter(r => r.state === s.tab);
       const rows = list.map(r => {
-        const acts = r.state === 'wait' && r.pend ? `<div style="display:flex;gap:6px;flex-shrink:0;"><span class="kal-b g" style="padding:7px 11px;" onclick="Iss.sum.approve('${r.pend.id}')">${ico('atlikta')}</span><span class="kal-b" style="padding:7px 10px;" onclick="Iss.sum.reject('${r.pend.id}')">Grąžinti</span></div>` : '';
+        const acts = r.state === 'wait' && r.pend ? `<div style="display:flex;gap:6px;flex-shrink:0;"><span class="kal-b g" style="padding:7px 11px;" onclick="Iss.sum.approve('${r.pend.id}')">${ico('atlikta')}</span><span class="kal-b" style="padding:7px 10px;" onclick="Iss.sum.reject('${r.pend.id}')">Grąžinti</span></div>` : (r.state === 'none' && manual && !s.busy ? `<span class="kal-b g" style="padding:7px 11px;flex-shrink:0;" onclick="Iss.sum.mark('${r.kid}')">${ico('atlikta')} ${learnCh ? 'Išmoko' : 'Atliko'}</span>` : '');
         return `<div class="kal-card" style="padding:9px 11px;margin-bottom:7px;${r.state === 'none' && r.last && r.last.status === 'rejected' ? 'border-color:rgba(255,122,51,.4);' : ''}" id="iss-row-${r.kid}"><div style="display:flex;align-items:center;gap:10px;"><div class="av" style="width:36px;height:36px;font-size:13px;background:${r.state === 'done' ? 'var(--grn)' : r.state === 'wait' ? 'var(--br)' : 'rgba(255,255,255,.12)'};flex-shrink:0;">${(r.name || '?')[0]}</div><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">${Iss.esc(r.name)}</div>${this.detail(r)}</div>${acts}</div></div>`;
       }).join('');
       body.innerHTML = `<div style="display:flex;gap:8px;margin:0 16px 12px;">${cnt(n.all, 'DALYVAUJA')}${cnt(n.done, 'ATLIKO', '#22C55E')}${cnt(n.wait, 'LAUKIA', '#FF7A33', 'rgba(255,77,0,.1)')}</div>
@@ -44423,7 +44425,7 @@ const Iss = {
       if (!foot) { foot = document.createElement('div'); foot.id = 'iss-sum-foot'; foot.style.cssText = 'padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:.5px solid var(--bdr);flex-shrink:0;background:var(--bg);'; body.parentElement.appendChild(foot); }
       const stravaN = s.rows.filter(r => (r.subs || []).some(x => x.source === 'strava')).length;   // V2 7b: kiek vaikų atėjo iš Strava
       const stravaHint = stravaN ? `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:6px;line-height:1.4;">Strava veiklos (${stravaN}) ${typeof flagOn === 'function' && flagOn('strava_auto_approve') ? 'patikrintos automatiškai — <b>peržiūrėti reikia tik rankinius pateikimus</b>' : 'atėjo automatiškai — klubas tvirtinimą paliko treneriui'}.</div>` : '';
-      const hint = stravaHint + (auto && !Strava.isStrava(ch) ? `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;line-height:1.4;">Skaičiuojama automatiškai ${Iss.esc(AutoTvirt.LABEL[ch.verify_kind] || '')} — tvirtinti nereikia.</div>` : (n.wait ? `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;line-height:1.4;">Peržiūrėk įrodymus ir patvirtink visus vienu paspaudimu — EXP išsiunčiami iškart.</div>` : ''));
+      const hint = stravaHint + (auto && !Strava.isStrava(ch) ? `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;line-height:1.4;">Skaičiuojama automatiškai ${Iss.esc(AutoTvirt.LABEL[ch.verify_kind] || '')} — tvirtinti nereikia.</div>` : (n.wait ? `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;line-height:1.4;">Peržiūrėk įrodymus ir patvirtink visus vienu paspaudimu — EXP išsiunčiami iškart.</div>` : (manual && n.none ? `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;line-height:1.4;">Skirtuke „Neatliko" spausk „${learnCh ? 'Išmoko' : 'Atliko'}" prie vardo — EXP išsiunčiama iškart.</div>` : '')));
       foot.innerHTML = hint + (n.wait ? `<button class="pl-cta g" ${s.busy ? 'disabled style="opacity:.5;"' : ''} onclick="Iss.sum.approveAll()">${s.busy ? 'TVIRTINAMA…' : `Patvirtinti ${n.wait} · EXP bus išsiųsti iškart`}</button>` : `<button class="pl-cta" style="background:rgba(255,255,255,.06);color:var(--txt);" onclick="document.getElementById('iss-sum').remove()">Uždaryti</button>`);
     },
     tab(k) { this.st.tab = k; this.render(); },
@@ -44454,6 +44456,20 @@ const Iss = {
       if (r.ok) showToast(`${ico('patvirtinta')} Patvirtinta ${r.ok} — EXP išsiųsta`, 'success', 4000);
       if (r.fail) showToast(`${ico('klaida')} ${r.fail} nepavyko patvirtinti`, 'error', 5000);
       await this.after();
+    },
+    // v572: pasiekimą (kata/spyris) ar kitą trenerio tikrinamą vienkartinį iššūkį treneris pažymi PATS — tas pats kelias kaip _assignExpDoChallenge
+    // (pateikimas pending → approved; EXP per esamą trigerį, naujos EXP logikos nėra)
+    async mark(kid) {
+      if (this.st.busy) return; const chId = (this.st.chOf || {})[kid]; if (!chId) return;
+      this.st.busy = true;
+      try {
+        const { data: ins, error } = await sb.from('challenge_submissions').insert({ challenge_id: chId, kid_id: kid, trainer_id: currentUser.id, value: 'Pažymėjo treneris', numeric_value: 1, status: 'pending' }).select('id').single();
+        if (error) throw error;
+        const { error: aerr } = await sb.from('challenge_submissions').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', ins.id).eq('status', 'pending');
+        if (aerr) throw aerr;
+        showToast(ico('patvirtinta') + ' Pažymėta — EXP išsiųsta', 'success');
+      } catch (e) { showToast(ico('klaida') + ' ' + (typeof _userError === 'function' ? _userError(e) : (e.message || '')), 'error', 5000); }
+      this.st.busy = false; await this.after();
     },
     async reject(subId) {
       if (this.st.busy) return;
@@ -44792,7 +44808,7 @@ const Tren = {
       return `<div class="kal-card" style="cursor:pointer;" onclick="Tren.etapas('${p.id}')">
         <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.esc(this.gname(p.group_id))} · ${this.esc(String(p.title || '').replace(/\s*—\s*/g, ' — '))}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${w ? `${w.k} sav. iš ${w.n} · ` : ''}${cnt.done} iš ${cnt.all} treniruočių įvykę · ${cnt.conf} patvirtinta${ev != null ? ` · ${this.esc(p.competitions.title)} ${p.competitions.event_date.slice(5).replace('-', '-')}` : ''}</div></div><span class="kal-tag" style="color:${st[1]};border-color:${st[1]};">${st[0]}</span></div>
         <div class="kal-bar" style="margin-top:8px;"><span style="width:${pct}%;"></span></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;" onclick="event.stopPropagation()">${this.btn(`Tren.etapas('${p.id}')`, 'Visos treniruotės')}${typeof Iss !== 'undefined' && p.status === 'active' ? this.btn(`Iss.plan.open('${p.id}')`, 'Iššūkiai') : ''}${edit && p.status === 'active' ? this.btn(`Planas.openWizard({ groupId: '${p.group_id}', afterPlanId: '${p.id}' })`, left <= 7 ? ico('prideti') + ' Planuoti kitą etapą' : 'Kitas etapas (kopija)', left <= 7 ? 'o' : '') : ''}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;" onclick="event.stopPropagation()">${this.btn(`Tren.etapas('${p.id}')`, 'Visos treniruotės')}${edit && p.status === 'active' ? this.btn(`Planas.openWizard({ groupId: '${p.group_id}', afterPlanId: '${p.id}' })`, left <= 7 ? ico('prideti') + ' Planuoti kitą etapą' : 'Kitas etapas (kopija)', left <= 7 ? 'o' : '') : ''}</div>
       </div>`;
     };
     const noPlan = s.groups.filter(g => !withPlan.has(g.id)).map(g => `<div class="kal-card" style="border-style:dashed;"><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${this.esc(g.name)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;">Aktyvaus etapo nėra — vaikai kalendoriuje mato tik laiką</div></div>${edit ? this.btn(`Planas.openWizard({ groupId: '${g.id}' })`, ico('prideti') + ' Planuoti etapą', 'o') : ''}</div></div>`).join('');
