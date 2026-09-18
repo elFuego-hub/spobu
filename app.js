@@ -44043,7 +44043,7 @@ const Iss = {
   emptyTile() {
     if (!this.on()) return '';
     // v557 (kalendorius v2): tuščia būsena — pasiūlyti iš plano arba sukurti ranka
-    return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span></div><div class="kal-empty"><b>Aktyvių iššūkių nėra</b><i>Savaitės — Strava užskaito pati · Mėnesio — pasiekimai, žymi treneris</i><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="kal-b o" onclick="Iss.create.open()">${ico('prideti')} Naujas iššūkis</span></div></div>`;
+    return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span></div><div class="kal-empty"><b>Aktyvių iššūkių nėra</b><i>Savaitės — Strava užskaito pati · Mėnesio — pasiekimai, žymi treneris</i><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="kal-b o" onclick="Iss.create.open(Kal.st.sel && Kal.st.sel !== 'all' ? { groupId: Kal.st.sel } : undefined)">${ico('prideti')} Naujas iššūkis</span></div></div>`;
   },
 
   // ─────────────────────────── NAUJAS IŠŠŪKIS v2 (tik automatiniai — Strava) ───────────────────────────
@@ -44068,15 +44068,27 @@ const Iss = {
         let gid = prefill && prefill.groupId;
         if (!gid && prefill && prefill.kidId) { const { data: k } = await sb.from('kids').select('group_id').eq('id', prefill.kidId).maybeSingle(); gid = k && k.group_id; }
         const g = Planas.st.groups.find(x => x.id === gid) || Planas.st.groups[0]; if (!g) { showToast('Neturi aktyvių grupių', 'error'); return; }
-        const [kR, aR] = await Promise.all([
-          sb.from('kids').select('id, gender, group_id, birth_date, birth_year').eq('group_id', g.id).eq('approval_status', 'approved').limit(200),
-          sb.from('challenges').select('type').eq('trainer_id', currentUser?.id).eq('group_id', g.id).eq('is_active', true).is('parent_challenge_id', null).gt('expires_at', new Date().toISOString()).limit(20),
-        ]);
-        const nPrev = { weekly: 0, monthly: 0 }; (aR.data || []).forEach(c => { if (nPrev[c.type] != null) nPrev[c.type]++; });
-        this.st = { group: g, kids: kR.data || [], type: (prefill && prefill.type === 'monthly') ? 'monthly' : 'weekly', sel: {}, tgt: {}, busy: false, nPrev };
-        Iss.sheet('iss-new', 'NAUJAS IŠŠŪKIS · ' + Iss.esc(String(g.name || '').toUpperCase()), '', '<div></div>', { z: 100006 });
+        this.st = { group: null, kids: [], type: (prefill && prefill.type === 'monthly') ? 'monthly' : 'weekly', sel: {}, tgt: {}, busy: false, nPrev: { weekly: 0, monthly: 0 } };
+        await this.loadGroup(g);
+        Iss.sheet('iss-new', 'NAUJAS IŠŠŪKIS', '', '<div></div>', { z: 100006, sub: this.sub() });
         this.render();
       } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 6000); }
+    },
+    // v573 (savininkas: „kodėl nėra kokiai grupei priskirti"): grupės čipsai lape — persijungus pasikeičia vaikai, aktyvių skaičius ir numatyti taikiniai
+    async loadGroup(g) {
+      const [kR, aR] = await Promise.all([
+        sb.from('kids').select('id, gender, group_id, birth_date, birth_year').eq('group_id', g.id).eq('approval_status', 'approved').limit(200),
+        sb.from('challenges').select('type').eq('trainer_id', currentUser?.id).eq('group_id', g.id).eq('is_active', true).is('parent_challenge_id', null).gt('expires_at', new Date().toISOString()).limit(20),
+      ]);
+      const nPrev = { weekly: 0, monthly: 0 }; (aR.data || []).forEach(c => { if (nPrev[c.type] != null) nPrev[c.type]++; });
+      Object.assign(this.st, { group: g, kids: kR.data || [], nPrev, tgt: {} });
+    },
+    sub() { const s = this.st; return s.group ? `${s.group.name || ''} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')}` : ''; },
+    async setGroup(gid) {
+      const s = this.st; if (s.busy || !s.group || s.group.id === gid) return; const g = Planas.st.groups.find(x => x.id === gid); if (!g) return;
+      s.busy = true; this.render();
+      try { await this.loadGroup(g); } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 5000); }
+      s.busy = false; const sub = document.querySelector('#iss-new .sh i'); if (sub) sub.textContent = this.sub(); this.render();
     },
     target(it) { const t = this.st.tgt[it.key]; if (t != null) return t; return katSeedTarget(it, katAgeBandIdx(this.st.kids), 'medium'); },   // numatytas — pagal grupės amžiaus juostą (base[banda]), kaip katalogo vedlyje
     step(key, d) { const it = this.items(this.st.type).find(i => i.key === key); if (!it || it.learn) return; const cur = this.target(it); const inc = it.unit === 'min' ? 0.5 : 1; const min = it.unit === 'min' ? 3 : 1; this.st.tgt[key] = Math.max(min, Math.round((cur + d * inc) * 10) / 10); this.render(); },
@@ -44087,13 +44099,15 @@ const Iss = {
       const items = this.items(s.type), n = Object.values(s.sel).filter(Boolean).length, cap = (typeof KAT_MAX_BY_TYPE !== 'undefined' && KAT_MAX_BY_TYPE[s.type]) || 3, left = Math.max(0, cap - (s.nPrev[s.type] || 0));
       const mon = s.type === 'monthly';
       const tgtHtml = it => it.learn ? '' : `<div style="display:flex;align-items:center;gap:3px;flex:none;" onclick="event.stopPropagation()"><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',-1)">−</span><b style="font-family:'Bebas Neue',sans-serif;font-size:16px;min-width:56px;text-align:center;">${this.target(it)} ${Iss.esc(it.unit)}</b><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',1)">+</span></div>`;
-      body.innerHTML = `<div style="display:flex;gap:6px;padding:0 16px 10px;">${[['weekly', 'Savaitės · Strava'], ['monthly', 'Mėnesio · Pasiekimai']].map(([k, t]) => `<span class="kal-b${s.type === k ? ' o' : ''}" style="flex:1;text-align:center;" onclick="Iss.create.setType('${k}')">${t}</span>`).join('')}</div>
+      const groups = Planas.st.groups || [];
+      const gChips = groups.length > 1 ? `<div class="no-scrollbar" style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;">${groups.map(g => `<span class="kal-b${s.group && g.id === s.group.id ? ' o' : ''}" style="flex:none;" onclick="Iss.create.setGroup('${g.id}')">${Iss.esc(g.name || 'Grupė')}</span>`).join('')}</div>` : '';
+      body.innerHTML = `${gChips}<div style="display:flex;gap:6px;padding:0 16px 10px;">${[['weekly', 'Savaitės · Strava'], ['monthly', 'Mėnesio · Pasiekimai']].map(([k, t]) => `<span class="kal-b${s.type === k ? ' o' : ''}" style="flex:1;text-align:center;" onclick="Iss.create.setType('${k}')">${t}</span>`).join('')}</div>
         <div class="kal-sec" style="padding-bottom:7px;">${mon ? 'PASIEKIMAI · ŽYMI TRENERIS' : 'STRAVA · UŽSKAITO PATI'} <span>${left ? `galima dar ${left}` : 'riba pasiekta'}</span></div>
         ${items.map(it => `<div class="pl-opt${s.sel[it.key] ? ' on' : ''}" onclick="Iss.create.toggle('${it.key}')"><div class="box${s.sel[it.key] ? ' on' : ''}">${s.sel[it.key] ? ico('atlikta') : ''}</div><div style="flex:1;min-width:0;"><div class="t">${it.icon || ''} ${Iss.esc(it.name)}</div><div class="s">${Iss.esc(it.desc || '')}</div></div>${tgtHtml(it)}</div>`).join('')}
         <div style="padding:4px 16px 10px;font-size:10.5px;color:var(--mut);line-height:1.45;">${mon
           ? `${ico('ispejimas')} Kai vaikas išmoko — iššūkio suvestinėje (kalendoriaus plytelė arba Treniruotės → Iššūkiai) paspausk „Išmoko" prie vardo: EXP išsiunčiama iškart. Vaikas gali ir pats pateikti „parodžiau" — tada patvirtini.`
           : `${ico('ispejimas')} Užskaito pati, kai vaikas prijungęs Strava (Profilis → Strava). Neprijungusiems rodoma užuomina „Susiek Strava" ir jie pateikia ranka — tvirtini tu. Rankiniai Strava įrašai neužskaitomi. Iki 14 m. Strava jungia tėvas savo paskyra.`}</div>`;
-      if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">EXP pagal katalogo kreivę · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${mon ? 'mėnesio pabaigos' : 'sekmadienio'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti grupei${n ? ' · ' + n : ''}`}</button>`;
+      if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">EXP pagal katalogo kreivę · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${mon ? 'mėnesio pabaigos' : 'sekmadienio'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti${s.group ? ' · ' + Iss.esc(s.group.name || 'grupei') : ' grupei'}${n ? ' · ' + n : ''}`}</button>`;
     },
     async assign() {
       const s = this.st; if (s.busy) return; const items = this.items(s.type).filter(it => s.sel[it.key]); if (!items.length) return;
