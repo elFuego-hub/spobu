@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=585">
+<link rel="stylesheet" href="styles.css?v=586">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v585</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v586</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2020,6 +2020,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg> Filtras pagal grupę (pildo renderTrPatGroupFilter) -->
     <div id="trp-group-filter" class="no-scrollbar" style="display:flex;gap:4px;margin:0 16px 6px;overflow-x:auto;padding-bottom:2px;"></div>
+    <div id="tr-plans-strip"></div><!-- v586: nepatvirtintos treniruotės — tik nuoroda į Treniruočių langą (Planas.loadPending) -->
 
     <!-- Tabai -->
     <div class="tabs no-scrollbar" style="padding:0 16px 10px;">
@@ -2028,8 +2029,6 @@ window.addEventListener('unhandledrejection', function(e) {
       <div class="tab" onclick="switchTrTab(this,'competitions')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> Varžybos <span id="tr-competitions-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'duels')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dvikova"></use></svg> Dvikovos <span id="tr-duels-count" style="opacity:.6;">0</span></div>
       <div class="tab" onclick="switchTrTab(this,'forms')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-stovykla"></use></svg> Stovyklos <span id="tr-forms-count" style="opacity:.6;">0</span></div>
-      <!-- MODULIS: planas v2 (v536) — nepatvirtintos treniruotės; rodo Kal.applyNav() tik su plans_enabled -->
-      <div class="tab" id="tr-plans-tab" style="display:none;" onclick="switchTrTab(this,'plans')"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-treniruote"></use></svg> Treniruotės <span id="tr-plans-count" style="opacity:.6;">0</span></div>
     </div>
     <!-- Karjeros pateikimai -->
     <div id="tr-submissions-list">
@@ -2048,7 +2047,6 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
     <!-- Anketos / naujos registracijos (paslėptos pradžioje) -->
-    <div id="tr-plans-list" style="display:none;"></div><!-- MODULIS: planas v2 (v536) -->
     <div id="tr-forms-list" style="display:none;">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
@@ -4770,7 +4768,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=585"></script>
+<script src="app.js?v=586"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

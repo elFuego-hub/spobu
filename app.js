@@ -21832,9 +21832,7 @@ async function loadPendingSubmissions() {
   const psEl = document.getElementById('tr-pending-summary');
   if (psEl) psEl.textContent = count ? `${count} rezultatų laukia` : 'Viskas patvirtinta ✓';
   
-  // Bendras skaičiukas (karjera + iššūkiai)
-  const challengesCount = parseInt(document.getElementById('tr-challenges-count').textContent) || 0;
-  document.getElementById('tr-pending-badge').textContent = count + challengesCount;
+  // v586: bendrą skaičių nustato _recountTrPat (visų skirtukų suma) — čia nebeskaičiuojam
 
   if (!subs?.length) {
     _trPatRenderTop('tr-submissions-list', 'career', [], '<div style="text-align:center;padding:40px;color:var(--mut);">'+ico('gimtadienis')+' Visi rezultatai patvirtinti!</div>');
@@ -24045,7 +24043,7 @@ function applyTrPatGroupFilter() {
   // 📝 Anketos (registracijos) — rodom TIK „Visos" (grupuoti registracijų nelogiška)
   const formsTab = document.querySelector('#tr-pat .tab[onclick*="forms"]');
   if (formsTab) {
-    formsTab.style.display = trPatGroupFilter ? 'none' : '';
+    formsTab.style.display = (trPatGroupFilter || (typeof flagOn === 'function' && !flagOn('camps_enabled'))) ? 'none' : '';   // v586: ir klubo jungiklis
     if (trPatGroupFilter && formsTab.classList.contains('on')) {
       const careerTab = document.querySelector('#tr-pat .tab[onclick*="career"]');
       if (careerTab) switchTrTab(careerTab, 'career');
@@ -24732,12 +24730,12 @@ function openTrInfo(which) {
       break;
     case 'pat':
       title = ''+ico('pagalba')+' PATVIRTINIMAI';
-      html = intro('Čia tvirtini, ką pateikė vaikai ir tėvai. Patvirtinus — EXP priskiriamas automatiškai. Automatiniai iššūkiai (lankomumas, varžybos, egzaminas, Strava) čia nepatenka — jie užsiskaito patys. Gali filtruoti pagal grupę.') +
-        row(''+ico('tikslas')+'', 'Kelias', 'Nauji pratimų rekordai.') +
-        row(''+ico('jega')+'', 'Iššūkiai', 'Atlikti iššūkiai.') +
-        row(''+ico('zenkliukai')+'', 'Varžybos', 'Varžybų rezultatai ir medaliai.') +
-        row(''+ico('dvikova')+'', 'Dvikovos', 'Dvikovų rezultatai.') +
-        row(''+ico('stovykla')+'', 'Stovyklos', 'Vaikų pažymėti stovyklų dalyvavimai — patvirtink, kad gautų EXP.') +
+      html = intro('Čia tvirtini, ką pateikė vaikai. Patvirtinus — EXP priskiriamas automatiškai. Automatiniai iššūkiai (Strava, lankomumas, varžybos, egzaminas) čia nepatenka — užsiskaito patys. Naujų vaikų anketos — Grupių lange, treniruotės — Treniruočių lange. Gali filtruoti pagal grupę.') +
+        row(''+ico('tikslas')+'', 'Kelias', 'Nauji pratimų rekordai — patvirtink arba grąžink pataisyti.') +
+        row(''+ico('jega')+'', 'Iššūkiai', 'Rankiniai pateikimai sugrupuoti pagal iššūkį — paspaudus atsidaro suvestinė, ten tvirtini po vieną arba visus.') +
+        row(''+ico('zenkliukai')+'', 'Varžybos', 'Varžybų rezultatai ir medaliai — visų tavo vaikų.') +
+        row(''+ico('dvikova')+'', 'Dvikovos', 'Dvikovų rezultatai (rodoma, kai klube įjungta).') +
+        row(''+ico('stovykla')+'', 'Stovyklos', 'Vaikų pažymėti stovyklų dalyvavimai — patvirtink, kad gautų EXP (rodoma, kai klube įjungta).') +
         `<div style="margin-top:10px;background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.45);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6;color:#fff;">${ico('ispejimas')} <b>Tvirtink atsakingai!</b> Patvirtink tik tai, ką vaikas tikrai atliko. Nuo to priklauso visa statistika, lygiai ir reitingai — klaidingas patvirtinimas iškreipia duomenis visiems.</div>`;
       break;
     case 'prof':
@@ -31626,10 +31624,9 @@ function switchTrTab(el, type) {
   const competitionsList = document.getElementById('tr-competition-submissions-list');
   const duelsList = document.getElementById('tr-duels-list');
   const formsList = document.getElementById('tr-forms-list');
-  const plansList = document.getElementById('tr-plans-list');   // MODULIS: planas v2 (v536)
 
   // Paslėpti visus
-  [careerList, challengesList, competitionsList, duelsList, formsList, plansList].forEach(l => { if (l) l.style.display = 'none'; });
+  [careerList, challengesList, competitionsList, duelsList, formsList].forEach(l => { if (l) l.style.display = 'none'; });
 
   if (type === 'career') {
     if (careerList) careerList.style.display = 'block';
@@ -31642,9 +31639,6 @@ function switchTrTab(el, type) {
   } else if (type === 'duels') {
     if (duelsList) duelsList.style.display = 'block';
     loadPendingDuels();
-  } else if (type === 'plans') {   // MODULIS: planas v2 (v536) — nepatvirtintos treniruotės
-    if (plansList) plansList.style.display = 'block';
-    if (typeof Planas !== 'undefined') Planas.loadPending();
   } else if (type === 'forms') {
     if (formsList) formsList.style.display = 'block';
     loadPendingKidForms();
@@ -34303,7 +34297,7 @@ async function loadTrainerOwnChallenges() {
     const cards = Object.values(by).sort((a, b) => b.subs.length - a.subs.length).map(b => {
       const names = [...b.kids].map(id => (kidNameMap[id] || kidsMap[id]?.first_name || 'Vaikas')).slice(0, 4).join(', ') + (b.kids.size > 4 ? ` +${b.kids.size - 4}` : '');
       const strava = b.subs.some(s => s.source === 'strava');
-      return `<div class="kal-card" style="cursor:pointer;" onclick="Iss.sum.open('${b.key}')"><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:22px;flex:none;">${escapeHtml(b.ch.icon || '🎯')}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(b.ch.title || 'Iššūkis')}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${TL[b.ch.type] || 'IŠŠŪKIS'} · <span style="color:var(--br);">${b.subs.length} ${_ltPl(b.subs.length, 'pateikimas', 'pateikimai', 'pateikimų')}</span> · ${escapeHtml(names)}${strava ? ' <span class="kal-tag ok">STRAVA</span>' : ''}</div></div>${ico('toliau')}</div></div>`;
+      return `<div class="kal-card" data-gid="${b.ch.group_id || ''}" style="cursor:pointer;" onclick="Iss.sum.open('${b.key}')"><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:22px;flex:none;">${escapeHtml(b.ch.icon || '🎯')}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(b.ch.title || 'Iššūkis')}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${TL[b.ch.type] || 'IŠŠŪKIS'} · <span style="color:var(--br);">${b.subs.length} ${_ltPl(b.subs.length, 'pateikimas', 'pateikimai', 'pateikimų')}</span> · ${escapeHtml(names)}${strava ? ' <span class="kal-tag ok">STRAVA</span>' : ''}</div></div>${ico('toliau')}</div></div>`;
     });
     _trPatRenderTop('tr-challenge-submissions-list', 'challenges', cards, '');
     return;
@@ -34799,7 +34793,7 @@ async function loadPendingChallengeSubmissions() {
   }
   
   const { data: subs, error } = await sb.from('challenge_submissions')
-    .select('*, challenges(title, icon, type, exp_reward, target_value, target_unit, content_type, allow_partial, instructions, parent_challenge_id)')   // v579: parent — grupavimui
+    .select('*, challenges(title, icon, type, exp_reward, target_value, target_unit, content_type, allow_partial, instructions, parent_challenge_id, group_id)')   // v579: parent — grupavimui; v586: group_id — data-gid
     .eq('status', 'pending')
     // 🔎 v451: buvo `.eq('trainer_id', currentUser.id)` — pateikimas, adresuotas KITAM
     // treneriui (vaikas turi du) arba likęs be gavėjo, niekam nesimatydavo ir kabodavo
@@ -34852,12 +34846,7 @@ async function loadPendingChallengeSubmissions() {
   // Atnaujinam skaičiukus
   document.getElementById('tr-challenges-count').textContent = subs?.length || 0;
   
-  const careerEl = document.getElementById('tr-career-count');
-  const pendingBadgeEl = document.getElementById('tr-pending-badge');
-  if (careerEl && pendingBadgeEl) {
-    const careerCount = parseInt(careerEl.textContent) || 0;
-    pendingBadgeEl.textContent = careerCount + (subs?.length || 0);
-  }
+  // v586: bendrą skaičių nustato _recountTrPat
   
   if (!subs?.length) {
     _trPatRenderTop('tr-challenge-submissions-list', 'challenges', [], '<div style="text-align:center;padding:40px;color:var(--mut);">'+ico('gimtadienis')+' Iššūkių pateikimų nėra</div>');
@@ -35168,9 +35157,12 @@ async function loadPendingCompetitionResults() {
   
   // Pending varžybų rezultatai - TIK 'participated' adresuoti šiam treneriui
   // 'didnt_attend' yra auto-approved (be EXP/medalio), nereikalauja patvirtinimo
+  // v586: kaip Kelias/Iššūkiai nuo v451 — VISŲ mano vaikų laukiantys rezultatai (kitam treneriui adresuoti kabodavo nematomi)
+  const _myKids = await getMyKidIds();
+  if (!_myKids || !_myKids.length) { document.getElementById('tr-competitions-count').textContent = '0'; _trPatRenderTop('tr-competition-submissions-list', 'competitions', [], '<div style="text-align:center;padding:40px;color:var(--mut);">Nėra laukiančių varžybų rezultatų</div>'); return; }
   const { data: results, error } = await sb.from('competition_results')
     .select('*')
-    .eq('target_trainer_id', trainerProfileId)
+    .in('kid_id', _myKids)
     .eq('approval_status', 'pending')
     .eq('status', 'participated')
     .order('created_at', { ascending: false });
@@ -35217,7 +35209,7 @@ async function loadPendingCompetitionResults() {
 
     // (v146) vardas 2 žingsnių per profiles
     const kidName = kidNameMap[r.kid_id] || 'Vaikas';
-    const genderIcon = kid.gender === 'female' ? '👦' : '👧';
+    const genderIcon = kid.gender === 'female' ? '👧' : '👦';   // v586: buvo apversta
     const typeLabel = COMP_TYPE_LABELS[comp.competition_type] || comp.competition_type;
     const levelLabel = comp.level ? ico(COMP_LEVEL_ICO[comp.level] || 'miestas') + ' ' + (COMP_LEVEL_LABELS[comp.level] || comp.level) : '';
     
@@ -35325,14 +35317,8 @@ async function rejectCompetitionResult(resultId) {
 
 // Atnaujinti trenerio bendrą pending badge'ą
 async function updateTrainerPendingBadge() {
-  const careerCount = parseInt(document.getElementById('tr-career-count').textContent) || 0;
-  const challengesCount = parseInt(document.getElementById('tr-challenges-count').textContent) || 0;
-  const compCount = parseInt(document.getElementById('tr-competitions-count').textContent) || 0;
-  const duelsCount = parseInt(document.getElementById('tr-duels-count')?.textContent) || 0;
-  
-  const total = careerCount + challengesCount + compCount + duelsCount;
-  const badge = document.getElementById('tr-pending-badge');
-  if (badge) badge.textContent = total;
+  // v586: vienas šaltinis — _recountTrPat (Kelias + Iššūkiai + Varžybos + Dvikovos + Stovyklos, pagal grupės filtrą)
+  if (typeof _recountTrPat === 'function') _recountTrPat();
 }
 
 
@@ -36445,7 +36431,12 @@ function nv(p,el,sid){
     if (typeof loadPendingChallengeSubmissions === 'function') loadPendingChallengeSubmissions();
     if (typeof loadPendingCompetitionResults === 'function') loadPendingCompetitionResults();
     if (typeof loadPendingDuels === 'function') loadPendingDuels();
-    if (typeof Planas !== 'undefined' && typeof Kal !== 'undefined' && Kal.on()) Planas.loadPending();   // MODULIS: planas v2 (v536) — skaičius skirtuke
+    if (typeof Planas !== 'undefined' && typeof Kal !== 'undefined' && Kal.on()) Planas.loadPending();   // v586: juosta „N nepatvirtintų → Treniruotės"
+    if (typeof flagOn === 'function') {   // v586: Dvikovos / Stovyklos skirtukai — tik kai klube įjungta
+      const dt = document.querySelector('#tr-pat .tab[onclick*="duels"]'), ft = document.querySelector('#tr-pat .tab[onclick*="forms"]');
+      if (dt) dt.style.display = flagOn('duels_enabled') ? '' : 'none';
+      if (ft) ft.style.display = flagOn('camps_enabled') ? '' : 'none';
+    }
   }
   if (sid === 'k-main' && typeof loadClubMainDashboard === 'function') {
     loadClubMainDashboard();
@@ -42717,25 +42708,21 @@ Object.assign(Planas, {
     } catch (err) { showToast(ico('klaida') + ' ' + (err.message || ''), 'error', 6000); }
   },
 
-  // ═══ PATVIRTINIMŲ SKIRTUKAS „Treniruotės" (tr-pat) ═══
+  // ═══ PATVIRTINIMAI: juosta „N nepatvirtintų treniruočių → Treniruotės" (v586; skirtukas išimtas — dubliavo Treniruočių langą, o
+  // plan_confirm_all tvirtino ir TUŠČIAS treniruotes; tvirtinama tik etapo lange / dienos lape) ═══
   async loadPending() {
-    const list = document.getElementById('tr-plans-list'); const cnt = document.getElementById('tr-plans-count');
-    if (!list) return;
-    if (!this.v2On()) { list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Treniruočių planai v2 klube neįjungti.</div>'; if (cnt) cnt.textContent = '0'; return; }
-    list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Kraunama...</div>';
+    const strip = document.getElementById('tr-plans-strip'); if (!strip) return;
+    if (!this.v2On()) { strip.innerHTML = ''; return; }
     try {
       if (!this.st.role) this.st.role = 'trainer';
       if (!this.st.groups.length) await this.loadGroups();
       const gids = this.st.groups.map(g => g.id);
-      const { data, error } = gids.length ? await sb.from('training_plan_sessions').select('id, plan_id, group_id, session_date, starts_at, title, blocks, status, training_plans(id, title, status, period_start, period_end)').in('group_id', gids).eq('status', 'draft').gte('session_date', this.ymdToday()).order('session_date').limit(200) : { data: [] };
+      const { data, error } = gids.length ? await sb.from('training_plan_sessions').select('id, session_date, blocks, training_plans(status)').in('group_id', gids).eq('status', 'draft').gte('session_date', this.ymdToday()).limit(200) : { data: [] };
       if (error) throw error;
       const rows = (data || []).filter(s => s.training_plans && s.training_plans.status !== 'archived');
-      if (cnt) cnt.textContent = rows.length;
-      if (!rows.length) { list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">${ico('atlikta')} Nepatvirtintų būsimų treniruočių nėra.</div>`; return; }
-      const byPlan = {}; rows.forEach(s => { (byPlan[s.plan_id] = byPlan[s.plan_id] || { p: s.training_plans, g: this.groupById(s.group_id), ss: [] }).ss.push(s); });
-      list.innerHTML = Object.keys(byPlan).map(pid => { const x = byPlan[pid]; return `<div class="kal-card" style="border-left:3px solid ${this.col(x.g.color)};"><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${this.esc(x.p.title)}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${this.esc(x.g.name || '')} · ${x.ss.length} laukia${x.p.status !== 'active' ? ' · etapas neaktyvus' : ''}</div></div><span class="kal-b g" onclick="Planas.confirmAll('${pid}').then(()=>Planas.loadPending())">Patvirtinti visas</span></div>
-        ${x.ss.map(s => `<div class="pl-row" style="margin-top:6px;"><div style="flex:1;min-width:0;cursor:pointer;" onclick="Planas.openApr('${s.id}')"><div style="font-size:12px;font-weight:800;">${this.fmtDate(s.session_date)}${s.starts_at ? ' ' + String(s.starts_at).slice(0, 5) : ''} · ${this.esc(s.title || 'Treniruotė')}</div><div style="font-size:10.5px;color:var(--mut);">${(s.blocks || []).length ? (s.blocks || []).map(b => this.esc(b.title)).join(' · ') : 'be turinio'}</div></div><span class="kal-b g" style="padding:5px 10px;" onclick="Planas.confirmSession('${s.id}',()=>Planas.loadPending())">Patvirtinti</span></div>`).join('')}</div>`; }).join('');
-    } catch (e) { console.error('[planas-pending]', e); list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--br);font-size:12px;">Klaida: ${this.esc(e.message || '')}</div>`; }
+      const ready = rows.filter(s => Array.isArray(s.blocks) && s.blocks.length).length, empty = rows.length - ready;
+      strip.innerHTML = rows.length ? `<div class="kal-card" style="margin:0 16px 8px;cursor:pointer;display:flex;align-items:center;gap:10px;border-color:rgba(168,85,247,.4);" onclick="nv('tr',null,'tr-tren')"><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">${rows.length} ${_ltPl(rows.length, 'nepatvirtinta treniruotė', 'nepatvirtintos treniruotės', 'nepatvirtintų treniruočių')}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${ready ? ready + ' paruoštos' : ''}${empty ? (ready ? ' · ' : '') + empty + ' be turinio' : ''} · tvirtinama Treniruočių lange</div></div>${ico('toliau')}</div>` : '';
+    } catch (e) { console.warn('[planas-pending]', e); strip.innerHTML = ''; }
   },
   newPlan() { return this.v2On() ? this.openWizard() : this.openForm(); },   // „+ Naujas planas" — vedlys su jungikliu, lite forma be jo
 });
@@ -43324,7 +43311,7 @@ const Kal = {
       vd.querySelectorAll('use').forEach(u => u.setAttribute('href', '#i-kalendorius'));
       [...vd.childNodes].forEach(x => { if (x.nodeType === 3 && x.textContent.trim()) x.textContent = ' Kalendorius'; });
     }
-    const pt = document.getElementById('tr-plans-tab'); if (pt) pt.style.display = '';   // 3 etapas (v536): tr-pat skirtukas „Treniruotės"
+    // v586: tr-pat skirtukas „Treniruotės" išimtas — vietoje jo juosta su nuoroda į Treniruočių langą (Planas.loadPending)
     const tp = document.getElementById('kal-t-prof'); if (tp) tp.style.display = '';     // 5 etapas (v541): tėvų profilio eilutės (užpildo Kal.parent.applyProfile)
     // 6 etapas (v542): klubo nav — „Renginiai" → „Kalendorius" (k-events lieka pasiekiamas iš kalendoriaus „Visi renginiai"); Analitikos PLANAI sekcija
     document.querySelectorAll('#pk .bn2 .ni').forEach(n => {
