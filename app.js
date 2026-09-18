@@ -45132,33 +45132,44 @@ const Grup = {
     }).join('');
     c.innerHTML = this.pendHtml() + chips + `<div style="padding:0 16px 8px;">${cards}</div>`;
   },
-  // laukiančios anketos — kortelė su grupės pasirinkimu ir „Patvirtinti į …"
-  pendHtml() {
-    const s = this.st, list = s.pendKids || []; if (!list.length) return '';
-    const gs = s.groups;
-    return `<div class="kal-sec" style="padding-top:6px;"><b>LAUKIA PATVIRTINIMO</b><span>${list.length}</span></div>` + list.map(k => {
-      const age = k.birth_date && typeof calculateAge === 'function' ? calculateAge(k.birth_date) : (k.birth_year ? new Date().getFullYear() - k.birth_year : null);
-      const gid = s.pick[k.id] || k.group_id || (gs.length === 1 ? gs[0].id : '');
-      const gname = (gs.find(g => g.id === gid) || {}).name || '';
-      const days = Math.max(0, Math.round((Date.now() - new Date(k.created_at).getTime()) / 86400000));
-      return `<div class="kal-card" style="border-color:rgba(255,215,0,.45);">
-        <div style="font-size:13.5px;font-weight:900;">${k.gender === 'female' ? '👧' : '👦'} ${this.esc(`${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim())}</div>
-        <div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${age != null ? age + ' m. · ' : ''}${this.esc(k.kyu || 'be kyu')} · anketa prieš ${days} d.${k.user_id ? ' · turi paskyrą' : ''}</div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;">${gs.map(g => `<span class="kal-b${gid === g.id ? ' o' : ''}" style="padding:5px 10px;font-size:10.5px;" onclick="Grup.pick('${k.id}','${g.id}')">${this.esc(g.name)}</span>`).join('')}</div>
-        <div class="kal-acts" style="margin-top:8px;"><span class="kal-b g" ${gid ? '' : 'style="opacity:.5;"'} onclick="Grup.approve('${k.id}')">${ico('atlikta')} Patvirtinti${gid ? ' į ' + this.esc(gname) : ' — pasirink grupę'}</span></div>
-      </div>`;
-    }).join('') + `<div style="font-size:10.5px;color:var(--mut);padding:0 18px 10px;line-height:1.4;">Patvirtinus vaikas patenka į grupę, tėvai ir vaikas aktyvuojami, tėvai gauna laišką. Atmesti anketą gali tik klubas.</div>`;
+  // laukiančios anketos — kompaktiška eilutė: vardas · amžius · kyu · prieš N d. | grupė (select, jei >1) | ✓; 3 rodomos, daugiau → lapas
+  pendGid(k) { const s = this.st; return s.pick[k.id] || k.group_id || (s.groups.length === 1 ? s.groups[0].id : (s.groups[0] || {}).id || ''); },
+  pendRow(k) {
+    const s = this.st, gs = s.groups, gid = this.pendGid(k);
+    const age = k.birth_date && typeof calculateAge === 'function' ? calculateAge(k.birth_date) : (k.birth_year ? new Date().getFullYear() - k.birth_year : null);
+    const days = Math.max(0, Math.round((Date.now() - new Date(k.created_at).getTime()) / 86400000));
+    const sel = gs.length > 1
+      ? `<select onchange="Grup.pick('${k.id}', this.value)" onclick="event.stopPropagation()" style="flex:0 1 118px;min-width:0;background:var(--card);color:var(--txt);border:.5px solid var(--bdr);border-radius:9px;padding:7px 6px;font-size:11px;font-weight:800;font-family:inherit;">${gs.map(g => `<option value="${g.id}"${g.id === gid ? ' selected' : ''}>${this.esc(g.name)}</option>`).join('')}</select>`
+      : `<span style="font-size:10.5px;color:var(--mut);font-weight:800;white-space:nowrap;">→ ${this.esc((gs[0] || {}).name || '')}</span>`;
+    return `<div class="kal-card" style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:6px;border-color:rgba(255,215,0,.45);">
+      <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,215,0,.16);display:flex;align-items:center;justify-content:center;font-size:15px;flex:none;">${k.gender === 'female' ? '👧' : '👦'}</div>
+      <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.esc(`${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim())}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${age != null ? age + ' m. · ' : ''}${this.esc(k.kyu || 'be kyu')} · prieš ${days} d.${k.user_id ? ' · paskyra' : ''}</div></div>
+      ${sel}
+      <span class="kal-b g" style="padding:7px 10px;flex:none;" title="Patvirtinti į grupę" onclick="Grup.approve('${k.id}')">${ico('atlikta')}</span>
+    </div>`;
   },
-  pick(kid, gid) { this.st.pick[kid] = gid; this.render(); },
+  pendHtml() {
+    const list = this.st.pendKids || []; if (!list.length) return '';
+    const more = list.length > 3 ? `<div style="padding:0 16px 8px;"><span class="kal-b" style="width:100%;justify-content:center;" onclick="Grup.pendSheet()">Daugiau · dar ${list.length - 3}</span></div>` : '';
+    return `<div class="kal-sec" style="padding-top:6px;"><b>LAUKIA PATVIRTINIMO</b><span>${list.length}</span></div><div style="padding:0 16px;">${list.slice(0, 3).map(k => this.pendRow(k)).join('')}</div>${more}`;
+  },
+  pendSheet() {
+    const list = this.st.pendKids || [];
+    const body = `<div style="padding:0 16px;">${list.map(k => this.pendRow(k)).join('')}</div><div style="font-size:10.5px;color:var(--mut);padding:4px 18px 10px;line-height:1.4;">Pasirink grupę ir spausk ✓ — vaikas patenka į grupę, tėvai ir vaikas aktyvuojami, tėvai gauna laišką. Atmesti anketą gali tik klubas.</div>`;
+    Planas.sheet('grp-pend', `LAUKIA PATVIRTINIMO · ${list.length}`, body, '', { z: 100006, sub: 'Visos klubo anketos' });
+  },
+  pick(kid, gid) { this.st.pick[kid] = gid; },   // be perpiešimo — select'as lieka fokuse
   async approve(kid) {
     const s = this.st, k = (s.pendKids || []).find(x => x.id === kid); if (!k || s.busy) return;
-    const gid = s.pick[kid] || k.group_id || (s.groups.length === 1 ? s.groups[0].id : ''); if (!gid) { showToast('Pasirink grupę', 'error'); return; }
+    const gid = this.pendGid(k); if (!gid) { showToast('Pasirink grupę', 'error'); return; }
     const g = s.groups.find(x => x.id === gid);
     if (!(await appConfirm(`Patvirtinti ${k.first_name || 'vaiką'} į grupę „${g ? g.name : ''}"? Tėvai ir vaikas bus aktyvuoti.`))) return;
     s.busy = true;
     try {
       const { error } = await sb.rpc('club_approve_kid', { p_kid: kid, p_group: gid }); if (error) throw error;   // v582: definer RPC — treneris tik į savo grupę, tik savo klubo vaiką
       showToast(ico('patvirtinta') + ` Patvirtinta — ${this.esc(k.first_name || 'vaikas')} grupėje „${this.esc(g ? g.name : '')}"`, 'success', 4000);
+      s.pendKids = (s.pendKids || []).filter(x => x.id !== kid);
+      const sh = document.getElementById('grp-pend-body'); if (sh) { if (s.pendKids.length) { const b = document.getElementById('grp-pend'); if (b) b.remove(); this.pendSheet(); } else document.getElementById('grp-pend')?.remove(); }
     } catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 6000); }
     s.busy = false;
     if (typeof loadNewKids === 'function') { try { loadNewKids(); } catch (_e) { } }
