@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=580">
+<link rel="stylesheet" href="styles.css?v=581">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v580</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v581</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2075,13 +2075,6 @@ window.addEventListener('unhandledrejection', function(e) {
       <div onclick="openTrainerSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
-  <!-- ===== MODULIS: planas — įėjimas iš grupių ekrano (v528) ===== -->
-  <div onclick="Planas.openTrainer()" style="margin:2px 16px 6px;background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:10px 13px;cursor:pointer;display:flex;align-items:center;gap:10px;">
-    <div style="font-size:18px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg></div>
-    <div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;color:#FF7A33;">Mėnesio planai</div><div style="font-size:10.5px;color:var(--mut);margin-top:1px;">Grupės tikslas + savaičių treniruotės iš katalogo</div></div>
-    <div style="font-size:15px;color:var(--mut);flex-shrink:0;">›</div>
-  </div>
-  <!-- ===== /MODULIS ===== -->
   <div class="sa" id="tr-groups-content">
     <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
   </div>
@@ -2313,8 +2306,8 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
 
-    <!-- <svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg> Grupių reitingas — filtras: bendras/karjera/varžybos/iššūkiai -->
-    <div style="margin:0 12px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
+    <!-- <svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg> Grupių reitingas — filtras: bendras/karjera/varžybos/iššūkiai (v581: V2 klube slepiamas — MODULIS: Grup) -->
+    <div id="trp-groups-rank" style="margin:0 12px 16px;background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:12px;">
       <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:8px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg> GRUPIŲ REITINGAS</div>
       <div id="trp-groups-toggle" class="no-scrollbar" style="display:flex;gap:5px;margin-bottom:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;"></div>
       <div style="font-size:9px;color:var(--mut);text-align:center;margin-bottom:8px;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> vidutinis EXP vienam vaikui · ⟷ slinkti</div>
@@ -4777,7 +4770,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=580"></script>
+<script src="app.js?v=581"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

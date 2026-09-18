@@ -22113,7 +22113,8 @@ async function loadTrainerGroups() {
     `;
   }
   
-  content.innerHTML = html;
+  if (typeof Grup !== 'undefined' && Grup.on()) Grup.mount(groups, kids, pendByGroup);   // MODULIS: Grup (v581) — reitingas + gyvesnės kortelės
+  else content.innerHTML = html;
 
   // (v117) „Šiandien" sekcija pašalinta iš tr-main — loadTrainerToday nebekviečiamas
   // Jei atidarytas grupės langas — atnaujinam jį
@@ -24701,7 +24702,8 @@ function openTrInfo(which) {
       // v451: tekstas pataisytas pagal faktą — grupes kuria ir vaikus priskiria KLUBAS,
       // treneris jų kurti/redaguoti negali (anksčiau čia buvo aprašyti neegzistuojantys mygtukai).
       html = intro('Čia matai savo grupes ir jų vaikus. Grupes kuria, tvarkaraštį nustato ir vaikus priskiria KLUBAS — jei kažko trūksta, kreipkis į klubą.') +
-        row(''+ico('profilis')+'', 'Grupės sudėtis', 'Matai savo grupes — ir tas, kur esi pagrindinis treneris, ir tas, kur pavaduoji.') +
+        row(''+ico('trofejai')+'', 'Reitingas', 'Čipsai viršuje — Bendras EXP, kiekvienas skillas, Varžybos, Iššūkiai (vidurkis vienam vaikui). Grupės išsirikiuoja pagal pasirinktą; kortelėje — lankomumas per 30 d., aktyvūs iššūkiai, kita treniruotė.') +
+        row(''+ico('profilis')+'', 'Grupės sudėtis', 'Matai savo grupes — ir tas, kur esi pagrindinis treneris, ir tas, kur pavaduoji. Paspaudus kortelę — grupės langas su vaikais.') +
         row(''+ico('ranka')+'', 'Paspausk ant vaiko', 'Atsidaro vaiko kortelė: duomenys, el. paštas, tėvai, sveikata, laukiantys patvirtinimai. Gali skirti EXP, asmeninį iššūkį ar EXP už elgesį.') +
         row(''+ico('lankomumas')+'', 'Lankomumas', 'Žymėk, kas atėjo, ir įvertink pastangas (20 / 14 / 8 EXP). Patogiausia — iš Kalendoriaus dienos lapo. Pilna savaitė → +15 EXP, pilnas mėnuo → +100.') +
         row(''+ico('tikslas')+'', 'Grupės iššūkis', 'Vienu paspaudimu skelbk iššūkį visai grupei.') +
@@ -45031,6 +45033,7 @@ const Tren = {
   seenDrop(i) { this.st.seen.splice(i, 1); this.render(); },
   // Nav: naujas skirtukas „Treniruotės" po Kalendoriaus visose trenerio .bn2 kopijose + desktop meniu (kviečia Kal.applyNav)
   nav() {
+    const rk = document.getElementById('trp-groups-rank'); if (rk) rk.style.display = 'none';   // v581: grupių reitingas persikėlė į Grupių langą (MODULIS: Grup)
     document.querySelectorAll('#ptr .bn2').forEach(nav => {
       if (nav.querySelector('.ni[onclick*="tr-tren"]')) return;
       const kal = [...nav.querySelectorAll('.ni')].find(n => (n.getAttribute('onclick') || '').indexOf("'tr-kal'") !== -1); if (!kal) return;
@@ -45044,6 +45047,78 @@ const Tren = {
       el.querySelectorAll('use').forEach(u => u.setAttribute('href', '#i-treniruote')); [...el.childNodes].forEach(x => { if (x.nodeType === 3 && x.textContent.trim()) x.textContent = ' Treniruotės'; });
       dn.insertAdjacentElement('afterend', el);
     }
+  },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: Grup =====
+// v581 (savininkas 09-18, A+B): Grupių langas V2 — „kaip laikosi grupės". Viršuje reitingo čipsai (Bendras · kiekvienas skillas ·
+// Varžybos · Iššūkiai — vidurkis vienam vaikui; tos pačios metrikos, kurios buvo profilyje — `_trGroupsMetrics`/`_trGroupsData`
+// iš loadTrainerProfileStats), kortelės išsirikiuoja pagal pasirinktą; kortelėje lankomumas 30 d., aktyvūs iššūkiai, kita treniruotė
+// pagal grafiką; veiksmai: Žinutė · Lankomumas (šiandienos lapas) · + Iššūkis. Profilio reitingo blokas V2 klube slepiamas (Tren.nav).
+// Viena vardų erdvė `Grup`, DOM — esamas #tr-groups-content, jokių naujų globalių. Klubai be plans_enabled — senas HTML.
+const Grup = {
+  st: { metric: 'exp', groups: [], kids: [], pend: {}, att: {}, ch: {}, busy: false },
+  on() { return typeof Kal !== 'undefined' && Kal.on(); },
+  esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); },
+  async mount(groups, kids, pend) {
+    const c = document.getElementById('tr-groups-content'); if (!c) return;
+    this.st.groups = groups || []; this.st.kids = kids || []; this.st.pend = pend || {};
+    if (this.st.busy) return; this.st.busy = true;
+    c.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Kraunama...</div>';
+    try {
+      if (!(_trGroupsData || []).length || !Object.keys(_trGroupsMetrics || {}).length) { try { await loadTrainerProfileStats(); } catch (_e) { } }   // metrikos (profilio skaičiavimas)
+      const gids = this.st.groups.map(g => g.id), from = Kal.ymd(new Date(Date.now() - 30 * 86400000));
+      const [aR, chs] = await Promise.all([
+        gids.length ? sb.from('attendance').select('group_id, present').in('group_id', gids).gte('session_date', from).limit(5000) : Promise.resolve({ data: [] }),
+        Kal.loadChallenges(60).catch(() => []),
+      ]);
+      const att = {}; (aR.data || []).forEach(a => { const v = att[a.group_id] || (att[a.group_id] = { n: 0, p: 0 }); v.n++; if (a.present) v.p++; });
+      const ch = {}; (chs || []).forEach(x => { if (x.group_id) ch[x.group_id] = (ch[x.group_id] || 0) + 1; });
+      this.st.att = att; this.st.ch = ch;
+    } catch (e) { console.warn('[grup]', e); }
+    this.st.busy = false; this.render();
+  },
+  setMetric(k) { if (_trGroupsMetrics[k]) this.st.metric = k; this.render(); },
+  // kita treniruotė pagal grupės grafiką (training_days 1=Pr..7=Sk + train_time)
+  next(g) {
+    const days = (g.training_days || []).filter(d => d >= 1 && d <= 7); if (!days.length) return '';
+    const now = new Date(), today = now.getDay() === 0 ? 7 : now.getDay(), hm = now.toTimeString().slice(0, 5), t = g.train_time || '';
+    let best = null;
+    days.forEach(d => { let off = (d - today + 7) % 7; if (off === 0 && t && t <= hm) off = 7; if (best === null || off < best.off) best = { off, d }; });
+    const lbl = best.off === 0 ? 'Šiandien' : (best.off === 1 ? 'Rytoj' : GROUP_DAY_SHORT[best.d - 1]);
+    return `${lbl}${t ? ' ' + t : ''}`;
+  },
+  render() {
+    const s = this.st, c = document.getElementById('tr-groups-content'); if (!c) return;
+    if (!s.groups.length) { c.innerHTML = `<div class="kal-empty"><b>Dar nėra grupių</b><i>Grupes kuria ir trenerius priskiria klubas.</i></div>`; return; }
+    const M = (_trGroupsMetrics || {})[s.metric] || (_trGroupsMetrics || {}).exp || { label: 'Bendras', icon: '', val: () => 0 };
+    const rowOf = {}; (_trGroupsData || []).forEach(r => { rowOf[r.g.id] = r; });
+    const val = g => M.val(rowOf[g.id] || { n: 0 });
+    const sorted = s.groups.slice().sort((a, b) => val(b) - val(a)), maxVal = Math.max(1, ...sorted.map(val));
+    const chips = `<div class="no-scrollbar" style="display:flex;gap:6px;overflow-x:auto;padding:2px 16px 10px;">${(_trGroupsMetricOrder || []).map(k => { const m = _trGroupsMetrics[k]; return `<span class="kal-b${k === s.metric ? ' o' : ''}" style="flex:none;" onclick="Grup.setMetric('${k}')">${m.icon} ${this.esc(m.label)}</span>`; }).join('')}</div>
+      <div style="font-size:10px;color:var(--mut);font-weight:700;text-align:center;padding:0 16px 8px;">${this.esc(M.label)} — vidutinis EXP vienam vaikui · grupės išrikiuotos pagal jį</div>`;
+    const stat = (v, l) => `<div style="flex:1;min-width:0;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v}</div><div style="font-size:8.5px;font-weight:800;color:var(--mut);letter-spacing:.7px;margin-top:3px;">${l}</div></div>`;
+    const btn = (fn, ic, l) => `<span onclick="${fn}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:11px 4px;font-size:11px;font-weight:800;cursor:pointer;color:var(--txt);">${ic} ${l}</span>`;
+    const cards = sorted.map((g, i) => {
+      const gk = s.kids.filter(k => k.group_id === g.id), color = Kal.col(g.color), v = val(g), pct = Math.max(4, Math.round(v / maxVal * 100));
+      const a = s.att[g.id], attPct = a && a.n ? Math.round(a.p * 100 / a.n) : null, nCh = s.ch[g.id] || 0, nx = this.next(g), pend = s.pend[g.id] || 0;
+      const nm = this.esc(g.name || 'Grupė'), nmJs = String(g.name || '').split('\\').join('\\\\').split("'").join("\\'").split('"').join('&quot;').split('<').join('&lt;');   // onclick atributui: kabutė → \' JS eilutei, " → &quot;
+      return `<div class="kal-card" style="margin:0 0 10px;padding:0;overflow:hidden;border-color:${color}66;">
+        <div onclick="openGroupView('${g.id}')" style="padding:12px 13px 11px;cursor:pointer;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--mut);min-width:22px;">#${i + 1}</div>
+            <div style="width:38px;height:38px;border-radius:12px;background:${color};display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:#fff;flex:none;">${this.esc((g.name || '?').trim().charAt(0).toUpperCase())}</div>
+            <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nm}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gk.length} ${_ltPl(gk.length, 'narys', 'nariai', 'narių')}${_groupScheduleLabel(g) ? ' · ' + this.esc(_groupScheduleLabel(g)) : ''}${pend ? ` · <span style="color:var(--br);">${pend} laukia</span>` : ''}</div></div>
+            <div style="text-align:right;flex:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:21px;color:${color};line-height:1;">${Math.round(v).toLocaleString()}</div><div style="font-size:8px;color:var(--mut);font-weight:800;letter-spacing:.7px;">${this.esc(M.label).toUpperCase()} / VAIK.</div></div>
+          </div>
+          <div class="kal-bar" style="margin-top:9px;"><span style="width:${pct}%;background:${color};"></span></div>
+          <div style="display:flex;gap:6px;margin-top:11px;">${stat(attPct == null ? '—' : attPct + '%', 'LANKOMUMAS 30 D.')}${stat(nCh, _ltPl(nCh, 'IŠŠŪKIS', 'IŠŠŪKIAI', 'IŠŠŪKIŲ'))}${stat(nx || '—', 'KITA TRENIRUOTĖ')}</div>
+        </div>
+        <div style="display:flex;border-top:.5px solid var(--bdr);" onclick="event.stopPropagation()">${btn(`composeMessageToGroup('${g.id}', '${nmJs}')`, ico('zinutes'), 'Žinutė')}<span style="width:.5px;background:var(--bdr);"></span>${btn(`openAttendance('${g.id}', '${Kal.ymd(new Date())}')`, ico('lankomumas'), 'Lankomumas')}<span style="width:.5px;background:var(--bdr);"></span>${btn(`Iss.create.open({ groupId: '${g.id}' })`, ico('prideti'), 'Iššūkis')}</div>
+      </div>`;
+    }).join('');
+    c.innerHTML = chips + `<div style="padding:0 16px 8px;">${cards}</div>`;
   },
 };
 // ===== /MODULIS =====
