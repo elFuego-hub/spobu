@@ -21623,7 +21623,14 @@ async function loadNewKids() {
   const allKidIds = [...new Set([...mnKidIds, ...legacyKidIds])];
   
   let kids = null, error = null;
-  if (allKidIds.length > 0) {
+  if (typeof Kal !== 'undefined' && Kal.on() && currentProfile?.club_id) {   // v582 (savininkas 09-18): V2 klube treneris mato ir tvirtina visas klubo anketas (RLS trainer_reads_pending_club_kids)
+    const result = await sb.from('kids')
+      .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id')
+      .eq('club_id', currentProfile.club_id)
+      .eq('approval_status', 'pending')
+      .order('created_at', { ascending: false });
+    kids = result.data; error = result.error;
+  } else if (allKidIds.length > 0) {
     const result = await sb.from('kids')
       .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id')
       .in('id', allKidIds)
@@ -21691,6 +21698,7 @@ async function loadPendingKidForms() {
 }
 
 async function approveKid(kidId) {
+  if (currentProfile?.role === 'trainer' && typeof Grup !== 'undefined' && Grup.on()) { nv('tr', null, 'tr-groups'); showToast(ico('grupe') + ' Pasirink grupę ir patvirtink Grupių lange', 'success', 3500); return; }   // v582: treneris tvirtina Į GRUPĘ
   if (!(await appConfirm('Patvirtinti vaiko paskyrą? Tėvai ir vaikas bus aktyvuoti.'))) return;
   
   try {
@@ -45058,7 +45066,7 @@ const Tren = {
 // pagal grafiką; veiksmai: Žinutė · Lankomumas (šiandienos lapas) · + Iššūkis. Profilio reitingo blokas V2 klube slepiamas (Tren.nav).
 // Viena vardų erdvė `Grup`, DOM — esamas #tr-groups-content, jokių naujų globalių. Klubai be plans_enabled — senas HTML.
 const Grup = {
-  st: { metric: 'exp', groups: [], kids: [], pend: {}, att: {}, ch: {}, busy: false },
+  st: { metric: 'exp', groups: [], kids: [], pend: {}, att: {}, ch: {}, pendKids: [], pick: {}, busy: false },
   on() { return typeof Kal !== 'undefined' && Kal.on(); },
   esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); },
   async mount(groups, kids, pend) {
@@ -45069,10 +45077,14 @@ const Grup = {
     try {
       if (!(_trGroupsData || []).length || !Object.keys(_trGroupsMetrics || {}).length) { try { await loadTrainerProfileStats(); } catch (_e) { } }   // metrikos (profilio skaičiavimas)
       const gids = this.st.groups.map(g => g.id), from = Kal.ymd(new Date(Date.now() - 30 * 86400000));
-      const [aR, chs] = await Promise.all([
+      const clubId = currentProfile?.club_id || null;
+      const [aR, chs, pR] = await Promise.all([
         gids.length ? sb.from('attendance').select('group_id, present').in('group_id', gids).gte('session_date', from).limit(5000) : Promise.resolve({ data: [] }),
         Kal.loadChallenges(60).catch(() => []),
+        // v582 (savininkas 09-18): treneris mato ir tvirtina klubo anketas — į savo grupę (RLS trainer_reads_pending_club_kids, RPC club_approve_kid p_group)
+        clubId ? sb.from('kids').select('id, first_name, last_name, gender, birth_date, birth_year, kyu, group_id, assigned_trainer_id, created_at, user_id').eq('club_id', clubId).eq('approval_status', 'pending').order('created_at').limit(100) : Promise.resolve({ data: [] }),
       ]);
+      this.st.pendKids = pR.data || [];
       const att = {}; (aR.data || []).forEach(a => { const v = att[a.group_id] || (att[a.group_id] = { n: 0, p: 0 }); v.n++; if (a.present) v.p++; });
       const ch = {}; (chs || []).forEach(x => { if (x.group_id) ch[x.group_id] = (ch[x.group_id] || 0) + 1; });
       this.st.att = att; this.st.ch = ch;
@@ -45118,7 +45130,39 @@ const Grup = {
         <div style="display:flex;border-top:.5px solid var(--bdr);" onclick="event.stopPropagation()">${btn(`composeMessageToGroup('${g.id}', '${nmJs}')`, ico('zinutes'), 'Žinutė')}<span style="width:.5px;background:var(--bdr);"></span>${btn(`openAttendance('${g.id}', '${Kal.ymd(new Date())}')`, ico('lankomumas'), 'Lankomumas')}<span style="width:.5px;background:var(--bdr);"></span>${btn(`Iss.create.open({ groupId: '${g.id}' })`, ico('prideti'), 'Iššūkis')}</div>
       </div>`;
     }).join('');
-    c.innerHTML = chips + `<div style="padding:0 16px 8px;">${cards}</div>`;
+    c.innerHTML = this.pendHtml() + chips + `<div style="padding:0 16px 8px;">${cards}</div>`;
+  },
+  // laukiančios anketos — kortelė su grupės pasirinkimu ir „Patvirtinti į …"
+  pendHtml() {
+    const s = this.st, list = s.pendKids || []; if (!list.length) return '';
+    const gs = s.groups;
+    return `<div class="kal-sec" style="padding-top:6px;"><b>LAUKIA PATVIRTINIMO</b><span>${list.length}</span></div>` + list.map(k => {
+      const age = k.birth_date && typeof calculateAge === 'function' ? calculateAge(k.birth_date) : (k.birth_year ? new Date().getFullYear() - k.birth_year : null);
+      const gid = s.pick[k.id] || k.group_id || (gs.length === 1 ? gs[0].id : '');
+      const gname = (gs.find(g => g.id === gid) || {}).name || '';
+      const days = Math.max(0, Math.round((Date.now() - new Date(k.created_at).getTime()) / 86400000));
+      return `<div class="kal-card" style="border-color:rgba(255,215,0,.45);">
+        <div style="font-size:13.5px;font-weight:900;">${k.gender === 'female' ? '👧' : '👦'} ${this.esc(`${k.first_name || 'Vaikas'} ${k.last_name || ''}`.trim())}</div>
+        <div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${age != null ? age + ' m. · ' : ''}${this.esc(k.kyu || 'be kyu')} · anketa prieš ${days} d.${k.user_id ? ' · turi paskyrą' : ''}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;">${gs.map(g => `<span class="kal-b${gid === g.id ? ' o' : ''}" style="padding:5px 10px;font-size:10.5px;" onclick="Grup.pick('${k.id}','${g.id}')">${this.esc(g.name)}</span>`).join('')}</div>
+        <div class="kal-acts" style="margin-top:8px;"><span class="kal-b g" ${gid ? '' : 'style="opacity:.5;"'} onclick="Grup.approve('${k.id}')">${ico('atlikta')} Patvirtinti${gid ? ' į ' + this.esc(gname) : ' — pasirink grupę'}</span></div>
+      </div>`;
+    }).join('') + `<div style="font-size:10.5px;color:var(--mut);padding:0 18px 10px;line-height:1.4;">Patvirtinus vaikas patenka į grupę, tėvai ir vaikas aktyvuojami, tėvai gauna laišką. Atmesti anketą gali tik klubas.</div>`;
+  },
+  pick(kid, gid) { this.st.pick[kid] = gid; this.render(); },
+  async approve(kid) {
+    const s = this.st, k = (s.pendKids || []).find(x => x.id === kid); if (!k || s.busy) return;
+    const gid = s.pick[kid] || k.group_id || (s.groups.length === 1 ? s.groups[0].id : ''); if (!gid) { showToast('Pasirink grupę', 'error'); return; }
+    const g = s.groups.find(x => x.id === gid);
+    if (!(await appConfirm(`Patvirtinti ${k.first_name || 'vaiką'} į grupę „${g ? g.name : ''}"? Tėvai ir vaikas bus aktyvuoti.`))) return;
+    s.busy = true;
+    try {
+      const { error } = await sb.rpc('club_approve_kid', { p_kid: kid, p_group: gid }); if (error) throw error;   // v582: definer RPC — treneris tik į savo grupę, tik savo klubo vaiką
+      showToast(ico('patvirtinta') + ` Patvirtinta — ${this.esc(k.first_name || 'vaikas')} grupėje „${this.esc(g ? g.name : '')}"`, 'success', 4000);
+    } catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 6000); }
+    s.busy = false;
+    if (typeof loadNewKids === 'function') { try { loadNewKids(); } catch (_e) { } }
+    if (typeof loadTrainerGroups === 'function') loadTrainerGroups();
   },
 };
 // ===== /MODULIS =====
