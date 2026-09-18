@@ -1948,7 +1948,7 @@ const WELCOME_CONTENT = {
       ['kalendorius', '<b class="t">Kalendorius</b>pradinis langas: grupės pagal tvarkaraštį, nepažymėtos dienos švyti, dienos lapas su lankomumu'],
       ['prideti',     '<b class="t">Planuoti treniruotes</b>10–15 min klausimų, AI paruošia etapą; tu patvirtini, vaikai mato'],
       ['jega',        '<b class="t">Pastangos</b>žymėdamas lankomumą įvertink: iš visų jėgų · gerai · lengviau (20 / 14 / 8 EXP)'],
-      ['tikslas',     '<b class="t">Iššūkiai</b>pasiūlyk iš plano; lankomumo, varžybų, egzamino ir Strava iššūkiai tvirtinasi patys, rankinius tvirtini tu'],
+      ['tikslas',     '<b class="t">Iššūkiai</b>savaitės (Strava) užsiskaito patys, mėnesio pasiekimus — kata, spyriai — pažymi „Išmoko"; kuri iš Kalendoriaus, Treniruočių ar Grupių'],
       ['bug',         'Radęs klaidą — Pagalba → „Pranešti problemą"']
     ]
   },
@@ -1964,12 +1964,15 @@ const WELCOME_CONTENT = {
   }
 };
 
-function maybeShowWelcome(role, force){
+async function maybeShowWelcome(role, force){
   try {
     const cfg = WELCOME_CONTENT[role];
     if (!cfg || !currentUser?.id) return;   // admin ir nežinomos rolės — be modalo
     if (!force) {
       if (localStorage.getItem(_welcomeKey()) === WELCOME_VERSION) return;
+      // v593: žymė ir serveryje (profiles.push_prefs.welcome_seen) — kitame įrenginyje ar naršyklėje antrą kartą nerodo
+      if (typeof Kal !== 'undefined' && Kal.prefsLoad) { try { await Kal.prefsLoad(); } catch (_e) { } }
+      if (currentProfile?.push_prefs?.welcome_seen === WELCOME_VERSION) { try { localStorage.setItem(_welcomeKey(), WELCOME_VERSION); } catch(_){} return; }
       // Konfliktai: age-up šventimas (vaikas) arba klubo pradžios vediklis — raktas nerašomas,
       // welcome parodys kitą prisijungimą
       if (document.getElementById('ageup-modal') || document.getElementById('club-onboard')) return;
@@ -1997,6 +2000,7 @@ function maybeShowWelcome(role, force){
 function _welcomeClose(){
   document.getElementById('welcome-modal')?.remove();
   try { localStorage.setItem(_welcomeKey(), WELCOME_VERSION); } catch(_){}
+  if (typeof Kal !== 'undefined' && Kal.prefsSave) { try { Kal.prefsSave({ welcome_seen: WELCOME_VERSION }); } catch(_){} }   // v593: žymė serveryje — vieną kartą per paskyrą
 }
 
 // „Rodyti įvadą iš naujo" (Pagalbos meniu): ištrina raktą ir iškart parodo modalą
@@ -26466,9 +26470,10 @@ async function toggleTrainerPushPref(key) {
   }
   _trPushPrefs[key] = turningOn;
   _applyTrPushPrefSwitch(key, turningOn);
-  if (currentProfile) currentProfile.push_prefs = { ..._trPushPrefs };
+  const merged = { ...((currentProfile && currentProfile.push_prefs) || {}), ..._trPushPrefs };   // v593: kitos žymės (welcome_seen, nomark_until, klubo tipai) išlieka
+  if (currentProfile) currentProfile.push_prefs = merged;
   try {
-    const { error } = await sb.from('profiles').update({ push_prefs: _trPushPrefs }).eq('id', currentUser.id);
+    const { error } = await sb.from('profiles').update({ push_prefs: merged }).eq('id', currentUser.id);
     if (error) { if (typeof showToast === 'function') showToast(ico('ispejimas')+' Neišsaugota serveryje (ar paleidai SQL „push_prefs"?): ' + (error.message || ''), 'error', 8000); }
   } catch (e) { console.warn('toggleTrainerPushPref', e); }
 }
@@ -43032,6 +43037,7 @@ const Kal = {
 
   // ── TRENERIO EKRANAS ──
   async loadTrainer() {
+    if (typeof this.prefsLoad === 'function') { try { await this.prefsLoad(); } catch (_e) { } }   // v593: UI žymės iš profilio (nomark_until, welcome_seen)
     const c = document.getElementById('kal-tr-content'); if (!c) return;
     if (!this.on()) { c.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--mut);font-size:12px;">Kalendorius klube dar neįjungtas.</div>'; return; }
     if (!this.st.ym) this.st.ym = this.ymNow();
@@ -43090,21 +43096,41 @@ const Kal = {
   },
 
   // praėjusios dienos (iki 14 d. atgal, šis mėnuo, pagal filtrą) su treniruotėmis, bet be pažymėto lankomumo
-  nomarkDays(today) {
+  nomarkDays(today, all) {
     if (!(typeof flagOn === 'function' && flagOn('attendance_enabled'))) return [];
     const from = this.ymd(new Date(Date.now() - 14 * 86400000));
     const days = {};
-    (this.st.sessions || []).filter(s => (this.st.sel === 'all' || s.group_id === this.st.sel) && s.date < today && s.date >= from && String(s.date).startsWith(this.st.ym)).forEach(s => { (days[s.date] = days[s.date] || []).push(s); });
-    const seen = this.nomarkSeen();
-    return Object.keys(days).filter(ds => !seen.has(ds) && !days[ds].some(s => s.total > 0)).sort();
+    (this.st.sessions || []).filter(s => (all || ((this.st.sel === 'all' || s.group_id === this.st.sel) && String(s.date).startsWith(this.st.ym))) && s.date < today && s.date >= from).forEach(s => { (days[s.date] = days[s.date] || []).push(s); });
+    const seen = this.nomarkSeen(), until = this.nomarkUntil();   // v593: „Supratau" galioja visoms dienoms iki paspaudimo datos (visos grupės, visi įrenginiai)
+    return Object.keys(days).filter(ds => !seen.has(ds) && ds > until && !days[ds].some(s => s.total > 0)).sort();
+  },
+  // v593: profiles.push_prefs kaip mažų UI žymių vieta (nomark_until, welcome_seen) — sinchronizuoja įrenginius be naujos lentelės/stulpelio
+  async prefsLoad() {
+    if (!currentUser?.id || !currentProfile) return;
+    if (currentProfile.push_prefs !== undefined && currentProfile.push_prefs !== null) return;
+    try { const { data } = await sb.from('profiles').select('push_prefs').eq('id', currentUser.id).maybeSingle(); currentProfile.push_prefs = (data && data.push_prefs) || {}; } catch (_e) { }
+  },
+  async prefsSave(patch) {
+    if (!currentUser?.id || !currentProfile) return;
+    const next = { ...(currentProfile.push_prefs || {}), ...(patch || {}) };
+    currentProfile.push_prefs = next;
+    try { await sb.from('profiles').update({ push_prefs: next }).eq('id', currentUser.id); } catch (_e) { }
+  },
+  nomarkUntilKey() { return 'spobu_kal_nomark_until_' + (currentUser?.id || ''); },
+  nomarkUntil() {
+    let u = ''; try { u = localStorage.getItem(this.nomarkUntilKey()) || ''; } catch (_e) { }
+    const srv = String(currentProfile?.push_prefs?.nomark_until || '');
+    return srv > u ? srv : u;
   },
   // v568 (savininkas 09-18): „treneris tada dar nebuvo" — įspėjimą galima uždaryti kaip perskaitytą; saugoma localStorage (per trenerį, per įrenginį)
   nomarkKey() { return 'spobu_kal_nomark_seen_' + (currentUser?.id || ''); },
   nomarkSeen() { try { return new Set(JSON.parse(localStorage.getItem(this.nomarkKey()) || '[]')); } catch (_e) { return new Set(); } },
   nomarkDismiss() {
-    const nd = this.nomarkDays(this.ymd(new Date())); if (!nd.length) return;
+    const today = this.ymd(new Date());
+    const nd = this.nomarkDays(today, true);   // v593: visos grupės ir visas 14 d. langas, ne tik pasirinkta grupė / mėnuo
     const s = this.nomarkSeen(); nd.forEach(d => s.add(d));
-    try { localStorage.setItem(this.nomarkKey(), JSON.stringify([...s].slice(-200))); } catch (_e) { }
+    try { localStorage.setItem(this.nomarkKey(), JSON.stringify([...s].slice(-200))); localStorage.setItem(this.nomarkUntilKey(), today); } catch (_e) { }
+    this.prefsSave({ nomark_until: today });   // v593: žymė ir serveryje — galioja visuose įrenginiuose; naujos nepažymėtos dienos po šios datos primins vėl
     showToast(ico('atlikta') + ' Supratau — šių dienų nebeprimins (lankomumą vis tiek gali pažymėti kalendoriuje)', 'success', 4000);
     this.render();
   },
@@ -44899,8 +44925,8 @@ const Tren = {
     const c = this.cid(); if (!c) return;
     if (!this.on()) { c.innerHTML = ''; return; }
     this.st.role = role || 'trainer';
-    c.innerHTML = '<div class="kal-empty"><b>Kraunama…</b></div>';
-    try { await this.load(); this.render(); }
+    if (!c.dataset.ready) c.innerHTML = '<div class="kal-empty"><b>Kraunama…</b></div>';   // v593: grįžus į langą senas turinys lieka, kol užsikrauna naujas (be mirgėjimo)
+    try { await this.load(); this.render(); c.dataset.ready = '1'; }
     catch (e) { console.warn('[tren]', e); c.innerHTML = `<div class="kal-empty"><b>Nepavyko užkrauti</b><i>${this.esc(e.message || '')}</i></div>`; }
   },
   async load() {
@@ -44909,6 +44935,11 @@ const Tren = {
     await Planas.loadGroups(); this.st.groups = Planas.st.groups;
     const gids = this.st.groups.map(g => g.id), today = this.today(), to = this.addDays(today, 14), from60 = this.addDays(today, -60), clubId = Planas.clubId();
     if (!gids.length) { this.st.plans = []; this.st.upcoming = []; this.st.recs = []; this.st.seen = []; this.st.lib = await Planas.loadLib(this.st.kind); return; }
+    const late = Promise.all([   // v593: biblioteka, atsiliepimai ir iššūkiai kraunami lygiagrečiai su planų užklausomis (buvo 3 nuoseklūs await po jų — ilgas „Kraunama…")
+      Planas.loadLib(this.st.kind),
+      (typeof Atsil !== 'undefined' && this.st.role !== 'club_admin') ? Promise.resolve().then(() => Atsil.load()).catch(() => null) : Promise.resolve(null),
+      (this.st.role !== 'club_admin') ? Promise.resolve().then(() => Kal.loadChallenges(60)).catch(() => []) : Promise.resolve([])
+    ]);
     const [plR, upR, hsR, recR, mineR] = await Promise.all([
       sb.from('training_plans').select('id, group_id, title, status, period_start, period_end, kind, competitions!training_plans_competition_id_fkey(title, event_date)').in('group_id', gids).in('status', ['active', 'draft']).order('period_start', { ascending: false }).limit(40),
       sb.from('training_plan_sessions').select('id, plan_id, group_id, session_date, starts_at, duration_min, title, blocks, status').in('group_id', gids).gte('session_date', today).lte('session_date', to).order('session_date').order('starts_at').limit(60),
@@ -44929,10 +44960,9 @@ const Tren = {
     const freq = {};
     (hsR.data || []).filter(s => s.status === 'confirmed' && s.session_date <= today).forEach(s => (Array.isArray(s.blocks) ? s.blocks : []).forEach(b => { if (!b || !b.title || b.block_id || !this.KINDS.includes(b.type)) return; const k = String(b.title).toLowerCase(); if (mine.has(k)) return; (freq[k] = freq[k] || { n: 0, b }).n++; }));
     this.st.seen = Object.values(freq).filter(x => x.n >= 2).sort((a, b) => b.n - a.n).slice(0, 3);
-    this.st.lib = await Planas.loadLib(this.st.kind);
-    // v570: aktyvūs iššūkiai (tie patys skaičiai kaip kalendoriaus plytelės) — tik trenerio savi (Kal.loadChallenges: trainer_id = aš)
-    if (typeof Atsil !== 'undefined' && this.st.role !== 'club_admin') { try { await Atsil.load(); } catch (_e) { } }   // MODULIS: Atsil (v584)
-    this.st.ch = []; try { if (this.st.role !== 'club_admin') this.st.ch = (await Kal.loadChallenges(60)).filter(c => !c.group_id || gids.includes(c.group_id)); } catch (_e) { }
+    const [libR, , chR] = await late;   // v593 (Atsil.load — MODULIS: Atsil v584; Kal.loadChallenges — v570: tie patys skaičiai kaip kalendoriaus plytelės, tik trenerio savi)
+    this.st.lib = libR;
+    this.st.ch = (chR || []).filter(c => !c.group_id || gids.includes(c.group_id));
   },
   chToggle(gid) { this.st.chOpen = this.st.chOpen === gid ? null : gid; this.render(); },   // v576: grupės eilutė išskleidžia jos iššūkius
   gname(id) { return (this.st.groups.find(g => g.id === id) || {}).name || ''; },
@@ -45104,7 +45134,7 @@ const Grup = {
     const c = document.getElementById('tr-groups-content'); if (!c) return;
     this.st.groups = groups || []; this.st.kids = kids || []; this.st.pend = pend || {};
     if (this.st.busy) return; this.st.busy = true;
-    c.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Kraunama...</div>';
+    if (c.dataset.ready) this.render(); else c.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Kraunama...</div>';   // v593: grįžus — iškart su naujais sąrašais ir senomis metrikomis, po užkrovimo perpiešiam (be mirgėjimo)
     try {
       if (!(_trGroupsData || []).length || !Object.keys(_trGroupsMetrics || {}).length) { try { await loadTrainerProfileStats(); } catch (_e) { } }   // metrikos (profilio skaičiavimas)
       const gids = this.st.groups.map(g => g.id), from = Kal.ymd(new Date(Date.now() - 30 * 86400000));
@@ -45120,7 +45150,7 @@ const Grup = {
       const ch = {}; (chs || []).forEach(x => { if (x.group_id) ch[x.group_id] = (ch[x.group_id] || 0) + 1; });
       this.st.att = att; this.st.ch = ch;
     } catch (e) { console.warn('[grup]', e); }
-    this.st.busy = false; this.render();
+    this.st.busy = false; this.render(); c.dataset.ready = '1';
   },
   setMetric(k) { if (_trGroupsMetrics[k]) this.st.metric = k; this.render(); },
   msg(gid) { const g = (this.st.groups || []).find(x => x.id === gid); if (g && typeof composeMessageToGroup === 'function') composeMessageToGroup(g.id, String(g.name || '')); },   // v587
