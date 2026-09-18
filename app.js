@@ -24682,9 +24682,19 @@ function openTrInfo(which) {
         row(''+ico('ispejimas')+'', 'Švytinti diena', 'Praėjusi treniruotė be pažymėto lankomumo. Juosta po tinkleliu — spustelk ir pažymėk iš dienos lapo.') +
         row(''+ico('jega')+'', 'Pastangos', 'Žymėdamas lankomumą įvertink kiekvieną: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP. Vaikas ir tėvai tai mato.') +
         row(''+ico('prideti')+'', 'Planuoti treniruotes', '10–15 min klausimų — AI paruošia visą etapą su „kodėl". Tu patvirtini kiekvieną treniruotę; kol nepatvirtinta, vaikai jos nemato.') +
-        row(''+ico('tikslas')+'', 'Iššūkiai', 'Plytelės apačioje — progresas ir kiek laukia tvirtinimo. Nėra iššūkių? „Pasiūlyti iš plano" — iš etapo turinio, EXP pagal kreivę.') +
+        row(''+ico('tikslas')+'', 'Iššūkiai', 'Plytelės apačioje — progresas ir kiek laukia tvirtinimo; su keliomis grupėmis — eilutė kiekvienai. „+ Naujas iššūkis": savaitės — Strava užskaito pati, mėnesio — pasiekimai (kata, spyriai), žymi treneris „Išmoko".') +
         row(''+ico('kalendorius')+'', 'Renginiai', 'Varžybos (violetinė), stovyklos (mėlyna), diržo testai (auksinė). Artimiausias — su dienų skaičiumi.') +
         row(''+ico('jega')+'', 'Normatyvai', 'Profilyje — pratimų rėžiai pagal amžių ir lytį.');
+      break;
+    case 'tren':
+      title = ''+ico('pagalba')+' TRENIRUOTĖS';
+      html = intro('Viskas, ko reikia treniruotėms planuoti ir vesti — vienoje vietoje. Kalendorius rodo KADA, čia — KĄ.') +
+        row(''+ico('treniruote')+'', 'Kita treniruotė', 'Artimiausia iš etapo: patvirtink (vaikai ir tėvai pamatys), koreguok blokus arba leisk AI perdaryti.') +
+        row(''+ico('prideti')+'', 'Aktyvūs etapai', '4–6 savaičių planai grupėms. „Planuoti treniruotes" — 10–15 min klausimų, AI paruošia visą etapą; „Visos treniruotės" — patvirtinti, koreguoti, pildyti tuščias.') +
+        row(''+ico('tikslas')+'', 'Iššūkiai', 'Aktyvūs pagal grupę: kiek savaitės / mėnesio, kiek laukia tvirtinimo, kur dar nesukurta. Paspaudus grupę — jos iššūkiai ir „Naujas iššūkis".') +
+        row(''+ico('zinutes')+'', 'Klubo rekomendacija', 'Ką klubas prašo akcentuoti šį laikotarpį — AI į tai atsižvelgia planuodamas.') +
+        row(''+ico('ai')+'', 'Katalogas', 'Tavo blokai pagal sritį (apšilimas, technika, kova, jėga, žaidimai): klubo numatytieji, tavo sukurti, AI pasiūlymai. Iš jų AI dėlioja treniruotes.') +
+        row(''+ico('ispejimas')+'', 'AI pastebėjo', 'Blokus, kuriuos naudoji dažnai, bet katalogo dar nėra — vienu paspaudimu įrašai.');
       break;
     case 'groups':
       title = ''+ico('pagalba')+' GRUPĖS';
@@ -24702,7 +24712,7 @@ function openTrInfo(which) {
       html = intro('Iššūkiai motyvuoja vaikus tarp treniruočių. Dalis tvirtinasi patys, kitus tvirtini tu.') +
         row(''+ico('atnaujinti')+'', 'Automatiniai', 'Lankomumas, varžybų rezultatas, diržo egzaminas, Strava bėgimas / dviratis / ėjimas — užsiskaito iš sistemos duomenų, vaikas nieko nesiunčia.') +
         row(''+ico('tikslas')+'', 'Rankiniai', 'Vaikas atlieka ir pateikia → tu patvirtini „Patvirtinti" lange arba iššūkio suvestinėje → EXP.') +
-        row(''+ico('prideti')+'', 'Iš plano', 'Kalendoriuje „Pasiūlyti iš plano" — iššūkiai iš etapo turinio, EXP pagal kreivę, grupei vienu paspaudimu.') +
+        row(''+ico('prideti')+'', 'Naujas iššūkis', 'Kalendoriuje arba Treniruotėse: savaitės — Strava (bėgimas, greitas km, ėjimas, dviratis, plaukimas, papildoma treniruotė) užskaito pati; mėnesio — pasiekimai (kata, technikos, spyriai), žymi treneris „Išmoko". Galima ne visiems (išbraukti, kas jau moka) arba vienam vaikui iš jo kortelės.') +
         row(''+ico('kalendorius')+'', 'Savaitės / mėnesio / treniruotės', 'Terminuoti tikslai: mėnesiui — didesnis, savaitei — mažesnis, treniruotei — atliekama ir patvirtinama tą dieną.') +
         row(''+ico('vieta')+'', 'Strava', 'Kai vaikas susieja Strava, bėgimo iššūkiai užsiskaito patys. Rankiniai Strava įrašai (be GPS) nesiskaito — apsauga nuo sukčiavimo.') +
         row(''+ico('programele')+'', 'Pasidalink', 'Pasibaigusio iššūkio rezultatų kortelę gali pasidalinti.');
@@ -43036,7 +43046,7 @@ const Kal = {
     const chips = `<div class="kal-chips"><span class="kal-chip${this.st.sel === 'all' ? ' on' : ''}" onclick="Kal.pick('all')">Visos</span>${(this.st.groups || []).map(gr => `<span class="kal-chip${this.st.sel === gr.id ? ' on' : ''}" onclick="Kal.pick('${gr.id}')"><i style="background:${this.col(gr.color)};"></i>${this.esc(gr.name)}</span>`).join('')}</div>`;
     const ng = this.st.groups.length;
     const head = `<div class="kal-head"><div style="min-width:0;"><div class="kal-mon">${this.MON[r.m - 1].toUpperCase()} <i>${String(r.y).slice(2)}</i></div><div class="kal-sub"><span>${ng} ${_ltPl(ng, 'grupė', 'grupės', 'grupių')}</span><s>/</s><span>${mine.length} ${_ltPl(mine.length, 'treniruotė', 'treniruotės', 'treniruočių')}</span></div></div>
-      <div class="kal-hbtn"><button onclick="openTrInfo('kal')" title="Apie šį langą">${ico('pagalba')}</button><button onclick="toggleTrainerNotifications()" title="Pranešimai">${ico('pranesimai')}</button><button onclick="Kal.shift(-1)" title="Ankstesnis mėnuo">${ico('atgal')}</button><button onclick="Kal.shift(1)" title="Kitas mėnuo">${ico('toliau')}</button></div></div>`;
+      <div class="kal-hbtn"><button onclick="openTrInfo('kal')" title="Apie šį langą">${ico('pagalba')}</button><button onclick="toggleTrainerNotifications()" title="Pranešimai" style="position:relative;">${ico('pranesimai')}<div class="trh-nbadge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div></button><button onclick="openTrainerSettings()" title="Nustatymai">${ico('nustatymai')}</button><button onclick="Kal.shift(-1)" title="Ankstesnis mėnuo">${ico('atgal')}</button><button onclick="Kal.shift(1)" title="Kitas mėnuo">${ico('toliau')}</button></div></div>`;
     const canPlan = typeof flagOn === 'function' && flagOn('trainers_can_create_plans') && typeof Planas !== 'undefined';
     const hasPlan = (this.st.sessions || []).some(s => s.session_id);
     const cta = (!canPlan || typeof Tren !== 'undefined') ? '' : (hasPlan   // v568: „Planuoti treniruotes" persikėlė į skirtuką Treniruotės (savininkas 09-18)
@@ -43044,6 +43054,7 @@ const Kal = {
       : `<div class="kal-empty plan"><div class="ic">${ico('prideti')}</div><b>PLANO DAR NĖRA</b><i>Atsakyk į 10–15 min klausimų — AI paruoš visą etapą, tu tik patvirtinsi.</i><span class="kal-b o" onclick="Planas.openWizard()">Planuoti treniruotes</span></div>`);
     const evBlock = (this.st.events || []).length >= 3 ? this.evListHtml(today) : this.nextHtml(today);   // v557: perkrautam mėnesiui — sąrašas vietoj vienos eilutės
     c.innerHTML = head + chips + this.gridHtml() + this.warnHtml(today) + evBlock + cta + this.todayHtml(today) + this.chHtml();
+    if (typeof _updateTrainerNotifCounts === 'function') try { _updateTrainerNotifCounts(); } catch (_e) { }   // v580: varpelio skaičius naujai sukurtame badge
     this.st.dir = 0;
     this.afterRender(c);
   },
@@ -44951,7 +44962,7 @@ const Tren = {
     if (typeof Kal !== 'undefined' && Kal.afterRender) Kal.afterRender(c);
   },
   // ── veiksmai ──
-  async reload() { try { await this.load(); this.render(); } catch (e) { console.warn('[tren]', e); } },
+  async reload() { try { await this.load(); this.render(); } catch (e) { console.warn('[tren]', e); } if (typeof _updateTrainerNotifCounts === 'function') try { _updateTrainerNotifCounts(); } catch (_e) { } },   // v580: varpelio skaičius
   // Etapo treniruotės (patvirtinti / koreguoti kiekvieną): treneriui — ekranas tr-planas (g(), ne nv() — nv kviestų loadTrainer ir sąrašas perrašytų etapą), adminui — ta pati Planai pane'a
   async etapas(planId) {
     Planas.st.role = this.st.role === 'club_admin' ? 'club_admin' : 'trainer';
