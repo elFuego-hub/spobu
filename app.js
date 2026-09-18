@@ -34271,6 +34271,21 @@ async function loadTrainerOwnChallenges() {
     specific_kid: ''+ico('tikslas')+' Konkretus vaikas'
   };
   
+  // v579 (V2; savininkas 09-18: „du keliai tam pačiam veiksmui"): pateikimai grupuojami PAGAL IŠŠŪKĮ, tvirtinama vienoje vietoje —
+  // Iss.sum suvestinėje (ta pati kaip iš kalendoriaus plytelės). Klubai be plans_enabled — kaip anksčiau, po vieną.
+  if (typeof Kal !== 'undefined' && Kal.on() && typeof Iss !== 'undefined') {
+    const by = {};
+    (subs || []).forEach(s => { const key = s.challenges?.parent_challenge_id || s.challenge_id; const b = by[key] || (by[key] = { key, ch: s.challenges || {}, subs: [], kids: new Set() }); b.subs.push(s); b.kids.add(s.kid_id); });
+    const TL = { training: 'TRENIRUOTĖS', weekly: 'SAVAITĖS', monthly: 'MĖNESIO', one_time: 'VIENKARTINIS', permanent: 'NUOLATINIS' };
+    const cards = Object.values(by).sort((a, b) => b.subs.length - a.subs.length).map(b => {
+      const names = [...b.kids].map(id => (kidNameMap[id] || kidsMap[id]?.first_name || 'Vaikas')).slice(0, 4).join(', ') + (b.kids.size > 4 ? ` +${b.kids.size - 4}` : '');
+      const strava = b.subs.some(s => s.source === 'strava');
+      return `<div class="kal-card" style="cursor:pointer;" onclick="Iss.sum.open('${b.key}')"><div style="display:flex;align-items:center;gap:10px;"><div style="font-size:22px;flex:none;">${escapeHtml(b.ch.icon || '🎯')}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(b.ch.title || 'Iššūkis')}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${TL[b.ch.type] || 'IŠŠŪKIS'} · <span style="color:var(--br);">${b.subs.length} ${_ltPl(b.subs.length, 'pateikimas', 'pateikimai', 'pateikimų')}</span> · ${escapeHtml(names)}${strava ? ' <span class="kal-tag ok">STRAVA</span>' : ''}</div></div>${ico('toliau')}</div></div>`;
+    });
+    _trPatRenderTop('tr-challenge-submissions-list', 'challenges', cards, '');
+    return;
+  }
+
   const typeLabels = { training: 'Treniruotė', weekly: 'Sav.', monthly: 'Mėn.', one_time: 'Vnk.', permanent: 'Nuolat.' };
 
   // 🗂️ v401 (B2): rinkinio parents ([set:] žymė) grupuojami į VIENĄ išskleidžiamą kortelę
@@ -34761,7 +34776,7 @@ async function loadPendingChallengeSubmissions() {
   }
   
   const { data: subs, error } = await sb.from('challenge_submissions')
-    .select('*, challenges(title, icon, type, exp_reward, target_value, target_unit, content_type, allow_partial, instructions)')
+    .select('*, challenges(title, icon, type, exp_reward, target_value, target_unit, content_type, allow_partial, instructions, parent_challenge_id)')   // v579: parent — grupavimui
     .eq('status', 'pending')
     // 🔎 v451: buvo `.eq('trainer_id', currentUser.id)` — pateikimas, adresuotas KITAM
     // treneriui (vaikas turi du) arba likęs be gavėjo, niekam nesimatydavo ir kabodavo
@@ -42356,6 +42371,23 @@ Object.assign(Planas, {
       return false;
     }
   },
+  // v579: plan_confirm_all patvirtina ir TUŠČIAS treniruotes (be blokų) — vaikai matytų „Turinys dar neparuoštas". Kai tuščių yra,
+  // tvirtinam tik paruoštas po vieną (plan_session_confirm — tas pats serverio kelias), tuščios lieka juodraščiais.
+  async confirmReady(planId) {
+    try {
+      const { data: p } = await sb.from('training_plans').select('id, status').eq('id', planId).maybeSingle(); if (!p) throw new Error('Planas nerastas');
+      const { data: ss } = await sb.from('training_plan_sessions').select('id, status, blocks').eq('plan_id', planId);
+      const ready = (ss || []).filter(s => s.status !== 'confirmed' && Array.isArray(s.blocks) && s.blocks.length);
+      const empty = (ss || []).filter(s => s.status !== 'confirmed' && !(Array.isArray(s.blocks) && s.blocks.length)).length;
+      if (!ready.length) { showToast(ico('ispejimas') + ' Paruoštų treniruočių nėra — pirma „Paruošti tuščias su AI"', 'error', 4500); return false; }
+      if (p.status !== 'active') { const { error: aErr } = await sb.rpc('plan_set_status', { p_plan: planId, p_status: 'active' }); if (aErr) throw aErr; this.pushGroupParents(planId); }
+      let n = 0;
+      for (const s of ready) { const { error } = await sb.rpc('plan_session_confirm', { p_session: s.id }); if (error) throw error; n++; }
+      showToast(ico('patvirtinta') + ` Patvirtinta: ${n} · vaikai ir tėvai mato${empty ? ` · ${empty} be turinio liko juodraščiu` : ''}`, 'success', 5000);
+      if (typeof Kal !== 'undefined' && document.getElementById('tr-kal')?.classList.contains('on')) Kal.reload();
+      return true;
+    } catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 6000); return false; }
+  },
   async confirmSession(sessId, after) {
     try {
       const { data: s } = await sb.from('training_plan_sessions').select('plan_id, training_plans(status)').eq('id', sessId).maybeSingle();
@@ -42402,7 +42434,7 @@ Object.assign(Planas, {
       <div class="kal-sec">TVIRTINIMAS</div>
       <div class="kal-card" style="border-left:3px solid #A855F7;"><div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;"><div style="font-size:13.5px;font-weight:900;">${ss.some(s => (s.blocks || []).length) ? 'Paruoštos ' + ss.length + ' ' + _ltPl(ss.length, 'treniruotė', 'treniruotės', 'treniruočių') : ss.length + ' treniruotės be turinio'}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">Patvirtinta ${conf}${lastConf ? ' · vaikai mato iki ' + this.fmtDate(lastConf) : ''}${p.status !== 'active' ? ' · etapas dar neaktyvus' : ''}</div></div>${wait ? `<span class="kal-tag ai">${wait} LAUKIA</span>` : `<span class="kal-tag ok">VISOS</span>`}</div>
         <div class="kal-bar" style="margin-top:10px;"><span style="width:${ss.length ? Math.round(conf * 100 / ss.length) : 0}%;"></span></div>
-        ${canEdit && wait ? `<div class="kal-acts"><span class="kal-b g" onclick="Planas.confirmAll('${p.id}').then(ok=>ok&&Tren.etapas('${p.id}'))">Patvirtinti visą etapą</span></div>` : ''}</div>
+        ${canEdit && wait ? (() => { const ready = ss.filter(s => s.status !== 'confirmed' && (s.blocks || []).length).length, emp = wait - ready; return `<div class="kal-acts">${ready ? `<span class="kal-b g" onclick="Planas.${emp ? 'confirmReady' : 'confirmAll'}('${p.id}').then(ok=>ok&&Tren.etapas('${p.id}'))">${emp ? `Patvirtinti paruoštas · ${ready}` : 'Patvirtinti visą etapą'}</span>` : ''}${emp ? `<span class="kal-tag ai" style="align-self:center;">${emp} BE TURINIO</span>` : ''}</div>`; })() : ''}</div>
       ${canEdit && typeof Iss !== 'undefined' ? Iss.etapasCard(p) : ''}
       <div class="kal-sec" style="padding-top:4px;">TRENIRUOTĖS</div>${wk || '<div class="kal-empty">Treniruočių nėra.</div>'}
       ${canEdit ? `<div class="kal-card" style="border:.5px dashed var(--bdr);cursor:pointer;" onclick="Planas.openWizard({groupId:'${p.group_id}',ps:'${nextPs}',afterPlanId:'${p.id}'})"><div style="display:flex;align-items:center;gap:9px;color:var(--mut);">${ico('prideti')}<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:900;color:var(--txt);">Pridėti kitą etapą</div><div style="font-size:10.5px;font-weight:700;margin-top:2px;">nuo ${this.fmtDate(nextPs)} · kitas tikslas</div></div></div></div>` : ''}
