@@ -19837,6 +19837,7 @@ async function getFilteredKidEntries(scoreSource, scoreField, fl, season, clubId
       ageGroup: fl.ageGroup,
       skillId: fl.skillId,
       weight: fl.weight,
+      group: fl.group || null,   // v590: grupės filtras (treneris)
       clubId: clubIdOverride || resolveMyClubId() || 'all' // ⚡ W1-6: kešo raktas su tikru klubo ID
     }
   );
@@ -19872,7 +19873,8 @@ async function _getFilteredKidEntriesUncached(scoreSource, scoreField, fl, seaso
     p_age_max: g.max,
     p_weight: fl.weight || 'all',
     p_skill: fl.skillId || null,
-    p_season_from: seasonFrom
+    p_season_from: seasonFrom,
+    p_group: fl.group || null   // v590: grupės filtras; šaltiniai 'attendance' (pastangų EXP + premijos, extra = lankomumo %) ir 'season_total'
   });
 
   if (error) {
@@ -19886,7 +19888,8 @@ async function _getFilteredKidEntriesUncached(scoreSource, scoreField, fl, seaso
     kyu: r.kyu,
     score: Number(r.score) || 0,
     isAnonymous: r.is_anonymous,
-    avatarUrl: r.avatar_url || null
+    avatarUrl: r.avatar_url || null,
+    extra: (r.extra === null || r.extra === undefined) ? null : Number(r.extra)   // v590: lankomumo %
   }));
 }
 
@@ -20494,6 +20497,7 @@ async function loadParentCompetitionsStatTab() {
 
 let trainerStatSeasonFilter = 'season';
 const trainerStatFilters = {
+  group: null,   // v590: grupės filtras (Visos / grupė)
   gender: 'all',
   ageGroup: 'all',
   skillId: null,
@@ -20563,6 +20567,7 @@ function switchTrainerStatTab(tabName) {
     else if (tabName === 'skills') loadTrainerSkillsStat();
     else if (tabName === 'challenges') loadTrainerChallengesStat();
     else if (tabName === 'competitions') loadTrainerCompetitionsStat();
+    else if (tabName === 'attendance') loadTrainerAttendanceStat();   // v590
   }, 150);
 }
 
@@ -20576,6 +20581,11 @@ async function getTrainerFilteredEntries(scoreSource) {
 // Render filtrus + savi vaikai paryškinti + CSV mygtukas
 function renderTrainerFiltersUI(tabType) {
   let html = '<div style="margin-bottom:14px;">';
+  // v590: grupės filtras — trenerio grupės (Grupių lango kešas arba kalendoriaus)
+  const _gs = (typeof trainerGroupsCache !== 'undefined' && trainerGroupsCache && trainerGroupsCache.length) ? trainerGroupsCache : ((typeof Kal !== 'undefined' && Kal.st && Kal.st.groups) || []);
+  if (_gs.length >= 2) {
+    html += `<div class="no-scrollbar" style="display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px;"><button onclick="setTrainerStatFilter('group',null)" style="flex:none;${chipStyle(!trainerStatFilters.group)}">Visos grupės</button>${_gs.map(g => `<button onclick="setTrainerStatFilter('group','${g.id}')" style="flex:none;${chipStyle(trainerStatFilters.group === g.id)}">${escapeHtml(g.name || 'Grupė')}</button>`).join('')}</div>`;
+  }
   
   html += `
     <div style="display:flex;gap:6px;margin-bottom:8px;">
@@ -20677,11 +20687,11 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
           </div>
           <div style="font-size:10px;color:var(--mut);margin-top:1px;">${e.kyu || 'Mu kyu'}</div>
         </div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:white;flex-shrink:0;">${e.score.toLocaleString()}</div>
+        <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:white;line-height:1;">${e.score.toLocaleString()}</div>${e.extra != null ? `<div style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-top:2px;">LANKĖ ${Math.round(e.extra)}%</div>` : ''}</div>
       </div>
     `;
   }).join('');
-  
+
   // Puslapiavimo navigacija
   const prevDisabled = currentPage <= 1;
   const nextDisabled = currentPage >= totalPages;
@@ -20760,25 +20770,9 @@ async function loadTrainerOverallStat() {
   trainerStatFilters.weight = 'all';
   trainerStatFilters.scope = 'club';
   
-  let entries;
-  if (trainerStatSeasonFilter === 'all') {
-    entries = await getTrainerFilteredEntries('total_exp');
-  } else {
-    const allKids = await getTrainerFilteredEntries('total_exp');
-    const combined = {};
-    allKids.forEach(e => { combined[e.kidId] = { ...e, score: 0 }; });
-    
-    const [s, c, p] = await Promise.all([
-      getTrainerFilteredEntries('kid_records'),
-      getTrainerFilteredEntries('challenge_submissions'),
-      getTrainerFilteredEntries('competition_results')
-    ]);
-    [...s, ...c, ...p].forEach(e => {
-      if (!combined[e.kidId]) combined[e.kidId] = { ...e, score: 0 };
-      combined[e.kidId].score += e.score;
-    });
-    entries = Object.values(combined);
-  }
+  // v590: sezono „Bendras" — serverio 'season_total' (rekordai + iššūkiai + varžybos + PASTANGŲ EXP ir lankomumo premijos);
+  // anksčiau 3 šaltinių suma be lankomumo — V2 klube sezono reitingas rodė 0 tiems, kurie lankė
+  const entries = trainerStatSeasonFilter === 'all' ? await getTrainerFilteredEntries('total_exp') : await getTrainerFilteredEntries('season_total');
   
   window._trainerLastEntries = entries;
   
@@ -20824,6 +20818,21 @@ async function loadTrainerChallengesStat() {
   const filtersHtml = renderTrainerFiltersUI('challenges');
   const leaderHtml = await renderTrainerLeaderboard(entries, 'EXP', currentUser?.id);
   container.innerHTML = filtersHtml + leaderHtml;
+}
+
+// v590: LANKOMUMAS — pastangų EXP (+20/14/8) + lankomumo premijos; šalia — lankomumo % (buvo / pažymėta)
+async function loadTrainerAttendanceStat() {
+  const container = document.getElementById('trainer-stat-tab-attendance');
+  if (!container) return;
+  trainerStatFilters.skillId = null;
+  trainerStatFilters.weight = 'all';
+  trainerStatFilters.scope = 'club';
+  const entries = await getTrainerFilteredEntries('attendance');
+  window._trainerLastEntries = entries;
+  const filtersHtml = renderTrainerFiltersUI('attendance');
+  const note = `<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin:-6px 4px 10px;line-height:1.4;">EXP = pastangos po treniruočių (+20 · +14 · +8) ir lankomumo premijos (savaitė +15, mėnuo +100). Procentas — kiek pažymėtų treniruočių vaikas buvo.</div>`;
+  const leaderHtml = await renderTrainerLeaderboard(entries, 'EXP', currentUser?.id);
+  container.innerHTML = filtersHtml + note + leaderHtml;
 }
 
 async function loadTrainerCompetitionsStat() {

@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=589">
+<link rel="stylesheet" href="styles.css?v=590">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v589</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v590</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2418,13 +2418,17 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- Tab nav (4 leaderboard'ai) -->
     <div class="no-scrollbar" style="display:flex;gap:6px;margin:0 16px 12px;overflow-x:auto;padding-bottom:4px;">
       <button class="trainer-stat-tab on" data-tab="overall" onclick="switchTrainerStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-grafikas"></use></svg> BENDRAS LVL</button>
-      <button class="trainer-stat-tab" data-tab="skills" onclick="switchTrainerStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> SKILL'AI</button>
+      <button class="trainer-stat-tab" data-tab="attendance" onclick="switchTrainerStatTab('attendance')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-lankomumas"></use></svg> LANKOMUMAS</button><!-- v590 -->
+$1 style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> SKILL'AI</button>
       <button class="trainer-stat-tab" data-tab="challenges" onclick="switchTrainerStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-issukiai"></use></svg> IŠŠŪKIAI</button>
       <button class="trainer-stat-tab" data-tab="competitions" onclick="switchTrainerStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:10px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> VARŽYBOS</button>
     </div>
     
     <!-- Tab content -->
     <div id="trainer-stat-tab-overall" class="trainer-stat-tab-content">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <div id="trainer-stat-tab-attendance" class="trainer-stat-tab-content" style="display:none;"><!-- v590 -->
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
     <div id="trainer-stat-tab-skills" class="trainer-stat-tab-content" style="display:none;">
@@ -4768,7 +4772,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=589"></script>
+<script src="app.js?v=590"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
