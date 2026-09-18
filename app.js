@@ -44172,7 +44172,7 @@ const Iss = {
       const nPrev = { weekly: 0, monthly: 0 }, seenP = new Set(); (aR.data || []).forEach(c => { const key = c.parent_challenge_id || c.id; if (seenP.has(key) || nPrev[c.type] == null) return; seenP.add(key); nPrev[c.type]++; });
       Object.assign(this.st, { group: g, kids: kR.data || [], nPrev, tgt: {}, excl: {}, exclOpen: null });
     },
-    sub() { const s = this.st; if (s.kid) return `tik ${Iss.esc(s.kid.first_name || 'jam')}${s.group && s.group.name ? ' · ' + Iss.esc(s.group.name) : ''}`; return s.group ? `${s.group.name || ''} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')}` : ''; },
+    sub() { const s = this.st; if (s.kid) return `tik ${Iss.esc(s.kid.first_name || 'jam')}${s.group && s.group.name ? ' · ' + Iss.esc(s.group.name) : ''}`; return s.group ? `${Iss.esc(s.group.name || '')} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')}` : ''; },   // v587: esc
     async setGroup(gid) {
       const s = this.st; if (s.busy || !s.group || s.group.id === gid) return; const g = Planas.st.groups.find(x => x.id === gid); if (!g) return;
       s.busy = true; this.render();
@@ -45090,10 +45090,11 @@ const Grup = {
     this.st.busy = false; this.render();
   },
   setMetric(k) { if (_trGroupsMetrics[k]) this.st.metric = k; this.render(); },
+  msg(gid) { const g = (this.st.groups || []).find(x => x.id === gid); if (g && typeof composeMessageToGroup === 'function') composeMessageToGroup(g.id, String(g.name || '')); },   // v587
   // kita treniruotė pagal grupės grafiką (training_days 1=Pr..7=Sk + train_time)
   next(g) {
     const days = (g.training_days || []).filter(d => d >= 1 && d <= 7); if (!days.length) return '';
-    const now = new Date(), today = now.getDay() === 0 ? 7 : now.getDay(), hm = now.toTimeString().slice(0, 5), t = g.train_time || '';
+    const now = new Date(), today = now.getDay() === 0 ? 7 : now.getDay(), hm = now.toTimeString().slice(0, 5), t = Kal.hhmm(g.train_time) || '';   // v587: tik HH:MM
     let best = null;
     days.forEach(d => { let off = (d - today + 7) % 7; if (off === 0 && t && t <= hm) off = 7; if (best === null || off < best.off) best = { off, d }; });
     const lbl = best.off === 0 ? 'Šiandien' : (best.off === 1 ? 'Rytoj' : GROUP_DAY_SHORT[best.d - 1]);
@@ -45113,7 +45114,7 @@ const Grup = {
     const cards = sorted.map((g, i) => {
       const gk = s.kids.filter(k => k.group_id === g.id), color = Kal.col(g.color), v = val(g), pct = Math.max(4, Math.round(v / maxVal * 100));
       const a = s.att[g.id], attPct = a && a.n ? Math.round(a.p * 100 / a.n) : null, nCh = s.ch[g.id] || 0, nx = this.next(g), pend = s.pend[g.id] || 0;
-      const nm = this.esc(g.name || 'Grupė'), nmJs = String(g.name || '').split('\\').join('\\\\').split("'").join("\\'").split('"').join('&quot;').split('<').join('&lt;');   // onclick atributui: kabutė → \' JS eilutei, " → &quot;
+      const nm = this.esc(g.name || 'Grupė');   // v587: vardas į onclick nebededamas (HTML atributas dekoduoja &#39; → ') — Grup.msg(id)
       return `<div class="kal-card" style="margin:0 0 10px;padding:0;overflow:hidden;border-color:${color}66;">
         <div onclick="openGroupView('${g.id}')" style="padding:12px 13px 11px;cursor:pointer;">
           <div style="display:flex;align-items:center;gap:10px;">
@@ -45125,7 +45126,7 @@ const Grup = {
           <div class="kal-bar" style="margin-top:9px;"><span style="width:${pct}%;background:${color};"></span></div>
           <div style="display:flex;gap:6px;margin-top:11px;">${stat(attPct == null ? '—' : attPct + '%', 'LANKOMUMAS 30 D.')}${stat(nCh, _ltPl(nCh, 'IŠŠŪKIS', 'IŠŠŪKIAI', 'IŠŠŪKIŲ'))}${stat(nx || '—', 'KITA TRENIRUOTĖ')}</div>
         </div>
-        <div style="display:flex;border-top:.5px solid var(--bdr);" onclick="event.stopPropagation()">${btn(`composeMessageToGroup('${g.id}', '${nmJs}')`, ico('zinutes'), 'Žinutė')}<span style="width:.5px;background:var(--bdr);"></span>${btn(`openAttendance('${g.id}', '${Kal.ymd(new Date())}')`, ico('lankomumas'), 'Lankomumas')}<span style="width:.5px;background:var(--bdr);"></span>${btn(`Iss.create.open({ groupId: '${g.id}' })`, ico('prideti'), 'Iššūkis')}</div>
+        <div style="display:flex;border-top:.5px solid var(--bdr);" onclick="event.stopPropagation()">${btn(`Grup.msg('${g.id}')`, ico('zinutes'), 'Žinutė')}<span style="width:.5px;background:var(--bdr);"></span>${btn(`openAttendance('${g.id}', '${Kal.ymd(new Date())}')`, ico('lankomumas'), 'Lankomumas')}<span style="width:.5px;background:var(--bdr);"></span>${btn(`Iss.create.open({ groupId: '${g.id}' })`, ico('prideti'), 'Iššūkis')}</div>
       </div>`;
     }).join('');
     c.innerHTML = this.pendHtml() + chips + `<div style="padding:0 16px 8px;">${cards}</div>`;
@@ -45217,7 +45218,7 @@ const Atsil = {
     const { data: ex } = await sb.from('session_feedback').select('id, rating, blocks, text').eq('session_id', s.id).eq('trainer_id', currentUser.id).maybeSingle();
     Object.assign(this.st, { sess: s, next, exId: ex?.id || null, rating: ex?.rating || null, verdicts: {}, text: ex?.text || '', rule: false, busy: false });
     (ex?.blocks || []).forEach(b => { if (b && b.verdict != null && b.i != null) this.st.verdicts[b.i] = b.verdict; });
-    Planas.sheet('ats', 'KAIP PAVYKO?', '', '<div></div>', { z: 100007, sub: `${s.title || 'Treniruotė'} · ${String(s.session_date || '').slice(5)}` });
+    Planas.sheet('ats', 'KAIP PAVYKO?', '', '<div></div>', { z: 100007, sub: `${this.esc(s.title || 'Treniruotė')} · ${this.esc(String(s.session_date || '').slice(5))}` });   // v587: saugumo peržiūra — pavadinimą rašo ir asistentai
     this.render();
   },
   close() { const el = document.getElementById('ats'); if (el) el.remove(); },
@@ -45228,7 +45229,7 @@ const Atsil = {
     const blocks = Array.isArray(s.sess.blocks) ? s.sess.blocks : [];
     const rb = Object.keys(this.R).map(k => `<div class="kal-card" style="flex:1;margin:0;text-align:center;cursor:pointer;padding:12px 6px;${s.rating === k ? 'border-color:var(--br);background:rgba(255,77,0,.1);' : ''}" onclick="Atsil.setRating('${k}')"><div style="font-size:26px;line-height:1;">${this.R[k][0]}</div><div style="font-size:11px;font-weight:900;margin-top:5px;">${this.R[k][1]}</div></div>`).join('');
     const showBlocks = s.rating === 'ok' || s.rating === 'bad';
-    const bl = showBlocks && blocks.length ? `<div class="kal-sec" style="padding-bottom:6px;"><b>KURIS BLOKAS NEVEIKĖ?</b><span>neprivaloma</span></div>` + blocks.map((b, i) => `<div class="kal-card" style="padding:9px 11px;"><div style="font-size:12.5px;font-weight:900;">${this.esc(b.title || (typeof Planas !== 'undefined' ? Planas.tyLt(b.type) : b.type))} <span style="font-size:10.5px;color:var(--mut);font-weight:700;">· ${b.minutes || 0} min</span></div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;">${this.VERD.map(([v, l]) => `<span class="kal-b${s.verdicts[i] === v ? ' o' : ''}" style="padding:5px 9px;font-size:10.5px;" onclick="Atsil.setVerdict(${i},'${v}')">${l}</span>`).join('')}</div></div>`).join('') : '';
+    const bl = showBlocks && blocks.length ? `<div class="kal-sec" style="padding-bottom:6px;"><b>KURIS BLOKAS NEVEIKĖ?</b><span>neprivaloma</span></div>` + blocks.map((b, i) => `<div class="kal-card" style="padding:9px 11px;"><div style="font-size:12.5px;font-weight:900;">${this.esc(b.title || (typeof Planas !== 'undefined' ? Planas.tyLt(b.type) : b.type))} <span style="font-size:10.5px;color:var(--mut);font-weight:700;">· ${Number(b.minutes) || 0} min</span></div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;">${this.VERD.map(([v, l]) => `<span class="kal-b${s.verdicts[i] === v ? ' o' : ''}" style="padding:5px 9px;font-size:10.5px;" onclick="Atsil.setVerdict(${i},'${v}')">${l}</span>`).join('')}</div></div>`).join('') : '';
     const txt = `<div class="kal-sec" style="padding-bottom:6px;"><b>KĄ KEISTUM?</b><span>tavo pasiūlymas AI</span></div>
       <div style="padding:0 16px;"><textarea id="ats-text" class="inp" rows="3" maxlength="600" placeholder="pvz. mažiau stovėjimo eilėje, daugiau žaidimų su spyriais; kumite poros pagal ūgį" style="width:100%;margin:0;font-family:inherit;font-size:12.5px;" oninput="Atsil.st.text=this.value">${this.esc(s.text)}</textarea>
       <label style="display:flex;align-items:center;gap:8px;margin:8px 0 4px;font-size:11.5px;font-weight:800;cursor:pointer;"><input type="checkbox" ${s.rule ? 'checked' : ''} onchange="Atsil.st.rule=this.checked" style="width:16px;height:16px;"> Taikyti visada — AI laikysis to kiekviename etape (taisyklė)</label></div>
@@ -45322,7 +45323,7 @@ const Pavad = {
     K.st.sessions.sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.time || '').localeCompare(String(b.time || '')));
   },
   fmt(d) { const K = Kal; return `${K.DNOM[K.dayNo(d) - 1].slice(0, 3)}, ${Number(d.slice(8, 10))} ${K.MONG[Number(d.slice(5, 7)) - 1]}`; },
-  time(gid, d) { const g = this.st.groups[gid] || (Kal.st.groups || []).find(x => x.id === gid); if (!g) return ''; const t = Kal.groupTimes(g).find(x => x.day === Kal.dayNo(d)); return t ? (t.time || '') : (g.train_time || ''); },
+  time(gid, d) { const g = this.st.groups[gid] || (Kal.st.groups || []).find(x => x.id === gid); if (!g) return ''; const t = Kal.groupTimes(g).find(x => x.day === Kal.dayNo(d)); return t ? (Kal.hhmm(t.time) || '') : (Kal.hhmm(g.train_time) || ''); },   // v587: tik HH:MM
   gname(s) { return this.esc((this.st.groups[s.group_id] || (Kal.st.groups || []).find(x => x.id === s.group_id) || {}).name || 'Grupė'); },
   // trenerio kalendorius — kortelės po tinklelio
   cardsHtml() {
