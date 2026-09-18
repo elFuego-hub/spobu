@@ -43045,6 +43045,7 @@ const Kal = {
       ]);
       this.st.sessions = ses; this.st.events = evs; this.st.ch = ch;
       if (typeof Atsil !== 'undefined' && Atsil.on()) { try { await Atsil.load(); } catch (_e) { } }   // MODULIS: Atsil (v584) — 👍/😐/👎 prie praėjusių treniruočių
+      if (typeof Pavad !== 'undefined' && Pavad.on()) { try { await Pavad.load(r.from, r.to); await Pavad.merge(); } catch (_e) { } }   // MODULIS: Pavad (v585) — pavadavimai
       this.render();
     } catch (e) {
       console.error('[kal-tr]', e);
@@ -43067,7 +43068,7 @@ const Kal = {
       ? `<div class="kal-cta" onclick="Planas.openWizard()"><div class="ic">${ico('prideti')}</div><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Planuoti treniruotes</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">10–15 min klausimų — AI paruoš visą etapą</div></div>${ico('toliau')}</div>`
       : `<div class="kal-empty plan"><div class="ic">${ico('prideti')}</div><b>PLANO DAR NĖRA</b><i>Atsakyk į 10–15 min klausimų — AI paruoš visą etapą, tu tik patvirtinsi.</i><span class="kal-b o" onclick="Planas.openWizard()">Planuoti treniruotes</span></div>`);
     const evBlock = (this.st.events || []).length >= 3 ? this.evListHtml(today) : this.nextHtml(today);   // v557: perkrautam mėnesiui — sąrašas vietoj vienos eilutės
-    c.innerHTML = head + chips + this.gridHtml() + this.warnHtml(today) + evBlock + cta + this.todayHtml(today) + this.chHtml();
+    c.innerHTML = head + chips + this.gridHtml() + this.warnHtml(today) + (typeof Pavad !== 'undefined' ? Pavad.cardsHtml() : '') + evBlock + cta + this.todayHtml(today) + this.chHtml();   // MODULIS: Pavad (v585)
     if (typeof _updateTrainerNotifCounts === 'function') try { _updateTrainerNotifCounts(); } catch (_e) { }   // v580: varpelio skaičius naujai sukurtame badge
     this.st.dir = 0;
     this.afterRender(c);
@@ -43161,7 +43162,9 @@ const Kal = {
       if (s.session_id && typeof Planas !== 'undefined') acts.push(`<span class="kal-b" onclick="event.stopPropagation();Planas.openApr('${s.session_id}')">Atidaryti</span>`);
       if (past && s.session_id && s.status === 'confirmed' && typeof Atsil !== 'undefined' && Atsil.on()) acts.push(`<span class="kal-b" onclick="event.stopPropagation();Atsil.open('${s.session_id}')">${Atsil.label(s.session_id)}</span>`);   // MODULIS: Atsil (v584)
     }
+    if (typeof Pavad !== 'undefined' && Pavad.on()) { const pb = Pavad.rowBtn(s, dateStr, todayS); if (pb) acts.push(pb); }   // MODULIS: Pavad (v585)
     const meta = [];
+    if (typeof Pavad !== 'undefined' && Pavad.on()) { const pm = Pavad.rowMeta(s, dateStr); if (pm) meta.push(pm); }
     if (kids) meta.push(`${kids} ${_ltPl(kids, 'vaikas', 'vaikai', 'vaikų')}`);
     if (marked) meta.push(`pažymėta ${s.present}/${s.total}${s.effortDone ? ' · pastangos ' + s.effortDone : ''}`);
     else if (past && att) meta.push('nepažymėta');
@@ -43833,6 +43836,7 @@ Object.assign(Kal, {
           this.K.monthEvents(this.clubId(), r.from, r.to).catch(() => [])
         ]);
         this.st.sessions = ses; this.st.events = evs;
+        if (typeof Pavad !== 'undefined') { try { await Pavad.load(r.from, r.to); } catch (_e) { } }   // MODULIS: Pavad (v585) — klubas mato ir priskiria
         // registracijos į varžybas (dalyvaus / ne) — vienas kvietimas mėnesiui
         this.st.reg = {};
         const compIds = evs.filter(e => e.kind === 'comp').map(e => e.id);
@@ -43861,7 +43865,7 @@ Object.assign(Kal, {
       const today = K.ymd(new Date());
       const evList = this.st.events.length ? this.st.events.map(ev => this.eventRow(ev, today)).join('') : '<div class="kal-empty">Šį mėnesį renginių nėra — sukurk per „+ Renginys".</div>';
       const cta = `<div class="kal-cta" onclick="Kal.club.openNew()"><div class="ic">${ico('prideti')}</div><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Naujas renginys</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Varžybos · stovykla · seminaras · diržo testas — mato visi</div></div>${ico('toliau')}</div>`;   // v555: „+ Renginys" iš antraštės į CTA juostą (antraštė 46 px netilpo)
-      c.innerHTML = head + chips + grid + cta + `<div class="kal-sec"><b>RENGINIAI ŠĮ MĖNESĮ</b><em>MATO VISI</em><span></span></div>` + evList
+      c.innerHTML = head + chips + grid + cta + (typeof Pavad !== 'undefined' ? Pavad.clubHtml() : '') + `<div class="kal-sec"><b>RENGINIAI ŠĮ MĖNESĮ</b><em>MATO VISI</em><span></span></div>` + evList
         + `<div style="text-align:center;padding:8px 16px 14px;"><span class="kal-b" onclick="nv('k',null,'k-events')">Visi renginiai ir rezultatai →</span></div>`;
       this.K.st.dir = 0; this.K.afterRender(c);
     },
@@ -45288,6 +45292,116 @@ const Atsil = {
     const { error } = await sb.from('trainer_prefs').update({ is_active: false }).eq('id', id).eq('trainer_id', currentUser.id);
     if (error) { showToast(ico('klaida') + ' ' + (error.message || ''), 'error', 5000); return; }
     try { await this.load(); } catch (_e) { } if (typeof Tren !== 'undefined') Tren.render();
+  },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: Pavad =====
+// v585 (A variantas, savininko sprendimas 09-18): TRENERIŲ PAVADAVIMAI. Treneris dienos lape spaudžia „Reikia pavadavimo" (+ pastaba) →
+// group_substitutions (sub_request). Klubo treneriai kalendoriuje mato kortelę „X reikia pavadavimo" → „Pavaduosiu" (sub_take, be klubo
+// patvirtinimo). Pavaduotojas tą dieną mato grupės treniruotę savo kalendoriuje ir žymi lankomumą/pastangas (serveris: spobu_is_group_staff
+// išplėsta ±1 d., RLS attendance_sub_all / tps_sub_read / groups_sub_read). Klubo kalendoriuje sekcija PAVADAVIMAI su priskyrimu (sub_assign).
+// Viena vardų erdvė `Pavad`, jokių naujų globalių; Kal.st.sessions eilutės su `sub` — pavaduojamos.
+const Pavad = {
+  st: { list: [], names: {}, groups: {}, from: null, to: null },
+  on() { return typeof Kal !== 'undefined' && Kal.on(); },
+  esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); },
+  async load(from, to) {
+    this.st.from = from; this.st.to = to;
+    const { data, error } = await sb.from('group_substitutions').select('id, group_id, club_id, session_date, requested_by, note, substitute_id, status, created_at')
+      .gte('session_date', from).lte('session_date', to).in('status', ['open', 'taken']).order('session_date').limit(200);
+    if (error) { console.warn('[pavad]', error.message); this.st.list = []; return; }
+    this.st.list = data || [];
+    const ids = [...new Set(this.st.list.flatMap(s => [s.requested_by, s.substitute_id]).filter(Boolean))];
+    const gids = [...new Set(this.st.list.map(s => s.group_id))];
+    const [pR, gR] = await Promise.all([
+      ids.length ? sb.from('profiles').select('id, first_name, last_name').in('id', ids) : Promise.resolve({ data: [] }),
+      gids.length ? sb.from('groups').select('id, name, color, club_id, training_days, train_time, schedule').in('id', gids) : Promise.resolve({ data: [] }),
+    ]);
+    this.st.names = {}; (pR.data || []).forEach(p => { this.st.names[p.id] = `${p.first_name || ''} ${(p.last_name || '')[0] ? p.last_name[0] + '.' : ''}`.trim() || 'Kolega'; });
+    this.st.groups = {}; (gR.data || []).forEach(g => { this.st.groups[g.id] = g; });
+  },
+  name(id) { return this.st.names[id] || 'kolega'; },
+  mine() { return (this.st.list || []).filter(s => s.status === 'taken' && s.substitute_id === currentUser?.id); },
+  forDay(gid, date) { return (this.st.list || []).find(s => s.group_id === gid && s.session_date === date) || null; },
+  // pavaduojamos grupės treniruotė — į trenerio kalendorių (tik ta diena; RLS tps_sub_read / attendance_sub_all)
+  async merge() {
+    const K = Kal, my = this.mine(); if (!my.length) return;
+    const have = new Set((K.st.groups || []).map(g => g.id));
+    for (const s of my) {
+      if (have.has(s.group_id)) continue; const g = this.st.groups[s.group_id]; if (!g) continue;
+      try { const ses = await K.monthSessions({ groups: [g], from: s.session_date, to: s.session_date }); ses.forEach(x => { x.sub = s; K.st.sessions.push(x); }); } catch (_e) { }
+    }
+    K.st.sessions.sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.time || '').localeCompare(String(b.time || '')));
+  },
+  fmt(d) { const K = Kal; return `${K.DNOM[K.dayNo(d) - 1].slice(0, 3)}, ${Number(d.slice(8, 10))} ${K.MONG[Number(d.slice(5, 7)) - 1]}`; },
+  time(gid, d) { const g = this.st.groups[gid] || (Kal.st.groups || []).find(x => x.id === gid); if (!g) return ''; const t = Kal.groupTimes(g).find(x => x.day === Kal.dayNo(d)); return t ? (t.time || '') : (g.train_time || ''); },
+  gname(s) { return this.esc((this.st.groups[s.group_id] || (Kal.st.groups || []).find(x => x.id === s.group_id) || {}).name || 'Grupė'); },
+  // trenerio kalendorius — kortelės po tinklelio
+  cardsHtml() {
+    const uid = currentUser?.id, list = this.st.list || []; if (!list.length) return '';
+    const open = list.filter(s => s.status === 'open' && s.requested_by !== uid);
+    const myReq = list.filter(s => s.requested_by === uid);
+    const myTaken = list.filter(s => s.status === 'taken' && s.substitute_id === uid);
+    const when = s => `${this.fmt(s.session_date)} ${this.time(s.group_id, s.session_date)} · ${this.gname(s)}`;
+    const rows = [];
+    open.forEach(s => rows.push(`<div class="kal-card" style="border-color:rgba(255,215,0,.5);"><div style="font-size:13px;font-weight:900;">🙋 ${this.esc(this.name(s.requested_by))} reikia pavadavimo</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${when(s)}${s.note ? ' · „' + this.esc(s.note) + '"' : ''}</div><div class="kal-acts"><span class="kal-b o" onclick="Pavad.take('${s.id}')">Pavaduosiu</span></div></div>`));
+    myTaken.forEach(s => rows.push(`<div class="kal-card" style="border-color:rgba(34,197,94,.5);"><div style="font-size:13px;font-weight:900;">✅ Pavaduoji ${this.esc(this.name(s.requested_by))}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${when(s)} · tą dieną lankomumą žymi tu</div><div class="kal-acts"><span class="kal-b" onclick="Kal.openDay('${s.session_date}')">Atidaryti dieną</span><span class="kal-b" onclick="Pavad.release('${s.id}')">Atsisakyti</span></div></div>`));
+    myReq.forEach(s => rows.push(`<div class="kal-card"><div style="font-size:13px;font-weight:900;">${s.status === 'taken' ? '✅ Pavaduoja ' + this.esc(this.name(s.substitute_id)) : '⏳ Tavo prašymas — dar niekas neperėmė'}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${when(s)}${s.note ? ' · „' + this.esc(s.note) + '"' : ''}</div><div class="kal-acts"><span class="kal-b" onclick="Pavad.cancel('${s.id}')">Atšaukti</span></div></div>`));
+    if (!rows.length) return '';
+    return `<div class="kal-sec"><b>PAVADAVIMAI</b><span>${rows.length}</span></div>${rows.join('')}`;
+  },
+  // dienos lapo eilutė — mygtukas / būsena
+  rowBtn(s, dateStr, todayS) {
+    if (s.sub || dateStr < todayS) return '';
+    const cur = this.forDay(s.group_id, dateStr);
+    if (!cur) return `<span class="kal-b" onclick="event.stopPropagation();Pavad.request('${s.group_id}','${dateStr}')">Reikia pavadavimo</span>`;
+    if (cur.requested_by === currentUser?.id) return `<span class="kal-b" onclick="event.stopPropagation();Pavad.cancel('${cur.id}')">${cur.status === 'taken' ? 'Pavaduoja ' + this.esc(this.name(cur.substitute_id)) + ' · atšaukti' : 'Laukia pavaduotojo · atšaukti'}</span>`;
+    if (cur.status === 'open') return `<span class="kal-b o" onclick="event.stopPropagation();Pavad.take('${cur.id}')">Pavaduosiu</span>`;
+    return '';
+  },
+  rowMeta(s, dateStr) {
+    if (s.sub) return `pavaduoji ${this.esc(this.name(s.sub.requested_by))}`;
+    const cur = this.forDay(s.group_id, dateStr);
+    if (cur && cur.status === 'taken' && cur.requested_by !== currentUser?.id) return `pavaduoja ${this.esc(this.name(cur.substitute_id))}`;
+    if (cur && cur.status === 'open' && cur.requested_by !== currentUser?.id) return `${this.esc(this.name(cur.requested_by))} prašo pavadavimo`;
+    return '';
+  },
+  async request(gid, date) {
+    const note = await appPrompt('Reikia pavadavimo — trumpa pastaba kolegoms (pvz. „sergu", „išvykęs"):'); if (note === null) return;
+    try { const { error } = await sb.rpc('sub_request', { p_group: gid, p_date: date, p_note: String(note || '').slice(0, 200) }); if (error) throw error; showToast(ico('patvirtinta') + ' Prašymas paskelbtas — klubo treneriai jį matys kalendoriuje', 'success', 4000); this.after(); }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 6000); }
+  },
+  async take(id) {
+    if (!(await appConfirm('Pavaduosi šią treniruotę? Tą dieną lankomumą ir pastangas žymėsi tu.'))) return;
+    try { const { error } = await sb.rpc('sub_take', { p_id: id }); if (error) throw error; showToast(ico('patvirtinta') + ' Ačiū — pavaduoji. Treniruotė atsiras tavo kalendoriuje', 'success', 4000); this.after(); }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 6000); }
+  },
+  async release(id) {
+    if (!(await appConfirm('Atsisakyti pavadavimo? Prašymas vėl bus atviras kolegoms.'))) return;
+    try { const { error } = await sb.rpc('sub_release', { p_id: id }); if (error) throw error; showToast('Atsisakyta', 'success'); this.after(); }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 6000); }
+  },
+  async cancel(id) {
+    if (!(await appConfirm('Atšaukti pavadavimo prašymą?'))) return;
+    try { const { error } = await sb.rpc('sub_cancel', { p_id: id }); if (error) throw error; showToast('Atšaukta', 'success'); this.after(); }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 6000); }
+  },
+  async assign(id, trainerId) {
+    if (!trainerId) return;
+    try { const { error } = await sb.rpc('sub_assign', { p_id: id, p_trainer: trainerId }); if (error) throw error; showToast(ico('patvirtinta') + ' Priskirta', 'success'); this.after(); }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 6000); }
+  },
+  after() {
+    if (document.getElementById('tr-kal')?.classList.contains('on')) { if (Kal.st.day) Kal.closeDay(); Kal.reload(); }
+    if (document.getElementById('kal-k-content') && Kal.club && Kal.club.st.ym) Kal.club.reload();
+  },
+  // klubo kalendorius — sąrašas su priskyrimu
+  clubHtml() {
+    const list = this.st.list || []; if (!list.length) return '';
+    const trainers = (Kal.club && Kal.club.st.trainers) || {};
+    const opts = id => Object.entries(trainers).map(([tid, nm]) => `<option value="${tid}"${tid === id ? ' selected' : ''}>${this.esc(nm)}</option>`).join('');
+    return `<div class="kal-sec"><b>PAVADAVIMAI</b><span>${list.length}</span></div>` + list.map(s => `<div class="kal-card" style="${s.status === 'open' ? 'border-color:rgba(255,215,0,.5);' : ''}"><div style="font-size:12.5px;font-weight:900;">${this.fmt(s.session_date)} ${this.time(s.group_id, s.session_date)} · ${this.gname(s)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">Prašo ${this.esc(this.name(s.requested_by))}${s.note ? ' · „' + this.esc(s.note) + '"' : ''} · ${s.status === 'taken' ? 'pavaduoja <b style="color:var(--grn);">' + this.esc(this.name(s.substitute_id)) + '</b>' : '<span style="color:#FF7A33;">dar niekas neperėmė</span>'}</div><div style="display:flex;gap:6px;margin-top:8px;align-items:center;"><select onchange="Pavad.assign('${s.id}', this.value)" style="flex:1;min-width:0;background:var(--card);color:var(--txt);border:.5px solid var(--bdr);border-radius:9px;padding:7px;font-size:11px;font-weight:800;font-family:inherit;"><option value="">Priskirti trenerį…</option>${opts(s.substitute_id)}</select><span class="kal-b" onclick="Pavad.cancel('${s.id}')">Atšaukti</span></div></div>`).join('');
   },
 };
 // ===== /MODULIS =====
