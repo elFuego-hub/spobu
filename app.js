@@ -42986,7 +42986,7 @@ const Kal = {
       const [ses, evs, ch] = await Promise.all([
         this.monthSessions({ groups, from: r.from, to: r.to }),
         this.monthEvents(this.clubId(), r.from, r.to).catch(() => []),
-        this.loadChallenges().catch(() => [])
+        this.loadChallenges(60).catch(() => [])   // v576: visi — sekcija grupuoja pagal grupę
       ]);
       this.st.sessions = ses; this.st.events = evs; this.st.ch = ch;
       this.render();
@@ -43129,15 +43129,25 @@ const Kal = {
   cardHtml(s, dateStr) { return this.rowHtml(s, dateStr); },
 
   chHtml() {
-    if (!(this.st.ch || []).length) return typeof Iss !== 'undefined' ? Iss.emptyTile() : '';   // MODULIS: Iss (v544)
-    const tiles = this.st.ch.map(c => `<div class="kal-tile" onclick="Iss.sum.open('${c.id}')">
+    // v576 (savininko A variantas 09-18): filtras „Visos" su keliomis grupėmis → po eilutę kiekvienai grupei (kiek savaitės/mėnesio,
+    // kiek tvirtinti, „Sukurti" ten, kur nėra); pasirinkta grupė (arba vienintelė) → VISOS jos plytelės + „Naujas iššūkis" tai grupei
+    const chs = this.st.ch || [], groups = this.st.groups || [], sel = this.st.sel, canNew = typeof Iss !== 'undefined' && Iss.on();
+    if (sel === 'all' && groups.length > 1) {
+      if (!chs.length) return canNew ? Iss.emptyTile() : '';
+      const rows = Iss.byGroup(chs, groups).map(r => Iss.groupRow(r, r.g.id ? `Kal.pick('${r.g.id}')` : '', canNew && r.g.id ? `Iss.create.open({ groupId: '${r.g.id}' })` : '')).join('');
+      return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span>${chs.length}</span></div>${rows}`;
+    }
+    const list = sel === 'all' ? chs : chs.filter(c => c.group_id === sel), g = groups.find(x => x.id === sel);
+    if (!list.length) return canNew ? Iss.emptyTile() : '';   // MODULIS: Iss (v544) — mygtukas ima Kal.st.sel
+    const tiles = list.map(c => `<div class="kal-tile" style="flex:1 1 calc(50% - 5px);" onclick="Iss.sum.open('${c.id}')">
       ${c.pending ? `<div class="bdg">${c.pending} tvirtinti</div>` : ''}
       <div class="tt"><span>${this.esc(this.CH_TYPE[c.type] || 'IŠŠŪKIS')}</span>${this.srcTag(c.verify_kind)}</div>
       <div class="tn">${this.esc(c.title)}</div>
       <div class="kal-bar"><span data-w="${c.pct}" style="width:0;"></span></div>
       <div class="tc">${c.done} / ${c.eligible}${c.left != null ? ' · liko ' + c.left + ' d.' : ''}</div>
     </div>`).join('');
-    return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span></div><div class="kal-tiles">${tiles}</div>`;
+    const add = canNew ? `<div style="padding:0 18px 10px;"><span class="kal-b" onclick="Iss.create.open(${sel !== 'all' ? `{ groupId: '${sel}' }` : ''})">${ico('prideti')} Naujas iššūkis${g ? ' · ' + this.esc(g.name) : ''}</span></div>` : '';
+    return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span>${g ? this.esc(g.name) : ''}</span></div><div class="kal-tiles" style="flex-wrap:wrap;">${tiles}</div>${add}`;
   },
 
   // Iššūkių plytelės — tie patys duomenys kaip tr-challenges (grupės iššūkis = paslėptas „parent" + vaikų kopijos)
@@ -44050,6 +44060,24 @@ const Iss = {
     return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span></div><div class="kal-empty"><b>Aktyvių iššūkių nėra</b><i>Savaitės — Strava užskaito pati · Mėnesio — pasiekimai, žymi treneris</i><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;"><span class="kal-b o" onclick="Iss.create.open(Kal.st.sel && Kal.st.sel !== 'all' ? { groupId: Kal.st.sel } : undefined)">${ico('prideti')} Naujas iššūkis</span></div></div>`;
   },
 
+  // v576: iššūkiai pagal grupę — bendra kalendoriui (Kal.chHtml) ir Treniruotėms (Tren.render)
+  byGroup(chs, groups) {
+    const cnt = list => ({ list, weekly: list.filter(c => c.type === 'weekly').length, monthly: list.filter(c => c.type === 'monthly').length, pending: list.reduce((a, c) => a + (c.pending || 0), 0) });
+    const rows = (groups || []).map(g => ({ g, ...cnt((chs || []).filter(c => c.group_id === g.id)) }));
+    const known = new Set((groups || []).map(g => g.id)), rest = (chs || []).filter(c => !known.has(c.group_id));
+    if (rest.length) rows.push({ g: { id: '', name: 'Kiti' }, ...cnt(rest) });
+    return rows;
+  },
+  groupRow(r, onRow, onNew, open) {
+    const has = r.list.length, click = has ? onRow : onNew;
+    const meta = has ? [r.weekly ? `${r.weekly} savaitės` : '', r.monthly ? `${r.monthly} mėnesio` : ''].filter(Boolean).join(' · ') : 'iššūkių nėra';
+    return `<div class="kal-card" style="display:flex;align-items:center;gap:10px;${click ? 'cursor:pointer;' : ''}${has ? '' : 'opacity:.75;'}"${click ? ` onclick="${click}"` : ''}>
+      <span style="width:9px;height:9px;border-radius:50%;background:${Kal.col(r.g.color)};flex:none;"></span>
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${this.esc(r.g.name || 'Grupė')}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${meta}${r.pending ? ` · <span style="color:var(--br);">${r.pending} tvirtinti</span>` : ''}</div></div>
+      ${has ? `<span style="display:inline-block;color:var(--mut);${open ? 'transform:rotate(90deg);' : ''}">${ico('toliau')}</span>` : (onNew ? `<span class="kal-b o" style="padding:6px 11px;" onclick="event.stopPropagation();${onNew}">${ico('prideti')} Sukurti</span>` : '')}
+    </div>`;
+  },
+
   // ─────────────────────────── NAUJAS IŠŠŪKIS v2 (tik automatiniai — Strava) ───────────────────────────
   // v570 (2026-09-18, savininko maketas claude.ai/artifact/PqfwoPxtni6VShPrtoGaJr; sprendimai: lankomumo iššūkio nėra — serijų
   // premijos jau yra; „tvirtina treneris" tipo nėra): savaitės / mėnesio iššūkiai iš katalogo Strava elementų su taikinio
@@ -44811,8 +44839,9 @@ const Tren = {
     this.st.seen = Object.values(freq).filter(x => x.n >= 2).sort((a, b) => b.n - a.n).slice(0, 3);
     this.st.lib = await Planas.loadLib(this.st.kind);
     // v570: aktyvūs iššūkiai (tie patys skaičiai kaip kalendoriaus plytelės) — tik trenerio savi (Kal.loadChallenges: trainer_id = aš)
-    this.st.ch = []; try { if (this.st.role !== 'club_admin') this.st.ch = (await Kal.loadChallenges(8)).filter(c => !c.group_id || gids.includes(c.group_id)); } catch (_e) { }
+    this.st.ch = []; try { if (this.st.role !== 'club_admin') this.st.ch = (await Kal.loadChallenges(60)).filter(c => !c.group_id || gids.includes(c.group_id)); } catch (_e) { }
   },
+  chToggle(gid) { this.st.chOpen = this.st.chOpen === gid ? null : gid; this.render(); },   // v576: grupės eilutė išskleidžia jos iššūkius
   gname(id) { return (this.st.groups.find(g => g.id === id) || {}).name || ''; },
   planOf(id) { return this.st.plans.find(p => p.id === id) || null; },
   evDays(p) { const d = p && p.competitions && p.competitions.event_date ? this.days(this.today(), p.competitions.event_date) : null; return d != null && d >= 0 ? d : null; },
@@ -44861,7 +44890,15 @@ const Tren = {
     c.innerHTML = `
       <div class="kal-sec"><b>KITA TRENIRUOTĖ</b><span>${s.upcoming.length > 1 ? `dar ${s.upcoming.length - 1} per 14 d.` : ''}</span></div>${next}
       <div class="kal-sec"><b>AKTYVŪS ETAPAI</b><span${edit ? ' onclick="Planas.openWizard()" style="cursor:pointer;color:var(--br);"' : ''}>${edit ? ico('prideti') + ' Planuoti treniruotes' : `${active.length}${drafts.length ? ` · ${drafts.length} juodr.` : ''}`}</span></div>${edit && !active.length && !drafts.length ? `<div class="kal-empty plan"><div class="ic">${ico('prideti')}</div><b>PLANO DAR NĖRA</b><i>Atsakyk į 10–15 min klausimų — AI paruoš visą etapą, tu tik patvirtinsi.</i><span class="kal-b o" onclick="Planas.openWizard()">Planuoti treniruotes</span></div>` : ''}${active.map(etapas).join('')}${drafts.map(etapas).join('')}${noPlan || (active.length || drafts.length ? '' : '<div class="kal-empty"><b>Grupių nėra</b></div>')}
-      <div class="kal-sec"><b>IŠŠŪKIAI</b><span${edit ? ` onclick="Iss.create.open({ groupId: '${(s.groups[0] || {}).id || ''}' })" style="cursor:pointer;color:var(--br);"` : ''}>${edit ? ico('prideti') + ' Naujas iššūkis' : ''}</span></div>${(s.ch || []).length ? (s.ch || []).map(c => `<div class="kal-card" style="cursor:pointer;" onclick="Iss.sum.open('${c.id}')"><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.esc(c.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${(Kal.CH_TYPE[c.type] || 'IŠŠŪKIS')} · ${c.done} iš ${c.eligible}${c.left != null ? ` · liko ${c.left} d.` : ''}${c.pending ? ` · <span style="color:var(--br);">${c.pending} tvirtinti</span>` : ''}</div></div>${Kal.srcTag(c.verify_kind) ? '<span class="kal-tag" style="color:var(--grn);border-color:var(--grn);">AUTO</span>' : ''}</div><div class="kal-bar" style="margin-top:8px;"><span style="width:${c.pct}%;"></span></div></div>`).join('') : `<div class="kal-empty"><b>Aktyvių iššūkių nėra</b><i>${edit ? 'Savaitės ar mėnesio iššūkis su Strava — užskaito pati' : 'Iššūkius kuria treneris'}</i></div>`}
+      ${(() => {   // v576: pagal grupę (kaip kalendoriuje) — kelios grupės → eilutės su išskleidimu; viena → kortelės iš karto
+        const chs = s.ch || [], gs = s.groups || [], multi = gs.length > 1, canNew = edit && typeof Iss !== 'undefined' && Iss.on();
+        const card = c => `<div class="kal-card" style="cursor:pointer;" onclick="Iss.sum.open('${c.id}')"><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.esc(c.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${(Kal.CH_TYPE[c.type] || 'IŠŠŪKIS')} · ${c.done} iš ${c.eligible}${c.left != null ? ` · liko ${c.left} d.` : ''}${c.pending ? ` · <span style="color:var(--br);">${c.pending} tvirtinti</span>` : ''}</div></div>${Kal.srcTag(c.verify_kind) ? '<span class="kal-tag" style="color:var(--grn);border-color:var(--grn);">AUTO</span>' : ''}</div><div class="kal-bar" style="margin-top:8px;"><span style="width:${c.pct}%;"></span></div></div>`;
+        const newBtn = gid => canNew ? `<div style="padding:0 18px 8px;"><span class="kal-b" onclick="Iss.create.open({ groupId: '${gid}' })">${ico('prideti')} Naujas iššūkis${multi ? ' · ' + this.esc(this.gname(gid)) : ''}</span></div>` : '';
+        let body;
+        if (multi) body = Iss.byGroup(chs, gs).map(r => Iss.groupRow(r, r.g.id ? `Tren.chToggle('${r.g.id}')` : '', canNew && r.g.id ? `Iss.create.open({ groupId: '${r.g.id}' })` : '', s.chOpen === r.g.id) + (s.chOpen === r.g.id && r.list.length ? `<div style="margin:-2px 0 6px 14px;">${r.list.map(card).join('')}</div>` + newBtn(r.g.id) : '')).join('');
+        else body = (chs.length ? chs.map(card).join('') : `<div class="kal-empty"><b>Aktyvių iššūkių nėra</b><i>${edit ? 'Savaitės — Strava užskaito pati · Mėnesio — pasiekimai, žymi treneris' : 'Iššūkius kuria treneris'}</i></div>`) + (gs[0] ? newBtn(gs[0].id) : '');
+        return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span>${chs.length || ''}</span></div>${body}`;
+      })()}
       ${recs ? `<div class="kal-sec"><b>KLUBO REKOMENDACIJA</b><span></span></div>${recs}` : (s.role === 'club_admin' ? `<div class="kal-sec"><b>KLUBO REKOMENDACIJA</b><span></span></div><div class="kal-empty"><b>Rekomendacijos dar nėra</b><i>Rašoma iš klubo kalendoriaus — treneriai ir AI planai ją matys čia</i></div>` : '')}
       <div class="kal-sec"><b>KATALOGAS</b><span>${lib.defs.length + lib.mine.length} ${Planas.tyLt(s.kind).toLowerCase()}${lib.hiddenIds.length ? ` · ${lib.hiddenIds.length} paslėpta` : ''}</span></div>
       <div style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;" class="no-scrollbar">${chips}</div>
