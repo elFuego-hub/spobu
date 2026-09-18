@@ -43196,7 +43196,7 @@ const Kal = {
         done = v.approved; pending = v.pending;
       }
       const left = p.expires_at ? Math.max(0, Math.ceil((new Date(p.expires_at) - Date.now()) / 86400000)) : null;
-      return { id: p.id, group_id: p.group_id, title: p.title || 'Iššūkis', type: p.type, verify_kind: p.verify_kind, eligible, done, pending, left, pct: eligible ? Math.min(100, Math.round(done * 100 / eligible)) : 0 };
+      return { id: p.id, group_id: p.group_id || ((myKids.find(k => k.id === p.target_kid_id) || {}).group_id || null), title: p.title || 'Iššūkis', type: p.type, verify_kind: p.verify_kind, eligible, done, pending, left, pct: eligible ? Math.min(100, Math.round(done * 100 / eligible)) : 0 };
     });
   },
 
@@ -44097,8 +44097,16 @@ const Iss = {
       try {
         Planas.st.role = currentProfile?.role === 'club_admin' ? 'club_admin' : 'trainer';
         if (!Planas.st.groups.length) await Planas.loadGroups();
-        let gid = prefill && prefill.groupId;
-        if (!gid && prefill && prefill.kidId) { const { data: k } = await sb.from('kids').select('group_id').eq('id', prefill.kidId).maybeSingle(); gid = k && k.group_id; }
+        if (prefill && prefill.kidId) {   // v578 (B variantas): ASMENINIS — tik šiam vaikui (katAssign specific_kid), be grupių čipsų ir „Ne visiems"
+          const { data: k } = await sb.from('kids').select('id, first_name, last_name, gender, group_id, birth_date, birth_year').eq('id', prefill.kidId).maybeSingle();
+          if (!k) { showToast('Vaikas nerastas', 'error'); return; }
+          const { data: aR } = await sb.from('challenges').select('id, type').eq('target_kid_id', k.id).eq('is_active', true).gt('expires_at', new Date().toISOString()).limit(50);
+          const nPrev = { weekly: 0, monthly: 0 }; (aR || []).forEach(c => { if (nPrev[c.type] != null) nPrev[c.type]++; });   // jo aktyvūs (įsk. grupės kopijas) — riba per vaiką
+          this.st = { kid: k, group: Planas.st.groups.find(x => x.id === k.group_id) || { id: k.group_id, name: '' }, kids: [k], type: (prefill.type === 'monthly') ? 'monthly' : 'weekly', sel: {}, tgt: {}, excl: {}, exclOpen: null, busy: false, nPrev };
+          Iss.sheet('iss-new', 'IŠŠŪKIS · ' + Iss.esc(`${k.first_name || ''} ${(k.last_name || '')[0] || ''}`.trim().toUpperCase()), '', '<div></div>', { z: 100006, sub: this.sub() });
+          this.render(); return;
+        }
+        const gid = prefill && prefill.groupId;
         const g = Planas.st.groups.find(x => x.id === gid) || Planas.st.groups[0]; if (!g) { showToast('Neturi aktyvių grupių', 'error'); return; }
         this.st = { group: null, kids: [], type: (prefill && prefill.type === 'monthly') ? 'monthly' : 'weekly', sel: {}, tgt: {}, excl: {}, exclOpen: null, busy: false, nPrev: { weekly: 0, monthly: 0 } };
         await this.loadGroup(g);
@@ -44115,7 +44123,7 @@ const Iss = {
       const nPrev = { weekly: 0, monthly: 0 }, seenP = new Set(); (aR.data || []).forEach(c => { const key = c.parent_challenge_id || c.id; if (seenP.has(key) || nPrev[c.type] == null) return; seenP.add(key); nPrev[c.type]++; });
       Object.assign(this.st, { group: g, kids: kR.data || [], nPrev, tgt: {}, excl: {}, exclOpen: null });
     },
-    sub() { const s = this.st; return s.group ? `${s.group.name || ''} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')}` : ''; },
+    sub() { const s = this.st; if (s.kid) return `tik ${Iss.esc(s.kid.first_name || 'jam')}${s.group && s.group.name ? ' · ' + Iss.esc(s.group.name) : ''}`; return s.group ? `${s.group.name || ''} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')}` : ''; },
     async setGroup(gid) {
       const s = this.st; if (s.busy || !s.group || s.group.id === gid) return; const g = Planas.st.groups.find(x => x.id === gid); if (!g) return;
       s.busy = true; this.render();
@@ -44136,7 +44144,7 @@ const Iss = {
       const mon = s.type === 'monthly';
       const tgtHtml = it => it.learn ? '' : `<div style="display:flex;align-items:center;gap:3px;flex:none;" onclick="event.stopPropagation()"><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',-1)">−</span><b style="font-family:'Bebas Neue',sans-serif;font-size:16px;min-width:56px;text-align:center;">${this.target(it)} ${Iss.esc(it.unit)}</b><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',1)">+</span></div>`;
       const groups = Planas.st.groups || [];
-      const gChips = groups.length ? `<div class="no-scrollbar" style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;">${groups.map(g => `<span class="kal-b${s.group && g.id === s.group.id ? ' o' : ''}" style="flex:none;" onclick="Iss.create.setGroup('${g.id}')">${Iss.esc(g.name || 'Grupė')}</span>`).join('')}</div>` : '';
+      const gChips = !s.kid && groups.length ? `<div class="no-scrollbar" style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;">${groups.map(g => `<span class="kal-b${s.group && g.id === s.group.id ? ' o' : ''}" style="flex:none;" onclick="Iss.create.setGroup('${g.id}')">${Iss.esc(g.name || 'Grupė')}</span>`).join('')}</div>` : '';
       body.innerHTML = `${gChips}<div style="display:flex;gap:6px;padding:0 16px 10px;">${[['weekly', 'Savaitės · Strava'], ['monthly', 'Mėnesio · Pasiekimai']].map(([k, t]) => `<span class="kal-b${s.type === k ? ' o' : ''}" style="flex:1;text-align:center;" onclick="Iss.create.setType('${k}')">${t}</span>`).join('')}</div>
         <div class="kal-sec" style="padding-bottom:7px;">${mon ? 'PASIEKIMAI · ŽYMI TRENERIS' : 'STRAVA · UŽSKAITO PATI'} <span>${left ? `galima dar ${left}` : 'riba pasiekta'}</span></div>
         ${items.map(it => {
@@ -44148,13 +44156,14 @@ const Iss = {
         <div style="padding:4px 16px 10px;font-size:10.5px;color:var(--mut);line-height:1.45;">${mon
           ? `${ico('ispejimas')} Kai vaikas išmoko — iššūkio suvestinėje (kalendoriaus plytelė arba Treniruotės → Iššūkiai) paspausk „Išmoko" prie vardo: EXP išsiunčiama iškart. Vaikas gali ir pats pateikti „parodžiau" — tada patvirtini.`
           : `${ico('ispejimas')} Užskaito pati, kai vaikas prijungęs Strava (Profilis → Strava). Neprijungusiems rodoma užuomina „Susiek Strava" ir jie pateikia ranka — tvirtini tu. Rankiniai Strava įrašai neužskaitomi. Iki 14 m. Strava jungia tėvas savo paskyra.`}</div>`;
-      if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">EXP pagal katalogo kreivę · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${mon ? 'mėnesio pabaigos' : 'sekmadienio'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti${s.group ? ' · ' + Iss.esc(s.group.name || 'grupei') : ' grupei'}${n ? ' · ' + n : ''}`}</button>`;
+      if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">EXP pagal katalogo kreivę · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${mon ? 'mėnesio pabaigos' : 'sekmadienio'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti${s.kid ? ' · ' + Iss.esc(s.kid.first_name || 'vaikui') : (s.group ? ' · ' + Iss.esc(s.group.name || 'grupei') : ' grupei')}${n ? ' · ' + n : ''}`}</button>`;
     },
     async assign() {
       const s = this.st; if (s.busy) return; const items = this.items(s.type).filter(it => s.sel[it.key]); if (!items.length) return;
       if (!s.kids.length) { showToast('Grupėje nėra patvirtintų vaikų', 'error'); return; }
       s.busy = true; this.render();
       try {
+        const kidName = s.kid ? `${s.kid.first_name || ''} ${(s.kid.last_name || '')[0] || ''}`.trim() : '';
         // trenerio parinktas taikinys galioja VISIEMS (targetBoys = targetGirls → viena banga, ne ♂/♀ dvi su juostos skaičiais); learn — taikinys 1
         const opts = {}; items.forEach(it => { if (it.learn) return; const t = this.target(it); opts['k:' + it.key] = { target: t, targetBoys: t, targetGirls: t }; });
         // tas pats kelias kaip Iss.plan.assign → katAssign (parent + kopijos, verify_kind/meta, [kat:]/[learn] žymos, istorija)
@@ -44163,7 +44172,7 @@ const Iss = {
         const run = async (list, kids) => {
           if (!list.length) return;
           if (!kids.length) { showToast(`${ico('ispejimas')} ${Iss.esc(list[0].name)}: visi išbraukti — nepaskirta`, 'error', 4000); return; }
-          katState = { aud: 'group', groupId: s.group.id, kidId: null, kids, bandIdx: katAgeBandIdx(kids), bandAuto: true, type: s.type, selected: list.map(it => 'k:' + it.key), diff: 'medium', nPrev, nPrevLoaded: true, recos: null, recoInfo: null, catFilter: null, busy: false, itemOpts: opts, showReps: false, extraItems: [], planSessionId: null, okRows: 0 };
+          katState = { aud: s.kid ? 'specific_kid' : 'group', groupId: s.group.id, kidId: s.kid ? s.kid.id : null, kids, bandIdx: katAgeBandIdx(kids), bandAuto: true, type: s.type, selected: list.map(it => 'k:' + it.key), diff: 'medium', nPrev, nPrevLoaded: true, recos: null, recoInfo: null, catFilter: null, busy: false, itemOpts: opts, showReps: false, extraItems: [], planSessionId: null, okRows: 0 };
           await katAssign();
           const ok = katState.okRows || 0; done += ok; nPrev += ok;
         };
@@ -44171,6 +44180,7 @@ const Iss = {
         for (const it of items.filter(it => this.kidsFor(it).length !== s.kids.length)) await run([it], this.kidsFor(it));
         if (!done) { s.busy = false; this.render(); return; }   // katAssign klaidą parodė pats (toast) — lapas lieka
         document.getElementById('iss-new')?.remove();
+        if (s.kid && kidName && typeof refreshGroupViewIfOpen === 'function') refreshGroupViewIfOpen();   // v578: grupės vaizde — vaiko iššūkių skaičius
         if (typeof Kal !== 'undefined' && document.getElementById('tr-kal')?.classList.contains('on')) Kal.reload();
         if (typeof Tren !== 'undefined' && document.getElementById('tr-tren')?.classList.contains('on')) Tren.reload();
       } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 6000); s.busy = false; this.render(); }
