@@ -43366,6 +43366,11 @@ const Kal = {
       norm.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">Pratimų normatyvai</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Kiek kartų pagal amžių ir lytį — vaikams ir tėvams</div></div>${ico('toliau')}</div>`;
       (hero && prof.contains(hero) ? hero : trp).insertAdjacentElement('afterend', norm);
     }
+    if (prof && !document.getElementById('kal-tr-stat')) {   // v588: kelias į Statistiką iš telefono (desktop meniu ją turi)
+      const st = document.createElement('div'); st.id = 'kal-tr-stat'; st.className = 'kal-card'; st.style.cssText = 'margin:0 12px 6px;cursor:pointer;'; st.setAttribute('onclick', 'openTrainerStatScreen()');
+      st.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">${ico('statistika')} Vaikų statistika</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Reitingai pagal EXP, lankomumą, iššūkius, varžybas · sezonas / visų laikų</div></div>${ico('toliau')}</div>`;
+      const norm = document.getElementById('kal-tr-norm'); (norm || trp).insertAdjacentElement('afterend', st);
+    }
     const best = document.getElementById('trh-best-comp')?.closest('div[style*="repeat(4,1fr)"]'); const stat = document.querySelector('#tr-stat .sa');
     if (best && stat && !stat.contains(best)) { const title = best.previousElementSibling; stat.insertBefore(best, stat.firstElementChild); if (title && title.classList.contains('st')) stat.insertBefore(title, best); best.style.marginBottom = '10px'; }
     if (currentProfile?.role === 'trainer') { const m = document.getElementById('tr-main'); if (m && m.classList.contains('on')) nv('tr', null, 'tr-kal'); }   // pradinis langas — kalendorius
