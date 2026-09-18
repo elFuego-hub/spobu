@@ -24740,11 +24740,14 @@ function openTrInfo(which) {
       break;
     case 'prof':
       title = ''+ico('pagalba')+' PROFILIS';
-      html = intro('Tavo profilis ir grupių analitika.') +
-        row(''+ico('dirzas')+'', 'Tavo lygis', 'Etapas ir progresas iki kito lygio.') +
+      html = intro('Tavo profilis, vaikų analitika ir įrankiai.') +
+        row(''+ico('dirzas')+'', 'Tavo lygis', 'Etapas, progresas iki kito lygio ir 3 skaičiai: vaikai, patvirtinta, sukurta.') +
+        row(''+ico('statistika')+'', 'Vaikų statistika', 'Reitingai pagal EXP, lankomumą, iššūkius, varžybas — sezonas arba visų laikų.') +
+        row(''+ico('jega')+'', 'Pratimų normatyvai', 'Kiek kartų pagal amžių ir lytį — rėžiai vaikams ir tėvams.') +
+        row(''+ico('treniruote')+'', 'Blokų papkė', 'Persikėlė į Treniruočių langą (KATALOGAS) — klubo numatytieji, tavo blokai, AI pasiūlymai.') +
         row('🕸️', 'Vaikų įgūdžių profilis', 'Radaras pagal lytį ir amžių — kur grupė stipri, kur reikia padirbėti.') +
         row(''+ico('dirzas')+'', 'Vaikų diržai', 'Diržų pasiskirstymas grupėse.') +
-        row(''+ico('trofejai')+'', 'Grupių reitingas', 'Filtruok pagal skillą, varžybas ar iššūkius (vidurkis vienam vaikui).');
+        row(''+ico('trofejai')+'', 'Grupių reitingas', 'Persikėlė į Grupių langą — čipsai viršuje rikiuoja grupes pagal pasirinktą metriką.');
       break;
     default:
       title = ''+ico('pagalba')+' INFO'; html = intro('Paaiškinimas.');
@@ -32141,7 +32144,7 @@ function ccSwitchTab(tab) {
 
 // prefill (neprivalomas): {groupId} — iššūkis grupei iš „Šiandien"; {kidId} — asmeninis iš vaiko modalo
 async function openCreateChallenge(prefill) {
-  if (typeof Iss !== 'undefined' && Iss.on() && Iss.create) { Iss.create.open(prefill); return; }   // v570: iššūkiai v2 — tik automatiniai (Strava), savaitės/mėnesio; sena lentelė lieka be plans_enabled
+  if (typeof Iss !== 'undefined' && Iss.on() && Iss.create && !(prefill && prefill.katType)) { Iss.create.open(prefill); return; }   // v570: iššūkiai v2 (v589: katType — sena lentelė) — tik automatiniai (Strava), savaitės/mėnesio; sena lentelė lieka be plans_enabled
   document.getElementById('cc-title').value = '';
   document.getElementById('cc-description').value = '';
   document.getElementById('cc-type').value = 'weekly';
@@ -41909,6 +41912,14 @@ const Planas = {
     const c = document.getElementById('pl-day'); if (!c) return;
     c.innerHTML = '';
     if (!att?.groupId || !this.canEdit()) return;
+    if (this.v2On()) {   // v589: V2 — lite dienos šablono (items, rotacija, „Skirti vaikams") čia nebėra; tik tos dienos treniruotė
+      try {
+        const { data: s } = await sb.from('training_plan_sessions').select('id, title, blocks, status').eq('group_id', att.groupId).eq('session_date', att.date).limit(1).maybeSingle();
+        const bl = s && Array.isArray(s.blocks) ? s.blocks : [];
+        c.innerHTML = s ? `<div class="pl-card" style="margin:0 0 12px;border-left:3px solid var(--br);padding:10px 12px;"><div style="font-size:9px;font-weight:800;color:var(--br);letter-spacing:1.2px;">${ico('treniruote')} ŠIOS DIENOS TRENIRUOTĖ${s.status !== 'confirmed' ? ' · JUODRAŠTIS' : ''}</div><div style="font-size:13px;font-weight:800;color:white;margin-top:4px;">${this.esc(s.title || 'Treniruotė')}</div><div style="font-size:11px;color:var(--mut);margin-top:3px;line-height:1.4;">${bl.length ? bl.map(b => this.esc(b.title || this.tyLt(b.type))).join(' · ') : 'Turinys dar neparuoštas'}</div></div>` : '';
+      } catch (e) { console.warn('[planas-day v2]', e); c.innerHTML = ''; }
+      return;
+    }
     try {
       const { data: plan, error } = await sb.from('training_plans').select('id, club_id, group_id, title, period_start, period_end, goal_parents, focus_areas, status').eq('group_id', att.groupId).eq('status', 'active').maybeSingle();
       if (error) throw error;
