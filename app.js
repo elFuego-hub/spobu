@@ -1858,8 +1858,19 @@ function openHelpModal(who) {
       ['Negaunu pranešimų?', 'Nustatymuose įjunk „Pranešimai" — gali tai padaryti pats. iPhone: appsas turi būti įsidėtas į pradžios ekraną. Jei vis tiek neveikia — paprašyk tėvų ar trenerio pagalbos.']
     ]
   };
+  // v595: klubo DUK (iki tol klubas gaudavo vaiko sąrašą) — kviečiama iš klubo paskyros meniu „Dažni klausimai"
+  FAQ.club = [
+    ['Nuo ko pradėti?', 'Pradžios vediklis (paskyros meniu): grupė su treniruočių laikais → treneris → vaikų anketos. Kai grupė turi trenerį, jis Kalendoriuje planuoja etapą, o tu matai visų grupių treniruotes.'],
+    ['Kaip veikia Kalendorius?', 'Visų grupių treniruotės pagal tvarkaraštį (kvadratėliai — grupių spalvos, čipsai filtruoja). Oranžinis taškelis — treniruotė be patvirtinto plano, švytinti diena — praėjusi be pažymėto lankomumo. Dienos lape matai trenerį, gali patvirtinti planą ar priminti. „Naujas renginys" — varžybos, stovykla, seminaras, diržo testas; visas sąrašas — „Visi renginiai".'],
+    ['Kas tvirtina vaikų anketas?', 'Tu (Klubas → Mokiniai → Registracijos) arba grupės treneris — savo grupei. Patvirtinta anketa dingsta iš abiejų sąrašų. Paaugliai 14+ su klubo kodu registruojasi patys ir laukia patvirtinimo be grupės — grupę priskiri tu.'],
+    ['Kaip skaičiuojami trenerių taškai?', 'Pažymėta treniruotė (lankomumas + pastangos) +3 · atsiliepimas po treniruotės +2 · patvirtinta treniruotė, sukurtas iššūkis ar rankinis patvirtinimas +1. Automatiniai užskaitymai (Strava, lankomumo užduotys) taškų neduoda. Pakopos: Padėjėjas 200 → Asistentas 500 → Instruktorius 1 000 → Senpajus 1 800 → Mokytojas 2 900 → Meistras 4 200 → Sensėjus 6 000. Reitingas — Analitikoje.'],
+    ['Kaip veikia pavadavimai?', 'Treneris dienos lape spaudžia „Reikia pavadavimo". Kiti klubo treneriai kalendoriuje mato kortelę ir gali paimti patys („Pavaduosiu"), o tu Kalendoriaus sekcijoje PAVADAVIMAI priskiri pavaduotoją. Pavaduotojas tą dieną žymi lankomumą ir pastangas.'],
+    ['Kur klubo jungikliai?', 'Profilis → Klubo nustatymai: planai, treneriai kuria planus, pastangos tėvams, Strava automatinis tvirtinimas, lankomumas, varžybos, stovyklos, nario mokesčiai ir kt. Prie kiekvieno — '+ico('info')+' su paaiškinimu. Pakeitimas galioja visam klubui iš karto.'],
+    ['Kas yra „Trenerių prieiga"?', 'Paskyros meniu pažymi trenerius, kurie gali administruoti klubą — jie iš savo Nustatymų atsidaro klubo vaizdą. Savininko funkcijos (klubo nustatymai, trenerių prieiga, vediklis) jiems paslėptos.'],
+    ['Negaunu push pranešimų?', 'Paskyros meniu „Push pranešimai" — įjunk bent vieną tipą (klubo administravimas, renginiai, žinutės); pirmas įjungimas užregistruoja telefoną. iPhone: appsą reikia įsidėti į pradžios ekraną.']
+  ];
   const faq = FAQ[who] || FAQ.kid;
-  const title = who === 'trainer' ? ''+ico('pagalba')+' PAGALBA TRENERIUI' : ''+ico('pagalba')+' PAGALBA';
+  const title = who === 'trainer' ? ''+ico('pagalba')+' PAGALBA TRENERIUI' : who === 'club' ? ''+ico('pagalba')+' PAGALBA KLUBUI' : ''+ico('pagalba')+' PAGALBA';
   const old = document.getElementById('help-modal'); if (old) old.remove();
   const m = document.createElement('div');
   m.id = 'help-modal';
@@ -15333,11 +15344,11 @@ function openClubRolesGuide(){
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('info')} KAIP VEIKIA SPOBU</div><button onclick="document.getElementById('club-roles-guide').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div style="padding:14px 16px 24px;">
       <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Keturios paskyros, kiekviena su savo vaidmeniu. Kad viskas suktųsi — kiekvienas daro savo dalį:</div>
-      ${role(''+ico('klubas')+'','KLUBAS — tu (administratorius)','#3B82F6',['Kuri grupes ir priskiri joms trenerius','Tvirtini arba atmeti naujų vaikų registracijas','Kuri varžybas, diržų laikymą, stovyklas, grupių iššūkius','Kvieti ir valdai trenerius','Matai analitiką, apyvartą, bonusą'])}
-      ${role(''+ico('dirzas')+'','TRENERIS','#22C55E',['Žymi lankomumą','Tvirtina rezultatus: varžybų, iššūkių, pratimų, dvikovų, stovyklų','Skiria EXP už elgesį','Pildo grupių iššūkio dienos rezultatus','Bendrauja su tėvais (žinutės, skelbimai)'])}
-      ${role(''+ico('grupe')+'‍'+ico('vaikas')+'','TĖVAS','#8B5CF6',['Stebi vaiko progresą ir pasiekimus','Gauna pranešimus apie vaiką','Perka AI ataskaitas','Bendrauja su treneriu ir klubu','NEteikia rezultatų — tik stebi'])}
-      ${role(''+ico('vaikas')+'','VAIKAS','#FF7A33',['Pats atlieka veiklas: teikia iššūkius, varžybų rezultatus, pratimų rekordus','Kviečia draugus į dvikovas','Mato savo EXP, lygį, reitingus, progresą'])}
-      <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-top:6px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px;">${ico('pagalba')} Trumpai: <b>klubas</b> tvarko struktūrą (grupės, registracijos, renginiai), <b>treneris</b> tvirtina ir vertina, <b>tėvas</b> stebi, <b>vaikas</b> daro.</div>
+      ${role(''+ico('klubas')+'','KLUBAS — tu (administratorius)','#3B82F6',['Kuri grupes su treniruočių laikais ir priskiri joms trenerius','Tvirtini vaikų anketas (arba tai daro grupės treneris)','Kalendoriuje matai visų grupių treniruotes, tvirtini planus, skiri pavaduotojus','Kuri renginius: varžybas, stovyklas, seminarus, diržo testus','Kvieti ir valdai trenerius, matai jų taškų reitingą ir analitiką'])}
+      ${role(''+ico('dirzas')+'','TRENERIS','#22C55E',['Kalendoriuje planuoja etapą (AI vedlys) ir patvirtina treniruotes','Žymi lankomumą ir vertina pastangas — iš to vaikų EXP','Skiria iššūkius: savaitės (Strava užskaito pati) ir mėnesio pasiekimus (žymi „Išmoko")','Tvirtina rekordus, varžybų rezultatus, rankinius iššūkius','Rašo atsiliepimą po treniruotės, bendrauja su tėvais'])}
+      ${role(''+ico('grupe')+'‍'+ico('vaikas')+'','TĖVAS','#8B5CF6',['Kalendoriuje mato vaiko treniruotes, lankomumą ir pastangas (jei klubas įjungęs)','Gauna pranešimus apie vaiką','Perka AI ataskaitas','Bendrauja su treneriu ir klubu','NEteikia rezultatų — tik stebi'])}
+      ${role(''+ico('vaikas')+'','VAIKAS','#FF7A33',['Lanko treniruotes ir stengiasi — pastangos virsta EXP','Vykdo iššūkius (Strava užskaito pati), teikia rekordus ir varžybų rezultatus, kviečia į dvikovas','Mato savo EXP, lygį, reitingus, progresą'])}
+      <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-top:6px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px;">${ico('pagalba')} Trumpai: <b>klubas</b> tvarko struktūrą (grupės, anketos, kalendorius, renginiai), <b>treneris</b> planuoja, žymi ir vertina, <b>tėvas</b> stebi, <b>vaikas</b> daro.</div>
     </div>
   </div>`;
   document.body.appendChild(m);
@@ -15386,7 +15397,7 @@ function kidChatOn(){ return !clubFlags || clubFlags.kid_trainer_chat_enabled !=
 const CLUB_FLAG_DEFS = [
   // V2 1 etapas (v534) → 6 etapas (v542, plano 6.6): treniruočių planų v2 jungikliai — ATSKIRA SEKCIJA VIRŠUJE (plans_enabled numatyta IŠJUNGTA iki 8 etapo)
   { sec:'TRENIRUOČIŲ PLANAI' },
-  { k:'plans_enabled', def:false, t:''+ico('treniruote')+' Treniruočių planai v2', d:'Kalendorius, treniruotės su blokais, pastangų vertinimas, AI vedlys. Numatyta: išjungta (įjungiama etapais).', info:'Treniruočių planai v2 — treneris atsidaro kalendorių su treniruotėmis, planuoja etapą su AI pagalba, patvirtina treniruotes (vaikai ir tėvai mato tik patvirtintas), po treniruotės vertina pastangas (EXP 20 / 14 / 8).<br><br>Išjungus: viskas veikia kaip iki šiol — mėnesio planai (lite), lankomumas be pastangų, iššūkiai.' },
+  { k:'plans_enabled', def:false, t:''+ico('treniruote')+' Treniruočių planai v2', d:'Kalendorius, treniruotės su blokais, pastangų vertinimas, AI vedlys, pavadavimai. Įjungta visiems klubams nuo 2026-09-13.', info:'Treniruočių planai v2 — Kalendorius visoms rolėms. Treneris planuoja etapą su AI pagalba, patvirtina treniruotes (vaikai ir tėvai mato tik patvirtintas), po treniruotės žymi lankomumą ir vertina pastangas (EXP 20 / 14 / 8). Tu Kalendoriuje matai visų grupių treniruotes, tvirtini planus, skiri pavaduotojus ir kuri renginius.<br><br>Išjungus: dingsta Kalendorius, planai, pastangų vertinimas ir pavadavimai — grįžta senoji navigacija (Renginiai, Iššūkiai), lankomumas be pastangų.' },
   { k:'trainers_can_create_plans', t:''+ico('treneris')+' Treneriai kuria planus', d:'Ar treneris pats kuria grupės etapus, ar tik klubas. Numatyta: įjungta.', info:'Treneriai kuria planus — grupės treneris pats planuoja etapą (vedlys, AI). Išjungus: etapus kuria tik klubas, treneris mato ir patvirtina.' },
   { k:'effort_visible_to_parents', t:''+ico('tikslas')+' Tėvai mato pastangų vertinimą', d:'Eilutė „dirbo iš visų jėgų" tėvų kalendoriuje ir Pasiekimuose. Numatyta: įjungta.', info:'Tėvai mato pastangų vertinimą — po treniruotės trenerio įvertintos pastangos (iš visų jėgų / gerai / lengviau) ir EXP už jas rodomi tėvams. Vaikas savo pastangas mato visada.<br><br>Išjungus: tėvams dingsta tik pastangų eilutė, EXP lieka.' },
   { k:'strava_auto_approve', t:''+ico('atnaujinti')+' Strava rezultatai tvirtinami automatiškai', d:'Susietos Strava bėgimai, ėjimai, dviratis — be trenerio. Numatyta: įjungta.', info:'Strava rezultatai tvirtinami automatiškai — kai vaikas (ar tėvas) susieja Strava, bėgimo / ėjimo / dviračio iššūkių veiklos ateina pačios ir, jei atitinka tikslą, patvirtinamos iš karto (EXP kaip įprasta). Treneris suvestinėje mato STRAVA žymą.<br><br>Išjungus: Strava veiklos vis tiek ateina, bet lieka „laukia" — tvirtina treneris.' },   // V2 7b (v552)
@@ -15474,11 +15485,12 @@ function openClubAccountMenu(){
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
       <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1px;padding:10px 2px 6px;">TEISINIAI IR PAGALBA</div>
-      <a href="ATMINTINE-KLUBUI.html" target="_blank" rel="noopener" style="text-decoration:none;display:block;"><div style="${rs}">
-        <div style="font-size:24px;flex-shrink:0;">${ico('dokumentas')}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Atmintinė administratoriui</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Startas, ritmas, renginiai, postai, funkcijos — 2 psl., spausdinama</div></div>
+      <!-- v595: „Atmintinė administratoriui" (ATMINTINE-KLUBUI.html, turinys iki V2) paslėpta, kol dokumentas neperrašytas pagal V2 — kaip trenerio v592 -->
+      <div onclick="document.getElementById('club-acct-menu').remove();openHelpModal('club');" style="${rs}">
+        <div style="font-size:24px;flex-shrink:0;">${ico('pagalba')}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Dažni klausimai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Kalendorius, anketos, trenerių taškai, pavadavimai, jungikliai</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
-      </div></a>
+      </div>
       <a href="privatumo-politika.html" target="_blank" rel="noopener" style="text-decoration:none;display:block;"><div style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('dokumentas')}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Privatumo politika</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Kaip tvarkomi duomenys</div></div>
@@ -30082,7 +30094,7 @@ async function openClubOnboarding(){
       ${step(hasGroup,'1',''+ico('kalendorius')+'','Sukurk pirmą grupę','Grupė + treniruočių laikai',"nv('k',null,'k-trainers');if(typeof switchClubTeamTab==='function')switchClubTeamTab('groups');if(typeof openClubGroupModal==='function')openClubGroupModal()")}
       ${step(hasTrainer,'2',''+ico('dirzas')+'','Pakviesk trenerį','Priskirsi jį grupei',"nv('k',null,'k-trainers');if(typeof switchClubTeamTab==='function')switchClubTeamTab('trainers');if(typeof openInviteTrainer==='function')openInviteTrainer()")}
       ${step(hasKid,'3',''+ico('mokiniai')+'','Patvirtink vaikų registracijas','Tėvai registruoja — tu tvirtini',"nv('k',null,'k-trainers');if(typeof switchClubTeamTab==='function')switchClubTeamTab('students')")}
-      <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-top:6px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px;">${ico('pagalba')} Kai bus vaikų — kurk renginius (varžybas, stovyklas, grupių iššūkius) skiltyje ${ico('kalendorius')} Renginiai.</div>
+      <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-top:6px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px;">${ico('pagalba')} ${(typeof Kal !== 'undefined' && Kal.on()) ? 'Kai grupė turi trenerį — jis ' + ico('kalendorius') + ' Kalendoriuje planuoja treniruotes, o tu matai visų grupių treniruotes. Renginius (varžybas, stovyklą, seminarą, diržo testą) kuri ten pat per „Naujas renginys".' : 'Kai bus vaikų — kurk renginius (varžybas, stovyklas, grupių iššūkius) skiltyje ' + ico('kalendorius') + ' Renginiai.'}</div>
     </div>
   </div>`;
   document.body.appendChild(m);
