@@ -12416,7 +12416,7 @@ async function _checkForNewApprovedSubmissionsInner() {
         : null;
       showApprovalStd({
         type: ch?.type, title: ch?.title || 'Iššūkis', progress: progStr,
-        exp: isCompleted ? (expSum || ch?.exp_reward || 0) : 0,
+        exp: expSum || (isCompleted ? (ch?.exp_reward || 0) : 0),   // v597: pakopų EXP ateina dalimis — rodom gautą ir nebaigus
         streakExp: streakSum, completed: isCompleted, ..._stOpts(ch?.type)
       });
     } else {
@@ -13674,11 +13674,12 @@ async function loadChallenges() {
         <div style="margin-top:8px;padding:8px;background:rgba(255,77,0,.05);border-radius:10px;border:.5px solid rgba(255,77,0,.2);">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <span style="font-size:10px;color:var(--mut);font-weight:700;letter-spacing:.5px;">${ico('statistika')} PROGRESAS</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${color};letter-spacing:1px;">${progressValue} / ${ch.target_value} ${ch.target_unit || ''}</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${color};letter-spacing:1px;">${progressValue} / ${ch.target_value} ${escapeHtml(ch.target_unit || '')}</span>
           </div>
           <div style="height:6px;background:var(--bdr);border-radius:99px;overflow:hidden;">
             <div style="height:100%;background:linear-gradient(90deg,${color},${isPartialFullyDone ? '#16A34A' : '#FFB300'});width:${pct.toFixed(1)}%;transition:width .4s ease;box-shadow:0 0 8px ${color}66;"></div>
           </div>
+          ${(typeof Iss !== 'undefined' && Iss.tiersOf(ch)) ? `<div style="display:flex;gap:6px;margin-top:6px;">${Iss.tiersOf(ch).map(t => `<span style="flex:1;text-align:center;font-size:10px;font-weight:800;border-radius:8px;padding:3px 0;${progressValue >= Number(t.v) ? 'background:rgba(34,197,94,.18);color:#22C55E;' : 'background:rgba(255,255,255,.05);color:var(--mut);'}">${progressValue >= Number(t.v) ? ico('atlikta') + ' ' : ''}${Number(t.v)} ${escapeHtml(ch.target_unit || '')} · +${Number(t.exp)}</span>`).join('')}</div>` : ''}
         </div>
       `;
     }
@@ -13750,7 +13751,7 @@ async function loadChallenges() {
     }
     
     const target = ch.target_value 
-      ? `${ico('tikslas')} ${ch.target_value} ${ch.target_unit || ''}` 
+      ? `${ico('tikslas')} ${ch.target_value} ${escapeHtml(ch.target_unit || '')}` 
       : '';
     
     // Atliktiems tabe - šiek tiek pritemdyti
@@ -32947,8 +32948,16 @@ async function katAssign() {
         verify_kind: (typeof AutoTvirt !== 'undefined') ? AutoTvirt.verifyKind(r.token) : 'coach',   // MODULIS: autotvirtinimas (v533)
         verify_meta: (typeof AutoTvirt !== 'undefined' && AutoTvirt.verifyMeta) ? AutoTvirt.verifyMeta(r.token) : null   // MODULIS: Strava (v552) — kurios Strava veiklos tinka
       };
+      // v597 (Iss.create, katState.tiersV2): fiksuotas EXP be katalogo kreivės (mėnesio 40 · savaitės fx 20 · savaitės kaupiamas — pakopos iki 25);
+      // kaupiamiems savaitės — 3 pakopos KIEKVIENAM vaikui pagal jo amžiaus juostą ir lytį (verify_meta.tiers), target_value = aukščiausia pakopa;
+      // trenerio „−/+" = santykis su grupės juostos baze, pastumia visas pakopas. Tėvinis (parent) — grupės juostos pakopos (rodymui).
+      const tierRow = !!(katState.tiersV2 && typeof Iss !== 'undefined' && s.type === 'weekly' && payload.allow_partial && !r.fx && !r.learn && r.base);
+      if (katState.tiersV2 && typeof Iss !== 'undefined') payload.exp_reward = s.type === 'monthly' ? Iss.TIER.monthlyExp : (r.fx ? Iss.TIER.weeklyFxExp : Iss.TIER.exp[2]);
+      const seedG = tierRow ? katSeedTarget(r, katState.bandIdx, 'medium') : 0, tierRatio = (seedG > 0 && r.target > 0) ? r.target / seedG : 1;
+      const tierPayload = (kid) => { if (!tierRow) return {}; const tiers = Iss.tierPlan(r, kid, tierRatio, katState.bandIdx); return tiers ? { target_value: tiers[2].v, verify_meta: { ...(payload.verify_meta || {}), tiers } } : {}; };
+      Object.assign(payload, tierPayload(null));
       if (isKid) {
-        const { error } = await sb.from('challenges').insert({ ...payload, target_audience: 'specific_kid', target_kid_id: s.kids[0].id });
+        const { error } = await sb.from('challenges').insert({ ...payload, ...tierPayload(s.kids[0]), target_audience: 'specific_kid', target_kid_id: s.kids[0].id });
         if (error) { console.error('[katAssign] kid insert', error); showToast(ico('klaida')+' ' + _userError(error), 'error', 5000); return; }
         okRows++;
       } else if (r.targetBoys > 0 && r.targetGirls > 0 && r.targetBoys !== r.targetGirls) {
@@ -32964,7 +32973,7 @@ async function katAssign() {
           if (gpe || !gp) { console.error('[katAssign] gender parent', gpe); showToast(ico('klaida')+' Klaida (parent): ' + (gpe?.message || '?'), 'error', 5000); return; }
           const gRes = await Promise.allSettled(gKids.map(kid =>
             sb.from('challenges').insert({
-              ...gPayload, target_audience: 'specific_kid', target_kid_id: kid.id,
+              ...gPayload, ...tierPayload(kid), target_audience: 'specific_kid', target_kid_id: kid.id,
               group_id: kid.group_id || groupId, parent_challenge_id: gp.id
             })
           ));
@@ -32981,7 +32990,7 @@ async function katAssign() {
         if (pErr || !parentData) { console.error('[katAssign] parent insert', pErr); showToast(ico('klaida')+' Klaida (parent): ' + (pErr?.message || '?'), 'error', 5000); return; }
         const results = await Promise.allSettled(s.kids.map(kid =>
           sb.from('challenges').insert({
-            ...payload, target_audience: 'specific_kid', target_kid_id: kid.id,
+            ...payload, ...tierPayload(kid), target_audience: 'specific_kid', target_kid_id: kid.id,
             group_id: kid.group_id || groupId, parent_challenge_id: parentData.id
           })
         ));
@@ -43691,14 +43700,14 @@ Object.assign(Kal, {
     setChallenges(active, progress, subs) {
       this.st.ch = (active || []).filter(c => c.type !== 'permanent').slice(0, 2).map(c => {
         const p = progress?.[c.id]; const s = (subs?.[c.id] || []).find(x => x.status === 'pending');
-        return { id: c.id, title: c.title || 'Iššūkis', type: c.type, vk: c.verify_kind, exp: c.exp_reward || 0, tv: c.target_value, tu: c.target_unit, done: p?.current_value ?? null, pending: !!s, left: c.expires_at ? Math.max(0, Math.ceil((new Date(c.expires_at) - Date.now()) / 86400000)) : null };
+        return { id: c.id, title: c.title || 'Iššūkis', type: c.type, vk: c.verify_kind, exp: c.exp_reward || 0, tv: c.target_value, tu: c.target_unit, tiers: (typeof Iss !== 'undefined' ? Iss.tiersOf(c) : null), done: p?.current_value ?? null, pending: !!s, left: c.expires_at ? Math.max(0, Math.ceil((new Date(c.expires_at) - Date.now()) / 86400000)) : null };
       });
       if (document.getElementById(this.scr)?.classList.contains('on')) this.render();
     },
     chHtml() {
       const K = this.K; if (!(this.st.ch || []).length) return '';
       const TL = { weekly: 'SAVAITĖS', monthly: 'MĖNESIO', training: 'TRENIRUOTĖS', one_time: 'VIENKARTINIS' };
-      return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span></div><div class="kal-tiles">${this.st.ch.map(c => { const pct = (c.tv && c.done != null) ? Math.min(100, Math.round(c.done * 100 / c.tv)) : (c.pending ? 60 : 0); return `<div class="kal-tile" onclick="${this.chNav}"><div class="tt"><span>${TL[c.type] || 'IŠŠŪKIS'}</span>${K.srcTag(c.vk)}</div><div class="tn">${K.esc(c.title)}</div><div class="kal-bar"><span data-w="${pct}" style="width:0;background:#22C55E;"></span></div><div class="tc">${c.tv && c.done != null ? `${c.done} / ${c.tv}${c.tu ? ' ' + K.esc(c.tu) : ''}` : (c.pending ? 'pateikta · laukia trenerio' : 'vyksta')}${c.left != null ? ' · liko ' + c.left + ' d.' : ''} · <b style="color:#FFD700;">+${c.exp}</b></div></div>`; }).join('')}</div>`;
+      return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span></div><div class="kal-tiles">${this.st.ch.map(c => { const pct = (c.tv && c.done != null) ? Math.min(100, Math.round(c.done * 100 / c.tv)) : (c.pending ? 60 : 0); return `<div class="kal-tile" onclick="${this.chNav}"><div class="tt"><span>${TL[c.type] || 'IŠŠŪKIS'}</span>${K.srcTag(c.vk)}</div><div class="tn">${K.esc(c.title)}</div><div class="kal-bar"><span data-w="${pct}" style="width:0;background:#22C55E;"></span></div><div class="tc">${c.tv && c.done != null ? `${c.done} / ${c.tv}${c.tu ? ' ' + K.esc(c.tu) : ''}` : (c.pending ? 'pateikta · laukia trenerio' : 'vyksta')}${c.left != null ? ' · liko ' + c.left + ' d.' : ''} · <b style="color:#FFD700;">${c.tiers ? (c.done != null ? 'pakopa ' + Iss.tierOf(c.tiers, c.done) + '/3 · ' : '') + c.tiers.map(t => '+' + Number(t.exp)).join('/') : '+' + c.exp}</b></div></div>`; }).join('')}</div>`;
     },
     shift(d) { const r = this.K.range(this.st.ym); const x = new Date(r.y, r.m - 1 + d, 1); this.st.ym = `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}`; this.st.dir = d; const g = document.querySelector('#' + this.cid + ' .kal-grid'); if (g && !this.K.reduced()) g.classList.add(d > 0 ? 'out-l' : 'out-r'); this.reload(); },
 
@@ -44164,6 +44173,28 @@ const Iss = {
   COL: { weekly: '#22C55E', monthly: '#3B82F6' },
   LT: { weekly: 'SAVAITĖS IŠŠŪKIAI', monthly: 'MĖNESIO IŠŠŪKIAI' },
   on() { return typeof Kal !== 'undefined' && Kal.on(); },
+  // v597 (savininko „A" 2026-09-22): PAKOPOS savaitės Strava kaupiamiems iššūkiams — 3 slenksčiai iš VAIKO amžiaus juostos ir lyties,
+  // EXP 15/20/25 (kiekviena pakopa kartą — DB trigeris update_challenge_progress pagal verify_meta.tiers); mėnesio pasiekimas 40;
+  // savaitės vienkartinis (fx, pvz. greitas km) 20. Katalogo kreivė su mažėjančia grąža V2 kelyje nebenaudojama.
+  TIER: { exp: [15, 20, 25], girls: 0.85, monthlyExp: 40, weeklyFxExp: 20 },
+  tierRound(v) { return Math.max(1, v >= 20 ? katRoundTarget(v) : Math.round(v)); },
+  tierPlan(it, kid, ratio, bandIdx) {
+    if (!it || it.learn || it.fx || !it.base) return null;
+    const band = kid ? katAgeBandIdx([kid]) : (bandIdx == null ? 1 : bandIdx);
+    const g = (kid && kid.gender === 'female' && it.unit === 'km') ? this.TIER.girls : 1;
+    const t2 = this.tierRound(katSeedTarget(it, band, 'medium') * g * (ratio > 0 ? ratio : 1));
+    let a = this.tierRound(t2 * 0.5), b = t2, c = this.tierRound(t2 * 1.5);
+    if (a >= b) { if (b > 1) a = b - 1; else b = a + 1; }
+    if (c <= b) c = b + 1;
+    return [a, b, c].map((v, i) => ({ v, exp: this.TIER.exp[i] }));
+  },
+  // sauga (/security-review 09-22): verify_meta rašo treneris — pakopos VISADA normalizuojamos į skaičius, kitaip null (jokio HTML iš DB)
+  tiersOf(ch) {
+    const t = ch && ch.verify_meta && ch.verify_meta.tiers; if (!Array.isArray(t) || !t.length) return null;
+    const out = t.map(x => ({ v: Number(x && x.v), exp: Number(x && x.exp) })).filter(x => Number.isFinite(x.v) && x.v > 0 && Number.isFinite(x.exp) && x.exp >= 0);
+    return out.length === t.length ? out : null;
+  },
+  tierOf(tiers, progress) { let k = 0; (tiers || []).forEach((t, i) => { if (Number(progress || 0) >= Number(t.v)) k = i + 1; }); return k; },
   esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); },
   md(iso) { return iso ? String(iso).slice(5, 10) : ''; },
   kyuN(v) { const m = /\d+/.exec(String(v == null ? '' : v)); return m ? m[0] : ''; },
@@ -44265,6 +44296,13 @@ const Iss = {
       const items = this.items(s.type), n = Object.values(s.sel).filter(Boolean).length, cap = (typeof KAT_MAX_BY_TYPE !== 'undefined' && KAT_MAX_BY_TYPE[s.type]) || 3, left = Math.max(0, cap - (s.nPrev[s.type] || 0));
       const mon = s.type === 'monthly';
       const tgtHtml = it => it.learn ? '' : `<div style="display:flex;align-items:center;gap:3px;flex:none;" onclick="event.stopPropagation()"><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',-1)">−</span><b style="font-family:'Bebas Neue',sans-serif;font-size:16px;min-width:56px;text-align:center;">${this.target(it)} ${Iss.esc(it.unit)}</b><span class="kal-b" style="padding:3px 9px;" onclick="Iss.create.step('${it.key}',1)">+</span></div>`;
+      // v597: pakopų peržiūra (kiekvienai amžiaus juostai; asmeniniam — to vaiko), „−/+" pastumia visas pakopas kartu
+      const tierLine = it => {
+        if (mon || it.fx || it.learn || !it.base || !s.sel[it.key]) return '';
+        const seedG = katSeedTarget(it, katAgeBandIdx(s.kids), 'medium'), ratio = seedG > 0 ? this.target(it) / seedG : 1;
+        const parts = (s.kid ? [null] : [0, 1, 2]).map(b => { const t = Iss.tierPlan(it, s.kid || null, ratio, b == null ? katAgeBandIdx(s.kids) : b); return t ? `${b == null ? '' : KAT_BANDS[b] + ' m. '}${t.map(x => x.v).join('·')}` : ''; }).filter(Boolean);
+        return `<div class="s" style="color:var(--br);font-weight:700;">Pakopos: ${parts.join(' | ')} ${Iss.esc(it.unit || '')}${it.unit === 'km' && !s.kid ? ' · ♀ −15 %' : ''} → +15 / +20 / +25 EXP</div>`;
+      };
       const groups = Planas.st.groups || [];
       const gChips = !s.kid && groups.length ? `<div class="no-scrollbar" style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;">${groups.map(g => `<span class="kal-b${s.group && g.id === s.group.id ? ' o' : ''}" style="flex:none;" onclick="Iss.create.setGroup('${g.id}')">${Iss.esc(g.name || 'Grupė')}</span>`).join('')}</div>` : '';
       body.innerHTML = `${gChips}<div style="display:flex;gap:6px;padding:0 16px 10px;">${[['weekly', 'Savaitės · Strava'], ['monthly', 'Mėnesio · Pasiekimai']].map(([k, t]) => `<span class="kal-b${s.type === k ? ' o' : ''}" style="flex:1;text-align:center;" onclick="Iss.create.setType('${k}')">${t}</span>`).join('')}</div>
@@ -44273,12 +44311,12 @@ const Iss = {
           const on = !!s.sel[it.key], ex = s.excl[it.key] || {}, nEx = s.kids.filter(k => ex[k.id]).length, nm = k => Iss.esc(`${k.first_name || ''} ${(k.last_name || '')[0] || ''}`.trim() || 'Vaikas');
           const exLink = on && it.learn && s.kids.length > 1 ? `<div style="margin-top:4px;"><span onclick="event.stopPropagation();Iss.create.exclOpen('${it.key}')" style="font-size:10.5px;font-weight:800;color:var(--br);cursor:pointer;">${s.exclOpen === it.key ? 'Suskleisti' : (nEx ? `Skirta ${s.kids.length - nEx} iš ${s.kids.length} · keisti` : 'Ne visiems…')}</span></div>` : '';
           const exList = on && it.learn && s.exclOpen === it.key ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin:-1px 16px 8px 46px;">${s.kids.map(k => `<span class="kal-b${ex[k.id] ? '' : ' o'}" style="padding:5px 10px;font-size:10.5px;${ex[k.id] ? 'opacity:.5;text-decoration:line-through;' : ''}" onclick="Iss.create.exclToggle('${it.key}','${k.id}')">${nm(k)}</span>`).join('')}<div style="width:100%;font-size:10px;color:var(--mut);font-weight:700;">Paspausk vardą — išbrauksi (pvz. jau moka). Išbrauktas šio iššūkio nemato.</div></div>` : '';
-          return `<div class="pl-opt${on ? ' on' : ''}" onclick="Iss.create.toggle('${it.key}')"><div class="box${on ? ' on' : ''}">${on ? ico('atlikta') : ''}</div><div style="flex:1;min-width:0;"><div class="t">${it.icon || ''} ${Iss.esc(it.name)}</div><div class="s">${Iss.esc(it.desc || '')}</div>${exLink}</div>${tgtHtml(it)}</div>${exList}`;
+          return `<div class="pl-opt${on ? ' on' : ''}" onclick="Iss.create.toggle('${it.key}')"><div class="box${on ? ' on' : ''}">${on ? ico('atlikta') : ''}</div><div style="flex:1;min-width:0;"><div class="t">${it.icon || ''} ${Iss.esc(it.name)}</div><div class="s">${Iss.esc(it.desc || '')}</div>${tierLine(it)}${exLink}</div>${tgtHtml(it)}</div>${exList}`;
         }).join('')}
         <div style="padding:4px 16px 10px;font-size:10.5px;color:var(--mut);line-height:1.45;">${mon
           ? `${ico('ispejimas')} Kai vaikas išmoko — iššūkio suvestinėje (kalendoriaus plytelė arba Treniruotės → Iššūkiai) paspausk „Išmoko" prie vardo: EXP išsiunčiama iškart. Vaikas gali ir pats pateikti „parodžiau" — tada patvirtini.`
           : `${ico('ispejimas')} Užskaito pati, kai vaikas prijungęs Strava (Profilis → Strava). Neprijungusiems rodoma užuomina „Susiek Strava" ir jie pateikia ranka — tvirtini tu. Rankiniai Strava įrašai neužskaitomi. Iki 14 m. Strava jungia tėvas savo paskyra.`}</div>`;
-      if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">EXP pagal katalogo kreivę · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${mon ? 'mėnesio pabaigos' : 'sekmadienio'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti${s.kid ? ' · ' + Iss.esc(s.kid.first_name || 'vaikui') : (s.group ? ' · ' + Iss.esc(s.group.name || 'grupei') : ' grupei')}${n ? ' · ' + n : ''}`}</button>`;
+      if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">${mon ? '+40 EXP už išmoktą' : 'Pakopos +15 / +20 / +25 EXP pagal amžių ir lytį'} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${mon ? 'mėnesio pabaigos' : 'sekmadienio'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti${s.kid ? ' · ' + Iss.esc(s.kid.first_name || 'vaikui') : (s.group ? ' · ' + Iss.esc(s.group.name || 'grupei') : ' grupei')}${n ? ' · ' + n : ''}`}</button>`;
     },
     async assign() {
       const s = this.st; if (s.busy) return; const items = this.items(s.type).filter(it => s.sel[it.key]); if (!items.length) return;
@@ -44294,7 +44332,7 @@ const Iss = {
         const run = async (list, kids) => {
           if (!list.length) return;
           if (!kids.length) { showToast(`${ico('ispejimas')} ${Iss.esc(list[0].name)}: visi išbraukti — nepaskirta`, 'error', 4000); return; }
-          katState = { aud: s.kid ? 'specific_kid' : 'group', groupId: s.group.id, kidId: s.kid ? s.kid.id : null, kids, bandIdx: katAgeBandIdx(kids), bandAuto: true, type: s.type, selected: list.map(it => 'k:' + it.key), diff: 'medium', nPrev, nPrevLoaded: true, recos: null, recoInfo: null, catFilter: null, busy: false, itemOpts: opts, showReps: false, extraItems: [], planSessionId: null, okRows: 0 };
+          katState = { aud: s.kid ? 'specific_kid' : 'group', groupId: s.group.id, kidId: s.kid ? s.kid.id : null, kids, bandIdx: katAgeBandIdx(kids), bandAuto: true, type: s.type, selected: list.map(it => 'k:' + it.key), diff: 'medium', nPrev, nPrevLoaded: true, recos: null, recoInfo: null, catFilter: null, busy: false, itemOpts: opts, showReps: false, extraItems: [], planSessionId: null, okRows: 0, tiersV2: true };   // v597: pakopos per vaiką (katAssign)
           await katAssign();
           const ok = katState.okRows || 0; done += ok; nPrev += ok;
         };
@@ -44547,7 +44585,7 @@ const Iss = {
     },
     async load() {
       const id = this.st.id;
-      const { data: ch, error } = await sb.from('challenges').select('id, title, icon, type, exp_reward, target_value, target_unit, content_type, allow_partial, verify_kind, expires_at, group_id, target_audience, target_kid_id, is_active, instructions').eq('id', id).maybeSingle();
+      const { data: ch, error } = await sb.from('challenges').select('id, title, icon, type, exp_reward, target_value, target_unit, content_type, allow_partial, verify_kind, verify_meta, expires_at, group_id, target_audience, target_kid_id, is_active, instructions').eq('id', id).maybeSingle();
       if (error) throw error; if (!ch) throw new Error('Iššūkis nerastas');
       this.st.ch = ch;
       // dalyviai: grupės iššūkis = vaikų kopijos (parent_challenge_id); atskiras — auditorija kaip trenerio sąraše
@@ -44593,7 +44631,7 @@ const Iss = {
       if (r.state === 'wait') { const s = r.pend; const proof = (typeof _chProofHtml === 'function') ? _chProofHtml(s.value) : ''; const strava = s.source === 'strava' || /strava\.com/i.test(String(s.value || '')); return `<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${Iss.esc(val(s) || 'pateikė')}${ch.allow_partial && r.prog ? ` · buvo ${r.prog.total_progress}/${ch.target_value || '?'}` : ''} · ${this.fmt(s.created_at)}${strava ? ' <span class="kal-tag ok">STRAVA</span>' : ''}</div>${proof ? `<div style="margin-top:5px;">${proof}</div>` : ''}`; }
       if (r.state === 'done') { const s = r.appr || r.last; return `<div style="font-size:10.5px;color:var(--grn);font-weight:700;margin-top:2px;">${ico('patvirtinta')} ${r.prog && r.prog.is_completed ? `${r.prog.total_progress} ${unit}`.trim() : Iss.esc(val(s) || 'atliko')} · ${s ? this.fmt(s.reviewed_at || s.created_at) : ''}${s && s.source === 'strava' ? ' <span class="kal-tag ok">STRAVA</span>' : ''}${s && s.auto_approved ? ' <span class="kal-tag ok">AUTO</span>' : ''}${s && s.exp_gain ? ` · +${s.exp_gain} EXP` : ''}</div>`; }
       if (r.last && r.last.status === 'rejected') return `<div style="font-size:10.5px;color:#FF7A33;font-weight:700;margin-top:2px;">Grąžinta: ${Iss.esc(r.last.rejection_reason || 'pateikti iš naujo')}</div>`;
-      if (ch.allow_partial && r.prog) return `<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Kol kas ${r.prog.total_progress}/${ch.target_value || '?'} ${unit}</div>`;
+      if (ch.allow_partial && r.prog) { const tiers = Iss.tiersOf(ch); return `<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Kol kas ${r.prog.total_progress}/${ch.target_value || '?'} ${unit}${tiers ? ` · pakopa ${Iss.tierOf(tiers, r.prog.total_progress)}/3` : ''}</div>`; }   // v597 pakopos
       return `<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Nepateikė</div>`;
     },
     render() {
