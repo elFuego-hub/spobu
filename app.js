@@ -1861,7 +1861,7 @@ function openHelpModal(who) {
   // v595: klubo DUK (iki tol klubas gaudavo vaiko sąrašą) — kviečiama iš klubo paskyros meniu „Dažni klausimai"
   FAQ.club = [
     ['Nuo ko pradėti?', 'Pradžios vediklis (paskyros meniu): grupė su treniruočių laikais → treneris → vaikų anketos. Kai grupė turi trenerį, jis Kalendoriuje planuoja etapą, o tu matai visų grupių treniruotes.'],
-    ['Kaip veikia Kalendorius?', 'Visų grupių treniruotės pagal tvarkaraštį (kvadratėliai — grupių spalvos, čipsai filtruoja). Oranžinis taškelis — treniruotė be patvirtinto plano, švytinti diena — praėjusi be pažymėto lankomumo. Dienos lape matai trenerį, gali patvirtinti planą ar priminti. „Naujas renginys" — varžybos, stovykla, seminaras, diržo testas; visas sąrašas — „Visi renginiai".'],
+    ['Kaip veikia Kalendorius?', 'Visų grupių treniruotės pagal tvarkaraštį. Dideliame klube viršuje pasirink trenerį — liks tik jo grupės. Oranžinė žymė — per 14 d. nepatvirtinta treniruotė arba reikia pavaduotojo, švytinti diena — praėjusi be pažymėto lankomumo. Dienos lape matai trenerį, gali palikti pastabą ar priminti (tvirtina treneris). „Naujas renginys" — varžybos, stovykla, seminaras, diržo testas; visas sąrašas — „Visi renginiai".'],
     ['Kas tvirtina vaikų anketas?', 'Tu (Klubas → Mokiniai → Registracijos) arba grupės treneris — savo grupei. Patvirtinta anketa dingsta iš abiejų sąrašų. Paaugliai 14+ su klubo kodu registruojasi patys ir laukia patvirtinimo be grupės — grupę priskiri tu.'],
     ['Kaip skaičiuojami trenerių taškai?', 'Pažymėta treniruotė (lankomumas + pastangos) +3 · atsiliepimas po treniruotės +2 · patvirtinta treniruotė, sukurtas iššūkis ar rankinis patvirtinimas +1. Automatiniai užskaitymai (Strava, lankomumo užduotys) taškų neduoda. Pakopos: Padėjėjas 200 → Asistentas 500 → Instruktorius 1 000 → Senpajus 1 800 → Mokytojas 2 900 → Meistras 4 200 → Sensėjus 6 000. Reitingas — Analitikoje.'],
     ['Kaip veikia pavadavimai?', 'Treneris dienos lape spaudžia „Reikia pavadavimo". Kiti klubo treneriai kalendoriuje mato kortelę ir gali paimti patys („Pavaduosiu"), o tu Kalendoriaus sekcijoje PAVADAVIMAI priskiri pavaduotoją. Pavaduotojas tą dieną žymi lankomumą ir pastangas.'],
@@ -15408,18 +15408,19 @@ function kidChatOn(){ return !clubFlags || clubFlags.kid_trainer_chat_enabled !=
 const CLUB_FLAG_DEFS = [
   // v612 (savininko „A" 2026-09-22): 5 suskleidžiamos grupės pagal tai, kam veikia (buvo 4 planų + 17 vienoje krūvoje).
   // plans_enabled rodomas TIK kol išjungtas (V2 — viena tvarka; išjungus visiems dingtų Kalendorius). def:false — griežti (trūksta => išjungta).
+  // v613 (savininko „1 + peržiūrėk kitus"): IŠIMTI V2 neveikiantys — challenge_numbers_required (tik senas iššūkių vedlys, nepasiekiamas
+  // nė vienam klubui nuo 09-22) ir auto_approval_enabled (V2 nebekuria lankomumo / varžybų / egzamino užduočių; DB 0 tokių iššūkių;
+  // stulpelis lieka, default true). Strava automatinis tvirtinimas — grupėje IŠŠŪKIAI kartu su dvikovomis.
   { sec:'TRENIRUOTĖS' },
   { k:'plans_enabled', def:false, t:''+ico('treniruote')+' Treniruočių planai v2', d:'Kalendorius visoms rolėms, etapai su AI, pastangų vertinimas, pavadavimai. Įjungus jungiklis dingsta — tai nauja SPOBU tvarka.', info:'Treniruočių planai v2 — Kalendorius visoms rolėms. Treneris planuoja etapą su AI pagalba, patvirtina treniruotes (vaikai ir tėvai mato tik patvirtintas), po treniruotės žymi lankomumą ir vertina pastangas (EXP 20 / 14 / 8). Tu Kalendoriuje matai visų grupių treniruotes, tvirtini planus, skiri pavaduotojus ir kuri renginius.<br><br>Išjungus: dingsta Kalendorius, planai, pastangų vertinimas ir pavadavimai — grįžta senoji navigacija (Renginiai, Iššūkiai), lankomumas be pastangų.' },
   { k:'trainers_can_create_plans', t:''+ico('treneris')+' Treneriai kuria planus', d:'Ar treneris pats kuria grupės etapus, ar tik klubas. Numatyta: įjungta.', info:'Treneriai kuria planus — grupės treneris pats planuoja etapą (vedlys, AI). Išjungus: etapus kuria tik klubas, treneris mato ir patvirtina.' },
   { k:'attendance_enabled', t:''+ico('lankomumas')+' Lankomumas', d:'Treneris žymi lankomumą ir pastangas — iš to vaikų EXP po treniruočių. Numatyta: įjungta.', info:'Lankomumas ir pastangos — treneris po treniruotės pažymi, kas dalyvavo, ir įvertina pastangas (iš visų jėgų / gerai / lengviau). Tai pagrindinis vaikų EXP šaltinis: +20 / +14 / +8 už treniruotę, +15 už pilną savaitę, +100 už pilną mėnesį.<br><br>Išjungus: treneriai nebežymės lankomumo ir pastangų, vaikai negaus EXP po treniruočių, vaikas ir tėvas nebematys lankomumo, dings Analitikos lankomumas.' },
   { k:'effort_visible_to_parents', t:''+ico('tikslas')+' Tėvai mato pastangų vertinimą', d:'Eilutė „dirbo iš visų jėgų" tėvų kalendoriuje ir Pasiekimuose. Numatyta: įjungta.', info:'Tėvai mato pastangų vertinimą — po treniruotės trenerio įvertintos pastangos (iš visų jėgų / gerai / lengviau) ir EXP už jas rodomi tėvams. Vaikas savo pastangas mato visada.<br><br>Išjungus: tėvams dingsta tik pastangų eilutė, EXP lieka.' },
   { k:'trainer_posts_enabled', t:''+ico('nuotrauka')+' Trenerių postai', d:'Treneris po treniruotės dalinasi nuotrauka su viena eilute — grupei, Facebook, Instagram. Numatyta: įjungta.', info:'Trenerių postai — po treniruotės treneris pasidaro postą: nuotrauka + viena eilutė, ir pasidalina tėvų grupės pokalbyje, Facebook ar Instagram. Vaikų vardai Facebook / Instagram — tik tų, kurių tėvai davė sutikimą.<br><br>Išjungus: treneriai nebematys „Postai" mygtuko. Klubo Postų studija lieka.' },
-  { k:'challenge_numbers_required', def:false, t:''+ico('statistika')+' Tik iššūkiai su skaičiais', d:'Savo pratimuose privalomas taikinys (rep/km/sek). Numatyta: išjungta.', info:'Įjungus — treneris, kurdamas savo pratimą, PRIVALĖS įvesti skaitinį taikinį (kartai, km, sekundės...). Varianto „be skaičiaus (atlikta/ne)" nebeliks — visi iššūkiai bus su suvedamais skaičiais.<br><br>Išjungus: treneris gali palikti taikinį tuščią, ir iššūkis žymimas tik „atlikta / neatlikta".' },
-  { sec:'AUTOMATINIS TVIRTINIMAS' },
+  { sec:'IŠŠŪKIAI' },
   { k:'strava_auto_approve', t:''+ico('atnaujinti')+' Strava rezultatai tvirtinami automatiškai', d:'Susietos Strava bėgimai, ėjimai, dviratis — be trenerio. Numatyta: įjungta.', info:'Strava rezultatai tvirtinami automatiškai — kai vaikas (ar tėvas) susieja Strava, bėgimo / ėjimo / dviračio iššūkių veiklos ateina pačios ir, jei atitinka tikslą, patvirtinamos iš karto (EXP kaip įprasta). Treneris suvestinėje mato STRAVA žymą.<br><br>Išjungus: Strava veiklos vis tiek ateina, bet lieka „laukia" — tvirtina treneris.' },   // V2 7b (v552)
-  { k:'auto_approval_enabled', t:''+ico('atnaujinti')+' Automatinis užduočių užskaitymas', d:'Lankomumo, varžybų ir egzamino užduotis užskaito sistema iš duomenų, ne treneris. Numatyta: įjungta.', info:'Automatinis užskaitymas — savaitės/mėnesio užduotys, kurias sistema mato iš duomenų, užskaitomos be trenerio: „Lankomumas — tobulas mėnuo" iš trenerio pažymėto lankomumo, „Dalyvavimas varžybose" ir „Diržo egzaminas" iš jau patvirtintų rezultatų. EXP toks pat kaip trenerio patvirtinimo. Tikrinama kasnakt.<br><br>Išjungus: šios užduotys vėl pildomos ranka ir tvirtinamos trenerio.' },
-  { sec:'VAIKAMS IR TĖVAMS' },
   { k:'duels_enabled', t:''+ico('dvikova')+' Dvikovos', d:'Vaikai kviečia vienas kitą į dvikovas.', info:'Dvikovos — vaikas iškviečia draugą į 1-prieš-1 pratimų varžytuves (atsispaudimai, pritūpimai ir pan.), o treneris patvirtina rezultatą.<br><br>Išjungus: vaikai nebegalės kurti ar priimti dvikovų.' },
+  { sec:'VAIKAMS IR TĖVAMS' },
   { k:'kid_trainer_chat_enabled', t:''+ico('zinutes')+' Vaikų žinutės treneriui', d:'Vaikas gali parašyti savo treneriui. Numatyta: įjungta.', info:'Vaikų žinutės treneriui — vaikas gali parašyti SAVO treneriui: iš varpelio („Žinutės" tabo) arba nustatymuose prie trenerio vardo spausdamas „Rašyti". Treneris atsako įprastame žinučių lange.<br><br>Vaikai TARPUSAVYJE susirašinėti negali — tai užrakinta sistemos lygiu.<br><br>Išjungus: vaikai nebegalės pradėti pokalbio ar atsakinėti, treneriui esami pokalbiai lieka matomi.' },
   { k:'birthdays_enabled', t:''+ico('gimtadienis')+' Gimtadienių priminimai', d:'Artėjantys vaikų gimtadieniai (per 7 d.) trenerio ir klubo varpelyje. Numatyta: įjungta.', info:'Gimtadienių priminimai — artėjantys (per 7 d.) vaikų gimtadieniai rodomi trenerio ir klubo varpelyje, kad spėtumėte pasveikinti.<br><br>Išjungus: priminimų nebebus.' },
   { sec:'RENGINIAI' },
@@ -15599,7 +15600,7 @@ async function _submitChangePassword(){
 
 // Suskleidžiamos „grouped settings" sekcijos (accordion) — numatytai suskleista
 let _clubSecOpen = {};
-const CLUB_SEC_KEY = { 'TRENIRUOTĖS':'tren', 'AUTOMATINIS TVIRTINIMAS':'auto', 'VAIKAMS IR TĖVAMS':'vaik', 'RENGINIAI':'ren', 'NARYSTĖ IR MOKESČIAI':'nar' };   // v612: 5 suskleidžiamos grupės
+const CLUB_SEC_KEY = { 'TRENIRUOTĖS':'tren', 'IŠŠŪKIAI':'iss', 'VAIKAMS IR TĖVAMS':'vaik', 'RENGINIAI':'ren', 'NARYSTĖ IR MOKESČIAI':'nar' };   // v612/v613: 5 suskleidžiamos grupės
 function toggleClubSettingsSection(key){
   _clubSecOpen[key] = !_clubSecOpen[key];
   const r = document.getElementById('cs-rows-' + key);
@@ -29158,7 +29159,7 @@ async function submitNewClub() {
     // 2b. F-05: club_settings eilutė IŠKART — kitaip pirmas bet kurios vėliavos
     // perjungimas sukurtų ją su DB defaults ir tyliai išjungtų 14+ registraciją
     // (self_signup_enabled DB default=false, o be eilutės serveris skaito true)
-    const { error: csErr } = await sb.from('club_settings').insert({ club_id: newClub.id, self_signup_enabled: true, plans_enabled: true });   // v612: naujas klubas iškart V2
+    const { error: csErr } = await sb.from('club_settings').insert({ club_id: newClub.id, self_signup_enabled: true, plans_enabled: true, kid_trainer_chat_enabled: true });   // v612: naujas klubas iškart V2; v613: vaikų žinutės įjungtos (DB default false, o jungiklis sako „Numatyta: įjungta")
     if (csErr) console.warn('club_settings insert:', csErr.message);
 
     // 3. Sukuriame pending invitation
