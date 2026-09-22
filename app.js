@@ -41471,7 +41471,11 @@ const Planas = {
 
   // ── bendri helperiai ──
   role() { return currentProfile?.role || null; },
-  canEdit() { return ['trainer', 'club_admin'].includes(this.role()); },
+  // v606 (savininko sprendimas 09-22 „nereikia klubui duoti koreguoti ir patvirtinti — lai tai būna tik treneriui"):
+  // klubas treniruotės turinio nekeičia ir netvirtina. Jis peržiūri (openApr be mygtukų), rašo pastabą ir gali priminti.
+  // Etapo/plano kūrimas klubui lieka (vedlys) — tai kita vieta ir kitas jungiklis.
+  canEdit() { return this.role() === 'trainer'; },
+  canPlan() { return ['trainer', 'club_admin'].includes(this.role()); },   // etapų kūrimas / vedlys — kaip buvo
   clubId() { return (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || currentClub?.id || currentProfile?.club_id || null; },
   esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); },
   col(c) { return /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : '#FF4D00'; },   // 🔒 spalva į style atributą tik validi (v531 saugumo peržiūra)
@@ -41582,7 +41586,7 @@ const Planas = {
     const grp = id => groups.find(g => g.id === id) || {};
     const head = `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px;">
         <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1.4px;">${ico('treniruote')} MĖNESIO PLANAI</div>
-        ${groups.length && this.canEdit() ? `<button onclick="Planas.newPlan()" style="background:var(--br);border:none;color:#fff;font-size:11px;font-weight:800;padding:6px 12px;border-radius:99px;cursor:pointer;">+ Naujas planas</button>` : ''}
+        ${groups.length && this.canPlan() ? `<button onclick="Planas.newPlan()" style="background:var(--br);border:none;color:#fff;font-size:11px;font-weight:800;padding:6px 12px;border-radius:99px;cursor:pointer;">+ Naujas planas</button>` : ''}
       </div>`;
     let body = '';
     if (!groups.length) {
@@ -41592,7 +41596,7 @@ const Planas = {
         <div style="font-size:34px;margin-bottom:6px;">${ico('tikslas')}</div>
         <div style="font-weight:800;font-size:14px;margin-bottom:6px;">Dar nėra nė vieno plano</div>
         <div style="font-size:12px;color:var(--mut);line-height:1.5;">Mėnesio planas = grupės tikslas vienu sakiniu + savaičių treniruotės iš katalogo. Tėvai matys „kodėl", treneris — paruoštą rinkinį treniruotės dienai.</div>
-        ${this.canEdit() ? `<button onclick="Planas.newPlan()" style="margin-top:12px;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px 16px;border-radius:99px;cursor:pointer;">+ Sukurti pirmą planą</button>` : ''}
+        ${this.canPlan() ? `<button onclick="Planas.newPlan()" style="margin-top:12px;background:var(--br);border:none;color:#fff;font-size:12px;font-weight:800;padding:9px 16px;border-radius:99px;cursor:pointer;">+ Sukurti pirmą planą</button>` : ''}
       </div>`;
     } else {
       body = '<div style="padding:0 16px 6px;">' + plans.map(p => {
@@ -41620,7 +41624,7 @@ const Planas = {
 
   // ── FORMA (naujas / redaguoti) ──
   async openForm(planId) {
-    if (!this.canEdit()) return;
+    if (!this.canPlan()) return;   // v606: etapo formą klubas naudoja
     const p = planId ? this.st.plans.find(x => x.id === planId) : null;
     if (planId && !p) return;
     if (!this.st.groups.length) { try { await this.loadGroups(); } catch (_) { } }
@@ -41781,7 +41785,7 @@ const Planas = {
     const c = this.el(); const p = this.st.plan; if (!c || !p) return;
     const g = this.st.groups.find(x => x.id === p.group_id) || {};
     const n = this.weeksCount(p);
-    const canEdit = this.canEdit() && p.status !== 'archived';
+    const canEdit = this.canPlan() && p.status !== 'archived';   // v606: plano lygio veiksmai (etapas) — ir klubui
     const weeks = [];
     for (let w = 1; w <= n; w++) {
       const ss = this.st.sessions.filter(s => s.week_no === w);
@@ -41810,14 +41814,14 @@ const Planas = {
             : `<div style="margin-top:8px;font-size:11px;color:var(--mut);">Tikslo tėvams dar nėra${canEdit ? ' — pridėk per „Redaguoti"' : ''}.</div>`}
           ${(p.focus_areas || []).length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${p.focus_areas.map(f => `<span class="pl-chip on" style="cursor:default;padding:3px 9px;font-size:10px;">${this.esc(f)}</span>`).join('')}</div>` : ''}
           ${p.note ? `<div style="margin-top:8px;font-size:11px;color:var(--mut);line-height:1.4;white-space:pre-wrap;">${this.esc(p.note)}</div>` : ''}
-          ${this.canEdit() ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;">
+          ${this.canPlan() ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;">
             ${p.status !== 'archived' ? `<button onclick="Planas.openForm('${p.id}')" style="${this.BTN}">${ico('redaguoti')} Redaguoti</button>` : ''}
             ${p.status === 'draft' ? `<button onclick="Planas.setStatus('${p.id}','active')" style="${this.BTN}background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:var(--grn);">${ico('leisti')} Aktyvuoti</button>` : ''}
             ${p.status === 'active' ? `<button onclick="Planas.setStatus('${p.id}','archived')" style="${this.BTN}">${ico('archyvas')} Archyvuoti</button>` : ''}
             ${p.status === 'archived' ? `<button onclick="Planas.setStatus('${p.id}','draft')" style="${this.BTN}">${ico('atnaujinti')} Grąžinti į juodraštį</button>` : ''}
             ${p.status === 'draft' ? `<button onclick="Planas.deletePlan('${p.id}')" style="${this.BTN}border-color:rgba(239,68,68,.4);color:#EF4444;">${ico('trinti')} Ištrinti</button>` : ''}
           </div>` : ''}
-          ${p.status === 'draft' && this.canEdit() ? '<div style="font-size:10px;color:var(--mut);margin-top:8px;line-height:1.4;">Juodraštį matai tik tu ir klubas. Aktyvavus — tėvai gaus „Šio mėnesio tikslas" kortelę (nuo 2 dalies).</div>' : ''}
+          ${p.status === 'draft' && this.canPlan() ? '<div style="font-size:10px;color:var(--mut);margin-top:8px;line-height:1.4;">Juodraštį matai tik tu ir klubas. Aktyvavus — tėvai gaus „Šio mėnesio tikslas" kortelę (nuo 2 dalies).</div>' : ''}
         </div>
         ${weeks.join('')}
       </div>`;
@@ -42269,7 +42273,7 @@ Object.assign(Planas, {
   // ═══ VEDLYS (4 žingsniai) ═══
   async openWizard(opts) {
     const o = opts || {};
-    if (!this.canEdit()) return;
+    if (!this.canPlan()) return;   // v606: vedlį klubas naudoja
     if (!this.v2On()) { this.openForm(); return; }   // jungiklis išjungtas → lite forma
     if (!(typeof flagOn !== 'function' || flagOn('trainers_can_create_plans')) && this.role() === 'trainer') { showToast('Etapus šiame klube kuria klubas', 'error'); return; }
     if (!this.st.role) this.st.role = this.role() === 'club_admin' ? 'club_admin' : 'trainer';
@@ -42533,6 +42537,7 @@ Object.assign(Planas, {
   renderEtapas() {
     const c = this.el(); const p = this.st.plan; if (!c || !p) return;
     const g = this.groupById(p.group_id); const ss = this.st.sessions; const canEdit = this.canEdit() && p.status !== 'archived';
+    const canPlan = this.canPlan() && p.status !== 'archived';   // v606: etapo (ne treniruotės) veiksmai — ir klubui
     const conf = ss.filter(s => s.status === 'confirmed').length; const wait = ss.length - conf;
     const lastConf = ss.filter(s => s.status === 'confirmed').map(s => s.session_date).sort().pop();
     const weeks = {}; ss.forEach(s => { (weeks[s.week_no] = weeks[s.week_no] || []).push(s); });
@@ -42543,14 +42548,14 @@ Object.assign(Planas, {
       <div onclick="Planas.loadList()" style="display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;margin:0 16px 8px;">${ico('atgal')} VISI ETAPAI</div>
       <div style="padding:0 16px 8px;display:flex;align-items:flex-start;gap:8px;"><div style="flex:1;min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1.5px;line-height:1;">${this.esc(p.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${this.esc(g.name || '')} · ${this.fmtDate(p.period_start)} – ${this.fmtDate(p.period_end)} · ${ss.length} ${_ltPl(ss.length, 'treniruotė', 'treniruotės', 'treniruočių')}</div></div><span class="pl-badge ${p.status}">${this.STATUS[p.status] || p.status}</span></div>
       <div class="pl-hero"><div class="tt">TIKSLAS TĖVAMS</div><div style="font-size:12.5px;line-height:1.45;margin-top:6px;">${p.goal_parents ? this.esc(p.goal_parents) : '<span style="color:var(--mut);">Dar nėra — įrašyk per „Redaguoti" arba AI įrašys kuriant.</span>'}</div>${(p.focus_areas || []).length ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;">${p.focus_areas.map(f => `<span class="pl-chip on" style="cursor:default;padding:3px 9px;font-size:10px;">${this.esc(f)}</span>`).join('')}</div>` : ''}</div>
-      ${canEdit ? `<div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px;"><button onclick="Planas.openForm('${p.id}')" style="${this.BTN}">${ico('redaguoti')} Redaguoti</button>${p.status === 'active' ? `<button onclick="Planas.setStatus('${p.id}','archived')" style="${this.BTN}">${ico('archyvas')} Archyvuoti</button>` : ''}${p.status === 'draft' ? `<button onclick="Planas.deletePlan('${p.id}')" style="${this.BTN}border-color:rgba(239,68,68,.4);color:#EF4444;">${ico('trinti')} Ištrinti</button>` : ''}${(() => { const emp = ss.filter(s => s.status === 'draft' && !(s.blocks || []).length).length; return emp ? `<button onclick="Planas.regenPlan('${p.id}')" style="${this.BTN}color:#A855F7;border-color:rgba(168,85,247,.4);">${ico('ai')} ${emp === ss.length ? 'Paruošti su AI' : `Paruošti tuščias su AI · ${emp}`}</button>` : ''; })()}</div>` : ''}
+      ${canPlan ? `<div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px;"><button onclick="Planas.openForm('${p.id}')" style="${this.BTN}">${ico('redaguoti')} Redaguoti</button>${p.status === 'active' ? `<button onclick="Planas.setStatus('${p.id}','archived')" style="${this.BTN}">${ico('archyvas')} Archyvuoti</button>` : ''}${p.status === 'draft' ? `<button onclick="Planas.deletePlan('${p.id}')" style="${this.BTN}border-color:rgba(239,68,68,.4);color:#EF4444;">${ico('trinti')} Ištrinti</button>` : ''}${(() => { const emp = ss.filter(s => s.status === 'draft' && !(s.blocks || []).length).length; return emp ? `<button onclick="Planas.regenPlan('${p.id}')" style="${this.BTN}color:#A855F7;border-color:rgba(168,85,247,.4);">${ico('ai')} ${emp === ss.length ? 'Paruošti su AI' : `Paruošti tuščias su AI · ${emp}`}</button>` : ''; })()}</div>` : ''}
       <div class="kal-sec">TVIRTINIMAS</div>
       <div class="kal-card" style="border-left:3px solid #A855F7;"><div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;"><div style="font-size:13.5px;font-weight:900;">${ss.some(s => (s.blocks || []).length) ? 'Paruoštos ' + ss.length + ' ' + _ltPl(ss.length, 'treniruotė', 'treniruotės', 'treniruočių') : ss.length + ' treniruotės be turinio'}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">Patvirtinta ${conf}${lastConf ? ' · vaikai mato iki ' + this.fmtDate(lastConf) : ''}${p.status !== 'active' ? ' · etapas dar neaktyvus' : ''}</div></div>${wait ? `<span class="kal-tag ai">${wait} LAUKIA</span>` : `<span class="kal-tag ok">VISOS</span>`}</div>
         <div class="kal-bar" style="margin-top:10px;"><span style="width:${ss.length ? Math.round(conf * 100 / ss.length) : 0}%;"></span></div>
         ${canEdit && wait ? (() => { const ready = ss.filter(s => s.status !== 'confirmed' && (s.blocks || []).length).length, emp = wait - ready; return `<div class="kal-acts">${ready ? `<span class="kal-b g" onclick="Planas.${emp ? 'confirmReady' : 'confirmAll'}('${p.id}').then(ok=>ok&&Tren.etapas('${p.id}'))">${emp ? `Patvirtinti paruoštas · ${ready}` : 'Patvirtinti visą etapą'}</span>` : ''}${emp ? `<span class="kal-tag ai" style="align-self:center;">${emp} BE TURINIO</span>` : ''}</div>`; })() : ''}</div>
-      ${canEdit && typeof Iss !== 'undefined' ? Iss.etapasCard(p) : ''}
+      ${canPlan && typeof Iss !== 'undefined' ? Iss.etapasCard(p) : ''}
       <div class="kal-sec" style="padding-top:4px;">TRENIRUOTĖS</div>${wk || '<div class="kal-empty">Treniruočių nėra.</div>'}
-      ${canEdit ? `<div class="kal-card" style="border:.5px dashed var(--bdr);cursor:pointer;" onclick="Planas.openWizard({groupId:'${p.group_id}',ps:'${nextPs}',afterPlanId:'${p.id}'})"><div style="display:flex;align-items:center;gap:9px;color:var(--mut);">${ico('prideti')}<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:900;color:var(--txt);">Pridėti kitą etapą</div><div style="font-size:10.5px;font-weight:700;margin-top:2px;">nuo ${this.fmtDate(nextPs)} · kitas tikslas</div></div></div></div>` : ''}
+      ${canPlan ? `<div class="kal-card" style="border:.5px dashed var(--bdr);cursor:pointer;" onclick="Planas.openWizard({groupId:'${p.group_id}',ps:'${nextPs}',afterPlanId:'${p.id}'})"><div style="display:flex;align-items:center;gap:9px;color:var(--mut);">${ico('prideti')}<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:900;color:var(--txt);">Pridėti kitą etapą</div><div style="font-size:10.5px;font-weight:700;margin-top:2px;">nuo ${this.fmtDate(nextPs)} · kitas tikslas</div></div></div></div>` : ''}
       <div style="font-size:11px;color:var(--mut);text-align:center;padding:6px 20px 0;line-height:1.4;">Vaikai ir tėvai mato tik patvirtintas treniruotes aktyviame etape.</div>
     </div>`;
   },
@@ -44056,7 +44061,7 @@ Object.assign(Kal, {
             <div class="mt">${meta.join(' · ')}</div>
             ${(() => {   // v600: klubas peržiūri trenerio treniruotę ir palieka pastabą (MODULIS: Past)
               const a = [];
-              if (draft) a.push(`<span class="kal-b g" onclick="Kal.club.confirm('${s.session_id}','${ds}')">Patvirtinti</span>`);
+              // v606: klubas netvirtina — tik peržiūri, rašo pastabą ir primena treneriui
               if (s.session_id && typeof Planas !== 'undefined') a.push(`<span class="kal-b" onclick="Kal.club.openSess('${s.session_id}')">Atidaryti</span>`);
               if (typeof Past !== 'undefined' && Past.on() && s.session_id) a.push(Past.btn(s));
               if (draft) a.push(`<span class="kal-b" onclick="Kal.club.remind('${s.group_id}')">Priminti treneriui</span>`);
@@ -45181,7 +45186,7 @@ const Tren = {
   addDays(s, n) { const d = this.dt(s); d.setDate(d.getDate() + n); return this.ymd(d); },
   days(a, b) { return Math.round((this.dt(b) - this.dt(a)) / 86400000); },
   dmon(s) { const d = this.dt(s); return `${d.getDate()} ${(Kal.MONG[d.getMonth()] || '').toLowerCase().slice(0, 4)}.`; },
-  canEdit() { return typeof Planas !== 'undefined' && Planas.canEdit() && (this.st.role !== 'trainer' || typeof flagOn !== 'function' || flagOn('trainers_can_create_plans')); },
+  canEdit() { return typeof Planas !== 'undefined' && Planas.canPlan() && (this.st.role !== 'trainer' || typeof flagOn !== 'function' || flagOn('trainers_can_create_plans')); },   // v606: planavimas (ne treniruotės tvirtinimas)
   // konteineris: treneriui — ekranas tr-tren; adminui — pirmas #k-team-planas vaikas (Planas.loadList perrašo pane'ą, todėl įterpiam po jo)
   cid() {
     if (this.st.role === 'club_admin') {
@@ -46102,7 +46107,8 @@ const Past = {
     const club = this.isClub();
     Planas.sheet('psn-sheet', 'PASTABOS TRENERIUI', `<div id="psn-body"><div class="kal-empty"><b>Kraunama…</b></div></div>`,
       club ? `<div style="padding:0 16px;"><textarea id="psn-text" class="inp" maxlength="500" placeholder="Ką patikslinti ar pagirti? Treneris pamatys prie šios treniruotės." style="margin:0;font-size:12px;min-height:74px;resize:vertical;"></textarea></div>
-       <button class="pl-cta" onclick="Past.save('${sessId}','${groupId}')">${ico('siusti')} Įrašyti pastabą</button>` : '',
+       <button class="pl-cta" onclick="Past.save('${sessId}','${groupId}')">${ico('siusti')} Įrašyti pastabą</button>
+       <div style="text-align:center;margin-top:8px;"><span class="kal-b" style="padding:6px 12px;font-size:11px;" onclick="Past.remind('${sessId}','${groupId}')">${ico('pranesimai')} Priminti apie patvirtinimą</span></div>` : '',
       { z: (typeof Planas !== 'undefined' && Planas.topZ) ? Planas.topZ(100006) : 100006 });   // v605: virš etapo / treniruotės lapo
     await this.render(sessId, groupId);
   },
@@ -46125,6 +46131,25 @@ const Past = {
         ${!club && !n.seen_at ? `<span class="kal-b" style="padding:4px 9px;font-size:10px;" onclick="Past.seen('${n.id}','${sessId}','${groupId}')">Supratau</span>` : ''}
         ${club ? `<span class="kal-b" style="padding:4px 9px;font-size:10px;" onclick="Past.del('${n.id}','${sessId}','${groupId}')">${ico('trinti')}</span>` : ''}
       </div></div>`).join('');
+  },
+  // v606: priminimas treneriui apie ŠIOS treniruotės patvirtinimą (klubas pats netvirtina)
+  async remind(sessId, groupId) {
+    try {
+      const { data: s } = await sb.from('training_plan_sessions').select('session_date, title, status').eq('id', sessId).maybeSingle();
+      if (s && s.status === 'confirmed') { showToast(ico('patvirtinta') + ' Ši treniruotė jau patvirtinta', 'success', 3500); return; }
+      const g = (typeof Kal !== 'undefined' && Kal.club) ? (Kal.club.st.groups || []).find(x => x.id === groupId) : null;
+      const tid = g && g.trainer_id;
+      if (!tid) { showToast(ico('ispejimas') + ' Grupė be trenerio', 'error'); return; }
+      const nm = (typeof Kal !== 'undefined' && Kal.club) ? (Kal.club.st.trainers[tid] || 'Treneris') : 'Treneris';
+      const d = s && s.session_date ? String(s.session_date).slice(5).replace('-', '-') : '';
+      document.getElementById('psn-sheet')?.remove();
+      if (typeof openComposeModal !== 'function') return;
+      openComposeModal({ type: 'direct', parentIds: [tid], kidId: null, title: 'Priminti apie patvirtinimą', recipientLabel: `Treneris ${nm}` });
+      setTimeout(() => {
+        const ta = document.querySelector('#msg-compose-modal textarea');
+        if (ta && !ta.value) ta.value = `Labas! Grupės „${(g && g.name) || ''}" treniruotė${d ? ' ' + d : ''}${s && s.title ? ' („' + s.title + '")' : ''} dar nepatvirtinta — vaikai ir tėvai jos nemato. Patvirtink, kai turėsi minutę. Ačiū!`;
+      }, 150);
+    } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); }
   },
   async save(sessId, groupId) {
     if (this.st.busy) return;
