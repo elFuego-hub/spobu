@@ -31102,7 +31102,10 @@ function switchClubTeamTab(tab){
   if (tab==='students' && typeof switchClubStudentsTab==='function') switchClubStudentsTab('reg');
   else if (tab==='groups' && typeof loadClubGroups==='function') loadClubGroups();
   else if (tab==='trainers' && typeof loadClubTrainers==='function') loadClubTrainers();
-  else if (tab==='planas' && typeof Planas!=='undefined') Planas.loadAdmin().then(() => { if (typeof Tren !== 'undefined') Tren.mount('club_admin'); });   // MODULIS: planas (v528) + Tren (v566)
+  else if (tab==='planas' && typeof Planas!=='undefined') {   // v600: mėnesio planų sąrašas (v528 lite) išimtas — dubliavo „Aktyvius etapus"; lieka Tren (Katalogas + klubo rekomendacija)
+    if (typeof Kal !== 'undefined' && Kal.on && Kal.on() && typeof Tren !== 'undefined') { Planas.st.role = 'club_admin'; Planas.st.container = 'k-team-planas'; Tren.mount('club_admin'); }
+    else Planas.loadAdmin();   // klubai be planų v2 — senas sąrašas kaip buvo
+  }
 }
 
 // 🎒 MOKINIAI: nepriskirti prie grupės + laukia anketos patvirtinimo
@@ -43111,6 +43114,7 @@ const Kal = {
       this.st.sessions = ses; this.st.events = evs; this.st.ch = ch;
       if (typeof Atsil !== 'undefined' && Atsil.on()) { try { await Atsil.load(); } catch (_e) { } }   // MODULIS: Atsil (v584) — 👍/😐/👎 prie praėjusių treniruočių
       if (typeof Pavad !== 'undefined' && Pavad.on()) { try { await Pavad.load(r.from, r.to); await Pavad.merge(); } catch (_e) { } }   // MODULIS: Pavad (v585) — pavadavimai
+      if (typeof Past !== 'undefined' && Past.on()) { try { await Past.load((this.st.sessions || []).map(x => x.session_id)); } catch (_e) { } }   // MODULIS: Past (v600) — klubo pastabos treniruotėms
       this.render();
     } catch (e) {
       console.error('[kal-tr]', e);
@@ -43249,6 +43253,7 @@ const Kal = {
     }
     if (typeof Pavad !== 'undefined' && Pavad.on()) { const pb = Pavad.rowBtn(s, dateStr, todayS); if (pb) acts.push(pb); }   // MODULIS: Pavad (v585)
     const meta = [];
+    if (typeof Past !== 'undefined' && Past.on() && s.session_id) { const sn = Past.meta(s); if (sn) meta.push(sn); }   // MODULIS: Past (v600) — klubo pastaba prie treniruotės
     if (typeof Pavad !== 'undefined' && Pavad.on()) { const pm = Pavad.rowMeta(s, dateStr); if (pm) meta.push(pm); }
     if (kids) meta.push(`${kids} ${_ltPl(kids, 'vaikas', 'vaikai', 'vaikų')}`);
     if (marked) meta.push(`pažymėta ${s.present}/${s.total}${s.effortDone ? ' · pastangos ' + s.effortDone : ''}`);
@@ -43927,6 +43932,7 @@ Object.assign(Kal, {
         ]);
         this.st.sessions = ses; this.st.events = evs;
         if (typeof Pavad !== 'undefined') { try { await Pavad.load(r.from, r.to); } catch (_e) { } }   // MODULIS: Pavad (v585) — klubas mato ir priskiria
+        if (typeof Past !== 'undefined' && Past.on()) { try { await Past.load(ses.map(x => x.session_id)); } catch (_e) { } }   // MODULIS: Past (v600) — pastabos treniruotėms
         // registracijos į varžybas (dalyvaus / ne) — vienas kvietimas mėnesiui
         this.st.reg = {};
         const compIds = evs.filter(e => e.kind === 'comp').map(e => e.id);
@@ -43982,17 +43988,31 @@ Object.assign(Kal, {
           const marked = s.total > 0; const g = s.group; const draft = !!s.session_id && s.status !== 'confirmed';
           const meta = [K.esc(this.trainerName(g))];
           if (marked) meta.push(`pažymėta ${s.present}/${s.total}${s.effortDone ? ' · pastangos ' + s.effortDone : ''}`); else if (ds < today) meta.push('nepažymėta');
+          if (typeof Past !== 'undefined' && Past.on() && s.session_id) { const pm = Past.meta(s); if (pm) meta.push(pm); }   // v600: MODULIS: Past
           const txt = K.sessionText(s);
           return `<div class="kal-row"><div class="time"><b>${s.time ? K.esc(s.time) : '—'}</b><i>${s.duration ? s.duration + ' MIN' : ''}</i></div><div class="gr" style="background:${K.col(g?.color)};"></div><div class="bd">
             <div class="nm"><span>${K.esc(g?.name || 'Grupė')}</span>${K.statusTag(s)}</div>
             ${txt ? `<div class="ds">${txt}</div>` : ''}
             <div class="mt">${meta.join(' · ')}</div>
-            ${draft ? `<div class="kal-acts"><span class="kal-b g" onclick="Kal.club.confirm('${s.session_id}','${ds}')">Patvirtinti</span><span class="kal-b" onclick="Kal.club.remind('${s.group_id}')">Priminti treneriui</span></div>` : ''}
+            ${(() => {   // v600: klubas peržiūri trenerio treniruotę ir palieka pastabą (MODULIS: Past)
+              const a = [];
+              if (draft) a.push(`<span class="kal-b g" onclick="Kal.club.confirm('${s.session_id}','${ds}')">Patvirtinti</span>`);
+              if (s.session_id && typeof Planas !== 'undefined') a.push(`<span class="kal-b" onclick="Kal.club.openSess('${s.session_id}')">Atidaryti</span>`);
+              if (typeof Past !== 'undefined' && Past.on() && s.session_id) a.push(Past.btn(s));
+              if (draft) a.push(`<span class="kal-b" onclick="Kal.club.remind('${s.group_id}')">Priminti treneriui</span>`);
+              return a.length ? `<div class="kal-acts">${a.join('')}</div>` : '';
+            })()}
           </div></div>`;
         }).join('<hr>')}</div>` : '');
       const m = Number(ds.slice(5, 7)) - 1, d = Number(ds.slice(8, 10));
       const sub = `${d} ${K.MONG[m]} · ${ses.length ? ses.length + ' ' + _ltPl(ses.length, 'treniruotė', 'treniruotės', 'treniruočių') : (evs.length ? 'renginys' : 'laisva diena')}`;
       K.sheetOpen('kal-k-day', `<div style="min-width:0;"><b>${K.DNOM[K.dayNo(ds) - 1].toUpperCase()}</b><i>${K.esc(sub)}</i></div><button class="kal-x" onclick="Kal.sheetClose('kal-k-day')" title="Uždaryti">${ico('uzdaryti')}</button>`, cards || '<div class="kal-empty"><b>Šią dieną nieko nėra</b></div>');
+    },
+    // v600: klubas atsidaro trenerio treniruotės turinį (tas pats Planas.openApr lapas; rolė club_admin — be „Koreguoti")
+    async openSess(id) {
+      if (typeof Planas === 'undefined') return;
+      Planas.st.role = 'club_admin'; Planas.st.container = 'kal-k-content';
+      await Planas.openApr(id);
     },
     async confirm(id, ds) {
       try { const { error } = await sb.rpc('plan_session_confirm', { p_session: id }); if (error) throw error;
@@ -45144,6 +45164,19 @@ const Tren = {
       </div>${aiCards}
       ${typeof Atsil !== 'undefined' && s.role !== 'club_admin' ? Atsil.trenHtml() : ''}
       ${seen ? `<div class="kal-sec"><b>AI PASTEBĖJO</b><span>iš tavo treniruočių</span></div>${seen}` : ''}`;
+    // v600 (savininko sprendimas 09-22): klubo adminui skirtuke lieka tik KLUBO dalis — KATALOGAS (numatytieji blokai visam klubui)
+    // ir KLUBO REKOMENDACIJA. Planavimas (kita treniruotė · aktyvūs etapai · iššūkiai) yra trenerio darbas ir gyvena Kalendoriuje
+    // bei Būreliuose; klubui rodomas TIK kai išjungtas jungiklis „Treneriai kuria planus" (tada planuoja pats klubas).
+    if (this.st.role === 'club_admin' && (typeof flagOn !== 'function' || flagOn('trainers_can_create_plans'))) {
+      const dropSec = (t) => {
+        const s0 = [...c.querySelectorAll('.kal-sec')].find(x => (x.textContent || '').trim().toUpperCase().indexOf(t) === 0);
+        if (!s0) return;
+        const kill = [s0]; let n = s0.nextElementSibling;
+        while (n && !n.classList.contains('kal-sec')) { kill.push(n); n = n.nextElementSibling; }
+        kill.forEach(x => x.remove());
+      };
+      ['KITA TRENIRUOTĖ', 'AKTYVŪS ETAPAI', 'IŠŠŪKIAI'].forEach(dropSec);
+    }
     if (typeof Kal !== 'undefined' && Kal.afterRender) Kal.afterRender(c);
   },
   // ── veiksmai ──
@@ -45856,6 +45889,107 @@ const KPost = {
     } catch (e) { if (e && e.name !== 'AbortError') this.download(); }
   },
   download() { const s = this.st; if (!s || !s.canvas) return; const a = document.createElement('a'); a.href = s.canvas.toDataURL('image/png'); a.download = 'spobu-klubas.png'; a.click(); showToast(ico('atlikta') + ' Atsisiųsta'); },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: Past =====
+// v600 (2026-09-22, savininko prašymas: „kalendoriuje klubo admin gali peržiūrėti į ateitį trenerio treniruotes ir parašyti pastabas"):
+// KLUBO PASTABOS TRENIRUOTEI. Klubo kalendoriaus dienos lape prie kiekvienos treniruotės su turiniu — „Atidaryti" (Planas.openApr,
+// tas pats peržiūros lapas kaip treneriui) ir „Pastaba" (šis modulis). Pastaba rišama prie KONKREČIOS treniruotės
+// (`session_notes.session_id`), ne prie grupės — grupės lygio kanalas lieka „Rekomendacija" (`group_recommendations`).
+// Treneris pastabą mato savo kalendoriaus dienos lape (Kal.rowHtml meta eilutė) ir, paspaudęs, pažymi perskaityta (RPC
+// `session_note_seen` — teksto keisti negali, RLS treneriui tik select). Lentelė: server-KLUBO-PASTABOS-2026-09-22.sql.
+// EXP ir lankomumo neliečia. Taisyklė 7: viena vardų erdvė `Past`, DOM prefiksas `psn-`, jokių naujų globalių.
+const Past = {
+  st: { bySess: {}, loadedFrom: null, loadedTo: null, busy: false },
+  on() { return typeof Kal !== 'undefined' && Kal.on(); },
+  esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); },
+  clubId() { return (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || (typeof currentClub !== 'undefined' && currentClub?.id) || currentProfile?.club_id || null; },
+  isClub() { return currentProfile?.role === 'club_admin' || (typeof _clubManagerMode !== 'undefined' && _clubManagerMode); },
+  list(sid) { return this.st.bySess[sid] || []; },
+  unseen(sid) { return this.list(sid).filter(n => !n.seen_at).length; },
+
+  // Dienos/mėnesio lango pastabos — kraunama kartu su sesijomis (Kal.club.reload ir Kal.reload)
+  async load(sessionIds) {
+    const ids = (sessionIds || []).filter(Boolean);
+    if (!ids.length) { this.st.bySess = {}; return {}; }
+    try {
+      const { data, error } = await sb.from('session_notes').select('id, session_id, group_id, text, seen_at, created_at').in('session_id', ids.slice(0, 300)).order('created_at', { ascending: false }).limit(400);
+      if (error) { console.warn('[past]', error.message); return this.st.bySess; }
+      const m = {}; (data || []).forEach(n => { (m[n.session_id] = m[n.session_id] || []).push(n); });
+      this.st.bySess = m;
+    } catch (e) { console.warn('[past]', e); }
+    return this.st.bySess;
+  },
+
+  // ── KLUBAS: mygtukas dienos lape + lapas su sąrašu ir nauja pastaba ──
+  btn(s) {
+    if (!this.on() || !s || !s.session_id) return '';
+    const n = this.list(s.session_id).length;
+    return `<span class="kal-b" onclick="event.stopPropagation();Past.open('${s.session_id}','${s.group_id}')">${n ? `Pastabos · ${n}` : 'Pastaba'}</span>`;
+  },
+  // Trenerio eilutės meta: „Klubo pastaba: …" (neperskaityta — oranžinė)
+  meta(s) {
+    if (!this.on() || !s || !s.session_id) return '';
+    const l = this.list(s.session_id); if (!l.length) return '';
+    const u = l.filter(x => !x.seen_at).length;
+    return `<span onclick="event.stopPropagation();Past.open('${s.session_id}','${s.group_id}')" style="cursor:pointer;color:${u ? '#FF7A33' : 'var(--mut)'};font-weight:800;">${ico('zinutes')} Klubo pastaba${l.length > 1 ? ' · ' + l.length : ''}${u ? ' · NAUJA' : ''}</span>`;
+  },
+
+  async open(sessId, groupId) {
+    if (!this.on()) return;
+    const club = this.isClub();
+    Planas.sheet('psn-sheet', 'PASTABOS TRENERIUI', `<div id="psn-body"><div class="kal-empty"><b>Kraunama…</b></div></div>`,
+      club ? `<div style="padding:0 16px;"><textarea id="psn-text" class="inp" maxlength="500" placeholder="Ką patikslinti ar pagirti? Treneris pamatys prie šios treniruotės." style="margin:0;font-size:12px;min-height:74px;resize:vertical;"></textarea></div>
+       <button class="pl-cta" onclick="Past.save('${sessId}','${groupId}')">${ico('siusti')} Įrašyti pastabą</button>` : '',
+      { z: 100006 });
+    await this.render(sessId, groupId);
+  },
+  async render(sessId, groupId) {
+    const body = document.getElementById('psn-body'); if (!body) return;
+    let rows = [];
+    try {
+      const { data, error } = await sb.from('session_notes').select('id, session_id, group_id, text, seen_at, created_at').eq('session_id', sessId).order('created_at', { ascending: false }).limit(50);
+      if (error) throw error;
+      rows = data || [];
+      this.st.bySess[sessId] = rows;
+    } catch (e) { body.innerHTML = `<div class="kal-empty"><b>Nepavyko</b><i>${this.esc(e.message || '')}</i></div>`; return; }
+    const club = this.isClub();
+    if (!rows.length) { body.innerHTML = `<div class="kal-empty"><b>Pastabų nėra</b><i>${club ? 'Parašyk žemiau — treneris pamatys prie šios treniruotės' : 'Klubas dar nieko neparašė'}</i></div>`; return; }
+    const dt = (s) => { try { const d = new Date(s); return `${d.getDate()} ${(Kal.MONG[d.getMonth()] || '').toLowerCase().slice(0, 4)}. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } catch (_e) { return ''; } };
+    body.innerHTML = rows.map(n => `<div class="kal-card" style="border-left:3px solid ${n.seen_at ? 'var(--bdr)' : '#FF7A33'};">
+      <div style="font-size:12.5px;font-weight:700;line-height:1.5;white-space:pre-wrap;">${this.esc(n.text)}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+        <span style="flex:1;font-size:10px;color:var(--mut);font-weight:700;">${this.esc(dt(n.created_at))}${n.seen_at ? ' · treneris perskaitė' : (club ? ' · dar neperskaityta' : '')}</span>
+        ${!club && !n.seen_at ? `<span class="kal-b" style="padding:4px 9px;font-size:10px;" onclick="Past.seen('${n.id}','${sessId}','${groupId}')">Supratau</span>` : ''}
+        ${club ? `<span class="kal-b" style="padding:4px 9px;font-size:10px;" onclick="Past.del('${n.id}','${sessId}','${groupId}')">${ico('trinti')}</span>` : ''}
+      </div></div>`).join('');
+  },
+  async save(sessId, groupId) {
+    if (this.st.busy) return;
+    const el = document.getElementById('psn-text'); const t = (el ? el.value : '').trim();
+    if (t.length < 2) { showToast(ico('ispejimas') + ' Parašyk pastabą', 'error'); return; }
+    const cid = this.clubId(); if (!cid) { showToast(ico('klaida') + ' Klubas neužkrautas', 'error'); return; }
+    this.st.busy = true;
+    try {
+      const { error } = await sb.from('session_notes').insert({ session_id: sessId, group_id: groupId, club_id: cid, text: t.slice(0, 500) }).select('id').single();
+      if (error) throw error;
+      if (el) el.value = '';
+      showToast(ico('atlikta') + ' Pastaba įrašyta — treneris ją matys prie treniruotės', 'success', 4000);
+      await this.render(sessId, groupId);
+      if (typeof Kal !== 'undefined' && Kal.club && Kal.st && Kal.st.day) { /* dienos lapas persipieš kitą atidarymą */ }
+    } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 5000); }
+    this.st.busy = false;
+  },
+  async seen(id, sessId, groupId) {
+    try { const { error } = await sb.rpc('session_note_seen', { p_note: id }); if (error) throw error; await this.render(sessId, groupId); }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); }
+  },
+  async del(id, sessId, groupId) {
+    if (typeof appConfirm === 'function' && !(await appConfirm('Ištrinti šią pastabą?'))) return;
+    try { const { error } = await sb.from('session_notes').delete().eq('id', id); if (error) throw error; await this.render(sessId, groupId); }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); }
+  },
 };
 // ===== /MODULIS =====
 
