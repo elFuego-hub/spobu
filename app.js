@@ -6536,6 +6536,7 @@ async function toggleParentNotifications() {
   document.body.appendChild(modal);
   _parentBellTab = 'ann';
   loadParentBellContent();
+  if (typeof PushKv !== 'undefined') PushKv.mount('parent-bell-list');   // v614: push kvietimas
 }
 
 // Pažymėti VISUS tėvo pokalbius/pranešimus skaitytais
@@ -14999,7 +15000,7 @@ function toggleClubNotifications(){
   const s = document.getElementById('kh-notif-section');
   if(!s) return;
   if (s.parentElement !== document.body) document.body.appendChild(s);
-  if (s.style.display==='none' || s.style.display===''){ s.style.display='flex'; if(typeof loadClubNotifications==='function') loadClubNotifications(); }
+  if (s.style.display==='none' || s.style.display===''){ s.style.display='flex'; if(typeof loadClubNotifications==='function') loadClubNotifications(); if (typeof PushKv !== 'undefined') PushKv.mount('kh-notif-list'); }   // v614: push kvietimas
   else { s.style.display='none'; }
 }
 let clubNotifTab = 'system';
@@ -15054,7 +15055,7 @@ async function _fetchClubNotifications(force){
     sb.rpc('club_trainer_activity', { club_uuid: clubId }).then(r=>r.data||[]).catch(()=>[]),
     campIds.length ? sb.from('club_event_rsvp').select('id, kid_id, event_id, status, created_at').in('event_id', campIds).gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(60) : Promise.resolve({data:[]}),
     sb.from('club_challenges').select('id, title, created_at').eq('club_id', clubId).eq('is_active', false).gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(10),
-    kidIds.length ? sb.from('reports').select('id, kid_id, type, created_at').in('kid_id', kidIds).neq('status','error').gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(20) : Promise.resolve({data:[]}),
+    Promise.resolve({data:[]}),   // v614: ataskaitų varpelyje nerodom — užklausa išimta
     compIds.length ? sb.from('competition_results').select('id, kid_id, competition_id, created_at').in('competition_id', compIds).eq('approval_status','pending').order('created_at',{ascending:false}).limit(20) : Promise.resolve({data:[]}),
     sb.from('conversation_members').select('last_read_at, conversations!inner(id, type, title, last_message_at, last_message_preview, last_message_sender_id)').eq('user_id', currentUser.id).limit(40),
     sb.from('kids').select('id, created_at').eq('club_id', clubId).eq('approval_status','pending').order('created_at',{ascending:false}).limit(50).then(r=>r.data||[]).catch(()=>[]),
@@ -15141,17 +15142,18 @@ async function _fetchClubNotifications(force){
   }
   // Neaktyvūs vaikai — agreguota, pagal lankomumo raudoną slenkstį (kaip loadClubInactiveKids)
   try {
-    const { data: grps } = await sb.from('groups').select('id').eq('club_id', clubId);
-    const gg = (grps||[]).map(x=>x.id);
-    if (gg.length){
-      const cut60 = new Date(Date.now()-60*86400000).toISOString().split('T')[0];
-      const { data: att } = await sb.from('attendance').select('kid_id, present, session_date').in('group_id', gg).gte('session_date', cut60);
-      const byKid={}; (att||[]).forEach(r=>{ (byKid[r.kid_id]=byKid[r.kid_id]||[]).push(r); });
+    // v614: Anal.att60 — tik aktyvios grupės, puslapiais (buvo iki 1000 eil. ir su neaktyviomis), tik dabartiniai klubo vaikai
+    const att = (typeof Anal !== 'undefined') ? await Anal.att60() : [];
+    const own = new Set(kidIds);
+    if (att.length){
+      const byKid={}; att.forEach(r=>{ if (own.has(r.kid_id)) (byKid[r.kid_id]=byKid[r.kid_id]||[]).push(r); });
       const RED = Math.max(2, parseInt(clubFlags?.inactive_red)||5); let redN=0;
       Object.values(byKid).forEach(rs=>{ rs.sort((a,b)=>a.session_date<b.session_date?1:(a.session_date>b.session_date?-1:0)); let s=0; for(const r of rs){ if(!r.present)s++; else break; } if(s>=RED) redN++; });
       if (redN>0) systemItems.push({ id:'inactive-kids-'+redN, icon: '<svg class="ico" style="color:currentColor" aria-hidden="true"><use href="#i-dirzas"></use></svg>', title:`${redN} nustojo lankyti`, sub:'Vaikai praleido daug treniruočių — verta susisiekti', ts:today+'T08:00:00Z', link:{screen:'k-trainers',teamTab:'students'} });
     }
   } catch(_){}
+  // v614: V2 įvykiai — „Reikia pavaduotojo" (14 d.) ir nepatvirtintos treniruotės per 7 d. pagal trenerį (MODULIS: KNotif)
+  try { if (typeof KNotif !== 'undefined') systemItems.push(...await KNotif.v2Items(clubId)); } catch(e){ console.warn('[knotif] v2', e); }
   systemItems.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
 
   // ŽINUTĖS: pokalbiai su perskaityta/neperskaityta būsena (kaip tėvo varpelis) — rodomi VISI, taškas = neperskaityta
@@ -15309,6 +15311,7 @@ function clubNotifClick(tab, id, convId){
   if (it && it.link){
     const s = document.getElementById('kh-notif-section'); if(s) s.style.display='none';
     if (it.link.fn === 'fbstudio'){ if (typeof openFbStudio === 'function') openFbStudio(); return; }   // v491: savaitės posto priminimas → studija
+    if (it.link.fn === 'kal'){ if (typeof KNotif !== 'undefined') KNotif.openKal(it.link); return; }   // v614: pavadavimai / nepatvirtintos → kalendorius
     if (typeof nv==='function') nv('k', null, it.link.screen);
     if (it.link.teamTab && typeof switchClubTeamTab==='function') switchClubTeamTab(it.link.teamTab);
     if (it.link.evTab && typeof switchClubEventsTab==='function') switchClubEventsTab(it.link.evTab);
@@ -15335,8 +15338,8 @@ function openClubNotifPrefs(){
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('pranesimai')} PUSH PRANEŠIMAI</div><button onclick="document.getElementById('club-notif-prefs').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div style="padding:14px 16px 22px;">
       <div style="font-size:11px;color:var(--mut);margin:0 2px 12px;">Įjunk, apie ką nori gauti pranešimus į telefoną — net kai programėlė uždaryta. Tas pats filtras galioja ir varpeliui.</div>
-      ${rowP(''+ico('dokumentas')+'','Klubas','Registracijos, neaktyvūs vaikai, ataskaitos','club_admin')}
-      ${rowP(''+ico('medalis')+'','Renginiai','Varžybos, stovyklos, grupių iššūkiai','club_events')}
+      ${rowP(''+ico('dokumentas')+'','Klubas','Naujos vaikų anketos, pavadavimo prašymai','club_admin')}
+      ${rowP(''+ico('medalis')+'','Renginiai','Kas užsiregistravo į varžybas ir stovyklas','club_events')}
       ${rowP(''+ico('zinutes')+'','Žinutės','Pokalbiai su tėvais ir treneriais','messages')}
     </div>
   </div>`;
@@ -25094,6 +25097,7 @@ function toggleTrainerNotifications() {
   if (section.style.display === 'none' || section.style.display === '') {
     section.style.display = 'flex';
     loadTrainerNotifications();
+    if (typeof PushKv !== 'undefined') PushKv.mount('trh-notif-list');   // v614: push kvietimas
   } else {
     section.style.display = 'none';
   }
@@ -29379,6 +29383,7 @@ async function loadClubData(clubIdOverride) {
   if (typeof loadClubGroups === 'function') loadClubGroups();
   if (typeof loadClubMainDashboard === 'function') loadClubMainDashboard();  // pagrindinio dashboard (v320)
   updateClubNotifBadge(true); // ${ico('pranesimai')} varpelio badge (Blokas 8)
+  if (typeof KNotif !== 'undefined') KNotif.subscribe();   // v614: gyvas varpelis (žinutės realtime + kas 5 min.)
 }
 
 // 🚀 KLUBO PRADŽIOS VEDIKLIS — protingas sąrašas su būsena (✓ jei padaryta), pirmam kartui + iš nustatymų
@@ -30782,6 +30787,7 @@ function openTrainerManage(tid, name, code){
     </div>
     <div style="padding:16px 20px;">
       <div style="font-size:12px;color:var(--mut);margin-bottom:16px;">${ico('anketa')} Trenerio kodas: <span style="color:#fff;font-weight:700;">${code||'–'}</span></div>
+      <button class="btn" style="width:100%;margin:0 0 8px;background:rgba(99,102,241,.14);color:#8b8df5;border:.5px solid rgba(99,102,241,.4);" onclick="document.getElementById('club-trmanage-modal').remove();KNotif.writeTrainer(${escapeHtml(JSON.stringify(String(tid)))},${escapeHtml(JSON.stringify(String(name || '')))})">${ico('zinutes')} RAŠYTI TRENERIUI</button>
       <button class="btn owner-only" style="width:100%;margin:0 0 8px;background:rgba(234,179,8,.15);color:#EAB308;border:.5px solid rgba(234,179,8,.4);" onclick="suspendTrainer('${tid}','${name.replace(/'/g,"\\'")}')">⏸️ SUSTABDYTI TRENERĮ</button>
       <button class="btn owner-only" style="width:100%;margin:0;background:rgba(239,68,68,.12);color:#EF4444;border:.5px solid rgba(239,68,68,.35);" onclick="openTrainerRemove('${tid}','${name.replace(/'/g,"\\'")}')">${ico('trinti')} PAŠALINTI TRENERĮ</button>
       <div style="font-size:11px;color:var(--mut);margin-top:10px;line-height:1.5;">⏸️ Sustabdytas treneris nebegali prisijungti, bet vaikai lieka jam priskirti. 🗑️ Šalinant — privalai perskirti visus jo vaikus kitam treneriui.</div>
@@ -36040,9 +36046,10 @@ async function handleAppResume() {
       if (typeof loadTrainerHome === 'function') loadTrainerHome();
     }
 
-    // 🏛️ KLUBAS: realtime kanalų nėra (poll) — atnaujinam varpelio badge po miego
+    // 🏛️ KLUBAS: po miego — varpelio badge + realtime kanalas iš naujo (v614: MODULIS KNotif)
     if (currentProfile?.role === 'club_admin') {
       if (typeof updateClubNotifBadge === 'function') updateClubNotifBadge(true);
+      if (typeof KNotif !== 'undefined') KNotif.subscribe();
     }
 
     // 👑 v496 (B5): ADMIN — po miego perregistruojam realtime kanalus + badge (anksčiau
@@ -37316,6 +37323,7 @@ function openMessages() {
 // Grįžti į pagrindinį ekraną
 function goBackFromMessages() {
   unsubscribeFromConversations();
+  unsubscribeFromMessages();   // v614: ir atidaryto pokalbio kanalas — kitaip naujos žinutės tyliai pažymimos perskaitytomis
   
   // Slėpti msg ekranus
   ['msg-list', 'msg-conv', 'msg-new'].forEach(id => {
@@ -37900,7 +37908,10 @@ function subscribeToMessages(convId) {
         // Nauja žinutė - perkrauti
         await loadMessages(convId);
         
-        // Pažymėti kaip perskaitytą jei aš ne siuntėjas
+        // Pažymėti kaip perskaitytą jei aš ne siuntėjas — v614: TIK kai pokalbis tikrai atidarytas ir matomas
+        // (išėjus per apatinį meniu kanalas likdavo gyvas ir naujos žinutės tyliai tapdavo „perskaitytos" — varpelis jų nerodydavo)
+        const _open = document.getElementById('msg-conv')?.classList.contains('on') && currentConversationId === convId && document.visibilityState === 'visible';
+        if (!_open) { unsubscribeFromMessages(); return; }
         if (payload.new.sender_id !== currentUser.id) {
           await sb.from('conversation_members')
             .update({ last_read_at: new Date().toISOString() })
@@ -37995,7 +38006,7 @@ function openComposeModal(context) {
   
   if (composeContext.type === 'direct') {
     // v460: tas pats modalas naudojamas ir rašant vaikui — antraštė turi sutapti su gavėju
-    titleEl.textContent = composeContext.toKid ? 'RAŠYTI VAIKUI' : 'RAŠYTI TĖVAMS';
+    titleEl.textContent = composeContext.toKid ? 'RAŠYTI VAIKUI' : (composeContext.toTrainer ? 'RAŠYTI TRENERIUI' : 'RAŠYTI TĖVAMS');   // v614: „Priminti" / „Rašyti treneriui"
     recipientEl.textContent = composeContext.recipientLabel || (composeContext.toKid ? 'Vaikas' : 'Tėvai');
   } else if (composeContext.type === 'group') {
     titleEl.textContent = 'RAŠYTI GRUPĖS TĖVAMS';
@@ -38379,7 +38390,7 @@ async function submitComposeMessage() {
     if (ctx.type === 'direct') {
       // VISI vaiko tėvai
       (ctx.parentIds || []).forEach(pid => {
-        if (pid !== currentUser.id) recipients.push({ user_id: pid, role: 'parent' });
+        if (pid !== currentUser.id) recipients.push({ user_id: pid, role: ctx.toTrainer ? 'trainer' : 'parent' });   // v614: treneris pokalbyje — 'trainer'
       });
       if (recipients.length === 0) {
         throw new Error('Nerasti gavėjai (tėvų paskyros). Uždaryk ir atidaryk žinutės langą iš naujo.');
@@ -38431,19 +38442,9 @@ async function submitComposeMessage() {
         }
       }
     } else if (ctx.type === 'broadcast') {
-      const audience = ctx.audience || 'parents';
-      let rolesFilter = ['parent'];
-      if (audience === 'trainers') rolesFilter = ['trainer'];
-      else if (audience === 'kids') rolesFilter = ['kid'];
-      else if (audience === 'all') rolesFilter = ['parent', 'trainer', 'kid'];
-
-      const { data: clubProfiles } = await sb.from('profiles')
-        .select('id, role')
-        .eq('club_id', resolveMyClubId()) // ⚡ W1-6
-        .in('role', rolesFilter)
-        .neq('id', currentUser.id);
-
-      (clubProfiles || []).forEach(p => recipients.push({ user_id: p.id, role: p.role }));
+      // v614: gavėjai per klubo vaikus ir trenerius (MODULIS: KNotif) — profiles.club_id realių klubų tėvams / vaikams TUŠČIAS
+      // (Vilkas, Shodan: „Visi klubo tėvai" = 0 gavėjų, „Nėra gavėjų pokalbiui")
+      (await KNotif.broadcastRecipients(ctx.audience || 'parents')).forEach(r => recipients.push(r));
     }
 
     if (recipients.length < 1) {
@@ -38797,6 +38798,7 @@ function toggleNotifications() {
     section.style.display = 'flex';
     // Užkrauti pranešimus
     loadAllNotifications();
+    if (typeof PushKv !== 'undefined') PushKv.mount('v-notif-list');   // v614: push kvietimas
   } else {
     section.style.display = 'none';
   }
@@ -43542,7 +43544,7 @@ Object.assign(Kal, {
       const gnames = [...new Set(l.map(s => s.group.name))].join(', ');
       Kal.sheetClose('kal-k-day', true);
       if (typeof openComposeModal !== 'function') return;
-      openComposeModal({ type: 'direct', parentIds: [tid], kidId: null, title: 'Priminti treneriui', recipientLabel: `Treneris ${nm}` });
+      openComposeModal({ type: 'direct', parentIds: [tid], kidId: null, toTrainer: true, title: 'Priminti treneriui', recipientLabel: `Treneris ${nm}` });
       setTimeout(() => { const ta = document.querySelector('#msg-compose-modal textarea'); if (ta && !ta.value) ta.value = `Labas! ${d} ${(this.K.MONG[m] || '').toLowerCase()} ${l.length === 1 ? 'treniruotė' : l.length + ' treniruotės'} (${gnames}) dar nepatvirtint${l.length === 1 ? 'a' : 'os'} — vaikai ir tėvai jų nemato. Patvirtink, kai turėsi minutę. Ačiū!`; }, 150);
     },
 
@@ -43659,7 +43661,7 @@ Object.assign(Kal, {
       const nm = this.st.trainers[tid] || (window._clubGroupsRank?.tName || {})[tid] || 'Treneris';
       Kal.sheetClose('kal-k-day', true); document.getElementById('club-group-preview')?.remove();
       if (typeof openComposeModal !== 'function') return;
-      openComposeModal({ type: 'direct', parentIds: [tid], kidId: null, title: 'Priminti treneriui', recipientLabel: `Treneris ${nm}` });
+      openComposeModal({ type: 'direct', parentIds: [tid], kidId: null, toTrainer: true, title: 'Priminti treneriui', recipientLabel: `Treneris ${nm}` });
       setTimeout(() => { const ta = document.querySelector('#msg-compose-modal textarea'); if (ta && !ta.value) ta.value = `Labas! Grupės „${g?.name || ''}" kalendoriuje yra nepatvirtintų treniruočių — vaikai ir tėvai jų nemato. Patvirtink, kai turėsi minutę. Ačiū!`; }, 150);
     },
 
@@ -45651,7 +45653,7 @@ const Past = {
       const d = s && s.session_date ? String(s.session_date).slice(5).replace('-', '-') : '';
       document.getElementById('psn-sheet')?.remove();
       if (typeof openComposeModal !== 'function') return;
-      openComposeModal({ type: 'direct', parentIds: [tid], kidId: null, title: 'Priminti apie patvirtinimą', recipientLabel: `Treneris ${nm}` });
+      openComposeModal({ type: 'direct', parentIds: [tid], kidId: null, toTrainer: true, title: 'Priminti apie patvirtinimą', recipientLabel: `Treneris ${nm}` });
       setTimeout(() => {
         const ta = document.querySelector('#msg-compose-modal textarea');
         if (ta && !ta.value) ta.value = `Labas! Grupės „${(g && g.name) || ''}" treniruotė${d ? ' ' + d : ''}${s && s.title ? ' („' + s.title + '")' : ''} dar nepatvirtinta — vaikai ir tėvai jos nemato. Patvirtink, kai turėsi minutę. Ačiū!`;
@@ -46256,6 +46258,156 @@ const KInfo = {
       box.style.display = '';
     } catch (e) { console.warn('[kinfo] tėvams', e); box.style.display = 'none'; }
   },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: KNotif =====
+// v614 (savininko „A+B ir C daryk, kortelė visiems" 2026-09-22): KLUBO PRANEŠIMAI po V2.
+// (1) Pranešimo „visiems" gavėjai — per klubo vaikus (kids.club_id → kid_parent_links, kids.user_id) ir trainers.invited_by_club_id;
+//     buvo profiles.club_id, kuris realių klubų tėvų / vaikų profiliuose TUŠČIAS (Vilkas, Shodan — 0 gavėjų, „Nėra gavėjų").
+// (2) „Rašyti treneriui" (Klubas → Treneriai) + teisinga antraštė ir nario rolė pokalbyje.
+// (3) Gyvas varpelis klubui: realtime naujoms žinutėms + atnaujinimas kas 5 min., kai langas matomas (anketos, pavadavimai).
+// (4) V2 įvykiai varpelyje: „Reikia pavaduotojo" (14 d.), nepatvirtintos treniruotės per 7 d. pagal trenerį.
+// Push apie pavadavimus ir registracijas siunčia serveris (server-PRANESIMAI-2026-09-22.sql). Vardų erdvė KNotif, jokių naujų globalių.
+const KNotif = {
+  st: { ch: null, timer: null, deb: null },
+  MON: ['saus.', 'vas.', 'kov.', 'bal.', 'geg.', 'birž.', 'liep.', 'rugp.', 'rugs.', 'spal.', 'lapkr.', 'gruod.'],
+  dm(s) { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${this.MON[Number(m[2]) - 1]} ${Number(m[3])}` : String(s || ''); },
+
+  // ── (1) gavėjai pranešimui „visiems" ──
+  async broadcastRecipients(aud) {
+    const cid = typeof resolveMyClubId === 'function' ? resolveMyClubId() : (currentClub && currentClub.id);
+    if (!cid) return [];
+    const out = [], seen = new Set(), add = (uid, role) => { if (uid && uid !== currentUser.id && !seen.has(uid)) { seen.add(uid); out.push({ user_id: uid, role }); } };
+    const wantP = aud === 'parents' || aud === 'all', wantK = aud === 'kids' || aud === 'all', wantT = aud === 'trainers' || aud === 'all';
+    const kids = (wantP || wantK) ? await _fetchAll(() => sb.from('kids').select('id, user_id').eq('club_id', cid).or('approval_status.is.null,approval_status.eq.approved').order('id')) : [];
+    if (wantT) {
+      const { data, error } = await sb.from('trainers').select('id, profiles!inner(status)').eq('invited_by_club_id', cid);
+      if (error) throw error;
+      (data || []).forEach(t => { if (t.profiles?.status !== 'suspended') add(t.id, 'trainer'); });
+    }
+    if (wantP && kids.length) (await Anal.rows('kid_parent_links', 'kid_id, parent_id', 'kid_id', kids.map(k => k.id), null, 'kid_id,parent_id')).forEach(l => add(l.parent_id, 'parent'));
+    if (wantK) {
+      const uids = kids.map(k => k.user_id).filter(Boolean);
+      if (uids.length) (await Anal.rows('profiles', 'id, role', 'id', uids, q => q.eq('role', 'kid'))).forEach(p => add(p.id, 'kid'));
+    }
+    return out;
+  },
+
+  // ── (2) rašyti treneriui ──
+  writeTrainer(tid, name) {
+    if (typeof openComposeModal !== 'function' || !tid) return;
+    openComposeModal({ type: 'direct', parentIds: [tid], kidId: null, toTrainer: true, title: '', recipientLabel: `Treneris ${name || ''}`.trim() });
+  },
+
+  // ── (3) gyvas varpelis ──
+  bump() { clearTimeout(this.st.deb); this.st.deb = setTimeout(() => { if (typeof updateClubNotifBadge === 'function') updateClubNotifBadge(true); const s = document.getElementById('kh-notif-section'); if (s && s.style.display === 'flex' && typeof loadClubNotifications === 'function') loadClubNotifications(); }, 800); },
+  subscribe() {
+    try {
+      if (!currentUser?.id || currentProfile?.role !== 'club_admin') return;
+      const topic = 'club-' + currentUser.id;
+      if (this.st.ch) { try { sb.removeChannel(this.st.ch); } catch (e) {} this.st.ch = null; }
+      try { (sb.getChannels ? sb.getChannels() : []).forEach(c => { if (c?.topic && c.topic.indexOf(topic) !== -1) { try { sb.removeChannel(c); } catch (e) {} } }); } catch (e) {}
+      const ch = sb.channel(topic);
+      ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
+        try {
+          const msg = payload.new; if (!msg || !msg.conversation_id || msg.sender_id === currentUser.id) return;
+          if (typeof _isSeen === 'function' && _isSeen('ms', msg.id)) return;
+          const { data: mem } = await sb.from('conversation_members').select('conversation_id').eq('conversation_id', msg.conversation_id).eq('user_id', currentUser.id).maybeSingle();
+          if (!mem) return;
+          const { data: p } = await sb.from('profiles').select('first_name, last_name, role').eq('id', msg.sender_id).maybeSingle();
+          const who = p ? (`${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Kažkas') : 'Kažkas', tag = p?.role === 'parent' ? ' (tėvai)' : (p?.role === 'trainer' ? ' (treneris)' : (p?.role === 'kid' ? ' (vaikas)' : ''));
+          if (typeof _addSeen === 'function') _addSeen('ms', msg.id);
+          showToast(`${ico('zinutes')} NUO ${who.toUpperCase()}${tag}\n\n${String(msg.body || '').slice(0, 80)}`, 'info', null, { sound: 'send' });
+          this.bump();
+        } catch (e) { /* nekritinis */ }
+      }).subscribe();
+      this.st.ch = ch;
+      clearInterval(this.st.timer);
+      this.st.timer = setInterval(() => { if (document.visibilityState === 'visible' && currentProfile?.role === 'club_admin') this.bump(); }, 300000);
+    } catch (e) { console.warn('[knotif] realtime', e); }
+  },
+
+  // ── (4) V2 įvykiai varpelio „Klubas" skirtuke ──
+  async v2Items(clubId) {
+    const out = [];
+    if (typeof Kal === 'undefined' || !Kal.on() || !clubId) return out;
+    const today = Anal.ymd(new Date()), d7 = Anal.ymd(new Date(Date.now() + 7 * 86400000)), d14 = Anal.ymd(new Date(Date.now() + 14 * 86400000));
+    const gs = await Anal.groups(); if (!gs.length) return out;
+    const gById = {}; gs.forEach(g => { gById[g.id] = g; });
+    const [sub, ses] = await Promise.all([
+      sb.from('group_substitutions').select('id, group_id, session_date, requested_by, created_at').eq('club_id', clubId).eq('status', 'open').gte('session_date', today).lte('session_date', d14).order('session_date').limit(30),
+      Anal.rows('training_plan_sessions', 'id, group_id, session_date, status', 'group_id', gs.map(g => g.id), q => q.gte('session_date', today).lte('session_date', d7).neq('status', 'confirmed'))
+    ]);
+    if (sub.error) throw sub.error;
+    (sub.data || []).forEach(s => {
+      const g = gById[s.group_id];
+      out.push({ id: 'sub-' + s.id, icon: '🆘', title: `Reikia pavaduotojo · ${g ? g.name : 'grupė'}`, sub: `${this.dm(s.session_date)} · ${Anal.tName(s.requested_by)} ieško pavaduotojo`, ts: s.created_at, link: { fn: 'kal', date: s.session_date } });
+    });
+    const byT = {}; ses.forEach(s => { const t = (gById[s.group_id] || {}).trainer_id || ''; (byT[t] = byT[t] || []).push(s); });
+    Object.entries(byT).forEach(([t, l]) => {
+      const n = l.length, word = typeof _ltPl === 'function' ? _ltPl(n, 'nepatvirtinta treniruotė', 'nepatvirtintos treniruotės', 'nepatvirtintų treniruočių') : 'nepatvirtintos';
+      out.push({ id: `drafts-${t || 'none'}-${n}-${today}`, icon: ico('laukia'), title: `${t ? Anal.tName(t) : 'Be trenerio'}: ${n} ${word}`, sub: 'Per artimiausias 7 d. · kalendoriuje gali priminti treneriui', ts: new Date().toISOString(), link: { fn: 'kal', tid: t || 'none' } });
+    });
+    return out;
+  },
+  async openKal(l) {
+    const C = (typeof Kal !== 'undefined' && Kal.club) ? Kal.club : null;
+    if (C && l && l.date) C.st.ym = String(l.date).slice(0, 7);
+    if (C && l && l.tid) { C.st.tsel = l.tid; C.st.sel = 'all'; }
+    if (typeof nv === 'function') nv('k', null, 'k-kal');
+    if (!C || !l || !l.date) return;
+    for (let i = 0; i < 30 && (C.st.busy || !C.st.groups || !C.st.groups.length); i++) await new Promise(r => setTimeout(r, 100));
+    try { C.openDay(l.date); } catch (e) { /* diena neatsidarė — lieka kalendorius */ }
+  },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: PushKv =====
+// v614 (savininko „kortelė visiems"): PUSH KVIETIMAS varpelio viršuje — klubui, treneriui, tėvams ir vaikui, kol šiame įrenginyje
+// pranešimai neįjungti (2026-09-22 visoje sistemoje buvo 1 prenumerata). Įjungia esamu enablePushNotifications();
+// iPhone be „Į pradžios ekraną" — instrukcija (iOS push veikia tik iš pradžios ekrano); užblokuota — kaip atblokuoti.
+// „Ne dabar" — 7 d. Vardų erdvė PushKv, DOM prefiksas pushkv-.
+const PushKv = {
+  KEY() { return 'spobu_pushkv_hide_' + (currentUser?.id || 'x'); },
+  hidden() { try { const t = Number(localStorage.getItem(this.KEY()) || 0); return !!t && Date.now() - t < 7 * 86400000; } catch (e) { return false; } },
+  ios() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); },
+  standalone() { try { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; } catch (e) { return false; } },
+  state() {
+    if (typeof pushRegisteredForMe === 'function' && pushRegisteredForMe()) return null;
+    if (this.hidden()) return null;
+    if (this.ios() && !this.standalone()) return 'ios';
+    if (typeof pushSupported !== 'function' || !pushSupported()) return null;
+    if (Notification.permission === 'denied') return 'denied';
+    return 'ask';
+  },
+  SUB: {
+    club_admin: 'Naujos anketos, pavadavimo prašymai, registracijos į renginius ir žinutės — net kai programėlė uždaryta.',
+    trainer: 'Nauji pateikimai, pavadavimo prašymai, klubo pranešimai ir žinutės — net kai programėlė uždaryta.',
+    parent: 'Patvirtinti rezultatai, nauji iššūkiai, klubo pranešimai ir žinutės — net kai programėlė uždaryta.',
+    kid: 'Patvirtinti iššūkiai, nauji iššūkiai ir žinutės — net kai programėlė uždaryta.',
+  },
+  html(st, listId) {
+    const a = escapeHtml(JSON.stringify(String(listId)));
+    const btn = (t, fn, main) => `<button onclick="${fn}" style="flex:${main ? 1 : '0 0 auto'};padding:9px 12px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;${main ? 'background:var(--br);color:#fff;border:none;' : 'background:transparent;color:var(--mut);border:.5px solid var(--bdr);'}">${t}</button>`;
+    let t, s, b;
+    if (st === 'ios') { t = 'Pranešimai iPhone telefone'; s = 'iPhone pranešimus rodo tik iš pradžios ekrano: Safari apačioje spausk <b>Bendrinti</b> (kvadratas su rodykle) → <b>„Į pradžios ekraną"</b>, tada atidaryk SPOBU iš ten ir čia spausk „Įjungti".'; b = btn('Supratau', `PushKv.later(${a})`, true); }
+    else if (st === 'denied') { t = 'Pranešimai užblokuoti'; s = 'Šiame įrenginyje pranešimai uždrausti. Atblokuok naršyklės svetainės nustatymuose (spyna prie adreso → Pranešimai → Leisti) ir grįžk čia.'; b = btn('Supratau', `PushKv.later(${a})`, true); }
+    else { t = 'Gauk pranešimus telefone'; s = this.SUB[currentProfile?.role] || this.SUB.parent; b = btn(`${ico('pranesimai')} Įjungti`, `PushKv.on(${a})`, true) + btn('Ne dabar', `PushKv.later(${a})`, false); }
+    return `<div style="background:linear-gradient(135deg,rgba(255,77,0,.16),rgba(255,122,51,.05));border:.5px solid rgba(255,77,0,.45);border-radius:14px;padding:12px;"><div style="font-size:13px;font-weight:900;color:#fff;margin-bottom:4px;">${ico('pranesimai')} ${t}</div><div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:10px;">${s}</div><div style="display:flex;gap:6px;">${b}</div></div>`;
+  },
+  mount(listId) {
+    try {
+      const list = document.getElementById(listId); if (!list || !list.parentElement) return;
+      document.getElementById('pushkv-' + listId)?.remove();
+      const st = this.state(); if (!st) return;
+      const d = document.createElement('div'); d.id = 'pushkv-' + listId; d.style.cssText = 'padding:10px 16px 2px;flex-shrink:0;';
+      d.innerHTML = this.html(st, listId);
+      list.parentElement.insertBefore(d, list);
+    } catch (e) { /* kortelė neprivaloma */ }
+  },
+  async on(listId) { const ok = typeof enablePushNotifications === 'function' ? await enablePushNotifications() : false; if (ok) document.getElementById('pushkv-' + listId)?.remove(); },
+  later(listId) { try { localStorage.setItem(this.KEY(), String(Date.now())); } catch (e) {} document.getElementById('pushkv-' + listId)?.remove(); },
 };
 // ===== /MODULIS =====
 
