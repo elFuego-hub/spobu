@@ -45174,7 +45174,12 @@ const Tren = {
   canEdit() { return typeof Planas !== 'undefined' && Planas.canEdit() && (this.st.role !== 'trainer' || typeof flagOn !== 'function' || flagOn('trainers_can_create_plans')); },
   // konteineris: treneriui — ekranas tr-tren; adminui — pirmas #k-team-planas vaikas (Planas.loadList perrašo pane'ą, todėl įterpiam po jo)
   cid() {
-    if (this.st.role === 'club_admin') { const pane = document.getElementById('k-team-planas'); if (!pane) return null; let c = document.getElementById('tren-k'); if (!c) { c = document.createElement('div'); c.id = 'tren-k'; pane.insertBefore(c, pane.firstChild); } return c; }
+    if (this.st.role === 'club_admin') {
+      const pane = document.getElementById('k-team-planas'); if (!pane) return null;
+      let c = document.getElementById('tren-k');
+      if (!c) { pane.innerHTML = ''; c = document.createElement('div'); c.id = 'tren-k'; pane.appendChild(c); }   // v604: statinis „Kraunama..." iš index.html — po v600 jo niekas nebeperrašo
+      return c;
+    }
     return document.getElementById('tren-tr');
   },
   async mount(role) {
@@ -45300,7 +45305,7 @@ const Tren = {
       ${recs ? `<div class="kal-sec"><b>KLUBO REKOMENDACIJA</b><span></span></div>${recs}` : (s.role === 'club_admin' ? `<div class="kal-sec"><b>KLUBO REKOMENDACIJA</b><span></span></div><div class="kal-empty"><b>Rekomendacijos dar nėra</b><i>Rašoma iš klubo kalendoriaus — treneriai ir AI planai ją matys čia</i></div>` : '')}
       <div class="kal-sec"><b>KATALOGAS</b><span>${lib.defs.length + lib.mine.length} ${Planas.tyLt(s.kind).toLowerCase()}${lib.hiddenIds.length ? ` · ${lib.hiddenIds.length} paslėpta` : ''}</span></div>
       <div style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;" class="no-scrollbar">${chips}</div>
-      <div class="kal-card">${rows.length ? rows.slice(0, 9).map(rowHtml).join('') : '<div style="font-size:11px;color:var(--mut);font-weight:700;">Šioje srityje blokų nėra — sukurk savo arba paprašyk AI.</div>'}${rows.length > 9 ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Visi ${rows.length} · paslėpti / trinti →</div>` : (rows.length ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Tvarkyti (paslėpti / trinti) →</div>` : '')}
+      <div class="kal-card">${rows.length ? rows.slice(0, 5).map(rowHtml).join('') + (rows.length > 5 ? `<div id="tren-lib-rest" style="display:none;">${rows.slice(5).map((r, j) => rowHtml(r, j + 5)).join('')}</div><div id="tren-lib-more" style="text-align:center;padding:7px 0 2px;"><span class="kal-b" style="padding:4px 11px;font-size:10.5px;" onclick="document.getElementById('tren-lib-rest').style.display='';this.parentElement.remove();">Rodyti visus · ${rows.length}</span></div>` : '') : '<div style="font-size:11px;color:var(--mut);font-weight:700;">Šioje srityje blokų nėra — sukurk savo arba paprašyk AI.</div>'}${rows.length > 5 ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Visi ${rows.length} · paslėpti / trinti →</div>` : (rows.length ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Tvarkyti (paslėpti / trinti) →</div>` : '')}
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;">${edit ? this.btn('Tren.newBlock()', ico('prideti') + ' Naujas blokas', 'o') : ''}${edit && activeForAi ? this.btn('Tren.aiSuggest()', ico('ai') + (s.aiBusy ? ' AI galvoja…' : ' AI: pasiūlyk 3')) : (edit ? `<span style="font-size:10.5px;color:var(--mut);font-weight:700;align-self:center;">AI pasiūlymai — kai bus aktyvus etapas</span>` : '')}</div>
       </div>${aiCards}
       ${typeof Atsil !== 'undefined' && s.role !== 'club_admin' ? Atsil.trenHtml() : ''}
