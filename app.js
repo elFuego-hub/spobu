@@ -494,7 +494,7 @@ async function _checkFeedbackReplies(){
     const last = data && data[0] && data[0].replied_at;
     if (!last) return;
     if (localStorage.getItem('spobu_fb_reply_seen_' + currentUser.id) === last) return;
-    showToast(''+ico('pastas')+' Gavai atsakymą iš SPOBU — Pagalba → „Mano žinutės"', 'success', 6000);
+    showToast(''+ico('pastas')+' Gavai atsakymą iš SPOBU — rasi „Mano žinutėse" (Nustatymai)', 'success', 6000);
   } catch(e){}
 }
 async function openMyMessages(){
@@ -1860,14 +1860,19 @@ function openHelpModal(who) {
   };
   // v595: klubo DUK (iki tol klubas gaudavo vaiko sąrašą) — kviečiama iš klubo paskyros meniu „Dažni klausimai"
   FAQ.club = [
-    ['Nuo ko pradėti?', 'Pradžios vediklis (paskyros meniu): grupė su treniruočių laikais → treneris → vaikų anketos. Kai grupė turi trenerį, jis Kalendoriuje planuoja etapą, o tu matai visų grupių treniruotes.'],
+    ['Nuo ko pradėti?', 'Pradžios vediklis (Nustatymai): grupė su treniruočių laikais → treneris → vaikų anketos → klubo informacija → pranešimai telefone. Kai grupė turi trenerį, jis Kalendoriuje planuoja etapą, o tu matai visų grupių treniruotes.'],
     ['Kaip veikia Kalendorius?', 'Visų grupių treniruotės pagal tvarkaraštį. Dideliame klube viršuje pasirink trenerį — liks tik jo grupės. Oranžinė žymė — per 14 d. nepatvirtinta treniruotė arba reikia pavaduotojo, švytinti diena — praėjusi be pažymėto lankomumo. Dienos lape matai trenerį, gali palikti pastabą ar priminti (tvirtina treneris). „Naujas renginys" — varžybos, stovykla, seminaras, diržo testas; visas sąrašas — „Visi renginiai".'],
     ['Kas tvirtina vaikų anketas?', 'Tu (Klubas → Mokiniai → Registracijos) arba grupės treneris — savo grupei. Patvirtinta anketa dingsta iš abiejų sąrašų. Paaugliai 14+ su klubo kodu registruojasi patys ir laukia patvirtinimo be grupės — grupę priskiri tu.'],
     ['Kaip skaičiuojami trenerių taškai?', 'Pažymėta treniruotė (lankomumas + pastangos) +3 · atsiliepimas po treniruotės +2 · patvirtinta treniruotė, sukurtas iššūkis ar rankinis patvirtinimas +1. Automatiniai užskaitymai (Strava, lankomumo užduotys) taškų neduoda. Pakopos: Padėjėjas 200 → Asistentas 500 → Instruktorius 1 000 → Senpajus 1 800 → Mokytojas 2 900 → Meistras 4 200 → Sensėjus 6 000. Reitingas — Analitikoje.'],
     ['Kaip veikia pavadavimai?', 'Treneris dienos lape spaudžia „Reikia pavadavimo". Kiti klubo treneriai kalendoriuje mato kortelę ir gali paimti patys („Pavaduosiu"), o tu Kalendoriaus sekcijoje PAVADAVIMAI priskiri pavaduotoją. Pavaduotojas tą dieną žymi lankomumą ir pastangas.'],
-    ['Kur klubo jungikliai?', 'Profilis → Klubo nustatymai: planai, treneriai kuria planus, pastangos tėvams, Strava automatinis tvirtinimas, lankomumas, varžybos, stovyklos, nario mokesčiai ir kt. Prie kiekvieno — '+ico('info')+' su paaiškinimu. Pakeitimas galioja visam klubui iš karto.'],
+    ['Kur klubo jungikliai?', 'Profilis → Klubo nustatymai: 5 grupės — Treniruotės (treneriai kuria planus, lankomumas ir pastangos, pastangos tėvams, trenerių postai), Iššūkiai (Strava automatinis tvirtinimas, dvikovos), Vaikams ir tėvams, Renginiai, Narystė ir mokesčiai. Prie kiekvieno — '+ico('info')+' su paaiškinimu. Pakeitimas galioja visam klubui iš karto.'],
+    ['Ką tėvai mato apie klubą?', 'Profilis → Klubo informacija: adresas, telefonas, el. paštas, trumpas aprašymas, Facebook / Instagram. Užpildžius tėvai savo Profilyje mato klubo kortelę (adresas atsidaro žemėlapyje, telefonu galima skambinti), o kvietimo poste atsiranda adresas ir telefonas.'],
+    ['Kaip parašyti treneriui?', 'Klubas → Treneriai → treneris → „Rašyti treneriui". Iš kalendoriaus dienos lapo — „Priminti" (nepatvirtintos treniruotės). Visiems — Pagrindinis → „Rašyti pranešimą" (tėvams, treneriams, vaikams ar visiems).'],
+    ['Kaip rasti vaiką statistikoje?', 'Visa statistika → paieškos laukas virš sąrašo: vardas ar pavardė (lietuviškos raidės nesvarbios). Klubas ir treneriai randa visus, taip pat anonimus; vaikai ir tėvai anonimų neranda.'],
     ['Kas yra „Trenerių prieiga"?', 'Paskyros meniu pažymi trenerius, kurie gali administruoti klubą — jie iš savo Nustatymų atsidaro klubo vaizdą. Savininko funkcijos (klubo nustatymai, trenerių prieiga, vediklis) jiems paslėptos.'],
-    ['Negaunu push pranešimų?', 'Paskyros meniu „Push pranešimai" — įjunk bent vieną tipą (klubo administravimas, renginiai, žinutės); pirmas įjungimas užregistruoja telefoną. iPhone: appsą reikia įsidėti į pradžios ekraną.']
+    ['Kokius pranešimus gaunu telefone?', 'Klubas: nauja vaiko anketa, pavadavimo prašymas ir kas pavaduos. Renginiai: kas užsiregistravo į varžybas ar stovyklą. Žinutės: nauji pokalbiai. Kiekvieną tipą galima išjungti (Nustatymai → Push pranešimai) — tas pats filtras galioja ir varpeliui.'],
+    ['Negaunu push pranešimų?', 'Varpelio viršuje spausk „Gauk pranešimus telefone" → „Įjungti" (arba Nustatymai → Push pranešimai). iPhone: pirma Safari → Bendrinti → „Į pradžios ekraną" ir atidaryk SPOBU iš ten. Jei pranešimai užblokuoti — atblokuok naršyklės svetainės nustatymuose.'],
+    ['Kur rašyti SPOBU?', 'Nustatymai → „SPOBU palaikymas" arba varpelis → Žinutės → „SPOBU palaikymas". Klausimai, klaidos, pasiūlymai — viename pokalbyje, atsakymas ateina ten pat ir į varpelį.']
   ];
   const faq = FAQ[who] || FAQ.kid;
   const title = who === 'trainer' ? ''+ico('pagalba')+' PAGALBA TRENERIUI' : who === 'club' ? ''+ico('pagalba')+' PAGALBA KLUBUI' : ''+ico('pagalba')+' PAGALBA';
@@ -1968,9 +1973,10 @@ const WELCOME_CONTENT = {
     items: [
       ['kalendorius', '<b class="t">Kalendorius</b>visų grupių treniruotės, nepatvirtinti planai, renginiai; „Naujas renginys" vienoje vietoje'],
       ['mokiniai',    'Nariai, grupės, treneriai, registracijos — Klubo skiltyje'],
-      ['nustatymai',  'Jungikliai Profilyje: planai, treneriai kuria planus, pastangos tėvams, Strava automatinis tvirtinimas'],
+      ['nustatymai',  'Profilyje — klubo informacija tėvams ir jungikliai (5 grupės: treniruotės, iššūkiai, vaikams ir tėvams, renginiai, narystė)'],
       ['startas',     'Pradžios vediklis (Nustatymuose): grupė → treneris → vaikai'],
-      ['bug',         'Pastabas siųskite per Pagalba → „Pranešti problemą"']
+      ['pranesimai',  'Varpelyje — anketos, pavadavimai, registracijos ir žinutės; įjunk pranešimus telefone'],
+      ['bug',         'Klausimus ir klaidas rašyk SPOBU: Nustatymai → „SPOBU palaikymas"']
     ]
   }
 };
@@ -15473,7 +15479,7 @@ function openClubAccountMenu(){
       </div>
       <div onclick="document.getElementById('club-acct-menu').remove();openClubNotifPrefs();" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('pranesimai')}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Push pranešimai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">3 tipai: klubas, renginiai, žinutės — net su uždarytu appsu</div></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Push pranešimai</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">${(typeof pushRegisteredForMe === 'function' && pushRegisteredForMe()) ? '<span style="color:var(--grn);">Įjungta šiame telefone</span> · klubas, renginiai, žinutės' : 'Šiame telefone neįjungta — paspausk ir įjunk'}</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
       ${!_clubManagerMode ? `<div onclick="openClubManagers()" style="${rs}">
@@ -15483,12 +15489,12 @@ function openClubAccountMenu(){
       </div>
       <div onclick="document.getElementById('club-acct-menu').remove();openClubOnboarding();" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('startas')}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Pradžios vediklis</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Žingsniai klubui paruošti (grupė → treneris → vaikai)</div></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Pradžios vediklis</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Grupė → treneris → vaikai → klubo informacija → pranešimai</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>` : ''}
       ${!_clubManagerMode ? `<div onclick="document.getElementById('club-acct-menu').remove();openClubSettings();" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('nustatymai')}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Klubo funkcijos ir logotipas</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Įjunk/išjunk funkcijas, keisk logo ir info</div></div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Klubo informacija ir funkcijos</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Kontaktai, aprašymas, logotipas, jungikliai</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>` : ''}
       <div onclick="openChangePasswordModal()" style="${rs}">
@@ -15528,21 +15534,14 @@ function openClubAccountMenu(){
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Rodyti įvadą iš naujo</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Pasveikinimo langas su pirmais žingsniais</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
-      <div onclick="document.getElementById('club-acct-menu').remove();openHelpReportModal();" style="${rs}">
-        <div style="font-size:24px;flex-shrink:0;">${ico('bug')}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Radote klaidą? Keliaus tiesiai administratoriui</div></div>
+      <!-- v618 (savininko sprendimas 2026-09-23 „C — pokalbyje"): vietoj „Pranešti problemą" + „Mano žinutės" + „Susisiekti" — vienas SPOBU palaikymo pokalbis
+           (klausimai, klaidos, pasiūlymai; atsakymas ateina čia pat ir į varpelį / telefoną). El. paštas lieka mažu tekstu apačioje. -->
+      <div onclick="document.getElementById('club-acct-menu').remove();_openSpobuThread();" style="${rs}background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,122,51,.04));border-color:rgba(255,77,0,.4);">
+        <img src="brand/mark-white-128.png" style="width:26px;height:26px;flex-shrink:0;" alt="">
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">SPOBU palaikymas</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Klausimai, klaidos, pasiūlymai — atsakome čia pat</div></div>
         <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
       </div>
-      <div onclick="document.getElementById('club-acct-menu').remove();openMyMessages();" style="${rs}">
-        <div style="font-size:24px;flex-shrink:0;">${ico('pastas')}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Mano žinutės</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Jūsų pranešimai ir SPOBU atsakymai</div></div>
-        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
-      </div>
-      <div onclick="contactSupport('SPOBU klubas – klausimas')" style="${rs}">
-        <div style="font-size:24px;flex-shrink:0;">${ico('pastas')}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">${SUP} — paspaudus adresas nusikopijuos</div></div>
-        <div style="font-size:16px;color:var(--mut);flex-shrink:0;">›</div>
-      </div>
+      <div onclick="contactSupport('SPOBU klubas – klausimas')" style="text-align:center;font-size:10.5px;color:var(--mut);margin:-2px 0 10px;cursor:pointer;">arba el. paštu: <u>${SUP}</u></div>
       <div onclick="openDataAccountModal()" style="${rs}">
         <div style="font-size:24px;flex-shrink:0;">${ico('dokumentas')}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">Duomenys ir paskyra</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Eksportas (GDPR) ar paskyros ištrynimas</div></div>
@@ -29437,17 +29436,22 @@ async function openClubOnboarding(){
     <div style="width:30px;height:30px;border-radius:50%;background:${done?'var(--grn)':'rgba(255,255,255,.08)'};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${done?'#fff':'var(--mut)'};flex-shrink:0;">${done?'✓':num}</div>
     <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;color:white;">${icon} ${title}</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">${done?'Padaryta ✓':sub}</div></div>
     ${done?'':'<div style="font-size:16px;color:var(--br);flex-shrink:0;">›</div>'}</div>`;
-  const doneN=[hasGroup,hasTrainer,hasKid].filter(Boolean).length;
+  // v618: + klubo informacija (MODULIS: KInfo) ir pranešimai telefone — auto rodymas lieka tik naujam klubui be grupių
+  const hasInfo = typeof KInfo !== 'undefined' && KInfo.has(currentClub);
+  const hasPush = typeof pushRegisteredForMe === 'function' && pushRegisteredForMe();
+  const doneN=[hasGroup,hasTrainer,hasKid,hasInfo,hasPush].filter(Boolean).length;
   const m=document.createElement('div'); m.id='club-onboard';
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100007;align-items:flex-end;justify-content:center;';
   m.onclick=e=>{ if(e.target===m){ _clubOnboardSeen(); m.remove(); } };
   m.innerHTML=`<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out;">
-    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('startas')} PRADŽIA · ${doneN}/3</div><button onclick="_clubOnboardSeen();document.getElementById('club-onboard').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
+    <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('startas')} PRADŽIA · ${doneN}/5</div><button onclick="_clubOnboardSeen();document.getElementById('club-onboard').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
     <div style="padding:14px 16px 22px;">
       <div style="font-size:11px;color:var(--mut);line-height:1.5;margin:0 2px 12px;">Keli žingsniai — ir klubas pasiruošęs. Kiekvienas nuveda kur reikia:</div>
       ${step(hasGroup,'1',''+ico('kalendorius')+'','Sukurk pirmą grupę','Grupė + treniruočių laikai',"nv('k',null,'k-trainers');if(typeof switchClubTeamTab==='function')switchClubTeamTab('groups');if(typeof openClubGroupModal==='function')openClubGroupModal()")}
       ${step(hasTrainer,'2',''+ico('dirzas')+'','Pakviesk trenerį','Priskirsi jį grupei',"nv('k',null,'k-trainers');if(typeof switchClubTeamTab==='function')switchClubTeamTab('trainers');if(typeof openInviteTrainer==='function')openInviteTrainer()")}
       ${step(hasKid,'3',''+ico('mokiniai')+'','Patvirtink vaikų registracijas','Tėvai registruoja — tu tvirtini',"nv('k',null,'k-trainers');if(typeof switchClubTeamTab==='function')switchClubTeamTab('students')")}
+      ${step(hasInfo,'4',''+ico('klubas')+'','Užpildyk klubo informaciją','Adresas, telefonas, aprašymas, FB/IG — tėvai matys savo profilyje',"nv('k',null,'k-prof');setTimeout(function(){if(typeof KInfo!=='undefined')KInfo.edit();},450)")}
+      ${step(hasPush,'5',''+ico('pranesimai')+'','Įjunk pranešimus telefone','Naujos anketos, pavadavimai, registracijos, žinutės',"openClubNotifPrefs()")}
       <div style="font-size:10px;color:var(--mut);line-height:1.5;margin-top:6px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px;">${ico('pagalba')} ${(typeof Kal !== 'undefined' && Kal.on()) ? 'Kai grupė turi trenerį — jis ' + ico('kalendorius') + ' Kalendoriuje planuoja treniruotes, o tu matai visų grupių treniruotes. Renginius (varžybas, stovyklą, seminarą, diržo testą) kuri ten pat per „Naujas renginys".' : 'Kai bus vaikų — kurk renginius (varžybas, stovyklas, grupių iššūkius) skiltyje ' + ico('kalendorius') + ' Renginiai.'}</div>
     </div>
   </div>`;
