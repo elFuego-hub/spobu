@@ -42670,17 +42670,50 @@ Object.assign(Planas, {
   // „paslėpti sau", UI variantas b). Tik trainer_block_hidden / trainer_blocks rašymas — EXP ir lankomumo neliečia.
   AGE_LT: { young: '6–9 m.', older: '10+ m.' },
   libClub() { const e = this.st.edit; return (e && (e.p.club_id || (this.groupById(e.s.group_id) || {}).club_id)) || this.clubId(); },
+  // v601 (savininko sprendimas 09-22 „daryk"): katalogas TRIMIS juostomis. Iki tol `mine` reiškė VISUS klubo blokus —
+  // du skirtingai dirbantys treneriai vienas kitam trukdė, o paslėpti sau buvo galima tik SPOBU numatytuosius.
+  // Dabar: mine = TIK savi (use_count čia ir yra „kiek aš naudojau" — didinamas tik savininkui), picks = klubo pažymėti
+  // `is_club_pick` (ne mano), defs = SPOBU numatytieji. Slepiama viskas: numatytieji per trainer_block_hidden,
+  // klubo blokai per trainer_blocks_hidden. SQL: server-KATALOGAS-juostos-2026-09-22.sql.
   async loadLib(type) {
     const uid = currentUser?.id;
-    const [dR, hR, mR] = await Promise.all([
+    const [dR, hR, mR, bhR] = await Promise.all([
       sb.from('trainer_block_defaults').select('id, kind, title, minutes, text, exercise_ids, age_group, sort_order').eq('is_active', true).eq('kind', type).order('sort_order').limit(60),
       sb.from('trainer_block_hidden').select('default_id').eq('trainer_id', uid).limit(500),
-      sb.from('trainer_blocks').select('id, kind, title, minutes, text, exercise_ids, use_count, trainer_id').eq('club_id', this.libClub()).eq('is_active', true).eq('kind', type).order('use_count', { ascending: false }).limit(30),
+      sb.from('trainer_blocks').select('id, kind, title, minutes, text, exercise_ids, use_count, trainer_id, is_club_pick').eq('club_id', this.libClub()).eq('is_active', true).eq('kind', type).order('use_count', { ascending: false }).limit(60),
+      sb.from('trainer_blocks_hidden').select('block_id').eq('trainer_id', uid).limit(500),
     ]);
-    [dR, hR, mR].forEach(r => { if (r.error) console.warn('[planas-lib]', r.error.message); });
+    [dR, hR, mR, bhR].forEach(r => { if (r && r.error) console.warn('[planas-lib]', r.error.message); });
     const hidden = new Set((hR.data || []).map(x => x.default_id));
+    const bHidden = new Set(((bhR && bhR.data) || []).map(x => x.block_id));
     const all = dR.data || [];
-    return { defs: all.filter(d => !hidden.has(d.id)), hiddenIds: all.filter(d => hidden.has(d.id)).map(d => d.id), mine: mR.data || [] };
+    const blocks = (mR.data || []).filter(b => !bHidden.has(b.id));
+    const isAdmin = this.st.role === 'club_admin';
+    return {
+      defs: all.filter(d => !hidden.has(d.id)),
+      hiddenIds: all.filter(d => hidden.has(d.id)).map(d => d.id),
+      mine: blocks.filter(b => b.trainer_id === uid),
+      picks: blocks.filter(b => b.trainer_id !== uid && (b.is_club_pick || isAdmin)),   // klubui rodomi visi — jis juos ir žymi
+      bHiddenN: ((bhR && bhR.data) || []).length,
+    };
+  },
+  // v601: treneris slepia SAU klubo bloką (savo blokus trina, ne slepia)
+  async hideBlock(id) {
+    try { const { error } = await sb.from('trainer_blocks_hidden').insert({ trainer_id: currentUser?.id, block_id: id }); if (error) throw error; }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); return; }
+    showToast(ico('atlikta') + ' Paslėpta tau — kitiems treneriams lieka', 'success', 3500);
+    if (typeof Tren !== 'undefined' && Tren.st && Tren.st.lib) Tren.reloadLib();
+  },
+  async unhideBlocks() {
+    try { await sb.from('trainer_blocks_hidden').delete().eq('trainer_id', currentUser?.id); } catch (_e) { }
+    if (typeof Tren !== 'undefined') Tren.reloadLib();
+  },
+  // v601: klubas siūlo bloką visiems klubo treneriams (RPC — treneris pats savęs pasiūlyti negali)
+  async clubPick(id, on) {
+    try { const { error } = await sb.rpc('club_block_pick', { p_block: id, p_on: !!on }); if (error) throw error; }
+    catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 4000); return; }
+    showToast(on ? ico('atlikta') + ' Siūloma visiems klubo treneriams' : ico('atlikta') + ' Nebesiūloma', 'success', 3000);
+    if (typeof Tren !== 'undefined') Tren.reloadLib();
   },
   async openSwap(idx, type) {
     const e = this.st.edit; if (!e) return;
@@ -42718,11 +42751,19 @@ Object.assign(Planas, {
     const x = (fn, title, col) => `<span onclick="event.stopPropagation();${fn}" title="${title}" style="flex:none;padding:6px;color:${col || 'var(--mut)'};cursor:pointer;">${ico('trinti')}</span>`;
     const age = d => d.age_group && d.age_group !== 'all' ? ` <span class="kal-tag" style="font-size:8px;">${this.AGE_LT[d.age_group] || ''}</span>` : '';
     const tabs = w.lib ? `<div style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 10px;" class="no-scrollbar">${Object.keys(this.V2_TYPES).map(k => `<span class="kal-b${w.type === k ? ' o' : ''}" onclick="Planas.openLib('${k}')" style="flex:none;">${this.tyLt(k)}</span>`).join('')}</div>` : '';
-    body.innerHTML = `${tabs}<div class="kal-sec" style="padding-bottom:7px;">NUMATYTIEJI · ${w.defs.length}</div>
-      ${w.defs.length ? w.defs.map(d => opt('d:' + d.id, w.pick === 'd:' + d.id, this.esc(d.title) + age(d), `${d.minutes} min${d.text ? ' · ' + this.esc(this.cutTxt(d.text, 70)) : ''}`, '', x(`Planas.hideDef('${d.id}')`, 'Paslėpti sau'))).join('') : '<div style="padding:0 16px 10px;font-size:11px;color:var(--mut);">Visi numatytieji paslėpti.</div>'}
-      ${w.hiddenIds.length ? `<div style="padding:0 16px 10px;"><span class="kal-b" onclick="Planas.unhideAll()">Rodyti paslėptus (${w.hiddenIds.length})</span></div>` : ''}
+    // v601 (savininko sprendimas 09-22): juostos planuojant — TAVO · KLUBO SIŪLOMI · SPOBU. Iki tol viršuje buvo
+    // numatytieji, o „TAVO BLOKAI" reiškė VISUS klubo trenerių blokus (skirtingai dirbantiems tai buvo šiukšlė).
+    const spobuHtml = `<div class="kal-sec" style="padding-bottom:7px;">SPOBU NUMATYTIEJI · ${w.defs.length}</div>`
+      + ((w.defs.length ? w.defs.map(d => opt('d:' + d.id, w.pick === 'd:' + d.id, this.esc(d.title) + age(d), `${d.minutes} min${d.text ? ' · ' + this.esc(this.cutTxt(d.text, 70)) : ''}`, '', x(`Planas.hideDef('${d.id}')`, 'Paslėpti sau'))).join('') : '<div style="padding:0 16px 10px;font-size:11px;color:var(--mut);">Šio tipo numatytųjų nėra.</div>')
+        + (w.hiddenIds.length ? `<div style="padding:0 16px 10px;"><span class="kal-b" onclick="Planas.unhideAll()">Rodyti paslėptus (${w.hiddenIds.length})</span></div>` : ''));
+    const picksHtml = (w.picks || []).length
+      ? `<div class="kal-sec" style="padding-bottom:7px;">KLUBO SIŪLOMI · ${w.picks.length}</div>`
+        + w.picks.map(b => opt('m:' + b.id, w.pick === 'm:' + b.id, this.esc(b.title) + (b.is_club_pick ? ' <span class="kal-tag wait">KLUBO</span>' : ''), `${b.minutes} min${cur && cur.block_id === b.id ? ' · dabartinis' : ''}`, '', x(`Planas.hideBlock('${b.id}')`, 'Paslėpti sau'))).join('')
+      : '';
+    body.innerHTML = `${tabs}
       <div class="kal-sec" style="padding-bottom:7px;">TAVO BLOKAI · ${w.mine.length}</div>
       ${w.mine.length ? w.mine.map(b => opt('m:' + b.id, w.pick === 'm:' + b.id, this.esc(b.title), `${b.minutes} min · naudota ${b.use_count || 0}×${cur && cur.block_id === b.id ? ' · dabartinis' : ''}`, '', b.trainer_id === me ? x(`Planas.delMine('${b.id}')`, 'Trinti', '#EF4444') : '')).join('') : '<div style="padding:0 16px 10px;font-size:11px;color:var(--mut);">Dar neturi savų šio tipo blokų — treniruotės koregavime pažymėk „išsaugoti į papkę".</div>'}
+      ${picksHtml}${spobuHtml}
       ${w.lib ? '' : `<div class="kal-sec" style="padding-bottom:7px;">KLUBO KATALOGAS · ${w.cat.length}</div>
       ${w.cat.length ? w.cat.map(i => opt('c:' + i.id, w.pick === 'c:' + i.id, this.esc(i.name), `${this.esc(i.unit || '')} · katalogas`)).join('') : '<div style="padding:0 16px 10px;font-size:11px;color:var(--mut);">Kataloge šio tipo pratimų nėra.</div>'}
       <div class="kal-sec" style="padding-bottom:7px;">AI SIŪLO ŠIAI DIENAI</div>
@@ -45139,8 +45180,27 @@ const Tren = {
     // ── KATALOGAS ──
     const lib = s.lib || { defs: [], mine: [], hiddenIds: [] };
     const chips = this.KINDS.map(k => `<span class="kal-b${s.kind === k ? ' o' : ''}" onclick="Tren.setKind('${k}')" style="flex:none;">${Planas.tyLt(k)}</span>`).join('');
-    const rows = [...lib.mine.map(b => ({ b, mine: true })), ...lib.defs.map(b => ({ b, mine: false }))];
-    const rowHtml = r => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:.5px solid var(--bdr);font-size:12px;font-weight:800;"><span style="width:7px;height:7px;border-radius:50%;background:${Planas.tyCol(s.kind)};flex:none;"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.esc(r.b.title)}${r.mine ? ' <span class="kal-tag" style="color:var(--br);border-color:var(--br);">TAVO</span>' : (r.b.age_group && r.b.age_group !== 'all' ? ` <span class="kal-tag">${r.b.age_group === 'young' ? '6–9 m.' : '10+ m.'}</span>` : '')}</span><span style="font-size:10.5px;color:var(--mut);font-weight:700;flex:none;">${r.b.minutes} min</span></div>`;
+    // v601: trys juostos — MANO (savi, pagal naudojimą) · KLUBO SIŪLOMI (is_club_pick) · SPOBU (numatytieji)
+    const rows = [
+      ...(lib.mine || []).map(b => ({ b, grp: 'mine' })),
+      ...(lib.picks || []).map(b => ({ b, grp: 'pick' })),
+      ...(lib.defs || []).map(b => ({ b, grp: 'def' })),
+    ];
+    // v601: eilutė pagal juostą — TAVO (naudojimas) · KLUBO SIŪLOMAS (galima paslėpti sau) · SPOBU (paslėpti sau).
+    // Klubo adminui prie kiekvieno ne SPOBU bloko — „Siūlyti visiems / Nebesiūlyti" (RPC club_block_pick).
+    const secHd = { mine: 'TAVO BLOKAI', pick: 'KLUBO SIŪLOMI', def: 'SPOBU' };
+    const rowHtml = (r, i) => {
+      const b = r.b, adm = s.role === 'club_admin';
+      const hd = (i === 0 || rows[i - 1].grp !== r.grp) ? `<div style="font-size:9px;font-weight:900;letter-spacing:1.4px;color:var(--mut);padding:8px 0 2px;">${secHd[r.grp]}</div>` : '';
+      const age = (r.grp === 'def' && b.age_group && b.age_group !== 'all') ? ` <span class="kal-tag">${b.age_group === 'young' ? '6–9 m.' : '10+ m.'}</span>` : '';
+      const tag = r.grp === 'pick' && b.is_club_pick ? ' <span class="kal-tag wait">KLUBO</span>' : '';
+      const sub = `${b.minutes} min${r.grp === 'mine' && b.use_count ? ' · naudojai ' + b.use_count + '×' : ''}`;
+      const hide = (fn) => `<span onclick="${fn}" title="Paslėpti sau" style="flex:none;padding:3px 5px;color:var(--mut);cursor:pointer;font-size:11px;">${ico('uzdaryti')}</span>`;
+      const act = adm && r.grp !== 'def'
+        ? `<span class="kal-b" style="padding:3px 8px;font-size:9.5px;flex:none;" onclick="Planas.clubPick('${b.id}', ${b.is_club_pick ? 'false' : 'true'})">${b.is_club_pick ? 'Nebesiūlyti' : 'Siūlyti visiems'}</span>`
+        : (r.grp === 'pick' ? hide(`Planas.hideBlock('${b.id}')`) : (r.grp === 'def' ? hide(`Planas.hideDef('${b.id}')`) : ''));
+      return `${hd}<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:.5px solid var(--bdr);font-size:12px;font-weight:800;"><span style="width:7px;height:7px;border-radius:50%;background:${Planas.tyCol(s.kind)};flex:none;"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.esc(b.title)}${tag}${age}</span><span style="font-size:10.5px;color:var(--mut);font-weight:700;flex:none;">${sub}</span>${act}</div>`;
+    };
     const activeForAi = active[0] || null;
     const aiCards = s.ai.map((a, i) => `<div class="kal-card" style="border-color:rgba(168,85,247,.4);background:rgba(168,85,247,.06);"><div style="font-size:13px;font-weight:900;">${this.esc(a.title)} <span class="kal-tag ai">AI</span></div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${a.minutes} min${a.text ? ' · ' + this.esc(String(a.text).slice(0, 140)) : ''}</div><div style="display:flex;gap:6px;margin-top:8px;">${this.btn(`Tren.addAi(${i})`, ico('atlikta') + ' Į katalogą', 'o')}${this.btn(`Tren.dropAi(${i})`, 'Ne')}</div></div>`).join('');
     const seen = s.seen.map((x, i) => `<div class="kal-card"><div style="font-size:13px;font-weight:900;">„${this.esc(x.b.title)}" naudojai ${x.n} kartus</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">${Planas.tyLt(x.b.type)} · ${x.b.minutes} min · įrašyti į katalogą kaip tavo bloką?</div><div style="display:flex;gap:6px;margin-top:8px;">${this.btn(`Tren.seenSave(${i})`, ico('atlikta') + ' Taip', 'o')}${this.btn(`Tren.seenDrop(${i})`, 'Vėliau')}</div></div>`).join('');
@@ -45159,7 +45219,7 @@ const Tren = {
       ${recs ? `<div class="kal-sec"><b>KLUBO REKOMENDACIJA</b><span></span></div>${recs}` : (s.role === 'club_admin' ? `<div class="kal-sec"><b>KLUBO REKOMENDACIJA</b><span></span></div><div class="kal-empty"><b>Rekomendacijos dar nėra</b><i>Rašoma iš klubo kalendoriaus — treneriai ir AI planai ją matys čia</i></div>` : '')}
       <div class="kal-sec"><b>KATALOGAS</b><span>${lib.defs.length + lib.mine.length} ${Planas.tyLt(s.kind).toLowerCase()}${lib.hiddenIds.length ? ` · ${lib.hiddenIds.length} paslėpta` : ''}</span></div>
       <div style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;" class="no-scrollbar">${chips}</div>
-      <div class="kal-card">${rows.length ? rows.slice(0, 6).map(rowHtml).join('') : '<div style="font-size:11px;color:var(--mut);font-weight:700;">Šioje srityje blokų nėra — sukurk savo arba paprašyk AI.</div>'}${rows.length > 6 ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Visi ${rows.length} · paslėpti / trinti →</div>` : (rows.length ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Tvarkyti (paslėpti / trinti) →</div>` : '')}
+      <div class="kal-card">${rows.length ? rows.slice(0, 9).map(rowHtml).join('') : '<div style="font-size:11px;color:var(--mut);font-weight:700;">Šioje srityje blokų nėra — sukurk savo arba paprašyk AI.</div>'}${rows.length > 9 ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Visi ${rows.length} · paslėpti / trinti →</div>` : (rows.length ? `<div style="font-size:11px;color:var(--mut);font-weight:800;padding-top:6px;cursor:pointer;" onclick="Planas.openLib('${s.kind}')">Tvarkyti (paslėpti / trinti) →</div>` : '')}
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;">${edit ? this.btn('Tren.newBlock()', ico('prideti') + ' Naujas blokas', 'o') : ''}${edit && activeForAi ? this.btn('Tren.aiSuggest()', ico('ai') + (s.aiBusy ? ' AI galvoja…' : ' AI: pasiūlyk 3')) : (edit ? `<span style="font-size:10.5px;color:var(--mut);font-weight:700;align-self:center;">AI pasiūlymai — kai bus aktyvus etapas</span>` : '')}</div>
       </div>${aiCards}
       ${typeof Atsil !== 'undefined' && s.role !== 'club_admin' ? Atsil.trenHtml() : ''}
@@ -45198,6 +45258,11 @@ const Tren = {
     catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 6000); }
     this.reload();
   },
+  // v601: perkrauti tik katalogą (po paslėpimo / klubo žymos) — be viso lango perkrovimo
+  async reloadLib() {
+    try { this.st.lib = await Planas.loadLib(this.st.kind); this.render(); } catch (e) { console.warn('[tren-lib]', e); }
+  },
+  tname(id) { const t = (typeof Kal !== 'undefined' && Kal.club && Kal.club.st.trainers) ? Kal.club.st.trainers[id] : null; return t || 'Kitas treneris'; },
   async setKind(k) { if (!this.KINDS.includes(k)) return; this.st.kind = k; this.st.ai = []; this.st.lib = await Planas.loadLib(k); this.render(); },
   // Naujas savas blokas — 4 laukai, į trainer_blocks (source 'trainer')
   newBlock() {
