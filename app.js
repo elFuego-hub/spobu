@@ -42580,6 +42580,41 @@ Object.assign(Planas, {
   },
 
   // ═══ APRAŠYMAS (tas pats komponentas vaikui/tėvui — Kal.renderSession su role) ═══
+  // v607 (savininko prašymas 09-22: „rodyti lankomumą ir pastangas kiek kas EXP gavo"): praėjusios treniruotės
+  // suvestinė klubui ir treneriui. Skaito attendance (present, effort, effort_exp) — nieko nerašo ir EXP neliečia.
+  EFF_LT: { max: ['iš visų jėgų', '#22C55E'], ok: ['gerai', '#FF7A33'], light: ['lengviau', '#888'], none: ['—', '#888'] },
+  async aprAtt(groupId, date) {
+    const el = document.getElementById('pl-apr-att'); if (!el || !groupId) return;
+    try {
+      const [aR, kR] = await Promise.all([
+        sb.from('attendance').select('kid_id, present, effort, effort_exp').eq('group_id', groupId).eq('session_date', date).limit(300),
+        sb.from('kids').select('id, first_name, last_name').eq('group_id', groupId).limit(300),
+      ]);
+      if (aR.error) throw aR.error;
+      const att = aR.data || [];
+      if (!att.length) { el.innerHTML = `<div class="kal-sec">LANKOMUMAS</div><div class="kal-empty"><b>Nepažymėta</b><i>Treneris šios treniruotės lankomumo dar nepažymėjo</i></div>`; return; }
+      const nm = {}; (kR.data || []).forEach(k => { nm[k.id] = `${k.first_name || 'Vaikas'} ${(k.last_name || '').charAt(0)}${k.last_name ? '.' : ''}`.trim(); });
+      const was = att.filter(a => a.present);
+      const exp = att.reduce((s2, a) => s2 + (Number(a.effort_exp) || 0), 0);
+      const ord = { max: 0, ok: 1, light: 2 };
+      const rows = att.slice().sort((a, b) => (b.present ? 1 : 0) - (a.present ? 1 : 0) || (ord[a.effort] ?? 3) - (ord[b.effort] ?? 3) || String(nm[a.kid_id] || '').localeCompare(String(nm[b.kid_id] || ''), 'lt'))
+        .map(a => {
+          const e = this.EFF_LT[a.effort] || null;
+          return `<div style="display:flex;align-items:center;gap:9px;padding:6px 0;border-top:.5px solid var(--bdr);">
+            <span style="flex:1;min-width:0;font-size:12px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${a.present ? '' : 'color:var(--mut);'}">${this.esc(nm[a.kid_id] || 'Vaikas')}</span>
+            ${a.present ? (e ? `<span style="font-size:10.5px;font-weight:800;color:${e[1]};">${e[0]}</span>` : '') : '<span style="font-size:10.5px;font-weight:800;color:var(--mut);">nebuvo</span>'}
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${a.effort_exp ? '#FF7A33' : 'var(--mut)'};width:46px;text-align:right;">${a.effort_exp ? '+' + a.effort_exp : '—'}</span>
+          </div>`;
+        }).join('');
+      el.innerHTML = `<div class="kal-sec">LANKOMUMAS <span></span> <em>${was.length} IŠ ${att.length}</em></div>
+        <div class="kal-card">${rows}
+          <div style="display:flex;align-items:center;gap:9px;padding-top:8px;margin-top:4px;border-top:.5px solid var(--bdr);">
+            <span style="flex:1;font-size:10.5px;color:var(--mut);font-weight:800;">Iš viso už pastangas</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#FF7A33;">+${exp} EXP</span>
+          </div>
+        </div>`;
+    } catch (e) { el.innerHTML = `<div class="kal-sec">LANKOMUMAS</div><div class="kal-empty"><b>Nepavyko</b><i>${this.esc(e.message || '')}</i></div>`; }
+  },
   async aprAI(sessId) {
     const { data: s } = await sb.from('training_plan_sessions').select('plan_id').eq('id', sessId).maybeSingle(); if (!s) return;
     showToast(ico('laukia') + ' AI ruošia treniruotę — iki 1 min…', 'success', 5000);
@@ -42593,8 +42628,12 @@ Object.assign(Planas, {
       const canEdit = this.canEdit() && p.status !== 'archived';
       const empty = !(Array.isArray(s.blocks) && s.blocks.length);   // v569: turinio nėra (nutrūkęs generavimas) → pirma AI, ne „Patvirtinti"
       const foot = canEdit ? `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">${s.status === 'confirmed' ? 'Šitą tekstą mato vaikai ir tėvai.' : (empty ? 'Turinio dar nėra — paruošk su AI arba sudėk blokus ranka.' : 'Kol nepatvirtinta, vaikai šios treniruotės nemato.')}</div><div style="display:flex;gap:7px;">${empty ? `<button class="pl-cta" style="flex:1;background:rgba(168,85,247,.18);color:#c084fc;border:.5px solid rgba(168,85,247,.5);" onclick="Planas.aprAI('${s.id}')">${ico('ai')} Paruošti su AI</button>` : (s.status !== 'confirmed' ? `<button class="pl-cta g" style="flex:1;" onclick="Planas.confirmSession('${s.id}',()=>Planas.openApr('${s.id}'))">Patvirtinti</button>` : '')}<button class="pl-cta" style="flex:1;background:rgba(255,255,255,.06);color:var(--txt);" onclick="document.getElementById('pl-apr').remove();Planas.openEdit('${s.id}')">Koreguoti</button></div>` : '';
-      this.sheet('pl-apr', this.esc(s.title || 'Treniruotė'), Kal.renderSession(s, { role: this.role() === 'club_admin' ? 'club_admin' : 'trainer', plan: p, group: this.groupById(s.group_id) }), foot,
+      const staff = ['club_admin', 'trainer'].includes(this.role());
+      const wasPast = String(s.session_date) < Kal.ymd(new Date());
+      this.sheet('pl-apr', this.esc(s.title || 'Treniruotė'), Kal.renderSession(s, { role: this.role() === 'club_admin' ? 'club_admin' : 'trainer', plan: p, group: this.groupById(s.group_id) })
+        + (staff && wasPast ? '<div id="pl-apr-att"><div style="padding:10px 18px;font-size:11px;color:var(--mut);">Kraunamas lankomumas…</div></div>' : ''), foot,
         { sub: `${this.dateLT(s.session_date)} · ${this.dowLT(s.session_date).toLowerCase()}${s.starts_at ? ' ' + String(s.starts_at).slice(0, 5) : ''} · ${s.duration_min || p.duration_min || 60} min`, right: Kal.statusTag({ session_id: s.id, status: s.status }), z: this.topZ() });   // v605: virš etapo lango
+      if (staff && wasPast) this.aprAtt(s.group_id, String(s.session_date));   // v607: kaip treneris pažymėjo
     } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); }
   },
 
