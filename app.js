@@ -30927,7 +30927,8 @@ async function openClubGroupPreview(groupId){
     const asst = (g.assistant_trainer_ids || []).map(id => tName[id]).filter(Boolean);
     const totalExp = kids.reduce((s, k) => s + (k.total_exp || 0), 0);
     const chip = (col2, txt, title) => `<span title="${title||''}" style="display:inline-flex;align-items:center;gap:3px;background:${col2}1f;border:.5px solid ${col2}55;color:${col2};font-size:8.5px;font-weight:800;padding:2px 7px;border-radius:99px;white-space:nowrap;">${txt}</span>`;
-    const rows = kids.length ? kids.map(k => {
+    // v602 (savininko prašymas 09-22): ilgą vaikų sąrašą sutraukiam iki 5 — likusieji po „Rodyti visus"
+    const kidRow = k => {
       const hasHealth = k.has_health_info || k.health_allergies || k.health_medications || k.health_conditions;
       const chips = [];
       if (hasHealth) chips.push(chip('#f87171', ico('sveikata')+' sveikata', 'Yra sveikatos pastabų — žr. vaiko kortelę'));
@@ -30942,7 +30943,15 @@ async function openClubGroupPreview(groupId){
         </div>
         <div style="font-size:14px;color:var(--mut);flex-shrink:0;">›</div>
       </div>`;
-    }).join('') : '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Grupėje dar nėra vaikų.</div>';
+    };
+    const SHOW = 5;
+    const rows = kids.length
+      ? kids.slice(0, SHOW).map(kidRow).join('')
+        + (kids.length > SHOW
+            ? `<div id="cgp-rest" style="display:none;">${kids.slice(SHOW).map(kidRow).join('')}</div>`
+              + `<div id="cgp-more" style="text-align:center;padding:4px 0 10px;"><span class="kal-b" onclick="document.getElementById('cgp-rest').style.display='';this.parentElement.remove();">Rodyti visus · ${kids.length}</span></div>`
+            : '')
+      : '<div style="text-align:center;padding:20px;color:var(--mut);font-size:12px;">Grupėje dar nėra vaikų.</div>';
     document.getElementById('cgp-body').innerHTML = `
       <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;">
         <div style="display:flex;align-items:center;gap:10px;min-width:0;">
@@ -30963,7 +30972,7 @@ async function openClubGroupPreview(groupId){
           </div>
         </div>
         <button onclick="document.getElementById('club-group-preview').remove();openClubGroupModal('${groupId}')" style="width:100%;background:rgba(255,77,0,.12);color:var(--br);border:.5px solid rgba(255,77,0,.4);border-radius:12px;padding:11px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:12px;">${ico('redaguoti')} REDAGUOTI GRUPĘ</button>
-        ${(typeof Kal !== 'undefined' && Kal.on && Kal.on()) ? `<div style="display:flex;gap:8px;margin-bottom:12px;"><button onclick="Kal.club.openRec('${groupId}')" style="flex:1;background:rgba(168,85,247,.12);color:#A855F7;border:.5px solid rgba(168,85,247,.4);border-radius:12px;padding:10px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('ai')} Rekomendacija treneriui</button><button onclick="Kal.club.remind('${groupId}')" style="flex:1;background:var(--card);color:var(--txt);border:.5px solid var(--bdr);border-radius:12px;padding:10px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('pranesimai')} Priminti</button></div>` : ''}<!-- MODULIS: Kal (v542) -->
+        ${(typeof Kal !== 'undefined' && Kal.on && Kal.on()) ? `<button onclick="Kal.club.openGroupPlan('${groupId}')" style="width:100%;background:rgba(255,77,0,.12);color:var(--br);border:.5px solid rgba(255,77,0,.4);border-radius:12px;padding:11px;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:8px;">${ico('treniruote')} Etapo treniruotės</button><div style="display:flex;gap:8px;margin-bottom:12px;"><button onclick="Kal.club.openRec('${groupId}')" style="flex:1;background:rgba(168,85,247,.12);color:#A855F7;border:.5px solid rgba(168,85,247,.4);border-radius:12px;padding:10px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('ai')} Rekomendacija treneriui</button><button onclick="Kal.club.remind('${groupId}')" style="flex:1;background:var(--card);color:var(--txt);border:.5px solid var(--bdr);border-radius:12px;padding:10px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('pranesimai')} Priminti</button></div>` : ''}<!-- MODULIS: Kal (v542) -->
         <div style="font-size:10px;color:var(--mut);font-weight:800;letter-spacing:1.2px;margin:0 2px 7px;">VAIKAI · ${kids.length}</div>
         ${rows}
       </div>`;
@@ -44048,6 +44057,21 @@ Object.assign(Kal, {
       const m = Number(ds.slice(5, 7)) - 1, d = Number(ds.slice(8, 10));
       const sub = `${d} ${K.MONG[m]} · ${ses.length ? ses.length + ' ' + _ltPl(ses.length, 'treniruotė', 'treniruotės', 'treniruočių') : (evs.length ? 'renginys' : 'laisva diena')}`;
       K.sheetOpen('kal-k-day', `<div style="min-width:0;"><b>${K.DNOM[K.dayNo(ds) - 1].toUpperCase()}</b><i>${K.esc(sub)}</i></div><button class="kal-x" onclick="Kal.sheetClose('kal-k-day')" title="Uždaryti">${ico('uzdaryti')}</button>`, cards || '<div class="kal-empty"><b>Šią dieną nieko nėra</b></div>');
+    },
+    // v602 (savininko prašymas 09-22): iš grupės lango — visos to etapo treniruotės (Klubas → Turinys pane'as).
+    // Be aktyvaus etapo siūlom rekomendaciją, nes planuoja treneris.
+    async openGroupPlan(groupId) {
+      try {
+        const { data, error } = await sb.from('training_plans').select('id, status, period_end').eq('group_id', groupId).in('status', ['active', 'draft']).order('status').order('period_end', { ascending: false }).limit(1);
+        if (error) throw error;
+        const p = (data || [])[0];
+        if (!p) { showToast(ico('ispejimas') + ' Grupė be etapo — pasiūlyk treneriui', 'error', 4000); this.openRec(groupId); return; }
+        document.getElementById('club-group-preview')?.remove();
+        if (typeof nv === 'function') nv('k', null, 'k-trainers');
+        if (typeof switchClubTeamTab === 'function') switchClubTeamTab('planas');
+        if (typeof Tren !== 'undefined') { Tren.st.role = 'club_admin'; await Tren.etapas(p.id); }
+        else { Planas.st.role = 'club_admin'; Planas.st.container = 'k-team-planas'; await Planas.openEtapas(p.id); }
+      } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 4000); }
     },
     // v600: klubas atsidaro trenerio treniruotės turinį (tas pats Planas.openApr lapas; rolė club_admin — be „Koreguoti")
     async openSess(id) {
