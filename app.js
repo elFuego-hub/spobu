@@ -30739,42 +30739,66 @@ async function loadClubMainDashboard(){
 // 📅 KLUBO GRUPIŲ VALDYMAS (struktūros modelis) — klubas kuria grupes, priskiria trenerį
 // ════════════════════════════════════════
 let _clubGroupsRankBy = 'overall';
-async function loadClubGroups(){
+// v608 (savininko pastaba 09-22 „grupės sumirga lyg atsidarytų antrą kartą, turinys kraunasi lėtai" → sprendimas 2):
+// vienas krovimas ir VIENAS piešimas. Iki tol: meniu „Klubas" + skirtuko perjungimas paleisdavo du krovimus lygiagrečiai
+// (26 užklausos), sąrašas būdavo nupiešiamas be ženklų, o po ženklų (v599) perpiešiamas kita tvarka; 5 nuoseklios bangos.
+// Dabar: (1) antras kvietimas gauna tą patį pažadą; (2) ženklai (Kal.club.loadFlags) kraunami LYGIAGREČIAI su vaikais,
+// su tomis pačiomis grupėmis ir treneriais (be antros užklausos), ir piešiama vieną kartą; (3) 60 s atmintis — grįžus
+// sąrašas rodomas iš karto be užklausų; po 60 s rodomas iš atminties ir atnaujinamas fone, perpiešiamas tik jei duomenys
+// pasikeitė. force = true — po pakeitimų (grupė sukurta / ištrinta, vaikas pridėtas / pašalintas / priskirtas).
+// Funkcijos savybė `_p` — vykdomas pažadas (ne naujas globalus kintamasis, taisyklė 7).
+async function loadClubGroups(force){
   const el = document.getElementById('k-groups-list');
   if (!el || !currentClub?.id) return;
-  if (typeof loadClubNotesStrip === 'function') loadClubNotesStrip();   // v470: užrašų juosta virš grupių
-  if (typeof Kal !== 'undefined' && Kal.club) Kal.club.st.flagsReady = false;   // v599: būrelių ženklai perskaičiuojami su naujais duomenimis (groupStrips)
-  try {
-    const [gRes, tRes, catRes] = await Promise.all([
-      sb.from('groups').select('id, name, color, training_days, train_time, schedule, trainer_id, assistant_trainer_ids, is_active').eq('club_id', currentClub.id),
-      sb.from('trainers').select('id, profiles!inner(first_name,last_name)').eq('invited_by_club_id', currentClub.id),
-      sb.from('career_categories').select('id, name, icon').order('sort_order')
-    ]);
-    const groups = (gRes.data||[]).filter(g => g.is_active !== false);
-    window._clubTrainerOpts = (tRes.data||[]).map(t => ({ id:t.id, name:`${t.profiles.first_name||''} ${t.profiles.last_name||''}`.trim()||'Treneris' }));
-    const tName = {}; window._clubTrainerOpts.forEach(t => { tName[t.id]=t.name; });
-    const cats = catRes.data || [];
-    if (!groups.length){ el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:16px;font-size:12px;">Dar nėra grupių. Sukurk pirmą ↑</div>'; window._clubGroupsRank=null; return; }
-    const gids = groups.map(g=>g.id);
-    const { data: kidsData } = await sb.from('kids').select('id, group_id, total_exp, current_level').in('group_id', gids);
-    const kids = kidsData || [];
-    const kidGroup = {}; kids.forEach(k=>{ kidGroup[k.id]=k.group_id; });
-    const kidIds = kids.map(k=>k.id);
-    const M = {}; groups.forEach(g=>{ M[g.id]={ exp:0, lvlSum:0, n:0, cats:{}, g:0,s:0,b:0, ch:0 }; });
-    kids.forEach(k=>{ const m=M[k.group_id]; if(!m) return; m.exp+=(k.total_exp||0); m.lvlSum+=(k.current_level||1); m.n++; });
-    if (kidIds.length){
-      const [rec, comp, chl] = await Promise.all([
-        sb.from('kid_records').select('kid_id, category_id, category_exp').in('kid_id', kidIds),
-        sb.from('competition_results').select('kid_id, placement, approval_status').in('kid_id', kidIds).eq('approval_status','approved'),
-        sb.from('challenge_submissions').select('kid_id, exp_gain, status').in('kid_id', kidIds).eq('status','approved')
+  if (loadClubGroups._p) { if (!force) return loadClubGroups._p; try { await loadClubGroups._p; } catch(_){} }
+  const D0 = window._clubGroupsRank;
+  const same = !!(D0 && D0.clubId === currentClub.id);
+  const shown = () => !!el.querySelector('[onclick^="openClubGroupPreview"]');
+  if (!force && same && (Date.now() - (D0.at || 0)) < 60000) { if (!shown()) renderClubGroupsRanked(); return; }
+  if (!force && same && !shown()) renderClubGroupsRanked();   // pasenę, bet rodom iš karto — atnaujinam fone
+  loadClubGroups._p = (async () => {
+    if (typeof loadClubNotesStrip === 'function') loadClubNotesStrip();   // v470: užrašų juosta virš grupių
+    try {
+      const cid = currentClub.id;
+      const [gRes, tRes, catRes] = await Promise.all([
+        sb.from('groups').select('id, name, color, club_id, training_days, train_time, schedule, trainer_id, assistant_trainer_ids, is_active').eq('club_id', cid),
+        sb.from('trainers').select('id, profiles!inner(first_name,last_name)').eq('invited_by_club_id', cid),
+        sb.from('career_categories').select('id, name, icon').order('sort_order')
       ]);
-      (rec.data||[]).forEach(r=>{ const m=M[kidGroup[r.kid_id]]; if(!m||!r.category_id) return; m.cats[r.category_id]=(m.cats[r.category_id]||0)+(r.category_exp||0); });
-      (comp.data||[]).forEach(r=>{ const m=M[kidGroup[r.kid_id]]; if(!m) return; if(r.placement===1)m.g++; else if(r.placement===2)m.s++; else if(r.placement===3)m.b++; });
-      (chl.data||[]).forEach(r=>{ const m=M[kidGroup[r.kid_id]]; if(!m) return; m.ch+=(r.exp_gain||0); });
-    }
-    window._clubGroupsRank = { groups, tName, M, cats };
-    renderClubGroupsRanked();
-  } catch(e){ console.error('[club-groups]',e); el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:16px;font-size:12px;">Klaida: ${e.message||''}</div>`; }
+      const groups = (gRes.data||[]).filter(g => g.is_active !== false);
+      window._clubTrainerOpts = (tRes.data||[]).map(t => ({ id:t.id, name:`${t.profiles.first_name||''} ${t.profiles.last_name||''}`.trim()||'Treneris' }));
+      const tName = {}; window._clubTrainerOpts.forEach(t => { tName[t.id]=t.name; });
+      const cats = catRes.data || [];
+      if (!groups.length){ el.innerHTML = '<div style="text-align:center;color:var(--mut);padding:16px;font-size:12px;">Dar nėra grupių. Sukurk pirmą ↑</div>'; window._clubGroupsRank=null; return; }
+      const gids = groups.map(g=>g.id);
+      // ženklai lygiagrečiai su vaikais — tos pačios grupės ir treneriai (MODULIS: Kal, v608)
+      const KC = (typeof Kal !== 'undefined' && Kal.club && Kal.on && Kal.on()) ? Kal.club : null;
+      const flagsP = KC ? KC.loadFlags({ groups, trainers: tName }, !!force).catch(e => { console.warn('[club-groups flags]', e); return null; }) : Promise.resolve(null);
+      const { data: kidsData } = await sb.from('kids').select('id, group_id, total_exp, current_level').in('group_id', gids);
+      const kids = kidsData || [];
+      const kidGroup = {}; kids.forEach(k=>{ kidGroup[k.id]=k.group_id; });
+      const kidIds = kids.map(k=>k.id);
+      const M = {}; groups.forEach(g=>{ M[g.id]={ exp:0, lvlSum:0, n:0, cats:{}, g:0,s:0,b:0, ch:0 }; });
+      kids.forEach(k=>{ const m=M[k.group_id]; if(!m) return; m.exp+=(k.total_exp||0); m.lvlSum+=(k.current_level||1); m.n++; });
+      if (kidIds.length){
+        const [rec, comp, chl] = await Promise.all([
+          sb.from('kid_records').select('kid_id, category_id, category_exp').in('kid_id', kidIds),
+          sb.from('competition_results').select('kid_id, placement, approval_status').in('kid_id', kidIds).eq('approval_status','approved'),
+          sb.from('challenge_submissions').select('kid_id, exp_gain, status').in('kid_id', kidIds).eq('status','approved')
+        ]);
+        (rec.data||[]).forEach(r=>{ const m=M[kidGroup[r.kid_id]]; if(!m||!r.category_id) return; m.cats[r.category_id]=(m.cats[r.category_id]||0)+(r.category_exp||0); });
+        (comp.data||[]).forEach(r=>{ const m=M[kidGroup[r.kid_id]]; if(!m) return; if(r.placement===1)m.g++; else if(r.placement===2)m.s++; else if(r.placement===3)m.b++; });
+        (chl.data||[]).forEach(r=>{ const m=M[kidGroup[r.kid_id]]; if(!m) return; m.ch+=(r.exp_gain||0); });
+      }
+      await flagsP;
+      const sig = JSON.stringify([groups.map(g => [g.id, g.name, g.color, g.trainer_id]), M, tName, cats.map(c => c.id), KC ? KC.st.flags : null]);
+      const prev = window._clubGroupsRank;
+      window._clubGroupsRank = { groups, tName, M, cats, clubId: cid, at: Date.now(), sig };
+      if (prev && prev.clubId === cid && prev.sig === sig && shown()) return;   // niekas nepasikeitė — nepiešiam (be mirgėjimo)
+      renderClubGroupsRanked();
+    } catch(e){ console.error('[club-groups]',e); if (!shown()) el.innerHTML = `<div style="text-align:center;color:#EF4444;padding:16px;font-size:12px;">Klaida: ${escapeHtml(e.message||'')}</div>`; }
+  })().finally(() => { loadClubGroups._p = null; });
+  return loadClubGroups._p;
 }
 
 function setClubGroupsRank(key){ _clubGroupsRankBy = key; renderClubGroupsRanked(); }
@@ -30884,7 +30908,7 @@ async function _pickKidToGroup(kidId, groupId){
     _clubKidsCache = null;
     const mm = document.getElementById('cgm-addkid-modal'); if(mm) mm.remove();
     showToast(ico('atlikta')+' Vaikas pridėtas','success');
-    _loadGroupKids(groupId); loadClubGroups();
+    _loadGroupKids(groupId); loadClubGroups(true);
   } catch(e){ console.error('[add-kid-group]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 async function _clubRemoveKidFromGroup(kidId, groupId){
@@ -30894,7 +30918,7 @@ async function _clubRemoveKidFromGroup(kidId, groupId){
     if (error) throw error;
     _clubKidsCache = null;
     showToast(ico('atlikta')+' Pašalintas','success');
-    _loadGroupKids(groupId); loadClubGroups();
+    _loadGroupKids(groupId); loadClubGroups(true);
   } catch(e){ console.error('[rm-kid-group]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 
@@ -31065,7 +31089,7 @@ async function submitClubGroup(groupId){
       showToast(ico('atlikta')+' Grupė sukurta','success');
     }
     const mm = document.getElementById('club-group-modal'); if (mm) mm.remove();
-    loadClubGroups();
+    loadClubGroups(true);
   } catch(e){ console.error('[club-group-save]',e); showE('Klaida: '+(e.message||'')); }
 }
 
@@ -31093,7 +31117,7 @@ async function deleteClubGroup(groupId){
     if (!(_gu||[]).length) throw new Error('grupė neištrinta (neturi teisių)');
     showToast(ico('atlikta')+' Grupė ištrinta','success');
     const mm = document.getElementById('club-group-modal'); if (mm) mm.remove();
-    loadClubGroups();
+    loadClubGroups(true);
   } catch(e){ console.error('[club-group-del]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 
@@ -31242,7 +31266,7 @@ async function _assignKidToGroup(kidId, groupId, isPending){
     _clubKidsCache = null;
     const mm = document.getElementById('assign-group-modal'); if(mm) mm.remove();
     showToast(ico('atlikta')+' Priskirta','success');
-    loadClubStudents(); loadClubGroups();
+    loadClubStudents(); loadClubGroups(true);
   } catch(e){ console.error('[assign-kid]',e); showToast(ico('klaida')+' '+(e.message||''),'error'); }
 }
 async function _approveKidOnly(kidId){
@@ -43998,7 +44022,7 @@ Kal.parent = Object.assign(Object.create(Kal.kid), {
 // Viskas po Kal.on() (plans_enabled); išjungus — k-kal nepasiekiamas, nav lieka „Renginiai", k-main/k-stat kaip v541.
 Object.assign(Kal, {
   club: {
-    st: { ym: null, groups: [], sel: 'all', sessions: [], events: [], reg: {}, busy: false, trainers: {}, flags: {}, flagsReady: false, flagsSes: [], flagsToday: null },   // v599: flags* — būrelių ženklai
+    st: { ym: null, groups: [], sel: 'all', sessions: [], events: [], reg: {}, busy: false, trainers: {}, flags: {}, flagsReady: false, flagsSes: [], flagsToday: null, flagsAt: 0, flagsClub: null, flagsP: null },   // v599: flags* — būrelių ženklai
     K: Kal,
     clubId() { return (typeof currentClub !== 'undefined' && currentClub?.id) || currentProfile?.club_id || null; },
 
@@ -44232,9 +44256,20 @@ Object.assign(Kal, {
     // ── v599 (savininko B kryptis 09-22): BŪRELIŲ ŽENKLAI — viena skaičiavimo vieta k-main eilutei „N būreliai laukia peržiūros",
     //    Būrelių kortelių ženklams (renderClubGroupsRanked) ir etapo juostelėms po kortelėmis (groupStrips) ──
     // st.flags[gid] = { drafts (būsimos nepatvirtintos), noPlan (be aktyvaus etapo šį mėnesį), noTrainer, all, conf, planned, lastConf }
-    async loadFlags() {
+    // v608: pre = { groups, trainers } iš loadClubGroups (be antros grupių/trenerių užklausos); be force — grąžinam
+    // vykdomą pažadą arba 60 s atmintį (Pagrindinis ir Grupės dalinasi vienu skaičiavimu)
+    async loadFlags(pre, force) {
+      const cid0 = this.clubId();
+      if (!force && this.st.flagsP) return this.st.flagsP;
+      if (!force && this.st.flagsReady && this.st.flagsClub === cid0 && Date.now() - (this.st.flagsAt || 0) < 60000) return this.st.flags;
+      const run = this.flagsRun(pre);
+      this.st.flagsP = run;
+      try { return await run; } finally { if (this.st.flagsP === run) this.st.flagsP = null; }
+    },
+    async flagsRun(pre) {
       const K = this.K, today = K.ymd(new Date()), r = K.range(K.ymNow());
-      await this.loadGroups();
+      if (pre && pre.groups) { this.st.groups = pre.groups.slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'lt')); if (pre.trainers) this.st.trainers = Object.assign({}, this.st.trainers, pre.trainers); }
+      else await this.loadGroups();
       const gids = this.st.groups.map(g => g.id);
       const [ses, plans] = await Promise.all([
         K.monthSessions({ groups: this.st.groups, from: r.from, to: r.to }),
@@ -44248,6 +44283,7 @@ Object.assign(Kal, {
         F[g.id] = { drafts, noPlan: !active.has(g.id), noTrainer: !g.trainer_id, all: all.length, conf, planned, lastConf: all.filter(s => s.status === 'confirmed').map(s => s.date).sort().pop() || null };
       });
       this.st.flags = F; this.st.flagsSes = ses; this.st.flagsToday = today; this.st.flagsReady = true;
+      this.st.flagsAt = Date.now(); this.st.flagsClub = this.clubId();   // v608: atmintis
       return F;
     },
     flagged(gid) { const f = (this.st.flags || {})[gid]; return !!(f && (f.drafts || f.noPlan || f.noTrainer)); },
@@ -45237,16 +45273,44 @@ const Tren = {
     return document.getElementById('tren-tr');
   },
   async mount(role) {
+    this.st.role = role || 'trainer';   // v608: rolė PRIEŠ konteinerį (iki tol cid() imdavo ankstesnę rolę)
     const c = this.cid(); if (!c) return;
     if (!this.on()) { c.innerHTML = ''; return; }
-    this.st.role = role || 'trainer';
+    // v608: klubui — 60 s atmintis: grįžus į „Turinį" nieko nekraunam; po 60 s atnaujinam, bet perpiešiam tik pasikeitus
+    const key = this.st.role + '|' + (Planas.clubId() || '');
+    const club = this.st.role === 'club_admin';
+    if (club && c.dataset.ready && this.st.loadedKey === key && Date.now() - (this.st.loadedAt || 0) < 60000) return;
     if (!c.dataset.ready) c.innerHTML = '<div class="kal-empty"><b>Kraunama…</b></div>';   // v593: grįžus į langą senas turinys lieka, kol užsikrauna naujas (be mirgėjimo)
-    try { await this.load(); this.render(); c.dataset.ready = '1'; }
+    try {
+      await this.load();
+      this.st.loadedAt = Date.now(); this.st.loadedKey = key;
+      const sig = club ? JSON.stringify([this.st.recs, this.st.lib, this.st.kind]) : null;
+      if (club && c.dataset.ready && sig === this.st.renderSig) return;
+      this.st.renderSig = sig;
+      this.render(); c.dataset.ready = '1';
+    }
     catch (e) { console.warn('[tren]', e); c.innerHTML = `<div class="kal-empty"><b>Nepavyko užkrauti</b><i>${this.esc(e.message || '')}</i></div>`; }
   },
   async load() {
     Planas.st.role = this.st.role === 'club_admin' ? 'club_admin' : 'trainer';
     if (!Planas.st.container) Planas.st.container = this.st.role === 'club_admin' ? 'k-team-planas' : 'pl-tr-content';
+    // v608: klubo adminui, kai planuoja treneriai, rodomi tik Katalogas ir rekomendacijos (v600) — planų, artimiausių
+    // treniruočių ir 600 eilučių istorijos nekraunam. Vienos bangos vietoj dviejų, 6 užklausos vietoj 10.
+    if (this.st.role === 'club_admin' && (typeof flagOn !== 'function' || flagOn('trainers_can_create_plans'))) {
+      const cid1 = Planas.clubId();
+      const [, recR, libR] = await Promise.all([
+        Planas.loadGroups(),
+        cid1 ? sb.from('group_recommendations').select('id, group_id, period_label, text, include_in_ai, created_at').eq('club_id', cid1).order('created_at', { ascending: false }).limit(5) : Promise.resolve({ data: [] }),
+        Planas.loadLib(this.st.kind),
+      ]);
+      if (recR && recR.error) console.warn('[tren]', recR.error.message);
+      this.st.groups = Planas.st.groups;
+      const gids1 = this.st.groups.map(g => g.id);
+      this.st.plans = []; this.st.counts = {}; this.st.upcoming = []; this.st.seen = []; this.st.ch = [];
+      this.st.recs = ((recR && recR.data) || []).filter(r => !r.group_id || gids1.includes(r.group_id));
+      this.st.lib = libR;
+      return;
+    }
     await Planas.loadGroups(); this.st.groups = Planas.st.groups;
     const gids = this.st.groups.map(g => g.id), today = this.today(), to = this.addDays(today, 14), from60 = this.addDays(today, -60), clubId = Planas.clubId();
     if (!gids.length) { this.st.plans = []; this.st.upcoming = []; this.st.recs = []; this.st.seen = []; this.st.lib = await Planas.loadLib(this.st.kind); return; }
