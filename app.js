@@ -42215,6 +42215,16 @@ Object.assign(Planas, {
   sumMin(blocks) { return (blocks || []).reduce((n, b) => n + (parseInt(b.minutes) || 0), 0); },
   dateLT(ds) { if (!ds) return ''; const d = this.d(ds); return `${this.MONTHS[d.getMonth()]} ${d.getDate()}`; },
   dowLT(ds) { if (!ds) return ''; const d = this.d(ds); return this.DAYS[(d.getDay() + 6) % 7]; },
+  // v605 (savininko pastaba 09-22: „lentelė išmetė ne ant viršaus o po apačia"): kai lapas atidaromas IŠ kito lapo
+  // (etapo langas → treniruotė → pastaba), naujam reikia didesnio sluoksnio. Skaičiuojam iš atidarytų .kal-dim / .kal-sheet.
+  topZ(base) {
+    let m = base || 100004;
+    document.querySelectorAll('.kal-dim, .kal-sheet').forEach(el => {
+      const z = parseInt(el.style.zIndex || '0', 10) || 0;
+      if (z >= m) m = z + 2;
+    });
+    return m;
+  },
   sheet(id, title, bodyHtml, footHtml, opts) {
     // v557 (kalendorius v2, 2 paketas): tas pats vaizdas kaip Kal.sheetOpen — .kal-dim fonas + .kal-sheet.pl su spyruokle; DOM kontraktas nesikeičia
     const o = opts || {};
@@ -42579,7 +42589,7 @@ Object.assign(Planas, {
       const empty = !(Array.isArray(s.blocks) && s.blocks.length);   // v569: turinio nėra (nutrūkęs generavimas) → pirma AI, ne „Patvirtinti"
       const foot = canEdit ? `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">${s.status === 'confirmed' ? 'Šitą tekstą mato vaikai ir tėvai.' : (empty ? 'Turinio dar nėra — paruošk su AI arba sudėk blokus ranka.' : 'Kol nepatvirtinta, vaikai šios treniruotės nemato.')}</div><div style="display:flex;gap:7px;">${empty ? `<button class="pl-cta" style="flex:1;background:rgba(168,85,247,.18);color:#c084fc;border:.5px solid rgba(168,85,247,.5);" onclick="Planas.aprAI('${s.id}')">${ico('ai')} Paruošti su AI</button>` : (s.status !== 'confirmed' ? `<button class="pl-cta g" style="flex:1;" onclick="Planas.confirmSession('${s.id}',()=>Planas.openApr('${s.id}'))">Patvirtinti</button>` : '')}<button class="pl-cta" style="flex:1;background:rgba(255,255,255,.06);color:var(--txt);" onclick="document.getElementById('pl-apr').remove();Planas.openEdit('${s.id}')">Koreguoti</button></div>` : '';
       this.sheet('pl-apr', this.esc(s.title || 'Treniruotė'), Kal.renderSession(s, { role: this.role() === 'club_admin' ? 'club_admin' : 'trainer', plan: p, group: this.groupById(s.group_id) }), foot,
-        { sub: `${this.dateLT(s.session_date)} · ${this.dowLT(s.session_date).toLowerCase()}${s.starts_at ? ' ' + String(s.starts_at).slice(0, 5) : ''} · ${s.duration_min || p.duration_min || 60} min`, right: Kal.statusTag({ session_id: s.id, status: s.status }) });
+        { sub: `${this.dateLT(s.session_date)} · ${this.dowLT(s.session_date).toLowerCase()}${s.starts_at ? ' ' + String(s.starts_at).slice(0, 5) : ''} · ${s.duration_min || p.duration_min || 60} min`, right: Kal.statusTag({ session_id: s.id, status: s.status }), z: this.topZ() });   // v605: virš etapo lango
     } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); }
   },
 
@@ -46093,7 +46103,7 @@ const Past = {
     Planas.sheet('psn-sheet', 'PASTABOS TRENERIUI', `<div id="psn-body"><div class="kal-empty"><b>Kraunama…</b></div></div>`,
       club ? `<div style="padding:0 16px;"><textarea id="psn-text" class="inp" maxlength="500" placeholder="Ką patikslinti ar pagirti? Treneris pamatys prie šios treniruotės." style="margin:0;font-size:12px;min-height:74px;resize:vertical;"></textarea></div>
        <button class="pl-cta" onclick="Past.save('${sessId}','${groupId}')">${ico('siusti')} Įrašyti pastabą</button>` : '',
-      { z: 100006 });
+      { z: (typeof Planas !== 'undefined' && Planas.topZ) ? Planas.topZ(100006) : 100006 });   // v605: virš etapo / treniruotės lapo
     await this.render(sessId, groupId);
   },
   async render(sessId, groupId) {
