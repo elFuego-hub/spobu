@@ -2791,7 +2791,7 @@ async function loadParentKidChallenges(k) {
     const progressMap = {}, subsMap = {};
     if (ids.length) {
       const [pr, sr] = await Promise.all([
-        sb.from('challenge_progress').select('challenge_id, total_progress, is_completed').eq('kid_id', k.id).in('challenge_id', ids),
+        sb.from('challenge_progress').select('challenge_id, total_progress, is_completed, exp_awarded').eq('kid_id', k.id).in('challenge_id', ids),
         sb.from('challenge_submissions').select('challenge_id, status, created_at, rejection_reason').eq('kid_id', k.id).in('challenge_id', ids) // v401 (B5): + created_at/reason atmetimo signalui
       ]);
       (pr.data || []).forEach(p => { progressMap[p.challenge_id] = p; });
@@ -11904,14 +11904,15 @@ function showChallengePopup(challenge, onClose) {
     }
   }
   
-  // Tikslas
+  // Tikslas (v598: pakopiniams — 3 · 6 · 9 km ir +15 / +20 / +25 EXP)
+  const _tiers = (typeof Iss !== 'undefined' && Iss.tiersOf) ? Iss.tiersOf(challenge) : null;
   const targetText = challenge.target_value 
-    ? `${ico('tikslas')} ${challenge.target_value} ${challenge.target_unit || ''}`
+    ? (_tiers ? `${ico('tikslas')} ${_tiers.map(t => t.v).join(' · ')} ${escapeHtml(challenge.target_unit || '')}` : `${ico('tikslas')} ${challenge.target_value} ${escapeHtml(challenge.target_unit || '')}`)
     : '';
   
   // EXP atlygis
   const expText = challenge.exp_reward 
-    ? `${ico('premium-plus')} +${challenge.exp_reward} EXP`
+    ? (_tiers ? `${ico('premium-plus')} ${_tiers.map(t => '+' + t.exp).join(' / ')} EXP` : `${ico('premium-plus')} +${challenge.exp_reward} EXP`)
     : '';
   
   // Sukuriam popup'ą
@@ -12224,6 +12225,11 @@ function _showApprovalStdNow(opts) {
   const t = TYPE[opts.type] || TYPE.one_time;
   const completed = !!opts.completed;
   const exp = opts.exp || 0;
+  // v598 pakopos: kuri pasiekta, kiek liko iki kitos; įveikus — didysis skaičius = iš viso gauta
+  const tiers = (opts.tiers && opts.tiers.length) ? opts.tiers : null;
+  const tierK = tiers ? Iss.tierOf(tiers, opts.prog) : 0, tierNext = (tiers && tierK < tiers.length) ? tiers[tierK] : null;
+  const unitTxt = escapeHtml(opts.unit || '');
+  const expBig = (tiers && completed && opts.expTotal > 0) ? opts.expTotal : exp;
   const popup = document.createElement('div');
   popup.style.cssText = `
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.5);
@@ -12233,19 +12239,20 @@ function _showApprovalStdNow(opts) {
     box-shadow: 0 20px 60px rgba(0,0,0,.7), 0 0 60px ${t.color}44;
     opacity: 0; transition: opacity .4s, transform .4s cubic-bezier(.34,1.56,.64,1);`;
   popup.innerHTML = `
-    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${ico('atlikta')} TRENERIS PATVIRTINO</div>
+    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${ico('atlikta')} ${opts.strava ? 'STRAVA UŽSKAITĖ' : 'TRENERIS PATVIRTINO'}</div>
     <div style="font-size:40px;line-height:1;margin-bottom:4px;filter:drop-shadow(0 0 14px ${t.color});">${t.icon}</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:3px;color:${t.color};margin-bottom:6px;">${t.label}</div>
     <div style="font-size:14px;color:white;font-weight:800;line-height:1.25;margin-bottom:${opts.progress ? '6px' : '12px'};">${escapeHtml(opts.title || 'Iššūkis')}</div>
     ${opts.progress ? `<div style="display:inline-block;padding:4px 14px;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.15);border-radius:99px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:white;margin-bottom:12px;">${escapeHtml(opts.progress)}</div>` : ''}
+    ${tiers && exp > 0 ? `<div style="font-size:11px;color:${t.color};font-weight:800;margin:2px 0 6px;">${completed ? `${tiers.length} pakopa iš ${tiers.length} · šį kartą +${exp}, iš viso +${expBig} EXP` : `${tierK} pakopa iš ${tiers.length} pasiekta${tierNext ? ` · kita: ${tierNext.v} ${unitTxt} → +${tierNext.exp} EXP` : ''}`}</div>` : ''}
     <div style="height:1px;background:linear-gradient(90deg,transparent,${t.color},transparent);margin:4px 0 12px;"></div>
-    ${exp > 0 ? `
+    ${expBig > 0 ? `
     <div style="display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:${opts.streakExp ? '6px' : '12px'};">
       <div style="font-size:22px;">${ico('premium-plus')}</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:${t.color};line-height:1;text-shadow:0 0 16px ${t.color};">+${exp}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:${t.color};line-height:1;text-shadow:0 0 16px ${t.color};">+${expBig}</div>
       <div style="font-size:13px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">EXP</div>
     </div>` : (completed ? '' : `
-    <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:12px;">Progresas įskaitytas · EXP gausi pasiekęs tikslą</div>`)}
+    <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:12px;">${tierNext ? `Įskaityta · iki ${tierK + 1} pakopos (${tierNext.v} ${unitTxt}) liko ${String(Math.max(0, Math.round((Number(tierNext.v) - (opts.prog || 0)) * 10) / 10)).replace('.', ',')} ${unitTxt} → +${tierNext.exp} EXP` : 'Progresas įskaitytas · EXP gausi pasiekęs tikslą'}</div>`)}
     ${opts.streakExp ? `<div style="display:inline-block;padding:5px 14px;background:${t.color}22;border:1px solid ${t.color}66;border-radius:99px;font-size:11px;color:${t.color};font-weight:800;margin-bottom:12px;">${ico('streak')} Serija: ${opts.streakCount ?? '–'} · bonusas +${opts.streakExp}</div>`
       : (opts.streakNext && opts.streakCount != null ? `<div style="display:inline-block;padding:5px 14px;background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.18);border-radius:99px;font-size:11px;color:rgba(255,255,255,.75);font-weight:800;margin-bottom:12px;">${ico('streak')} Serija: ${opts.streakCount} · dar ${opts.streakNext.in} ${STREAK_UNIT[opts.type] || ''} iki +${opts.streakNext.prize}</div>` : '')}
     ${completed ? `<div style="margin:0 -6px 12px;padding:7px;background:linear-gradient(90deg,rgba(34,197,94,.18),rgba(34,197,94,.08));border:1px solid rgba(34,197,94,.4);border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#22C55E;">${ico('trofejai')} IŠŠŪKIS ĮVEIKTAS!</div>` : ''}
@@ -12291,7 +12298,7 @@ async function _checkForNewApprovedSubmissionsInner() {
   const cut = new Date(Date.now() - 30 * 86400000).toISOString();
 
   const { data: subs } = await sb.from('challenge_submissions')
-    .select('id, challenge_id, numeric_value, exp_gain, reviewed_at, challenges(title, type, target_value, target_unit, allow_partial, exp_reward, instructions)')
+    .select('id, challenge_id, numeric_value, exp_gain, reviewed_at, source, auto_approved, challenges(title, type, target_value, target_unit, allow_partial, exp_reward, instructions, verify_meta)')
     .eq('kid_id', currentKid.id)
     .eq('status', 'approved')
     .gte('reviewed_at', cut)
@@ -12345,7 +12352,7 @@ async function _checkForNewApprovedSubmissionsInner() {
   const progressMap = {};
   if (partialChallengeIds.length > 0) {
     const { data: progress } = await sb.from('challenge_progress')
-      .select('challenge_id, total_progress, is_completed')
+      .select('challenge_id, total_progress, is_completed, exp_awarded')
       .in('challenge_id', partialChallengeIds)
       .eq('kid_id', currentKid.id);
     
@@ -12417,6 +12424,8 @@ async function _checkForNewApprovedSubmissionsInner() {
       showApprovalStd({
         type: ch?.type, title: ch?.title || 'Iššūkis', progress: progStr,
         exp: expSum || (isCompleted ? (ch?.exp_reward || 0) : 0),   // v597: pakopų EXP ateina dalimis — rodom gautą ir nebaigus
+        tiers: (typeof Iss !== 'undefined' && Iss.tiersOf) ? Iss.tiersOf(ch) : null, prog: progress?.total_progress || 0, expTotal: progress?.exp_awarded || 0, unit,   // v598 pakopos
+        strava: subsOfCh.some(x => x.source === 'strava' || x.auto_approved),
         streakExp: streakSum, completed: isCompleted, ..._stOpts(ch?.type)
       });
     } else {
@@ -18624,7 +18633,7 @@ async function loadGoals() {
   if (eligibleIds.length > 0) {
     const [progressRes, subsRes] = await Promise.all([
       sb.from('challenge_progress')
-        .select('challenge_id, total_progress, is_completed')
+        .select('challenge_id, total_progress, is_completed, exp_awarded')
         .eq('kid_id', myKidId)
         .in('challenge_id', eligibleIds),
       sb.from('challenge_submissions')
@@ -23474,7 +23483,7 @@ async function _assignExpChallengeList() {
   if (ids.length) {
     const [s, p] = await Promise.all([
       sb.from('challenge_submissions').select('challenge_id, status').eq('kid_id', kid.id).in('challenge_id', ids),
-      sb.from('challenge_progress').select('challenge_id, total_progress, is_completed').eq('kid_id', kid.id).in('challenge_id', ids)
+      sb.from('challenge_progress').select('challenge_id, total_progress, is_completed, exp_awarded').eq('kid_id', kid.id).in('challenge_id', ids)
     ]);
     (s.data || []).forEach(x => { if (x.status === 'approved') doneSub.add(x.challenge_id); });
     (p.data || []).forEach(x => { progMap[x.challenge_id] = x; if (x.is_completed) doneProg.add(x.challenge_id); });
@@ -39460,7 +39469,7 @@ async function loadAllNotifications(force) {
   const [approvedChRes, approvedCoRes, approvedPrRes, streakRes, newChRes, newCoRes, msgsRes] = await Promise.all([
     // 🤖 SISTEMA - patvirtinti IR atmesti iššūkių submissions (v400: + instructions rinkinio grupavimui)
     sb.from('challenge_submissions')
-      .select('id, exp_gain, numeric_value, reviewed_at, status, rejection_reason, challenges(title, type, instructions, allow_partial, target_value, target_unit)')
+      .select('id, exp_gain, numeric_value, reviewed_at, status, rejection_reason, source, auto_approved, challenges(title, type, instructions, allow_partial, target_value, target_unit, verify_meta)')
       .eq('kid_id', currentKid.id)
       .in('status', ['approved', 'rejected'])
       .gte('reviewed_at', cutoffISO)
@@ -39491,9 +39500,10 @@ async function loadAllNotifications(force) {
       .limit(20),
     // 🎯 IŠŠŪKIAI - nauji (TIK aktyvūs — paslėpti "parent template" įrašai is_active=false neįtraukiami!)
     sb.from('challenges')
-      .select('id, title, type, exp_reward, target_value, target_unit, expires_at, created_at, target_audience, target_kid_id, group_id')
+      .select('id, title, type, exp_reward, target_value, target_unit, expires_at, created_at, target_audience, target_kid_id, group_id, verify_meta')
       .eq('club_id', currentProfile.club_id)
       .eq('is_active', true)
+      .or(`target_kid_id.eq.${currentKid.id},target_audience.neq.specific_kid,target_audience.is.null`)   // v598: kitų vaikų kopijos (V2 — po vieną kiekvienam) neužima 20 vietų
       .gte('created_at', cutoffISO)
       .order('created_at', { ascending: false })
       .limit(20),
@@ -39595,7 +39605,7 @@ async function loadAllNotifications(force) {
         id: `apprCh-${s.id}`,
         icon: ''+ico('statistika')+'',
         title: `${typeLabel} — tarpinis įskaitytas`,
-        body: `${escapeHtml(s.challenges?.title || 'Iššūkis')}${s.numeric_value ? ` · +${s.numeric_value} ${escapeHtml(s.challenges?.target_unit || '')}` : ''} · EXP kai pasieks tikslą`,
+        body: `${escapeHtml(s.challenges?.title || 'Iššūkis')}${s.numeric_value ? ` · +${s.numeric_value} ${escapeHtml(s.challenges?.target_unit || '')}` : ''} · ${(typeof Iss !== 'undefined' && Iss.tiersOf(s.challenges)) ? 'EXP pasiekus pakopą (' + Iss.tiersOf(s.challenges).map(t => t.v).join(' / ') + ' ' + escapeHtml(s.challenges?.target_unit || '') + ')' : 'EXP kai pasieks tikslą'}`,
         time: s.reviewed_at,
         link: 'v-ish'
       });
@@ -39603,7 +39613,7 @@ async function loadAllNotifications(force) {
       issukiai.push({
         id: `apprCh-${s.id}`,
         icon: ''+ico('patvirtinta')+'',
-        title: `${typeLabel} patvirtintas`,
+        title: `${typeLabel} ${(s.source === 'strava' || s.auto_approved) ? 'užskaitytas (Strava)' : 'patvirtintas'}`,   // v598
         body: `${escapeHtml(s.challenges?.title || 'Iššūkis')} · +${s.exp_gain || 0} EXP`,
         time: s.reviewed_at,
         link: 'v-ish'
@@ -39720,7 +39730,7 @@ async function loadAllNotifications(force) {
         id: `newCh-${ch.id}`,
         icon: typeIcon,
         title: `Naujas ${challengeTypeWords[ch.type]?.toLowerCase() || ''} iššūkis`,
-        body: `${escapeHtml(ch.title || 'Iššūkis')}${ch.exp_reward ? ' · +' + ch.exp_reward + ' EXP' : ''}`, // v400: escapeHtml
+        body: `${escapeHtml(ch.title || 'Iššūkis')}${(typeof Iss !== 'undefined' && Iss.tiersOf(ch)) ? ' · ' + Iss.tiersOf(ch).map(t => t.v).join(' · ') + ' ' + escapeHtml(ch.target_unit || '') + ' → ' + Iss.tiersOf(ch).map(t => '+' + t.exp).join(' / ') + ' EXP' : (ch.exp_reward ? ' · +' + ch.exp_reward + ' EXP' : '')}`, // v400: escapeHtml; v598 pakopos
         time: ch.created_at,
         link: 'v-ish'
       });
