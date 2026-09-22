@@ -44058,21 +44058,78 @@ Object.assign(Kal, {
       const sub = `${d} ${K.MONG[m]} · ${ses.length ? ses.length + ' ' + _ltPl(ses.length, 'treniruotė', 'treniruotės', 'treniruočių') : (evs.length ? 'renginys' : 'laisva diena')}`;
       K.sheetOpen('kal-k-day', `<div style="min-width:0;"><b>${K.DNOM[K.dayNo(ds) - 1].toUpperCase()}</b><i>${K.esc(sub)}</i></div><button class="kal-x" onclick="Kal.sheetClose('kal-k-day')" title="Uždaryti">${ico('uzdaryti')}</button>`, cards || '<div class="kal-empty"><b>Šią dieną nieko nėra</b></div>');
     },
-    // v602 (savininko prašymas 09-22): iš grupės lango — visos to etapo treniruotės (Klubas → Turinys pane'as).
-    // Be aktyvaus etapo siūlom rekomendaciją, nes planuoja treneris.
+    // v603 (savininko pastaba 09-22: „turi iššokti langas ant viršaus"): ETAPO LANGAS klubui — iššokantis lapas su VISO etapo
+    // treniruotėmis. Buvusios: kaip treneris pažymėjo lankomumą ir pastangas. Ateinančios: ar patvirtinta, galima peržiūrėti
+    // turinį ir palikti pastabą. Viršuje — etapo eiga ir „Rekomendacija etapui". Nieko nerašo, tik skaito (pastabos — MODULIS: Past).
     async openGroupPlan(groupId) {
+      const K = this.K;
+      await this.loadGroups().catch(() => { });
+      const g = this.st.groups.find(x => x.id === groupId);
+      if (!g) { showToast(ico('ispejimas') + ' Grupė nerasta', 'error'); return; }
+      document.getElementById('club-group-preview')?.remove();
+      Planas.sheet('kal-k-etapas', K.esc(g.name || 'Grupė'), '<div id="ket-body"><div class="kal-empty"><b>Kraunama…</b></div></div>',
+        `<button class="pl-cta" onclick="Kal.club.openRec('${groupId}')">${ico('ai')} Rekomendacija etapui</button>`,
+        { z: 100005, sub: 'Etapo treniruotės' });
       try {
-        const { data, error } = await sb.from('training_plans').select('id, status, period_end').eq('group_id', groupId).in('status', ['active', 'draft']).order('status').order('period_end', { ascending: false }).limit(1);
+        const { data: plans, error } = await sb.from('training_plans')
+          .select('id, title, status, period_start, period_end, goal_parents')
+          .eq('group_id', groupId).in('status', ['active', 'draft'])
+          .order('status').order('period_end', { ascending: false }).limit(1);
         if (error) throw error;
-        const p = (data || [])[0];
-        if (!p) { showToast(ico('ispejimas') + ' Grupė be etapo — pasiūlyk treneriui', 'error', 4000); this.openRec(groupId); return; }
-        document.getElementById('club-group-preview')?.remove();
-        if (typeof nv === 'function') nv('k', null, 'k-trainers');
-        if (typeof switchClubTeamTab === 'function') switchClubTeamTab('planas');
-        if (typeof Tren !== 'undefined') { Tren.st.role = 'club_admin'; await Tren.etapas(p.id); }
-        else { Planas.st.role = 'club_admin'; Planas.st.container = 'k-team-planas'; await Planas.openEtapas(p.id); }
-      } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error', 4000); }
+        const p = (plans || [])[0];
+        const body = document.getElementById('ket-body'); if (!body) return;
+        if (!p) {
+          body.innerHTML = `<div class="kal-empty"><b>Etapo nėra</b><i>Šiai grupei treneris dar nesuplanavo etapo. Parašyk, ko norėtum — jis matys planuodamas.</i></div>`;
+          return;
+        }
+        const today = K.ymd(new Date());
+        const ses = (await K.monthSessions({ groups: [g], from: p.period_start, to: p.period_end }))
+          .filter(s => s.session_id || s.date >= today)   // tvarkaraščio langai be turinio praeityje nedomina
+          .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+        if (typeof Past !== 'undefined' && Past.on()) { try { await Past.load(ses.map(x => x.session_id)); } catch (_e) { } }
+        const conf = ses.filter(s => s.status === 'confirmed').length;
+        const planned = ses.filter(s => s.session_id).length;
+        const marked = ses.filter(s => s.date < today && s.total > 0).length;
+        const past = ses.filter(s => s.date < today);
+        const next = ses.filter(s => s.date >= today);
+        const dLT = (d) => `${Number(d.slice(8, 10))} ${(K.MONG[Number(d.slice(5, 7)) - 1] || '').toLowerCase().slice(0, 4)}.`;
+        const dow = (d) => (K.DNOM[K.dayNo(d) - 1] || '').slice(0, 3);
+        const row = (s) => {
+          const has = !!s.session_id;
+          const isPast = s.date < today;
+          const tag = isPast
+            ? (s.total > 0 ? `<span class="kal-tag ok">PAŽYMĖTA ${s.present}/${s.total}</span>` : '<span class="kal-tag wait">NEPAŽYMĖTA</span>')
+            : (has ? (s.status === 'confirmed' ? '<span class="kal-tag ok">PATVIRTINTA</span>' : '<span class="kal-tag ai">NEPATVIRTINTA</span>') : '<span class="kal-tag mut">BE TURINIO</span>');
+          const eff = (isPast && s.total > 0 && s.effortDone) ? ` · pastangos ${s.effortDone}/${s.total}` : '';
+          const acts = [];
+          if (has) acts.push(`<span class="kal-b" style="padding:4px 9px;font-size:10px;" onclick="Kal.club.openSess('${s.session_id}')">Atidaryti</span>`);
+          if (has && typeof Past !== 'undefined' && Past.on()) {
+            const n = Past.list(s.session_id).length;
+            acts.push(`<span class="kal-b" style="padding:4px 9px;font-size:10px;${n ? 'color:#FF9E40;border-color:rgba(255,122,51,.5);' : ''}" onclick="Past.open('${s.session_id}','${s.group_id}')">${n ? 'Pastabos · ' + n : 'Pastaba'}</span>`);
+          }
+          return `<div class="kal-card" style="border-left:3px solid ${isPast ? 'var(--bdr)' : K.col(g.color)};">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:52px;flex:none;"><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;line-height:1;color:${isPast ? 'var(--mut)' : '#FF7A33'};">${K.esc(dLT(s.date))}</div><div style="font-size:9px;font-weight:900;letter-spacing:.6px;color:var(--mut);">${K.esc(dow(s.date))}${s.time ? ' ' + K.esc(s.time) : ''}</div></div>
+              <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${K.esc(s.title || (has ? 'Treniruotė' : 'Pagal tvarkaraštį'))}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${tag}${eff}</div></div>
+            </div>${acts.length ? `<div class="kal-acts" style="margin-top:7px;">${acts.join('')}</div>` : ''}</div>`;
+        };
+        body.innerHTML = `
+          <div class="kal-card" style="border-left:3px solid ${K.col(g.color)};">
+            <div style="font-size:13px;font-weight:900;">${K.esc(p.title || 'Etapas')}${p.status === 'draft' ? ' <span class="kal-tag ai">JUODRAŠTIS</span>' : ''}</div>
+            <div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:3px;">${K.esc(dLT(p.period_start))} – ${K.esc(dLT(p.period_end))} · ${K.esc(this.trainerName(g))}</div>
+            ${p.goal_parents ? `<div style="font-size:11.5px;color:var(--txt);line-height:1.45;margin-top:6px;">${K.esc(p.goal_parents)}</div>` : ''}
+            <div style="height:4px;border-radius:99px;background:rgba(255,255,255,.09);margin-top:8px;overflow:hidden;"><span style="display:block;width:${planned ? Math.round(conf * 100 / planned) : 0}%;height:100%;background:${planned && conf === planned ? '#22C55E' : '#FF4D00'};"></span></div>
+            <div style="font-size:10.5px;color:var(--mut);font-weight:800;margin-top:5px;">Patvirtinta ${conf} iš ${planned} · pažymėta ${marked} iš ${past.length}</div>
+          </div>
+          ${next.length ? `<div class="kal-sec">ATEINA <span></span> <em>${next.length}</em></div>${next.map(row).join('')}` : ''}
+          ${past.length ? `<div class="kal-sec">BUVO <span></span> <em>${past.length}</em></div>${past.slice().reverse().map(row).join('')}` : ''}
+          ${!ses.length ? '<div class="kal-empty"><b>Treniruočių nėra</b><i>Etape dar nesuplanuota nė vienos treniruotės</i></div>' : ''}`;
+      } catch (e) {
+        const body = document.getElementById('ket-body');
+        if (body) body.innerHTML = `<div class="kal-empty"><b>Nepavyko</b><i>${this.K.esc(e.message || '')}</i></div>`;
+      }
     },
+
     // v600: klubas atsidaro trenerio treniruotės turinį (tas pats Planas.openApr lapas; rolė club_admin — be „Koreguoti")
     async openSess(id) {
       if (typeof Planas === 'undefined') return;
