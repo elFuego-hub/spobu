@@ -43148,7 +43148,9 @@ const Kal = {
   },
 
   // ── BENDRAS VAIZDAS: mėnesio tinklelis (HTML eilutė, be DOM prieigos) ──
-  gridHtml() {
+  // v609: opts (tik klubo kalendoriui) — count: skaičius vietoj taškų · attn: dėmesio žymės taisyklė · noLegend · maxDots · attnLabel
+  gridHtml(opts) {
+    const o = opts || {};
     const r = this.range(this.st.ym);
     const first = new Date(r.y, r.m - 1, 1);
     const off = (first.getDay() || 7) - 1;
@@ -43160,19 +43162,20 @@ const Kal = {
       const ds = `${this.st.ym}-${String(d).padStart(2, '0')}`;
       const ses = this.sessionsOn(ds);
       const evs = this.eventsOn(ds);
-      const wait = ses.some(s => !s.session_id || s.status !== 'confirmed');
+      const wait = o.attn ? ses.some(o.attn) : ses.some(s => !s.session_id || s.status !== 'confirmed');
       const cls = ['kal-d'];
       if (ds === today) cls.push('today');
       if (!ses.length && !evs.length) cls.push('off');
       if (ses.length && wait) cls.push('w');
       if (nomark.has(ds)) cls.push('nomark');
       if (evs.length) cls.push(evs[0].cls);
-      const dots = ses.slice(0, 3).map(s => `<i style="background:${this.col(s.group?.color)};"></i>`).join('');
+      const dots = o.count ? '' : ses.slice(0, o.maxDots || 3).map(s => `<i style="background:${this.col(s.group?.color)};"></i>`).join('');
+      const cnt = (o.count && ses.length) ? `<u><em style="font-style:normal;font-size:9.5px;font-weight:900;line-height:1;color:var(--mut);">${ses.length}</em></u>` : '';
       const sub = evs.length ? `<span class="ev">${this.evTag(evs[0])}</span>` : '';
-      cells += `<div class="${cls.join(' ')}" onclick="Kal.openDay('${ds}')"><b>${d}</b>${dots ? `<u>${dots}</u>` : ''}${sub}</div>`;
+      cells += `<div class="${cls.join(' ')}" onclick="Kal.openDay('${ds}')"><b>${d}</b>${dots ? `<u>${dots}</u>` : cnt}${sub}</div>`;
     }
-    const legend = (this.st.groups || []).map(gr => `<span><i style="background:${this.col(gr.color)};"></i>${this.esc(gr.name)}</span>`).join('')
-      + '<span style="color:#FF7A33;"><i style="background:#FF7A33;border-radius:50%;"></i>nepatvirtinta</span>';
+    const legend = (o.noLegend ? '' : (this.st.groups || []).map(gr => `<span><i style="background:${this.col(gr.color)};"></i>${this.esc(gr.name)}</span>`).join(''))
+      + `<span style="color:#FF7A33;"><i style="background:#FF7A33;border-radius:50%;"></i>${this.esc(o.attnLabel || 'nepatvirtinta')}</span>`;
     const anim = (this.st.dir ? (this.st.dir > 0 ? ' out-r' : ' out-l') : '') + (this.st.filt ? ' filt' : '');
     this.st.filt = false;
     return `<div class="kal-grid${anim}">
@@ -44022,7 +44025,7 @@ Kal.parent = Object.assign(Object.create(Kal.kid), {
 // Viskas po Kal.on() (plans_enabled); išjungus — k-kal nepasiekiamas, nav lieka „Renginiai", k-main/k-stat kaip v541.
 Object.assign(Kal, {
   club: {
-    st: { ym: null, groups: [], sel: 'all', sessions: [], events: [], reg: {}, busy: false, trainers: {}, flags: {}, flagsReady: false, flagsSes: [], flagsToday: null, flagsAt: 0, flagsClub: null, flagsP: null },   // v599: flags* — būrelių ženklai
+    st: { ym: null, groups: [], sel: 'all', sessions: [], events: [], reg: {}, busy: false, trainers: {}, flags: {}, flagsReady: false, flagsSes: [], flagsToday: null, flagsAt: 0, flagsClub: null, flagsP: null, tsel: 'all' },   // v599: flags* — būrelių ženklai
     K: Kal,
     clubId() { return (typeof currentClub !== 'undefined' && currentClub?.id) || currentProfile?.club_id || null; },
 
@@ -44079,13 +44082,19 @@ Object.assign(Kal, {
     render() {
       const c = document.getElementById('kal-k-content'); if (!c) return;
       const K = this.K, r = K.range(this.st.ym);
-      const mine = this.st.sessions.filter(s => this.st.sel === 'all' || s.group_id === this.st.sel);
-      const wait = mine.filter(s => s.date >= K.ymd(new Date()) && (!s.session_id || s.status !== 'confirmed')).length;
-      const head = `<div class="kal-head"><div style="min-width:0;"><div class="kal-mon">${K.MON[r.m - 1].toUpperCase()} <i>${String(r.y).slice(2)}</i></div><div class="kal-sub"><span>${this.st.groups.length} ${_ltPl(this.st.groups.length, 'grupė', 'grupės', 'grupių')}</span><s>/</s><span>${mine.length} ${_ltPl(mine.length, 'treniruotė', 'treniruotės', 'treniruočių')}</span><s>/</s><span>${this.st.events.length} ${_ltPl(this.st.events.length, 'renginys', 'renginiai', 'renginių')}</span>${wait ? `<s>/</s><span style="color:#FF7A33;">${wait} nepatvirtintos</span>` : ''}</div></div>
+      // v609: matomos grupės pagal trenerio ir grupės filtrą; dėmesio žymė — tik nepatvirtintos artimiausias 14 d.
+      const vis = this.visibleSet();
+      const visG = this.st.groups.filter(g => vis.has(g.id));
+      const mine = this.st.sessions.filter(s => vis.has(s.group_id));
+      const t0 = K.ymd(new Date()), t14 = K.ymd(new Date(Date.now() + 14 * 86400000));
+      const attn = s => s.date >= t0 && s.date <= t14 && (!s.session_id || s.status !== 'confirmed' || this.subOpen(s.group_id, s.date));
+      const wait = mine.filter(attn).length;
+      Object.assign(this.K.st, { groups: visG, sessions: mine, sel: 'all' });
+      const head = `<div class="kal-head"><div style="min-width:0;"><div class="kal-mon">${K.MON[r.m - 1].toUpperCase()} <i>${String(r.y).slice(2)}</i></div><div class="kal-sub"><span>${visG.length} ${_ltPl(visG.length, 'grupė', 'grupės', 'grupių')}</span><s>/</s><span>${mine.length} ${_ltPl(mine.length, 'treniruotė', 'treniruotės', 'treniruočių')}</span><s>/</s><span>${this.st.events.length} ${_ltPl(this.st.events.length, 'renginys', 'renginiai', 'renginių')}</span>${wait ? `<s>/</s><span style="color:#FF7A33;">${wait} ${_ltPl(wait, 'nepatvirtinta', 'nepatvirtintos', 'nepatvirtintų')} per 14 d.</span>` : ''}</div></div>
         <div class="kal-hbtn"><button onclick="Kal.club.shift(-1)" title="Ankstesnis mėnuo">${ico('atgal')}</button><button onclick="Kal.club.shift(1)" title="Kitas mėnuo">${ico('toliau')}</button></div></div>`;
-      const chips = `<div class="kal-chips"><span class="kal-chip${this.st.sel === 'all' ? ' on' : ''}" onclick="Kal.club.pick('all')">Visos</span>${this.st.groups.map(g => `<span class="kal-chip${this.st.sel === g.id ? ' on' : ''}" onclick="Kal.club.pick('${g.id}')"><i style="background:${K.col(g.color)};"></i>${K.esc(g.name)}</span>`).join('')}</div>`;
+      const chips = this.filterHtml();   // v609: treneriai → jų grupės
       // tinklelis — bendras Kal.gridHtml, tik dienos onclick → klubo lapas
-      const grid = K.gridHtml().replace(/onclick="Kal\.openDay\(/g, 'onclick="Kal.club.openDay(');
+      const grid = K.gridHtml({ count: visG.length > 6, noLegend: visG.length > 6, maxDots: 4, attn, attnLabel: 'reikia dėmesio' }).replace(/onclick="Kal\.openDay\(/g, 'onclick="Kal.club.openDay(');
       const today = K.ymd(new Date());
       const evList = this.st.events.length ? this.st.events.map(ev => this.eventRow(ev, today)).join('') : '<div class="kal-empty">Šį mėnesį renginių nėra — sukurk per „+ Renginys".</div>';
       const cta = `<div class="kal-cta" onclick="Kal.club.openNew()"><div class="ic">${ico('prideti')}</div><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Naujas renginys</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Varžybos · stovykla · seminaras · diržo testas — mato visi</div></div>${ico('toliau')}</div>`;   // v555: „+ Renginys" iš antraštės į CTA juostą (antraštė 46 px netilpo)
@@ -44108,34 +44117,120 @@ Object.assign(Kal, {
     // dienos lapas: visos grupės su būsena + „Patvirtinti" (plan_session_confirm leidžia klubo adminui) + renginiai
     openDay(ds) {
       const K = this.K, today = K.ymd(new Date());
-      const ses = this.st.sessions.filter(s => s.date === ds && (this.st.sel === 'all' || s.group_id === this.st.sel));
+      const vis = this.visibleSet();   // v609: pagal trenerio / grupės filtrą, pagal laiką
+      const ses = this.st.sessions.filter(s => s.date === ds && vis.has(s.group_id)).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
       const evs = this.st.events.filter(ev => String(ev.date) <= ds && ds <= String(ev.endDate || ev.date));
       // v555: bendras dienos lapas (Kal.sheetOpen) ir .kal-row eilutės — kaip treneriui, tik su trenerio vardu ir klubo veiksmais
       const cards = evs.map(ev => `<div class="kal-card ${ev.cls}"><div style="font-size:14px;font-weight:900;">${K.esc(ev.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${K.esc(ev.label)}${ev.location ? ' · ' + K.esc(ev.location) : ''}${ev.deadline ? ' · registracija iki ' + K.esc(ev.deadline) : ''}${ev.price ? ' · ' + K.esc(ev.price) : ''}</div>${this.st.reg[ev.id] ? `<div style="font-size:10.5px;color:var(--grn);font-weight:800;margin-top:5px;">${this.st.reg[ev.id].go} dalyvaus · ${this.st.reg[ev.id].no} ne</div>` : ''}<div class="kal-acts"><span class="kal-b" onclick="Kal.sheetClose('kal-k-day', true);nv('k',null,'k-events')">Atidaryti Renginiuose</span></div></div>`).join('')
-        + (ses.length ? `<div class="kal-rows">${ses.map(s => {
-          const marked = s.total > 0; const g = s.group; const draft = !!s.session_id && s.status !== 'confirmed';
-          const meta = [K.esc(this.trainerName(g))];
-          if (marked) meta.push(`pažymėta ${s.present}/${s.total}${s.effortDone ? ' · pastangos ' + s.effortDone : ''}`); else if (ds < today) meta.push('nepažymėta');
-          if (typeof Past !== 'undefined' && Past.on() && s.session_id) { const pm = Past.meta(s); if (pm) meta.push(pm); }   // v600: MODULIS: Past
-          const txt = K.sessionText(s);
-          return `<div class="kal-row"><div class="time"><b>${s.time ? K.esc(s.time) : '—'}</b><i>${s.duration ? s.duration + ' MIN' : ''}</i></div><div class="gr" style="background:${K.col(g?.color)};"></div><div class="bd">
-            <div class="nm"><span>${K.esc(g?.name || 'Grupė')}</span>${K.statusTag(s)}</div>
-            ${txt ? `<div class="ds">${txt}</div>` : ''}
-            <div class="mt">${meta.join(' · ')}</div>
-            ${(() => {   // v600: klubas peržiūri trenerio treniruotę ir palieka pastabą (MODULIS: Past)
-              const a = [];
-              // v606: klubas netvirtina — tik peržiūri, rašo pastabą ir primena treneriui
-              if (s.session_id && typeof Planas !== 'undefined') a.push(`<span class="kal-b" onclick="Kal.club.openSess('${s.session_id}')">Atidaryti</span>`);
-              if (typeof Past !== 'undefined' && Past.on() && s.session_id) a.push(Past.btn(s));
-              if (draft) a.push(`<span class="kal-b" onclick="Kal.club.remind('${s.group_id}')">Priminti treneriui</span>`);
-              return a.length ? `<div class="kal-acts">${a.join('')}</div>` : '';
-            })()}
-          </div></div>`;
-        }).join('<hr>')}</div>` : '');
+        + this.dayRows(ses, ds, today);   // v609: sutrauktos eilutės, „Reikia dėmesio" viršuje, vienas priminimas treneriui
       const m = Number(ds.slice(5, 7)) - 1, d = Number(ds.slice(8, 10));
       const sub = `${d} ${K.MONG[m]} · ${ses.length ? ses.length + ' ' + _ltPl(ses.length, 'treniruotė', 'treniruotės', 'treniruočių') : (evs.length ? 'renginys' : 'laisva diena')}`;
       K.sheetOpen('kal-k-day', `<div style="min-width:0;"><b>${K.DNOM[K.dayNo(ds) - 1].toUpperCase()}</b><i>${K.esc(sub)}</i></div><button class="kal-x" onclick="Kal.sheetClose('kal-k-day')" title="Uždaryti">${ico('uzdaryti')}</button>`, cards || '<div class="kal-empty"><b>Šią dieną nieko nėra</b></div>');
     },
+    // ── v609 (savininko sprendimas 09-22 „pasirenki trenerį viršuj, tada išmeta jo grupes"; asistentai ir pavadavimai — kaip siūlyta):
+    //    TRENERIŲ FILTRAS klubo kalendoriuje. Viršuje treneriai (su grupių skaičiumi) + „Be trenerio"; pasirinkus — jo grupės
+    //    (pagrindinis + asistentas su žyma „asist."). Pavaduojama treniruotė lieka savo grupės trenerio sąraše, dienos lape
+    //    parašyta „pavaduoja X". Dienos lapas — pagal laiką, sutrauktos eilutės, viršuje „Reikia dėmesio", vienas priminimas treneriui.
+    trainerList() {
+      const m = {};
+      this.st.groups.forEach(g => {
+        if (g.trainer_id) (m[g.trainer_id] = m[g.trainer_id] || { id: g.trainer_id, main: [], asst: [] }).main.push(g.id);
+        (g.assistant_trainer_ids || []).forEach(a => { if (a && a !== g.trainer_id) (m[a] = m[a] || { id: a, main: [], asst: [] }).asst.push(g.id); });
+      });
+      const list = Object.values(m).map(x => Object.assign(x, { name: this.st.trainers[x.id] || 'Treneris', n: x.main.length + x.asst.length }))
+        .sort((a, b) => String(a.name).localeCompare(String(b.name), 'lt'));
+      const none = this.st.groups.filter(g => !g.trainer_id).map(g => g.id);
+      return { list, none };
+    },
+    tGroups() {
+      const t = this.st.tsel || 'all';
+      if (t === 'all') return this.st.groups.map(g => ({ g, asst: false }));
+      if (t === 'none') return this.st.groups.filter(g => !g.trainer_id).map(g => ({ g, asst: false }));
+      return this.st.groups.filter(g => g.trainer_id === t || (g.assistant_trainer_ids || []).includes(t)).map(g => ({ g, asst: g.trainer_id !== t }));
+    },
+    visibleSet() {
+      if (this.st.sel && this.st.sel !== 'all') return new Set([this.st.sel]);
+      return new Set(this.tGroups().map(x => x.g.id));
+    },
+    pickT(id) { this.st.tsel = id; this.st.sel = 'all'; this.K.st.sel = 'all'; this.K.st.filt = true; this.render(); },
+    // viršutinės eilės: treneriai (jei jų ≥ 2 arba yra grupių be trenerio) ir grupės
+    filterHtml() {
+      const K = this.K, { list, none } = this.trainerList();
+      if (this.st.tsel !== 'all' && this.st.tsel !== 'none' && !list.some(t => t.id === this.st.tsel)) this.st.tsel = 'all';
+      const showT = list.length >= 2 || (list.length >= 1 && none.length);
+      const chip = (on, onclick, inner) => `<span class="kal-chip${on ? ' on' : ''}" onclick="${onclick}">${inner}</span>`;
+      const cnt = (n) => `<em style="font-style:normal;font-weight:900;opacity:.7;margin-left:3px;">${n}</em>`;
+      let h = '';
+      if (showT) {
+        h += `<div class="kal-chips">${chip(this.st.tsel === 'all', "Kal.club.pickT('all')", 'Visi')}`
+          + list.map(t => chip(this.st.tsel === t.id, `Kal.club.pickT('${t.id}')`, `${K.esc(String(t.name).split(' ')[0])}${cnt(t.n)}`)).join('')
+          + (none.length ? chip(this.st.tsel === 'none', "Kal.club.pickT('none')", `Be trenerio${cnt(none.length)}`) : '') + '</div>';
+      }
+      const tg = this.tGroups();
+      const showG = !showT || this.st.tsel !== 'all' || this.st.groups.length <= 6;
+      if (showG && tg.length > 1) {
+        const allLbl = this.st.tsel === 'all' || !showT ? 'Visos' : (this.st.tsel === 'none' ? 'Visos be trenerio' : `Visos · ${K.esc(String((list.find(t => t.id === this.st.tsel) || {}).name || '').split(' ')[0])}`);
+        h += `<div class="kal-chips" style="${showT ? 'margin-top:-4px;' : ''}">${chip(this.st.sel === 'all', "Kal.club.pick('all')", allLbl)}`
+          + tg.map(x => chip(this.st.sel === x.g.id, `Kal.club.pick('${x.g.id}')`, `<i style="background:${K.col(x.g.color)};"></i>${K.esc(x.g.name)}${x.asst ? ' <em style="font-style:normal;font-size:9px;opacity:.7;">asist.</em>' : ''}`)).join('') + '</div>';
+      }
+      return h;
+    },
+    // pavadavimas tą dieną (MODULIS: Pavad): „pavaduoja X" / „reikia pavaduotojo"
+    subLine(g, ds) {
+      if (!g || typeof Pavad === 'undefined' || !Pavad.on() || !Pavad.forDay) return '';
+      const cur = Pavad.forDay(g.id, ds); if (!cur) return '';
+      if (cur.status === 'taken' && cur.substitute_id) return `<span style="color:#60A5FA;">pavaduoja ${this.K.esc(Pavad.name(cur.substitute_id))}</span>`;
+      if (cur.status === 'open') return '<span style="color:#FF7A33;">reikia pavaduotojo</span>';
+      return '';
+    },
+    subOpen(gid, ds) { if (typeof Pavad === 'undefined' || !Pavad.on() || !Pavad.forDay) return false; const cur = Pavad.forDay(gid, ds); return !!(cur && cur.status === 'open'); },
+    rowToggle(id) { const el = document.getElementById(id); if (el) el.style.display = el.style.display === 'none' ? '' : 'none'; },
+    // dienos lapo eilutės: pagal laiką, sutrauktos; paspaudus — veiksmai; viršuje „Reikia dėmesio" ir vienas priminimas treneriui
+    dayRows(ses, ds, today) {
+      const K = this.K; if (!ses.length) return '';
+      const attOn = typeof flagOn !== 'function' || flagOn('attendance_enabled');
+      const need = s => ds >= today ? (!s.session_id || s.status !== 'confirmed' || this.subOpen(s.group_id, ds)) : (attOn && !(s.total > 0));
+      const row = (s) => {
+        const g = s.group || {}; const marked = s.total > 0;
+        const meta = [K.esc(this.trainerName(g))];
+        const sub = this.subLine(g, ds); if (sub) meta.push(sub);
+        if (marked) meta.push(`pažymėta ${s.present}/${s.total}`); else if (ds < today && attOn) meta.push('<span style="color:#FF7A33;">nepažymėta</span>');
+        if (typeof Past !== 'undefined' && Past.on() && s.session_id) { const pm = Past.meta(s); if (pm) meta.push(pm); }
+        const acts = [];
+        if (s.session_id && typeof Planas !== 'undefined') acts.push(`<span class="kal-b" onclick="Kal.club.openSess('${s.session_id}')">Atidaryti</span>`);
+        if (typeof Past !== 'undefined' && Past.on() && s.session_id) acts.push(Past.btn(s));
+        const id = 'kkr-' + String(s.session_id || (g.id + '-' + ds)).replace(/[^A-Za-z0-9_-]/g, '');
+        return `<div class="kal-card" style="padding:8px 12px;${acts.length ? 'cursor:pointer;' : ''}"${acts.length ? ` onclick="Kal.club.rowToggle('${id}')"` : ''}>
+          <div style="display:flex;align-items:center;gap:9px;">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:17px;line-height:1;color:${ds < today ? 'var(--mut)' : '#FF7A33'};width:42px;flex:none;">${s.time ? K.esc(s.time) : '—'}</span>
+            <span style="width:3px;height:30px;border-radius:2px;background:${K.col(g.color)};flex:none;"></span>
+            <div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${K.esc(g.name || 'Grupė')}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${meta.join(' · ')}</div></div>
+            ${K.statusTag(s)}
+          </div>${acts.length ? `<div id="${id}" class="kal-acts" style="display:none;margin-top:8px;" onclick="event.stopPropagation()">${acts.join('')}</div>` : ''}</div>`;
+      };
+      const bad = ses.filter(need), ok = ses.filter(s => !need(s));
+      // vienas priminimas vienam treneriui — tik ateities nepatvirtintoms
+      let rem = '';
+      if (ds >= today) {
+        const byT = {}; bad.forEach(s => { const t = s.group && s.group.trainer_id; if (t && s.session_id) (byT[t] = byT[t] || []).push(s); });
+        rem = Object.entries(byT).map(([t, l]) => `<div style="display:flex;align-items:center;gap:8px;padding:0 18px 6px;"><span style="flex:1;font-size:10.5px;color:var(--mut);font-weight:800;">${K.esc(this.st.trainers[t] || 'Treneris')} · ${l.length} ${_ltPl(l.length, 'nepatvirtinta', 'nepatvirtintos', 'nepatvirtintų')}</span><span class="kal-b" style="padding:4px 10px;font-size:10px;" onclick="Kal.club.remindT('${t}','${ds}')">Priminti</span></div>`).join('');
+      }
+      if (!bad.length) return ok.map(row).join('');
+      return `<div class="kal-sec">REIKIA DĖMESIO <span></span> <em class="o">${bad.length}</em></div>${rem}${bad.map(row).join('')}`
+        + (ok.length ? `<div class="kal-sec">TVARKINGOS <span></span> <em>${ok.length}</em></div>${ok.map(row).join('')}` : '');
+    },
+    // priminimas treneriui apie TOS DIENOS nepatvirtintas jo treniruotes (vienas, ne po vieną kiekvienai)
+    remindT(tid, ds) {
+      const l = this.st.sessions.filter(s => s.date === ds && s.group && s.group.trainer_id === tid && s.session_id && s.status !== 'confirmed');
+      const nm = this.st.trainers[tid] || 'Treneris';
+      const d = Number(ds.slice(8, 10)), m = Number(ds.slice(5, 7)) - 1;
+      const gnames = [...new Set(l.map(s => s.group.name))].join(', ');
+      Kal.sheetClose('kal-k-day', true);
+      if (typeof openComposeModal !== 'function') return;
+      openComposeModal({ type: 'direct', parentIds: [tid], kidId: null, title: 'Priminti treneriui', recipientLabel: `Treneris ${nm}` });
+      setTimeout(() => { const ta = document.querySelector('#msg-compose-modal textarea'); if (ta && !ta.value) ta.value = `Labas! ${d} ${(this.K.MONG[m] || '').toLowerCase()} ${l.length === 1 ? 'treniruotė' : l.length + ' treniruotės'} (${gnames}) dar nepatvirtint${l.length === 1 ? 'a' : 'os'} — vaikai ir tėvai jų nemato. Patvirtink, kai turėsi minutę. Ačiū!`; }, 150);
+    },
+
     // v603 (savininko pastaba 09-22: „turi iššokti langas ant viršaus"): ETAPO LANGAS klubui — iššokantis lapas su VISO etapo
     // treniruotėmis. Buvusios: kaip treneris pažymėjo lankomumą ir pastangas. Ateinančios: ar patvirtinta, galima peržiūrėti
     // turinį ir palikti pastabą. Viršuje — etapo eiga ir „Rekomendacija etapui". Nieko nerašo, tik skaito (pastabos — MODULIS: Past).
@@ -45871,7 +45966,8 @@ const Pavad = {
   },
   // klubo kalendorius — sąrašas su priskyrimu
   clubHtml() {
-    const list = this.st.list || []; if (!list.length) return '';
+    const vis = (Kal.club && Kal.club.visibleSet) ? Kal.club.visibleSet() : null;   // v609: pagal klubo kalendoriaus trenerio / grupės filtrą
+    const list = (this.st.list || []).filter(s => !vis || vis.has(s.group_id)); if (!list.length) return '';
     const trainers = (Kal.club && Kal.club.st.trainers) || {};
     const opts = id => Object.entries(trainers).map(([tid, nm]) => `<option value="${tid}"${tid === id ? ' selected' : ''}>${this.esc(nm)}</option>`).join('');
     return `<div class="kal-sec"><b>PAVADAVIMAI</b><span>${list.length}</span></div>` + list.map(s => `<div class="kal-card" style="${s.status === 'open' ? 'border-color:rgba(255,215,0,.5);' : ''}"><div style="font-size:12.5px;font-weight:900;">${this.fmt(s.session_date)} ${this.time(s.group_id, s.session_date)} · ${this.gname(s)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:2px;">Prašo ${this.esc(this.name(s.requested_by))}${s.note ? ' · „' + this.esc(s.note) + '"' : ''} · ${s.status === 'taken' ? 'pavaduoja <b style="color:var(--grn);">' + this.esc(this.name(s.substitute_id)) + '</b>' : '<span style="color:#FF7A33;">dar niekas neperėmė</span>'}</div><div style="display:flex;gap:6px;margin-top:8px;align-items:center;"><select onchange="Pavad.assign('${s.id}', this.value)" style="flex:1;min-width:0;background:var(--card);color:var(--txt);border:.5px solid var(--bdr);border-radius:9px;padding:7px;font-size:11px;font-weight:800;font-family:inherit;"><option value="">Priskirti trenerį…</option>${opts(s.substitute_id)}</select><span class="kal-b" onclick="Pavad.cancel('${s.id}')">Atšaukti</span></div></div>`).join('');
