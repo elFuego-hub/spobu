@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=609">
+<link rel="stylesheet" href="styles.css?v=610">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v609</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v610</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3841,6 +3841,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <button class="club-stat-tab on" data-tab="overall" onclick="switchClubStatTab('overall')" style="flex-shrink:0;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-grafikas"></use></svg> BENDRAS LVL</button>
       <button class="club-stat-tab" data-tab="skills" onclick="switchClubStatTab('skills')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> SKILL'AI</button>
       <button class="club-stat-tab" data-tab="challenges" onclick="switchClubStatTab('challenges')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-issukiai"></use></svg> IŠŠŪKIAI</button>
+      <button class="club-stat-tab" data-tab="attendance" onclick="switchClubStatTab('attendance')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-lankomumas"></use></svg> LANKOMUMAS</button><!-- v610 -->
       <button class="club-stat-tab" data-tab="competitions" onclick="switchClubStatTab('competitions')" style="flex-shrink:0;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:8px 14px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-varzybos"></use></svg> VARŽYBOS</button>
     </div>
     
@@ -3852,6 +3853,9 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
     <div id="club-stat-tab-challenges" class="club-stat-tab-content" style="display:none;">
+      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
+    </div>
+    <div id="club-stat-tab-attendance" class="club-stat-tab-content" style="display:none;"><!-- v610 -->
       <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
     </div>
     <div id="club-stat-tab-competitions" class="club-stat-tab-content" style="display:none;">
@@ -3899,6 +3903,13 @@ window.addEventListener('unhandledrejection', function(e) {
         <span id="k-treneriai-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-treneriai-content" style="display:none;padding:0 16px 10px;"></div>
+      <!-- v610: AUGIMAS perkeltas iš Verslo — tai apie žmones, ne pinigus -->
+      <div onclick="_toggleSec('k-augimas-content','k-augimas-chev',loadClubGrowth)" class="k-sec">
+        <div class="k-sec-ico" style="background:rgba(34,197,94,.15);"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></div>
+        <div style="flex:1;min-width:0;"><div class="k-sec-tt">AUGIMAS</div><div class="k-sec-ds">Nauji vaikai · aktyvumas</div></div>
+        <span id="k-augimas-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
+      </div>
+      <div id="k-augimas-content" style="display:none;padding:0 16px 10px;"></div>
     </div>
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> VEIKLA -->
     <div id="k-anal-activity" class="k-anal-pane" style="display:none;">
@@ -3922,22 +3933,24 @@ window.addEventListener('unhandledrejection', function(e) {
         </div>
         <div id="k-health-content" style="display:none;padding:0 16px 10px;"></div>
       </div>
-      <!-- ===== MODULIS: Kal — Analitika PLANAI (v542, V2 6 etapas); rodoma tik su plans_enabled (Kal.applyNav) ===== -->
+      <!-- ===== MODULIS: Anal — Analitika PLANAVIMAS pagal trenerį (v610; buvo Kal PLANAI v542); rodoma tik su plans_enabled (Kal.applyNav) ===== -->
       <div id="kal-k-anal-sec" style="display:none;">
-        <div onclick="_toggleSec('kal-k-anal','kal-k-anal-chev',()=>Kal.club.analytics())" class="k-sec">
+        <div onclick="_toggleSec('kal-k-anal','kal-k-anal-chev',()=>Anal.plans())" class="k-sec">
           <div class="k-sec-ico" style="background:rgba(168,85,247,.15);"><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg></div>
-          <div style="flex:1;min-width:0;"><div class="k-sec-tt">PLANAI</div><div class="k-sec-ds">Kiek mėnesio treniruočių patvirtinta į priekį</div></div>
+          <div style="flex:1;min-width:0;"><div class="k-sec-tt">PLANAVIMAS</div><div class="k-sec-ds">Pagal trenerį: kiek šio mėnesio treniruočių patvirtinta</div></div>
           <span id="kal-k-anal-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
         </div>
         <div id="kal-k-anal" style="display:none;padding:0 16px 10px;"></div>
       </div>
       <!-- ===== /MODULIS ===== -->
+      <div id="k-lank-sec"><!-- v610: vartai attendance_enabled -->
       <div onclick="_toggleSec('k-lank-content','k-lank-chev',loadClubAttendance)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(239,68,68,.15);"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">LANKOMUMAS</div><div class="k-sec-ds">Kas nelanko — verta susisiekti</div></div>
         <span id="k-lank-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-lank-content" style="display:none;padding:0 16px 10px;"></div>
+      </div>
       <div onclick="_toggleSec('k-pulsas-content','k-pulsas-chev',loadClubPulse)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(255,140,0,.15);"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">KLUBO PULSAS</div><div class="k-sec-ds">Veikla per 30 dienų</div></div>
@@ -3950,18 +3963,22 @@ window.addEventListener('unhandledrejection', function(e) {
         <span id="k-skill-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-skill-content" style="display:none;padding:0 16px 10px;"></div>
+      <div id="k-issukiai-sec"><!-- v610: vartai challenges_enabled -->
       <div onclick="toggleClubChallengesSection()" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(168,85,247,.15);"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">IŠŠŪKIAI</div><div class="k-sec-ds">Visų trenerių iššūkiai</div></div>
         <span id="k-issukiai-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-issukiai-content" style="display:none;padding:0 16px 10px;"></div>
+      </div>
+      <div id="k-varzybos-sec"><!-- v610: vartai competitions_enabled -->
       <div onclick="toggleClubCompetitionsSection()" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(255,215,0,.15);"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">VARŽYBOS</div><div class="k-sec-ds">Rezultatai · medaliai · nauji diržai</div></div>
         <span id="k-varzybos-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-varzybos-content" style="display:none;padding:0 16px 10px;"></div>
+      </div>
     </div>
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-verslas"></use></svg> VERSLAS -->
     <div id="k-anal-business" class="k-anal-pane" style="display:none;">
@@ -3977,12 +3994,6 @@ window.addEventListener('unhandledrejection', function(e) {
         <span id="k-premium-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
       </div>
       <div id="k-premium-content" style="display:none;padding:0 16px 10px;"></div>
-      <div onclick="_toggleSec('k-augimas-content','k-augimas-chev',loadClubGrowth)" class="k-sec">
-        <div class="k-sec-ico" style="background:rgba(34,197,94,.15);"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></div>
-        <div style="flex:1;min-width:0;"><div class="k-sec-tt">AUGIMAS</div><div class="k-sec-ds">Nauji vaikai · aktyvumas</div></div>
-        <span id="k-augimas-chev" class="k-sec-cv"><svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></span>
-      </div>
-      <div id="k-augimas-content" style="display:none;padding:0 16px 10px;"></div>
       <div onclick="_toggleSec('club-stat-tab-revenue','k-rev-chev',loadClubRevenue)" class="k-sec">
         <div class="k-sec-ico" style="background:rgba(255,140,0,.15);"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></div>
         <div style="flex:1;min-width:0;"><div class="k-sec-tt">APYVARTA</div><div class="k-sec-ds">Pajamos per laikotarpį</div></div>
@@ -4772,7 +4783,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=609"></script>
+<script src="app.js?v=610"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
