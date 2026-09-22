@@ -19053,6 +19053,11 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
   const myEntry = myIndex >= 0 ? entries[myIndex] : null;
   const myRank = myIndex >= 0 ? myIndex + 1 : null;
   const totalCount = entries.length;
+  // v616: paieška (MODULIS: StatPaieska) — vaikui ir tėvams ANONIMAI nerandami; rangas lieka iš viso sąrašo
+  const _sRole = (opts && opts.pageFn === 'setParentStatPage') ? 'parent' : 'kid';
+  const _sOn = !!(opts && opts.paginate), _all = entries, _rank = new Map(_all.map((e, i) => [e.kidId, i + 1]));
+  if (_sOn && !opts.listOnly) StatPaieska.remember(_sRole, lo => renderLeaderboardCard(_all, currentKidId, scoreLabel, Object.assign({}, opts, { listOnly: lo, page: opts.page != null ? 1 : opts.page })));
+  if (_sOn && StatPaieska.active(_sRole)) entries = StatPaieska.filter(_sRole, _all);
   
   // Puslapiavimas (kai opts.paginate) arba TOP 10
   const PAGE = 10;
@@ -19064,7 +19069,7 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
   const startIdx = paginate ? (page - 1) * PAGE : 0;
   const top10 = entries.slice(startIdx, startIdx + PAGE);
   // Ar mano įrašas matomas dabartiniame puslapyje/top10?
-  const myVisible = myIndex >= startIdx && myIndex < startIdx + PAGE;
+  const myVisible = top10.some(e => e.kidId === currentKidId);   // v616: ir ieškant
 
   // Mano pozicija kortelė (tik jei vaikas yra rezultatuose)
   let myCard = '';
@@ -19097,7 +19102,7 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
   
   // Sąrašas (rank pagal puslapį)
   const topList = top10.map((e, i) => {
-    const rank = startIdx + i + 1;
+    const rank = _rank.get(e.kidId) || (startIdx + i + 1);   // v616: tikra vieta ir ieškant
     const isMe = e.kidId === currentKidId;
     const medal = rank === 1 ? ''+ico('medalis')+'' : rank === 2 ? ''+ico('medalis')+'' : rank === 3 ? ''+ico('medalis')+'' : '';
     
@@ -19128,18 +19133,20 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
     `;
   }
 
-  const heading = paginate ? `${ico('trofejai')} VISI VAIKAI (${totalCount})` : ''+ico('trofejai')+' TOP 10';
+  const heading = paginate ? (StatPaieska.active(_sRole) ? `${ico('trofejai')} RASTA ${entries.length} IŠ ${totalCount}` : `${ico('trofejai')} VISI VAIKAI (${totalCount})`) : ''+ico('trofejai')+' TOP 10';
   // Puslapiuojant mano kortelę rodom tik kai manęs nėra šiame puslapyje
   const myCardOut = (paginate && myVisible) ? '' : myCard;
 
-  return `
+  const _inner = `
     ${myCardOut}
     <div style="font-size:9px;color:var(--mut);font-weight:700;letter-spacing:1px;margin:0 16px 4px;">${heading}</div>
     <div class="cd" style="padding:5px;margin:0 16px;">
-      ${topList}
+      ${topList || StatPaieska.none(_sRole)}
     </div>
     ${pagination}
   `;
+  if (!_sOn) return _inner;
+  return opts.listOnly ? _inner : `<div style="margin:0 16px;">${StatPaieska.box(_sRole)}</div><div id="sts-list-${_sRole}">${_inner}</div>`;   // v616
 }
 
 // Helper: gauti vaikų entries su filtrais (bendrai naudojama)
@@ -19995,13 +20002,21 @@ function renderTrainerFiltersUI(tabType) {
 }
 
 // Render visų vaikų sąrašas su PUSLAPIAVIMU (10 puslapyje)
-async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId) {
+async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId, o) {
   if (!entries || entries.length === 0) {
     return '<div class="cd" style="padding:30px;text-align:center;color:var(--mut);font-size:12px;">Pagal šiuos filtrus nėra rezultatų</div>';
   }
   
   // Surūšiuoti
   entries.sort((a, b) => (b.score || 0) - (a.score || 0));
+  // v616: paieška (MODULIS: StatPaieska) — treneris randa visus, ir anonimus, pagal vardą ar pavardę
+  const _all = entries, _rank = new Map(_all.map((e, i) => [e.kidId, i + 1]));
+  if (!(o && o.listOnly)) StatPaieska.remember('trainer', lo => renderTrainerLeaderboard(_all, scoreLabel, highlightTrainerId, { listOnly: lo }));
+  if (StatPaieska.active('trainer')) {
+    await StatPaieska.loadNames('trainer', _all);
+    entries = StatPaieska.filter('trainer', _all);
+    if (!entries.length) return (o && o.listOnly) ? StatPaieska.none('trainer') : StatPaieska.box('trainer') + `<div id="sts-list-trainer">${StatPaieska.none('trainer')}</div>`;
+  }
   
   // Paginacija
   const totalPages = Math.ceil(entries.length / STAT_PAGE_SIZE);
@@ -20028,7 +20043,7 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
   });
   
   const list = pageEntries.map((e, i) => {
-    const rank = startIdx + i + 1; // tikra vieta visame sąraše
+    const rank = _rank.get(e.kidId) || (startIdx + i + 1); // tikra vieta visame sąraše (v616: ir ieškant)
     const tInfo = trainerMap[e.kidId];
     // Mano vaikas: legacy assigned_trainer_id ARBA M:N rinkinys (kid_trainers)
     const isMine = tInfo?.assigned_trainer_id === highlightTrainerId
@@ -20073,15 +20088,16 @@ async function renderTrainerLeaderboard(entries, scoreLabel, highlightTrainerId)
     </div>
   ` : '';
   
-  return `
+  const _inner = `
     <div style="font-size:12px;color:white;font-weight:800;letter-spacing:.5px;margin-bottom:8px;padding:0 4px;">
-      ${ico('trofejai')} Visi dalyviai (${entries.length}) · <span style="color:#FFD700;">${ico('zvaigzde')} Mano vaikai</span>
+      ${ico('trofejai')} ${StatPaieska.active('trainer') ? `Rasta ${entries.length} iš ${_all.length}` : `Visi dalyviai (${entries.length})`} · <span style="color:#FFD700;">${ico('zvaigzde')} Mano vaikai</span>
     </div>
     <div class="cd" style="padding:8px;">
       ${list}
     </div>
     ${paginationHtml}
   `;
+  return (o && o.listOnly) ? _inner : StatPaieska.box('trainer') + `<div id="sts-list-trainer">${_inner}</div>`;   // v616
 }
 
 // CSV eksportas
@@ -20459,7 +20475,7 @@ function _statApplyFocus(){
 }
 
 // Render klubo leaderboard'as (be paryškinimo, be anonimų) + PUSLAPIAVIMAS
-async function renderClubLeaderboard(entries, scoreLabel) {
+async function renderClubLeaderboard(entries, scoreLabel, o) {
   if (!entries || entries.length === 0) {
     const er = _getFilteredKidEntriesUncached.err;   // v610: RPC klaida — rodom, ne „nėra rezultatų"
     if (er) return `<div class="cd" style="padding:30px;text-align:center;color:#EF4444;font-size:12px;">Klaida: ${escapeHtml(String(er))}</div>`;
@@ -20467,6 +20483,14 @@ async function renderClubLeaderboard(entries, scoreLabel) {
   }
 
   entries.sort((a, b) => (b.score || 0) - (a.score || 0));
+  // v616: paieška (MODULIS: StatPaieska) — rangas iš viso sąrašo, rodom rastus
+  const _all = entries, _rank = new Map(_all.map((e, i) => [e.kidId, i + 1]));
+  if (!(o && o.listOnly)) StatPaieska.remember('club', lo => renderClubLeaderboard(_all, scoreLabel, { listOnly: lo }));
+  if (StatPaieska.active('club')) {
+    await StatPaieska.loadNames('club', _all);
+    entries = StatPaieska.filter('club', _all);
+    if (!entries.length) return (o && o.listOnly) ? StatPaieska.none('club') : StatPaieska.box('club') + `<div id="sts-list-club">${StatPaieska.none('club')}</div>`;
+  }
 
   // 🎯 v485: jei atėjom iš lyderių kortelės — atsiverčiam puslapį, kuriame tas vaikas
   if (window._statFocusKid){
@@ -20495,7 +20519,7 @@ async function renderClubLeaderboard(entries, scoreLabel) {
   });
 
   const list = pageEntries.map((e, i) => {
-    const rank = startIdx + i + 1;
+    const rank = _rank.get(e.kidId) || (startIdx + i + 1);   // v616: tikra vieta ir ieškant
     const realName = namesMap[e.kidId] || e.name;
     const avUrl = avatarMap[e.kidId];
     const medal = rank === 1 ? ''+ico('medalis')+'' : rank === 2 ? ''+ico('medalis')+'' : rank === 3 ? ''+ico('medalis')+'' : '';
@@ -20527,11 +20551,12 @@ async function renderClubLeaderboard(entries, scoreLabel) {
     </div>
   ` : '';
   
-  return `
-    <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">${ico('trofejai')} VISI DALYVIAI (${entries.length})</div>
+  const _inner = `
+    <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;margin-bottom:8px;">${ico('trofejai')} ${StatPaieska.active('club') ? `RASTA ${entries.length} IŠ ${_all.length}` : `VISI DALYVIAI (${entries.length})`}</div>
     <div class="cd" style="padding:8px;">${list}</div>
     ${paginationHtml}
   `;
+  return (o && o.listOnly) ? _inner : StatPaieska.box('club') + `<div id="sts-list-club">${_inner}</div>`;   // v616
 }
 
 window._clubLastEntries = [];
@@ -46408,6 +46433,56 @@ const PushKv = {
   },
   async on(listId) { const ok = typeof enablePushNotifications === 'function' ? await enablePushNotifications() : false; if (ok) document.getElementById('pushkv-' + listId)?.remove(); },
   later(listId) { try { localStorage.setItem(this.KEY(), String(Date.now())); } catch (e) {} document.getElementById('pushkv-' + listId)?.remove(); },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: StatPaieska =====
+// v616 (savininko prašymas 2026-09-22): PAIEŠKA pagal vardą visų paskyrų statistikos reitinguose — vaikas, tėvai, treneris, klubas.
+// Vaikui ir tėvams — tik tai, ką jie ir taip mato (serverio vardas „Vardas P."); ANONIMAI nerandami. Treneris ir klubas randa visus,
+// ir anonimus, ir pagal pavardę (tikri vardai iš kids — tik RLS ribose, t. y. tie, kuriuos jie ir taip mato). Rangas lieka tikras
+// (vieta visame sąraše), paieška tik filtruoja rodymą; puslapiai — iš rastų. Rašant perpiešiamas tik sąrašas (įvesties laukas lieka).
+// Be diakritikų: „zygim" randa „Žygimantas". Vardų erdvė StatPaieska, DOM prefiksas sts-.
+const StatPaieska = {
+  st: { q: { kid: '', parent: '', trainer: '', club: '' }, names: {}, last: {}, deb: null },
+  norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); },
+  full(role) { return role === 'club' || role === 'trainer'; },
+  active(role) { return !!this.norm(this.st.q[role]).trim(); },
+  // tikri vardai klubui / treneriui — kraunami tik ieškant, atmintyje visą sesiją
+  async loadNames(role, entries) {
+    if (!this.full(role)) return;
+    const need = (entries || []).map(e => e.kidId).filter(id => id && this.st.names[id] === undefined);
+    if (!need.length) return;
+    try {
+      if (role === 'club' && typeof _getClubKids === 'function') (await _getClubKids()).forEach(k => { this.st.names[k.id] = `${k.first_name || ''} ${k.last_name || ''}`.trim(); });
+      const still = need.filter(id => this.st.names[id] === undefined);
+      if (still.length && typeof Anal !== 'undefined') (await Anal.rows('kids', 'id, first_name, last_name', 'id', still)).forEach(k => { this.st.names[k.id] = `${k.first_name || ''} ${k.last_name || ''}`.trim(); });
+      still.forEach(id => { if (this.st.names[id] === undefined) this.st.names[id] = ''; });
+    } catch (e) { console.warn('[stat-paieska] vardai', e); }
+  },
+  filter(role, entries) {
+    const q = this.norm(this.st.q[role]).trim(); if (!q) return entries;
+    const parts = q.split(/\s+/).filter(Boolean), full = this.full(role);
+    return (entries || []).filter(e => {
+      if (!full && e.isAnonymous) return false;
+      const hay = this.norm(`${full ? (this.st.names[e.kidId] || '') : ''} ${e.isAnonymous ? '' : (e.name || '')}`);
+      return parts.every(p => hay.includes(p));
+    });
+  },
+  box(role) {
+    const q = this.st.q[role] || '', full = this.full(role);
+    return `<div style="position:relative;margin:0 0 8px;"><span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none;display:flex;">${ico('paieska')}</span><input id="sts-q-${role}" class="inp" type="search" autocomplete="off" enterkeyhint="search" placeholder="${full ? 'Ieškoti vaiko pagal vardą ar pavardę…' : 'Ieškoti pagal vardą…'}" value="${escapeHtml(q)}" oninput="StatPaieska.input('${role}', this.value)" style="margin:0;padding-left:34px;font-size:13px;"></div>`;
+  },
+  none(role) { return `<div style="padding:16px;text-align:center;color:var(--mut);font-size:11.5px;line-height:1.5;">Nieko nerasta${this.full(role) ? '' : '<br><span style="font-size:10px;">Anonimai paieškoje nerodomi</span>'}</div>`; },
+  input(role, v) { this.st.q[role] = v; clearTimeout(this.st.deb); this.st.deb = setTimeout(() => this.rerender(role), 220); },
+  remember(role, fn) { this.st.last[role] = fn; },
+  async rerender(role) {
+    const fn = this.st.last[role], el = document.getElementById('sts-list-' + role); if (!fn || !el) return;
+    if (role === 'club') clubStatPage = 1;
+    else if (role === 'trainer') trainerStatPage = 1;
+    else if (role === 'kid') kidStatPage = 1;
+    else if (role === 'parent') parentStatPage = 1;
+    try { el.innerHTML = await fn(true); } catch (e) { console.warn('[stat-paieska]', e); }
+  },
 };
 // ===== /MODULIS =====
 
