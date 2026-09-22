@@ -2260,7 +2260,7 @@ async function loadParentMainLatestAnnouncement(annMemberships) {
   // Gauti naujausią žinutę
   const { data: msg } = await sb.from('messages').select('body, sent_at, sender_id').eq('conversation_id', convId).order('sent_at', { ascending: false }).limit(1).maybeSingle();
   if (!msg) { container.innerHTML = ''; return; }
-  const preview = (msg.body || '').substring(0, 100);
+  const preview = escapeHtml((msg.body || '').substring(0, 100));   // v615 XSS: tekstas į innerHTML
   const trimmed = (msg.body || '').length > 100 ? '...' : '';
   container.innerHTML = `
     <div onclick="openAnnouncement('${convId}')" style="background:linear-gradient(135deg,rgba(255,77,0,.08),rgba(255,140,0,.02));border:.5px solid rgba(255,77,0,.3);border-radius:10px;padding:12px;cursor:pointer;">
@@ -34804,9 +34804,9 @@ function subscribeTrainerNotifications() {
         const { data: sender } = await sb.from('profiles').select('first_name, last_name, role').eq('id', msg.sender_id).maybeSingle();
         const senderName = sender ? (`${sender.first_name || ''} ${sender.last_name || ''}`.trim() || 'Kažkas') : 'Kažkas';
         const tag = sender?.role === 'kid' ? ' (vaikas)' : (sender?.role === 'parent' ? ' (tėvai)' : '');
-        const preview = (msg.body || '').substring(0, 80);
+        const preview = escapeHtml((msg.body || '').substring(0, 80));   // v615 XSS: showToast → innerHTML (pirma nukerpam, tada išvalom)
         if (typeof _addSeen === 'function') _addSeen('ms', msg.id);
-        showToast(`${ico('zinutes')} NUO ${senderName.toUpperCase()}${tag}\n\n${preview}`, 'info', null, { sound: 'send' });
+        showToast(`${ico('zinutes')} NUO ${escapeHtml(senderName.toUpperCase())}${tag}\n\n${preview}`, 'info', null, { sound: 'send' });
         if (typeof updateTrainerNotifBadge === 'function') updateTrainerNotifBadge(true);
       } catch (e) { /* nekritinis */ }
     })
@@ -35035,13 +35035,13 @@ function subscribeKidNotifications() {
       
       let header;
       if (isAnnouncement) {
-        header = `${ico('skelbimas')} KLUBO PRANEŠIMAS\n${roleEmoji} ${senderName}`;
+        header = `${ico('skelbimas')} KLUBO PRANEŠIMAS\n${roleEmoji} ${escapeHtml(senderName)}`;   // v615 XSS
       } else {
-        header = `${ico('zinutes')} NUO ${roleEmoji} ${senderName.toUpperCase()}`;
+        header = `${ico('zinutes')} NUO ${roleEmoji} ${escapeHtml(senderName.toUpperCase())}`;   // v615 XSS
       }
       
       _addSeen('ms', msg.id);
-      showToast(`${header}\n\n${preview}${trimmed}`, 'info', null, { sound: 'send' });
+      showToast(`${header}\n\n${escapeHtml(preview)}${trimmed}`, 'info', null, { sound: 'send' });   // v615 XSS: showToast → innerHTML
       if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
     })
     .subscribe();
@@ -36210,8 +36210,8 @@ async function showMissedEvents() {
         const isAnnouncement = conv?.type === 'announcement';
         const preview = (ev.data.body || '').substring(0, 80);
         const trimmed = (ev.data.body || '').length > 80 ? '...' : '';
-        const header = isAnnouncement ? `${ico('skelbimas')} KLUBO PRANEŠIMAS\n${roleEmoji} ${senderName}` : `${ico('zinutes')} NUO ${roleEmoji} ${senderName.toUpperCase()}`;
-        showToast(`${header}\n\n${preview}${trimmed}`, 'info', null, { sound: 'send' });
+        const header = isAnnouncement ? `${ico('skelbimas')} KLUBO PRANEŠIMAS\n${roleEmoji} ${escapeHtml(senderName)}` : `${ico('zinutes')} NUO ${roleEmoji} ${escapeHtml(senderName.toUpperCase())}`;   // v615 XSS
+        showToast(`${header}\n\n${escapeHtml(preview)}${trimmed}`, 'info', null, { sound: 'send' });   // v615 XSS: showToast → innerHTML
       }
     }
 
@@ -46318,7 +46318,7 @@ const KNotif = {
           const { data: p } = await sb.from('profiles').select('first_name, last_name, role').eq('id', msg.sender_id).maybeSingle();
           const who = p ? (`${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Kažkas') : 'Kažkas', tag = p?.role === 'parent' ? ' (tėvai)' : (p?.role === 'trainer' ? ' (treneris)' : (p?.role === 'kid' ? ' (vaikas)' : ''));
           if (typeof _addSeen === 'function') _addSeen('ms', msg.id);
-          showToast(`${ico('zinutes')} NUO ${who.toUpperCase()}${tag}\n\n${String(msg.body || '').slice(0, 80)}`, 'info', null, { sound: 'send' });
+          showToast(`${ico('zinutes')} NUO ${escapeHtml(who.toUpperCase())}${tag}\n\n${escapeHtml(String(msg.body || '').slice(0, 80))}`, 'info', null, { sound: 'send' });   // v615 XSS: showToast → innerHTML
           this.bump();
         } catch (e) { /* nekritinis */ }
       }).subscribe();
