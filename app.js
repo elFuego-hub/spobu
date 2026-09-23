@@ -495,7 +495,7 @@ async function _checkFeedbackReplies(){
     const last = data && data[0] && data[0].replied_at;
     if (!last) return;
     if (localStorage.getItem('spobu_fb_reply_seen_' + currentUser.id) === last) return;
-    showToast(''+ico('pastas')+' Gavai atsakymą iš SPOBU — rasi „Mano žinutėse" (Nustatymai)', 'success', 6000);
+    showToast(''+ico('pastas')+' Gavai atsakymą iš SPOBU — rasi „Mano žinutėse" (Nustatymai → Pagalba)', 'success', 6000);
   } catch(e){}
 }
 async function openMyMessages(){
@@ -1594,8 +1594,9 @@ async function loadParentSettingsTrainers() {
 // admino), kol SHOP_TRIAL_MODE — sausį dingsta pats. Atidaro esamą „Pranešti problemą" formą.
 function applyTrialBugFab(){
   const old = document.getElementById('trial-bug-fab');
+  // v624 (27A): vaikui ne — jam „Pranešti problemą" Pagalboje (Nustatymai), be plaukiojančio mygtuko
   const show = (typeof SHOP_TRIAL_MODE !== 'undefined') && SHOP_TRIAL_MODE
-    && !!currentUser && !!currentProfile?.role && currentProfile.role !== 'admin';
+    && !!currentUser && !!currentProfile?.role && currentProfile.role !== 'admin' && currentProfile.role !== 'kid';
   if (!show) { if (old) old.remove(); return; }
   if (old) return; // jau yra
   const b = document.createElement('div');
@@ -1800,7 +1801,7 @@ function openHelpReportModal() {
   m.innerHTML = `
     <div style="width:100%;max-width:400px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:20px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;margin-bottom:6px;">${ico('bug')} PRANEŠTI PROBLEMĄ</div>
-      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Aprašyk ką darei ir kas nutiko. Pranešimas keliaus tiesiai administratoriui.</div>
+      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">${currentProfile?.role === 'kid' ? 'Aprašyk, ką darei ir kas nutiko. Atsakymą rasi Pagalboje → „Mano žinutės".' : 'Aprašyk ką darei ir kas nutiko. Pranešimas keliaus tiesiai administratoriui.'}</div>
       <textarea id="help-report-text" class="inp" rows="5" maxlength="1000" placeholder="Pvz. Bandžiau..., bet išmetė klaidą..." style="width:100%;resize:vertical;margin-bottom:14px;font-family:inherit;"></textarea>
       <div style="display:flex;gap:8px;">
         <button onclick="document.getElementById('help-report-modal').remove()" style="flex:1;padding:12px;background:var(--card);border:.5px solid var(--bdr);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">Atšaukti</button>
@@ -1852,12 +1853,13 @@ function openHelpModal(who) {
       ['Negaunu push pranešimų?', 'Nustatymuose „Pranešimai į telefoną" įjunk bent vieną tipą — pirmas įjungimas užregistruoja telefoną. iPhone: appsą reikia įsidėti į pradžios ekraną.'],
       ['Kas yra „Anonimas"?', 'Tėvų jungiklis (iš pradžių įjungtas): kitiems vaikams ir tėvams reitinguose ir paieškoje vaikas rodomas „Anonimas". Savo grupės draugai jį mato vardu. Tu ir klubas visada matote tikrus vardus ir anonimus randate paieškoje. Keičia tik tėvai.']
     ],
+    // v624 (23A/29A): V2 tekstai — automatiškai užsiskaito tik savaitės Strava iššūkiai (V2 lankomumo / varžybų / egzamino iššūkių nekuria, v613)
     kid: [
-      ['Kaip gaunu EXP ir keliu lygį?', 'Lankyk treniruotes ir stenkis — treneris įvertina pastangas (iš visų jėgų +20 · gerai +14 · lengviau +8). Įveik iššūkius, gerink rekordus Kelio lange, dalyvauk varžybose. Viską matai Kalendoriuje.'],
-      ['Kurie iššūkiai skaičiuojasi patys?', 'Lankomumo, varžybų, diržo egzamino ir Strava (bėgimas, dviratis, ėjimas su GPS). Prie jų — žyma „skaičiuojama automatiškai". Kitus pateiki pats, treneris patvirtina.'],
+      ['Kaip gaunu EXP ir keliu lygį?', 'Lankyk treniruotes ir stenkis — treneris įvertina pastangas (iš visų jėgų +20 · gerai +14 · lengviau +8), už visas savaitės treniruotes +15, už visas mėnesio +100. Dar — iššūkiai, rekordai Kelio lange, varžybos ir dvikovos. Visi skaičiai: Nustatymai → „Kaip veikia SPOBU".'],
+      ['Kurie iššūkiai skaičiuojasi patys?', 'Savaitės Strava iššūkiai ' + ((typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? 'užsiskaito patys' : 'ateina patys (patvirtina treneris)') + ', jei susietas Strava (iki 14 m. susieja tėvai). Kitus pažymi tu, patvirtina treneris.'],
       ['Kaip pateikiu rezultatą?', '„Kelias" lange pasirink sritį ir pratimą, įrašyk naują rekordą. Treneris jį patvirtins.'],
-      ['Kas yra dvikova?', '1 prieš 1 iššūkis draugui (atsispaudimai, bėgimas...). Iškviesk draugą, abu atlikit, treneris patvirtina — nugalėtojas gauna daugiau EXP!'],
-      ['Kodėl mano lygis žemas?', 'Lygis auga nuo surinkto EXP — kuo daugiau treniruojiesi, atlieki iššūkių ir gerini rekordus, tuo greičiau kyla. Reitinguose lyginamas tik su savo amžiaus ir lyties draugais. OSU! '+ico('dirzas')+''],
+      ...((typeof KidGate === 'undefined' || KidGate.on('duels')) ? [['Kas yra dvikova?', '1 prieš 1 su grupės draugu (atsispaudimai, pritūpimai, presas, lenta, bėgimas). Grupės lange iškviesk draugą, abu įveskite rezultatą, treneris patvirtina. Pergalė +50 · lygiosios +35 · pralaimėjus +25 EXP.']] : []),
+      ['Kodėl mano lygis žemas?', 'Lygis auga nuo surinkto EXP — kuo daugiau treniruojiesi, atlieki iššūkių ir gerini rekordus, tuo greičiau kyla. Reitinguose iš pradžių matai savo amžiaus ir lyties draugus. OSU! '+ico('dirzas')+''],
       ['Kas mato mano vardą?', 'Reitinguose ir paieškoje — Anonimas (jei tėvai jį įjungę). Savo grupės draugai tave mato. Treneris ir klubas visada mato tavo vardą. Kaip tu rodomas — Nustatymai → Privatumas; keičia tėvai.'],
       ['Kaip pasidalinti pasiekimu?', 'Varpelyje prie „PR patvirtintas" spausk '+ico('programele')+' — sukursi kortelę su nuotrauka, kurią gali dėti į Instagram/TikTok.'],
       ['Negaunu pranešimų?', 'Nustatymuose įjunk „Pranešimai" — gali tai padaryti pats. iPhone: appsas turi būti įsidėtas į pradžios ekraną. Jei vis tiek neveikia — paprašyk tėvų ar trenerio pagalbos.']
@@ -1893,17 +1895,17 @@ function openHelpModal(who) {
         <button onclick="document.getElementById('help-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:16px 18px 28px;">
-        <div onclick="contactSupport()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(99,102,241,.2);">
+        ${who === 'kid' ? '' : `<div onclick="contactSupport()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(99,102,241,.2);">
           <div style="background:rgba(99,102,241,.12);border:.5px solid rgba(99,102,241,.4);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">${ico('pastas')}</div>
             <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Susisiekti</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">${SUPPORT_EMAIL} — paspaudus adresas nusikopijuos</div></div>
             <div style="font-size:18px;color:#8B5CF6;">›</div>
           </div>
-        </div>
+        </div>`}
         <div onclick="openHelpReportModal()" style="cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:rgba(255,77,0,.2);">
           <div style="background:rgba(255,77,0,.12);border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;">
             <div style="font-size:24px;">${ico('bug')}</div>
-            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">Radai klaidą? Keliaus tiesiai administratoriui</div></div>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Pranešti problemą</div><div style="font-size:10px;color:var(--mut);margin-top:2px;">${who === 'kid' ? 'Radai klaidą? Parašyk SPOBU — atsakymą rasi „Mano žinutėse"' : 'Radai klaidą? Keliaus tiesiai administratoriui'}</div></div>
             <div style="font-size:18px;color:var(--br);">›</div>
           </div>
         </div>
@@ -1948,9 +1950,9 @@ const WELCOME_CONTENT = {
     items: [
       ['kalendorius', '<b class="t">Kalendorius</b>tavo treniruotės, renginiai ir EXP kiekvienai dienai. Šiandien: ką darysim ir ką pasiimti'],
       ['jega',        '<b class="t">Pastangos</b>po treniruotės treneris įvertina: iš visų jėgų <b style="color:white;">+20</b> · gerai +14 · lengviau +8 EXP'],
-      ['tikslas',     '<b class="t">Iššūkiai</b>lankomumo, varžybų, egzamino ir Strava iššūkiai skaičiuojasi patys, kitus tvirtina treneris'],
+      ['tikslas',     '<b class="t">Iššūkiai</b>savaitės Strava iššūkiai užsiskaito patys, jei susietas Strava. Kitus pažymi tu, patvirtina treneris'],   // v624 (23A)
       ['augimas',     '<b class="t">Kelias</b>pratimai, rekordai, lygiai. Diržas ir kanji — tavo etapas'],
-      ['bug',         'Radai klaidą? Spausk <b style="color:white;">🐞</b> mygtuką kampe — parašysi mums']
+      ['pagalba',     'Radai klaidą? Nustatymai → <b style="color:white;">Pagalba</b> → „Pranešti problemą"']   // v624 (27A/29A): be 🐞 mygtuko
     ]
   },
   parent: {
@@ -18445,7 +18447,7 @@ function openStreakRoad() {
     { tp: 'monthly', title: 'MĖNESIŲ SERIJA', unit: 'mėn.', color: '#BA68C8', icon: 'zenkliukai', big: 9, bigLabel: 'SEZONAS',
       cur: s.monthly_current || 0, best: s.monthly_best || 0, earned: s.monthly_total_exp || 0,
       rule: 'Bent 1 mėnesinis kiekvieną mėnesį. Praleistas mėnuo — serija iš naujo. 9 mėn. = SEZONAS!' }
-  ];
+  ].filter(sec => !(sec.tp === 'training' && s._attMode));   // v624 (28A): V2 treniruočių iššūkių nėra — čipas „Treniruotės" rodo lankomumo seriją
   const secHtml = SEC.map(sec => {
     const milestones = [];
     for (let i = 1; i <= 200 && milestones.length < 40; i++) { const p = streakPrizeAt(sec.tp, i); if (p > 0) milestones.push(i); }
@@ -18511,11 +18513,13 @@ async function loadStreaks() {
   if (!currentKid?.id) return;
   
   // Skaityti DB kid_streaks (DB yra tiesos šaltinis - trigger atnaujina)
-  const { data: streaks } = await sb.from('kid_streaks')
-    .select('*')
-    .eq('kid_id', currentKid.id)
-    .maybeSingle();
-  
+  // v624 (28A): V2 — „Treniruotės" čipas = lankomumo serija (Kal.attStreak, ta pati kaip kalendoriuje), lygiagrečiai su kid_streaks
+  const attMode = typeof Kal !== 'undefined' && Kal.on(), attOn = typeof KidGate === 'undefined' || KidGate.on('attendance');
+  const [{ data: streaks }, attN] = await Promise.all([
+    sb.from('kid_streaks').select('*').eq('kid_id', currentKid.id).maybeSingle(),
+    (attMode && attOn) ? Kal.attStreak(currentKid.id).catch(e => { console.warn('[loadStreaks] serija', e.message || e); return null; }) : Promise.resolve(null)
+  ]);
+
   const s = streaks || {
     training_current: 0, training_best: 0, training_total_exp: 0,
     weekly_current: 0, weekly_best: 0, weekly_total_exp: 0,
@@ -18531,8 +18535,9 @@ async function loadStreaks() {
   
   // ⭐ v404: PAGRINDINIO LANGO serijų ČIPAI 2.0 — progresas iki kito slenksčio + prizas +
   // pavojaus būsena; tap → „Serijų kelias" (savininko užsakymas 08-12)
+  s._attMode = attMode;   // „Serijų kelias" tada be treniruočių iššūkių sekcijos (V2 jų nekuria, v613)
   window._streakRowCache = s;
-  renderStreakChips(s, 'v-home-streak');
+  renderStreakChips(s, 'v-home-streak', attMode ? { att: attN, attHide: !attOn } : null);
   // PROFILIO langas (jei yra)
   const container = document.getElementById('v-streaks');
   if (!container) return;
@@ -18542,8 +18547,10 @@ async function loadStreaks() {
 // 🔥 v448: serijų čipai — VIENA funkcija vaikui IR tėvui (savininko užsakymas 08-19:
 // „rodyk kaip vaikams toje pačioje vietoje taip pat tėvams"). Prefiksas skiriasi tik ID:
 // vaikas → 'v-home-streak', tėvas → 'tk-streak'. Logika, prizai, pavojus ir „Serijų kelias" — tie patys.
-function renderStreakChips(s, prefix) {
+function renderStreakChips(s, prefix, opts) {
   if (!s) return;
+  // v624 (28A): opts.att — lankomumo serija „Treniruotės" čipui (tik vaiko V2 Pagrindinis); opts.attHide — lankomumas klube išjungtas
+  const att = opts ? opts.att : undefined, attHide = !!(opts && opts.attHide);
   const trainingStreak = s.training_current || 0;
   const weeklyStreak = s.weekly_current || 0;
   const monthlyStreak = s.monthly_current || 0;
@@ -18555,6 +18562,26 @@ function renderStreakChips(s, prefix) {
   chipDefs.forEach(d => {
     const el = document.getElementById(d.id);
     if (!el) return;
+    if (d.tp === 'training' && opts) {
+      el.style.display = attHide ? 'none' : 'flex';   // ne '' — tuščia reikšmė ištrina įterptą display:flex (index.html) ir čipas išsidėsto stulpeliu
+      if (attHide) return;
+      const n = typeof att === 'number' ? att : 0;
+      el.style.cursor = 'pointer';
+      el.onclick = () => nv('v', null, 'v-kal');
+      el.style.borderColor = '';
+      el.style.background = n >= 2 ? 'linear-gradient(135deg, rgba(255,77,0,.14), rgba(255,128,0,.04))' : 'var(--card)';
+      el.innerHTML = `
+      <div style="width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ico(d.icon)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:baseline;gap:4px;">
+          <span id="${d.numId}" style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#FF7A33;line-height:1;">${typeof att === 'number' ? n : '–'}</span>
+          <span style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.label}</span>
+        </div>
+        <div style="height:3px;margin:3px 0 2px;"></div>
+        <div style="font-size:7px;color:var(--mut);font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n > 0 ? 'iš eilės buvai' : 'ateik į treniruotę'}</div>
+      </div>`;
+      return;
+    }
     const next = streakNextPrize(d.tp, d.n);
     const danger = _streakDanger(d.tp, s);
     let pct = 0;
@@ -24073,8 +24100,8 @@ function openKidInfo(which) {
       title = ''+ico('pagalba')+' PAGRINDINIS';
       html = intro('Tavo namų ekranas — viskas apie tave vienoje vietoje. Treniruotes ir dienas žiūrėk Kalendoriuje.') +
         row(''+ico('dirzas')+'', 'Tavo lygis ir kanji', 'Skaičius viduryje — tavo lygis (1–99). Žiedas aplink pildosi link kito lygio. Kanji ženklas — tavo etapas (Naujokas → … → Sensėjus).') +
-        row(''+ico('greitis')+'', 'EXP taškai', 'Gauni juos už treniruotes ir pastangas jose, iššūkius, pratimų rekordus ir varžybas. Daugiau EXP → aukštesnis lygis.') +
-        row(''+ico('streak')+'', 'Serija (streak)', 'Kiek treniruočių iš eilės buvai. Stenkis jos nenutraukti!') +
+        row(''+ico('greitis')+'', 'EXP taškai', 'Gauni juos už treniruotes ir pastangas jose, iššūkius, pratimų rekordus ir varžybas. Daugiau EXP → aukštesnis lygis. Visi skaičiai — Nustatymai → „Kaip veikia SPOBU".') +
+        row(''+ico('streak')+'', 'Serijos', 'Treniruotės — kiek treniruočių iš eilės buvai (tas pats skaičius kaip Kalendoriuje). Savaitės ir Mėnesiai — kiek savaičių ar mėnesių iš eilės įveikei iššūkį; už jas premijos EXP (bakstelėk).') +   // v624 (28A)
         row(''+ico('trofejai')+'', 'Reitingai', 'Tavo vieta tarp BENDRAAMŽIŲ — lyginiesi su panašiais į tave, ne su vyresniais.') +
         row(''+ico('kalendorius')+'', 'Kalendorius', 'Apatinėje juostoje — ten matai, kada buvai, kiek EXP gavai ir kas laukia.');
       break;
@@ -24090,18 +24117,20 @@ function openKidInfo(which) {
       break;
     case 'grupe':
       title = ''+ico('pagalba')+' GRUPĖ';
+      // v624 (29A): „?" mygtukas Grupės antraštėje; dvikovų ir grupių iššūkių eilutės — tik jei klubas jas įjungęs (KidGate)
       html = intro('Tavo komanda — grupės draugai, dvikovos ir grupių iššūkiai.') +
-        row(''+ico('dvikova')+'', 'Dvikova', '1 prieš 1 su komandos draugu: abu atliekate, treneris patvirtina. Pergalė +50 · lygiosios +35 · už dalyvavimą EXP visada.') +
-        row(''+ico('tikslas')+'', 'Grupių iššūkiai', 'Klubo paskelbtos grupių varžytuvės — visa grupė renka taškus kartu.') +
-        row(''+ico('grupe')+'', 'Komandos draugai', 'Kas treniruojasi su tavimi ir kaip jiems sekasi.');
+        ((typeof KidGate === 'undefined' || KidGate.on('duels')) ? row(''+ico('dvikova')+'', 'Dvikova', '1 prieš 1 su grupės draugu: bakstelėk draugą sąraše → „Iškviesti", abu įveskite rezultatą, treneris patvirtina. Pergalė +50 · lygiosios +35 · pralaimėjus +25. Iškviesti gali kartą per 7 d.') : '') +
+        ((typeof KidGate === 'undefined' || KidGate.on('gc')) ? row(''+ico('tikslas')+'', 'Grupių iššūkiai', 'Klubo paskelbtos grupių varžytuvės — visa grupė renka taškus kartu.') : '') +
+        row(''+ico('grupe')+'', 'Komandos draugai', 'Kas treniruojasi su tavimi ir kaip jiems sekasi. Bakstelėk draugą — pamatysi jo kortelę.');
       break;
     case 'ish':
       title = ''+ico('pagalba')+' IŠŠŪKIAI';
       html = intro('Treneris skiria iššūkius — užduotis, kurias atlikęs gauni EXP. Aktyvius matai ir Kalendoriuje.') +
-        row(''+ico('atnaujinti')+'', 'Skaičiuojasi patys', 'Lankomumo, varžybų, diržo egzamino ir Strava iššūkiai užsiskaito automatiškai — nieko siųsti nereikia, žyma „skaičiuojama automatiškai".') +
-        row(''+ico('tikslas')+'', 'Rankiniai', 'Kitus atlieki → pažymi rezultatą → treneris patvirtina → gauni EXP. Išmokimo iššūkiai: spausk „Pasiruošiau", treneris patikrins treniruotėje.') +
-        row(''+ico('vieta')+'', 'Strava', 'Bėgimo, dviračio ir ėjimo iššūkiams susiek Strava (Profilis) — veiklos su GPS užsiskaitys pačios. Rankiniai Strava įrašai nesiskaito.') +
-        row(''+ico('kalendorius')+'', 'Trukmė', 'Vieni skirti vienai treniruotei, kiti trunka savaitę ar mėnesį. Ilgesni — didesni tikslai.') +
+        // v624 (23A/29A): V2 — automatiškai tik savaitės Strava iššūkiai (ir tik jei klubas leidžia strava_auto_approve)
+        row(''+ico('atnaujinti')+'', 'Savaitės — per Strava', 'Savaitės Strava iššūkiai ' + ((typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? 'užsiskaito patys' : 'ateina patys, o patvirtina treneris') + ', jei susietas Strava. 3 pakopos pagal tavo amžių ir lytį: +15, iš viso +20, iš viso +25 EXP.') +
+        row(''+ico('tikslas')+'', 'Kitus pažymi tu', 'Atlieki → pažymi rezultatą → treneris patvirtina → gauni EXP. Mėnesio pasiekimai (kata, spyriai): spausk „Pasiruošiau", treneris patikrins treniruotėje ir pažymės „Išmoko".') +
+        row(''+ico('vieta')+'', 'Strava', 'Bėgimas, ėjimas, dviratis, plaukimas ir treniruotės. Iki 14 m. Strava susieja tėvai savo SPOBU paskyroje, 14+ — pats Profilyje. Rankiniai Strava įrašai (be GPS) nesiskaito.') +
+        row(''+ico('kalendorius')+'', 'Trukmė', 'Savaitės iššūkis trunka iki sekmadienio, mėnesio — iki mėnesio galo.') +
         row(''+ico('ranka')+'', 'Sąžiningai', 'Pažymėk tik tai, ką tikrai padarei — treneris peržiūri kiekvieną rankinį pateikimą.');
       break;
     case 'comp':
@@ -24115,11 +24144,14 @@ function openKidInfo(which) {
       title = ''+ico('pagalba')+' STATISTIKA';
       // v447: tekstas suderintas su tikru ekranu (buvo žadami grafikai ir rekordų sąrašas, kurių čia nėra —
       // rekordai gyvena „Kelias" lange). Keturi tabai: LVL · SKILL'AI · IŠŠŪKIAI · VARŽYBOS.
-      html = intro('Čia matai, kaip atrodai tarp savo klubo draugų — keturi reitingai.') +
+      // v624 (29A, peržiūra): IŠŠŪKIAI / VARŽYBOS eilutė — pagal tai, kurie skirtukai rodomi (KidGate.statTab)
+      html = intro('Čia matai, kaip atrodai tarp savo klubo draugų.') +
         row(''+ico('dirzas')+'', 'LVL · SKILL\'AI', 'Reitingai pagal bendrą EXP ir pagal atskirus pratimus.') +
-        row(''+ico('tikslas')+'', 'IŠŠŪKIAI · VARŽYBOS', 'Kas daugiausiai įveikė iššūkių ir surinko varžybų taškų.') +
+        (() => { const kg = typeof KidGate !== 'undefined' ? KidGate : null, ch = !kg || kg.statTab('challenges'), cp = !kg || kg.statTab('competitions');
+          return (ch || cp) ? row(''+ico('tikslas')+'', [ch ? 'IŠŠŪKIAI' : '', cp ? 'VARŽYBOS' : ''].filter(Boolean).join(' · '), 'Kas daugiausiai ' + [ch ? 'įveikė iššūkių' : '', cp ? 'surinko varžybų taškų' : ''].filter(Boolean).join(' ir ') + '.') : ''; })() +
         row(''+ico('streak')+'', 'Sezonas / visų laikų', 'Perjunk, ar nori matyti šį sezoną, ar visą kelią.') +
-        row(''+ico('trofejai')+'', 'Palyginimas', 'Lyginamas tik su savo amžiaus ir lyties draugais — sąžiningai.');
+        row(''+ico('trofejai')+'', 'Palyginimas', 'Iš pradžių matai savo kategoriją — tos pačios lyties ir amžiaus draugus. Filtrais gali pažiūrėti ir kitus.') +   // v624 (29A)
+        row(''+ico('paieska')+'', 'Paieška', 'Įrašyk draugo vardą — pamatysi jo vietą reitinge. Anonimų paieška neranda.');
       break;
     case 'prof':
       title = ''+ico('pagalba')+' PROFILIS';
@@ -24127,7 +24159,8 @@ function openKidInfo(which) {
         row(''+ico('dirzas')+'', 'Diržas ir kanji', 'Tavo dabartinis kyu (diržas) ir etapas.') +
         row(''+ico('trofejai')+'', 'Pasiekimai', 'Medaliai, įveikti iššūkiai, rekordai ir dvikovų pergalės vienoje vietoje.') +
         row(''+ico('nustatymai')+'', 'Nustatymai', 'Nuotrauka, pranešimai, vaizdo dydis — pro nustatymų mygtuką.') +
-        `<div style="margin-top:12px;background:rgba(236,64,122,.1);border:.5px solid rgba(236,64,122,.4);border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.6;color:#f3c6d8;">
+        // v624 (29A, peržiūra): dvikovų blokas — tik jei klubas dvikovas įjungęs (KidGate)
+        ((typeof KidGate !== 'undefined' && !KidGate.on('duels')) ? '' : `<div style="margin-top:12px;background:rgba(236,64,122,.1);border:.5px solid rgba(236,64,122,.4);border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.6;color:#f3c6d8;">
            <div style="font-size:13px;color:#EC407A;font-weight:800;margin-bottom:6px;">${ico('dvikova')} DVIKOVOS — 1 prieš 1</div>
            Iškviesk komandos draugą į draugišką dvikovą! Kaip:
            <div style="margin-top:6px;color:#fff;line-height:1.75;">
@@ -24138,7 +24171,7 @@ function openKidInfo(which) {
              <b>5.</b> Treneris patvirtina — ir paaiškėja nugalėtojas! ${ico('trofejai')}
            </div>
            <div style="margin-top:7px;">Aktyvias dvikovas matai <b style="color:#fff;">${(typeof Kal !== 'undefined' && Kal.on()) ? 'Grupės' : 'Iššūkių'}</b> lange. Pergalė <b style="color:#fff;">+50</b> · lygiosios <b style="color:#fff;">+35</b> · net nelaimėjus <b style="color:#fff;">+25</b> EXP — apsimoka visada!</div>
-         </div>`;
+         </div>`);
       break;
     default:
       title = ''+ico('pagalba')+' INFO'; html = intro('Paaiškinimas.');
@@ -37594,7 +37627,8 @@ async function openConversation(convId) {
     .update({ last_read_at: new Date().toISOString() })
     .eq('conversation_id', convId)
     .eq('user_id', currentUser.id);
-  
+  if (typeof KidInfo !== 'undefined') KidInfo.seenConv(convId);   // v624 (31A): vaiko varpelio „Žinutės" — iš karto
+
   // Užkrauti pokalbio info
   await loadConversationHeader(convId);
   
@@ -38608,6 +38642,7 @@ async function openAnnouncement(convId) {
     .eq('user_id', currentUser.id);
   // Tėvui — nedelsiant atnaujinti varpelio badge (kitaip „neperskaityta" lieka kaboti perskaičius)
   if (currentProfile?.role === 'parent' && typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+  if (typeof KidInfo !== 'undefined') KidInfo.seenConv(convId);   // v624 (31A): vaikui — tas pats
 
   const { data: sender } = await sb.from('profiles')
     .select('first_name, last_name, role')
@@ -39067,10 +39102,14 @@ async function loadAllNotifications(force) {
   if (msgsRes.data && msgsRes.data.length > 0) {
     const convIds = [...new Set(msgsRes.data.map(m => m.conversation_id))];
     const [membersRes, convsRes] = await Promise.all([
-      sb.from('conversation_members').select('conversation_id').eq('user_id', currentUser.id).in('conversation_id', convIds),
+      sb.from('conversation_members').select('conversation_id, last_read_at').eq('user_id', currentUser.id).in('conversation_id', convIds),
       sb.from('conversations').select('id, type, title').in('id', convIds)
     ]);
     const myConvIds = new Set((membersRes.data || []).map(m => m.conversation_id));
+    // v624 (31A): pokalbyje jau perskaitytos (openConversation / openAnnouncement atnaujina last_read_at) — varpelyje irgi perskaitytos
+    const lastRead = {}; (membersRes.data || []).forEach(m => { if (m.last_read_at) lastRead[m.conversation_id] = new Date(m.last_read_at).getTime(); });
+    const readIds = msgsRes.data.filter(m => myConvIds.has(m.conversation_id) && lastRead[m.conversation_id] && new Date(m.sent_at).getTime() <= lastRead[m.conversation_id]).map(m => `msg-${m.id}`);
+    if (readIds.length && typeof KidInfo !== 'undefined') { readIds.forEach(id => seenIds.add(id)); KidInfo.seen(readIds); }
     const convById = {};
     (convsRes.data || []).forEach(c => { convById[c.id] = c; });
 
@@ -39699,17 +39738,17 @@ async function openKidSettings() {
           </div>
         </div>
         
-        <!-- INFO MYGTUKAI -->
+        <!-- INFO MYGTUKAI — v624 (24A/26A): vienas „Kaip veikia SPOBU" (KidInfo: EXP · lygiai · diržai) vietoj keturių; „Kaip naudotis" (V1) išimtas — kiekviename lange yra „?" -->
         <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
-          <button onclick="openInstructionsModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
-            <div style="font-size:28px;">${ico('mokslas')}</div>
+          <button onclick="KidInfo.open('exp')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
+            <div style="font-size:28px;">${ico('info')}</div>
             <div style="flex:1;">
-              <div style="font-size:13px;font-weight:800;color:white;">Kaip naudotis app'su</div>
-              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Visi puslapiai ir funkcijos</div>
+              <div style="font-size:13px;font-weight:800;color:white;">Kaip veikia SPOBU</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Kaip gauti EXP · lygiai · diržai</div>
             </div>
             <div style="font-size:18px;color:var(--mut);">›</div>
           </button>
-          
+
           <button onclick="openInstallAppModal()" style="background:linear-gradient(135deg, rgba(255,77,0,.12), rgba(255,128,0,.04));border:.5px solid rgba(255,77,0,.35);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
             <div style="font-size:28px;">${ico('programele')}</div>
             <div style="flex:1;">
@@ -39717,33 +39756,6 @@ async function openKidSettings() {
               <div style="font-size:11px;color:#FF7A33;margin-top:2px;">Greitas paleidimas iš ekrano · be naršyklės</div>
             </div>
             <div style="font-size:18px;color:#FF7A33;">›</div>
-          </button>
-          
-          <button onclick="openExpTableModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
-            <div style="font-size:28px;">${ico('statistika')}</div>
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:800;color:white;">EXP lentelė</div>
-              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Kiek EXP reikia kiekvienam lygiui</div>
-            </div>
-            <div style="font-size:18px;color:var(--mut);">›</div>
-          </button>
-          
-          <button onclick="openBeltsModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
-            <div style="font-size:28px;">${ico('dirzas')}</div>
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:800;color:white;">Diržų sistema</div>
-              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Kyokushin kyu lygiai</div>
-            </div>
-            <div style="font-size:18px;color:var(--mut);">›</div>
-          </button>
-          
-          <button onclick="openHowExpModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
-            <div style="font-size:28px;">${ico('premium-plus')}</div>
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:800;color:white;">Kaip gauti EXP</div>
-              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Iššūkiai, varžybos, streak'ai</div>
-            </div>
-            <div style="font-size:18px;color:var(--mut);">›</div>
           </button>
         </div>
         
@@ -39767,8 +39779,8 @@ async function openKidSettings() {
           <div onclick="openHelpModal('kid')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
             <div style="font-size:28px;">${ico('pagalba')}</div>
             <div style="flex:1;">
-              <div style="font-size:13px;font-weight:800;color:white;">Pagalba ir atsiliepimai</div>
-              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Susisiekti, pranešti problemą, DUK</div>
+              <div style="font-size:13px;font-weight:800;color:white;">Pagalba</div>
+              <div style="font-size:11px;color:var(--mut);margin-top:2px;">Dažni klausimai, pranešti problemą, mano žinutės</div>
             </div>
             <div style="font-size:18px;color:var(--mut);">›</div>
           </div>
@@ -40020,59 +40032,7 @@ function openInstallAppModal() {
   `);
 }
 
-function openInstructionsModal() {
-  openInfoSubmodal(''+ico('mokslas')+' KAIP NAUDOTIS', `
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FF4D00;">
-        <div style="font-size:14px;font-weight:800;color:#FF7A33;margin-bottom:6px;">${ico('namai')} Pagrindinis</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Tavo dienos apžvalga: ${ico('streak')} streakai (treniruočių, savaitinis, mėnesinis), ${ico('tikslas')} tikslai, ${ico('statistika')} reitingai, ${ico('trofejai')} artimiausios varžybos ir ${ico('laukia')} laukiantys patvirtinimai.</div>
-      </div>
-      
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #4FC3F7;">
-        <div style="font-size:14px;font-weight:800;color:#4FC3F7;margin-bottom:6px;">${ico('treniruote')} Kelias</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">7 sporto kategorijos su pratimais (JĖGA, GREITIS, IŠTVERMĖ, ir t.t.). Pateik savo asmeninius rekordus (PR) - treneris patvirtins ir gausi EXP. Pasiek tier'us: BRONZE → SILVER → GOLD → MAX.</div>
-      </div>
-      
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #BA68C8;">
-        <div style="font-size:14px;font-weight:800;color:#BA68C8;margin-bottom:6px;">${ico('tikslas')} Iššūkiai</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Trenerio sukurti uždaviniai. 4 tipai: ${ico('treniruote')} treniruočių, ${ico('greitis')} savaitiniai, ${ico('menesinis')} mėnesiniai, ${ico('zvaigzde')} vienkartiniai. Įveik ir gauk EXP + streak bonusus!</div>
-      </div>
-      
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FFD700;">
-        <div style="font-size:14px;font-weight:800;color:#FFD700;margin-bottom:6px;">${ico('trofejai')} Varžybos</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Klubo paskelbtos varžybos (Kumite, Kata, Diržo egzaminas). Pateik savo rezultatus - laimėjimus, vietas. Gauk medalius ir EXP.</div>
-      </div>
-      
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #EC407A;">
-        <div style="font-size:14px;font-weight:800;color:#EC407A;margin-bottom:6px;">${ico('dvikova')} Dvikovos</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Iškviesk komandos draugą į draugišką dvikovą! Treneris patvirtina, kas laimėjo. Už dalyvavimą visada gauni EXP. Iškviesti gali 1× per savaitę, o priimti kvietimus — be limito.</div>
-      </div>
-
-      <!-- v449: antra „Kelias" sekcija pašalinta — dubliavo pirmąją (savininko pastaba 08-19) -->
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #4FC3F7;">
-        <div style="font-size:14px;font-weight:800;color:#4FC3F7;margin-bottom:6px;">${ico('zinutes')} Žinutės ir pranešimai</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">${(typeof kidChatOn === 'function' && kidChatOn()) ? 'Susirašyk su treneriu, gauk' : 'Gauk'} klubo pranešimus (${ico('skelbimas')}). ${ico('pranesimai')} Varpelis viršuje renka visus pranešimus — iššūkius, varžybas ir patvirtinimus.</div>
-      </div>
-
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FF7A33;">
-        <div style="font-size:14px;font-weight:800;color:#FF7A33;margin-bottom:6px;">${ico('streak')} Streak — kodėl svarbu</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Streak — kiek kartų IŠ EILĖS atlikai užduotis nepraleisdamas. Kuo ilgesnis streak, tuo DIDESNIS EXP bonusas! Sportuok reguliariai ir nenutrauk serijos.</div>
-      </div>
-
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #22C55E;">
-        <div style="font-size:14px;font-weight:800;color:#22C55E;margin-bottom:6px;">${ico('statistika')} Statistika</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Reitingai tarp tavo kategorijos draugų (lytis + amžiaus grupė). Pamatyk kas yra TOP klube ir savo poziciją.</div>
-      </div>
-
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #BA68C8;">
-        <div style="font-size:14px;font-weight:800;color:#BA68C8;margin-bottom:6px;">${ico('profilis')} Profilis</div>
-        <div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.85);">Diržo sertifikatas, skill badges, varžybų medaliai, streakų statistika.</div>
-      </div>
-    </div>
-  `);
-}
-
-function openExpTableModal() {
+function openExpTableModal(asHtml) {   // v624: asHtml — turinys KidInfo lapui „Kaip veikia SPOBU"
   // Generuojam EXP lentelę iš LEVEL_THRESHOLDS
   let tableHtml = `
     <div style="font-size:11px;color:var(--mut);margin-bottom:12px;line-height:1.5;">
@@ -40122,10 +40082,11 @@ function openExpTableModal() {
   });
   
   tableHtml += '</div>';
+  if (asHtml) return tableHtml;
   openInfoSubmodal(''+ico('statistika')+' EXP LENTELĖ', tableHtml);
 }
 
-function openBeltsModal() {
+function openBeltsModal(asHtml) {   // v624: asHtml — kaip openExpTableModal
   // Tikra Kyokushin karatė diržų sistema
   // base = pagrindinė spalva, stripe = juostos spalva (jei yra), gold_stripes = aukso juostų skaičius DAN'ams
   const BELTS = [
@@ -40205,85 +40166,8 @@ function openBeltsModal() {
     </div>
   `;
   
+  if (asHtml) return html;
   openInfoSubmodal(''+ico('dirzas')+' DIRŽŲ SISTEMA', html);
-}
-
-function openHowExpModal() {
-  openInfoSubmodal(''+ico('premium-plus')+' KAIP GAUTI EXP', `
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FF4D00;">
-        <div style="font-size:13px;font-weight:800;color:#FF7A33;margin-bottom:6px;">${ico('treniruote')} TRENIRUOTĖS IŠŠŪKIS</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
-          Trenerio sukurta užduotis treniruotės metu. Bazinis EXP ~+10. Plius serijos premija, kuri auga su kiekviena iš eilės atlikta!
-          <br><b style="color:#FF7A33;">Serija:</b> kuo ilgesnė, tuo didesnė premija
-        </div>
-      </div>
-      
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #4FC3F7;">
-        <div style="font-size:13px;font-weight:800;color:#4FC3F7;margin-bottom:6px;">${ico('greitis')} SAVAITINIS IŠŠŪKIS</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
-          Savaitės užduotys. Bazinis EXP ~+25. Serijos premija didesnė:
-          <br><b style="color:#4FC3F7;">Serija:</b> kas savaitę iš eilės — premija auga
-        </div>
-      </div>
-      
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #BA68C8;">
-        <div style="font-size:13px;font-weight:800;color:#BA68C8;margin-bottom:6px;">${ico('menesinis')} MĖNESINIS IŠŠŪKIS</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
-          Mėnesio tikslai. Bazinis EXP ~+50. Didžiausios serijų premijos:
-          <br><b style="color:#BA68C8;">Serija:</b> kas mėnesį iš eilės — premija dar didesnė
-        </div>
-      </div>
-      
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FFD700;">
-        <div style="font-size:13px;font-weight:800;color:#FFD700;margin-bottom:6px;">${ico('trofejai')} VARŽYBOS</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
-          Klubo lygis:<br>
-          • ${ico('miestas')} Vietinė: 40-200 EXP<br>
-          • ${ico('miestas')} Vidutinė: 100-500 EXP<br>
-          • ${ico('svetaine')} Europos: 300-1000 EXP<br>
-          Pagal pozicijos vietą (1, 2, 3) ir kovos rezultatus.
-        </div>
-      </div>
-      
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #EC407A;">
-        <div style="font-size:13px;font-weight:800;color:#EC407A;margin-bottom:6px;">${ico('dvikova')} DVIKOVOS</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
-          Iškviesk komandos draugą į dvikovą! Treneris patvirtina rezultatą.<br>
-          • ${ico('patvirtinta')} Laimėjimas: <b style="color:#EC407A;">+50 EXP</b><br>
-          • ${ico('bendradarbiavimas')} Lygiosios: <b style="color:#EC407A;">+35 EXP</b><br>
-          • ${ico('jega')} Net nelaimėjus: <b style="color:#EC407A;">+25 EXP</b> (vis tiek gauni!)<br>
-          <span style="color:#FF7A33;">${ico('laukia')} Iškviesti gali 1× per savaitę</span> · priimti kvietimus — be limito.
-        </div>
-      </div>
-
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #FCD34D;">
-        <div style="font-size:13px;font-weight:800;color:#FCD34D;margin-bottom:6px;">${ico('dirzas')} DIRŽO EGZAMINAS</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
-          Išlaikęs gausi naują kyu/dan + EXP. Aukštesni diržai — didesnis atlygis:<br>
-          • 🟧 10-1 kyu: <b style="color:#FCD34D;">~150-600 EXP</b><br>
-          • ⚫ 1 dan (Shodan): <b style="color:#FCD34D;">~1000 EXP</b><br>
-          • ⚫ 2 dan: <b style="color:#FCD34D;">~1500 EXP</b> · 3 dan: <b style="color:#FCD34D;">~2000 EXP</b><br>
-          • ⚫ 4 dan: <b style="color:#FCD34D;">~2500 EXP</b> · 5 dan: <b style="color:#FCD34D;">~3000 EXP</b><br>
-          Diržą skiria treneris po sėkmingo egzamino.
-        </div>
-      </div>
-
-      <div style="background:var(--card);border-radius:12px;padding:14px;border-left:3px solid #22C55E;">
-        <div style="font-size:13px;font-weight:800;color:#22C55E;margin-bottom:6px;">${ico('jega')} ASMENINIAI REKORDAI (PR)</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
-          Pateik naują rekordą pratime (Kelio lange). Treneris patvirtins ir gausi EXP proporcingai skirtumui nuo seno PR.
-        </div>
-      </div>
-      
-      <div style="background:linear-gradient(135deg,rgba(255,77,0,.15),rgba(255,128,0,.05));border-radius:12px;padding:14px;border:.5px solid rgba(255,77,0,.3);">
-        <div style="font-size:13px;font-weight:800;color:#FF7A33;margin-bottom:6px;">${ico('streak')} STREAK BONUSAI</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.85);line-height:1.5;">
-          Atlikdamas iššūkius iš eilės gauni <b>streak bonusus</b>. Kuo ilgesnis streak, tuo daugiau EXP! Bet jei nepateiki - streak nutruko, pradedi nuo 0.
-        </div>
-      </div>
-    </div>
-  `);
 }
 
 function openAllAnnouncements() {
@@ -42404,6 +42288,20 @@ const Kal = {
     });
     return out;
   },
+  // ── VARIKLIS: lankomumo serija (be DOM) — v624 (28A): VIENA vaikui Pagrindinyje ir kalendoriuje ──
+  // Iš eilės buvusios pažymėtos treniruotės nuo paskutinės atgal. Šaltinis — vaiko attendance eilutės (treneris rašo VISIEMS grupės
+  // vaikams present true/false — žr. lankomumo upsert). 120 paskutinių eilučių; 60 s atmintis vaikui (Pagrindinis + kalendorius — viena užklausa).
+  // Serijos premijų EXP (kid_streaks, server-streak-v3) nekeičiama — tai tik rodymas.
+  _stk: {},
+  attStreak(kidId) {
+    if (!kidId) return Promise.resolve(0);
+    const c = this._stk[kidId]; if (c && Date.now() - c.at < 60000) return c.p;
+    const p = sb.from('attendance').select('session_date, present').eq('kid_id', kidId).lte('session_date', this.ymd(new Date())).order('session_date', { ascending: false }).limit(120)
+      .then(({ data, error }) => { if (error) throw error; let n = 0; for (const r of data || []) { if (r.present) n++; else break; } return n; });
+    this._stk[kidId] = { at: Date.now(), p };
+    p.catch(() => { if (this._stk[kidId] && this._stk[kidId].p === p) delete this._stk[kidId]; });
+    return p;
+  },
 
   eventsOn(dateStr) {
     return (this.st.events || []).filter(ev => String(ev.date) <= dateStr && dateStr <= String(ev.endDate || ev.date));
@@ -42995,18 +42893,20 @@ Object.assign(Kal, {
         const r = this.K.range(ym);
         const clubId = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || this.st.group?.club_id || null;
         const needCh = this.ownCh && (!this.st.chAt || Date.now() - this.st.chAt > 60000);   // v623 (12A): iššūkiai nuo mėnesio nepriklauso — 60 s atmintis
-        const [ses, evs, exp, intents, ch] = await Promise.all([
+        const [ses, evs, exp, intents, ch, stk] = await Promise.all([
           this.st.group ? this.K.monthSessions({ groups: [this.st.group], from: r.from, to: r.to, kidId: kid }) : Promise.resolve([]),
           this.K.monthEvents(clubId, r.from, r.to).catch(() => []),
           this.loadExp(kid, r.from, r.to).catch(e => { console.warn('[kal-kid] exp', e); return { exp: {}, att: {} }; }),
           this.loadIntents(kid).catch(() => ({ intents: {}, rsvp: {} })),
           needCh ? this.loadCh(kid, clubId).catch(e => { console.warn('[kal-kid] ch', e); return null; }) : Promise.resolve(null),
+          this.K.attStreak(kid).catch(e => { console.warn('[kal-kid] serija', e.message || e); return null; }),   // v624 (28A): ta pati kaip Pagrindinyje
         ]);
         if ((stale = isStale())) return;   // finally perkraus su naujais parametrais
         // v623 (15A): klubo jungikliai — išjungtų renginių tipų nerodom; lankomumas išjungtas — jokio „buvo / nebuvo" (EXP eilutės lieka)
         const kg = typeof KidGate !== 'undefined' ? KidGate : null, attOff = kg && !kg.on('attendance');
         if (attOff) (ses || []).forEach(s => { s.present = 0; s.total = 0; s.effortDone = 0; });
         this.st.sessions = ses; this.st.events = kg ? (evs || []).filter(ev => kg.event(ev)) : evs; this.st.exp = exp.exp || {}; this.st.att = attOff ? {} : (exp.att || {}); this.st.intents = intents.intents; this.st.rsvp = intents.rsvp;
+        this.st.streakN = attOff ? 0 : stk;
         if (ch) { this.st.ch = this.chTiles(ch.active, ch.progress, ch.subs); this.st.chAt = Date.now(); }
         this.render();
       } catch (e) {
@@ -43174,7 +43074,8 @@ Object.assign(Kal, {
     },
     // serija kliente iš lankomumo (šio mėnesio duomenys): iš eilės buvusios pažymėtos treniruotės nuo paskutinės pažymėtos atgal
     streak(today) {
-      const past = (this.st.sessions || []).filter(s => s.date <= today && s.total > 0).sort((a, b) => b.date.localeCompare(a.date) || String(b.time || '').localeCompare(String(a.time || '')));
+      if (typeof this.st.streakN === 'number') return this.st.streakN;   // v624 (28A): Kal.attStreak — ne tik šio mėnesio duomenys; žemiau — atsarginis kelias
+      const past =(this.st.sessions || []).filter(s => s.date <= today && s.total > 0).sort((a, b) => b.date.localeCompare(a.date) || String(b.time || '').localeCompare(String(a.time || '')));
       let n = 0; for (const s of past) { if (s.present > 0) n++; else break; } return n;
     },
     nextLabel(today) {
@@ -44556,9 +44457,11 @@ const Strava = {
     if (sp.some(s => /Run/.test(s))) return 'bėgimai';
     return 'veiklos';
   },
+  // v624 (29A): „skaičiuosis patys" — tik jei klubas leidžia automatinį tvirtinimą (strava_auto_approve); giminė pagal žodį (treniruotės / veiklos — pačios)
+  how(w) { const self = /(ės|os)$/.test(w || '') ? 'pačios' : 'patys'; return (typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? `skaičiuosis ${self}` : `ateis ${self}, patvirtins treneris`; },
   hintHtml(ch) {
     const w = this.sportWord(ch);
-    const t = this.selfBlocked() ? `📱 Paprašyk tėvų susieti Strava — ${w} skaičiuosis patys` : `📱 Susiek Strava Profilyje — ${w} skaičiuosis patys`;
+    const t = this.selfBlocked() ? `📱 Paprašyk tėvų susieti Strava — ${w} ${this.how(w)}` : `📱 Susiek Strava Profilyje — ${w} ${this.how(w)}`;
     return `<div style="clear:both;font-size:9.5px;color:#4FC3F7;margin-top:6px;cursor:pointer;" onclick="event.stopPropagation();Strava.goProfile()">${t}</div>`;
   },
   // v622 (6A): vaikui iki 14 m. — paaiškinimas (tėvų prašymo mechanizmo appse nėra; tėvai susieja savo Profilyje)
@@ -44568,7 +44471,7 @@ const Strava = {
     const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b class="t">${t}</b>${d}</div></div>`;
     openInfoSubmodal('STRAVA · TĖVAMS', `<div class="hlp-intro">Iki 14 metų Strava su SPOBU susieja tėvai — vaiko duomenims reikia tėvų sutikimo.</div>`
       + row(ico('grupe'), 'Parodyk tėvams', 'Tėvų SPOBU programėlėje: <b>Profilis → Strava</b> prie tavo vardo → <b>Susieti Strava</b>.')
-      + row(ico('vieta'), 'Kas bus toliau', 'Tavo bėgimai, ėjimai, dviratis ir plaukimas užsiskaitys patys. Kol nesusieta — pažymėk rezultatą pats, treneris patvirtins.')
+      + row(ico('vieta'), 'Kas bus toliau', 'Tavo bėgimai, ėjimai, dviratis, plaukimas ir treniruotės ' + this.how('') + '. Kol nesusieta — pažymėk rezultatą pats, treneris patvirtins.')
       + (hasParent === false ? `<div class="hlp-intro" style="margin-top:8px;">Tavo tėvai dar neprisijungę prie SPOBU — paprašyk trenerio pagalbos.</div>` : ''));
   },
   goProfile() { if (currentProfile?.role === 'parent') nv('t', null, 't-prof'); else nv('v', null, 'v-prof'); },
@@ -44632,7 +44535,7 @@ const Strava = {
     const how = auto ? 'užsiskaitys patys' : 'ateis patys (patvirtins treneris)';
     const ico_ = `<div style="width:34px;height:34px;border-radius:11px;background:rgba(252,76,2,.16);display:flex;align-items:center;justify-content:center;color:#FC4C02;flex-shrink:0;font-weight:900;font-size:15px;">S</div>`;
     if (!s.linked) {
-      const sub = blocked ? 'Iki 14 metų Strava susieja tėvai savo SPOBU paskyroje' : `Bėgimo, ėjimo, dviračio ir plaukimo iššūkiai ${how} iš ${parent ? 'vaiko' : 'tavo'} Strava veiklų`;
+      const sub = blocked ? 'Iki 14 metų Strava susieja tėvai savo SPOBU paskyroje' : `Bėgimo, ėjimo, dviračio, plaukimo ir treniruočių iššūkiai ${how} iš ${parent ? 'vaiko' : 'tavo'} Strava veiklų`;
       const btn = blocked ? `<span class="kal-b o" onclick="Strava.askParents()">Paprašyk tėvų susieti</span>` : `<span class="kal-b o" onclick="Strava.start('${kidId}')">Susieti Strava</span>`;
       return `<div class="kal-card" style="margin:6px 12px;"><div style="display:flex;align-items:center;gap:10px;">${ico_}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${who}Strava nesusieta</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${sub}</div></div></div><div class="kal-acts" style="align-items:center;">${btn}<span style="margin-left:auto;">${this.mark()}</span></div></div>`;
     }
@@ -46685,6 +46588,61 @@ const KidGate = {
     _gateSel('#v-announcements-section .notif-tab[data-tab="competitions"]', scr);
     _gateSel('#v-announcements-section .notif-tab[data-tab="messages"]', chat);
     this.cols('v-notif-tabs', 1 + ((ch || gc) ? 1 : 0) + (scr ? 1 : 0) + (chat ? 1 : 0));
+  },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: KidInfo =====
+// v624 (vaiko paskyros 3 paketas, savininko 24A–26A + 31A, 09-23): „Kaip veikia SPOBU" vaikui — vienas langas vietoj keturių
+// (Kaip naudotis · EXP lentelė · Diržų sistema · Kaip gauti EXP). EXP skaičiai — tie, kuriuos rašo serveris: pastangos 20/14/8,
+// attendance_finalize_period +15/+100, pakopos 15/20/25, mėnesio 40, vienkartinis 20, serijos (server-streak-v3 = STREAK_MILESTONES),
+// apply_approved_submission (rekordai), process_competition_result (varžybos, diržai), dvikovos. Išjungtos klubo funkcijos (KidGate) nerodomos.
+// Žinutės (31A): kas perskaityta pokalbyje (conversation_members.last_read_at) — perskaityta ir varpelyje.
+const KidInfo = {
+  tabs: [['exp', 'Kaip gauti EXP'], ['lvl', 'Lygiai'], ['belt', 'Diržai']],
+  open(tab) {
+    const t = tab || 'exp';
+    const chips = this.tabs.map(([k, l]) => `<span class="kal-chip${k === t ? ' on' : ''}" data-kh="${k}" onclick="KidInfo.tab('${k}')">${l}</span>`).join('');
+    openInfoSubmodal(ico('info') + ' KAIP VEIKIA SPOBU', `<div class="kal-chips" style="padding:0 0 12px;">${chips}</div><div id="kidinfo-c">${this.body(t)}</div>`);
+  },
+  tab(t) {
+    const c = document.getElementById('kidinfo-c'); if (!c) return;
+    c.innerHTML = this.body(t);
+    document.querySelectorAll('#settings-submodal [data-kh]').forEach(el => el.classList.toggle('on', el.dataset.kh === t));
+  },
+  body(t) {
+    if (t === 'lvl') return openExpTableModal(true);
+    if (t === 'belt') return openBeltsModal(true);
+    return this.expHtml();
+  },
+  on(k) { return typeof KidGate === 'undefined' || KidGate.on(k); },
+  expHtml() {
+    const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ico(ic)}</div><div class="tx"><b class="t">${t}</b>${d}</div></div>`;
+    const b = (x) => `<b style="color:white;">${x}</b>`;
+    const auto = typeof flagOn !== 'function' || flagOn('strava_auto_approve');
+    let h = `<div class="hlp-intro">EXP kelia tavo lygį (1–99). Daugiausia jų gauni treniruotėse — už tai, kad ateini ir stengiesi.</div>`;
+    if (this.on('attendance')) h += row('jega', 'Pastangos treniruotėje', `Po kiekvienos treniruotės treneris įvertina: iš visų jėgų ${b('+20')} · gerai ${b('+14')} · lengviau ${b('+8')}.`)
+      + row('lankomumas', 'Lankomumo premijos', `Buvai visose savaitės treniruotėse — ${b('+15')}, visose mėnesio — ${b('+100')}. Neįvykusios treniruotės neskaičiuojamos.`);
+    if (this.on('challenges')) h += row('tikslas', 'Iššūkiai', `Savaitės (Strava): 3 pakopos pagal tavo amžių ir lytį — pasiekęs 1-ą gauni ${b('+15')}, 2-ą — iš viso ${b('+20')}, 3-ią — iš viso ${b('+25')}. Savaitės iššūkis su vienu tikslu (pvz. greitas kilometras) — ${b('+20')}. Mėnesio pasiekimas (kata, spyriai) — ${b('+40')}, kai treneris pažymi „Išmoko". Strava veiklos ${auto ? 'užsiskaito pačios' : 'ateina pačios, patvirtina treneris'}.`)
+      + row('streak', 'Iššūkių serijos', `Savaitės iš eilės: kas 2 — ${b('+20')}, kas 4 — ${b('+40')}, 24 — ${b('+300')}. Mėnesiai iš eilės: nuo 2-o — ${b('+30')}, kas 3 — ${b('+60')}, 9 (sezonas) — ${b('+450')}.`);
+    h += row('augimas', 'Rekordai (Kelias)', `Pratimo EXP — iki ${b('100')}: bronza 25 · sidabras 50 · auksas 75 · MAX 100 (pagal tavo amžiaus ir lyties normatyvą). Pagerinęs rekordą gauni skirtumą. Patvirtina treneris.`);
+    if (this.on('comp')) h += row('trofejai', 'Varžybos', `Vietinės: 1 vieta ${b('+150')} · 2 — ${b('+100')} · 3 — ${b('+70')} · dalyvavimas ${b('+40')} (kumitė dar +3 už pergalę, +1 už pralaimėtą kovą). Vidutinės 400 / 250 / 180 / 100, Europos 1000 / 700 / 500 / 300.`);
+    if (this.on('belt')) h += row('dirzas', 'Diržo egzaminas', `Išlaikius: 9–1 kyu ${b('+100…+400')}, 1–5 dan ${b('+1000…+3000')}. Neišlaikius vis tiek ${b('+25…+100')} — už drąsą.`);
+    if (this.on('duels')) h += row('dvikova', 'Dvikovos', `Pergalė ${b('+50')} · lygiosios ${b('+35')} · pralaimėjus ${b('+25')}. Iškviesti gali kartą per 7 d., priimti — be ribos.`);
+    return h;
+  },
+  // 31A: tas pats localStorage raktas kaip markNotifRead / markAllNotifRead
+  seen(ids) {
+    if (!currentKid?.id || !ids || !ids.length) return;
+    const k = `spobu_kid_${currentKid.id}_seen_notif_ids`, s = new Set(lsGetArr(k));
+    ids.forEach(i => s.add(i));
+    let a = [...s]; if (a.length > 500) a = a.slice(a.length - 500);
+    try { localStorage.setItem(k, JSON.stringify(a)); } catch (_e) { }
+  },
+  // atidarius pokalbį — visos to pokalbio žinutės varpelyje perskaitytos iš karto (be varpelio perkrovimo)
+  seenConv(convId) {
+    if (currentProfile?.role !== 'kid' || !convId || typeof allNotifications === 'undefined') return;
+    (allNotifications.messages || []).filter(n => n.link === 'msg:' + convId).forEach(n => markNotifRead(n.id));
   },
 };
 // ===== /MODULIS =====
