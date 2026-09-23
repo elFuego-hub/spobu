@@ -1844,7 +1844,7 @@ function openHelpModal(who) {
   const FAQ = {
     trainer: [
       ['Iš kur atsiranda grupės ir vaikai?', 'Grupes kuria ir vaikus priskiria KLUBAS. Tu matai tau priskirtas grupes (kaip pagrindinis treneris arba asistentas) ir valdai jų kasdienybę.'],
-      ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai pratimų rekordus, rankinius iššūkius, varžybas ir dvikovas. Lankomumo, varžybų, egzamino ir Strava iššūkiai užsiskaito patys — jų tvirtinti nereikia. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
+      ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai pratimų rekordus, rankinius iššūkius ir varžybas. Dvikovas vertini treniruotėje — Kalendoriaus dienos lape arba lankomumo lange įvedi abiejų rezultatus. Lankomumo, varžybų, egzamino ir Strava iššūkiai užsiskaito patys — jų tvirtinti nereikia. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
       ['Kaip veikia planai ir kalendorius?', 'Kalendorius — pradinis langas. „Planuoti treniruotes": 10–15 min klausimų, AI paruošia etapą; kiekvieną treniruotę patvirtini tu (kol nepatvirtinta, vaikai nemato). Dienos lapas: lankomumas, pastangos, blokai.'],
       ['Kas yra pastangos?', 'Žymėdamas lankomumą kiekvienam vaikui parenki: iš visų jėgų (+20 EXP) · gerai (+14) · lengviau (+8). Numatyta „gerai" — žymėk tik išimtis. Vaikas ir tėvai (jei klubas įjungęs) tai mato.'],
       ['Kaip skirti iššūkį?', 'Grupių lange kortelės mygtukas „Iššūkis" arba Kalendoriuje / Treniruotėse prie grupės „+". Savaitės iššūkiai (bėgimas, ėjimas, dviratis, plaukimas, treniruotė) užsiskaito per Strava patys; mėnesio pasiekimus (kata, spyriai) pažymi „Išmoko" suvestinėje. Paspaudęs vaiką — asmeninį.'],
@@ -1858,7 +1858,7 @@ function openHelpModal(who) {
       ['Kaip gaunu EXP ir keliu lygį?', 'Lankyk treniruotes ir stenkis — treneris įvertina pastangas (iš visų jėgų +20 · gerai +14 · lengviau +8), už visas savaitės treniruotes +15, už visas mėnesio +100. Dar — iššūkiai, rekordai Kelio lange, varžybos ir dvikovos. Visi skaičiai: Nustatymai → „Kaip veikia SPOBU".'],
       ['Kurie iššūkiai skaičiuojasi patys?', 'Savaitės Strava iššūkiai ' + ((typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? 'užsiskaito patys' : 'ateina patys (patvirtina treneris)') + ', jei susietas Strava (iki 14 m. susieja tėvai). Kitus pažymi tu, patvirtina treneris.'],
       ['Kaip pateikiu rezultatą?', '„Kelias" lange pasirink sritį ir pratimą, įrašyk naują rekordą. Treneris jį patvirtins.'],
-      ...((typeof KidGate === 'undefined' || KidGate.on('duels')) ? [['Kas yra dvikova?', '1 prieš 1 su grupės draugu (atsispaudimai, pritūpimai, presas, lenta, bėgimas). Grupės lange iškviesk draugą, abu įveskite rezultatą, treneris patvirtina. Pergalė +50 · lygiosios +35 · pralaimėjus +25 EXP.']] : []),
+      ...((typeof KidGate === 'undefined' || KidGate.on('duels')) ? [['Kas yra dvikova?', '1 prieš 1 su grupės draugu (atsispaudimai, pritūpimai, presas, lenta, bėgimas). Grupės lange iškviesk draugą ir pasirink treniruotę — joje treneris įvertins ir įves rezultatus. Pergalė +50 · lygiosios +35 · pralaimėjus +25 EXP.']] : []),
       ['Kodėl mano lygis žemas?', 'Lygis auga nuo surinkto EXP — kuo daugiau treniruojiesi, atlieki iššūkių ir gerini rekordus, tuo greičiau kyla. Reitinguose iš pradžių matai savo amžiaus ir lyties draugus. OSU! '+ico('dirzas')+''],
       ['Kas mato mano vardą?', 'Reitinguose ir paieškoje — Anonimas (jei tėvai jį įjungę). Savo grupės draugai tave mato. Treneris ir klubas visada mato tavo vardą. Kaip tu rodomas — Nustatymai → Privatumas; keičia tėvai.'],
       ['Kaip pasidalinti pasiekimu?', 'Varpelyje prie „PR patvirtintas" spausk '+ico('programele')+' — sukursi kortelę su nuotrauka, kurią gali dėti į Instagram/TikTok.'],
@@ -3554,6 +3554,10 @@ async function loadParentKidFeed() {
       }
       if (/^Stovykla:/i.test(reason)) {
         items.push({ kind: 'camp', color: '#8B5CF6', icon: '🏕️', title: reason.replace(/^Stovykla:\s*/i, ''), label: 'Stovykla', exp: a.exp_change || 0, date: a.created_at });
+        return;
+      }
+      if (/^Dvikova \(/.test(reason)) {   // v625 (1A): duel_judge — dvikova, ne „trenerio įvertinimas"
+        items.push({ kind: 'duel', color: '#EC407A', icon: ico('dvikova'), title: reason, label: 'Dvikova', exp: a.exp_change || 0, date: a.created_at });
         return;
       }
       const pos = (a.exp_change || 0) >= 0;
@@ -10537,7 +10541,9 @@ async function renderMyDuels(opts) {
       
       let statusBlock = '';
       
-      if (d.status === 'pending') {
+      if (d.status === 'pending' && typeof Dvk !== 'undefined' && Dvk.past(d)) {
+        statusBlock = Dvk.cardPast();   // MODULIS: Dvk (v625) — dvikovos diena praėjo, priimti nebegalima
+      } else if (d.status === 'pending') {
         if (isChallenger) {
           statusBlock = `
             <div style="background:rgba(255,140,0,.1);border-radius:8px;padding:7px;margin-top:6px;text-align:center;">
@@ -10552,6 +10558,8 @@ async function renderMyDuels(opts) {
             </div>
           `;
         }
+      } else if (d.status === 'active' && d.session_date && typeof Dvk !== 'undefined') {
+        statusBlock = Dvk.cardActive(d);   // MODULIS: Dvk (v625) — datuotoje dvikovoje rezultatus įveda treneris
       } else if (d.status === 'active') {
         if (iSubmitted) {
           statusBlock = `
@@ -10610,6 +10618,7 @@ async function renderMyDuels(opts) {
             </div>
             <div style="font-size:8px;color:#EC407A;font-weight:800;letter-spacing:.5px;background:rgba(236,64,122,.15);padding:3px 7px;border-radius:99px;">${isChallenger ? 'TU IŠKVIETEI' : 'TAVE IŠKVIETĖ'}</div>
           </div>
+          ${typeof Dvk !== 'undefined' ? Dvk.when(d) : ''}
           ${noteHtml}
           ${statusBlock}
         </div>
@@ -10630,6 +10639,8 @@ async function renderMyDuels(opts) {
 
 // v622 (9A): po dvikovos veiksmo atnaujinti ten, kur dvikovos rodomos — V2 Grupė, V1 Iššūkių sąrašas
 function _refreshDuelViews() {
+  // MODULIS: Dvk (v625) — dvikova su data matoma ir kalendoriuje
+  if (typeof Kal !== 'undefined' && Kal.on() && Kal.kid && document.getElementById('v-kal')?.classList.contains('on')) Kal.kid.reload();
   const p = (typeof Kal !== 'undefined' && Kal.on() && Kal.kid && typeof Kal.kid.duels === 'function')
     ? Kal.kid.duels()
     : (typeof loadChallenges === 'function' ? loadChallenges() : null);
@@ -10640,22 +10651,26 @@ function _refreshDuelViews() {
 async function respondToDuel(duelId, action) {
   if (typeof flagOn === 'function' && !flagOn('duels_enabled')) { showToast(''+ico('dvikova')+' Dvikovos klube išjungtos', 'error', 4000); return; }
   if (action === 'accept') {
-    const { error } = await sb.from('duels')
+    const { data: upd, error } = await sb.from('duels')
       .update({ status: 'active' })
-      .eq('id', duelId);
-    
-    if (error) {
-      showToast(ico('klaida')+' ' + _userError(error), 'error');
+      .eq('id', duelId)
+      .select('id, session_date');   // v625: .select() — kitaip RLS atmetimas atrodytų kaip sėkmė
+
+    if (error || !upd || !upd.length) {
+      showToast(ico('klaida')+' ' + (error ? _userError(error) : 'Dvikovos priimti nepavyko'), 'error');
       return;
     }
-    showToast(ico('patvirtinta')+' Dvikova priimta! Dabar atlik užduotį ir įvesk rezultatą.', 'success');
+    showToast(ico('patvirtinta')+' ' + (upd[0].session_date && typeof Dvk !== 'undefined'
+      ? `Dvikova priimta! Susitiksit ${escapeHtml(Dvk.at(upd[0].session_date))} treniruotėje — rezultatus įves treneris.`
+      : 'Dvikova priimta! Dabar atlik užduotį ir įvesk rezultatą.'), 'success');
   } else {
-    const { error } = await sb.from('duels')
+    const { data: upd, error } = await sb.from('duels')
       .update({ status: 'declined' })
-      .eq('id', duelId);
-    
-    if (error) {
-      showToast(ico('klaida')+' ' + _userError(error), 'error');
+      .eq('id', duelId)
+      .select('id');
+
+    if (error || !upd || !upd.length) {
+      showToast(ico('klaida')+' ' + (error ? _userError(error) : 'Dvikovos atmesti nepavyko'), 'error');
       return;
     }
     showToast('Dvikova atmesta.', 'info');
@@ -11004,7 +11019,7 @@ async function openFriendModal(friendJson) {
         <button onclick="openDuelChallenge('${friend.id}')" style="width:100%;padding:14px;background:linear-gradient(135deg,#FF4D00,#FF7A33);border:none;border-radius:14px;color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
           ${ico('dvikova')} IŠKVIESTI Į DVIKOVĄ
         </button>
-        <div style="font-size:9px;color:var(--mut);text-align:center;margin-top:6px;">Iškviesti gali 1× per savaitę · priimti — be limito</div>` : `
+        <div style="font-size:9px;color:var(--mut);text-align:center;margin-top:6px;">Dvikova vyksta treniruotėje · iškviesti gali 1× per savaitę · priimti — be limito</div>` : `
         <div style="font-size:10px;color:var(--mut);text-align:center;padding:10px;border:.5px dashed var(--bdr);border-radius:12px;">${ico('dvikova')} Dvikovai draugui reikia SPOBU paskyros — jis dar neprisijungęs</div>`}
       </div>
     </div>
@@ -11089,7 +11104,7 @@ async function openDuelChallenge(friendJson) {
     .select('id, created_at, status')
     .eq('challenger_id', currentKid.id)
     .gte('created_at', weekAgo)
-    .neq('status', 'declined'); // atmestos nesiskaito - vaikas gali bandyti vėl
+    .not('status', 'in', '(declined,expired)'); // atmestos ir neįvykusios nesiskaito (v625 — kaip serverio sargas)
   if (myWeekDuels && myWeekDuels.length >= 1) {
     showToast(''+ico('dvikova')+' Jau iškvietei dvikovą šią savaitę! Kitą galėsi po savaitės.', 'error');
     return;
@@ -11118,8 +11133,11 @@ async function openDuelChallenge(friendJson) {
     return;
   }
   
+  // MODULIS: Dvk (v625, 1A) — artimiausios savo grupės treniruotės (≤ 14 d.), kuriose gali vykti dvikova
+  const dvkSes = (typeof Dvk !== 'undefined') ? await Dvk.nextFor(currentKid).catch(() => []) : [];
+
   // Saugom globaliai (sendDuelChallenge prieiga)
-  window._duelChallengeData = { friendId: friend.id, friendName, trainers: myTrainers };
+  window._duelChallengeData = { friendId: friend.id, friendName, trainers: myTrainers, sessionDate: null };
   
   const modal = document.createElement('div');
   modal.id = 'duel-challenge-modal';
@@ -11151,14 +11169,17 @@ async function openDuelChallenge(friendJson) {
           ${typeCards}
         </div>
         
-        <div style="font-size:10px;color:#EC407A;font-weight:800;letter-spacing:1px;margin:14px 0 8px;">2️⃣ TEISĖJAS (TRENERIS)</div>
+        <div style="font-size:10px;color:#EC407A;font-weight:800;letter-spacing:1px;margin:14px 0 8px;">2️⃣ KADA (TRENIRUOTĖ)</div>
+        ${typeof Dvk !== 'undefined' ? Dvk.pickHtml(dvkSes) : ''}
+
+        <div style="font-size:10px;color:#EC407A;font-weight:800;letter-spacing:1px;margin:14px 0 8px;">3️⃣ TEISĖJAS (TRENERIS)</div>
         <select id="duel-trainer-select" style="width:100%;padding:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;color:white;font-size:12px;font-weight:700;box-sizing:border-box;">
           ${trainerOptions}
         </select>
-        <div style="font-size:8px;color:var(--mut);margin-top:4px;">Šis treneris patvirtins dvikovos rezultatą</div>
-        
-        <div style="font-size:10px;color:#EC407A;font-weight:800;letter-spacing:1px;margin:14px 0 8px;">3️⃣ ŽINUTĖ DRAUGUI</div>
-        <input type="text" id="duel-note-input" maxlength="120" placeholder="pvz. Po treniruotės eisim / Trečiadienį" style="width:100%;padding:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;color:white;font-size:12px;box-sizing:border-box;" />
+        <div style="font-size:8px;color:var(--mut);margin-top:4px;">Treneris treniruotėje įves abiejų rezultatus</div>
+
+        <div style="font-size:10px;color:#EC407A;font-weight:800;letter-spacing:1px;margin:14px 0 8px;">4️⃣ ŽINUTĖ DRAUGUI</div>
+        <input type="text" id="duel-note-input" maxlength="120" placeholder="pvz. Pasiruošk!" style="width:100%;padding:11px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;color:white;font-size:12px;box-sizing:border-box;" />
         
         <button onclick="sendDuelChallenge()" style="width:100%;padding:14px;background:linear-gradient(135deg,#EC407A,#D81B60);border:none;border-radius:14px;color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;cursor:pointer;margin-top:16px;">
           ${ico('dvikova')} SIŲSTI IŠKVIETIMĄ
@@ -11207,6 +11228,12 @@ async function sendDuelChallenge() {
     return;
   }
   
+  // Validacija - treniruotė (MODULIS: Dvk, v625 — serveris priima tik savo grupės treniruotę per 14 d.)
+  if (!data.sessionDate) {
+    showToast(ico('klaida')+' Pasirink treniruotę, kurioje vyks dvikova', 'error');
+    return;
+  }
+
   // Validacija - treneris
   const trainerSelect = document.getElementById('duel-trainer-select');
   const chosenTrainerId = trainerSelect?.value;
@@ -11233,7 +11260,8 @@ async function sendDuelChallenge() {
       duel_type: duelType,
       chosen_trainer_id: chosenTrainerId,
       note: note,
-      status: 'pending'
+      status: 'pending',
+      session_date: data.sessionDate
     });
     
     if (error) {
@@ -11246,7 +11274,7 @@ async function sendDuelChallenge() {
     document.getElementById('duel-challenge-modal')?.remove();
     document.getElementById('friend-modal')?.remove();
     
-    showToast(`${ico('dvikova')} Dvikova "${t.name}" išsiųsta! Laukiama, ar draugas priims.`, 'success');
+    showToast(`${ico('dvikova')} Dvikova "${t.name}" išsiųsta — ${typeof Dvk !== 'undefined' ? escapeHtml(Dvk.at(data.sessionDate)) + ' treniruotėje' : ''}. Laukiama, ar draugas priims.`, 'success');
     playSound('send');
     
     // Atnaujint draugų sekciją + v622: savo „Laukiama…" kortelė Grupėje / sąraše
@@ -12847,14 +12875,15 @@ const _duelPopup = {
       m[duelId] = now + 24 * 60 * 60 * 1000;
       localStorage.setItem(this.key(), JSON.stringify(m));
     } catch (e) { /* privatus režimas — užtenka shown šiai sesijai */ }
-    const where = (typeof Kal !== 'undefined' && Kal.on()) ? 'Grupės' : 'Iššūkių';
-    showToast(`${ico('laukia')} Priminsim po 24 val. Kvietimą rasi ${where} lange.`, 'info', 3500);
+    const where = (typeof Kal !== 'undefined' && Kal.on()) ? 'Grupės ir Kalendoriaus' : 'Iššūkių';   // v625: dvikova su data matosi ir kalendoriuje
+    showToast(`${ico('laukia')} Priminsim po 24 val. Kvietimą rasi ${where} lange — atsakyk iki treniruotės.`, 'info', 3500);
   }
 };
 
 // 🥊 Gražus dvikovos IŠKVIETIMO popup (kai mane iškviečia)
 function showDuelChallengePopup(duel, challengerName) {
   if (typeof flagOn === 'function' && !flagOn('duels_enabled')) return;   // v622 (9A) — ir realtime keliui
+  if (typeof Dvk !== 'undefined' && Dvk.past(duel)) return;   // MODULIS: Dvk (v625) — diena praėjo, priimti nebegalima
   if (duel?.id) _duelPopup.shown.add(duel.id);
   const t = DUEL_TYPES[duel.duel_type] || { icon: ''+ico('dvikova')+'', name: 'Dvikova', desc: '' };
 
@@ -12889,7 +12918,8 @@ function showDuelChallengePopup(duel, challengerName) {
     <div style="font-size:56px;line-height:1;margin-bottom:6px;filter:drop-shadow(0 0 16px #FF4D00);">${t.icon}</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:#FF7A33;margin-bottom:4px;">${t.name.toUpperCase()}</div>
     <div style="font-size:10px;color:rgba(255,255,255,.7);margin-bottom:${duel.note ? '10px' : '14px'};">${t.desc}</div>
-    
+    ${duel.session_date && typeof Dvk !== 'undefined' ? `<div style="font-size:11px;color:#EC407A;font-weight:800;margin:-6px 0 12px;">${ico('kalendorius')} ${escapeHtml(Dvk.At(duel.session_date))} treniruotėje</div>` : ''}
+
     ${duel.note ? `<div style="background:rgba(236,64,122,.12);border:.5px solid rgba(236,64,122,.3);border-radius:10px;padding:9px 11px;margin-bottom:14px;display:flex;gap:7px;align-items:flex-start;text-align:left;">
       <div style="font-size:13px;">${ico('zinutes')}</div>
       <div style="font-size:11px;color:white;line-height:1.35;font-style:italic;">${escapeHtml(duel.note)}</div>
@@ -15449,7 +15479,7 @@ const CLUB_FLAG_DEFS = [
   { k:'trainer_posts_enabled', t:''+ico('nuotrauka')+' Trenerių postai', d:'Treneris po treniruotės dalinasi nuotrauka su viena eilute — grupei, Facebook, Instagram. Numatyta: įjungta.', info:'Trenerių postai — po treniruotės treneris pasidaro postą: nuotrauka + viena eilutė, ir pasidalina tėvų grupės pokalbyje, Facebook ar Instagram. Vaikų vardai Facebook / Instagram — tik tų, kurių tėvai davė sutikimą.<br><br>Išjungus: treneriai nebematys „Postai" mygtuko. Klubo Postų studija lieka.' },
   { sec:'IŠŠŪKIAI' },
   { k:'strava_auto_approve', t:''+ico('atnaujinti')+' Strava rezultatai tvirtinami automatiškai', d:'Susietos Strava bėgimai, ėjimai, dviratis — be trenerio. Numatyta: įjungta.', info:'Strava rezultatai tvirtinami automatiškai — kai vaikas (ar tėvas) susieja Strava, bėgimo / ėjimo / dviračio iššūkių veiklos ateina pačios ir, jei atitinka tikslą, patvirtinamos iš karto (EXP kaip įprasta). Treneris suvestinėje mato STRAVA žymą.<br><br>Išjungus: Strava veiklos vis tiek ateina, bet lieka „laukia" — tvirtina treneris.' },   // V2 7b (v552)
-  { k:'duels_enabled', t:''+ico('dvikova')+' Dvikovos', d:'Vaikai kviečia vienas kitą į dvikovas.', info:'Dvikovos — vaikas iškviečia draugą į 1-prieš-1 pratimų varžytuves (atsispaudimai, pritūpimai ir pan.), o treneris patvirtina rezultatą.<br><br>Išjungus: vaikai nebegalės kurti ar priimti dvikovų.' },
+  { k:'duels_enabled', t:''+ico('dvikova')+' Dvikovos', d:'Vaikai kviečia grupės draugą į dvikovą treniruotėje; rezultatus įveda treneris.', info:'Dvikovos — vaikas iškviečia savo grupės draugą į 1-prieš-1 pratimų varžytuves (atsispaudimai, pritūpimai, presas, lenta, bėgimas) konkrečioje treniruotėje per artimiausias 14 d. Dvikova matoma abiejų vaikų ir trenerio kalendoriuje; treniruotėje treneris įveda abiejų rezultatus (dienos lape arba lankomumo lange, prieš pastangas) — nugalėtoją ir EXP (+50 / +35 / +25) skaičiuoja sistema. Nepriimta iki treniruotės — neįvyksta.<br><br>Išjungus: vaikai nebegalės kurti ar priimti dvikovų, dvikovos dings iš kalendorių ir lankomumo lango, pranešimai nesiunčiami.' },   // v625 (1A)
   { sec:'VAIKAMS IR TĖVAMS' },
   { k:'kid_trainer_chat_enabled', t:''+ico('zinutes')+' Vaikų žinutės treneriui', d:'Vaikas gali parašyti savo treneriui. Numatyta: įjungta.', info:'Vaikų žinutės treneriui — vaikas gali parašyti SAVO treneriui: iš varpelio („Žinutės" tabo) arba nustatymuose prie trenerio vardo spausdamas „Rašyti". Treneris atsako įprastame žinučių lange.<br><br>Vaikai TARPUSAVYJE susirašinėti negali — tai užrakinta sistemos lygiu.<br><br>Išjungus: vaikai nebegalės pradėti pokalbio ar atsakinėti, treneriui esami pokalbiai lieka matomi.' },
   { k:'birthdays_enabled', t:''+ico('gimtadienis')+' Gimtadienių priminimai', d:'Artėjantys vaikų gimtadieniai (per 7 d.) trenerio ir klubo varpelyje. Numatyta: įjungta.', info:'Gimtadienių priminimai — artėjantys (per 7 d.) vaikų gimtadieniai rodomi trenerio ir klubo varpelyje, kad spėtumėte pasveikinti.<br><br>Išjungus: priminimų nebebus.' },
@@ -19639,7 +19669,7 @@ async function loadKidProgress() {
     events.push({ ts: s.approved_at, icon: s.placement === 1 ? ''+ico('medalis')+'' : s.placement === 2 ? ''+ico('medalis')+'' : s.placement === 3 ? ''+ico('medalis')+'' : ''+ico('trofejai')+'', title: s.competitions?.title || 'Varžybos', sub: placement, exp: s.exp_gained });
   });
   (prRes.data || []).forEach(s => events.push({ ts: s.reviewed_at, icon: ''+ico('jega')+'', title: s.exercises?.name || 'Pratimas', sub: `Naujas PR: ${s.new_value}`, exp: s.exp_gain }));
-  (adjRes.data || []).forEach(a => { const pos = (a.exp_change || 0) >= 0; events.push({ ts: a.created_at, icon: pos ? ''+ico('zvaigzde')+'' : ''+ico('ispejimas')+'', title: a.reason || 'Trenerio įvertinimas', sub: 'Trenerio įvertinimas', exp: a.exp_change }); });
+  (adjRes.data || []).forEach(a => { const pos = (a.exp_change || 0) >= 0; events.push({ ts: a.created_at, icon: pos ? ''+ico('zvaigzde')+'' : ''+ico('ispejimas')+'', title: a.reason || 'Trenerio įvertinimas', sub: /^Dvikova \(/.test(a.reason || '') ? 'Dvikova' : 'Trenerio įvertinimas', exp: a.exp_change }); });
   events.sort((a, b) => new Date(b.ts) - new Date(a.ts));
   const recent = events.slice(0, 8);
 
@@ -22404,6 +22434,7 @@ async function openAttendance(groupId, dateStr){
       <label style="font-size:11px;color:var(--mut);font-weight:700;">Treniruotės data</label>
       <input type="date" id="att-date" value="${_attState.date}" onchange="_attReload()" class="inp" style="width:100%;margin:4px 0 12px;font-family:inherit;">
       <div id="att-warn"></div>
+      <div id="dvk-att"></div><!-- MODULIS: Dvk (v625) — tos dienos dvikovos: rezultatai prieš pastangas -->
       <div id="pl-day"></div><!-- MODULIS: planas (v530) — dienos šablonas iš mėnesio plano -->
       <div style="display:flex;gap:8px;margin-bottom:12px;">
         <button onclick="_attSetAll(true)" style="flex:1;padding:9px;border-radius:10px;border:.5px solid rgba(34,197,94,.4);background:rgba(34,197,94,.12);color:var(--grn);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">${ico('atlikta')} Visi atėjo</button>
@@ -22436,6 +22467,7 @@ async function _attReload(){
   }
   _attRenderList();
   if (typeof Planas !== 'undefined') Planas.loadDay(_attState);   // MODULIS: planas (v530) — dienos šablonas
+  if (typeof Dvk !== 'undefined') Dvk.attMount(_attState).catch(e => console.warn('[att] dvikovos', e.message || e));   // MODULIS: Dvk (v625)
 }
 
 // MODULIS: Kal (v535) — pastangų vertinimas rodomas tik su įjungtu `plans_enabled` ir tik ten,
@@ -23978,6 +24010,7 @@ function openTrInfo(which) {
         row('<i style="width:10px;height:10px;border-radius:2px;background:#A855F7;display:block;"></i>', 'Kvadratėliai', 'Kiek grupių tą dieną treniruojasi (spalva — grupės). Čipsai viršuje filtruoja grupę.') +
         row(''+ico('ispejimas')+'', 'Švytinti diena', 'Praėjusi treniruotė be pažymėto lankomumo. Juosta po tinkleliu — spustelk ir pažymėk iš dienos lapo.') +
         row(''+ico('jega')+'', 'Pastangos', 'Žymėdamas lankomumą įvertink kiekvieną: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP. Vaikas ir tėvai tai mato.') +
+        ((typeof KidGate === 'undefined' || KidGate.on('duels')) ? row('<i style="width:8px;height:8px;border-radius:50%;background:#EC407A;display:block;"></i>', 'Rožinis taškas — dvikova', 'Vaikai iškvietė vienas kitą į dvikovą tos dienos treniruotėje. Dienos lape (ir lankomumo lange) įvesk abiejų rezultatus prieš pastangas — nugalėtoją ir EXP skaičiuoja sistema.') : '') +   // v625 (1A)
         row(''+ico('prideti')+'', 'Planuoti treniruotes', '10–15 min klausimų — AI paruošia visą etapą su „kodėl". Tu patvirtini kiekvieną treniruotę; kol nepatvirtinta, vaikai jos nemato.') +
         row(''+ico('tikslas')+'', 'Iššūkiai', 'Plytelės apačioje — progresas ir kiek laukia tvirtinimo; su keliomis grupėmis — eilutė kiekvienai. „+ Naujas iššūkis": savaitės — Strava užskaito pati, mėnesio — pasiekimai (kata, spyriai), žymi treneris „Išmoko".') +
         row(''+ico('kalendorius')+'', 'Renginiai', 'Varžybos (violetinė), stovyklos (mėlyna), diržo testai (auksinė). Artimiausias — su dienų skaičiumi.') +
@@ -24021,7 +24054,7 @@ function openTrInfo(which) {
         row(''+ico('tikslas')+'', 'Kelias', 'Nauji pratimų rekordai — patvirtink arba grąžink pataisyti.') +
         row(''+ico('jega')+'', 'Iššūkiai', 'Rankiniai pateikimai sugrupuoti pagal iššūkį — paspaudus atsidaro suvestinė, ten tvirtini po vieną arba visus.') +
         row(''+ico('zenkliukai')+'', 'Varžybos', 'Varžybų rezultatai ir medaliai — visų tavo vaikų.') +
-        row(''+ico('dvikova')+'', 'Dvikovos', 'Dvikovų rezultatai (rodoma, kai klube įjungta).') +
+        row(''+ico('dvikova')+'', 'Dvikovos', 'Senos dvikovos be datos. Naujas dvikovas vertini treniruotėje — Kalendoriaus dienos lape arba lankomumo lange (rodoma, kai klube įjungta).') +
         row(''+ico('stovykla')+'', 'Stovyklos', 'Vaikų pažymėti stovyklų dalyvavimai — patvirtink, kad gautų EXP (rodoma, kai klube įjungta).') +
         `<div style="margin-top:10px;background:rgba(255,77,0,.1);border:.5px solid rgba(255,77,0,.45);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6;color:#fff;">${ico('ispejimas')} <b>Tvirtink atsakingai!</b> Patvirtink tik tai, ką vaikas tikrai atliko. Nuo to priklauso visa statistika, lygiai ir reitingai — klaidingas patvirtinimas iškreipia duomenis visiems.</div>`;
       break;
@@ -24111,6 +24144,7 @@ function openKidInfo(which) {
         row('<i style="width:10px;height:10px;border-radius:2px;background:#22C55E;display:block;"></i>', 'Žalia diena su +EXP', 'Buvai treniruotėje. Skaičius po data — kiek EXP tą dieną gavai.') +
         row('<i style="width:14px;height:3px;border-radius:2px;background:#FF4D00;display:block;"></i>', 'Oranžinis brūkšnys', 'Būsima treniruotė. Perbrauktas skaičius — treniruotė buvo, bet tavęs nebuvo.') +
         row(''+ico('jega')+'', 'Pastangos', 'Po treniruotės treneris įvertina: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP. Matai dienos lape.') +
+        ((typeof KidGate === 'undefined' || KidGate.on('duels')) ? row('<i style="width:8px;height:8px;border-radius:50%;background:#EC407A;display:block;"></i>', 'Rožinis taškas', 'Tą dieną tavo dvikova. Paspausk dieną — pamatysi, su kuo ir ar priimta. Rezultatus įveda treneris treniruotėje.') : '') +   // v625 (1A)
         row(''+ico('varzybos')+'', 'Spalvotos dienos', 'Violetinė — varžybos, mėlyna — stovykla ar seminaras, auksinė — diržo testas. Paspausk — pamatysi detales ir ar dalyvausi.') +
         row(''+ico('treniruote')+'', 'Šiandien', 'Oranžinė kortelė — šiandienos treniruotė: ką darysim, kodėl ir ką pasiimti. Kai treneris patvirtina, matai visą eigą.') +
         row(''+ico('ranka')+'', 'Spausk dieną', 'Atsidaro dienos lapas: EXP išskaidymas, pastangos, treniruotės blokai su trukmėmis.');
@@ -24119,7 +24153,7 @@ function openKidInfo(which) {
       title = ''+ico('pagalba')+' GRUPĖ';
       // v624 (29A): „?" mygtukas Grupės antraštėje; dvikovų ir grupių iššūkių eilutės — tik jei klubas jas įjungęs (KidGate)
       html = intro('Tavo komanda — grupės draugai, dvikovos ir grupių iššūkiai.') +
-        ((typeof KidGate === 'undefined' || KidGate.on('duels')) ? row(''+ico('dvikova')+'', 'Dvikova', '1 prieš 1 su grupės draugu: bakstelėk draugą sąraše → „Iškviesti", abu įveskite rezultatą, treneris patvirtina. Pergalė +50 · lygiosios +35 · pralaimėjus +25. Iškviesti gali kartą per 7 d.') : '') +
+        ((typeof KidGate === 'undefined' || KidGate.on('duels')) ? row(''+ico('dvikova')+'', 'Dvikova', '1 prieš 1 su grupės draugu: bakstelėk draugą sąraše → „Iškviesti" ir pasirink treniruotę — joje treneris įves abiejų rezultatus. Pergalė +50 · lygiosios +35 · pralaimėjus +25. Iškviesti gali kartą per 7 d.') : '') +
         ((typeof KidGate === 'undefined' || KidGate.on('gc')) ? row(''+ico('tikslas')+'', 'Grupių iššūkiai', 'Klubo paskelbtos grupių varžytuvės — visa grupė renka taškus kartu.') : '') +
         row(''+ico('grupe')+'', 'Komandos draugai', 'Kas treniruojasi su tavimi ir kaip jiems sekasi. Bakstelėk draugą — pamatysi jo kortelę.');
       break;
@@ -24164,11 +24198,11 @@ function openKidInfo(which) {
            <div style="font-size:13px;color:#EC407A;font-weight:800;margin-bottom:6px;">${ico('dvikova')} DVIKOVOS — 1 prieš 1</div>
            Iškviesk komandos draugą į draugišką dvikovą! Kaip:
            <div style="margin-top:6px;color:#fff;line-height:1.75;">
-             <b>1.</b> Rask komandos draugą ir paspausk „Iškviesti į dvikovą".<br>
+             <b>1.</b> Rask komandos draugą, paspausk „Iškviesti į dvikovą" ir pasirink treniruotę.<br>
              <b>2.</b> Pasirink tipą: ${ico('jega')} atsispaudimai · ${ico('koja')} pritūpimai · ${ico('treniruote')} presas · ${ico('laikmatis')} lenta · ${ico('istverme')} bėgimas.<br>
              <b>3.</b> Draugas priima iššūkį.<br>
-             <b>4.</b> Abu atliekate ir įvedate savo rezultatą.<br>
-             <b>5.</b> Treneris patvirtina — ir paaiškėja nugalėtojas! ${ico('trofejai')}
+             <b>4.</b> Treniruotėje abu atliekate — treneris įveda rezultatus.<br>
+             <b>5.</b> Paaiškėja nugalėtojas, EXP gaunate abu! ${ico('trofejai')}
            </div>
            <div style="margin-top:7px;">Aktyvias dvikovas matai <b style="color:#fff;">${(typeof Kal !== 'undefined' && Kal.on()) ? 'Grupės' : 'Iššūkių'}</b> lange. Pergalė <b style="color:#fff;">+50</b> · lygiosios <b style="color:#fff;">+35</b> · net nelaimėjus <b style="color:#fff;">+25</b> EXP — apsimoka visada!</div>
          </div>`);
@@ -34839,6 +34873,7 @@ function subscribeKidNotifications() {
       if (typeof flagOn === 'function' && !flagOn('duels_enabled')) return;   // v622 (9A)
       // v622 (9A): V2 Grupė — priimta / pateikta / atmesta / užbaigta
       if (typeof Kal !== 'undefined' && Kal.on() && Kal.kid && Kal.kid.duels && document.getElementById('v-grupe')?.classList.contains('on')) Kal.kid.duels();
+      if (typeof Kal !== 'undefined' && Kal.on() && Kal.kid && document.getElementById('v-kal')?.classList.contains('on')) Kal.kid.reload();   // MODULIS: Dvk (v625) — dvikova ir kalendoriuje
       if (duel.status !== 'completed') return;
 
       // Pažymėti matytą (kad checkForCompletedDuels nepasikartotų)
@@ -34920,6 +34955,7 @@ function subscribeKidNotifications() {
       if (_isSeen('adj', adj.id)) return;
       _addSeen('adj', adj.id);
       const amt = adj.exp_change || 0;
+      if (/^Dvikova \(/.test(adj.reason || '')) { await loadKidData(); return; }   // v625: dvikovą jau švenčia dvikovos pop-up — ne „trenerio įvertinimas"
       if (amt >= 0) {
         showToast(`${ico('zvaigzde')} TRENERIO ĮVERTINIMAS\n\n${escapeHtml(adj.reason || '')}\n+${amt} EXP`, 'success', null, { confetti: 15, sound: 'exp' });
       } else {
@@ -42336,10 +42372,12 @@ const Kal = {
       const dots = o.count ? '' : ses.slice(0, o.maxDots || 3).map(s => `<i style="background:${this.col(s.group?.color)};"></i>`).join('');
       const cnt = (o.count && ses.length) ? `<u><em style="font-style:normal;font-size:9.5px;font-weight:900;line-height:1;color:var(--mut);">${ses.length}</em></u>` : '';
       const sub = evs.length ? `<span class="ev">${this.evTag(evs[0])}</span>` : '';
-      cells += `<div class="${cls.join(' ')}" onclick="Kal.openDay('${ds}')"><b>${d}</b>${dots ? `<u>${dots}</u>` : cnt}${sub}</div>`;
+      const dvk = (o.duels && typeof Dvk !== 'undefined') ? Dvk.trCell(ds) : '';   // MODULIS: Dvk (v625) — tik trenerio kalendoriui (opt-in; klubo gridHtml be jo)
+      cells += `<div class="${cls.join(' ')}" onclick="Kal.openDay('${ds}')"><b>${d}</b>${dots ? `<u>${dots}</u>` : cnt}${sub}${dvk}</div>`;
     }
     const legend = (o.noLegend ? '' : (this.st.groups || []).map(gr => `<span><i style="background:${this.col(gr.color)};"></i>${this.esc(gr.name)}</span>`).join(''))
-      + `<span style="color:#FF7A33;"><i style="background:#FF7A33;border-radius:50%;"></i>${this.esc(o.attnLabel || 'nepatvirtinta')}</span>`;
+      + `<span style="color:#FF7A33;"><i style="background:#FF7A33;border-radius:50%;"></i>${this.esc(o.attnLabel || 'nepatvirtinta')}</span>`
+      + ((o.duels && typeof Dvk !== 'undefined' && Dvk.on() && Dvk.st.tr.some(x => String(x.session_date || '').startsWith(this.st.ym))) ? '<span style="color:#EC407A;"><i style="background:#EC407A;border-radius:50%;"></i>dvikova</span>' : '');   // MODULIS: Dvk (v625)
     const anim = (this.st.dir ? (this.st.dir > 0 ? ' out-r' : ' out-l') : '') + (this.st.filt ? ' filt' : '');
     this.st.filt = false;
     return `<div class="kal-grid${anim}">
@@ -42410,6 +42448,7 @@ const Kal = {
       if (typeof Atsil !== 'undefined' && Atsil.on()) { try { await Atsil.load(); } catch (_e) { } }   // MODULIS: Atsil (v584) — 👍/😐/👎 prie praėjusių treniruočių
       if (typeof Pavad !== 'undefined' && Pavad.on()) { try { await Pavad.load(r.from, r.to); await Pavad.merge(); } catch (_e) { } }   // MODULIS: Pavad (v585) — pavadavimai
       if (typeof Past !== 'undefined' && Past.on()) { try { await Past.load((this.st.sessions || []).map(x => x.session_id)); } catch (_e) { } }   // MODULIS: Past (v600) — klubo pastabos treniruotėms
+      if (typeof Dvk !== 'undefined' && Dvk.on()) { try { await Dvk.load(r.from, r.to); } catch (e) { console.warn('[kal-tr] dvikovos', e.message || e); } }   // MODULIS: Dvk (v625) — po Pavad (pavaduojamos grupės)
       this.render();
     } catch (e) {
       console.error('[kal-tr]', e);
@@ -42432,7 +42471,7 @@ const Kal = {
       ? `<div class="kal-cta" onclick="Planas.openWizard()"><div class="ic">${ico('prideti')}</div><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Planuoti treniruotes</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">10–15 min klausimų — AI paruoš visą etapą</div></div>${ico('toliau')}</div>`
       : `<div class="kal-empty plan"><div class="ic">${ico('prideti')}</div><b>PLANO DAR NĖRA</b><i>Atsakyk į 10–15 min klausimų — AI paruoš visą etapą, tu tik patvirtinsi.</i><span class="kal-b o" onclick="Planas.openWizard()">Planuoti treniruotes</span></div>`);
     const evBlock = (this.st.events || []).length >= 3 ? this.evListHtml(today) : this.nextHtml(today);   // v557: perkrautam mėnesiui — sąrašas vietoj vienos eilutės
-    c.innerHTML = head + chips + this.gridHtml() + this.warnHtml(today) + (typeof Pavad !== 'undefined' ? Pavad.cardsHtml() : '') + evBlock + cta + this.todayHtml(today) + this.chHtml();   // MODULIS: Pavad (v585)
+    c.innerHTML = head + chips + this.gridHtml({ duels: true }) + this.warnHtml(today) + (typeof Pavad !== 'undefined' ? Pavad.cardsHtml() : '') + evBlock + cta + this.todayHtml(today) + this.chHtml();   // MODULIS: Pavad (v585)
     if (typeof _updateTrainerNotifCounts === 'function') try { _updateTrainerNotifCounts(); } catch (_e) { }   // v580: varpelio skaičius naujai sukurtame badge
     this.st.dir = 0;
     this.afterRender(c);
@@ -42676,7 +42715,8 @@ const Kal = {
     this.st.day = dateStr;
     const ses = this.sessionsOn(dateStr);
     const evs = this.eventsOn(dateStr);
-    const body = (evs.map(ev => this.evCardHtml(ev)).join('') + (ses.length ? `<div class="kal-rows">${ses.map(s => this.rowHtml(s, dateStr, { blocks: true })).join('<hr>')}</div>` : ''))
+    const dvk = typeof Dvk !== 'undefined' ? Dvk.trDayHtml(dateStr) : '';   // MODULIS: Dvk (v625) — dvikovos VIRŠ treniruočių (rezultatai prieš lankomumą ir pastangas)
+    const body = (evs.map(ev => this.evCardHtml(ev)).join('') + dvk + (ses.length ? `${dvk ? '<div class="kal-sec"><b>TRENIRUOTĖS</b><span></span></div>' : ''}<div class="kal-rows">${ses.map(s => this.rowHtml(s, dateStr, { blocks: true })).join('<hr>')}</div>` : ''))
       || '<div class="kal-empty"><b>Šią dieną treniruočių nėra</b></div>';
     const m = Number(dateStr.slice(5, 7)) - 1, d = Number(dateStr.slice(8, 10));
     const sub = `${d} ${this.MONG[m]} · ${ses.length ? ses.length + ' ' + _ltPl(ses.length, 'treniruotė', 'treniruotės', 'treniruočių') : (evs.length ? 'renginys' : 'laisva diena')}`;
@@ -42893,13 +42933,15 @@ Object.assign(Kal, {
         const r = this.K.range(ym);
         const clubId = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || this.st.group?.club_id || null;
         const needCh = this.ownCh && (!this.st.chAt || Date.now() - this.st.chAt > 60000);   // v623 (12A): iššūkiai nuo mėnesio nepriklauso — 60 s atmintis
-        const [ses, evs, exp, intents, ch, stk] = await Promise.all([
+        const dvkTo = (typeof Dvk !== 'undefined') ? [r.to, Kal.addDays(Dvk.today(), 14)].sort()[1] : r.to;   // MODULIS: Dvk — ir artimiausia dvikova kitą mėnesį
+        const [ses, evs, exp, intents, ch, stk, dvk] = await Promise.all([
           this.st.group ? this.K.monthSessions({ groups: [this.st.group], from: r.from, to: r.to, kidId: kid }) : Promise.resolve([]),
           this.K.monthEvents(clubId, r.from, r.to).catch(() => []),
           this.loadExp(kid, r.from, r.to).catch(e => { console.warn('[kal-kid] exp', e); return { exp: {}, att: {} }; }),
           this.loadIntents(kid).catch(() => ({ intents: {}, rsvp: {} })),
           needCh ? this.loadCh(kid, clubId).catch(e => { console.warn('[kal-kid] ch', e); return null; }) : Promise.resolve(null),
           this.K.attStreak(kid).catch(e => { console.warn('[kal-kid] serija', e.message || e); return null; }),   // v624 (28A): ta pati kaip Pagrindinyje
+          (typeof Dvk !== 'undefined') ? Dvk.forKid(kid, r.from, dvkTo).catch(e => { console.warn('[kal-kid] dvikovos', e.message || e); return []; }) : Promise.resolve([]),   // v625 (1A)
         ]);
         if ((stale = isStale())) return;   // finally perkraus su naujais parametrais
         // v623 (15A): klubo jungikliai — išjungtų renginių tipų nerodom; lankomumas išjungtas — jokio „buvo / nebuvo" (EXP eilutės lieka)
@@ -42907,6 +42949,7 @@ Object.assign(Kal, {
         if (attOff) (ses || []).forEach(s => { s.present = 0; s.total = 0; s.effortDone = 0; });
         this.st.sessions = ses; this.st.events = kg ? (evs || []).filter(ev => kg.event(ev)) : evs; this.st.exp = exp.exp || {}; this.st.att = attOff ? {} : (exp.att || {}); this.st.intents = intents.intents; this.st.rsvp = intents.rsvp;
         this.st.streakN = attOff ? 0 : stk;
+        this.st.duels = dvk || [];   // MODULIS: Dvk (v625)
         if (ch) { this.st.ch = this.chTiles(ch.active, ch.progress, ch.subs); this.st.chAt = Date.now(); }
         this.render();
       } catch (e) {
@@ -42980,6 +43023,7 @@ Object.assign(Kal, {
         if (/atšaukta/i.test(rs_)) addTs(a.created_at, a.exp_change, 'revoke', 'Premija atšaukta');
         else if (/^Grupių iššūkis:/i.test(rs_)) addTs(a.created_at, a.exp_change, 'gc', rs_.replace(/^Grupių iššūkis:\s*/i, ''));
         else if (/^Stovykla:/i.test(rs_)) addTs(a.created_at, a.exp_change, 'camp', rs_.replace(/^Stovykla:\s*/i, ''));
+        else if (/^Dvikova \(/.test(rs_)) addTs(a.created_at, a.exp_change, 'duel', rs_);   // v625 (1A): duel_judge
         else addTs(a.created_at, a.exp_change, 'coach', rs_ || 'Trenerio įvertinimas');
       });
       (rs[1].data || []).forEach(s => addTs(s.created_at, s.exp_awarded, 'streak', `Serija ${s.streak_count} (${s.streak_type === 'training' ? 'treniruočių' : s.streak_type === 'weekly' ? 'savaičių' : 'mėnesių'})`));
@@ -43027,16 +43071,17 @@ Object.assign(Kal, {
         if (!wasHere && exp > 0 && !evs.length) inner += `<span class="exp" style="color:#FFD700;">+${exp}</span>`;   // v623: EXP be treniruotės (iššūkis, rekordas) — kad mėnesio suma sutaptų su langeliais
         if (evs.length) { cls.push('ev', evs[0].cls); if (!wasHere) inner += `<span class="ev">${K.evTag(evs[0])}</span>`; }
         if (ses.length && ds > today) { cls.push('up'); inner += '<span class="bar"></span>'; }
+        if (typeof Dvk !== 'undefined') inner += Dvk.kidCell(this, ds);   // MODULIS: Dvk (v625) — rožinis taškas
         cells += `<div class="${cls.join(' ')}" onclick="${this.ns}.openDay('${ds}')">${inner}</div>`;
       }
       const head = `<div class="kal-head" style="padding-top:4px;"><div style="min-width:0;"><div class="kal-mon">${K.MON[r.m - 1].toUpperCase()}${r.y !== new Date().getFullYear() ? ` <i>${String(r.y).slice(2)}</i>` : ''}</div><div class="kal-sub"><span>${K.esc(this.name())}</span>${this.st.group ? `<s>/</s><span>${K.esc(this.st.group.name)}</span>` : ''}${marked ? `<s>/</s><span>${this.T.wasN} ${was} iš ${marked}</span>` : ''}</div></div>
         <div class="kal-hbtn"><button onclick="${this.ns}.shift(-1)" title="Ankstesnis">${ico('atgal')}</button><button onclick="${this.ns}.shift(1)" title="Kitas">${ico('toliau')}</button></div></div>`;
       const _on = k => typeof KidGate === 'undefined' || KidGate.on(k);   // v623 (15A): legenda tik įjungtoms funkcijoms
-      const legend = `<div class="kal-leg">${_on('attendance') ? `<span><i style="background:#22C55E;"></i>${this.T.legWas}</span>` : ''}<span><i class="bar" style="background:#FF4D00;"></i>Treniruotė</span>${_on('comp') ? '<span><i style="background:#A855F7;"></i>Varžybos</span>' : ''}${_on('camps') ? '<span><i style="background:#3B82F6;"></i>Stovykla</span>' : ''}${_on('belt') ? '<span><i style="background:#FFD700;"></i>Diržo testas</span>' : ''}</div>`;
+      const legend = `<div class="kal-leg">${_on('attendance') ? `<span><i style="background:#22C55E;"></i>${this.T.legWas}</span>` : ''}<span><i class="bar" style="background:#FF4D00;"></i>Treniruotė</span>${_on('comp') ? '<span><i style="background:#A855F7;"></i>Varžybos</span>' : ''}${_on('camps') ? '<span><i style="background:#3B82F6;"></i>Stovykla</span>' : ''}${_on('belt') ? '<span><i style="background:#FFD700;"></i>Diržo testas</span>' : ''}${_on('duels') && (this.st.duels || []).some(x => String(x.session_date || '').startsWith(this.st.ym)) ? '<span><i style="background:#EC407A;border-radius:50%;"></i>Dvikova</span>' : ''}</div>`;
       const expRow = `<div class="kal-exp-row"><span>EXP ${K.MONA[r.m - 1]}</span><span><b data-count="${Math.max(0, monthExp)}">0</b><em>EXP</em></span></div>`;
       const anim = this.st.dir ? (this.st.dir > 0 ? ' out-r' : ' out-l') : '';
       const grid = `<div class="kal-grid${anim}"><div class="kal-dow">${K.DOW.map(x => `<span>${x}</span>`).join('')}</div><div class="kal-cells">${cells}</div>${legend}${expRow}</div>`;
-      c.innerHTML = this.kidsHtml() + head + grid + this.effHtml(r) + this.todayHtml(today) + this.compHtml(today) + this.etapasBtn() + this.chHtml();
+      c.innerHTML = this.kidsHtml() + head + grid + this.effHtml(r) + this.todayHtml(today) + (typeof Dvk !== 'undefined' ? Dvk.kidTodayHtml(this, today) : '') + this.compHtml(today) + this.etapasBtn() + this.chHtml();
       this.st.dir = 0;
       K.afterRender(c);
     },
@@ -43150,6 +43195,7 @@ Object.assign(Kal, {
         parts.push(`<div class="kal-rows" style="padding-bottom:8px;"><div class="kal-row"><div class="gr" style="background:${K.col(this.st.group?.color)};"></div><div class="bd"><div class="nm"><span>${conf ? K.esc(s.title || 'Treniruotė') : 'Treniruotė'}</span>${tag}</div>${conf && s.why_text ? `<div class="ds" style="font-weight:700;">${K.esc(s.why_text)}</div>` : ''}${conf && s.bring_text ? `<div class="mt"><b style="color:var(--txt);">Pasiimk:</b> ${K.esc(s.bring_text)}</div>` : ''}${this.blocksHtml(s, conf)}</div></div></div>`);
         if (!conf) parts.push('<div class="kal-empty">Treniruotės turinys atsiras, kai treneris ją patvirtins.</div>');
       });
+      if (typeof Dvk !== 'undefined') { const dv = Dvk.kidDayHtml(this, ds); if (dv) parts.push(dv); }   // MODULIS: Dvk (v625)
       evs.forEach(ev => parts.push(this.eventHtml(ev, ds, today)));
       if (!parts.length) parts.push('<div class="kal-empty"><b>Šią dieną treniruočių nėra</b></div>');
       const m = Number(ds.slice(5, 7)) - 1, d = Number(ds.slice(8, 10));
@@ -46628,7 +46674,7 @@ const KidInfo = {
     h += row('augimas', 'Rekordai (Kelias)', `Pratimo EXP — iki ${b('100')}: bronza 25 · sidabras 50 · auksas 75 · MAX 100 (pagal tavo amžiaus ir lyties normatyvą). Pagerinęs rekordą gauni skirtumą. Patvirtina treneris.`);
     if (this.on('comp')) h += row('trofejai', 'Varžybos', `Vietinės: 1 vieta ${b('+150')} · 2 — ${b('+100')} · 3 — ${b('+70')} · dalyvavimas ${b('+40')} (kumitė dar +3 už pergalę, +1 už pralaimėtą kovą). Vidutinės 400 / 250 / 180 / 100, Europos 1000 / 700 / 500 / 300.`);
     if (this.on('belt')) h += row('dirzas', 'Diržo egzaminas', `Išlaikius: 9–1 kyu ${b('+100…+400')}, 1–5 dan ${b('+1000…+3000')}. Neišlaikius vis tiek ${b('+25…+100')} — už drąsą.`);
-    if (this.on('duels')) h += row('dvikova', 'Dvikovos', `Pergalė ${b('+50')} · lygiosios ${b('+35')} · pralaimėjus ${b('+25')}. Iškviesti gali kartą per 7 d., priimti — be ribos.`);
+    if (this.on('duels')) h += row('dvikova', 'Dvikovos', `Pergalė ${b('+50')} · lygiosios ${b('+35')} · pralaimėjus ${b('+25')}. Vyksta treniruotėje, rezultatus įveda treneris. Iškviesti gali kartą per 7 d., priimti — be ribos.`);
     return h;
   },
   // 31A: tas pats localStorage raktas kaip markNotifRead / markAllNotifRead
@@ -46643,6 +46689,211 @@ const KidInfo = {
   seenConv(convId) {
     if (currentProfile?.role !== 'kid' || !convId || typeof allNotifications === 'undefined') return;
     (allNotifications.messages || []).filter(n => n.link === 'msg:' + convId).forEach(n => markNotifRead(n.id));
+  },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: Dvk =====
+// v625 (savininko 1A + patikslinimas 09-23, PLANAS-VAIKO-PAPILDYMAI): dvikova vyksta KONKREČIOJE savo grupės treniruotėje (≤ 14 d.).
+// Kvietime renkamasi treniruotė; dvikova rodoma abiejų vaikų (tėvams — tik skaityti) ir trenerio kalendoriuje; rezultatus įveda
+// TRENERIS — dienos lape ir lankomumo lange (prieš pastangų žymėjimą); nugalėtoją ir EXP (+50 / +35 / +25) skaičiuoja serveris (duel_judge).
+// Serveris: server-DVIKOVA-data-2026-09-23.sql (session_date, group_id, sargai, duel_judge, duel_not_held, naktinis 'expired').
+// Datų taisyklė = serverio spobu_group_slot_time: Kal.groupTimes (schedule → training_days), šiandien — tik kol anksčiausia treniruotė neprasidėjo.
+const Dvk = {
+  st: { tr: [], names: {} },
+  on() { return typeof KidGate === 'undefined' || KidGate.on('duels'); },
+  esc(s) { return escapeHtml(String(s == null ? '' : s)); },
+  today() { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Vilnius' }).format(new Date()); } catch (_e) { return Kal.ymd(new Date()); } },
+  nowHm() { try { return new Intl.DateTimeFormat('lt-LT', { timeZone: 'Europe/Vilnius', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date()); } catch (_e) { return new Date().toTimeString().slice(0, 5); } },
+  past(d) { return !!(d && d.session_date) && d.session_date < this.today(); },
+  label(ds, time) {
+    const t0 = this.today();
+    const w = ds === t0 ? 'Šiandien' : (ds === Kal.addDays(t0, 1) ? 'Rytoj' : `${Kal.DNOM[Kal.dayNo(ds) - 1]} ${ds.slice(5, 7)}-${ds.slice(8, 10)}`);
+    return w + (time ? ' ' + time : '');
+  },
+  // „kada" sakinio viduryje (galininkas): šiandien / rytoj / trečiadienį (09-25) — „… treniruotėje"
+  DACC: ['pirmadienį', 'antradienį', 'trečiadienį', 'ketvirtadienį', 'penktadienį', 'šeštadienį', 'sekmadienį'],
+  at(ds) { const t0 = this.today(); return ds === t0 ? 'šiandien' : (ds === Kal.addDays(t0, 1) ? 'rytoj' : `${this.DACC[Kal.dayNo(ds) - 1]} (${ds.slice(5, 7)}-${ds.slice(8, 10)})`); },
+  At(ds) { const s = this.at(ds); return s.charAt(0).toUpperCase() + s.slice(1); },
+  nm(id) { return this.st.names[id] || (typeof getKidName === 'function' && currentProfile?.role === 'kid' ? getKidName(id) : '') || 'Vaikas'; },
+  async names(ids) {
+    const need = [...new Set((ids || []).filter(id => id && !this.st.names[id]))];
+    (typeof allTrainerKids !== 'undefined' && Array.isArray(allTrainerKids) ? allTrainerKids : []).forEach(k => { if (need.includes(k.id) && k.first_name) this.st.names[k.id] = `${k.first_name}${k.last_name ? ' ' + k.last_name[0] + '.' : ''}`; });
+    const rest = need.filter(id => !this.st.names[id]); if (!rest.length) return;
+    try { Object.assign(this.st.names, await _fetchKidNameMap(rest)); } catch (_e) { }
+  },
+
+  // ── Kvietimas: artimiausios savo grupės treniruotės (≤ 14 d.) ──
+  nextSessions(gr, n, days) {
+    const times = Kal.groupTimes(gr); if (!times.length) return [];
+    const t0 = this.today(), hm = this.nowHm(), out = [];
+    for (let i = 0; i <= (days || 14) && out.length < (n || 6); i++) {
+      const ds = Kal.addDays(t0, i), dn = Kal.dayNo(ds);
+      const first = times.filter(t => t.day === dn).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')))[0];
+      if (!first) continue;
+      if (i === 0 && !(/^\d{2}:\d{2}$/.test(first.time || '') && first.time > hm)) continue;   // kaip serveris: šiandien — tik kol neprasidėjo
+      out.push({ date: ds, time: first.time || '' });
+    }
+    return out;
+  },
+  async nextFor(kid) {
+    if (!kid?.group_id) return [];
+    let gr = (typeof Kal !== 'undefined' && Kal.kid?.st?.group && Kal.kid.st.group.id === kid.group_id) ? Kal.kid.st.group : null;
+    if (!gr) { const { data } = await sb.from('groups').select('id, name, training_days, train_time, schedule').eq('id', kid.group_id).maybeSingle(); gr = data || null; }
+    return gr ? this.nextSessions(gr, 6, 14) : [];
+  },
+  pickHtml(list) {
+    if (!list.length) return '<div style="font-size:11px;color:var(--mut);line-height:1.5;">Tavo grupės tvarkaraštis dar nenustatytas — paprašyk trenerio.</div>';
+    return `<div class="kal-chips" style="padding:0;flex-wrap:wrap;">${list.map(x => `<span class="kal-chip" data-dvk-d="${x.date}" onclick="Dvk.pick('${x.date}')">${this.esc(this.label(x.date, x.time))}</span>`).join('')}</div>`
+      + '<div style="font-size:8px;color:var(--mut);margin-top:4px;">Dvikova vyks šioje treniruotėje — treneris įvertins vietoje</div>';
+  },
+  pick(ds) {
+    if (window._duelChallengeData) window._duelChallengeData.sessionDate = ds;
+    document.querySelectorAll('#duel-challenge-modal [data-dvk-d]').forEach(el => el.classList.toggle('on', el.dataset.dvkD === ds));
+  },
+
+  // ── Vaiko kortelės (Grupė / sąrašas) ir pop-up ──
+  when(d) { return d?.session_date ? `<div style="font-size:9.5px;color:#EC407A;font-weight:800;margin-top:6px;">${ico('kalendorius')} ${this.esc(this.At(d.session_date))} treniruotėje</div>` : ''; },
+  cardActive(d) {
+    const t = (d && this.past(d)) ? 'Laukiam trenerio įvertinimo' : ((d && d.session_date === this.today()) ? 'Šiandien treniruotėje — rezultatus įves treneris' : 'Susitinkat treniruotėje — rezultatus įves treneris');
+    return `<div style="background:rgba(236,64,122,.08);border-radius:8px;padding:7px;margin-top:6px;text-align:center;"><div style="font-size:10px;color:#EC407A;font-weight:700;">${ico('treniruote')} ${t}</div></div>`;
+  },
+  cardPast() { return '<div style="background:rgba(255,255,255,.05);border-radius:8px;padding:7px;margin-top:6px;text-align:center;"><div style="font-size:10px;color:var(--mut);font-weight:700;">Dvikovos diena praėjo</div></div>'; },
+  async respond(id, action) {
+    if (typeof respondToDuel === 'function') await respondToDuel(id, action);
+    if (typeof Kal !== 'undefined') { Kal.sheetClose('kal-v-day'); if (Kal.kid && document.getElementById(Kal.kid.cid)) await Kal.kid.reload(); }
+  },
+
+  // ── Vaiko / tėvo kalendorius (K = Kal.kid arba Kal.parent) ──
+  async forKid(kidId, from, to) {
+    if (!kidId || !this.on()) return [];
+    const { data, error } = await sb.from('duels').select('id, challenger_id, opponent_id, duel_type, status, session_date, winner_id, challenger_value, opponent_value')
+      .or(`challenger_id.eq.${kidId},opponent_id.eq.${kidId}`).gte('session_date', from).lte('session_date', to).neq('status', 'declined').limit(100);
+    if (error) throw error;
+    await this.names((data || []).flatMap(x => [x.challenger_id, x.opponent_id]));
+    return data || [];
+  },
+  kidCell(K, ds) { return this.on() && (K.st.duels || []).some(x => x.session_date === ds && x.status !== 'expired') ? '<span class="dvk-dot"></span>' : ''; },
+  tag(x, me) {
+    if (x.status === 'completed') return `<span class="kal-tag ${x.winner_id == null || x.winner_id === me ? 'ok' : 'mut'}">${x.winner_id == null ? 'LYGIOSIOS' : (x.winner_id === me ? 'PERGALĖ' : 'GERA KOVA')}</span>`;
+    if (x.status === 'expired' || (x.status === 'pending' && this.past(x))) return '<span class="kal-tag mut">NEĮVYKO</span>';
+    if (x.status === 'pending') return '<span class="kal-tag wait">LAUKIA ATSAKYMO</span>';
+    if (x.status === 'submitted') return '<span class="kal-tag wait">LAUKIA TRENERIO</span>';
+    return '<span class="kal-tag ai">PRIIMTA</span>';
+  },
+  kidDayHtml(K, ds) {
+    if (!this.on()) return '';
+    const list = (K.st.duels || []).filter(x => x.session_date === ds); if (!list.length) return '';
+    const me = K.kidId(), own = K.ns === 'Kal.kid';
+    const rows = list.map(x => {
+      const t = DUEL_TYPES[x.duel_type] || { name: 'Dvikova', unit: '' };
+      const other = x.challenger_id === me ? x.opponent_id : x.challenger_id;
+      const ask = own && x.status === 'pending' && x.opponent_id === me && !this.past(x);
+      const res = x.status === 'completed' ? `<div class="mt">${this.esc(this.nm(x.challenger_id))} ${this.esc(x.challenger_value ?? '–')} · ${this.esc(x.opponent_value ?? '–')} ${this.esc(this.nm(x.opponent_id))} ${this.esc(t.unit)}</div>` : '';
+      const hint = (x.status === 'active' || (x.status === 'pending' && !this.past(x))) ? '<div class="mt">Rezultatus įves treneris treniruotėje</div>' : '';
+      const acts = ask ? `<div class="kal-acts"><span class="kal-b g" onclick="Dvk.respond('${x.id}','accept')">Priimti</span><span class="kal-b" onclick="Dvk.respond('${x.id}','decline')">Atmesti</span></div>` : '';
+      return `<div class="kal-row"><div class="gr" style="background:#EC407A;"></div><div class="bd"><div class="nm"><span>${this.esc(t.name)} · su ${this.esc(this.nm(other))}</span>${this.tag(x, me)}</div>${res}${hint}${acts}</div></div>`;
+    }).join('');
+    return `<div class="kal-sec"><b>DVIKOVA</b><span></span></div><div class="kal-rows" style="padding-bottom:8px;">${rows}</div>`;
+  },
+  kidTodayHtml(K, today) {
+    if (!this.on()) return '';
+    const me = K.kidId();
+    const nx = (K.st.duels || []).filter(x => x.session_date >= today && (x.status === 'pending' || x.status === 'active')).sort((a, b) => a.session_date.localeCompare(b.session_date))[0];
+    if (!nx) return '';
+    const t = DUEL_TYPES[nx.duel_type] || { name: 'Dvikova' };
+    const other = nx.challenger_id === me ? nx.opponent_id : nx.challenger_id;
+    const ask = K.ns === 'Kal.kid' && nx.status === 'pending' && nx.opponent_id === me;
+    const sub = ask ? 'Tave iškvietė — priimsi?' : (nx.status === 'pending' ? 'Laukia atsakymo' : 'Rezultatus įves treneris treniruotėje');
+    return `<div class="kal-sec"><b>DVIKOVA</b><em class="o">${this.esc(this.label(nx.session_date).toUpperCase())}</em><span></span></div>`
+      + `<div class="kal-card" style="border-left:3px solid #EC407A;display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;cursor:pointer;" onclick="${K.ns}.openDay('${nx.session_date}')"><div style="font-size:12.5px;font-weight:900;">${this.esc(t.name)} · su ${this.esc(this.nm(other))}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${sub}</div></div>${ask ? `<span class="kal-b g lg" onclick="Dvk.respond('${nx.id}','accept')">Priimti</span>` : ''}</div>`;
+  },
+
+  // ── Trenerio kalendorius + lankomumo langas: rezultatus įveda treneris ──
+  async load(from, to) {
+    this.st.tr = [];
+    if (!this.on() || typeof Kal === 'undefined') return;
+    const gids = [...new Set([...(Kal.st.groups || []).map(g => g.id), ...(Kal.st.sessions || []).map(s => s.group_id)].filter(Boolean))];
+    const uid = currentUser?.id;
+    const or = [gids.length ? `group_id.in.(${gids.join(',')})` : '', uid ? `chosen_trainer_id.eq.${uid}` : ''].filter(Boolean).join(',');
+    if (!or) return;
+    const { data, error } = await sb.from('duels').select('id, challenger_id, opponent_id, duel_type, status, session_date, group_id, chosen_trainer_id, winner_id, challenger_value, opponent_value, note')
+      .gte('session_date', from).lte('session_date', to).neq('status', 'declined').or(or).limit(300);
+    if (error) throw error;
+    this.st.tr = data || [];
+    await this.names(this.st.tr.flatMap(x => [x.challenger_id, x.opponent_id]));
+  },
+  vis(x) { return typeof Kal === 'undefined' || Kal.st.sel === 'all' || x.group_id === Kal.st.sel || x.chosen_trainer_id === currentUser?.id; },
+  trCell(ds) { return this.on() && this.st.tr.some(x => x.session_date === ds && ['pending', 'active', 'submitted'].includes(x.status) && this.vis(x)) ? '<span class="dvk-dot"></span>' : ''; },
+  trTag(x) {
+    if (x.status === 'completed') return '<span class="kal-tag ok">ĮVERTINTA</span>';
+    if (x.status === 'expired' || (x.status === 'pending' && this.past(x))) return '<span class="kal-tag mut">NEĮVYKO</span>';
+    if (x.status === 'pending') return '<span class="kal-tag wait">LAUKIA ATSAKYMO</span>';
+    return '<span class="kal-tag ai">PRIIMTA</span>';
+  },
+  trRow(x, ds, today) {
+    const t = DUEL_TYPES[x.duel_type] || { name: 'Dvikova', unit: '', moreIsBetter: true };
+    const a = this.nm(x.challenger_id), b = this.nm(x.opponent_id);
+    let body = '';
+    if (x.status === 'active' || x.status === 'submitted') {
+      body = ds <= today
+        ? `<div class="dvk-judge"><label>${this.esc(a)}<input type="text" inputmode="decimal" autocomplete="off" id="dvk-a-${x.id}" value="${this.esc(x.challenger_value ?? '')}"></label><label>${this.esc(b)}<input type="text" inputmode="decimal" autocomplete="off" id="dvk-b-${x.id}" value="${this.esc(x.opponent_value ?? '')}"></label><em>${this.esc(t.unit)}${t.moreIsBetter === false ? ' · mažiau — geriau' : ''}</em></div><div class="kal-acts"><span class="kal-b g" onclick="Dvk.judge('${x.id}')">Įvertinti</span><span class="kal-b" onclick="Dvk.notHeld('${x.id}')">Neįvyko</span></div>`
+        : '<div class="mt">Priimta — įvertinsi treniruotėje</div>';
+    } else if (x.status === 'pending') body = `<div class="mt">${this.past(x) ? 'Nepriimta laiku' : 'Laukia, ar ' + this.esc(b) + ' priims'}</div>`;
+    else if (x.status === 'completed') body = `<div class="mt">${this.esc(a)} ${this.esc(x.challenger_value ?? '–')} · ${this.esc(x.opponent_value ?? '–')} ${this.esc(b)} ${this.esc(t.unit)} · ${x.winner_id == null ? 'lygiosios' : 'laimėjo ' + this.esc(this.nm(x.winner_id))}</div>`;
+    return `<div class="kal-row"><div class="gr" style="background:#EC407A;"></div><div class="bd"><div class="nm"><span>${this.esc(a)} vs ${this.esc(b)}</span>${this.trTag(x)}</div><div class="mt">${this.esc(t.name)}${x.note ? ' · „' + this.esc(x.note) + '"' : ''}</div>${body}</div></div>`;
+  },
+  trDayHtml(ds) {
+    if (!this.on()) return '';
+    this.st.day = ds;   // after() — Kal.st.day nunulinamas, kai lapas atidaromas iš naujo (sheetOpen uždaro seną su onClose)
+    const list = this.st.tr.filter(x => x.session_date === ds && this.vis(x)); if (!list.length) return '';
+    const today = this.today();
+    return `<div class="kal-sec"><b>DVIKOVOS${ds === today ? ' ŠIANDIEN' : ''}</b><em class="o">${list.length}</em><span></span></div><div class="kal-rows" style="padding-bottom:4px;">${list.map(x => this.trRow(x, ds, today)).join('<hr>')}</div>`
+      + (list.some(x => x.status === 'active' || x.status === 'submitted') && ds <= today ? '<div style="font-size:10px;color:var(--mut);padding:0 18px 10px;line-height:1.4;">Įvesk rezultatus prieš žymėdamas lankomumą ir pastangas.</div>' : '');
+  },
+  // lankomumo lange — virš vaikų sąrašo („prieš skyrimą, kas stengėsi")
+  async attMount(s) {
+    const el = document.getElementById('dvk-att'); if (!el) return;
+    if (!s || !this.on()) { el.innerHTML = ''; return; }
+    const date = s.date, gid = s.groupId;
+    const { data, error } = await sb.from('duels').select('id, challenger_id, opponent_id, duel_type, status, session_date, group_id, chosen_trainer_id, winner_id, challenger_value, opponent_value, note')
+      .eq('group_id', gid).eq('session_date', date).neq('status', 'declined').limit(50);
+    if (typeof _attState === 'undefined' || !_attState || _attState.date !== date || _attState.groupId !== gid) return;   // data pasikeitė
+    if (error || !data || !data.length) { el.innerHTML = ''; return; }
+    await this.names(data.flatMap(x => [x.challenger_id, x.opponent_id]));
+    el.innerHTML = `<div class="dvk-att"><div class="dvk-att-t">${ico('dvikova')} DVIKOVOS — ĮVESK PRIEŠ PASTANGAS</div><div class="kal-rows">${data.map(x => this.trRow(x, date, this.today())).join('<hr>')}</div></div>`;
+  },
+  num(id) { const v = String(document.getElementById(id)?.value || '').replace(',', '.').trim(); const n = Number(v); return v && isFinite(n) ? n : NaN; },
+  async judge(id) {
+    if (this._busy) return;
+    const a = this.num('dvk-a-' + id), b = this.num('dvk-b-' + id);
+    if (!(a > 0) || !(b > 0)) { showToast(ico('klaida') + ' Įvesk abiejų vaikų rezultatus (daugiau nei 0; dešimtainės — su kableliu ar tašku)', 'error', 4500); return; }
+    this._busy = true;
+    try {
+      const { data, error } = await sb.rpc('duel_judge', { p_duel: id, p_ch: a, p_op: b });
+      if (error) throw error;
+      const w = data && data.winner_id;
+      showToast(ico('patvirtinta') + ' ' + (w ? `Laimėjo ${this.esc(this.nm(w))} — +50 / +25 EXP` : 'Lygiosios — abiem po +35 EXP'), 'success');
+      await this.after();
+    } catch (e) { showToast(ico('klaida') + ' ' + escapeHtml(_userError(e)), 'error', 5000); }
+    finally { this._busy = false; }
+  },
+  async notHeld(id) {
+    const ok = typeof appConfirm === 'function' ? await appConfirm('Pažymėti, kad dvikova neįvyko? EXP nebus skirtas.') : true;
+    if (!ok) return;
+    const { error } = await sb.rpc('duel_not_held', { p_duel: id });
+    if (error) { showToast(ico('klaida') + ' ' + escapeHtml(_userError(error)), 'error', 5000); return; }
+    showToast('Dvikova pažymėta: neįvyko');
+    await this.after();
+  },
+  async after() {
+    if (typeof _attState !== 'undefined' && _attState && document.getElementById('att-modal')) await this.attMount(_attState);
+    if (typeof Kal !== 'undefined' && document.getElementById('kal-tr-content') && Kal.st.ym) {
+      const d = document.getElementById('kal-day') ? (Kal.st.day || this.st.day) : null, r = Kal.range(Kal.st.ym);
+      try { await this.load(r.from, r.to); } catch (_e) { }
+      Kal.render(); if (d) Kal.openDay(d);
+    }
+    if (typeof loadPendingDuels === 'function') try { loadPendingDuels(); } catch (_e) { }
   },
 };
 // ===== /MODULIS =====
