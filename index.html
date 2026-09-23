@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=622">
+<link rel="stylesheet" href="styles.css?v=623">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v622</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v623</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -1091,7 +1091,7 @@ window.addEventListener('unhandledrejection', function(e) {
         </div>
         
         <!-- 4 TABAI -->
-        <div style="padding:12px 16px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+        <div id="v-notif-tabs" style="padding:12px 16px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
           <button class="notif-tab" data-tab="system" onclick="switchNotifTab('system')" style="background:rgba(255,77,0,.15);color:#FF7A33;border:.5px solid rgba(255,77,0,.4);padding:8px 4px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;">
             <span><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span>
             <span>Sistema <span id="v-notif-count-system" style="opacity:.7;"></span></span>
@@ -1175,8 +1175,8 @@ window.addEventListener('unhandledrejection', function(e) {
     
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> REITINGAI - kompaktiški 4 kvadratai vienoje eilėje -->
     <div class="st"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-statistika"></use></svg>MANO REITINGAI <span style="font-size:10px;color:rgba(255,255,255,.55);font-weight:700;text-transform:none;letter-spacing:.5px;" id="v-rank-category-info">(kategorija)</span></div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 16px;">
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openStatWithFilter('competitions')">
+    <div id="v-rank-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 16px;">
+      <div id="v-rank-comp-tile" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openStatWithFilter('competitions')">
         <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#FFD700;text-shadow:0 0 6px rgba(255,215,0,.4);line-height:1;" id="v-rank-comp">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Varžybos</div>
@@ -1186,7 +1186,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#C0C0C0;text-shadow:0 0 6px rgba(192,192,192,.4);line-height:1;" id="v-rank-exp">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">EXP</div>
       </div>
-      <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openStatWithFilter('challenges')">
+      <div id="v-rank-ish-tile" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;" onclick="openStatWithFilter('challenges')">
         <div style="font-size:16px;line-height:1;margin-bottom:2px;"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#CD7F32;text-shadow:0 0 6px rgba(205,127,50,.4);line-height:1;" id="v-rank-ish">#–</div>
         <div style="font-size:7px;color:var(--mut);letter-spacing:.3px;font-weight:700;text-transform:uppercase;margin-top:2px;">Iššūkiai</div>
@@ -1202,7 +1202,7 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-kalendorius"></use></svg> ARTIMIAUSI RENGINIAI (varžybos + stovyklos) -->
-    <div class="st"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-kalendorius"></use></svg>ARTIMIAUSI RENGINIAI</div>
+    <div class="st" id="v-next-event-t"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:5px;"><use href="#i-kalendorius"></use></svg>ARTIMIAUSI RENGINIAI</div>
     <div id="v-next-event" onclick="g('v','v-comp');if(typeof loadKidCompetitions==='function')loadKidCompetitions();" style="margin:0 16px;padding:12px;background:linear-gradient(135deg, rgba(255,215,0,.12), rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.3);border-radius:14px;display:flex;align-items:center;gap:12px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,215,0,.2);transition:transform .15s, border-color .2s;" onmouseenter="this.style.borderColor='rgba(255,215,0,.6)'" onmouseleave="this.style.borderColor='rgba(255,215,0,.3)'">
       <div style="font-size:28px;line-height:1;" id="v-next-event-icon"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
       <div style="flex:1;">
@@ -1239,7 +1239,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">KALENDORIUS</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openKidInfo('kal')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div onclick="openKidAttendance()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Lankomumas"><svg class="ico" aria-hidden="true"><use href="#i-lankomumas"></use></svg></div>
+      <div id="kal-v-att-btn" onclick="openKidAttendance()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Lankomumas"><svg class="ico" aria-hidden="true"><use href="#i-lankomumas"></use></svg></div>
       <div onclick="toggleNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg></div>
       <div onclick="openKidSettings()" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
@@ -1457,7 +1457,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="v-comp">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">VARŽYBOS</div>
+    <div id="v-comp-title" style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">VARŽYBOS</div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openKidInfo('comp')" style="width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
       <div onclick="toggleNotifications()" style="position:relative;width:40px;height:40px;background:var(--card);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
@@ -4764,7 +4764,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=622"></script>
+<script src="app.js?v=623"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

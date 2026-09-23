@@ -747,6 +747,7 @@ body.portal-v{--ico-accent:var(--br);}
 .kal-sec b{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;font-weight:400;}
 .kal-sec em{font-style:normal;font-family:'Nunito',system-ui,sans-serif;font-size:9.5px;font-weight:900;letter-spacing:1.4px;color:var(--mut);}
 .kal-sec em.o{color:#FF7A33;}
+.kal-sec .kal-all{cursor:pointer;white-space:nowrap;padding:12px 0 12px 12px;margin:-12px 0;-webkit-tap-highlight-color:transparent;}   /* v623 (13A) „Visi →" — didesnis paspaudimo plotas */
 .kal-sec > span:empty{flex:1;height:.5px;background:rgba(255,255,255,.1);}
 /* treniruotes eilute (vietoj korteles) */
 .kal-rows{padding:0 18px 10px;display:flex;flex-direction:column;gap:8px;}

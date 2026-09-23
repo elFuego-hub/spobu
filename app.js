@@ -11,7 +11,8 @@ function ico(name, cls = '', label = ''){
 
 // Emoji→ikona (DB įrašytos kategorijų/pratimų emoji) + pakopos ikona
 const EMOJI_ICO = {'💪':'jega','🏃':'istverme','🥋':'kata','🤸':'lankstumas','⚡':'sprintas','🎓':'seminaras','🧘':'seiza','⚖️':'seiza','🎭':'spyris','🔬':'mokslas','🎯':'tikslas','🏆':'trofejai','🥇':'medalis','🥈':'medalis','🥉':'medalis','🔥':'streak','📊':'statistika','⭐':'zvaigzde','👑':'premium','⚔️':'dvikova','🌱':'augimas','🐉':'ninja','📅':'kalendorius'};
-function emojiToIco(v){ if(!v) return ico('tikslas'); if(typeof v==='string' && v.indexOf('<svg')!==-1) return v; const k=(v+'').trim(); if(EMOJI_ICO[k]) return ico(EMOJI_ICO[k]); return v; }
+// v623 (16A): praleidžiamas tik tikslus ico() rezultatas; nežinoma DB reikšmė pabėgama
+function emojiToIco(v){ if(!v) return ico('tikslas'); if(typeof v==='string' && /^<svg class="ico(?: [\w -]+)?" (?:aria-hidden="true"|role="img" aria-label="[^"<>]*")>(?:<use (?:class="duo" )?href="#i-[\w-]+"\/>)+<\/svg>$/.test(v)) return v; const k=(v+'').trim(); if(EMOJI_ICO[k]) return ico(EMOJI_ICO[k]); return escapeHtml(String(v)); }
 const STAGE_ICO = {'Naujokas':'augimas','Pažengęs':'jega','Patyręs':'kata','Ekspertas':'dvikova','Čempionas':'trofejai','Legenda':'premium','Drakonas':'ninja','Šlovės salė':'zvaigzde'};
 function stageIco(stageName){ return ico(STAGE_ICO[stageName] || 'augimas'); }
 
@@ -1576,10 +1577,10 @@ async function loadParentSettingsTrainers() {
       return;
     }
     el.innerHTML = trainers.map(t => {
-      const safe = (t.name || 'Treneris').replace(/'/g, "\\'");
+      const safe = escapeHtml(JSON.stringify(String(t.name || 'Treneris')).slice(1, -1).replace(/'/g, "\\'"));   // v623 (16A): \ " ' — JS eilutei atribute
       return `<div onclick="document.getElementById('parent-settings-modal').remove(); parentStartTrainerChat('${t.id}','${safe}')" style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.04);border:.5px solid var(--bdr);border-radius:10px;margin-bottom:6px;cursor:pointer;">
         <div style="font-size:18px;">${ico('dirzas')}</div>
-        <div style="flex:1;font-size:13px;font-weight:800;color:white;">${t.name}</div>
+        <div style="flex:1;font-size:13px;font-weight:800;color:white;">${escapeHtml(t.name)}</div>
         <div style="font-size:11px;color:var(--br);font-weight:800;">${ico('redaguoti')} Rašyti</div>
       </div>`;
     }).join('');
@@ -2218,7 +2219,7 @@ async function loadParentMainKidsPreview() {
         <div style="width:40px;height:40px;border-radius:50%;${avStyle}display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:white;flex-shrink:0;">${avInner}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:800;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${k.kyu || 'Mu kyu'} · ${exp} EXP${isPending ? ' · <span style="color:#FF7A33;">'+ico('laukia')+' laukia</span>' : ''}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px;">${escapeHtml(k.kyu || 'Mu kyu')} · ${exp} EXP${isPending ? ' · <span style="color:#FF7A33;">'+ico('laukia')+' laukia</span>' : ''}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--br);line-height:1;">LVL ${stage.globalLevel}</div>
@@ -3018,7 +3019,7 @@ async function loadParentKidCareer() {
       let iconGlowClass = '';
       if (tierClass === 'completed' || tierClass === 'gold') iconGlowClass = 'glow-strong'; else if (tierClass === 'silver' || tierClass === 'bronze') iconGlowClass = 'glow-soft';
 
-      return `<div class="tap-react" onclick="showParentExercises('${cat.id}','${cat.name}')" style="background:${bgStyle};border:1px solid ${borderStyle};border-radius:12px;padding:8px 6px;text-align:center;cursor:pointer;position:relative;${shadow}-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+      return `<div class="tap-react" onclick="showParentExercises('${cat.id}', ${escapeHtml(JSON.stringify(String(cat.name || '')))})" style="background:${bgStyle};border:1px solid ${borderStyle};border-radius:12px;padding:8px 6px;text-align:center;cursor:pointer;position:relative;${shadow}-webkit-tap-highlight-color:rgba(255,77,0,.2);">
         ${medal ? `<div style="position:absolute;top:4px;right:4px;font-size:13px;">${medal}</div>` : ''}
         <div class="${iconGlowClass}" style="font-size:26px;line-height:1;margin-bottom:2px;--glow-color:${tierColor};">${CATEGORY_ICONS[cat.name] || ''+ico('jega')+''}</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1px;margin-bottom:2px;color:white;">${(cat.name || '').toUpperCase()}</div>
@@ -6568,10 +6569,10 @@ async function parentComposeToTrainer() {
     if (el) {
       el.innerHTML = `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin:4px 0 10px;">KAM RAŠYTI? PASIRINK TRENERĮ:</div>` +
         trainers.map(t => {
-          const safe = (t.name || 'Treneris').replace(/'/g, "\\'");
+          const safe = escapeHtml(JSON.stringify(String(t.name || 'Treneris')).slice(1, -1).replace(/'/g, "\\'"));   // v623 (16A): \ " ' — JS eilutei atribute
           return `<div onclick="parentStartTrainerChat('${t.id}','${safe}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
             <div style="font-size:20px;">${ico('dirzas')}</div>
-            <div style="font-weight:800;font-size:13px;color:white;">${t.name}</div>
+            <div style="font-weight:800;font-size:13px;color:white;">${escapeHtml(t.name)}</div>
             <div style="margin-left:auto;color:var(--br);font-size:14px;">›</div>
           </div>`;
         }).join('');
@@ -8610,10 +8611,10 @@ async function openArchiveBadgesModal() {
   const cards = (cats || []).map(c => {
     const exp = Math.min(600, byCat[c.id] || 0);
     const t = tierOf(exp); const earned = t[0] !== 'PRADINIS';
-    const icon = (typeof CATEGORY_ICONS !== 'undefined' && CATEGORY_ICONS[c.name]) || c.icon || ''+ico('jega')+'';
+    const icon = (typeof CATEGORY_ICONS !== 'undefined' && CATEGORY_ICONS[c.name]) || (c.icon ? emojiToIco(c.icon) : '') || ''+ico('jega')+'';
     return `<div style="background:${earned ? `linear-gradient(135deg, ${t[1]}22, ${t[1]}08)` : 'var(--card)'};border:1px solid ${earned ? t[1] + '44' : 'var(--bdr)'};border-radius:12px;padding:10px 6px;text-align:center;">
       <div style="font-size:28px;line-height:1;">${icon}</div>
-      <div style="font-size:9px;font-weight:800;color:white;margin-top:5px;line-height:1.1;">${c.name}</div>
+      <div style="font-size:9px;font-weight:800;color:white;margin-top:5px;line-height:1.1;">${escapeHtml(c.name || '')}</div>
       <div style="font-size:8px;font-weight:800;color:${t[1]};margin-top:4px;letter-spacing:.5px;">${t[2]} ${t[0]}</div>
       <div style="font-size:8px;color:var(--mut);margin-top:2px;">${exp} EXP</div>
     </div>`;
@@ -9144,7 +9145,7 @@ async function uploadKidAvatar(inputEl) {
     showToast(ico('patvirtinta')+' Nuotrauka atnaujinta!', 'success');
   } catch (e) {
     console.error('[avatar] klaida:', e);
-    showToast(ico('klaida')+' Klaida: ' + (e.message || ''), 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + escapeHtml(_userError(e)), 'error', 5000);
   }
 }
 
@@ -9170,7 +9171,7 @@ async function removeKidAvatar() {
     if (_rm) _rm.style.display = 'none';
     showToast(ico('patvirtinta')+' Nuotrauka pašalinta', 'success');
   } catch (e) {
-    showToast(ico('klaida')+' Klaida: ' + (e.message || ''), 'error');
+    showToast(ico('klaida')+' Klaida: ' + escapeHtml(_userError(e)), 'error');
   }
 }
 
@@ -9697,7 +9698,7 @@ function _showBeltCelebrationNow(newKyu, oldKyu = '') {
       </div>
       
       ${oldKyu ? `<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:18px 0;font-family:'Bebas Neue',sans-serif;color:${textColor};">
-        <span style="font-size:20px;opacity:.5;">${oldKyu}</span>
+        <span style="font-size:20px;opacity:.5;">${escapeHtml(oldKyu)}</span>
         <span style="font-size:20px;opacity:.7;">→</span>
         <span style="font-size:36px;text-shadow:0 4px 20px rgba(0,0,0,.3);">${newKyu}</span>
       </div>` : `<div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:${textColor};margin:18px 0;">${newKyu}</div>`}
@@ -9876,9 +9877,10 @@ async function detectNewMedals() {
   console.log('🔵 [medals] naujų medalių:', newMedals.length);
   
   if (newMedals.length === 0) return;
-  
+
   localStorage.setItem(lsKey, results[0].id);
-  
+  if (typeof KidGate !== 'undefined' && !KidGate.on('comp')) return;   // v623 (15A): varžybos išjungtos — be pop-up (pagrindas atnaujintas)
+
   // Gauti varžybų pavadinimą + tipą
   const compIds = newMedals.map(m => m.competition_id);
   const { data: comps } = await sb.from('competitions')
@@ -9953,7 +9955,7 @@ function _showParticipationCelebrationNow(competitionTitle = '', expEarned = 0, 
       <div style="font-size:54px;line-height:1;margin-bottom:8px;">${ico('dirzas')}</div>
       
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:white;line-height:1.1;">TU KOVOJAI!</div>
-      ${placement ? `<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;">${placement} vieta · ${competitionTitle}</div>` : `<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;">${competitionTitle}</div>`}
+      ${placement ? `<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;">${placement} vieta · ${escapeHtml(competitionTitle)}</div>` : `<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;">${escapeHtml(competitionTitle)}</div>`}
       
       <div style="height:1px;background:linear-gradient(90deg,transparent,${accent},transparent);margin:16px 0;"></div>
       
@@ -10129,10 +10131,10 @@ async function loadCategories() {
     else if (tierClass === 'silver') iconGlowClass = 'glow-soft';
     else if (tierClass === 'bronze') iconGlowClass = 'glow-soft';
     
-    return `<div class="tap-react" onclick="showExercises('${cat.id}','${cat.name}')" style="background:${bgStyle};border:1px solid ${borderStyle};border-radius:12px;padding:8px 6px;text-align:center;cursor:pointer;position:relative;${shadow}-webkit-tap-highlight-color:rgba(255,77,0,.2);">
+    return `<div class="tap-react" onclick="showExercises('${cat.id}', ${escapeHtml(JSON.stringify(String(cat.name || '')))})" style="background:${bgStyle};border:1px solid ${borderStyle};border-radius:12px;padding:8px 6px;text-align:center;cursor:pointer;position:relative;${shadow}-webkit-tap-highlight-color:rgba(255,77,0,.2);">
       ${medal ? `<div style="position:absolute;top:4px;right:4px;font-size:13px;">${medal}</div>` : ''}
       <div class="${iconGlowClass}" style="font-size:26px;line-height:1;margin-bottom:2px;--glow-color:${tierColor};">${CATEGORY_ICONS[cat.name] || ''+ico('jega')+''}</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1px;margin-bottom:2px;color:white;">${cat.name.toUpperCase()}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1px;margin-bottom:2px;color:white;">${escapeHtml(cat.name.toUpperCase())}</div>
       <div style="font-size:7px;font-weight:800;letter-spacing:.5px;margin-bottom:3px;color:${tierColor};">${tierLabel}</div>
       <div style="background:rgba(0,0,0,.4);height:3px;border-radius:2px;overflow:hidden;margin-bottom:2px;">
         <div style="height:100%;border-radius:2px;background:${fillStyle};width:${Math.min(100, pct)}%;"></div>
@@ -10395,7 +10397,7 @@ async function renderProfileExtras() {
         
         return `
           <div onclick="openFriendModal('${m.id}')" style="display:flex;align-items:center;gap:6px;padding:4px 9px;${idx < total - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-            <div style="width:22px;height:22px;border-radius:50%;${m.avatar_url ? `background-image:url('${_safeUrl(m.avatar_url)}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,${stage.color}88,${stage.color}44);`}color:white;font-family:'Bebas Neue',sans-serif;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${m.avatar_url ? '' : letter}</div>
+            <div style="width:22px;height:22px;border-radius:50%;${m.avatar_url ? `background-image:url('${_safeUrl(m.avatar_url)}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,${stage.color}88,${stage.color}44);`}color:white;font-family:'Bebas Neue',sans-serif;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${m.avatar_url ? '' : escapeHtml(letter)}</div>
             <div style="flex:1;min-width:0;">
               <div style="font-size:10px;font-weight:800;color:white;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(name)}</div>
               <div style="font-size:7px;color:var(--mut);margin-top:1px;">${stage.emoji} ${stage.name} · ${(m.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
@@ -10787,7 +10789,7 @@ function openTeammatesModal() {
     
     return `
       <div onclick="document.getElementById('teammates-modal').remove();openFriendModal('${m.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border-radius:10px;margin-bottom:5px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
-        <div style="width:34px;height:34px;border-radius:50%;${m.avatar_url ? `background-image:url('${_safeUrl(m.avatar_url)}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,${stage.color}88,${stage.color}44);`}color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${m.avatar_url ? '' : letter}</div>
+        <div style="width:34px;height:34px;border-radius:50%;${m.avatar_url ? `background-image:url('${_safeUrl(m.avatar_url)}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,${stage.color}88,${stage.color}44);`}color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${m.avatar_url ? '' : escapeHtml(letter)}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:12px;font-weight:800;color:white;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(name)}</div>
           <div style="font-size:9px;color:var(--mut);margin-top:2px;">${stage.emoji} ${stage.name} · ${(m.total_exp || 0).toLocaleString('lt-LT')} EXP · ${escapeHtml(m.kyu || 'Mu kyu')}</div>
@@ -11133,12 +11135,12 @@ async function openDuelChallenge(friendJson) {
   `).join('');
   
   // Trenerio dropdown (jei >1) arba tiesiog rodom (jei 1)
-  const trainerOptions = myTrainers.map(tr => `<option value="${tr.id}">${tr.name}</option>`).join('');
+  const trainerOptions = myTrainers.map(tr => `<option value="${tr.id}">${escapeHtml(tr.name)}</option>`).join('');
   
   modal.innerHTML = `
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out;">
       <div style="padding:14px 16px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${ico('dvikova')} DVIKOVA SU ${friendName.toUpperCase()}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">${ico('dvikova')} DVIKOVA SU ${escapeHtml(friendName.toUpperCase())}</div>
         <button onclick="document.getElementById('duel-challenge-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;">${ico('uzdaryti')}</button>
       </div>
       <div style="flex:1;overflow-y:auto;padding:14px 16px;">
@@ -11344,7 +11346,7 @@ async function updateProfileCounts() {
 async function openTrophiesModal(kidId, kidName) {
   const targetKidId = kidId || currentKid?.id;
   const isOwn = !kidId || kidId === currentKid?.id;
-  const titleText = isOwn ? ''+ico('trofejai')+' MANO TROFĖJAI' : `${ico('trofejai')} ${(kidName || 'DRAUGO').toUpperCase()} TROFĖJAI`;
+  const titleText = isOwn ? ''+ico('trofejai')+' MANO TROFĖJAI' : `${ico('trofejai')} ${escapeHtml((kidName || 'DRAUGO').toUpperCase())} TROFĖJAI`;
   
   const existing = document.getElementById('prof-trophies-modal');
   if (existing) existing.remove();
@@ -11466,7 +11468,7 @@ async function openTrophiesModal(kidId, kidName) {
 async function openBadgesModal(kidId, kidName) {
   const targetKidId = kidId || currentKid?.id;
   const isOwn = !kidId || kidId === currentKid?.id;
-  const titleText = isOwn ? ''+ico('zenkliukai')+' ĮGŪDŽIŲ ŽENKLIUKAI' : `${ico('zenkliukai')} ${(kidName || 'DRAUGO').toUpperCase()} ŽENKLIUKAI`;
+  const titleText = isOwn ? ''+ico('zenkliukai')+' ĮGŪDŽIŲ ŽENKLIUKAI' : `${ico('zenkliukai')} ${escapeHtml((kidName || 'DRAUGO').toUpperCase())} ŽENKLIUKAI`;
   
   const existing = document.getElementById('prof-badges-modal');
   if (existing) existing.remove();
@@ -11509,7 +11511,7 @@ async function openBadgesModal(kidId, kidName) {
     return `
       <div style="background:${isEarned ? `linear-gradient(135deg, ${badge.tierColor}22, ${badge.tierColor}08)` : 'var(--card)'};border:1px solid ${isEarned ? badge.tierColor + '44' : 'var(--bdr)'};border-radius:12px;padding:10px 6px;text-align:center;">
         <div class="${glowClass}" style="font-size:28px;line-height:1;--glow-color:${badge.tierColor};">${CATEGORY_ICONS[badge.name] || ''+ico('jega')+''}</div>
-        <div style="font-size:9px;font-weight:800;color:white;margin-top:5px;line-height:1.1;">${badge.name}</div>
+        <div style="font-size:9px;font-weight:800;color:white;margin-top:5px;line-height:1.1;">${escapeHtml(badge.name)}</div>
         <div style="font-size:8px;font-weight:800;color:${badge.tierColor};margin-top:4px;letter-spacing:.5px;">${badge.tierIcon} ${badge.tier}</div>
         <div style="font-size:8px;color:var(--mut);margin-top:2px;">${badge.exp} EXP</div>
       </div>
@@ -11537,7 +11539,7 @@ async function openBadgesModal(kidId, kidName) {
 async function openChallengeTypesModal(kidId, kidName) {
   const targetKidId = kidId || currentKid?.id;
   const isOwn = !kidId || kidId === currentKid?.id;
-  const titleText = isOwn ? ''+ico('tikslas')+' IŠŠŪKIAI · PAGAL TIPUS' : `${ico('tikslas')} ${(kidName || 'DRAUGO').toUpperCase()} IŠŠŪKIAI`;
+  const titleText = isOwn ? ''+ico('tikslas')+' IŠŠŪKIAI · PAGAL TIPUS' : `${ico('tikslas')} ${escapeHtml((kidName || 'DRAUGO').toUpperCase())} IŠŠŪKIAI`;
   
   const existing = document.getElementById('prof-challenges-modal');
   if (existing) existing.remove();
@@ -11794,9 +11796,9 @@ async function loadBadges() {
     const exp = Math.min(expByCategory[cat.id] || 0, 600);
     const tier = getTierFromExp(exp);
     const icon = CATEGORY_ICONS[cat.name] || ''+ico('jega')+'';
-    return `<div class="skb skb-${tier}" title="${cat.name}: ${exp}/600 EXP">
+    return `<div class="skb skb-${tier}" title="${escapeHtml(cat.name)}: ${exp}/600 EXP">
       <div class="skb-circle">${icon}</div>
-      <div class="skb-name">${cat.name}</div>
+      <div class="skb-name">${escapeHtml(cat.name)}</div>
       <div class="skb-progress">${exp}/600</div>
     </div>`;
   }).join('');
@@ -11817,6 +11819,7 @@ let _newChallengeDebounce = null;
 let _checkingChallenges = false;
 async function checkForNewChallenges() {
   if (!currentKid?.id || !currentProfile?.club_id) return;
+  if (typeof KidGate !== 'undefined' && !KidGate.on('challenges')) return;   // v623 (15A)
   if (_checkingChallenges) return; // apsauga nuo lygiagretaus vykdymo (race → dublikatas)
   _checkingChallenges = true;
   try {
@@ -12109,7 +12112,8 @@ function subscribeToNewChallenges() {
     sb.removeChannel(challengesRealtimeSub);
     challengesRealtimeSub = null;
   }
-  
+  if (typeof KidGate !== 'undefined' && !KidGate.on('challenges')) return;   // v623 (15A)
+
   challengesRealtimeSub = sb.channel(`new-challenges-${currentKid.id}`)
     .on('postgres_changes', {
       event: 'INSERT',
@@ -12143,6 +12147,7 @@ function subscribeToNewCompetitions() {
     sb.removeChannel(competitionsRealtimeSub);
     competitionsRealtimeSub = null;
   }
+  if (typeof KidGate !== 'undefined' && !(KidGate.on('comp') || KidGate.on('belt'))) return;   // v623 (15A)
   competitionsRealtimeSub = sb.channel(`new-competitions-${currentKid.id}`)
     .on('postgres_changes', {
       event: 'INSERT',
@@ -12180,7 +12185,8 @@ async function checkForNewCompetitions() {
   if (error || !comps) return;
 
   // Nauji = tiesiog dar nematyti (data NESVARBI — svarbu kad naujai paskelbtos)
-  const fresh = comps.filter(c => !seenIds.has(c.id));
+  // v623 (15A): tik įjungtų tipų (visi vis tiek pažymimi matytais — įjungus neužplūs)
+  const fresh = comps.filter(c => !seenIds.has(c.id) && (typeof KidGate === 'undefined' || KidGate.compType(c.competition_type)));
 
 
   // Pažymėti VISUS matytais (kad nepasikartotų)
@@ -12196,7 +12202,7 @@ async function checkForNewCompetitions() {
   for (const c of fresh) {
     const icon = typeIcon[c.competition_type] || ''+ico('medalis')+'';
     const dateStr = c.event_date ? `${ico('kalendorius')} ${c.event_date}` : '';
-    const loc = c.location ? ` · ${c.location}` : '';
+    const loc = c.location ? ` · ${escapeHtml(c.location)}` : '';   // v623 (16A): vieta — klubo tekstas į innerHTML
     showToast(`${ico('medalis')} NAUJOS VARŽYBOS!\n\n${icon} ${escapeHtml(c.title)}\n${dateStr}${loc}`, 'success', null, { sound: 'send' });
   }
 }
@@ -13692,7 +13698,7 @@ async function loadChallenges() {
         // Visiškai atliktas
         statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">${ico('patvirtinta')} Pilnai atlikta!</span>`;
       } else if (pendingSub) {
-        statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">${ico('laukia')} Treneris tikrina: ${pendingSub.value}</span>`;
+        statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">${ico('laukia')} Treneris tikrina: ${escapeHtml(String(pendingSub.value ?? ''))}</span>`;
         // Net laukiant - galima pateikti dar (jei netruks - susikaups)
       } else if (latestSub?.status === 'rejected') {
         // 🔄 v400 (BUG-1): partial šaka atmetimo NErodė iš viso — vaikas nesuprasdavo, kas vyksta
@@ -13711,12 +13717,12 @@ async function loadChallenges() {
     } else {
       // Standartinis (be tarpinių) - sena logika
       if (approvedSub) {
-        statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">${ico('patvirtinta')} Atlikta: ${approvedSub.value} ${ch.target_unit || ''}</span>`;
+        statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">${ico('patvirtinta')} Atlikta: ${escapeHtml(String(approvedSub.value ?? ''))} ${escapeHtml(ch.target_unit || '')}</span>`;
         if (ch.type === 'permanent' && !isCompletedTab) {
           actionButton = `<button style="margin-top:5px;padding:5px 10px;background:linear-gradient(135deg,#FF4D00,#FF7A33);color:white;border:none;border-radius:8px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;float:right;" onclick="event.stopPropagation();openSubmitChallenge('${ch.id}')">PAKARTOTI</button>`;
         }
       } else if (pendingSub) {
-        statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">${ico('laukia')} Treneris tikrina: ${pendingSub.value}</span>`;
+        statusBadge = `<span class="bg or" style="padding:4px 10px;font-size:11px;">${ico('laukia')} Treneris tikrina: ${escapeHtml(String(pendingSub.value ?? ''))}</span>`;
       } else if (rejectedSub) {
         statusBadge = `<span class="bg" style="background:rgba(255,140,0,.15);color:#FF7A33;padding:4px 10px;font-size:11px;">${ico('kartoti')} Grąžinta pataisyti</span>` + rejReasonHtml(rejectedSub); // v400: + priežastis
         if (!isExpired && !isCompletedTab) {
@@ -14023,7 +14029,7 @@ function _showChallengeTrainerPicker(trainers){
   const m = document.createElement('div'); m.id='ch-trainer-pick';
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100005;align-items:flex-end;justify-content:center;';
   m.onclick=(e)=>{ if(e.target===m) m.remove(); };
-  const rows = (trainers||[]).map(t=>{ const nm = t.name || 'Treneris'; return `<div onclick="_chPickTrainer('${t.id}')" style="padding:13px 16px;border-top:.5px solid var(--bdr);cursor:pointer;font-size:14px;color:#fff;">${ico('dirzas')} ${nm}</div>`; }).join('');
+  const rows = (trainers||[]).map(t=>{ const nm = t.name || 'Treneris'; return `<div onclick="_chPickTrainer('${t.id}')" style="padding:13px 16px;border-top:.5px solid var(--bdr);cursor:pointer;font-size:14px;color:#fff;">${ico('dirzas')} ${escapeHtml(nm)}</div>`; }).join('');
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;animation:slideUp .3s ease-out;"><div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">KAM SIŲSTI?</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Pasirink trenerį, kuris patvirtins</div></div>${rows}<div style="height:10px;"></div></div>`;
   document.body.appendChild(m);
 }
@@ -14139,7 +14145,7 @@ function updateBeltDisplay() {
   
   beltEl.innerHTML = `
     ${generateBeltSvg(kyu, { width: 100, height: 12 })}
-    <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">${kyu.toUpperCase()}</div>
+    <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">${escapeHtml(kyu.toUpperCase())}</div>
   `;
 }
 
@@ -14619,7 +14625,7 @@ async function loadClubCompetitions() {
     const typeLabel = COMP_TYPE_LABELS[c.competition_type] || c.competition_type;
     const levelLabel = c.level ? ico(COMP_LEVEL_ICO[c.level] || 'miestas') + ' ' + (COMP_LEVEL_LABELS[c.level] || c.level) : '';
     const accent = { kumite:'#EF4444', kata:'#4FC3F7' }[c.competition_type] || 'var(--br)';
-    const safe = (c.title || '').replace(/'/g, "\\'");
+    const safe = escapeHtml(JSON.stringify(String(c.title || '')).slice(1, -1).replace(/'/g, "\\'"));   // v623 (16A): \ " ' — JS eilutei atribute
     let statsBlock;
     if (isPast) {
       statsBlock = `<div style="display:flex;gap:6px;margin-bottom:10px;">
@@ -14941,7 +14947,7 @@ async function loadClubBeltTests(){
     const s = byComp[c.id] || {planning:0,wont:0,participated:0,passed:0,pending:0};
     const isPast = c.event_date < today;
     const when = isPast ? `${ico('kalendorius')} Prieš ${Math.ceil((new Date()-new Date(c.event_date))/86400000)} d.` : (c.event_date===today?''+ico('streak')+' Šiandien!':`${ico('laikmatis')} Liko ${Math.ceil((new Date(c.event_date)-new Date())/86400000)} d.`);
-    const safe = (c.title||'').replace(/'/g,"\\'");
+    const safe = escapeHtml(JSON.stringify(String(c.title||'')).slice(1, -1).replace(/'/g, "\\'"));   // v623 (16A): \ " ' — JS eilutei atribute
     let statsBlock;
     if (isPast) {
       statsBlock = `<div style="display:flex;gap:6px;margin-bottom:10px;">
@@ -15854,9 +15860,8 @@ function applyClubFlagGates(){
     _gateSel('#v-desktop-nav .vdn-item[data-sid="v-comp"]', flagOn('competitions_enabled'));
     // 💬 v447/v450: varpelio „Žinutės" tabas vaikui rodomas tik kai klubas leidžia rašyti treneriui
     // (kitaip tabas kabotų visada tuščias „Nėra žinučių" ir vaikas nieko negalėtų padaryti).
-    if (currentProfile?.role === 'kid') {
-      _gateSel('#pv .notif-tab[data-tab="messages"]', typeof kidChatOn === 'function' ? kidChatOn() : false);
-    }
+    // v623 (15A): V2 vaiko vartai — MODULIS: KidGate (varpelio tabai per #v-announcements-section, nes toggleNotifications perkelia sekciją į body)
+    if (currentProfile?.role === 'kid' && typeof KidGate !== 'undefined') KidGate.apply();
     // TĖVO portalas — parduotuvė (t-shop nav) + AI ataskaitų pirkimas (shop-act-report)
     _gateSel('.bn2 .ni[onclick*="t-shop"]', flagOn('store_enabled'));
     _gateEl('shop-act-report', flagOn('ai_reports_enabled'));
@@ -15982,7 +15987,7 @@ async function loadClubCamps(){
     const isPast = endRef < today;
     const dateRange = (c.ends_on && c.ends_on !== c.starts_on) ? `${formatDateLT(c.starts_on)} – ${formatDateLT(c.ends_on)}` : formatDateLT(c.starts_on);
     const when = isPast ? ''+ico('paketas')+' Pasibaigusi' : (c.starts_on===today ? ''+ico('streak')+' Šiandien!' : (c.starts_on<today ? ''+ico('istverme')+' Vyksta' : `${ico('laikmatis')} Liko ${Math.ceil((new Date(c.starts_on)-new Date())/86400000)} d.`));
-    const safe = (c.title||'').replace(/'/g,"\\'");
+    const safe = escapeHtml(JSON.stringify(String(c.title||'')).slice(1, -1).replace(/'/g, "\\'"));   // v623 (16A): \ " ' — JS eilutei atribute
     return `<div class="cd" style="margin-bottom:12px;${isPast?'opacity:.85;':''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
         <div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:900;margin-bottom:4px;">${_campType(c.event_type).icon} ${escapeHtml(c.title)}</div><div style="font-size:11px;color:var(--mut);">${_campType(c.event_type).label} · ${ico('kalendorius')} ${dateRange}</div></div>
@@ -16233,7 +16238,7 @@ async function loadClubGroupChallenges(){
   await Promise.all(_gShow.map(async c=>{ try { const { data } = await sb.rpc('club_challenge_standings',{challenge_uuid:c.id}); _gcSt[c.id]=data||[]; } catch(_){ _gcSt[c.id]=[]; } }));
   const _gAccent = '#EAB308';
   el.innerHTML = _gShow.map(c=>{
-    const safe = (c.title||'').replace(/'/g,"\\'");
+    const titleArg = escapeHtml(JSON.stringify(String(c.title || '')));   // v623 (16A): JS eilutė onclick'e
     const dateRange = (c.starts_on||c.ends_on) ? `${c.starts_on?formatDateLT(c.starts_on):'…'} – ${c.ends_on?formatDateLT(c.ends_on):'…'}` : 'Be datų';
     const timeEnded = c.ends_on && c.ends_on < today;
     const status = !c.is_active ? ''+ico('finisas')+' Užbaigtas' : (timeEnded ? ''+ico('laikmatis')+' Laikas baigėsi' : '🟢 Vyksta');
@@ -16270,10 +16275,10 @@ async function loadClubGroupChallenges(){
       <div style="font-size:11px;color:var(--mut);margin-bottom:10px;">${ico('kalendorius')} ${dateRange}${c.winner_exp>0?`  ·  ${ico('zvaigzde')} 1 v.: ${Math.min(GROUP_CHALLENGE_EXP_CAP,c.winner_exp)} EXP${(!c.is_active&&c.exp_awarded)?' '+ico('patvirtinta')+'':''}`:''}</div>
       ${statsBlock}
       ${!c.is_active ? `<button onclick="openEventPostCard('gc','${c.id}')" style="width:100%;background:rgba(234,179,8,.15);color:#EAB308;border:.5px solid rgba(234,179,8,.45);padding:9px;border-radius:9px;font-size:12px;cursor:pointer;font-weight:800;margin-bottom:6px;">${ico('skelbimas')} Sukurti soc. postą</button>` : ''}
-      <button onclick="viewChallengeStandings('${c.id}','${safe}')" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">${ico('statistika')} GRUPIŲ REZULTATAI</button>
+      <button onclick="viewChallengeStandings('${c.id}', ${titleArg})" style="width:100%;background:rgba(255,77,0,.05);color:var(--br);border:.5px solid rgba(255,77,0,.3);padding:8px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;margin-bottom:6px;">${ico('statistika')} GRUPIŲ REZULTATAI</button>
       <div style="display:flex;gap:6px;">
-        ${c.is_active?`<button onclick="finalizeClubChallengeUI('${c.id}','${safe}')" style="flex:1;background:rgba(34,197,94,.12);color:var(--grn);border:.5px solid rgba(34,197,94,.35);padding:8px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">${ico('finisas')} Užbaigti + EXP</button>`:''}
-        <button onclick="deleteClubChallenge('${c.id}','${safe}')" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">${ico('trinti')} Ištrinti</button>
+        ${c.is_active?`<button onclick="finalizeClubChallengeUI('${c.id}', ${titleArg})" style="flex:1;background:rgba(34,197,94,.12);color:var(--grn);border:.5px solid rgba(34,197,94,.35);padding:8px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">${ico('finisas')} Užbaigti + EXP</button>`:''}
+        <button onclick="deleteClubChallenge('${c.id}', ${titleArg})" style="flex:1;background:rgba(239,68,68,.1);color:#EF4444;border:.5px solid rgba(239,68,68,.3);padding:8px;border-radius:9px;font-size:11px;cursor:pointer;font-weight:700;">${ico('trinti')} Ištrinti</button>
       </div>
     </div>`;
   }).join('');
@@ -16402,7 +16407,7 @@ async function viewChallengeStandings(id, title){
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100002;align-items:flex-end;justify-content:center;';
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease-out;">
     <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('statistika')} ${title}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${ico('statistika')} ${escapeHtml(title || '')}</div>
       <button onclick="document.getElementById('club-gc-stand-modal').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
     </div>
     <div id="gc-stand-list" style="padding:16px 20px;"><div style="text-align:center;color:var(--mut);padding:20px;">Kraunama...</div></div>
@@ -16410,7 +16415,7 @@ async function viewChallengeStandings(id, title){
   document.body.appendChild(m);
   const { data: st, error } = await sb.rpc('club_challenge_standings', { challenge_uuid: id });
   const list = document.getElementById('gc-stand-list'); if(!list) return;
-  if (error){ list.innerHTML = `<div style="text-align:center;color:#EF4444;padding:20px;">Klaida: ${error.message}</div>`; return; }
+  if (error){ list.innerHTML = `<div style="text-align:center;color:#EF4444;padding:20px;">Klaida: ${escapeHtml(_userError(error))}</div>`; return; }
   if (!st || !st.length){ list.innerHTML = '<div style="text-align:center;color:var(--mut);padding:20px;">Dar nėra rezultatų. Suvesk rezultatus arba pažymėk lankomumą.</div>'; return; }
   st.sort((a,b)=>a.rnk-b.rnk);
   list.innerHTML = `<div style="font-size:11px;color:var(--mut);margin-bottom:12px;text-align:center;">Reitingas pagal vidurkį vienam vaikui</div>` + st.map(r=>{
@@ -16419,7 +16424,7 @@ async function viewChallengeStandings(id, title){
     return `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:${isTop?'rgba(255,215,0,.08)':'rgba(255,255,255,.03)'};border:.5px solid ${isTop?'rgba(255,215,0,.3)':'var(--bdr)'};border-radius:12px;margin-bottom:8px;">
       <div style="font-size:20px;width:28px;text-align:center;font-weight:900;">${medal}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:800;">${r.g_name||'Grupė'}</div>
+        <div style="font-size:14px;font-weight:800;">${escapeHtml(r.g_name||'Grupė')}</div>
         <div style="font-size:10px;color:var(--mut);">${r.n_kids} vaik. · viso ${(+r.total_val||0)}</div>
       </div>
       <div style="text-align:right;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--br);">${(+r.avg_kid||0)}</div><div style="font-size:8px;color:var(--mut);letter-spacing:1px;">VID./VAIKUI</div></div>
@@ -16498,9 +16503,9 @@ function _showClubChallengeResultPopup(title, rank, totalGroups, groupName, isWi
   m.innerHTML = `<div style="width:100%;max-width:360px;background:linear-gradient(160deg,#1a1208,#0d0d0d);border:1px solid rgba(255,140,0,.3);border-radius:24px;padding:28px 24px;text-align:center;animation:slideUp .4s ease-out;">
     <div style="font-size:56px;line-height:1;margin-bottom:8px;">${medal}</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:${isWinner?'#FFD700':'#fff'};">${isWinner?'PERGALĖ! '+ico('gimtadienis')+'':'IŠŠŪKIS BAIGTAS'}</div>
-    <div style="font-size:13px;color:var(--mut);margin:6px 0 16px;">${title}</div>
+    <div style="font-size:13px;color:var(--mut);margin:6px 0 16px;">${escapeHtml(title || '')}</div>
     <div style="background:rgba(255,255,255,.05);border-radius:14px;padding:16px;margin-bottom:16px;">
-      <div style="font-size:12px;color:var(--mut);margin-bottom:4px;">${groupName||'Tavo būrelis'}</div>
+      <div style="font-size:12px;color:var(--mut);margin-bottom:4px;">${escapeHtml(groupName||'Tavo būrelis')}</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--br);">${rank} vieta <span style="font-size:18px;color:var(--mut);">iš ${totalGroups}</span></div>
       ${(exp)?`<div style="font-size:13px;color:var(--grn);font-weight:800;margin-top:8px;">+${exp} EXP visam būreliui!</div>`:''}
     </div>
@@ -16513,6 +16518,7 @@ function _showClubChallengeResultPopup(title, rank, totalGroups, groupName, isWi
 async function _checkClubChallengeResultsKid(){
   try {
     if (!currentKid?.id) return;
+    if (typeof flagOn === 'function' && !flagOn('group_challenges_enabled')) return;   // v623 (15A)
     let gid = currentKid.group_id;
     if (gid === undefined){ const { data } = await sb.from('kids').select('group_id').eq('id', currentKid.id).maybeSingle(); gid = data?.group_id; }
     if (!gid) return;
@@ -17161,12 +17167,12 @@ function _kidCampCardHtml(c, rsvp){
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:6px;">
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:800;line-height:1.2;color:white;">${_campType(c.event_type).icon} ${escapeHtml(c.title)}</div>
-        <div style="font-size:9px;color:#22C55E;margin-top:2px;font-weight:700;">${_campType(c.event_type).label}${c.price_info?' · '+ico('pinigai')+' '+c.price_info:''}</div>
+        <div style="font-size:9px;color:#22C55E;margin-top:2px;font-weight:700;">${_campType(c.event_type).label}${c.price_info?' · '+ico('pinigai')+' '+escapeHtml(c.price_info):''}</div>
       </div>
       <div style="background:${isPast?'rgba(255,255,255,.1)':'rgba(34,197,94,.15)'};color:${isPast?'var(--mut)':'#22C55E'};border:.5px solid ${isPast?'var(--bdr)':'rgba(34,197,94,.3)'};padding:3px 8px;font-size:9px;font-weight:800;border-radius:99px;flex-shrink:0;white-space:nowrap;">${when}</div>
     </div>
     <div style="background:var(--bg);border-radius:8px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:var(--mut);">
-      <div>${ico('kalendorius')} ${range}${c.location?' · '+ico('vieta')+' '+c.location:''}</div>
+      <div>${ico('kalendorius')} ${range}${c.location?' · '+ico('vieta')+' '+escapeHtml(c.location):''}</div>
       ${c.exp_reward>0?`<div style="margin-top:3px;color:var(--br);">${ico('zvaigzde')} +${c.exp_reward} EXP už dalyvavimą</div>`:''}
       ${c.description?`<div style="margin-top:3px;color:var(--text);">${escapeHtml(c.description)}</div>`:''}
     </div>
@@ -17193,7 +17199,7 @@ async function kidRsvpCamp(eventId, status){
     if (error) throw error;
     showToast(status==='going'?''+ico('ranka')+' Pažymėta — dalyvausi!':'Pažymėta — nedalyvausi');
     if (typeof loadKidCompetitions === 'function') loadKidCompetitions();
-  } catch(e){ console.error('[kid-rsvp]',e); showToast(ico('klaida')+' '+(e.message||'Nepavyko pažymėti'),'error'); }
+  } catch(e){ console.error('[kid-rsvp]',e); showToast(ico('klaida')+' '+escapeHtml(_userError(e)),'error'); }
 }
 // Po stovyklos: vaikas patvirtina „Dalyvavau" (→ pasirenka trenerį → laukia patvirtinimo) arba „Nebuvau"
 async function kidConfirmCamp(eventId, kind){
@@ -17212,7 +17218,7 @@ function _showCampTrainerPicker(trainers){
   const m = document.createElement('div'); m.id='camp-trainer-pick';
   m.style.cssText='display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100006;align-items:flex-end;justify-content:center;';
   m.onclick=(e)=>{ if(e.target===m) m.remove(); };
-  const rows = (trainers||[]).map(t=>{ const nm = t.name || 'Treneris'; return `<div onclick="_campPickTrainer('${t.id}')" style="padding:13px 16px;border-top:.5px solid var(--bdr);cursor:pointer;font-size:14px;color:#fff;">${ico('dirzas')} ${nm}</div>`; }).join('');
+  const rows = (trainers||[]).map(t=>{ const nm = t.name || 'Treneris'; return `<div onclick="_campPickTrainer('${t.id}')" style="padding:13px 16px;border-top:.5px solid var(--bdr);cursor:pointer;font-size:14px;color:#fff;">${ico('dirzas')} ${escapeHtml(nm)}</div>`; }).join('');
   m.innerHTML = `<div style="width:100%;max-width:480px;background:var(--bg);border-radius:24px 24px 0 0;animation:slideUp .3s ease-out;"><div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">KAM SIŲSTI?</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">Pasirink trenerį, kuris patvirtins stovyklą</div></div>${rows}<div style="height:10px;"></div></div>`;
   document.body.appendChild(m);
 }
@@ -17230,7 +17236,7 @@ async function _doKidConfirmCamp(eventId, kind, trainerId){
     if (error) throw error;
     showToast(kind==='participated'?ico('patvirtinta')+' Išsiųsta treneriui — laukia patvirtinimo':'Pažymėta — nedalyvavai');
     if (typeof loadKidCompetitions === 'function') loadKidCompetitions();
-  } catch(e){ console.error('[kid-confirm-camp]',e); showToast(ico('klaida')+' '+(e.message||'Nepavyko'),'error'); }
+  } catch(e){ console.error('[kid-confirm-camp]',e); showToast(ico('klaida')+' '+escapeHtml(_userError(e)),'error'); }
 }
 
 async function loadKidCompetitions() {
@@ -17254,7 +17260,7 @@ async function loadKidCompetitions() {
   _kidCompClubId = clubId;
   try {
     const { data: _camps } = await sb.from('club_events').select('*').eq('club_id', clubId).order('starts_on', { ascending: true });
-    _kidCampsRaw = _camps || [];
+    _kidCampsRaw = (typeof KidGate === 'undefined' || KidGate.on('camps')) ? (_camps || []) : [];   // v623 (15A)
     const _cids = _kidCampsRaw.map(c=>c.id);
     _kidCampRsvp = {};
     if (_cids.length){
@@ -17273,7 +17279,7 @@ async function loadKidCompetitions() {
   if (error) {
     console.error('loadKidCompetitions error:', error);
     document.getElementById('v-comp-list').innerHTML =
-      `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${error.message}</div>`;
+      `<div style="text-align:center;padding:40px;color:#EF4444;">Klaida: ${escapeHtml(_userError(error))}</div>`;
     return;
   }
   
@@ -17291,7 +17297,7 @@ async function loadKidCompetitions() {
   const pending = [];  // praėjo + dar nepateikė rezultato (arba planning)
   const completed = []; // pateikė rezultatą (participated/didnt_attend)
   
-  (competitions || []).forEach(c => {
+  (competitions || []).filter(c => typeof KidGate === 'undefined' || KidGate.compType(c.competition_type)).forEach(c => {   // v623 (15A)
     const isPast = c.event_date < today;
     const myResult = resultsByComp[c.id];
     
@@ -17391,7 +17397,7 @@ async function loadKidCompetitions() {
         else resultText = ''+ico('patvirtinta')+' Dalyvavau';
         
         if (c.competition_type === 'belt_test') {
-          resultText = myResult.belt_passed ? `${ico('dirzas')} Išlaikiau (${myResult.new_kyu})` : ''+ico('dirzas')+' Neišlaikiau';
+          resultText = myResult.belt_passed ? `${ico('dirzas')} Išlaikiau (${escapeHtml(myResult.new_kyu || '')})` : ''+ico('dirzas')+' Neišlaikiau';
         }
         
         statusBadge = `<span class="bg gn" style="padding:4px 10px;font-size:11px;">${resultText}${myResult.exp_gained ? ' (+' + myResult.exp_gained + ' EXP)' : ''}</span>`;
@@ -17399,7 +17405,7 @@ async function loadKidCompetitions() {
         statusBadge = `<span class="bg" style="background:rgba(255,140,0,.15);color:#FF7A33;padding:4px 10px;font-size:11px;">${ico('kartoti')} Grąžinta pataisyti</span>`;
         // Pridėti priežastį jei yra
         if (myResult.rejection_reason) {
-          statusBadge += `<div style="font-size:10px;color:var(--mut);margin-top:4px;font-style:italic;">"${myResult.rejection_reason}"</div>`;
+          statusBadge += `<div style="font-size:10px;color:var(--mut);margin-top:4px;font-style:italic;">"${escapeHtml(myResult.rejection_reason)}"</div>`;
         }
         // Bandyti dar kartą mygtukas
         actionButtons = `
@@ -17437,9 +17443,9 @@ async function loadKidCompetitions() {
       </div>
       
       <div style="background:var(--bg);border-radius:8px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:var(--mut);">
-        <div>${ico('kalendorius')} ${formatDateLT(c.event_date)}${c.location ? ' · '+ico('vieta')+' ' + c.location : ''}</div>
-        ${c.registration_url ? `<div style="margin-top:3px;"><a href="${c.registration_url}" target="_blank" style="color:var(--br);text-decoration:none;">${ico('nuoroda')} Registracija</a></div>` : ''}
-        ${c.additional_info ? `<div style="margin-top:3px;color:var(--text);font-size:10px;">${c.additional_info}</div>` : ''}
+        <div>${ico('kalendorius')} ${formatDateLT(c.event_date)}${c.location ? ' · '+ico('vieta')+' ' + escapeHtml(c.location) : ''}</div>
+        ${c.registration_url && /^https?:\/\//i.test(c.registration_url) ? `<div style="margin-top:3px;"><a href="${escapeHtml(c.registration_url)}" target="_blank" rel="noopener noreferrer" style="color:var(--br);text-decoration:none;">${ico('nuoroda')} Registracija</a></div>` : ''}
+        ${c.additional_info ? `<div style="margin-top:3px;color:var(--text);font-size:10px;">${escapeHtml(c.additional_info)}</div>` : ''}
       </div>
       
       ${statusBadge}
@@ -17504,8 +17510,9 @@ function openKidCompModal() {
 }
 
 // Vaikas pažymi ketinimą (planning/wont_attend)
+// v623 (19A): grąžina true / false — kalendorius rodo atsakymą (ir tėvai jį mato) tik jei jis tikrai išsaugotas
 async function setKidIntent(competitionId, intent) {
-  if (!currentKid?.id) return;
+  if (!currentKid?.id) return false;
   
   // Tikrinti ar jau yra įrašas
   const { data: existing } = await sb.from('competition_results')
@@ -17525,7 +17532,7 @@ async function setKidIntent(competitionId, intent) {
       .select();
     if (!result.error && !(result.data || []).length) {
       showToast(ico('klaida') + ' Nepavyko pakeisti — kreipkis į trenerį', 'error', 5000);
-      return;
+      return false;
     }
   } else {
     // Insert
@@ -17541,8 +17548,8 @@ async function setKidIntent(competitionId, intent) {
   
   if (result.error) {
     console.error('setKidIntent error:', result.error);
-    showToast(ico('klaida')+' Klaida: ' + result.error.message, 'error', 5000);
-    return;
+    showToast(ico('klaida')+' ' + escapeHtml(_userError(result.error)), 'error', 5000);
+    return false;
   }
   
   showToast(intent === 'planning' ? ''+ico('tikslas')+' Pažymėta!' : ico('isjungta')+' Nedalyvausiu', 'success');
@@ -17556,6 +17563,7 @@ async function setKidIntent(competitionId, intent) {
   // Scroll į viršų (kad vartotojas matytų pakeitimus)
   const compSa = document.querySelector('#v-comp .sa');
   if (compSa) compSa.scrollTo({ top: 0, behavior: 'smooth' });
+  return true;
 }
 
 // Vaiko rezultato pateikimas (po varžybų)
@@ -17638,7 +17646,7 @@ async function loadKidTrainersForCompResult() {
   (trainers || []).forEach(t => {
     const name = `${t.first_name} ${t.last_name || ''}`.trim();
     const isPrimary = t.id === currentKid.assigned_trainer_id;
-    html += `<option value="${t.id}">${isPrimary ? '⭐ ' : ''}${name}${isPrimary ? ' (pagrindinis)' : ''}</option>`;
+    html += `<option value="${t.id}">${isPrimary ? '⭐ ' : ''}${escapeHtml(name)}${isPrimary ? ' (pagrindinis)' : ''}</option>`;
   });
   
   select.innerHTML = html;
@@ -17835,7 +17843,7 @@ async function submitCompResult() {
   
   if (result.error) {
     console.error('submitCompResult error:', result.error);
-    showToast(ico('klaida')+' Klaida: ' + result.error.message, 'error', 5000);
+    showToast(ico('klaida')+' Klaida: ' + escapeHtml(_userError(result.error)), 'error', 5000);
     return;
   }
   
@@ -17947,6 +17955,12 @@ let activeMonthlyChallengeId = null;
 
 async function loadGoals() {
   if (!currentKid?.id) return;
+  if (typeof KidGate !== 'undefined' && !KidGate.on('challenges')) {   // v623 (15A): iššūkiai išjungti — tik grupių iššūkis (turi savo jungiklį)
+    const lw = document.getElementById('v-home-challenges-list'); if (lw) lw.innerHTML = '';
+    const ph = document.getElementById('v-no-active-challenges'); if (ph) ph.style.display = 'none';
+    if (typeof _kidHomeGroupChallenge === 'function') await _kidHomeGroupChallenge();
+    return;
+  }
   console.log('[loadGoals] start, kidId:', currentKid.id);
   
   // Užkraunam aktyvius weekly + monthly iššūkius vaikui
@@ -18028,7 +18042,7 @@ async function loadGoals() {
       const latestHomeSub = subsArr.slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))[0];
       const isRejected = !hasPending && latestHomeSub?.status === 'rejected';
       const learn = katIsLearn(ch.instructions);
-      let right = isPartial ? `${cur} / ${target} ${ch.target_unit || ''}` : (hasPending ? '⏳ Laukia' : (learn ? '🎓 Išmok' : '🎯 Dalyvauk'));
+      let right = isPartial ? `${cur} / ${target} ${escapeHtml(ch.target_unit || '')}` : (hasPending ? '⏳ Laukia' : (learn ? '🎓 Išmok' : '🎯 Dalyvauk'));
       let sub = isPartial
         ? `${Math.round(pct)}% atlikta · +${ch.exp_reward || 0} EXP`
         : `${hasPending ? 'Pateikta, laukia' : (learn ? 'Parodyk treneriui' : 'Pradėk dabar')} · +${ch.exp_reward || 0} EXP`;
@@ -18169,27 +18183,27 @@ async function _kidGroupChallengesScreen(){
       const total = mine ? (+mine.total_val||0) : 0;
       const avg = mine ? (+mine.avg_kid||0) : 0;
       const medal = rnk===1?''+ico('medalis')+'':rnk===2?''+ico('medalis')+'':rnk===3?''+ico('medalis')+'':`${rnk}.`;
-      const safe = (ch.title||'').replace(/'/g,"\\'");
+      const titleArg = escapeHtml(JSON.stringify(String(ch.title || '')));   // v623 (16A): JS eilutė onclick'e — ne rankinis ' pabėgimas
       if (ch.is_active){
         const daysLeft = ch.ends_on ? Math.max(0, Math.ceil((new Date(ch.ends_on)-new Date())/86400000)) : null;
-        active.push(`<div onclick="viewChallengeStandings('${ch.id}','${safe}')" style="background:linear-gradient(135deg,rgba(234,179,8,.1),rgba(234,179,8,.03));border:.5px solid rgba(234,179,8,.3);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #EAB308;">
+        active.push(`<div onclick="viewChallengeStandings('${ch.id}', ${titleArg})" style="background:linear-gradient(135deg,rgba(234,179,8,.1),rgba(234,179,8,.03));border:.5px solid rgba(234,179,8,.3);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #EAB308;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
             <div style="flex:1;min-width:0;">
               <div style="font-size:12px;font-weight:800;color:white;">${ico('trofejai')} ${escapeHtml(ch.title)}</div>
               <div style="font-size:9px;color:#EAB308;margin-top:2px;font-weight:700;">TAVO GRUPĖ ${medal} vieta iš ${N}${daysLeft!=null?' · liko '+daysLeft+' d.':''}</div>
             </div>
-            <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#EAB308;line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);">${ch.unit||''} · vid.${avg}</div></div>
+            <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#EAB308;line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);">${escapeHtml(ch.unit||'')} · vid.${avg}</div></div>
           </div>
         </div>`);
       } else {
         const gotExp = (typeof _gcTierExp==='function') ? _gcTierExp(ch.winner_exp, rnk) : 0;
-        arch.push(`<div onclick="viewChallengeStandings('${ch.id}','${safe}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #6B7280;opacity:.9;">
+        arch.push(`<div onclick="viewChallengeStandings('${ch.id}', ${titleArg})" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #6B7280;opacity:.9;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
             <div style="flex:1;min-width:0;">
               <div style="font-size:12px;font-weight:800;color:white;">${ico('paketas')} ${escapeHtml(ch.title)}</div>
               <div style="font-size:9px;color:var(--mut);margin-top:2px;font-weight:700;">TAVO GRUPĖ ${medal} vieta iš ${N}${ch.exp_awarded&&gotExp>0?' · <span style="color:#EAB308;">+'+gotExp+' EXP</span>':''}</div>
             </div>
-            <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);">${ch.unit||''}</div></div>
+            <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);">${escapeHtml(ch.unit||'')}</div></div>
           </div>
         </div>`);
       }
@@ -18294,12 +18308,18 @@ async function loadNextEvent() {
     if (clubId) _kidCompClubId = clubId;
   }
   if (!clubId) return;
+  // v623 (15A): tik įjungtų tipų renginiai (filtras užklausoje — dėl limit(1))
+  const _kg = typeof KidGate !== 'undefined' ? KidGate : null;
+  if (_kg && !_kg.compScreen()) return;
+  const _types = _kg ? _kg.compTypes() : null;
 
   // Artimiausias renginys = varžyba ARBA stovykla/seminaras (kas anksčiau)
   const today = new Date().toISOString().split('T')[0];
   const [compRes, campRes] = await Promise.all([
-    sb.from('competitions').select('*').eq('club_id', clubId).gte('event_date', today).order('event_date', { ascending: true }).limit(1),
-    sb.from('club_events').select('*').eq('club_id', clubId).gte('starts_on', today).order('starts_on', { ascending: true }).limit(1)
+    (!_types || _types.length)
+      ? (() => { let q = sb.from('competitions').select('*').eq('club_id', clubId); if (_types && _types.length < 3) q = q.in('competition_type', _types); return q.gte('event_date', today).order('event_date', { ascending: true }).limit(1); })()
+      : Promise.resolve({ data: [] }),
+    (!_kg || _kg.on('camps')) ? sb.from('club_events').select('*').eq('club_id', clubId).gte('starts_on', today).order('starts_on', { ascending: true }).limit(1) : Promise.resolve({ data: [] })
   ]);
   const comp = compRes.data && compRes.data[0];
   const camp = campRes.data && campRes.data[0];
@@ -18650,7 +18670,7 @@ async function openClubChallengeLeaderboard() {
   
   if (error) {
     document.getElementById('vlb-list').innerHTML =
-      `<div style="text-align:center;padding:20px;color:#EF4444;">Klaida: ${error.message}</div>`;
+      `<div style="text-align:center;padding:20px;color:#EF4444;">Klaida: ${escapeHtml(_userError(error))}</div>`;
     return;
   }
   
@@ -18685,7 +18705,7 @@ async function openClubChallengeLeaderboard() {
         <div style="font-size:18px;width:32px;text-align:center;flex-shrink:0;font-weight:800;">${rankIcon}</div>
         <div style="font-size:24px;flex-shrink:0;">${tier.icon}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:13px;${isMe ? 'color:var(--br);' : ''}">${name}${isMe ? ' (TU)' : ''}</div>
+          <div style="font-weight:700;font-size:13px;${isMe ? 'color:var(--br);' : ''}">${escapeHtml(name)}${isMe ? ' (TU)' : ''}</div>
           <div style="font-size:10px;color:${tier.color};letter-spacing:1px;font-weight:700;margin-top:2px;">${tier.name} · ${entry.completed_count} iššūkių</div>
         </div>
         <div style="font-weight:900;color:${tier.color};font-size:14px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;">${entry.challenge_exp}</div>
@@ -18835,6 +18855,7 @@ function openMainStat() {
 }
 
 function switchStatTab(tabName, keepPage) {
+  if (typeof KidGate !== 'undefined' && currentProfile?.role === 'kid' && !KidGate.statTab(tabName)) tabName = 'overall';   // v623 (15A)
   // Puslapį atstatom į 1 tik kai tikrai keičiam tab'ą (ne perrenderinant per puslapiavimą)
   if (!keepPage && tabName !== kidStatActiveTab) kidStatPage = 1;
   kidStatActiveTab = tabName;
@@ -19304,7 +19325,7 @@ async function loadSkillsStatTab() {
   const skillSelect = document.getElementById('skill-filter-select');
   if (skillSelect && cats) {
     skillSelect.innerHTML = '<option value="">Visi skill\'ai</option>' + 
-      cats.map(c => `<option value="${c.id}" ${statFilters.skillId === c.id ? 'selected' : ''}>${c.icon || '💪'} ${c.name}</option>`).join('');
+      cats.map(c => `<option value="${c.id}" ${statFilters.skillId === c.id ? 'selected' : ''}>${escapeHtml(String(c.icon || '💪'))} ${escapeHtml(c.name || '')}</option>`).join('');
   }
   
   const entries = await getFilteredKidEntries('kid_records');
@@ -19317,7 +19338,7 @@ async function loadSkillsStatTab() {
   const skillSelect2 = document.getElementById('skill-filter-select');
   if (skillSelect2 && cats) {
     skillSelect2.innerHTML = '<option value="">Visi skill\'ai</option>' + 
-      cats.map(c => `<option value="${c.id}" ${statFilters.skillId === c.id ? 'selected' : ''}>${c.icon || '💪'} ${c.name}</option>`).join('');
+      cats.map(c => `<option value="${c.id}" ${statFilters.skillId === c.id ? 'selected' : ''}>${escapeHtml(String(c.icon || '💪'))} ${escapeHtml(c.name || '')}</option>`).join('');
   }
 }
 
@@ -19357,7 +19378,7 @@ async function loadCompetitionsStatTab() {
   const weightSelect = document.getElementById('weight-filter-select');
   if (weightSelect) {
     weightSelect.innerHTML = '<option value="all">Visi svoriai</option>' +
-      uniqueWeights.map(w => `<option value="${w}" ${statFilters.weight === w ? 'selected' : ''}>${w}</option>`).join('');
+      uniqueWeights.map(w => `<option value="${escapeHtml(String(w))}" ${statFilters.weight === w ? 'selected' : ''}>${escapeHtml(String(w))}</option>`).join('');
   }
 }
 
@@ -19623,7 +19644,7 @@ async function loadKidProgress() {
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;text-align:center;">
         <div style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:6px;">${ico('dirzas')} DIRŽAS</div>
         <div style="width:80%;height:14px;margin:0 auto 8px;border-radius:2px;background:${beltInfo.mainGradient || beltInfo.color || '#FFFFFF'};border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 0 4px rgba(0,0,0,.3);"></div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;letter-spacing:1.5px;">${kid.kyu || 'Mu kyu'}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:white;letter-spacing:1.5px;">${escapeHtml(kid.kyu || 'Mu kyu')}</div>
       </div>
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:12px;text-align:center;">
         <div style="font-size:9px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:6px;">${ico('dvikova')} DVIKOVŲ PERGALĖS</div>
@@ -19688,7 +19709,7 @@ async function loadParentSkillsStatTab() {
   const skillSelect = document.getElementById('parent-skill-filter-select');
   if (skillSelect && cats) {
     skillSelect.innerHTML = '<option value="">Visi skill\'ai</option>' + 
-      cats.map(c => `<option value="${c.id}" ${parentStatFilters.skillId === c.id ? 'selected' : ''}>${c.icon || '💪'} ${c.name}</option>`).join('');
+      cats.map(c => `<option value="${c.id}" ${parentStatFilters.skillId === c.id ? 'selected' : ''}>${escapeHtml(String(c.icon || '💪'))} ${escapeHtml(c.name || '')}</option>`).join('');
   }
 }
 
@@ -19727,7 +19748,7 @@ async function loadParentCompetitionsStatTab() {
   const weightSelect = document.getElementById('parent-weight-filter-select');
   if (weightSelect) {
     weightSelect.innerHTML = '<option value="all">Visi svoriai</option>' +
-      uniqueWeights.map(w => `<option value="${w}" ${parentStatFilters.weight === w ? 'selected' : ''}>${w}</option>`).join('');
+      uniqueWeights.map(w => `<option value="${escapeHtml(String(w))}" ${parentStatFilters.weight === w ? 'selected' : ''}>${escapeHtml(String(w))}</option>`).join('');
   }
 }
 
@@ -20049,7 +20070,7 @@ async function loadTrainerSkillsStat() {
   const skillSelect = document.getElementById('trainer-skill-select');
   if (skillSelect && cats) {
     skillSelect.innerHTML = '<option value="">Visi skill\'ai</option>' + 
-      cats.map(c => `<option value="${c.id}" ${trainerStatFilters.skillId === c.id ? 'selected' : ''}>${c.icon || '💪'} ${c.name}</option>`).join('');
+      cats.map(c => `<option value="${c.id}" ${trainerStatFilters.skillId === c.id ? 'selected' : ''}>${escapeHtml(String(c.icon || '💪'))} ${escapeHtml(c.name || '')}</option>`).join('');
   }
 }
 
@@ -20103,7 +20124,7 @@ async function loadTrainerCompetitionsStat() {
   const weightSelect = document.getElementById('trainer-weight-select');
   if (weightSelect) {
     weightSelect.innerHTML = '<option value="all">Visi svoriai</option>' +
-      uniqueWeights.map(w => `<option value="${w}" ${trainerStatFilters.weight === w ? 'selected' : ''}>${w}</option>`).join('');
+      uniqueWeights.map(w => `<option value="${escapeHtml(String(w))}" ${trainerStatFilters.weight === w ? 'selected' : ''}>${escapeHtml(String(w))}</option>`).join('');
   }
 }
 
@@ -20662,21 +20683,21 @@ async function loadKidPendingSubmissions() {
           <span style="font-size:12px;line-height:1;">${catIcon}</span>
           <span style="font-size:7px;background:rgba(255,77,0,.2);color:#FF7A33;padding:1px 5px;border-radius:99px;font-weight:800;">PR</span>
         </div>
-        <div style="font-size:9px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${exName}</div>
+        <div style="font-size:9px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(exName)}</div>
         <div style="font-size:7px;color:var(--mut);margin-top:1px;">+${s.exp_gain || 0} EXP · ${time}</div>
       </div>`;
       
     } else if (s._type === 'ch') {
       // IŠŠŪKIS → nukela į v-ish (visi tipai - 🎯 vienodinta ikona)
       const chTitle = s.challenges?.title || 'Iššūkis';
-      const value = s.numeric_value ? `${s.numeric_value} ${s.challenges?.target_unit || ''}` : 'Pateikta';
+      const value = s.numeric_value ? `${s.numeric_value} ${escapeHtml(s.challenges?.target_unit || '')}` : 'Pateikta';
       
       html += `<div onclick="nv('v',document.querySelector('.bn2 .ni:nth-child(3)'),'v-ish')" style="background:var(--card);border-radius:8px;padding:6px 4px;border:.5px solid rgba(79,195,247,.3);cursor:pointer;-webkit-tap-highlight-color:rgba(79,195,247,.2);text-align:center;min-width:0;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:2px;">
           <span style="font-size:12px;line-height:1;">${ico('tikslas')}</span>
           <span style="font-size:7px;background:rgba(79,195,247,.2);color:#4FC3F7;padding:1px 5px;border-radius:99px;font-weight:800;">Iššūk</span>
         </div>
-        <div style="font-size:9px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${chTitle}</div>
+        <div style="font-size:9px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(chTitle)}</div>
         <div style="font-size:7px;color:var(--mut);margin-top:1px;">${value} · ${time}</div>
       </div>`;
       
@@ -20694,7 +20715,7 @@ async function loadKidPendingSubmissions() {
           <span style="font-size:12px;line-height:1;">${compTypeIcon}</span>
           <span style="font-size:7px;background:rgba(255,215,0,.2);color:#FFD700;padding:1px 5px;border-radius:99px;font-weight:800;">Varž</span>
         </div>
-        <div style="font-size:9px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${compTitle}</div>
+        <div style="font-size:9px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(compTitle)}</div>
         <div style="font-size:7px;color:var(--mut);margin-top:1px;">${detailsText} · ${time}</div>
       </div>`;
     }
@@ -22577,17 +22598,18 @@ function _attPanelHtml(stats){
   if(!stats) return '<div style="color:var(--mut);font-size:12px;text-align:center;padding:10px;">Grupė nepriskirta arba tvarkaraščio nėra.</div>';
   const wPct=stats.weekScheduled?Math.min(100,Math.round(stats.weekPresent/stats.weekScheduled*100)):0;
   const mPct=stats.monthScheduled?Math.min(100,Math.round(stats.monthPresent/stats.monthScheduled*100)):0;
-  const wFull=stats.weekScheduled>0 && stats.weekPresent>=stats.weekScheduled;
-  const mFull=stats.monthScheduled>0 && stats.monthPresent>=stats.monthScheduled;
+  // v623 (18A): premija rodoma tik tokia, kokią serveris ĮSKAITĖ (Kal.attBonuses → kid_exp_adjustments), ne skaičiuojama iš training_days
+  const wB=Math.max(0,stats.weekBonus||0), mB=Math.max(0,stats.monthBonus||0);
   const bar=(pct,col)=>`<div style="height:8px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${col};border-radius:99px;transition:width .6s ease;"></div></div>`;
-  return `<div style="font-size:13px;font-weight:800;color:white;margin-bottom:2px;">${stats.group.name||'Grupė'}</div>
-    <div style="font-size:11px;color:var(--mut);margin-bottom:12px;">${ico('kalendorius')} ${stats.schedule||'Tvarkaraštis nenustatytas'}</div>
-    <div style="margin-bottom:11px;"><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px;"><span style="color:var(--mut);">Ši savaitė</span><span style="color:var(--grn);">${stats.weekPresent}/${stats.weekScheduled}${wFull?' '+ico('patvirtinta')+' +15':''}</span></div>${bar(wPct,'#22C55E')}</div>
-    <div><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px;"><span style="color:var(--mut);">Šis mėnuo</span><span style="color:#FF7A33;">${stats.monthPresent}/${stats.monthScheduled}${mFull?' '+ico('trofejai')+' +100':''}</span></div>${bar(mPct,'#FF7A33')}</div>`;
+  return `<div style="font-size:13px;font-weight:800;color:white;margin-bottom:2px;">${escapeHtml(stats.group.name||'Grupė')}</div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:12px;">${ico('kalendorius')} ${escapeHtml(stats.schedule||'Tvarkaraštis nenustatytas')}</div>
+    <div style="margin-bottom:11px;"><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px;"><span style="color:var(--mut);">Ši savaitė</span><span style="color:var(--grn);">${stats.weekPresent}/${stats.weekScheduled}${wB?' '+ico('patvirtinta')+' +'+wB:''}</span></div>${bar(wPct,'#22C55E')}</div>
+    <div><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px;"><span style="color:var(--mut);">Šis mėnuo</span><span style="color:#FF7A33;">${stats.monthPresent}/${stats.monthScheduled}${mB?' '+ico('trofejai')+' +'+mB:''}</span></div>${bar(mPct,'#FF7A33')}</div>`;
 }
 
 // Vaiko „Mano lankomumas" langas (mygtukas v-main antraštėje prie 🔔/⚙️)
 async function openKidAttendance(){
+  if(typeof KidGate!=='undefined' && !KidGate.on('attendance')){ showToast(ico('lankomumas')+' Lankomumas klube išjungtas','info'); return; }   // v623 (15A)
   const kid=currentKid;
   if(!kid){ showToast('Vaiko duomenys nerasti','error'); return; }
   const old=document.getElementById('kid-att-modal'); if(old) old.remove();
@@ -22605,7 +22627,15 @@ async function openKidAttendance(){
   document.body.appendChild(m);
   const body=document.getElementById('kid-att-body');
   const st=await _attStatsForKid(kid);
-  if(body) body.innerHTML=_attPanelHtml(st)+`<div style="font-size:10px;color:var(--mut);text-align:center;margin-top:14px;line-height:1.5;">Pilna savaitė → +15 EXP · pilnas mėnuo → +100 EXP.<br>Lankomumą žymi treneris po treniruotės.</div>`;
+  // v623 (18A): serverio įskaitytos premijos šiai savaitei / mėnesiui (raktai kaip attendance_finalize_period: IYYY-Www / YYYY-MM)
+  if(st && typeof Kal!=='undefined' && Kal.attBonuses){
+    try{
+      const t=Kal.ymd(new Date()), mk=t.slice(0,7);
+      const b=await Kal.attBonuses(kid.id, Kal.addDays(Kal.isoMon(mk+'-01'),-1));   // apima ir savaitę, prasidėjusią praeitą mėnesį
+      st.weekBonus=b['week:'+Kal.isoWeekKey(t)]?.exp||0; st.monthBonus=b['month:'+mk]?.exp||0;
+    }catch(e){ console.warn('[kid-att] premijos', e?.message||e); }
+  }
+  if(body) body.innerHTML=_attPanelHtml(st)+`<div style="font-size:10px;color:var(--mut);text-align:center;margin-top:14px;line-height:1.5;">Pilna savaitė +15 EXP · pilnas mėnuo +100 EXP — jei buvai visose įvykusiose treniruotėse.<br>Premija atsiranda, kai treneris pažymi lankomumą.</div>`;
 }
 
 // ════════════════════════════════════════
@@ -30049,7 +30079,7 @@ function renderClubGroupsRanked(){
 const CLUB_DAYS = ['Pirmadienis','Antradienis','Trečiadienis','Ketvirtadienis','Penktadienis','Šeštadienis','Sekmadienis'];
 const CLUB_DAY_SHORT = { 'Pirmadienis':'Pr','Antradienis':'An','Trečiadienis':'Tr','Ketvirtadienis':'Kt','Penktadienis':'Pn','Šeštadienis':'Št','Sekmadienis':'Sk' };
 const _CGM_CSS = 'box-sizing:border-box;background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px;color:#fff;font-size:13px;';
-function _cgmTrainerOpts(sel){ return '<option value="">— pasirink —</option>'+(window._clubTrainerOpts||[]).map(t=>`<option value="${t.id}" ${sel===t.id?'selected':''}>${t.name}</option>`).join(''); }
+function _cgmTrainerOpts(sel){ return '<option value="">— pasirink —</option>'+(window._clubTrainerOpts||[]).map(t=>`<option value="${t.id}" ${sel===t.id?'selected':''}>${escapeHtml(t.name)}</option>`).join(''); }
 function _cgmAddAssistant(sel){
   const c = document.getElementById('cgm-assistants'); if(!c) return;
   const row = document.createElement('div'); row.style.cssText='display:flex;gap:8px;margin-top:6px;';
@@ -31011,7 +31041,7 @@ async function loadPendingDuels() {
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
           <div style="font-size:28px;">${t.icon}</div>
           <div style="flex:1;">
-            <div style="font-size:14px;font-weight:900;color:white;">${t.name}</div>
+            <div style="font-size:14px;font-weight:900;color:white;">${escapeHtml(t.name)}</div>
             <div style="font-size:10px;color:var(--mut);">Dvikovos rezultatas</div>
           </div>
         </div>
@@ -33297,7 +33327,7 @@ async function _trainerGroupChallenges(){
       if (!chGroups.length) continue;
       const { data: st } = await sb.rpc('club_challenge_standings', { challenge_uuid: ch.id });
       const N = (st||[]).length;
-      const safe=(ch.title||'').replace(/'/g,"\\'");
+      const titleArg = escapeHtml(JSON.stringify(String(ch.title || '')));   // v623 (16A): JS eilutė onclick'e
       // Kompaktiška kortelė per grupę — identiška vaiko archyvo dizainui
       chGroups.forEach(g=>{
         const mine = (st||[]).find(r=>r.g_id===g.id);
@@ -33305,13 +33335,13 @@ async function _trainerGroupChallenges(){
         const total = mine ? (+mine.total_val||0) : 0;
         const medal = rnk===1?''+ico('medalis')+'':rnk===2?''+ico('medalis')+'':rnk===3?''+ico('medalis')+'':`${rnk}.`;
         const gotExp = (typeof _gcTierExp==='function') ? _gcTierExp(ch.winner_exp, rnk) : 0;
-        arr.push(`<div onclick="viewChallengeStandings('${ch.id}','${safe}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #6B7280;opacity:.9;">
+        arr.push(`<div onclick="viewChallengeStandings('${ch.id}', ${titleArg})" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #6B7280;opacity:.9;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
             <div style="flex:1;min-width:0;">
               <div style="font-size:12px;font-weight:800;color:white;">${ico('paketas')} ${escapeHtml(ch.title)}</div>
               <div style="font-size:9px;color:var(--mut);margin-top:2px;font-weight:700;">${g.name||'Grupė'} ${medal} vieta iš ${N}${ch.exp_awarded&&gotExp>0?' · <span style="color:#EAB308;">+'+gotExp+' EXP/vaikui</span>':''}</div>
             </div>
-            <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);">${ch.unit||''}</div></div>
+            <div style="text-align:right;flex-shrink:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--mut);line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);">${escapeHtml(ch.unit||'')}</div></div>
           </div>
         </div>`);
       });
@@ -33351,7 +33381,7 @@ async function _trainerGroupChallenges(){
     return `<div class="cd" style="margin-bottom:10px;border-left:3px solid #EAB308;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${ico('trofejai')} ${escapeHtml(ch.title)}</div><div style="font-size:10px;color:var(--mut);">${ch.exercise_label||_gcMetricLabel(ch)}${daysLeft!=null?' · liko '+daysLeft+' d.':''}</div></div>
-        <div style="text-align:right;flex-shrink:0;"><div id="trgc-${ch.id}-total" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EAB308;line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);letter-spacing:.5px;">GRUPĖS VISO ${ch.unit||''}</div></div>
+        <div style="text-align:right;flex-shrink:0;"><div id="trgc-${ch.id}-total" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#EAB308;line-height:1;">${total}</div><div style="font-size:8px;color:var(--mut);letter-spacing:.5px;">GRUPĖS VISO ${escapeHtml(ch.unit||'')}</div></div>
       </div>
       ${groupSel}
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
@@ -34535,7 +34565,7 @@ async function loadPendingCompetitionResults() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:14px;font-weight:900;margin-bottom:2px;">${genderIcon} ${kidName}</div>
-          <div style="font-size:11px;color:var(--mut);">${kid.kyu || 'Mu kyu'}</div>
+          <div style="font-size:11px;color:var(--mut);">${escapeHtml(kid.kyu || 'Mu kyu')}</div>
         </div>
         <div class="bg or" style="padding:3px 8px;font-size:10px;">${ico('laukia')} Laukia</div>
       </div>
@@ -34725,7 +34755,7 @@ function subscribeKidNotifications() {
         .select('name, career_categories(name)')
         .eq('id', sub.exercise_id)
         .single();
-      const exName = ex?.name || 'Pratimas';
+      const exName = escapeHtml(ex?.name || 'Pratimas');   // v623 (16A): toast = innerHTML
 
       if (sub.status === 'approved') {
         if (_isSeen('ex', sub.id)) return; // jau parodyta (gyvai ar kaip praleista)
@@ -34733,7 +34763,7 @@ function subscribeKidNotifications() {
         showToast(`${ico('patvirtinta')} TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
         await loadKidData();
       } else if (sub.status === 'rejected') {
-        const reason = sub.rejection_reason || 'be priežasties';
+        const reason = escapeHtml(sub.rejection_reason || 'be priežasties');
         showToast(`${ico('klaida')} ATMESTA\n\n${exName}\n${reason}`, 'error');
         await loadKidPendingSubmissions();
       }
@@ -34835,7 +34865,8 @@ function subscribeKidNotifications() {
         if (_isSeen('cpRej', res.id)) return;
         _addSeen('cpRej', res.id);
         const reason = res.rejection_reason || 'be priežasties';
-        showToast(`${ico('klaida')} VARŽYBŲ REZULTATAS ATMESTAS\n\n${reason}`, 'error', null, { sound: 'send' });
+        // v623: priežastis — trenerio tekstas į innerHTML (16A); išjungtoms varžyboms / egzaminams — be toast (15A)
+        if (typeof KidGate === 'undefined' || KidGate.on('comp') || KidGate.on('belt')) showToast(`${ico('klaida')} VARŽYBŲ REZULTATAS ATMESTAS\n\n${escapeHtml(reason)}`, 'error', null, { sound: 'send' });
         await loadKidData();
         return;
       }
@@ -34857,9 +34888,9 @@ function subscribeKidNotifications() {
       _addSeen('adj', adj.id);
       const amt = adj.exp_change || 0;
       if (amt >= 0) {
-        showToast(`${ico('zvaigzde')} TRENERIO ĮVERTINIMAS\n\n${adj.reason || ''}\n+${amt} EXP`, 'success', null, { confetti: 15, sound: 'exp' });
+        showToast(`${ico('zvaigzde')} TRENERIO ĮVERTINIMAS\n\n${escapeHtml(adj.reason || '')}\n+${amt} EXP`, 'success', null, { confetti: 15, sound: 'exp' });
       } else {
-        showToast(`${ico('ispejimas')} TRENERIO PASTABA\n\n${adj.reason || ''}\n${amt} EXP`, 'error', null, { sound: 'send' });
+        showToast(`${ico('ispejimas')} TRENERIO PASTABA\n\n${escapeHtml(adj.reason || '')}\n${amt} EXP`, 'error', null, { sound: 'send' });
       }
       await loadKidData();
     })
@@ -35108,8 +35139,8 @@ async function showExercises(categoryId, categoryName) {
     .order('sort_order');
 
   if (error) {
-    document.getElementById('exo-list').innerHTML = 
-      `<div style="padding:20px;text-align:center;color:var(--br);">Klaida: ${error.message}</div>`;
+    document.getElementById('exo-list').innerHTML =
+      `<div style="padding:20px;text-align:center;color:var(--br);">Klaida: ${escapeHtml(_userError(error))}</div>`;
     return;
   }
 
@@ -35200,7 +35231,7 @@ function renderExoList() {
   const html = currentExerciseList.map(ex => {
     const icon = (typeof CAREER_ICONS !== 'undefined' && CAREER_ICONS[ex.name]) || `<span style="font-size:18px;">${ico('dirzas')}</span>`;
     if (!ex.target) {
-      return `<div class="ri" style="opacity:.4;"><div style="flex:1;"><span style="font-size:13px;font-weight:800;">${ex.name}</span><div style="font-size:10px;color:var(--mut);margin-top:3px;">${ico('ispejimas')} Ribos dar nenustatytos</div></div></div>`;
+      return `<div class="ri" style="opacity:.4;"><div style="flex:1;"><span style="font-size:13px;font-weight:800;">${escapeHtml(ex.name)}</span><div style="font-size:10px;color:var(--mut);margin-top:3px;">${ico('ispejimas')} Ribos dar nenustatytos</div></div></div>`;
     }
     const { pct, exp } = exoExpOf(ex);
     const open = exoOpenSet[ex.id];
@@ -35210,8 +35241,8 @@ function renderExoList() {
       <div onclick="toggleExo('${ex.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
         <div style="width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex:none;">${icon}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:800;line-height:1.25;">${ex.name}</div>
-          <div style="font-size:10px;color:var(--mut);margin-top:1px;">${ex.has_pr ? `Rekordas: <b style="color:#FFD700;">${ex.current_pr}</b> ${ex.unit}` : `Dar nebandyta · ${ex.unit}`}</div>
+          <div style="font-size:12px;font-weight:800;line-height:1.25;">${escapeHtml(ex.name)}</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;">${ex.has_pr ? `Rekordas: <b style="color:#FFD700;">${ex.current_pr}</b> ${escapeHtml(ex.unit || '')}` : `Dar nebandyta · ${escapeHtml(ex.unit || '')}`}</div>
         </div>
         <div style="text-align:right;flex:none;width:54px;">
           <div style="font-size:10.5px;font-weight:800;">${exp}<span style="color:var(--mut);font-size:8px;">/100</span></div>
@@ -35229,13 +35260,13 @@ function renderExoList() {
         return `<div style="flex:1;text-align:center;border:1px solid ${c[1]};background:${c[2]};border-radius:9px;padding:5px 2px;position:relative;color:${c[0]};${got ? '' : 'opacity:.45;'}">${got ? `<span style='position:absolute;top:-6px;right:-3px;font-size:9px;'>${ico('patvirtinta')}</span>` : ''}<div style="font-size:10px;">${t[0]}</div><div style="font-size:11.5px;font-weight:800;">${t[1]}</div></div>`;
       }).join('');
       let nxt = '';
-      for (const t of tiers) { if (!exoReached(ex, t[1])) { nxt = `Kitas tikslas: <b style="color:#ffd24a;">${t[0]} ${t[1]} ${ex.unit}</b>`; break; } }
+      for (const t of tiers) { if (!exoReached(ex, t[1])) { nxt = `Kitas tikslas: <b style="color:#ffd24a;">${t[0]} ${t[1]} ${escapeHtml(ex.unit || '')}</b>`; break; } }
       if (!nxt) nxt = `<b style="color:#FF4D00;">${ico('trofejai')} Pasiektas maksimumas!</b>`;
 
       h += `<div style="border-top:1px solid var(--bdr);padding:10px 12px 12px;">
-        ${ex.description ? `<div style="font-size:11px;color:#c9c9d4;line-height:1.55;">${ex.description}</div>` : ''}
-        ${ex.why_text ? `<div style="font-size:10px;color:#9a9aa8;margin-top:7px;line-height:1.5;background:rgba(0,0,0,.25);border-left:2px solid #3a3a48;padding:6px 9px;border-radius:0 8px 8px 0;">${ico('tikslas')} <b style="color:#c9c9d4;">Kodėl:</b> ${ex.why_text}</div>` : ''}
-        ${ex.report_text ? `<div style="font-size:10px;color:#9a9aa8;margin-top:6px;line-height:1.5;background:rgba(0,0,0,.25);border-left:2px solid #FF7A33;padding:6px 9px;border-radius:0 8px 8px 0;">${ico('statistika')} <b style="color:#c9c9d4;">Ataskaitoje:</b> ${ex.report_text}</div>` : ''}
+        ${ex.description ? `<div style="font-size:11px;color:#c9c9d4;line-height:1.55;">${_richLite(ex.description)}</div>` : ''}
+        ${ex.why_text ? `<div style="font-size:10px;color:#9a9aa8;margin-top:7px;line-height:1.5;background:rgba(0,0,0,.25);border-left:2px solid #3a3a48;padding:6px 9px;border-radius:0 8px 8px 0;">${ico('tikslas')} <b style="color:#c9c9d4;">Kodėl:</b> ${_richLite(ex.why_text)}</div>` : ''}
+        ${ex.report_text ? `<div style="font-size:10px;color:#9a9aa8;margin-top:6px;line-height:1.5;background:rgba(0,0,0,.25);border-left:2px solid #FF7A33;padding:6px 9px;border-radius:0 8px 8px 0;">${ico('statistika')} <b style="color:#c9c9d4;">Ataskaitoje:</b> ${_richLite(ex.report_text)}</div>` : ''}
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
           ${sc ? `<span style="font-size:8.5px;font-weight:800;letter-spacing:.4px;border:1px solid ${sc[0]}55;color:${sc[0]};border-radius:20px;padding:2px 8px;">${sc[1]}</span>` : ''}
           ${ex.strava ? `<span style="font-size:8.5px;font-weight:800;border:1px solid #7a3414;color:#ff7a3d;border-radius:20px;padding:2px 8px;">${ico('vieta')} STRAVA ĮRODYMAS</span>` : ''}
@@ -35265,8 +35296,8 @@ function openSubmissionForm(exerciseId) {
   const lower = ex.lower_is_better;
   const arrow = lower ? '↓' : '↑';
   document.getElementById('exo-form-info').innerHTML = 
-    `<strong>${ex.ageGroup.name}</strong> · ${lower?'mažiau geriau':'daugiau geriau'} ${arrow}<br>` +
-    `${ico('medalis')} Bronze: ${t.bronze} · ${ico('medalis')} Silver: ${t.silver} · ${ico('medalis')} Gold: ${t.gold} · ${ico('trofejai')} Max: ${t.completed} ${ex.unit}`;
+    `<strong>${escapeHtml(ex.ageGroup.name)}</strong> · ${lower?'mažiau geriau':'daugiau geriau'} ${arrow}<br>` +
+    `${ico('medalis')} Bronze: ${t.bronze} · ${ico('medalis')} Silver: ${t.silver} · ${ico('medalis')} Gold: ${t.gold} · ${ico('trofejai')} Max: ${t.completed} ${escapeHtml(ex.unit || '')}`;
   
   document.getElementById('exo-form-pr').textContent = ex.has_pr ? ex.current_pr : '–';
   document.getElementById('exo-form-new').value = '';
@@ -35635,6 +35666,7 @@ function showPortalSelector(){
   document.getElementById('ps').style.display='';
 }
 function g(p,id){
+  try { if (typeof Kal !== 'undefined' && Kal.sheetCloseAll) Kal.sheetCloseAll(); } catch (_e) { }   // MODULIS: Kal (v623, 17A b) — lapas nelieka ant naujo ekrano
   const portal=document.getElementById(portals[p]);
   portal.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
   const el=document.getElementById(id);
@@ -35649,6 +35681,7 @@ function nvDesktop(sid) {
 }
 
 function nv(p,el,sid){
+  if (p === 'v' && typeof KidGate !== 'undefined' && !KidGate.screen(sid)) { sid = 'v-main'; el = null; }   // v623 (15A): išjungtos funkcijos ekrano nerodom
   g(p,sid);
   _activeSid = sid;
   // Sinchronizuoti VISŲ apatinių navigacijų aktyvų mygtuką pagal sid
@@ -36056,9 +36089,10 @@ async function showMissedEvents() {
       } else if (ev.type === 'competition') {
         // ⛔ Žalio NEBERODOM — varžybų medalio/dalyvavimo šventę parodo detectNewMedals (žemiau, atsibudus)
       } else if (ev.type === 'exercise') {
-        const exName = _exNameMap[ev.data.exercise_id] || 'Pratimas';
+        const exName = escapeHtml(_exNameMap[ev.data.exercise_id] || 'Pratimas');
         showToast(`${ico('patvirtinta')} TRENERIS PATVIRTINO\n\n${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
       } else if (ev.type === 'duel') {
+        if (typeof KidGate !== 'undefined' && !KidGate.on('duels')) continue;   // v623 (15A)
         const won = ev.data.winner_id === kidId;
         const drew = !ev.data.winner_id;
         const txt = drew ? 'Lygiosios' : (won ? ''+ico('patvirtinta')+' Laimėjai!' : ''+ico('jega')+' Šįkart laimėjo draugas');
@@ -37284,7 +37318,7 @@ async function loadConversationsList() {
   
   if (error) {
     console.error('❌ loadConversationsList klaida:', error);
-    container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--br);">Klaida: ${error.message}<br><br><small>${error.code || ''}</small></div>`;
+    container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--br);">Klaida: ${escapeHtml(_userError(error))}<br><br><small>${escapeHtml(error.code || '')}</small></div>`;
     return;
   }
   
@@ -37373,15 +37407,16 @@ async function loadConversationsList() {
         am.conversation_id === conv.id && am.user_id !== currentUser.id
       );
       const otherProfile = otherMembers.length > 0 ? profilesMap[otherMembers[0].user_id] : null;
+      // v623 (16A): title eina į HTML kartu su ico() — tekstas pabėgamas čia, priskiriant
       if (conv.title) {
-        title = conv.title; // įrašytas vardas — pirmenybė (nereikia skaityti kito profilio)
+        title = escapeHtml(conv.title); // įrašytas vardas — pirmenybė (nereikia skaityti kito profilio)
       } else if (otherProfile) {
         const nm = `${otherProfile.first_name || ''} ${otherProfile.last_name || ''}`.trim();
         const ctxKid = (conv.kid_id && kidsMap[conv.kid_id]) ? kidsMap[conv.kid_id] : null;
-        if (otherProfile.role === 'trainer') title = (nm || 'Treneris') + ' (treneris)';
-        else if (otherProfile.role === 'parent') title = nm ? nm + ' (tėvai)' : (ctxKid ? `${ctxKid.first_name || 'Vaikas'} tėvai` : 'Tėvai');
-        else if (otherProfile.role === 'kid') title = (nm || (ctxKid ? (ctxKid.first_name || 'Vaikas') : 'Vaikas')) + ' (vaikas)';
-        else title = nm || 'Vartotojas';
+        if (otherProfile.role === 'trainer') title = escapeHtml((nm || 'Treneris') + ' (treneris)');
+        else if (otherProfile.role === 'parent') title = escapeHtml(nm ? nm + ' (tėvai)' : (ctxKid ? `${ctxKid.first_name || 'Vaikas'} tėvai` : 'Tėvai'));
+        else if (otherProfile.role === 'kid') title = escapeHtml((nm || (ctxKid ? (ctxKid.first_name || 'Vaikas') : 'Vaikas')) + ' (vaikas)');
+        else title = escapeHtml(nm || 'Vartotojas');
       } else {
         title = 'Vartotojas';
       }
@@ -37393,12 +37428,12 @@ async function loadConversationsList() {
         if (creator.id === currentUser.id) {
           creatorLabel = ' (tavo)';
         } else if (creator.role === 'trainer') {
-          creatorLabel = ` · ${ico('dirzas')} ${creator.first_name || 'Treneris'}`;
+          creatorLabel = ` · ${ico('dirzas')} ${escapeHtml(creator.first_name || 'Treneris')}`;
         } else if (creator.role === 'club_admin') {
           creatorLabel = ` · ${ico('klubas')} Klubas`;
         }
       }
-      title = `${ico('grupe')} ${conv.title || 'Grupinis pokalbis'}${creatorLabel}`;
+      title = `${ico('grupe')} ${escapeHtml(conv.title || 'Grupinis pokalbis')}${creatorLabel}`;
     } else if (conv.type === 'broadcast') {
       const creator = profilesMap[conv.created_by];
       let creatorLabel = '';
@@ -37408,19 +37443,19 @@ async function loadConversationsList() {
         } else if (creator.role === 'club_admin') {
           creatorLabel = ` · ${ico('klubas')} Klubas`;
         } else if (creator.role === 'trainer') {
-          creatorLabel = ` · ${ico('dirzas')} ${creator.first_name || 'Treneris'}`;
+          creatorLabel = ` · ${ico('dirzas')} ${escapeHtml(creator.first_name || 'Treneris')}`;
         }
       }
-      title = `${ico('skelbimas')} ${conv.title || 'Klubo pokalbis'}${creatorLabel}`;
+      title = `${ico('skelbimas')} ${escapeHtml(conv.title || 'Klubo pokalbis')}${creatorLabel}`;
     } else if (conv.type === 'announcement') {
       const cat = ANNOUNCEMENT_CATEGORIES[conv.category] || ANNOUNCEMENT_CATEGORIES.general;
-      title = `${cat.icon} ${conv.title || cat.name}`;
+      title = `${cat.icon} ${escapeHtml(conv.title || cat.name)}`;
     }
-    
+
     // Konteksto vaikas
     if (conv.kid_id && kidsMap[conv.kid_id]) {
       const kid = kidsMap[conv.kid_id];
-      subtitle = `Apie: ${kid.first_name} ${kid.last_name?.[0] || ''}.`;
+      subtitle = escapeHtml(`Apie: ${kid.first_name} ${kid.last_name?.[0] || ''}.`);
     }
     
     // Last message
@@ -37523,8 +37558,12 @@ function _userError(e){
 
 function escapeHtml(text) {
   if (!text) return '';
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  // v623 (16A): String() — skaičiai/objektai nebemeta TypeError
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+
+// v623 (16A): tekstas su leistinais <b>/<i>/<strong>/<em>/<br> (exercises.description/why_text/report_text) — visa kita pabėgta
+function _richLite(s){ return escapeHtml(String(s ?? '')).replace(/&lt;(\/?)(b|i|strong|em)&gt;/gi,'<$1$2>').replace(/&lt;br\s*\/?&gt;/gi,'<br>'); }
 
 // ATIDARYTI POKALBĮ
 async function openConversation(convId) {
@@ -37658,7 +37697,7 @@ async function loadMessages(convId) {
     .order('sent_at', { ascending: true });
   
   if (error) {
-    thread.innerHTML = `<div style="text-align:center;color:var(--br);">Klaida: ${error.message}</div>`;
+    thread.innerHTML = `<div style="text-align:center;color:var(--br);">Klaida: ${escapeHtml(_userError(error))}</div>`;
     return;
   }
   
@@ -37695,7 +37734,7 @@ function renderMessage(msg, sendersMap) {
   
   return `
     <div style="display:flex;flex-direction:column;align-items:${isMine ? 'flex-end' : 'flex-start'};">
-      ${!isMine && senderName ? `<div style="font-size:10px;color:var(--mut);margin-bottom:2px;padding:0 6px;">${senderName}</div>` : ''}
+      ${!isMine && senderName ? `<div style="font-size:10px;color:var(--mut);margin-bottom:2px;padding:0 6px;">${escapeHtml(senderName)}</div>` : ''}
       <div style="background:${isMine ? '#6366f1' : 'var(--card)'};color:${isMine ? '#fff' : 'var(--text)'};padding:10px 14px;border-radius:18px;max-width:78%;font-size:13px;line-height:1.4;word-wrap:break-word;border:${isMine ? 'none' : '.5px solid var(--bdr)'};">
         ${escapeHtml(msg.body).replace(/\n/g, '<br>')}
       </div>
@@ -38659,6 +38698,7 @@ function toggleNotifications() {
   
   if (section.style.display === 'none' || section.style.display === '') {
     section.style.display = 'flex';
+    if (typeof KidGate !== 'undefined' && typeof currentNotifTab !== 'undefined' && !KidGate.notifTab(currentNotifTab) && typeof switchNotifTab === 'function') switchNotifTab('system');   // v623 (15A)
     // Užkrauti pranešimus
     loadAllNotifications();
     if (typeof PushKv !== 'undefined') PushKv.mount('v-notif-list');   // v614: push kvietimas
@@ -38704,7 +38744,7 @@ async function loadAllNotifications(force) {
       .limit(20),
     // 🤖 SISTEMA - patvirtintos IR atmestos varžybos
     sb.from('competition_results')
-      .select('id, exp_gained, approved_at, placement, approval_status, rejection_reason, competitions(title)')
+      .select('id, exp_gained, approved_at, placement, approval_status, rejection_reason, competitions(title, competition_type)')
       .eq('kid_id', currentKid.id)
       .in('approval_status', ['approved', 'rejected'])
       .gte('approved_at', cutoffISO)
@@ -38874,7 +38914,7 @@ async function loadAllNotifications(force) {
   (approvedCoRes.data || []).forEach(s => {
     if (s.approval_status === 'rejected') {
       varzybos.push({
-        id: `rejCo-${s.id}`,
+        id: `rejCo-${s.id}`, ctype: s.competitions?.competition_type,   // v623 (15A)
         icon: ''+ico('klaida')+'',
         title: 'Varžybų rezultatas atmestas',
         body: `${escapeHtml(s.competitions?.title || 'Varžyba')} · ${escapeHtml(s.rejection_reason || 'be priežasties')}`, // v401 (B4)
@@ -38884,7 +38924,7 @@ async function loadAllNotifications(force) {
     } else {
       const placement = s.placement ? `${s.placement}-a vieta · ` : '';
       varzybos.push({
-        id: `apprCo-${s.id}`,
+        id: `apprCo-${s.id}`, ctype: s.competitions?.competition_type,   // v623 (15A)
         icon: ''+ico('trofejai')+'',
         title: 'Varžybos patvirtintos',
         body: `${escapeHtml(s.competitions?.title || 'Varžyba')} · ${placement}+${s.exp_gained || 0} EXP`, // v401 (B4)
@@ -38924,7 +38964,7 @@ async function loadAllNotifications(force) {
     monthly: { icon: ico('menesinis'), label: 'Mėnesinis' }
   };
   (streakRes.data || []).forEach(s => {
-    const cfg = streakTypeConfig[s.streak_type] || { icon: ''+ico('streak')+'', label: s.streak_type };
+    const cfg = streakTypeConfig[s.streak_type] || { icon: ''+ico('streak')+'', label: escapeHtml(String(s.streak_type || '')) };
     sistema.push({
       id: `streak-${s.id}`,
       icon: cfg.icon,
@@ -38968,7 +39008,7 @@ async function loadAllNotifications(force) {
   (newCoRes.data || []).forEach(co => {
     const levelLabels = { local: ''+ico('miestas')+'', medium: ''+ico('miestas')+'', european: ''+ico('svetaine')+'' };
     varzybos.push({
-      id: `newCo-${co.id}`,
+      id: `newCo-${co.id}`, ctype: co.competition_type,   // v623 (15A)
       icon: levelLabels[co.level] || ''+ico('trofejai')+'',
       title: 'Nauja varžyba',
       body: `${escapeHtml(co.title || 'Varžyba')} · ${new Date(co.event_date).toLocaleDateString('lt-LT')}`, // v401 (B4)
@@ -39071,10 +39111,11 @@ async function loadAllNotifications(force) {
     const seen = new Set();
     return arr.filter(n => { if (seen.has(n.id)) return false; seen.add(n.id); return true; });
   };
+  const _kg = typeof KidGate !== 'undefined' ? KidGate : null;   // v623 (15A): išjungtų funkcijų įrašų nerodom
   allNotifications = {
     system: dedupeById(sistema),
-    challenges: dedupeById(issukiai),
-    competitions: dedupeById(varzybos),
+    challenges: dedupeById(issukiai).filter(n => !_kg || _kg.notifKeep('challenges', n)),
+    competitions: dedupeById(varzybos).filter(n => !_kg || _kg.notifKeep('competitions', n)),
     messages: dedupeById(zinutes)
   };
   
@@ -39097,6 +39138,8 @@ function updateNotifCounts(seenIds) {
   let totalUnread = 0;
   
   cats.forEach(cat => {
+    // v623 (15A): paslėpto tabo įrašai neskaičiuojami (anksčiau išjungtos Žinutės vis tiek pūtė varpelio skaičių)
+    if (typeof KidGate !== 'undefined' && !KidGate.notifTab(cat)) { const e0 = document.getElementById(`v-notif-count-${cat}`); if (e0) e0.textContent = ''; return; }
     const unread = allNotifications[cat].filter(n => !seenIds.has(n.id)).length;
     const el = document.getElementById(`v-notif-count-${cat}`);
     if (el) el.textContent = unread > 0 ? `(${unread})` : '';
@@ -39230,10 +39273,10 @@ async function kidComposeToTrainer() {
     if (el) {
       el.innerHTML = `<div style="font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin:4px 0 10px;">KAM RAŠYTI? PASIRINK TRENERĮ:</div>` +
         trainers.map(t => {
-          const safe = (t.name || 'Treneris').replace(/'/g, "\\'");
-          return `<div onclick="kidStartTrainerChat('${t.id}','${safe}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
+          // v623 (16A): perduodamas tik ID (vardas funkcijoje nenaudojamas)
+          return `<div onclick="kidStartTrainerChat('${t.id}')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;">
             <div style="font-size:20px;">${ico('dirzas')}</div>
-            <div style="font-weight:800;font-size:13px;color:white;">${t.name}</div>
+            <div style="font-weight:800;font-size:13px;color:white;">${escapeHtml(t.name)}</div>
             <div style="margin-left:auto;color:var(--br);font-size:14px;">›</div>
           </div>`;
         }).join('');
@@ -39293,7 +39336,7 @@ async function kidStartTrainerChat(trainerId, trainerName) {
     openKidConversation(convId);
   } catch (e) {
     console.error('kidStartTrainerChat:', e);
-    if (typeof showToast === 'function') showToast('Nepavyko atidaryti pokalbio: ' + (e.message || ''), 'error', 5000);
+    if (typeof showToast === 'function') showToast('Nepavyko atidaryti pokalbio: ' + escapeHtml(_userError(e)), 'error', 5000);
   }
 }
 
@@ -39382,10 +39425,10 @@ function _kidShareBody(d) {
   const name = `${(currentKid?.first_name || '')} ${(currentKid?.last_name || '')}`.trim();
   return `<div style="margin-top:auto;padding:20px;min-height:0;">
         <div style="font-size:44px;line-height:1;margin-bottom:8px;">${ico('jega')}</div>
-        <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:.5px;text-shadow:0 1px 4px rgba(0,0,0,.6);">${d.ex}</div>
+        <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:.5px;text-shadow:0 1px 4px rgba(0,0,0,.6);">${escapeHtml(d.ex)}</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;color:#fff;line-height:1;margin:2px 0;text-shadow:0 2px 8px rgba(0,0,0,.7);">${d.val}</div>
         <div style="display:inline-block;font-size:14px;font-weight:800;color:#1a0a00;background:#FFD700;padding:4px 12px;border-radius:99px;">+${d.exp} EXP</div>
-        <div style="font-size:12px;color:#fff;margin-top:12px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.6);">${name ? name + ' · ' : ''}OSU! ${ico('dirzas')}</div>
+        <div style="font-size:12px;color:#fff;margin-top:12px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.6);">${name ? escapeHtml(name) + ' · ' : ''}OSU! ${ico('dirzas')}</div>
       </div>`;
 }
 let _kidShareLogo = null; // klubo logo data URL (shareFrame juostai)
@@ -39474,7 +39517,7 @@ async function _kidShareAction(kind) {
     }
   } catch (e) {
     console.error('kidShare:', e);
-    showToast(ico('klaida')+' Nepavyko: ' + (e.message || 'klaida'), 'error', 4000);
+    showToast(ico('klaida')+' Nepavyko: ' + escapeHtml(_userError(e)), 'error', 4000);
   }
 }
 
@@ -39851,7 +39894,7 @@ async function loadKidSettingsDetails() {
     trainersHtml = trainersList.map(t => `
       <div style="display:flex;align-items:center;gap:8px;padding:3px 0;">
         <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.name)}${t.isPrimary && trainersList.length > 1 ? ' <span style="color:var(--mut);font-size:8px;">pagrindinis</span>' : ''}</span>
-        ${_canWrite ? `<button onclick="event.stopPropagation();_kidWriteToTrainer('${t.id}','${(t.name || '').replace(/'/g, "\\'")}')" style="flex-shrink:0;background:rgba(255,77,0,.14);border:.5px solid rgba(255,77,0,.4);color:var(--br);font-size:9px;font-weight:800;padding:4px 9px;border-radius:99px;cursor:pointer;font-family:inherit;">${ico('zinutes')} Rašyti</button>` : ''}
+        ${_canWrite ? `<button onclick="event.stopPropagation();_kidWriteToTrainer('${t.id}')" style="flex-shrink:0;background:rgba(255,77,0,.14);border:.5px solid rgba(255,77,0,.4);color:var(--br);font-size:9px;font-weight:800;padding:4px 9px;border-radius:99px;cursor:pointer;font-family:inherit;">${ico('zinutes')} Rašyti</button>` : ''}
       </div>`).join('');
   }
   
@@ -39869,12 +39912,12 @@ async function loadKidSettingsDetails() {
   const trainerLabel = trainerIds.size > 1 ? `Treneriai (${trainerIds.size})` : 'Treneris';
   
   container.innerHTML = `
-    ${cell(''+ico('namai')+'', 'Klubas', clubName)}
-    ${cell(''+ico('grupe')+'', 'Grupė', groupName)}
+    ${cell(''+ico('namai')+'', 'Klubas', escapeHtml(clubName))}
+    ${cell(''+ico('grupe')+'', 'Grupė', escapeHtml(groupName))}
     ${cell(''+ico('treneris')+'', trainerLabel, trainersHtml)}
-    ${cell(''+ico('dirzas')+'', 'Diržas (kyu)', kyu)}
+    ${cell(''+ico('dirzas')+'', 'Diržas (kyu)', escapeHtml(kyu))}
     ${cell(''+ico('gimtadienis')+'', 'Amžius', age !== null ? `${age} m.` : '–')}
-    ${cell(''+ico('teisingumas')+'', 'Svorio kat.', weight)}
+    ${cell(''+ico('teisingumas')+'', 'Svorio kat.', escapeHtml(weight))}
     ${cell(''+ico('anketa')+'', 'Lytis', currentKid.gender === 'male' ? ''+ico('vaikas')+' Vaikinas' : currentKid.gender === 'female' ? ''+ico('vaikas')+' Mergaitė' : '–')}
   `;
 }
@@ -42155,6 +42198,11 @@ const Kal = {
     const last = new Date(y, m, 0).getDate();
     return { y, m, from: `${ym}-01`, to: `${ym}-${String(last).padStart(2, '0')}`, last };
   },
+  // v623 (11A/18A, tik rodymas): ISO savaitė kaip serveryje — to_char(date_trunc('week', d), 'IYYY-"W"IW')
+  addDays(ds, n) { const x = this.dt(ds); x.setDate(x.getDate() + n); return this.ymd(x); },
+  isoMon(ds) { return this.addDays(ds, 1 - this.dayNo(ds)); },
+  isoWeekKey(ds) { const m = this.isoMon(ds), y = Number(this.addDays(m, 3).slice(0, 4)); const w = Math.round((this.dt(m) - this.dt(this.isoMon(`${y}-01-04`))) / 604800000) + 1; return `${y}-W${String(w).padStart(2, '0')}`; },
+  isoWeekMon(key) { const x = /^(\d{4})-W(\d{2})$/.exec(String(key || '')); return x ? this.addDays(this.isoMon(`${x[1]}-01-04`), (Number(x[2]) - 1) * 7) : null; },
   clubId() { return (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || currentProfile?.club_id || null; },
   // v555 (kalendorius v2 „1a"): kilmininkas / galininkas antraštėms, renginio žyma ir spalva, bendras dienos lapas su spyruokle
   MONG: ['SAUSIO', 'VASARIO', 'KOVO', 'BALANDŽIO', 'GEGUŽĖS', 'BIRŽELIO', 'LIEPOS', 'RUGPJŪČIO', 'RUGSĖJO', 'SPALIO', 'LAPKRIČIO', 'GRUODŽIO'],
@@ -42206,6 +42254,12 @@ const Kal = {
     if (now || this.reduced()) { fin(); return; }
     sh?.classList.remove('on'); dim?.classList.remove('on');
     setTimeout(fin, 340);
+  },
+  // v623 (17A b): ekrano keitimas (g → nv / nvDesktop / tiesioginis g) uždaro VISUS Kal.sheetOpen lapus (body > .kal-sheet + #id-dim)
+  // ir likusius foną. Planas.sheet / Iss.sheet (.kal-dim#id > .kal-sheet.pl, id be „-dim") neliečiami.
+  sheetCloseAll() {
+    document.querySelectorAll('body > .kal-sheet').forEach(sh => { if (sh.id) this.sheetClose(sh.id, true); else sh.remove(); });
+    document.querySelectorAll('body > .kal-dim[id$="-dim"]').forEach(d => d.remove());
   },
 
   // Grupės treniruočių langeliai: [{day:1..7, time:'HH:MM'}] — pirmenybė `schedule` (laikas kiekvienai dienai),
@@ -42306,8 +42360,10 @@ const Kal = {
     const [c, e] = await Promise.all([
       sb.from('competitions').select('id, title, event_date, competition_type, level, location, registration_url, price_info, registration_deadline')
         .eq('club_id', clubId).gte('event_date', from).lte('event_date', to).limit(200),
+      // v623 (17A d): be pabaigos datos = vienos dienos renginys → turi prasidėti šį mėnesį (anksčiau seni tokie išstumdavo šio mėnesio)
       sb.from('club_events').select('id, title, event_type, starts_on, ends_on')
-        .eq('club_id', clubId).lte('starts_on', to).or(`ends_on.gte.${from},ends_on.is.null`).limit(200)
+        .eq('club_id', clubId).lte('starts_on', to).or(`ends_on.gte.${from},and(ends_on.is.null,starts_on.gte.${from})`)
+        .order('starts_on', { ascending: true }).limit(200)
     ]);
     const out = [];
     (c.data || []).forEach(x => {
@@ -42324,6 +42380,29 @@ const Kal = {
       type: x.event_type || 'other', cls: 'ev-camp', label: x.event_type === 'seminar' ? 'Seminaras' : 'Stovykla'
     }));
     return out.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  },
+
+  // ── VARIKLIS: serverio ĮSKAITYTOS lankomumo premijos (be DOM) — v623 (11A/18A) ──
+  // Šaltinis — kid_exp_adjustments (tai, kas realiai pakeitė EXP). attendance_finalize_period rašo 'Pilnas savaitės lankomumas (IYYY-Www)' (+15),
+  // 'Pilnas mėnesio lankomumas (YYYY-MM)' (+100) ir atšaukimą 'Lankomumo premija atšaukta (pataisytas lankomumas, <raktas>)' (−).
+  // Senas kliento kelias (_attAwardBonuses) rašė be rakto → raktas pagal įrašymo dieną. Grąžina { 'week:2026-W38': { type, key, exp (neto), at }, … }.
+  BONUS_RE: { week: /Pilnas savaitės lankomumas(?:\s*\((\d{4}-W\d{2})\))?/i, month: /Pilnas mėnesio lankomumas(?:\s*\((\d{4}-\d{2})\))?/i, revoke: /Lankomumo premija atšaukta\s*\([^,]*,\s*(\d{4}-(?:W\d{2}|\d{2}))\)/i },
+  isBonusReason(r) { const s = String(r || ''); return this.BONUS_RE.week.test(s) || this.BONUS_RE.month.test(s) || this.BONUS_RE.revoke.test(s); },
+  async attBonuses(kidId, sinceDs) {
+    let q = sb.from('kid_exp_adjustments').select('created_at, exp_change, reason').eq('kid_id', kidId).ilike('reason', '%lankomum%').order('created_at').limit(500);
+    if (sinceDs) q = q.gte('created_at', new Date(sinceDs + 'T00:00:00').toISOString());
+    const { data, error } = await q; if (error) throw error;
+    const out = {};
+    (data || []).forEach(a => {
+      const s = String(a.reason || ''), at = this.ymd(a.created_at); let m, type, key;
+      if ((m = this.BONUS_RE.revoke.exec(s))) { key = m[1]; type = key.indexOf('-W') > 0 ? 'week' : 'month'; }
+      else if ((m = this.BONUS_RE.week.exec(s))) { type = 'week'; key = m[1] || this.isoWeekKey(at); }
+      else if ((m = this.BONUS_RE.month.exec(s))) { type = 'month'; key = m[1] || at.slice(0, 7); }
+      else return;
+      const id = type + ':' + key, b = out[id] || (out[id] = { type, key, exp: 0, at });
+      b.exp += Number(a.exp_change) || 0;
+    });
+    return out;
   },
 
   eventsOn(dateStr) {
@@ -42819,7 +42898,10 @@ const Kal = {
     const vp = document.querySelector('#v-prof .sa');
     if (vp && !document.getElementById('kal-v-comp-link')) {
       const a = document.createElement('div'); a.id = 'kal-v-comp-link'; a.className = 'kal-card'; a.style.cssText = 'margin:6px 12px;cursor:pointer;'; a.setAttribute('onclick', "nv('v',null,'v-comp')");
-      a.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">Varžybos ir rekordas</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Kumite, kata, medaliai, būsimos varžybos</div></div>${ico('toliau')}</div>`;
+      // v623 (15A): pavadinimas pagal įjungtas funkcijas (matomumą valdo KidGate.apply)
+      const _kg = typeof KidGate !== 'undefined' ? KidGate : null, _c = !_kg || _kg.on('comp');
+      const _sub = [_c ? 'Kumite, kata, medaliai' : '', (!_kg || _kg.on('belt')) ? 'diržų egzaminai' : '', (!_kg || _kg.on('camps')) ? 'stovyklos' : ''].filter(Boolean).join(' · ') || 'Kumite, kata, medaliai, būsimos varžybos';
+      a.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">${_c ? 'Varžybos ir rekordas' : 'Renginiai'}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${_sub}</div></div>${ico('toliau')}</div>`;
       vp.appendChild(a);
     }
     // TĖVAI
@@ -42861,24 +42943,29 @@ Object.assign(Kal, {
     grupeEmpty() {
       const em = document.getElementById('kal-v-grupe-empty'); if (!em) return;
       const duelsOn = (typeof flagOn !== 'function') || flagOn('duels_enabled');
+      const gcOn = (typeof flagOn !== 'function') || flagOn('group_challenges_enabled');   // v623 (15A)
       const card = document.getElementById('v-group-challenge-card'), gcs = document.getElementById('v-ish-gc-section'), du = document.getElementById('v-ish-duels');
-      const hasGc = !!((card && card.style.display !== 'none') || (gcs && gcs.innerText.trim()));
+      const hasGc = !!(gcOn && ((card && card.style.display !== 'none') || (gcs && gcs.innerText.trim())));
       const hasDu = !!(duelsOn && du && du.innerText.trim());
-      if (hasDu || (!duelsOn && hasGc)) { em.style.display = 'none'; return; }
+      // v623 (15A): antraštė pagal įjungtas funkcijas; abi išjungtos — bloko nėra
+      const t = document.getElementById('kal-v-grupe-gc-t');
+      if (t) { t.style.display = (duelsOn || gcOn) ? '' : 'none'; const tx = t.lastChild; if (tx && tx.nodeType === 3) tx.textContent = duelsOn && gcOn ? 'GRUPĖS DVIKOVOS IR IŠŠŪKIAI' : (duelsOn ? 'DVIKOVOS' : 'GRUPIŲ IŠŠŪKIAI'); }
+      if (hasDu || (!duelsOn && hasGc) || (!duelsOn && !gcOn)) { em.style.display = 'none'; return; }
       em.textContent = duelsOn
-        ? 'Dvikovų dar nėra — iškviesk draugą iš sąrašo žemiau.' + (hasGc ? '' : ' Grupių iššūkius skelbia treneris arba klubas.')
+        ? 'Dvikovų dar nėra — iškviesk draugą iš sąrašo žemiau.' + (hasGc || !gcOn ? '' : ' Grupių iššūkius skelbia treneris arba klubas.')
         : 'Šiuo metu grupių iššūkių nėra — juos skelbia treneris arba klubas.';
       em.style.display = '';
     },
-    st: { ym: null, group: null, sessions: [], events: [], exp: {}, att: {}, busy: false, ch: [], intents: {}, rsvp: {}, plan: null },
+    st: { ym: null, group: null, sessions: [], events: [], exp: {}, att: {}, busy: false, ch: [], intents: {}, rsvp: {}, plan: null, again: false, chAt: 0 },
     K: Kal,
     // parametrai paveldėjimui (5 etapas, v541): konteineris, vardų erdvė onclick'ams, langas, iššūkių nuoroda, tekstai 2-u asmeniu
-    cid: 'kal-v-content', ns: 'Kal.kid', scr: 'v-kal', chNav: "nv('v',null,'v-ish')",
-    T: { was: 'BUVAI', legWas: 'Buvau', wasnt: 'NEBUVAI', wasN: 'buvai', ask: 'Ar dalyvausi?', yes: 'Taip, dalyvausiu', yesOn: '✓ Dalyvauju', noOn: '✓ Nedalyvauju', note: 'Iki 14 m. dalyvavimą patvirtina tėvai — jie mato tavo pasirinkimą.', seeAll: 'matai visą etapą', goal: 'MŪSŲ TIKSLAS',
+    // v623: ownCh — kalendorius pats krauna vaiko iššūkių plyteles (12A); evNav — „Atidaryti Varžybose" (17A a; tėvams nėra)
+    cid: 'kal-v-content', ns: 'Kal.kid', scr: 'v-kal', chNav: "nv('v',null,'v-ish')", ownCh: true, evNav: "nv('v',null,'v-comp')",
+    T: { was: 'BUVAI', legWas: 'Buvau', wasnt: 'NEBUVAI', wasN: 'buvai', ask: 'Ar dalyvausi?', yes: 'Taip, dalyvausiu', yesOn: '✓ Dalyvauju', tagYes: 'DALYVAUJU', tagNo: 'NEDALYVAUJU', noOn: '✓ Nedalyvauju', note: 'Pasitark su tėvais — jie mato tavo atsakymą.', seeAll: 'matai visą etapą', goal: 'MŪSŲ TIKSLAS',
          eff: e => e >= 20 ? 'Dirbai iš visų jėgų' : (e >= 14 ? 'Dirbai gerai' : (e > 0 ? 'Dirbai lengviau' : 'Pastangas treneris įvertins po treniruotės')) },
     kid() { return (typeof currentKid !== 'undefined' && currentKid) ? currentKid : null; },
     kidId() { return this.kid()?.id || null; },
-    effortVisible() { return true; },   // vaikas savo pastangas mato visada; tėvui — klubo jungiklis
+    effortVisible() { return typeof KidGate === 'undefined' || KidGate.on('attendance'); },   // vaikas savo pastangas mato visada (v623: jei klube įjungtas lankomumas); tėvui — klubo jungiklis
     name() { return (typeof currentProfile !== 'undefined' && currentProfile?.first_name) ? currentProfile.first_name : 'Aš'; },
 
     // ── įėjimas iš nv('v', …, 'v-kal') ──
@@ -42889,9 +42976,13 @@ Object.assign(Kal, {
       await this.reload();
     },
     async reload() {
-      const c = document.getElementById(this.cid); if (!c || this.st.busy) return;
+      const c = document.getElementById(this.cid); if (!c) return;
+      if (this.st.busy) { this.st.again = true; return; }   // v623 (17A c): krovimas vyksta — po jo perkraunam (naujas mėnuo / kitas vaikas), ne išmetam
       const kid = this.kidId(); if (!kid) { c.innerHTML = '<div class="kal-empty">Vaiko duomenys nerasti.</div>'; return; }
-      this.st.busy = true;
+      this.st.busy = true; this.st.again = false;
+      const ym = this.st.ym;   // ŠIO krovimo mėnuo — atsakymas taikomas tik jei vis dar aktualus
+      const isStale = () => this.st.ym !== ym || this.kidId() !== kid;
+      let stale = false;
       if (!c.querySelector('.kal-grid')) c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);font-size:12px;">Kraunama...</div>';
       try {
         if (!this.st.group || this.st.group.id !== this.kid()?.group_id) {
@@ -42901,25 +42992,55 @@ Object.assign(Kal, {
           if (error) console.warn('[kal-kid] groups', error.message);
           this.st.group = g || null;
         }
-        const r = this.K.range(this.st.ym);
+        const r = this.K.range(ym);
         const clubId = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || this.st.group?.club_id || null;
-        const [ses, evs, exp, intents] = await Promise.all([
+        const needCh = this.ownCh && (!this.st.chAt || Date.now() - this.st.chAt > 60000);   // v623 (12A): iššūkiai nuo mėnesio nepriklauso — 60 s atmintis
+        const [ses, evs, exp, intents, ch] = await Promise.all([
           this.st.group ? this.K.monthSessions({ groups: [this.st.group], from: r.from, to: r.to, kidId: kid }) : Promise.resolve([]),
           this.K.monthEvents(clubId, r.from, r.to).catch(() => []),
-          this.loadExp(kid, r.from, r.to).catch(e => { console.warn('[kal-kid] exp', e); return {}; }),
+          this.loadExp(kid, r.from, r.to).catch(e => { console.warn('[kal-kid] exp', e); return { exp: {}, att: {} }; }),
           this.loadIntents(kid).catch(() => ({ intents: {}, rsvp: {} })),
+          needCh ? this.loadCh(kid, clubId).catch(e => { console.warn('[kal-kid] ch', e); return null; }) : Promise.resolve(null),
         ]);
-        this.st.sessions = ses; this.st.events = evs; this.st.exp = exp; this.st.intents = intents.intents; this.st.rsvp = intents.rsvp;
+        if ((stale = isStale())) return;   // finally perkraus su naujais parametrais
+        // v623 (15A): klubo jungikliai — išjungtų renginių tipų nerodom; lankomumas išjungtas — jokio „buvo / nebuvo" (EXP eilutės lieka)
+        const kg = typeof KidGate !== 'undefined' ? KidGate : null, attOff = kg && !kg.on('attendance');
+        if (attOff) (ses || []).forEach(s => { s.present = 0; s.total = 0; s.effortDone = 0; });
+        this.st.sessions = ses; this.st.events = kg ? (evs || []).filter(ev => kg.event(ev)) : evs; this.st.exp = exp.exp || {}; this.st.att = attOff ? {} : (exp.att || {}); this.st.intents = intents.intents; this.st.rsvp = intents.rsvp;
+        if (ch) { this.st.ch = this.chTiles(ch.active, ch.progress, ch.subs); this.st.chAt = Date.now(); }
         this.render();
       } catch (e) {
+        if ((stale = isStale())) return;
         console.error('[kal-kid]', e);
         c.innerHTML = `<div style="padding:20px;text-align:center;color:#EF4444;font-size:12px;">Klaida kraunant kalendorių: ${this.K.esc(e.message || '')}</div>`;
-      } finally { this.st.busy = false; }
+      } finally {
+        this.st.busy = false;
+        if (stale || this.st.again) { this.st.again = false; this.reload(); }
+      }
+    },
+    // v623 (12A): vaiko AKTYVŪS (ne nuolatiniai) iššūkiai + progresas + pateikimai — tas pats pasirinkimas kaip Iššūkių lange (Iss.forKid)
+    async loadCh(kid, clubId) {
+      const k = this.kid(); if (!k || k.id !== kid || typeof Iss === 'undefined') return null;
+      const res = await Iss.forKid(k, { clubId, activeOnly: true, limit: 60, cols: 'id, title, type, verify_kind, verify_meta, exp_reward, target_value, target_unit, expires_at, allow_partial, target_audience, group_id, target_kid_id, created_at' });
+      if (res.error) throw res.error;
+      const el = (res.rows || []).filter(ch => ch.type !== 'permanent');
+      if (!el.length) return { active: [], progress: {}, subs: {} };
+      const sp = await Iss.kidSubs(kid, el, { subsCols: 'challenge_id, status, created_at', progCols: 'challenge_id, total_progress, is_completed, exp_awarded' });
+      if (sp.error) throw sp.error;
+      const subs = {}; (sp.subs || []).forEach(x => { (subs[x.challenge_id] = subs[x.challenge_id] || []).push(x); });
+      const progress = sp.progress || {};
+      const active = el.filter(ch => ch.allow_partial === true ? progress[ch.id]?.is_completed !== true : !(subs[ch.id] || []).some(x => x.status === 'approved'));
+      return { active, progress, subs };
     },
 
     // ── EXP pagal dieną (tik skaitymas; visi šaltiniai — vaiko savi, RLS) ──
+    // v623 (11A): pastangos ir buvimas — iš attendance pagal TRENIRUOTĖS datą (anksčiau 'effort:' deltos pagal įrašymo dieną: pataisymas
+    // 14→20 rodėsi kaip „gerai + lengviau", o kelių dienų EXP suplaukdavo į vieną); lankomumo premijos — serverio įskaitytos (K.attBonuses),
+    // prie paskutinės periodo dienos, kurioje vaikas buvo; kiti šaltiniai — pagal savo datą (vietinė diena). Grąžina { exp, att }.
     async loadExp(kid, from, to) {
-      const fromTs = from + 'T00:00:00', toTs = to + 'T23:59:59';
+      const K = this.K;
+      const fromTs = new Date(from + 'T00:00:00').toISOString(), toTs = new Date(to + 'T23:59:59.999').toISOString();   // vietinės paros ribos
+      const wFrom = K.isoMon(from), wTo = K.addDays(K.isoMon(to), 6);   // pilnos ISO savaitės aplink mėnesį — savaitės premijos vietai
       const q = [
         sb.from('kid_exp_adjustments').select('created_at, exp_change, reason').eq('kid_id', kid).gte('created_at', fromTs).lte('created_at', toTs).limit(300),
         sb.from('streak_bonus_log').select('created_at, exp_awarded, streak_type, streak_count').eq('kid_id', kid).gte('created_at', fromTs).lte('created_at', toTs).limit(100),
@@ -42927,27 +43048,46 @@ Object.assign(Kal, {
         sb.from('challenge_submissions').select('reviewed_at, exp_gain, challenges(title)').eq('kid_id', kid).eq('status', 'approved').gte('reviewed_at', fromTs).lte('reviewed_at', toTs).limit(100),
         sb.from('competition_results').select('approved_at, exp_gained, placement, competitions(title)').eq('kid_id', kid).eq('approval_status', 'approved').gte('approved_at', fromTs).lte('approved_at', toTs).limit(50),
         sb.from('result_submissions').select('reviewed_at, exp_gain, new_value, exercises(name, unit)').eq('kid_id', kid).eq('status', 'approved').gte('reviewed_at', fromTs).lte('reviewed_at', toTs).limit(50),
+        sb.from('attendance').select('session_date, present, effort, effort_exp').eq('kid_id', kid).gte('session_date', wFrom).lte('session_date', wTo).order('session_date').limit(200),   // 6
+        K.attBonuses(kid, K.addDays(wFrom, -1)).then(data => ({ data })),   // 7
       ];
       const rs = await Promise.all(q.map(p => p.then(x => x).catch(e => ({ data: null, error: e }))));
       rs.forEach((x, i) => { if (x.error) console.warn('[kal-kid] exp šaltinis ' + i, x.error.message || x.error); });   // 🔒 klaidos matomos, ne slepiamos (|| [] pamoka)
-      const out = {};
-      const add = (ts, exp, kind, title) => { if (!ts) return; const d = String(ts).slice(0, 10); (out[d] = out[d] || []).push({ exp: exp || 0, kind, title }); };
+      const out = {}, att = {};
+      const add = (ds, exp, kind, title, x) => { if (!ds) return; (out[ds] = out[ds] || []).push(Object.assign({ exp: exp || 0, kind, title }, x || {})); };
+      const addTs = (ts, exp, kind, title) => { if (ts) add(K.ymd(ts), exp, kind, title); };
+      // 1) lankomumas (kaip Planas.aprAtt v607: present / effort / effort_exp) — pagal treniruotės dieną
+      (rs[6].data || []).forEach(r => {
+        const ds = String(r.session_date), x = att[ds] || (att[ds] = { present: false, effort: null, effort_exp: 0 });
+        if (!r.present) return;
+        x.present = true; x.effort_exp += Number(r.effort_exp) || 0;
+        if (K.EFF[r.effort] && (!x.effort || K.EFF[r.effort].exp > K.EFF[x.effort].exp)) x.effort = r.effort;
+      });
+      Object.keys(att).forEach(ds => { const x = att[ds]; if (ds >= from && ds <= to && x.present && x.effort_exp > 0) add(ds, x.effort_exp, 'effort', 'Pastangos treniruotėje', { eff: x.effort }); });
+      // 2) įskaitytos premijos — prie paskutinės periodo dienos, kurioje vaikas buvo (jei nėra — įskaitymo diena, ne vėliau periodo galo)
+      const lastWas = (p0, p1) => Object.keys(att).filter(ds => ds >= p0 && ds <= p1 && att[ds].present).sort().pop() || null;
+      Object.values(rs[7].data || {}).forEach(b => {
+        if (!(b.exp > 0)) return;   // atšaukta / neto 0 — nerodom
+        const p0 = b.type === 'week' ? K.isoWeekMon(b.key) : b.key + '-01'; if (!p0) return;
+        const p1 = b.type === 'week' ? K.addDays(p0, 6) : K.range(b.key).to;
+        if (p1 < from || p0 > to) return;
+        add(lastWas(p0, p1) || (b.at < p1 ? b.at : p1), b.exp, b.type, b.type === 'week' ? 'Pilna savaitė' : 'Pilnas mėnuo');
+      });
+      // 3) kita kid_exp_adjustments — pagal įrašymo dieną (pastangos ir lankomumo premijos jau aukščiau)
       (rs[0].data || []).forEach(a => {
         const rs_ = a.reason || '';
-        if (/^effort:/.test(rs_)) add(a.created_at, a.exp_change, 'effort', 'Pastangos treniruotėje');
-        else if (/^Pilnas savaitės/i.test(rs_)) add(a.created_at, a.exp_change, 'week', 'Pilna savaitė');
-        else if (/^Pilnas mėnesio/i.test(rs_)) add(a.created_at, a.exp_change, 'month', 'Pilnas mėnuo');
-        else if (/atšaukta/i.test(rs_)) add(a.created_at, a.exp_change, 'revoke', 'Premija atšaukta');
-        else if (/^Grupių iššūkis:/i.test(rs_)) add(a.created_at, a.exp_change, 'gc', rs_.replace(/^Grupių iššūkis:\s*/i, ''));
-        else if (/^Stovykla:/i.test(rs_)) add(a.created_at, a.exp_change, 'camp', rs_.replace(/^Stovykla:\s*/i, ''));
-        else add(a.created_at, a.exp_change, 'coach', rs_ || 'Trenerio įvertinimas');
+        if (/^effort:/.test(rs_) || K.isBonusReason(rs_)) return;
+        if (/atšaukta/i.test(rs_)) addTs(a.created_at, a.exp_change, 'revoke', 'Premija atšaukta');
+        else if (/^Grupių iššūkis:/i.test(rs_)) addTs(a.created_at, a.exp_change, 'gc', rs_.replace(/^Grupių iššūkis:\s*/i, ''));
+        else if (/^Stovykla:/i.test(rs_)) addTs(a.created_at, a.exp_change, 'camp', rs_.replace(/^Stovykla:\s*/i, ''));
+        else addTs(a.created_at, a.exp_change, 'coach', rs_ || 'Trenerio įvertinimas');
       });
-      (rs[1].data || []).forEach(s => add(s.created_at, s.exp_awarded, 'streak', `Serija ${s.streak_count} (${s.streak_type === 'training' ? 'treniruočių' : s.streak_type === 'weekly' ? 'savaičių' : 'mėnesių'})`));
-      (rs[2].data || []).forEach(p => add(p.completed_at, p.exp_awarded, 'challenge', p.challenges?.title || 'Iššūkis'));
-      (rs[3].data || []).forEach(s => add(s.reviewed_at, s.exp_gain, 'challenge', s.challenges?.title || 'Iššūkis'));
-      (rs[4].data || []).forEach(c => add(c.approved_at, c.exp_gained, 'comp', (c.competitions?.title || 'Varžybos') + (c.placement ? ` · ${c.placement} vieta` : '')));
-      (rs[5].data || []).forEach(r => add(r.reviewed_at, r.exp_gain, 'record', `${r.exercises?.name || 'Rekordas'} → ${r.new_value}${r.exercises?.unit ? ' ' + r.exercises.unit : ''}`));
-      return out;
+      (rs[1].data || []).forEach(s => addTs(s.created_at, s.exp_awarded, 'streak', `Serija ${s.streak_count} (${s.streak_type === 'training' ? 'treniruočių' : s.streak_type === 'weekly' ? 'savaičių' : 'mėnesių'})`));
+      (rs[2].data || []).forEach(p => addTs(p.completed_at, p.exp_awarded, 'challenge', p.challenges?.title || 'Iššūkis'));
+      (rs[3].data || []).forEach(s => addTs(s.reviewed_at, s.exp_gain, 'challenge', s.challenges?.title || 'Iššūkis'));
+      (rs[4].data || []).forEach(c => addTs(c.approved_at, c.exp_gained, 'comp', (c.competitions?.title || 'Varžybos') + (c.placement ? ` · ${c.placement} vieta` : '')));
+      (rs[5].data || []).forEach(r => addTs(r.reviewed_at, r.exp_gain, 'record', `${r.exercises?.name || 'Rekordas'} → ${r.new_value}${r.exercises?.unit ? ' ' + r.exercises.unit : ''}`));
+      return { exp: out, att };
     },
     async loadIntents(kid) {
       const [c, r] = await Promise.all([
@@ -42959,6 +43099,7 @@ Object.assign(Kal, {
       return { intents, rsvp };
     },
     dayExp(ds) { return (this.st.exp[ds] || []).reduce((n, x) => n + (x.exp || 0), 0); },
+    attOn(ds) { return (this.st.att || {})[ds] || null; },   // v623 (11A): vaiko lankomumas tą dieną (kad ir ne pagal tvarkaraštį)
     sesOn(ds) { return (this.st.sessions || []).filter(s => s.date === ds); },
     evOn(ds) { return (this.st.events || []).filter(ev => String(ev.date) <= ds && ds <= String(ev.endDate || ev.date)); },
     evTag(ev) { return ev.cls === 'ev-belt' ? 'DIRŽ' : (ev.kind === 'comp' ? 'VARŽ' : (ev.type === 'seminar' ? 'SEM' : 'STOV')); },
@@ -42968,9 +43109,9 @@ Object.assign(Kal, {
       const c = document.getElementById(this.cid); if (!c) return;
       const K = this.K, r = K.range(this.st.ym), today = K.ymd(new Date());
       const first = new Date(r.y, r.m - 1, 1); const off = (first.getDay() || 7) - 1;
-      const past = this.st.sessions.filter(s => s.date <= today);
-      const was = past.filter(s => s.present > 0).length;
-      const marked = past.filter(s => s.total > 0).length;
+      const attM = Object.keys(this.st.att || {}).filter(ds => ds.startsWith(this.st.ym) && ds <= today);   // v623 (11A): „buvai N iš M" iš lankomumo
+      const was = attM.filter(ds => this.st.att[ds].present).length;
+      const marked = attM.length;
       let cells = ''; for (let i = 0; i < off; i++) cells += '<div class="kal-v-d e"></div>';
       let monthExp = 0;
       for (let d = 1; d <= r.last; d++) {
@@ -42978,18 +43119,20 @@ Object.assign(Kal, {
         const ses = this.sesOn(ds), evs = this.evOn(ds), exp = this.dayExp(ds);
         monthExp += exp;
         const cls = ['kal-v-d']; let inner = `<b>${d}</b>`;
-        const wasHere = ses.some(s => s.present > 0);
+        const a = this.attOn(ds); const wasHere = a ? a.present : ses.some(s => s.present > 0);   // v623 (11A)
         if (ds === today) cls.push('today');
-        if (!ses.length && !evs.length && exp <= 0) cls.push('off');
+        if (!ses.length && !evs.length && !a && exp <= 0) cls.push('off');
         if (wasHere) { cls.push('was'); if (exp > 0) inner += `<span class="exp">+${exp}</span>`; }
-        else if (ses.length && ds < today && ses.some(s => s.total > 0)) cls.push('miss');
+        else if (ds < today && (a || ses.some(s => s.total > 0))) cls.push('miss');
+        if (!wasHere && exp > 0 && !evs.length) inner += `<span class="exp" style="color:#FFD700;">+${exp}</span>`;   // v623: EXP be treniruotės (iššūkis, rekordas) — kad mėnesio suma sutaptų su langeliais
         if (evs.length) { cls.push('ev', evs[0].cls); if (!wasHere) inner += `<span class="ev">${K.evTag(evs[0])}</span>`; }
         if (ses.length && ds > today) { cls.push('up'); inner += '<span class="bar"></span>'; }
         cells += `<div class="${cls.join(' ')}" onclick="${this.ns}.openDay('${ds}')">${inner}</div>`;
       }
       const head = `<div class="kal-head" style="padding-top:4px;"><div style="min-width:0;"><div class="kal-mon">${K.MON[r.m - 1].toUpperCase()}${r.y !== new Date().getFullYear() ? ` <i>${String(r.y).slice(2)}</i>` : ''}</div><div class="kal-sub"><span>${K.esc(this.name())}</span>${this.st.group ? `<s>/</s><span>${K.esc(this.st.group.name)}</span>` : ''}${marked ? `<s>/</s><span>${this.T.wasN} ${was} iš ${marked}</span>` : ''}</div></div>
         <div class="kal-hbtn"><button onclick="${this.ns}.shift(-1)" title="Ankstesnis">${ico('atgal')}</button><button onclick="${this.ns}.shift(1)" title="Kitas">${ico('toliau')}</button></div></div>`;
-      const legend = `<div class="kal-leg"><span><i style="background:#22C55E;"></i>${this.T.legWas}</span><span><i class="bar" style="background:#FF4D00;"></i>Treniruotė</span><span><i style="background:#A855F7;"></i>Varžybos</span><span><i style="background:#3B82F6;"></i>Stovykla</span><span><i style="background:#FFD700;"></i>Diržo testas</span></div>`;
+      const _on = k => typeof KidGate === 'undefined' || KidGate.on(k);   // v623 (15A): legenda tik įjungtoms funkcijoms
+      const legend = `<div class="kal-leg">${_on('attendance') ? `<span><i style="background:#22C55E;"></i>${this.T.legWas}</span>` : ''}<span><i class="bar" style="background:#FF4D00;"></i>Treniruotė</span>${_on('comp') ? '<span><i style="background:#A855F7;"></i>Varžybos</span>' : ''}${_on('camps') ? '<span><i style="background:#3B82F6;"></i>Stovykla</span>' : ''}${_on('belt') ? '<span><i style="background:#FFD700;"></i>Diržo testas</span>' : ''}</div>`;
       const expRow = `<div class="kal-exp-row"><span>EXP ${K.MONA[r.m - 1]}</span><span><b data-count="${Math.max(0, monthExp)}">0</b><em>EXP</em></span></div>`;
       const anim = this.st.dir ? (this.st.dir > 0 ? ' out-r' : ' out-l') : '';
       const grid = `<div class="kal-grid${anim}"><div class="kal-dow">${K.DOW.map(x => `<span>${x}</span>`).join('')}</div><div class="kal-cells">${cells}</div>${legend}${expRow}</div>`;
@@ -42998,11 +43141,15 @@ Object.assign(Kal, {
       K.afterRender(c);
     },
     kidsHtml() { return ''; },   // tėvams — vaikų čipsai (Kal.parent)
-    // PASTANGOS šį mėnesį: kiek treniruočių „iš visų jėgų" (20) · „gerai" (14) · „lengviau" (8) — iš EXP eilučių, tik su jungikliu
+    // PASTANGOS šį mėnesį: kiek treniruočių „iš visų jėgų" (20) · „gerai" (14) · „lengviau" (8) — v623 (11A): iš lankomumo (attendance.effort), tik su jungikliu
     effHtml(r) {
       if (!this.effortVisible()) return '';
       const K = this.K; let mx = 0, ok = 0, lt = 0;
-      Object.keys(this.st.exp || {}).forEach(ds => { if (!String(ds).startsWith(this.st.ym)) return; (this.st.exp[ds] || []).forEach(x => { if (x.kind !== 'effort') return; if (x.exp >= K.EFF.max.exp) mx++; else if (x.exp >= K.EFF.ok.exp) ok++; else if (x.exp > 0) lt++; }); });
+      Object.keys(this.st.att || {}).forEach(ds => {
+        if (!ds.startsWith(this.st.ym)) return; const a = this.st.att[ds]; if (!a.present) return;
+        const e = K.EFF[a.effort] ? a.effort : (a.effort_exp >= K.EFF.max.exp ? 'max' : (a.effort_exp >= K.EFF.ok.exp ? 'ok' : (a.effort_exp > 0 ? 'light' : null)));
+        if (e === 'max') mx++; else if (e === 'ok') ok++; else if (e === 'light') lt++;
+      });
       if (!mx && !ok && !lt) return '';
       return `<div class="kal-sec" style="padding-top:10px;"><b>PASTANGOS</b><em>${K.MONA[r.m - 1]}</em><span></span></div><div class="kal-eff"><div><b style="color:${K.EFF.max.c};">${mx}</b><i>IŠ VISŲ JĖGŲ</i></div><div><b>${ok}</b><i>GERAI</i></div><div><b style="color:${K.EFF.light.c};">${lt}</b><i>LENGVIAU</i></div></div>`;
     },
@@ -43042,13 +43189,14 @@ Object.assign(Kal, {
       const intent = this.st.intents[next.id];
       const days = Math.round((K.dt(next.date) - K.dt(today)) / 86400000);
       const when = days === 0 ? 'Šiandien' : (days === 1 ? 'Rytoj' : `${K.DNOM[K.dayNo(next.date) - 1]} · ${K.esc(next.date)}`);
-      const st = intent === 'planning' ? `<span class="kal-tag ok">DALYVAUJU</span>` : (intent === 'wont_attend' ? `<span class="kal-tag mut">NEDALYVAUJU</span>` : '');
+      const st = intent === 'planning' ? `<span class="kal-tag ok">${this.T.tagYes}</span>` : (intent === 'wont_attend' ? `<span class="kal-tag mut">${this.T.tagNo}</span>` : '');
       return `<div class="kal-card ev-comp" style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;cursor:pointer;" onclick="${this.ns}.openDay('${next.date}')"><div style="font-size:12.5px;font-weight:900;">${when} · ${K.esc(next.title)} ${st}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${intent ? 'Pakeisti gali dienos lape' : this.T.ask}</div></div>
         ${!intent && typeof setKidIntent === 'function' ? `<span class="kal-b g lg" onclick="${this.ns}.intent('${next.id}','planning')">Taip</span><span class="kal-b lg" onclick="${this.ns}.intent('${next.id}','wont_attend')">Ne</span>` : ''}</div>`;
     },
     async intent(compId, v) {
       if (typeof setKidIntent !== 'function') return;
-      await setKidIntent(compId, v);   // esamas kelias: competition_results + toast + v-comp perkrovimas
+      const ok = await setKidIntent(compId, v);   // esamas kelias: competition_results + toast + v-comp perkrovimas
+      if (ok === false) return;                   // v623 (19A): neišsaugota — nerodom kaip pažymėto
       this.st.intents[compId] = v;
       const d = document.getElementById('kal-v-day'); if (d) { const ds = d.dataset.ds; this.K.sheetClose('kal-v-day', true); this.openDay(ds); } else this.render();
     },
@@ -43056,18 +43204,27 @@ Object.assign(Kal, {
       if (!this.st.sessions.some(s => s.session_id)) return '';
       return `<div class="kal-card" style="cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="${this.ns}.openEtapas()"><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">${ico('treniruote')} Mūsų etapas</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Tikslas, savaitės ir kas laukia</div></div>${ico('toliau')}</div>`;
     },
-    // iššūkių plytelės — iš esamo loadChallenges/updateChallengeStatsUI skaičiavimo (setChallenges hook'as)
-    setChallenges(active, progress, subs) {
-      this.st.ch = (active || []).filter(c => c.type !== 'permanent').slice(0, 2).map(c => {
+    // iššūkių plytelės — v623 (12A): bendras žemėlapis hook'ui (loadChallenges → updateChallengeStatsUI) ir kalendoriaus savam krovimui (loadCh)
+    chTiles(active, progress, subs) {
+      return (active || []).filter(c => c.type !== 'permanent').slice(0, 2).map(c => {
         const p = progress?.[c.id]; const s = (subs?.[c.id] || []).find(x => x.status === 'pending');
-        return { id: c.id, title: c.title || 'Iššūkis', type: c.type, vk: c.verify_kind, exp: c.exp_reward || 0, tv: c.target_value, tu: c.target_unit, tiers: (typeof Iss !== 'undefined' ? Iss.tiersOf(c) : null), done: p?.current_value ?? null, pending: !!s, left: c.expires_at ? Math.max(0, Math.ceil((new Date(c.expires_at) - Date.now()) / 86400000)) : null };
+        // challenge_progress.total_progress (current_value stulpelio nėra); tarpinis be eilutės = 0; ne tarpinis progreso neturi → null
+        const raw = (p && p.total_progress != null) ? Number(p.total_progress) : (c.allow_partial ? 0 : null);
+        const done = Number.isFinite(raw) ? Math.round(raw * 10) / 10 : null;
+        return { id: c.id, title: c.title || 'Iššūkis', type: c.type, vk: c.verify_kind, exp: c.exp_reward || 0, tv: c.target_value, tu: c.target_unit, tiers: (typeof Iss !== 'undefined' ? Iss.tiersOf(c) : null), done, pending: !!s, left: c.expires_at ? Math.max(0, Math.ceil((new Date(c.expires_at) - Date.now()) / 86400000)) : null };
       });
-      if (document.getElementById(this.scr)?.classList.contains('on')) this.render();
+    },
+    setChallenges(active, progress, subs) {
+      if (!this.ownCh && this !== Kal.kid) return;
+      this.st.ch = this.chTiles(active, progress, subs); this.st.chAt = Date.now();
+      if (!this.st.busy && document.getElementById(this.scr)?.classList.contains('on')) this.render();   // v623 (17A c): nepiešiam krovimo viduryje
     },
     chHtml() {
       const K = this.K; if (!(this.st.ch || []).length) return '';
+      if (typeof KidGate !== 'undefined' && !KidGate.on('challenges')) return '';   // v623 (15A)
       const TL = { weekly: 'SAVAITĖS', monthly: 'MĖNESIO', training: 'TRENIRUOTĖS', one_time: 'VIENKARTINIS' };
-      return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span></div><div class="kal-tiles">${this.st.ch.map(c => { const pct = (c.tv && c.done != null) ? Math.min(100, Math.round(c.done * 100 / c.tv)) : (c.pending ? 60 : 0); return `<div class="kal-tile" onclick="${this.chNav}"><div class="tt"><span>${TL[c.type] || 'IŠŠŪKIS'}</span>${K.srcTag(c.vk)}</div><div class="tn">${K.esc(c.title)}</div><div class="kal-bar"><span data-w="${pct}" style="width:0;background:#22C55E;"></span></div><div class="tc">${c.tv && c.done != null ? `${c.done} / ${c.tv}${c.tu ? ' ' + K.esc(c.tu) : ''}` : (c.pending ? 'pateikta · laukia trenerio' : 'vyksta')}${c.left != null ? ' · liko ' + c.left + ' d.' : ''} · <b style="color:#FFD700;">${c.tiers ? (c.done != null ? 'pakopa ' + Iss.tierOf(c.tiers, c.done) + '/3 · ' : '') + c.tiers.map(t => '+' + Number(t.exp)).join('/') : '+' + c.exp}</b></div></div>`; }).join('')}</div>`;
+      // v623 (13A): „Visi →" — į Iššūkių langą (rankiniai pateikimai, „Pasiruošiau", archyvas)
+      return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span><em class="o kal-all" onclick="${this.chNav}">Visi →</em></div><div class="kal-tiles">${this.st.ch.map(c => { const pct = (c.tv && c.done != null) ? Math.min(100, Math.round(c.done * 100 / c.tv)) : (c.pending ? 60 : 0); return `<div class="kal-tile" onclick="${this.chNav}"><div class="tt"><span>${TL[c.type] || 'IŠŠŪKIS'}</span>${K.srcTag(c.vk)}</div><div class="tn">${K.esc(c.title)}</div><div class="kal-bar"><span data-w="${pct}" style="width:0;background:#22C55E;"></span></div><div class="tc">${c.tv && c.done != null ? `${c.done} / ${Number(c.tv)}${c.tu ? ' ' + K.esc(c.tu) : ''}${c.pending ? ' · laukia trenerio' : ''}` : (c.pending ? 'pateikta · laukia trenerio' : 'vyksta')}${c.left != null ? ' · liko ' + c.left + ' d.' : ''} · <b style="color:#FFD700;">${c.tiers ? (c.done != null ? 'pakopa ' + Iss.tierOf(c.tiers, c.done) + '/' + c.tiers.length + ' · ' : '') + c.tiers.map(t => '+' + Number(t.exp)).join('/') : '+' + Number(c.exp)}</b></div></div>`; }).join('')}</div>`;
     },
     shift(d) { const r = this.K.range(this.st.ym); const x = new Date(r.y, r.m - 1 + d, 1); this.st.ym = `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}`; this.st.dir = d; const g = document.querySelector('#' + this.cid + ' .kal-grid'); if (g && !this.K.reduced()) g.classList.add(d > 0 ? 'out-l' : 'out-r'); this.reload(); },
 
@@ -43076,16 +43233,18 @@ Object.assign(Kal, {
       const K = this.K, today = K.ymd(new Date());
       const ses = this.sesOn(ds), evs = this.evOn(ds), lines = this.st.exp[ds] || [], total = this.dayExp(ds);
       const parts = [];
-      const wasHere = ses.some(s => s.present > 0);
-      if (wasHere || (!ses.length && lines.length)) {
+      const a = this.attOn(ds); const wasHere = a ? a.present : ses.some(s => s.present > 0);   // v623 (11A)
+      if (wasHere || lines.length) {
         const vis = lines.filter(x => this.effortVisible() || x.kind !== 'effort');
         parts.push(`<div class="kal-dexp"><div><div style="font-size:9px;font-weight:900;letter-spacing:1.6px;color:var(--mut);">DIENOS EXP</div><b>${total >= 0 ? '+' : ''}${total}</b></div><div style="flex:1;min-width:0;padding-bottom:4px;">${vis.map(x => `<div class="ln"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${K.esc(x.title)}</span><em>${x.exp >= 0 ? '+' : ''}${x.exp}</em></div>`).join('') || '<div class="ln"><span style="color:var(--mut);">EXP treneris skiria po treniruotės</span></div>'}</div></div>`);
-        if (wasHere && this.effortVisible()) { const eff = lines.find(x => x.kind === 'effort'); parts.push(`<div class="kal-sec" style="padding-top:10px;"><b>PASTANGOS</b><em>${K.esc(this.T.eff(eff ? eff.exp : 0).toUpperCase())}</em><span></span></div>`); }
+        // v623 (11A): pastangos iš lankomumo; senesnė nei 14 d. neįvertinta treniruotė — nebežadam „treneris įvertins" (serveris nebeleidžia)
+        if (wasHere && this.effortVisible() && !(a && !a.effort && !a.effort_exp && ds < K.addDays(today, -14))) parts.push(`<div class="kal-sec" style="padding-top:10px;"><b>PASTANGOS</b><em>${K.esc(this.T.eff(a ? (K.EFF[a.effort] ? K.EFF[a.effort].exp : a.effort_exp) : 0).toUpperCase())}</em><span></span></div>`);
       }
       ses.forEach(s => {
         const conf = s.session_id && s.status === 'confirmed';
-        const markedDay = s.total > 0, here = s.present > 0;
-        const tag = markedDay ? (here ? `<span class="kal-tag ok">${this.T.was}</span>` : `<span class="kal-tag mut">${this.T.wasnt}</span>`) : (ds > today ? '<span class="kal-tag ai">BŪSIMA</span>' : '<span class="kal-tag mut">DAR NEPAŽYMĖTA</span>');
+        const markedDay = a ? true : s.total > 0, here = a ? a.present : s.present > 0;   // v623 (11A)
+        const attOnF = typeof KidGate === 'undefined' || KidGate.on('attendance');   // v623 (15A)
+        const tag = markedDay ? (here ? `<span class="kal-tag ok">${this.T.was}</span>` : `<span class="kal-tag mut">${this.T.wasnt}</span>`) : (ds > today ? '<span class="kal-tag ai">BŪSIMA</span>' : (attOnF ? '<span class="kal-tag mut">DAR NEPAŽYMĖTA</span>' : ''));
         parts.push(`<div class="kal-sec"><b>TRENIRUOTĖ</b><em class="o">${s.time ? K.esc(s.time) : ''}${s.duration ? ' · ' + s.duration + ' MIN' : ''}</em><span></span></div>`);
         parts.push(`<div class="kal-rows" style="padding-bottom:8px;"><div class="kal-row"><div class="gr" style="background:${K.col(this.st.group?.color)};"></div><div class="bd"><div class="nm"><span>${conf ? K.esc(s.title || 'Treniruotė') : 'Treniruotė'}</span>${tag}</div>${conf && s.why_text ? `<div class="ds" style="font-weight:700;">${K.esc(s.why_text)}</div>` : ''}${conf && s.bring_text ? `<div class="mt"><b style="color:var(--txt);">Pasiimk:</b> ${K.esc(s.bring_text)}</div>` : ''}${this.blocksHtml(s, conf)}</div></div></div>`);
         if (!conf) parts.push('<div class="kal-empty">Treniruotės turinys atsiras, kai treneris ją patvirtins.</div>');
@@ -43093,7 +43252,8 @@ Object.assign(Kal, {
       evs.forEach(ev => parts.push(this.eventHtml(ev, ds, today)));
       if (!parts.length) parts.push('<div class="kal-empty"><b>Šią dieną treniruočių nėra</b></div>');
       const m = Number(ds.slice(5, 7)) - 1, d = Number(ds.slice(8, 10));
-      const st = wasHere ? this.T.was : (ses.length ? (ds > today ? 'BŪSIMA' : (ses.some(s => s.total > 0) ? this.T.wasnt : 'NEPAŽYMĖTA')) : (evs.length ? 'RENGINYS' : 'LAISVA DIENA'));
+      const _attF = typeof KidGate === 'undefined' || KidGate.on('attendance');   // v623 (15A)
+      const st = wasHere ? this.T.was : (a ? this.T.wasnt : (ses.length ? (ds > today ? 'BŪSIMA' : (ses.some(s => s.total > 0) ? this.T.wasnt : (_attF ? 'NEPAŽYMĖTA' : 'TRENIRUOTĖ'))) : (evs.length ? 'RENGINYS' : 'LAISVA DIENA')));
       const sh = K.sheetOpen('kal-v-day', `<div style="min-width:0;"><b>${K.DNOM[K.dayNo(ds) - 1].toUpperCase()}</b><i>${d} ${K.MONG[m]} · ${K.esc(st)}</i></div><button class="kal-x" onclick="Kal.sheetClose('kal-v-day')" title="Uždaryti">${ico('uzdaryti')}</button>`, parts.join(''));
       sh.dataset.ds = ds;
     },
@@ -43110,18 +43270,18 @@ Object.assign(Kal, {
         const intent = this.st.intents[ev.id]; const past = String(ev.date) < today; const belt = ev.cls === 'ev-belt';
         const btns = !past && typeof setKidIntent === 'function' ? `<div style="display:flex;gap:8px;margin-top:10px;"><span class="kal-b g lg" style="flex:1;${intent === 'planning' ? 'opacity:.55;' : ''}" onclick="${this.ns}.intent('${ev.id}','planning')">${intent === 'planning' ? this.T.yesOn : this.T.yes}</span><span class="kal-b lg" style="flex:1;${intent === 'wont_attend' ? 'opacity:.55;' : ''}" onclick="${this.ns}.intent('${ev.id}','wont_attend')">${intent === 'wont_attend' ? this.T.noOn : 'Ne'}</span></div>` : '';
         return `<div class="kal-card ${ev.cls}"><div style="font-size:15px;font-weight:900;">${K.esc(ev.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${K.esc(ev.label)} · ${K.esc(ev.date)}${ev.location ? ' · ' + K.esc(ev.location) : ''}${intent === 'participated' ? ' · dalyvavo' : ''}</div>${(ev.deadline || ev.price) ? `<div style="display:flex;gap:12px;margin-top:7px;font-size:10.5px;font-weight:800;color:var(--mut);">${ev.deadline ? `<span>Registracija iki <b style="color:#FF7A33;">${K.esc(ev.deadline)}</b></span>` : ''}${ev.price ? `<span>Mokestis <b style="color:var(--txt);">${K.esc(ev.price)}</b></span>` : ''}</div>` : ''}${ev.url && /^https?:\/\//i.test(ev.url) ? `<div style="margin-top:7px;"><a href="${K.esc(ev.url)}" target="_blank" rel="noopener" class="kal-b" style="display:inline-block;text-decoration:none;">Registracija ↗</a></div>` : ''}</div>
-          ${!past ? `<div style="margin:0 16px 10px;background:linear-gradient(155deg,rgba(59,130,246,.2),var(--card) 68%);border:.5px solid rgba(59,130,246,.45);border-radius:18px;padding:13px 14px;"><div style="font-size:9.5px;font-weight:900;letter-spacing:1.3px;color:#3B82F6;">AR DALYVAUSI?</div>${btns}<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:9px;line-height:1.45;">${this.T.note}</div></div>` : ''}
+          ${!past ? `<div style="margin:0 16px 10px;background:linear-gradient(155deg,rgba(59,130,246,.2),var(--card) 68%);border:.5px solid rgba(59,130,246,.45);border-radius:18px;padding:13px 14px;"><div style="font-size:9.5px;font-weight:900;letter-spacing:1.3px;color:#3B82F6;">${this.T.ask.toUpperCase()}</div>${btns}<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:9px;line-height:1.45;">${this.T.note}</div></div>` : ''}
           ${!belt ? `<div class="kal-sec">EXP UŽ REZULTATĄ</div><div class="kal-card"><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;text-align:center;">${[['150', '1 VIETA', '#FFD700'], ['100', '2 VIETA', 'var(--txt)'], ['70', '3 VIETA', 'var(--txt)'], ['40', 'DALYVAVO', 'var(--mut)']].map(x => `<div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${x[2]};line-height:1;">${x[0]}</div><div style="font-size:9px;font-weight:800;color:var(--mut);margin-top:3px;">${x[1]}</div></div>`).join('')}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:9px;padding-top:8px;border-top:.5px solid var(--bdr);text-align:center;">+3 už kiekvieną laimėtą kovą · +1 už pralaimėtą</div></div>` : ''}`;
       }
       const r = this.st.rsvp[ev.id];
-      return `<div class="kal-card ${ev.cls}"><div style="font-size:15px;font-weight:900;">${K.esc(ev.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${K.esc(ev.label)} · ${K.esc(ev.date)}${ev.endDate && ev.endDate !== ev.date ? ' – ' + K.esc(ev.endDate) : ''}${r ? ' · ' + (r.attended ? 'dalyvavai' : (r.status === 'going' ? 'dalyvausi' : (r.status === 'didnt_attend' ? 'nedalyvavai' : K.esc(r.status || '')))) : ''}</div><div class="kal-acts"><span class="kal-b" onclick="document.getElementById('kal-v-day').remove();nv('v',null,'v-comp')">Atidaryti Varžybose</span></div></div>`;
+      return `<div class="kal-card ${ev.cls}"><div style="font-size:15px;font-weight:900;">${K.esc(ev.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${K.esc(ev.label)} · ${K.esc(ev.date)}${ev.endDate && ev.endDate !== ev.date ? ' – ' + K.esc(ev.endDate) : ''}${r ? ' · ' + (r.attended ? 'dalyvavai' : (r.status === 'going' ? 'dalyvausi' : (r.status === 'didnt_attend' ? 'nedalyvavai' : K.esc(r.status || '')))) : ''}</div>${this.evNav ? `<div class="kal-acts"><span class="kal-b" onclick="Kal.sheetClose('kal-v-day',true);${this.evNav}">Atidaryti Varžybose</span></div>` : ''}</div>`;
     },
 
     // ── ETAPAS (sheet): tikslas + savaitės + iššūkiai — per esamą RPC spobu_kid_month_plan (tėvų laukai) ──
     async openEtapas() {
       const K = this.K, kid = this.kidId(); if (!kid) return;
       let p = null;
-      try { const { data, error } = await sb.rpc('spobu_kid_month_plan', { p_kid: kid }); if (error) throw error; p = Array.isArray(data) ? data[0] : data; } catch (e) { showToast(ico('klaida') + ' ' + (e.message || ''), 'error'); return; }
+      try { const { data, error } = await sb.rpc('spobu_kid_month_plan', { p_kid: kid }); if (error) throw error; p = Array.isArray(data) ? data[0] : data; } catch (e) { showToast(ico('klaida') + ' ' + escapeHtml(_userError(e)), 'error'); return; }
       const today = K.ymd(new Date());
       // v538: savaitės — VISO etapo, ne tik atidaryto mėnesio (kalendorius rodo vieną mėnesį, etapas gali būti ilgesnis)
       let all = this.st.sessions || [];
@@ -43151,14 +43311,14 @@ Object.assign(Kal, {
 // politika `compres_self_update` + sargas). t-main SENAS turinys lieka DOM'e (`tk-legacy`) ir rodomas, kai jungiklis
 // išjungtas — regresija = v534. Profilyje — eilutės Visa statistika / Reitingai / Varžybų rekordas / Vaikai (`kal-t-prof`).
 Kal.parent = Object.assign(Object.create(Kal.kid), {
-  st: { ym: null, group: null, sessions: [], events: [], exp: {}, att: {}, busy: false, ch: [], intents: {}, rsvp: {}, plan: null },
-  cid: 'kal-t-content', ns: 'Kal.parent', scr: 't-main', chNav: "nv('t',null,'t-feed')",
-  T: { was: 'BUVO', legWas: 'Buvo', wasnt: 'NEBUVO', wasN: 'buvo', ask: 'Ar dalyvaus?', yes: 'Taip, dalyvaus', yesOn: '✓ Dalyvaus', noOn: '✓ Nedalyvaus',
+  st: { ym: null, group: null, sessions: [], events: [], exp: {}, att: {}, busy: false, ch: [], intents: {}, rsvp: {}, plan: null, again: false, chAt: 0 },
+  cid: 'kal-t-content', ns: 'Kal.parent', scr: 't-main', chNav: "nv('t',null,'t-feed')", ownCh: false, evNav: '',   // v623: tėvams plytelių ir „Atidaryti Varžybose" nėra
+  T: { was: 'BUVO', legWas: 'Buvo', wasnt: 'NEBUVO', wasN: 'buvo', ask: 'Ar dalyvaus?', yes: 'Taip, dalyvaus', yesOn: '✓ Dalyvaus', tagYes: 'DALYVAUS', tagNo: 'NEDALYVAUS', noOn: '✓ Nedalyvaus',
        note: 'Iki 14 m. dalyvavimą patvirtina tėvai. Jūsų pasirinkimą matys vaikas ir treneris.', seeAll: 'matote visą etapą', goal: 'TIKSLAS TĖVAMS',
        eff: e => e >= 20 ? 'Dirbo iš visų jėgų' : (e >= 14 ? 'Dirbo gerai' : (e > 0 ? 'Dirbo lengviau' : 'Pastangas treneris įvertins po treniruotės')) },
   kid() { return (typeof parentActiveKid !== 'undefined' && parentActiveKid) ? parentActiveKid : null; },
   name() { return this.kid()?.first_name || 'Vaikas'; },
-  effortVisible() { return typeof flagOnStrict === 'function' && flagOnStrict('effort_visible_to_parents'); },
+  effortVisible() { return typeof flagOnStrict === 'function' && flagOnStrict('effort_visible_to_parents') && (typeof KidGate === 'undefined' || KidGate.on('attendance')); },
   // v557: vaikų čipsai kalendoriaus viršuje (kai vaikų > 1) — tas pats parentSelectKid kelias
   kidsHtml() {
     const ks = (typeof parentKids !== 'undefined' && Array.isArray(parentKids)) ? parentKids : []; if (ks.length < 2) return '';
@@ -44428,7 +44588,7 @@ const Strava = {
       if (!data?.url) throw new Error('Strava nuorodos nėra');
       try { sessionStorage.setItem('stv_return', currentProfile?.role === 'parent' ? 't-prof' : 'v-prof'); sessionStorage.setItem('stv_kid', kidId); } catch (_e) { }
       window.location.href = data.url;
-    } catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 5000); this.st.busy = false; }
+    } catch (e) { showToast(ico('klaida') + ' ' + escapeHtml(e.message || 'Nepavyko'), 'error', 5000); this.st.busy = false; }
   },
   async unlink(kidId) {
     if (!(await appConfirm('Atsieti Strava? Seni pateikimai liks, nauji bėgimai nebeateis automatiškai.'))) return;
@@ -44437,7 +44597,7 @@ const Strava = {
       if (error) throw new Error(await this.errText(error));
       if (data?.error) throw new Error(data.error);
       showToast('Strava atsieta', 'success');
-    } catch (e) { showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 5000); }
+    } catch (e) { showToast(ico('klaida') + ' ' + escapeHtml(e.message || 'Nepavyko'), 'error', 5000); }
     await this.status(kidId, true); this.render();
   },
   async sync(kidId, silent) {
@@ -44455,7 +44615,7 @@ const Strava = {
       }
       if (data.created && currentProfile?.role === 'kid' && typeof loadChallenges === 'function') loadChallenges();
       return data;
-    } catch (e) { if (!silent) showToast(ico('klaida') + ' ' + (e.message || 'Nepavyko'), 'error', 5000); return null; }
+    } catch (e) { if (!silent) showToast(ico('klaida') + ' ' + escapeHtml(e.message || 'Nepavyko'), 'error', 5000); return null; }
     finally { this.st.syncing[kidId] = false; this.render(); }
   },
   // vaiko iššūkių sąrašui: būsena kortelėms + fono sinchronizacija, jei praėjo >10 min
@@ -44484,7 +44644,7 @@ const Strava = {
   async render() {
     const kid = document.getElementById('stv-v-card'), par = document.getElementById('stv-t-row');
     const hide = el => { if (el) el.style.display = 'none'; };
-    if (!this.on()) { hide(kid); hide(par); return; }
+    if (!this.on() || (typeof KidGate !== 'undefined' && !KidGate.on('challenges'))) { hide(kid); hide(par); return; }   // v623 (15A): Strava — tik iššūkiams
     if (currentProfile?.role === 'parent') {
       // v622 (6A): kortelė KIEKVIENAM vaikui (su jo ID) — anksčiau viena aktyviam vaikui ir po vaiko keitimo mygtukai likdavo su senu ID
       if (!par) return;
@@ -46482,6 +46642,49 @@ const StatPaieska = {
     else if (role === 'kid') kidStatPage = 1;
     else if (role === 'parent') parentStatPage = 1;
     try { el.innerHTML = await fn(true); } catch (e) { console.warn('[stat-paieska]', e); }
+  },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: KidGate =====
+// v623 (15A, savininko 09-23): klubo funkcijų jungikliai VISUR, kur vaikas ką nors mato — V2 navigacija perrašyta, todėl senieji
+// selektoriai applyClubFlagGates (.ni[onclick*="v-ish/v-comp"]) nebeveikia. Šaltinis — clubFlags (get_club_flags); semantika kaip
+// flagOn: nėra / null => įjungta. Tik display:none, ankstyvi grįžimai ir filtrai — EXP istorija lieka (kalendoriaus EXP eilutės,
+// statistika, trofėjai). Kal.parent paveldi Kal.kid — kalendoriaus filtrai galioja ir tėvams.
+const KidGate = {
+  F: { challenges: 'challenges_enabled', duels: 'duels_enabled', gc: 'group_challenges_enabled', comp: 'competitions_enabled', belt: 'belt_grading_enabled', camps: 'camps_enabled', attendance: 'attendance_enabled' },
+  on(k) {
+    if (k === 'chat') return typeof kidChatOn !== 'function' || kidChatOn();
+    const f = this.F[k];
+    return !f || typeof flagOn !== 'function' || flagOn(f);
+  },
+  compScreen() { return this.on('comp') || this.on('belt') || this.on('camps'); },
+  compType(t) { return (t === 'belt_test' || t === 'belt') ? this.on('belt') : this.on('comp'); },
+  compTypes() { return [...(this.on('comp') ? ['kumite', 'kata'] : []), ...(this.on('belt') ? ['belt_test'] : [])]; },
+  event(ev) { return !!ev && (ev.kind === 'comp' ? (ev.cls === 'ev-belt' ? this.on('belt') : this.on('comp')) : this.on('camps')); },
+  screen(sid) { return sid === 'v-ish' ? this.on('challenges') : (sid === 'v-comp' ? this.compScreen() : true); },
+  statTab(t) { return t === 'challenges' ? this.on('challenges') : (t === 'competitions' ? this.on('comp') : true); },
+  notifTab(t) { return t === 'challenges' ? (this.on('challenges') || this.on('gc')) : (t === 'competitions' ? this.compScreen() : (t === 'messages' ? this.on('chat') : true)); },
+  notifKeep(cat, n) {
+    const id = String((n && n.id) || ''), isGc = /^(newgc|gcexp)-/.test(id), isCamp = /^(newcamp|campexp)-/.test(id);
+    if (cat === 'challenges') return isGc ? this.on('gc') : this.on('challenges');
+    if (cat === 'competitions') return isCamp ? this.on('camps') : this.compType(n && n.ctype);
+    return true;
+  },
+  cols(id, n) { const el = document.getElementById(id); if (el) el.style.gridTemplateColumns = `repeat(${Math.max(1, n)},1fr)`; },
+  apply() {
+    if (currentProfile?.role !== 'kid' || typeof _gateEl !== 'function') return;
+    const ch = this.on('challenges'), gc = this.on('gc'), cp = this.on('comp'), scr = this.compScreen(), att = this.on('attendance'), chat = this.on('chat');
+    _gateEl('v-rank-comp-tile', cp); _gateEl('v-rank-ish-tile', ch); this.cols('v-rank-grid', 2 + (cp ? 1 : 0) + (ch ? 1 : 0));
+    _gateEl('v-next-event-t', scr); _gateEl('v-next-event', scr);
+    _gateEl('kal-v-att-btn', att);
+    _gateEl('kal-v-comp-link', scr);
+    _gateSel('#v-stat .stat-tab[data-tab="challenges"]', ch); _gateSel('#v-stat .stat-tab[data-tab="competitions"]', cp);
+    const vt = document.getElementById('v-comp-title'); if (vt) vt.textContent = cp ? 'VARŽYBOS' : 'RENGINIAI';
+    _gateSel('#v-announcements-section .notif-tab[data-tab="challenges"]', ch || gc);
+    _gateSel('#v-announcements-section .notif-tab[data-tab="competitions"]', scr);
+    _gateSel('#v-announcements-section .notif-tab[data-tab="messages"]', chat);
+    this.cols('v-notif-tabs', 1 + ((ch || gc) ? 1 : 0) + (scr ? 1 : 0) + (chat ? 1 : 0));
   },
 };
 // ===== /MODULIS =====
