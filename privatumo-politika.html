@@ -20,7 +20,7 @@
   .mut { color:var(--mut); }
   .brand { color:var(--br); font-weight:800; letter-spacing:.5px; }
   table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13.5px; }
-  th, td { text-align:left; padding:8px 10px; border:1px solid var(--bdr); vertical-align:top; }
+  th, td { text-align:left; padding:8px 10px; border:1px solid var(--bdr); vertical-align:top; overflow-wrap:anywhere; }
   th { background:var(--card); font-size:12px; letter-spacing:.5px; text-transform:uppercase; }
   .box { background:var(--card); border:1px solid var(--bdr); border-radius:12px; padding:16px 18px; margin:14px 0; }
   .kid { border-left:4px solid var(--br); }
@@ -37,7 +37,7 @@
 
   <div class="brand" style="font-size:22px;">SPO<span style="color:inherit;">BU.</span></div>
   <h1>Privatumo politika</h1>
-  <div class="sub">Versija 1.1 · Įsigalioja 2026-08-18 (patikslinta 2026-08-22) · Taikoma programėlei „SPOBU" (app.spobu.lt) ir svetainei spobu.lt</div>
+  <div class="sub">Versija 1.2 · Įsigalioja 2026-08-18 (patikslinta 2026-08-22, papildyta 2026-09-23) · Taikoma programėlei „SPOBU" (app.spobu.lt) ir svetainei spobu.lt</div>
 
   <!-- ══════════ SANTRAUKA VAIKAMS ══════════ -->
   <div class="box kid">
@@ -47,6 +47,7 @@
       <li>Tavo duomenis mato tik tavo <b>tėvai, treneris ir klubas</b>. Kiti vaikai reitinguose mato tik vardą ir rezultatus — o jei įjungsi „Anonimas statistikoje", nematys nė vardo.</li>
       <li>Mes <b>nerodome reklamų</b>, <b>neparduodame tavo duomenų</b> ir niekam pašaliniam jų neduodame.</li>
       <li>Apie sveikatą (pvz., alergijas) pasakoji tik jei pats nori — kad treneris galėtų tavimi pasirūpinti.</li>
+      <li>🏃 Jei susieji Strava, matome tik tavo bėgimų, ėjimų ir kitų treniruočių atstumą, trukmę ir datą — kad iššūkiai užsiskaitytų patys. Atsieti gali bet kada.</li>
       <li>Jei kas neaišku ar nepatinka — pasakyk tėvams arba parašyk mums. Gali paprašyti, kad tavo duomenis ištrintume.</li>
     </ul>
   </div>
@@ -95,8 +96,10 @@
     <tr><td><b>Vaiko anketa</b></td><td>Vardas, pavardė, lytis, gimimo data, diržas (kyu), ūgis, svoris, svorio kategorija, telefonas (jei turi), profilio nuotrauka (jei įkeliama), klubas, grupė, treneris</td><td>Pateikia tėvai arba 14+ vaikas; grupę ir trenerį priskiria klubas</td></tr>
     <tr><td><b>Sveikatos duomenys</b> <span class="mut">(spec. kategorija)</span></td><td>Alergijos, vartojami vaistai, sveikatos būklės, traumos, pastabos treneriui</td><td>Tik savanoriškai, su atskiru aiškiu sutikimu (žr. 5 sk.)</td></tr>
     <tr><td><b>Avarinis kontaktas</b></td><td>Tėvų / globėjų (ar kito artimo asmens) vardas, telefonas, ryšys</td><td>Pateikia tėvai arba 14+ vaikas — kad treneris galėtų susisiekti nelaimės atveju</td></tr>
-    <tr><td><b>Sporto veikla</b></td><td>Patirties taškai (EXP), lygiai, etapai, diržų egzaminai, varžybų rezultatai, dvikovos, rekordai, iššūkiai, lankomumas, stovyklų registracijos</td><td>Fiksuoja vaikas, treneris, klubas naudodamiesi programėle</td></tr>
-    <tr><td><b>Bendravimas</b></td><td>Vaiko ir jo trenerio susirašinėjimas programėlėje, klubo skelbimai, jūsų atsiliepimai mums ir mūsų atsakymai</td><td>Sukuriama naudojantis programėle</td></tr>
+    <tr><td><b>Sporto veikla</b></td><td>Patirties taškai (EXP), lygiai, etapai, diržų egzaminai, varžybų rezultatai, dvikovos, rekordai, iššūkiai, lankomumas, pastangų įvertinimas po treniruotės (iš visų jėgų / gerai / lengviau), treniruočių planai ir etapai, stovyklų registracijos</td><td>Fiksuoja vaikas, treneris, klubas naudodamiesi programėle</td></tr>
+    <tr><td><b>Strava duomenys</b> <span class="mut">(tik susiejus)</span></td><td>Strava sportininko ID; prisijungimo raktai (saugomi tik serveryje, vartotojams nematomi); veiklų tipas (bėgimas, ėjimas, dviratis, plaukimas, treniruotė), pavadinimas, atstumas, trukmė, data ir nuoroda į veiklą — tik tos, kurios reikalingos iššūkiams užskaityti</td><td>Iš Strava, kai vaikas (vaikui iki 14 m. — su tėvų sutikimu) arba tėvai savanoriškai susieja Strava paskyrą</td></tr>
+    <tr><td><b>Bendravimas</b></td><td>Vaiko ir jo trenerio susirašinėjimas programėlėje, klubo ir trenerių tarpusavio žinutės, klubo skelbimai, trenerio atsiliepimai po treniruotės ir klubo pastabos treneriams, jūsų atsiliepimai ir pokalbiai su SPOBU palaikymu</td><td>Sukuriama naudojantis programėle</td></tr>
+    <tr><td><b>Klubo informacija</b></td><td>Klubo adresas, telefonas, el. paštas, trumpas aprašymas, Facebook / Instagram nuorodos</td><td>Pateikia klubo administratorius; rodoma klubo nariams</td></tr>
     <tr><td><b>Pirkimai</b></td><td>Užsakytos AI ataskaitos ir prenumeratos, sumos, datos, būsenos; ataskaitai — papildomai jūsų nurodyti ūgis/svoris, traumos, lūkesčiai</td><td>Pateikiate užsakydami</td></tr>
     <tr><td><b>Techniniai duomenys</b></td><td>Programėlės klaidų įrašai (klaidos tekstas, programos versija, rolė, paskyros ID), aktyvumo žyma (1 įrašas per dieną, kad matytume, ar paskyra naudojama), pranešimų (push) prenumeratos adresas</td><td>Generuojama automatiškai naudojantis</td></tr>
   </table>
@@ -113,6 +116,10 @@
     <tr><td>Klaidų stebėjimas ir programėlės saugumas</td><td>Teisėtas interesas (stabili ir saugi paslauga)</td><td>Klaidų įrašai — iki 90 dienų</td></tr>
     <tr><td>Naudojimo statistika (aktyvumo žyma, funkcijų naudojimas)</td><td>Teisėtas interesas (paslaugos tobulinimas)</td><td>Iki 24 mėn., po to sumuojama be asmens duomenų</td></tr>
     <tr><td>Naujienų siuntimas el. paštu (tik tėvams)</td><td>Sutikimas — atskiras, nebūtinas registracijai</td><td>Iki atšaukimo</td></tr>
+    <tr><td>Iššūkių užskaitymas pagal Strava veiklas</td><td>Sutikimas (6 str. 1 d. a p.) — susiejimas savanoriškas; vaikui iki 14 m. — tėvų sutikimas (8 str.)</td><td>Kol susieta. Atsiejus Strava prisijungimo raktai ištrinami; jau užskaityti iššūkių rezultatai lieka kaip sporto veikla</td></tr>
+    <tr><td>Treniruočių dalijimasis (trenerio / klubo postas: nuotrauka + viena eilutė) tėvų grupės pokalbyje</td><td>Teisėtas interesas (klubo bendruomenės informavimas)</td><td>Postai programėlėje nesaugomi — dalijamasi jūsų pasirinktame kanale</td></tr>
+    <tr><td>Vaikų vardai viešuose postuose (Facebook / Instagram)</td><td>Sutikimas — ta pati atskira „media" sutikimo žyma; be jos vaiko vardas viešame poste nerodomas (tik „+N")</td><td>Iki sutikimo atšaukimo</td></tr>
+    <tr><td>Pranešimai telefone (push) apie klubo įvykius ir žinutes</td><td>Sutarties vykdymas; įjungiama savanoriškai, kiekvieną tipą galima išjungti</td><td>Kol įjungta šiame įrenginyje</td></tr>
     <tr><td>Nepatvirtintos (laukiančios) paskyros</td><td>—</td><td>Klubo atmestos arba 12 mėn. nepatvirtintos anketos šalinamos</td></tr>
   </table>
 
@@ -131,10 +138,12 @@
   <h2 id="matomumas">6. Kas mato jūsų duomenis</h2>
   <table>
     <tr><th>Kas</th><th>Ką mato</th></tr>
-    <tr><td>Tėvai / globėjai</td><td>Visus savo vaikų duomenis ir veiklą</td></tr>
-    <tr><td>Vaiko treneris</td><td>Savo grupių vaikų anketas (įsk. sveikatos pastabas ir avarinį kontaktą), rezultatus, lankomumą, susirašinėjimą su juo</td></tr>
+    <tr><td>Tėvai / globėjai</td><td>Visus savo vaikų duomenis ir veiklą; trenerio pastangų įvertinimą — jei klubas tai įjungęs</td></tr>
+    <tr><td>Vaiko treneris</td><td>Savo grupių vaikų anketas (įsk. sveikatos pastabas ir avarinį kontaktą), rezultatus, lankomumą ir pastangų įvertinimą, susirašinėjimą su juo</td></tr>
     <tr><td>Klubo administratorius</td><td>Savo klubo narių anketas, grupes, rezultatus, klubo apyvartos suvestines</td></tr>
-    <tr><td>Kiti klubo vaikai / tėvai</td><td>Tik viešą sportinę dalį: vardą, diržą, lygį, rezultatus reitinguose. Įjungus „Anonimas statistikoje", vietoj vardo rodoma „Anonimas"</td></tr>
+    <tr><td>Kiti klubo vaikai / tėvai</td><td>Tik viešą sportinę dalį: vardą, diržą, lygį, rezultatus reitinguose. Įjungus „Anonimas statistikoje", vietoj vardo rodoma „Anonimas". Reitinguose galima ieškoti pagal vardą; anonimai paieškoje nerodomi</td></tr>
+    <tr><td>Kitų klubų nariai</td><td>Varžybų reitinge (federacijos skiltis) — vardą ir pavardės pirmą raidę, diržą, balą; anonimai rodomi kaip „Anonimas"</td></tr>
+    <tr><td>Klubo nariai (apie klubą)</td><td>Klubo kontaktus ir aprašymą, kuriuos pateikė klubas</td></tr>
     <tr><td>Platformos administratorius (SPOBU)</td><td>Duomenis, kiek būtina paslaugai palaikyti, klaidoms tirti ir pagalbai teikti; administratoriaus veiksmai fiksuojami audito žurnale</td></tr>
   </table>
   <p><b>Niekada</b> neparduodame duomenų, nesidalijame jais su reklamos tinklais ir nenaudojame automatizuoto sprendimų priėmimo, sukeliančio teisines pasekmes.</p>
@@ -160,9 +169,11 @@
     <tr><td>GitHub Pages (Microsoft)</td><td>Programėlės failų talpinimas (hostingas)</td><td>Techniniai užklausų įrašai (IP adresas) — asmens duomenų programėlės turinyje GitHub nesaugo</td></tr>
     <tr><td>jsDelivr / unpkg (turinio pristatymo tinklai)</td><td>Programėlės bibliotekos įkėlimas</td><td>IP adresas užklausos metu</td></tr>
     <tr><td>Google Fonts</td><td>Šriftų įkėlimas</td><td>IP adresas užklausos metu</td></tr>
-    <tr><td>Anthropic, PBC (JAV) — „Claude" modelių šeima</td><td>AI ataskaitų generavimas užsakius mokamą ataskaitą</td><td>Ataskaitai reikalingi vaiko sporto duomenys, amžius, lytis, jūsų nurodyti ūgis/svoris ir pastabos. Pagal Anthropic komercines sąlygas per API perduoti duomenys modelių mokymui nenaudojami</td></tr>
+    <tr><td>Anthropic, PBC (JAV) — „Claude" modelių šeima</td><td>(1) AI ataskaitų generavimas užsakius mokamą ataskaitą; (2) treniruočių planų pasiūlymai treneriui (AI vedlys)</td><td>(1) Ataskaitai reikalingi vaiko sporto duomenys, amžius, lytis, jūsų nurodyti ūgis/svoris ir pastabos; (2) grupės apibendrinti duomenys: vaikų amžius ir diržai (be vardų), treniruočių tvarkaraštis, klubo katalogo pratimai, trenerio atsakymai ir pastabos apie treniruotes. Pagal Anthropic komercines sąlygas per API perduoti duomenys modelių mokymui nenaudojami</td></tr>
     <tr><td>Naršyklių pranešimų tarpininkai (Google, Apple, Mozilla)</td><td>Push pranešimų pristatymas, jei juos įsijungiate</td><td>Techninis prenumeratos adresas; pranešimo turinys</td></tr>
   </table>
+
+  <p><b>Strava, Inc. (JAV)</b> nėra mūsų duomenų tvarkytojas — tai atskiras duomenų valdytojas. Duomenis iš Strava gauname tik jums savanoriškai susiejus paskyrą ir tik tokius, kokie nurodyti 3 skyriuje. Strava savo duomenis tvarko pagal savo privatumo politiką. Susiejimą galite bet kada nutraukti programėlėje arba Strava nustatymuose.</p>
 
   <!-- ══════════ 9 ══════════ -->
   <h2 id="perdavimai">9. Perdavimai už ES / EEE ribų</h2>
@@ -205,8 +216,9 @@
   <!-- ══════════ 13 ══════════ -->
   <h2 id="pakeitimai">13. Politikos pakeitimai</h2>
   <p>Apie esminius pakeitimus pranešime programėlėje ir (arba) el. paštu ne vėliau kaip prieš 7 dienas. Jei pakeitimams reikės naujo sutikimo (pvz., naujas duomenų naudojimo tikslas), jo paprašysime atskirai — tyliai sutikimų neišplėsime.</p>
+  <p class="mut" style="font-size:13px;"><b>2026-09-23 (v1.2)</b> — papildyta: Strava susiejimas, pastangų įvertinimas, AI treniruočių planai, postai socialiniuose tinkluose, klubo informacija, SPOBU palaikymo pokalbiai.</p>
 
-  <p class="mut" style="margin-top:34px;font-size:13px;">SPOBU privatumo politika · v1.1 · 2026-08-22 · Susijęs dokumentas: <a href="naudojimo-taisykles.html">Naudojimo taisyklės</a></p>
+  <p class="mut" style="margin-top:34px;font-size:13px;">SPOBU privatumo politika · v1.2 · 2026-09-23 · Susijęs dokumentas: <a href="naudojimo-taisykles.html">Naudojimo taisyklės</a></p>
 
 </div>
 </body>

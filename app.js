@@ -598,7 +598,7 @@ async function _checkSelfSignupFlag(){
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfSignupFlag, 1500); });
 
 // ── 📜 Sutikimų žurnalas (server-consents.sql) — BDAR įrodymas: kas/kada/kokia versija ──
-const POLICY_VERSION = 'v1.1';   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
+const POLICY_VERSION = 'v1.2';   // v621: 2026-09-23 papildyta (Strava, pastangos, AI planai, postai, klubo info, SPOBU pokalbiai)   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
 const SUPPORT_EMAIL = 'info@spobu.lt';   // reali dėžutė nuo 2026-08-18 (iv.lt catch-all persiuntimas)
 // 🎁 v439: parduotuvės BANDYMO REŽIMAS — planai su kainomis paslėpti (kainodara neskelbiama iki
 // mokėjimų įjungimo). Sausį su payments_live → pakeisti į false, pilnas langas grįžta pats.
