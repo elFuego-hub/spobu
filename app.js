@@ -599,7 +599,7 @@ async function _checkSelfSignupFlag(){
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfSignupFlag, 1500); });
 
 // ── 📜 Sutikimų žurnalas (server-consents.sql) — BDAR įrodymas: kas/kada/kokia versija ──
-const POLICY_VERSION = 'v1.3';   // v627: 2026-09-23 Strava Kelio rekordams + vaikas susieja pats (S2), 14+ susitikimai; v621: v1.2 (Strava, pastangos, AI planai, postai, klubo info, SPOBU pokalbiai)   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
+const POLICY_VERSION = 'v1.4';   // v628: 2026-09-24 sporto kortelė su nuotrauka (ne anonimams), medijos sutikimas iš registracijos išimtas; v627: 2026-09-23 Strava Kelio rekordams + vaikas susieja pats (S2), 14+ susitikimai; v621: v1.2 (Strava, pastangos, AI planai, postai, klubo info, SPOBU pokalbiai)   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
 const SUPPORT_EMAIL = 'info@spobu.lt';   // reali dėžutė nuo 2026-08-18 (iv.lt catch-all persiuntimas)
 // 🎁 v439: parduotuvės BANDYMO REŽIMAS — planai su kainomis paslėpti (kainodara neskelbiama iki
 // mokėjimų įjungimo). Sausį su payments_live → pakeisti į false, pilnas langas grįžta pats.
@@ -1735,7 +1735,7 @@ function openParentHelpModal() {
     ['Kaip pridėti antrą vaiką?', 'Paspausk avatarą viršuje → „Pridėti vaiką" ir užpildyk anketą — ją patvirtins klubas. Jei vaikas jau turi SPOBU paskyrą, paprašyk jo kodo ir spausk „Su kodu".'],
     ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsas turi būti įdiegtas į pradžios ekraną ir duotas pranešimų leidimas.'],
     ['Kaip pakeisti savo vardą?', 'Nustatymai → prie tavo paskyros paspausk „'+ico('redaguoti')+' Vardas".'],
-    ['Kas yra „Anonimas statistikoje"?', 'Nustatymai → „Vaiko duomenys" → Privatumas. Įjungta (taip nustatyta iš pradžių): reitinguose ir paieškoje vietoj vaiko vardo rodoma „Anonimas". Savo grupės draugai vaiką mato vardu — grupės sąraše ir dvikovose. Treneris ir klubas vardą mato visada. Išjungus reitinguose rodomas vardas ir pavardės raidė.'],
+    ['Kas yra „Anonimas statistikoje"?', 'Nustatymai → „Vaiko duomenys" → Privatumas. Įjungta (taip nustatyta iš pradžių): reitinguose ir paieškoje vietoj vaiko vardo rodoma „Anonimas". Išjungus — klubo nariai reitinge gali atidaryti vaiko sporto kortelę su profilio nuotrauka. Savo grupės draugai vaiką mato vardu — grupės sąraše ir dvikovose. Treneris ir klubas vardą mato visada. Išjungus reitinguose rodomas vardas ir pavardės raidė.'],
     ['Kada bus ataskaitos ir premium?', 'Mėnesio ataskaita jau yra „Pasiekimų" lange. Ketvirtinės AI ataskaitos ir premium — netrukus.']
   ];
   const old = document.getElementById('parent-help-modal'); if (old) old.remove();
@@ -1852,7 +1852,7 @@ function openHelpModal(who) {
       ['Kaip žymiu lankomumą?', 'Kalendoriuje spausk dieną → „Pažymėti lankomumą" (data jau įrašyta) arba Grupės lange „'+ico('lankomumas')+' ŽYMĖTI LANKOMUMĄ". Pilna savaitė → +15 EXP vaikui, pilnas mėnuo → +100.'],
       ['Kur matau pratimų normatyvus?', 'Profilio lange kortelė „Normatyvai" — rėžiai ('+ico('medalis')+''+ico('medalis')+''+ico('medalis')+''+ico('trofejai')+') pagal lytį ir amžių.'],
       ['Negaunu push pranešimų?', 'Nustatymuose „Pranešimai į telefoną" įjunk bent vieną tipą — pirmas įjungimas užregistruoja telefoną. iPhone: appsą reikia įsidėti į pradžios ekraną.'],
-      ['Kas yra „Anonimas"?', 'Tėvų jungiklis (iš pradžių įjungtas): kitiems vaikams ir tėvams reitinguose ir paieškoje vaikas rodomas „Anonimas". Savo grupės draugai jį mato vardu. Tu ir klubas visada matote tikrus vardus ir anonimus randate paieškoje. Keičia tik tėvai.']
+      ['Kas yra „Anonimas"?', 'Tėvų jungiklis (iš pradžių įjungtas): kitiems vaikams ir tėvams reitinguose ir paieškoje vaikas rodomas „Anonimas". Išjungus — jie gali atidaryti jo sporto kortelę su nuotrauka. Savo grupės draugai jį mato vardu. Tu ir klubas visada matote tikrus vardus ir anonimus randate paieškoje. Keičia tik tėvai.']
     ],
     // v624 (23A/29A): V2 tekstai — automatiškai užsiskaito tik savaitės Strava iššūkiai (V2 lankomumo / varžybų / egzamino iššūkių nekuria, v613)
     kid: [
@@ -1862,7 +1862,7 @@ function openHelpModal(who) {
       ...((typeof KidGate === 'undefined' || KidGate.on('duels')) ? [['Kas yra dvikova?', '1 prieš 1 su grupės draugu (atsispaudimai, pritūpimai, presas, lenta, bėgimas). Grupės lange iškviesk draugą ir pasirink treniruotę — joje treneris įvertins ir įves rezultatus. Pergalė +50 · lygiosios +35 · pralaimėjus +25 EXP.']] : []),
       ...((typeof Susit !== 'undefined' && Susit.kidOk()) ? [['Kas yra 14+ susitikimai?', 'Kalendoriuje „Pakviesti sportuoti" — pasirink veiklą (prasibėgam, krepšinis…), dieną, laiką ir vietą. Kvietimą mato klubo 14+ nariai; kas nori, spaudžia „Eisiu". Tai ne klubo treniruotė: susitik viešoje vietoje, pasakyk tėvams, telefonų ir adresų nerašyk. EXP už tai nėra.']] : []),   // MODULIS: Susit (v627)
       ['Kodėl mano lygis žemas?', 'Lygis auga nuo surinkto EXP — kuo daugiau treniruojiesi, atlieki iššūkių ir gerini rekordus, tuo greičiau kyla. Reitinguose iš pradžių matai savo amžiaus ir lyties draugus. OSU! '+ico('dirzas')+''],
-      ['Kas mato mano vardą?', 'Reitinguose ir paieškoje — Anonimas (jei tėvai jį įjungę). Savo grupės draugai tave mato. Treneris ir klubas visada mato tavo vardą. Kaip tu rodomas — Nustatymai → Privatumas; keičia tėvai.'],
+      ['Kas mato mano vardą?', 'Reitinguose ir paieškoje — Anonimas (jei tėvai jį įjungę); kitaip klubo nariai gali atidaryti tavo sporto kortelę su nuotrauka. Savo grupės draugai tave mato. Treneris ir klubas visada mato tavo vardą. Kaip tu rodomas — Nustatymai → Privatumas; keičia tėvai.'],
       ['Kaip pasidalinti pasiekimu?', 'Varpelyje prie patvirtinto rekordo, iššūkio, varžybų rezultato ar laimėtos dvikovos spausk „Pasidalinti" — sukursi kortelę su nuotrauka, kurią gali dėti į Instagram/TikTok.'],
       ['Negaunu pranešimų?', 'Nustatymuose įjunk „Pranešimai" — gali tai padaryti pats. iPhone: appsas turi būti įsidėtas į pradžios ekraną. Jei vis tiek neveikia — paprašyk tėvų ar trenerio pagalbos.']
     ]
@@ -4567,7 +4567,7 @@ async function openFbStudio(opts) {
       <div style="font-size:10px;color:var(--mut);margin:10px 0 4px;">Posto tekstas (paspausk — nukopijuos):</div>
       <div id="fb-text" onclick="_fbCopyText()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:11px;padding:10px 12px;font-size:11.5px;line-height:1.55;cursor:pointer;white-space:pre-wrap;"></div>
       <button onclick="_fbShare()" id="fb-share-btn" style="width:100%;padding:13px;margin-top:10px;background:linear-gradient(90deg,#1877F2,#4293f5);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:800;letter-spacing:.3px;cursor:pointer;font-family:inherit;">📣 Dalintis / atsisiųsti paveiksliuką</button>
-      <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">⭐ Pažymėk poste SPOBU paskyrą — geriausiais klubų postais dalinamės savo kanale.</div>`;
+      `;
     _pfSheet('fb-studio-modal', '📣 POSTŲ STUDIJA', body);
     if (typeof _fbRestoreSel === 'function') _fbRestoreSel();   // v475: atkuriam įsimintą pasirinkimą
     _fbRender();
@@ -4585,8 +4585,8 @@ function _fbRender() {
       const hs = st.d.heroes;
       exEl.innerHTML = hs.length
         ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;">${hs.map(h => `<div onclick="_fbSet('kidId','${h.id}')" style="${chip(st.kidId === h.id)}">${escapeHtml(h.name)} · +${h.exp}</div>`).join('')}</div>
-           <div style="font-size:9px;color:var(--mut);margin-top:4px;">Rodomi TIK vaikai su tėvų media sutikimu · kortelėje tik vardas</div>`
-        : '<div style="font-size:10.5px;color:#EF4444;margin-top:6px;">Nėra vaikų su tėvų media sutikimu — kario posto skelbti negalima</div>';
+           <div style="font-size:9px;color:var(--mut);margin-top:4px;">Rodomi TIK vaikai su tėvų leidimu rodyti vardą · kortelėje tik vardas</div>`
+        : '<div style="font-size:10.5px;color:#EF4444;margin-top:6px;">Nėra vaikų su tėvų leidimu rodyti vardą — kario posto skelbti negalima</div>';
     } else if ((st.tpl === 'klubas' || st.tpl === 'kvietimas') && (st.d.numsRows || []).length > 3) {
       // 🎛️ v472: adminas pats pasirenka, kurie pratimai eina į postą (max 3; Auto = pagal kodą)
       // v475: kai pratimų daug — top 10 + pažymėti, likusius atskleidžia „Rodyti visus (N)"
@@ -7302,9 +7302,9 @@ function akNext(currentScreen) {
     akData.emergency_contact_phone = document.getElementById('ak-emergency-phone').value.trim() || null;
     akData.emergency_contact_relation = document.getElementById('ak-emergency-relation').value.trim() || null;
     
-    // Media sutikimas (radio button)
-    const mediaConsent = document.querySelector('input[name="ak-media-consent"]:checked');
-    akData.media_consent = mediaConsent ? mediaConsent.value === 'true' : false;
+    // v628: medijos klausimas registracijoje išimtas (savininkas 09-23) — klubo fotografavimas yra klubo ir tėvų susitarimas;
+    // vardą klubo viešuose įrašuose (FB/IG) tėvai gali leisti vėliau vaiko nustatymuose. Numatyta — neleidžiama.
+    akData.media_consent = false;
 
     // 📜 BDAR 9 str.: jei pildyti sveikatos laukai — privalomas aiškus sutikimas
     const _akHealthAny = akData.health_allergies || akData.health_medications || akData.health_conditions || akData.health_injuries || akData.health_notes;
@@ -7436,7 +7436,6 @@ async function akSubmit() {
     // 📜 Sutikimų žurnalas: sveikata (jei pildyta) + media pasirinkimas (fiksuojam ir „ne")
     const _akHealthLog = akData.health_allergies || akData.health_medications || akData.health_conditions || akData.health_injuries || akData.health_notes;
     if (_akHealthLog) await logConsent('health', { kid_id: kidId, source: 'add_kid_wizard' });
-    await logConsent('media', { kid_id: kidId, given: !!akData.media_consent, source: 'add_kid_wizard' });
     
     // 2b. kid_trainers (M:N) — TIK jei tėvas pasirinko trenerį (Etapas 4: galima be trenerio)
     if (akData.trainer_id) {
@@ -7565,13 +7564,6 @@ async function akSubmit() {
       successHTML += `<div style="font-size:11px;color:var(--mut);margin-top:4px;">Galima keisti per vaiko nustatymus.</div></div>`;
     }
     
-    // Media sutikimas
-    successHTML += `
-      <div style="background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:12px;margin-bottom:12px;">
-        <div style="font-weight:800;font-size:12px;">${akData.media_consent ? ''+ico('nuotrauka')+' '+ico('patvirtinta')+' Spobu media: leidžiama' : ''+ico('nuotrauka')+' '+ico('isjungta')+' Spobu media: neleidžiama'}</div>
-        <div style="font-size:11px;color:var(--mut);margin-top:4px;">Galima bet kada keisti per nustatymus.</div>
-      </div>
-    `;
     
     if (akData.has_phone) {
       successHTML += `
@@ -7661,7 +7653,7 @@ async function showKidDetail(kidId) {
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
           <div style="flex:1;">
             <div style="font-size:13px;font-weight:800;">Anonimas statistikoje</div>
-            <div style="font-size:11px;color:var(--mut);margin-top:2px;line-height:1.4;">Reitinguose ir paieškoje — „Anonimas" vietoj vardo. Savo grupės draugai vaiką mato vardu, treneris ir klubas — visada.</div>
+            <div style="font-size:11px;color:var(--mut);margin-top:2px;line-height:1.4;">Reitinguose ir paieškoje — „Anonimas" vietoj vardo, sporto kortelė ir nuotrauka kitiems nerodomos. Išjungus — klubo nariai reitinge gali atidaryti vaiko sporto kortelę (vardas, lygis, diržas, medaliai, profilio nuotrauka). Savo grupės draugai vaiką mato vardu, treneris ir klubas — visada.</div>
           </div>
           <button class="tg ${kid.is_anonymous ? 'on' : ''}" id="t-anon-toggle-${kidId}" onclick="toggleKidAnonymity('${kidId}')"></button>
         </div>
@@ -7748,7 +7740,7 @@ async function showKidDetail(kidId) {
       
       <!-- MEDIA SUTIKIMAS -->
       <div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:12px;">
-        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;">${ico('nuotrauka')} SPOBU MEDIA SUTIKIMAS</div>
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;">${ico('nuotrauka')} VARDAS KLUBO VIEŠUOSE ĮRAŠUOSE</div>
         <div id="t-kid-media-display">
           ${renderMediaConsent(kid, true)}
         </div>
@@ -7878,7 +7870,7 @@ function renderMediaConsent(kid, canEdit) {
       <div style="flex:1;">
         <div style="font-weight:700;color:${color};font-size:13px;">${text}</div>
         <div style="font-size:11px;color:var(--mut);margin-top:2px;">
-          ${consent ? 'Spobu gali naudoti vaiko medžiagą' : 'Spobu negali naudoti vaiko medžiagos'}
+          ${consent ? 'Klubo įrašuose Facebook / Instagram gali būti vaiko vardas' : 'Viešuose klubo įrašuose vardas nerodomas (tik „+N")'}
         </div>
       </div>
     </div>
@@ -8017,8 +8009,8 @@ async function parentToggleMediaConsent() {
   
   const newConsent = !currentParentKid.media_consent;
   const confirmText = newConsent 
-    ? 'Ar tikrai leidžiate Spobu naudoti vaiko medžiagą savo platformoje, marketinge ir socialiniuose kanaluose?'
-    : 'Ar tikrai uždraudžiate Spobu naudoti vaiko medžiagą?';
+    ? 'Leisti klubui viešuose įrašuose (Facebook / Instagram) rodyti vaiko vardą?\n\nSPOBU vaikų nuotraukų rinkodarai nenaudoja. Klubo fotografavimas treniruotėse ir renginiuose — klubo ir jūsų susitarimas.'
+    : 'Nerodyti vaiko vardo viešuose klubo įrašuose? (liks tik „+N")';
   
   if (!(await appConfirm(confirmText))) return;
   
@@ -8029,7 +8021,7 @@ async function parentToggleMediaConsent() {
   
   currentParentKid.media_consent = newConsent;
   if (typeof syncParentKidCache === 'function') syncParentKidCache(currentParentKid.id, { media_consent: newConsent });
-  showToast(newConsent ? ico('patvirtinta')+' Media sutikimas: leidžiama' : ico('isjungta')+' Media sutikimas: neleidžiama', 'success');
+  showToast(newConsent ? ico('patvirtinta')+' Vardas viešuose klubo įrašuose: leidžiama' : ico('isjungta')+' Vardas viešuose klubo įrašuose: nerodomas', 'success');
   document.getElementById('t-kid-media-display').innerHTML = renderMediaConsent(currentParentKid, true);
 }
 
@@ -10276,9 +10268,10 @@ async function renderProfileExtras() {
     try {
       // ⚡ W2-1 (F1-13): kids-first — be-login vaikai (user_id NULL) anksčiau iškrisdavo,
       // nes ėjom profiles→kids. RLS tiesioginę kids užklausą klubo/grupės scope LEIDŽIA (patikrinta E2E).
+      // v628 (sauga): vaikas mato tik savo grupės draugus (kids RLS) — užklausa iškart pagal grupę; grupių vieta — kid_club_group_standings
       const { data: clubKids } = await sb.from('kids')
         .select('id, user_id, first_name, last_name, total_exp, kyu, is_anonymous, group_id, created_at, bio, karate_since, avatar_url')
-        .eq('club_id', resolveMyClubId())
+        .eq(currentKid.group_id ? 'group_id' : 'club_id', currentKid.group_id || resolveMyClubId())
         .eq('approval_status', 'approved');
       
       // Filtruoti tik tos pačios grupės
@@ -10289,8 +10282,12 @@ async function renderProfileExtras() {
       let groupHeaderHtml = '';
       try {
         // Suskaičiuoti kiekvienos grupės EXP sumą
-        const groupExpMap = {};  // { group_id: { sum, count } }
-        (clubKids || []).forEach(k => {
+        const groupExpMap = {};  // { group_id: { sum, count } } — v628: iš serverio (kitų grupių vaikų eilutės vaikui nebematomos)
+        try {
+          const { data: gst } = await sb.rpc('kid_club_group_standings');
+          (gst || []).forEach(g => { if (g.group_id) groupExpMap[g.group_id] = { sum: Number(g.exp_sum) || 0, count: Number(g.n_kids) || 0 }; });
+        } catch (_e) { }
+        if (!Object.keys(groupExpMap).length) (clubKids || []).forEach(k => {
           if (!k.group_id) return;
           if (!groupExpMap[k.group_id]) groupExpMap[k.group_id] = { sum: 0, count: 0 };
           groupExpMap[k.group_id].sum += (k.total_exp || 0);
@@ -14844,7 +14841,7 @@ function _showCardModal(canvas){
         <button onclick="_pickEventPhoto()" style="flex:1;background:rgba(255,106,0,.12);color:#FF7A33;border:.5px solid rgba(255,106,0,.45);padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">${ico('nuotrauka')} Su sava nuotrauka</button>
         <button onclick="_revertEventCard()" style="flex:1;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:11px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">${ico('atgal')}️ Grynas grafikas</button>
       </div>
-      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:14px;">„${ico('nuotrauka')} Su sava nuotrauka" uždeda klubo statistiką (medaliai ir kt.) ant tavo komandos nuotraukos — kaip Strava. Skaičiai be vaikų vardų.<br>⭐ Pažymėk poste SPOBU paskyrą — geriausiais klubų postais dalinamės savo kanale.</div>
+      <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:14px;">„${ico('nuotrauka')} Su sava nuotrauka" uždeda klubo statistiką (medaliai ir kt.) ant tavo komandos nuotraukos — kaip Strava. Skaičiai be vaikų vardų.</div>
       ${canShare ? `<button onclick="_shareEventCard()" class="btn btng" style="width:100%;margin:0 0 8px;">${ico('siusti')} Pasidalinti</button>` : ''}
       <button onclick="_downloadEventCard()" style="width:100%;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">${ico('zemyn')} Atsisiųsti paveiksliuką</button>
       <button onclick="_copyEventCard()" style="width:100%;background:rgba(255,255,255,.06);color:#fff;border:.5px solid var(--bdr);padding:13px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">${ico('dokumentas')} Kopijuoti paveiksliuką</button>
@@ -19115,10 +19112,11 @@ function renderLeaderboardCard(entries, currentKidId, scoreLabel, opts) {
   const topList = top10.map((e, i) => {
     const rank = _rank.get(e) || (startIdx + i + 1);   // v616: tikra vieta ir ieškant
     const isMe = !!currentKidId && e.kidId === currentKidId;
+    const canOpen = !isMe && typeof KidCard !== 'undefined' && KidCard.UUID.test(String(e.kidId || ''));   // v628: sporto kortelė
     const medal = rank === 1 ? ''+ico('medalis')+'' : rank === 2 ? ''+ico('medalis')+'' : rank === 3 ? ''+ico('medalis')+'' : '';
 
     return `
-      <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;${isMe ? 'background:rgba(255,77,0,.08);border-left:2px solid var(--br);' : 'background:var(--bg);'}border-radius:6px;margin-bottom:3px;">
+      <div ${canOpen ? `onclick="KidCard.open('${e.kidId}', ${Number(rank) || 0})" ` : ''}style="display:flex;align-items:center;gap:6px;padding:5px 8px;${isMe ? 'background:rgba(255,77,0,.08);border-left:2px solid var(--br);' : 'background:var(--bg);'}border-radius:6px;margin-bottom:3px;${canOpen ? 'cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);' : ''}">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:${isMe ? 'var(--br)' : 'var(--mut)'};min-width:22px;">${medal || '#' + rank}</div>
         <div style="width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:11px;color:white;${e.avatarUrl ? `background-image:url('${_safeUrl(e.avatarUrl)}');background-size:cover;background-position:center;` : `background:${isMe ? 'var(--br)' : 'rgba(255,255,255,.12)'};`}">${e.avatarUrl ? '' : escapeHtml((e.name?.[0] || '?').toUpperCase())}</div>
         <div style="flex:1;min-width:0;">
@@ -19415,20 +19413,9 @@ async function loadCompetitionsStatTab() {
   statFilters.skillId = null;
   
   // Užkrauti svorio kategorijas (dinaminiai - registruotų vaikų svorius)
-  let userIds = null;
-  if (statFilters.scope === 'club' && currentProfile?.club_id) {
-    const { data: clubProfiles } = await sb.from('profiles')
-      .select('id')
-      .eq('club_id', currentProfile.club_id);
-    userIds = (clubProfiles || []).map(p => p.id);
-  }
-  
-  let weightQuery = sb.from('kids').select('weight_range').eq('approval_status', 'approved').not('weight_range', 'is', null);
-  if (userIds) {
-    weightQuery = weightQuery.in('user_id', userIds);
-  }
-  const { data: weightsData } = await weightQuery;
-  const uniqueWeights = [...new Set((weightsData || []).map(w => w.weight_range).filter(Boolean))].sort();
+  // v628 (sauga): svorio kategorijos — per serverį (tik etiketės; kitų grupių vaikų eilutės vaikui nebematomos)
+  const { data: weightsData } = await sb.rpc('spobu_weight_ranges');
+  const uniqueWeights = [...new Set((weightsData || []).map(w => typeof w === 'string' ? w : (w && w.spobu_weight_ranges)).filter(Boolean))].sort();
   
   const entries = await getFilteredKidEntries('competition_results');
   
@@ -19797,10 +19784,9 @@ async function loadParentCompetitionsStatTab() {
   
   parentStatFilters.skillId = null;
   
-  // Užkrauti svorius
-  let weightQuery = sb.from('kids').select('weight_range').eq('approval_status', 'approved').not('weight_range', 'is', null);
-  const { data: weightsData } = await weightQuery;
-  const uniqueWeights = [...new Set((weightsData || []).map(w => w.weight_range).filter(Boolean))].sort();
+  // Užkrauti svorius — v628: per serverį (tik etiketės)
+  const { data: weightsData } = await sb.rpc('spobu_weight_ranges');
+  const uniqueWeights = [...new Set((weightsData || []).map(w => typeof w === 'string' ? w : (w && w.spobu_weight_ranges)).filter(Boolean))].sort();
   
   const entries = await getParentFilteredKidEntries('competition_results');
   
@@ -20836,7 +20822,7 @@ async function toggleKidAnonymity(kidId) {
     STAT_CACHE.clear();
   }
   
-  showToast(newVal ? ico('anonimas')+' Reitinguose ir paieškoje — Anonimas' : ''+ico('profilis')+' Reitinguose rodomas vaiko vardas', 'success');
+  showToast(newVal ? ico('anonimas')+' Reitinguose ir paieškoje — Anonimas' : ''+ico('profilis')+' Reitinguose rodomas vaiko vardas ir sporto kortelė', 'success');
 }
 
 // ════════════════════════════════════════
@@ -21265,12 +21251,7 @@ let _myKidIdSetTr = new Set(); // trenerio vaikų ID (M:N + legacy) — tr-stat 
 function renderKidIcons(kid) {
   const icons = [];
   
-  // Media sutikimas (visada rodom)
-  if (kid.media_consent) {
-    icons.push('<span title="Media leidžiama" style="font-size:14px;">'+ico('nuotrauka')+''+ico('patvirtinta')+'</span>');
-  } else {
-    icons.push('<span title="Media neleidžiama" style="font-size:14px;">'+ico('nuotrauka')+''+ico('isjungta')+'</span>');
-  }
+  // v628: media ikonėlė išimta — SPOBU nereguliuoja klubo fotografavimo (vardas FB/IG — tėvų nustatymuose)
   
   // Telefonas (jei turi)
   if (kid.has_phone || kid.kid_phone) {
@@ -21525,7 +21506,6 @@ async function openGroupView(groupId, silent) {
     else if (!gl.w) chips.push(`<span style="${_sigChip('#fbbf24')}" title="Turi mėnesinį, bet ne savaitinį tikslą">⚡ be savaitinio</span>`);
     else if (!gl.m) chips.push(`<span style="${_sigChip('#fbbf24')}" title="Turi savaitinį, bet ne mėnesinį tikslą">🎯 be mėnesinio</span>`);
     if (hasHealth) chips.push(`<span style="${_sigChip('#f87171')}" title="Yra sveikatos pastabų — atsidaryk vaiko kortelę">${ico('sveikata')} sveikata</span>`);
-    if (!k.media_consent) chips.push(`<span style="${_sigChip('#94a3b8')}" title="Tėvai NELEIDŽIA fotografuoti / filmuoti">${ico('nuotrauka')} nefilmuoti</span>`);
     // v412: be telefono = vaikas appso nemato → treniruotes ir iššūkius už jį žymi TRENERIS
     if (!k.has_phone && !k.kid_phone) chips.push(`<span style="${_sigChip('#60a5fa')}" title="Vaikas neturi telefono — treniruotes ir iššūkius už jį žymi treneris">${ico('programele')} žymi treneris</span>`);
     return `
@@ -21669,7 +21649,7 @@ async function openTrainerPostStudio(groupId){
       <button onclick="_tpsShare()" style="flex:1;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:#fff;border:none;border-radius:11px;padding:13px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('siusti')} Dalintis</button>
       <button onclick="_tpsDownload()" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:#fff;border-radius:11px;padding:13px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('zemyn')}</button>
     </div>
-    <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:9px;line-height:1.5;">Postą gali siųsti į grupės pokalbį tėvams arba dėti į klubo socialinius tinklus.<br>⭐ Pažymėk SPOBU paskyrą — geriausiais postais dalinamės savo kanale.</div>
+    <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:9px;line-height:1.5;">Postą gali siųsti į grupės pokalbį tėvams arba dėti į klubo socialinius tinklus.</div>
   `);
   const tplEl = document.getElementById('tps-tpls');
   if (tplEl) tplEl.innerHTML = TPS_TPLS.map(t =>
@@ -26786,7 +26766,7 @@ async function loadKidMedia(kid) {
       <div style="flex:1;">
         <div style="font-weight:700;color:${color};font-size:13px;">${text}</div>
         <div style="font-size:11px;color:var(--mut);margin-top:2px;">
-          ${consent ? 'Spobu gali naudoti vaiko medžiagą' : 'Spobu negali naudoti vaiko medžiagos'}
+          ${consent ? 'Klubo įrašuose Facebook / Instagram gali būti vaiko vardas' : 'Viešuose klubo įrašuose vardas nerodomas (tik „+N")'}
         </div>
       </div>
     </div>
@@ -26808,8 +26788,8 @@ async function kdToggleMediaConsent() {
   
   const newConsent = !currentKidDetails.media_consent;
   const confirmText = newConsent 
-    ? 'Ar tikrai leidžiate Spobu naudoti vaiko medžiagą savo platformoje, marketinge ir socialiniuose kanaluose?'
-    : 'Ar tikrai uždraudžiate Spobu naudoti vaiko medžiagą?';
+    ? 'Leisti klubui viešuose įrašuose (Facebook / Instagram) rodyti vaiko vardą?\n\nSPOBU vaikų nuotraukų rinkodarai nenaudoja. Klubo fotografavimas treniruotėse ir renginiuose — klubo ir jūsų susitarimas.'
+    : 'Nerodyti vaiko vardo viešuose klubo įrašuose? (liks tik „+N")';
   
   if (!(await appConfirm(confirmText))) return;
   
@@ -26825,7 +26805,7 @@ async function kdToggleMediaConsent() {
   }
   
   currentKidDetails.media_consent = newConsent;
-  showToast(newConsent ? ico('patvirtinta')+' Media sutikimas: leidžiama' : ico('isjungta')+' Media sutikimas: neleidžiama', 'success');
+  showToast(newConsent ? ico('patvirtinta')+' Vardas viešuose klubo įrašuose: leidžiama' : ico('isjungta')+' Vardas viešuose klubo įrašuose: nerodomas', 'success');
   await loadKidMedia(currentKidDetails);
 }
 
@@ -30249,7 +30229,6 @@ async function openClubGroupPreview(groupId){
       const hasHealth = k.has_health_info || k.health_allergies || k.health_medications || k.health_conditions;
       const chips = [];
       if (hasHealth) chips.push(chip('#f87171', ico('sveikata')+' sveikata', 'Yra sveikatos pastabų — žr. vaiko kortelę'));
-      if (!k.media_consent) chips.push(chip('#94a3b8', ico('nuotrauka')+' nefilmuoti', 'Tėvai neleidžia fotografuoti/filmuoti'));
       if (!k.has_phone && !k.kid_phone) chips.push(chip('#60a5fa', ico('programele')+' žymi treneris', 'Vaikas neturi telefono'));
       return `<div onclick="document.getElementById('club-group-preview').remove();openKidDetailsModal('${k.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;margin-bottom:7px;cursor:pointer;">
         <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:14px;${k.avatar_url ? `background-image:url('${_safeUrl(k.avatar_url)}');background-size:cover;background-position:center;` : `background:${col};`}">${k.avatar_url ? '' : (k.first_name?.[0] || '?')}</div>
@@ -45493,7 +45472,6 @@ const KPost = {
       + p('👨‍👩‍👧 Tėvų tinklas.', 'Kai tėvai pasidalina, postą pamato jų draugai — šeimos, kurios dar ieško būrelio.')
       + p('🔁 Sniego gniūžtė.', 'Treneris dalinasi treniruotės nuotrauka, klubas — savaitės kilometrais, geriausiais ir renginiais. Keli postai per savaitę = šimtai peržiūrų be biudžeto.')
       + p('🥇 Vaikų motyvacija.', 'Vaikai, kurių darbas matomas, stengiasi labiau — o jų progresas tampa kitu postu.')
-      + p('⭐ SPOBU.', 'Pažymėk SPOBU paskyrą — geriausiais klubų postais dalinamės savo kanale.')
       + `<div style="margin:4px 16px 14px;padding:10px 12px;border-radius:10px;background:rgba(255,77,0,.08);border:.5px solid rgba(255,77,0,.3);font-size:11.5px;color:var(--mut);line-height:1.5;"><b style="color:#fff;">Praktiškai:</b> 2–3 postai per savaitę. Facebook / Instagram poste vardai — tik vaikų, kurių tėvai davė sutikimą (studija tai daro pati).</div>`, '', { z: 100008 });
   },
   place() { const c = (typeof currentClub !== 'undefined' && currentClub) ? currentClub : {}; return typeof KInfo !== 'undefined' ? KInfo.place(c) : [c.address, c.city].filter(Boolean).join(', '); },
@@ -47241,6 +47219,53 @@ const Susit = {
     const list = this.st.tr.filter(x => x.ds === ds); if (!list.length) return '';
     return `<div class="kal-sec"><b>SUSITIKIMAI 14+</b><em class="o">${list.length}</em><span></span></div><div style="font-size:10px;color:var(--mut);padding:0 18px 6px;line-height:1.4;">Vaikų pačių kvietimai — ne klubo treniruotė. Netinkamą gali paslėpti.</div>`
       + `<div class="kal-rows" style="padding-bottom:8px;">${list.map(x => this.rowHtml(x, { staff: true })).join('<hr>')}</div>`;
+  },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: KidCard =====
+// v628 (savininko „taip" 09-23): statistikos reitinge paspaudus klubo vaiką — SPORTO KORTELĖ: vieša sportinė dalis + profilio nuotrauka.
+// Serveris `kid_public_card` (server-KORTELE-sporto-2026-09-24.sql): tik to paties klubo nariams; anonimas → {anonymous:true}
+// (išskyrus jį patį, jo tėvus, grupės draugus ir štabą — politika §6). Grupės draugui — esama pilna „Komandos draugo" kortelė.
+// Viena vardų erdvė `KidCard`, DOM prefiksas `kc-`, jokių naujų globalių (taisyklė 7).
+const KidCard = {
+  _busy: false,
+  UUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  async open(kidId, rank) {
+    if (!this.UUID.test(String(kidId || '')) || this._busy) return;
+    this._busy = true;
+    try {
+      const { data, error } = await sb.rpc('kid_public_card', { p_kid: kidId });
+      if (error) throw error;
+      if (!data) { showToast(ico('info') + ' Kortelė rodoma tik savo klubo nariams', 'info'); return; }
+      if (data.anonymous) { showToast(ico('info') + ' Šis narys statistikoje anonimas — kortelė nerodoma', 'info'); return; }
+      if (data.same_group && typeof openFriendModal === 'function' && (window._teammatesData?.mates || []).some(m => m.id === kidId)) { openFriendModal(kidId); return; }
+      this.show(data, rank);
+    } catch (e) { showToast(ico('klaida') + ' ' + escapeHtml(typeof _userError === 'function' ? _userError(e) : (e.message || 'Nepavyko')), 'error'); }
+    finally { this._busy = false; }
+  },
+  show(d, rank) {
+    const esc = s => escapeHtml(String(s == null ? '' : s));
+    const si = typeof getStageInfo === 'function' ? getStageInfo(Number(d.total_exp) || 0) : null;
+    const st = (si && typeof STAGES !== 'undefined') ? (STAGES.find(s => s.name === si.stage) || STAGES[0]) : null;
+    const col = (st && /^#[0-9a-f]{3,8}$/i.test(String(st.color || ''))) ? st.color : '#FF4D00';
+    const url = d.avatar_url && typeof _safeUrl === 'function' ? _safeUrl(d.avatar_url) : '';
+    const av = url
+      ? `<div style="width:92px;height:92px;border-radius:50%;margin:0 auto;background:url('${url}') center/cover, rgba(0,0,0,.4);border:3px solid ${col};"></div>`
+      : `<div style="width:92px;height:92px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);border:3px solid ${col};font-size:40px;color:${col};">${esc(st ? st.kanji : '')}</div>`;
+    const c = d.comp || {}, r = d.records || {};
+    const tile = (big, small, color) => `<div style="flex:1;min-width:0;text-align:center;background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 2px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;color:${color || 'var(--text)'};">${big}</div><div style="font-size:8.5px;color:var(--mut);font-weight:800;letter-spacing:.4px;margin-top:3px;">${small}</div></div>`;
+    const sec = t => `<div style="font-size:10px;color:var(--mut);font-weight:900;letter-spacing:1px;text-align:left;margin:14px 2px 6px;">${t}</div>`;
+    const n = x => Number(x) || 0;
+    const body = `<div style="padding:6px 16px 22px;text-align:center;">
+      ${av}
+      <div style="font-size:18px;font-weight:900;margin-top:10px;">${esc(d.name || 'Klubo narys')}</div>
+      <div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${st ? esc(st.emoji + ' ' + st.name) + ' · ' : ''}LVL ${si ? n(si.globalLevel) : n(d.level) || 1} · ${esc(d.kyu || 'Mu kyu')}</div>
+      <div style="display:flex;gap:6px;margin-top:14px;">${tile(n(d.total_exp).toLocaleString('lt-LT'), 'EXP IŠ VISO', col)}${n(rank) > 0 ? tile('#' + n(rank), 'VIETA ŠIAME SĄRAŠE') : ''}</div>
+      ${sec('VARŽYBOS')}<div style="display:flex;gap:6px;">${tile(n(c.gold), '1 VIETA', '#FFD700')}${tile(n(c.silver), '2 VIETA', '#C0C0C0')}${tile(n(c.bronze), '3 VIETA', '#CD7F32')}${tile(n(c.total), 'DALYVAVO')}</div>
+      ${sec('KELIO REKORDAI')}<div style="display:flex;gap:6px;">${tile(n(r.completed), 'MAX', '#FF4D00')}${tile(n(r.gold), 'AUKSAS', '#FFD700')}${tile(n(r.silver), 'SIDABRAS', '#C0C0C0')}${tile(n(r.bronze), 'BRONZA', '#CD7F32')}</div>
+    </div>`;
+    Kal.sheetOpen('kc-sheet', `<div style="min-width:0;"><b>SPORTO KORTELĖ</b><i>klubo narys</i></div><button class="kal-x" onclick="Kal.sheetClose('kc-sheet')" title="Uždaryti">${ico('uzdaryti')}</button>`, body);
   },
 };
 // ===== /MODULIS =====

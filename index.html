@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=627">
+<link rel="stylesheet" href="styles.css?v=628">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v627</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v628</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3364,38 +3364,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <input class="inp" type="text" id="ak-emergency-relation" placeholder="Pvz: Senelė, Dėdė, Krikštatėvis">
       </div>
       
-      <!-- MEDIA SUTIKIMAS -->
-      <div style="background:rgba(255,77,0,.05);border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:12px;margin-bottom:14px;">
-        <div style="font-size:11px;color:var(--br);font-weight:800;letter-spacing:1px;margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-nuotrauka"></use></svg> SPOBU MEDIA SUTIKIMAS</div>
-        <div style="font-size:12px;color:var(--text);line-height:1.5;margin-bottom:10px;">
-          Ar leidžiate Spobu naudoti vaiko nuotraukas/video savo platformoje, marketinge ir socialiniuose kanaluose (Instagram, Facebook, TikTok, reklamose)?
-        </div>
-        
-        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;margin-bottom:6px;">
-          <input type="radio" name="ak-media-consent" id="ak-media-no" value="false" checked style="margin-top:2px;flex-shrink:0;">
-          <div>
-            <div style="font-weight:800;font-size:13px;color:var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-isjungta"></use></svg> Ne, neleidžiu</div>
-            <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:2px;">
-              Vaiko medžiaga nebus naudojama Spobu marketinge.
-            </div>
-          </div>
-        </label>
-        
-        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px;background:var(--bg);border:.5px solid var(--bdr);border-radius:8px;">
-          <input type="radio" name="ak-media-consent" id="ak-media-yes" value="true" style="margin-top:2px;flex-shrink:0;">
-          <div>
-            <div style="font-weight:800;font-size:13px;color:var(--text);"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg> Taip, leidžiu</div>
-            <div style="font-size:11px;color:var(--mut);line-height:1.4;margin-top:2px;">
-              Spobu gali naudoti vaiko nuotraukas/video savo kanaluose.
-            </div>
-          </div>
-        </label>
-        
-        <div style="font-size:10px;color:var(--mut);margin-top:10px;line-height:1.4;">
-          <svg class="ico" aria-hidden="true"><use href="#i-info"></use></svg> Galite bet kada pakeisti šį pasirinkimą per vaiko nustatymus.
-        </div>
-      </div>
-      
+      <!-- v628: MEDIA SUTIKIMAS išimtas iš registracijos (savininkas 09-23) — vardas FB/IG: vaiko nustatymuose -->
       <button class="btn-auth" onclick="akNext('3b')">TĘSTI <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></button>
       <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="akPrev('3b')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg> Atgal</button>
     </div>
@@ -4598,7 +4567,7 @@ window.addEventListener('unhandledrejection', function(e) {
       
       <!-- MEDIA SUTIKIMAS -->
       <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px;">
-        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-nuotrauka"></use></svg> SPOBU MEDIA SUTIKIMAS</div>
+        <div style="font-size:11px;color:var(--mut);font-weight:800;letter-spacing:1px;margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-nuotrauka"></use></svg> VARDAS KLUBO VIEŠUOSE ĮRAŠUOSE</div>
         <div id="kd-media-display" style="font-size:13px;line-height:1.6;">
           <div style="text-align:center;color:var(--mut);">Kraunama...</div>
         </div>
@@ -4769,7 +4738,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=627"></script>
+<script src="app.js?v=628"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
