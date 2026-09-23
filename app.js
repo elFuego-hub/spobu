@@ -1861,7 +1861,7 @@ function openHelpModal(who) {
       ...((typeof KidGate === 'undefined' || KidGate.on('duels')) ? [['Kas yra dvikova?', '1 prieš 1 su grupės draugu (atsispaudimai, pritūpimai, presas, lenta, bėgimas). Grupės lange iškviesk draugą ir pasirink treniruotę — joje treneris įvertins ir įves rezultatus. Pergalė +50 · lygiosios +35 · pralaimėjus +25 EXP.']] : []),
       ['Kodėl mano lygis žemas?', 'Lygis auga nuo surinkto EXP — kuo daugiau treniruojiesi, atlieki iššūkių ir gerini rekordus, tuo greičiau kyla. Reitinguose iš pradžių matai savo amžiaus ir lyties draugus. OSU! '+ico('dirzas')+''],
       ['Kas mato mano vardą?', 'Reitinguose ir paieškoje — Anonimas (jei tėvai jį įjungę). Savo grupės draugai tave mato. Treneris ir klubas visada mato tavo vardą. Kaip tu rodomas — Nustatymai → Privatumas; keičia tėvai.'],
-      ['Kaip pasidalinti pasiekimu?', 'Varpelyje prie „PR patvirtintas" spausk '+ico('programele')+' — sukursi kortelę su nuotrauka, kurią gali dėti į Instagram/TikTok.'],
+      ['Kaip pasidalinti pasiekimu?', 'Varpelyje prie patvirtinto rekordo, iššūkio, varžybų rezultato ar laimėtos dvikovos spausk „Pasidalinti" — sukursi kortelę su nuotrauka, kurią gali dėti į Instagram/TikTok.'],
       ['Negaunu pranešimų?', 'Nustatymuose įjunk „Pranešimai" — gali tai padaryti pats. iPhone: appsas turi būti įsidėtas į pradžios ekraną. Jei vis tiek neveikia — paprašyk tėvų ar trenerio pagalbos.']
     ]
   };
@@ -20749,7 +20749,7 @@ async function loadKidPendingSubmissions() {
       const chTitle = s.challenges?.title || 'Iššūkis';
       const value = s.numeric_value ? `${s.numeric_value} ${escapeHtml(s.challenges?.target_unit || '')}` : 'Pateikta';
       
-      html += `<div onclick="nv('v',document.querySelector('.bn2 .ni:nth-child(3)'),'v-ish')" style="background:var(--card);border-radius:8px;padding:6px 4px;border:.5px solid rgba(79,195,247,.3);cursor:pointer;-webkit-tap-highlight-color:rgba(79,195,247,.2);text-align:center;min-width:0;">
+      html += `<div onclick="KidIss.go()" style="background:var(--card);border-radius:8px;padding:6px 4px;border:.5px solid rgba(79,195,247,.3);cursor:pointer;-webkit-tap-highlight-color:rgba(79,195,247,.2);text-align:center;min-width:0;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:2px;">
           <span style="font-size:12px;line-height:1;">${ico('tikslas')}</span>
           <span style="font-size:7px;background:rgba(79,195,247,.2);color:#4FC3F7;padding:1px 5px;border-radius:99px;font-weight:800;">Iššūk</span>
@@ -30987,7 +30987,7 @@ async function submitInviteTrainer() {
   // Perkraunam klubo duomenis TIK atkūrus sesiją (kad užklausos eitų klubo, ne trenerio vardu)
   if (_ok) {
     closeInviteTrainer();
-    try { await loadClubTrainers(); await loadClubData(); } catch(e){ console.warn('reload after invite', e); }
+    try { await loadClubTrainers(); await loadClubData(_clubManagerMode && currentClub ? currentClub.id : undefined); } catch(e){ console.warn('reload after invite', e); }   // 09-23: vadybininkas (kvietimu sprendimas) — savo klubas, ne admin_profile_id
   }
 }
 
@@ -38954,7 +38954,9 @@ async function loadAllNotifications(force) {
         title: `${typeLabel} ${(s.source === 'strava' || s.auto_approved) ? 'užskaitytas (Strava)' : 'patvirtintas'}`,   // v598
         body: `${escapeHtml(s.challenges?.title || 'Iššūkis')} · +${s.exp_gain || 0} EXP`,
         time: s.reviewed_at,
-        link: 'v-ish'
+        link: 'v-ish',
+        // v626 (D1): dalinimasis per varpelį (vietoj seno Iššūkių ekrano)
+        share: (s.exp_gain || 0) > 0 ? { ic: 'tikslas', ex: s.challenges?.title || 'Iššūkis', val: s.numeric_value ? `${s.numeric_value} ${s.challenges?.target_unit || ''}`.trim() : 'ĮVEIKTA', exp: s.exp_gain || 0 } : null
       });
     }
   });
@@ -38978,7 +38980,8 @@ async function loadAllNotifications(force) {
         title: `Rinkinys patvirtintas (${rows.length})`,
         body: `${names} · +${sumExp} EXP`,
         time: latest.reviewed_at,
-        link: 'v-ish'
+        link: 'v-ish',
+        share: sumExp > 0 ? { ic: 'tikslas', ex: `Rinkinys (${rows.length})`, val: 'ĮVEIKTA', exp: sumExp } : null   // v626 (D1)
       });
     }
   });
@@ -39000,7 +39003,8 @@ async function loadAllNotifications(force) {
         title: 'Varžybos patvirtintos',
         body: `${escapeHtml(s.competitions?.title || 'Varžyba')} · ${placement}+${s.exp_gained || 0} EXP`, // v401 (B4)
         time: s.approved_at,
-        link: 'v-comp'
+        link: 'v-comp',
+        share: (s.exp_gained || 0) > 0 ? { ic: 'trofejai', ex: s.competitions?.title || 'Varžybos', val: s.placement ? `${s.placement} VIETA` : 'DALYVAVAU', exp: s.exp_gained || 0 } : null   // v626 (D1)
       });
     }
   });
@@ -39133,6 +39137,19 @@ async function loadAllNotifications(force) {
       issukiai.push({ id: `gcexp-${a.id}`, icon: ''+ico('trofejai')+'', title: 'Grupių iššūkis baigėsi', body: `${escapeHtml((a.reason || '').replace('Grupių iššūkis: ', ''))}${a.exp_change > 0 ? ' · +' + a.exp_change + ' EXP' : ''}`, time: a.created_at, link: 'v-ish' });
     });
   } catch(e){ /* nekritinis */ }
+
+  // 🥊 v626 (D1): LAIMĖTOS DVIKOVOS → Sistema, su „Pasidalinti" (be varžovo vardo — jis gali būti anonimas)
+  try {
+    if (typeof KidGate === 'undefined' || KidGate.on('duels')) {
+      const { data: _dw } = await sb.from('duels').select('id, duel_type, completed_at')
+        .eq('winner_id', currentKid.id).eq('status', 'completed').gte('completed_at', cutoffISO).order('completed_at', { ascending: false }).limit(10);
+      (_dw || []).forEach(d => {
+        const tn = (DUEL_TYPES[d.duel_type] || { name: 'Dvikova' }).name;
+        sistema.push({ id: `duelWin-${d.id}`, icon: '' + ico('dvikova') + '', title: 'Dvikova laimėta!', body: `${escapeHtml(tn)} · +50 EXP`, time: d.completed_at, link: 'v-grupe',
+          share: { ic: 'dvikova', ex: 'Dvikova · ' + tn, val: 'PERGALĖ', exp: 50 } });
+      });
+    }
+  } catch (e) { /* nekritinis */ }
 
   // 💬 ŽINUTĖS + KLUBO PRANEŠIMAI → 💬 Žinutės (tik kur esu pokalbio narys)
   if (msgsRes.data && msgsRes.data.length > 0) {
@@ -39492,17 +39509,19 @@ function openKidShareCardFromNotif(notifId) {
   ['system', 'challenges', 'competitions', 'messages'].forEach(t => {
     (allNotifications[t] || []).forEach(n => { if (n.id === notifId && n.share) found = n.share; });
   });
-  if (found) openKidShareCard(found.ex, found.val, found.exp);
+  if (found) openKidShareCard(found.ex, found.val, found.exp, found.ic);
 }
 
 // Kortelės VIDUS (be fono/antraštės/juostos — jas duoda shareFrame)
+// v626 (D1): ikona pagal pasiekimo rūšį (tik iš sąrašo), val escape'inamas (iššūkių / varžybų tekstai — iš DB)
 function _kidShareBody(d) {
   const name = `${(currentKid?.first_name || '')} ${(currentKid?.last_name || '')}`.trim();
+  const ic = ['jega', 'tikslas', 'trofejai', 'dvikova'].includes(d.ic) ? d.ic : 'jega';
   return `<div style="margin-top:auto;padding:20px;min-height:0;">
-        <div style="font-size:44px;line-height:1;margin-bottom:8px;">${ico('jega')}</div>
+        <div style="font-size:44px;line-height:1;margin-bottom:8px;">${ico(ic)}</div>
         <div style="font-size:15px;font-weight:700;color:#fff;letter-spacing:.5px;text-shadow:0 1px 4px rgba(0,0,0,.6);">${escapeHtml(d.ex)}</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;color:#fff;line-height:1;margin:2px 0;text-shadow:0 2px 8px rgba(0,0,0,.7);">${d.val}</div>
-        <div style="display:inline-block;font-size:14px;font-weight:800;color:#1a0a00;background:#FFD700;padding:4px 12px;border-radius:99px;">+${d.exp} EXP</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;color:#fff;line-height:1;margin:2px 0;text-shadow:0 2px 8px rgba(0,0,0,.7);">${escapeHtml(String(d.val ?? ''))}</div>
+        <div style="display:inline-block;font-size:14px;font-weight:800;color:#1a0a00;background:#FFD700;padding:4px 12px;border-radius:99px;">+${Number(d.exp) || 0} EXP</div>
         <div style="font-size:12px;color:#fff;margin-top:12px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.6);">${name ? escapeHtml(name) + ' · ' : ''}OSU! ${ico('dirzas')}</div>
       </div>`;
 }
@@ -39511,8 +39530,8 @@ function _kidShareFrameHtml() {
   return shareFrame('kid', _kidShareBody(_kidShareData), { photo: _kidSharePhoto, clubLogo: _kidShareLogo });
 }
 
-async function openKidShareCard(ex, val, exp) {
-  _kidShareData = { ex: ex, val: val, exp: exp };
+async function openKidShareCard(ex, val, exp, ic) {
+  _kidShareData = { ex: ex, val: val, exp: exp, ic: ic || 'jega' };
   _kidSharePhoto = null;
   _kidShareLogo = await _shareClubLogo();
   let m = document.getElementById('kidshare-modal');
@@ -42898,7 +42917,7 @@ Object.assign(Kal, {
     K: Kal,
     // parametrai paveldėjimui (5 etapas, v541): konteineris, vardų erdvė onclick'ams, langas, iššūkių nuoroda, tekstai 2-u asmeniu
     // v623: ownCh — kalendorius pats krauna vaiko iššūkių plyteles (12A); evNav — „Atidaryti Varžybose" (17A a; tėvams nėra)
-    cid: 'kal-v-content', ns: 'Kal.kid', scr: 'v-kal', chNav: "nv('v',null,'v-ish')", ownCh: true, evNav: "nv('v',null,'v-comp')",
+    cid: 'kal-v-content', ns: 'Kal.kid', scr: 'v-kal', chNav: "KidIss.go()", ownCh: true, evNav: "nv('v',null,'v-comp')",
     T: { was: 'BUVAI', legWas: 'Buvau', wasnt: 'NEBUVAI', wasN: 'buvai', ask: 'Ar dalyvausi?', yes: 'Taip, dalyvausiu', yesOn: '✓ Dalyvauju', tagYes: 'DALYVAUJU', tagNo: 'NEDALYVAUJU', noOn: '✓ Nedalyvauju', note: 'Pasitark su tėvais — jie mato tavo atsakymą.', seeAll: 'matai visą etapą', goal: 'MŪSŲ TIKSLAS',
          eff: e => e >= 20 ? 'Dirbai iš visų jėgų' : (e >= 14 ? 'Dirbai gerai' : (e > 0 ? 'Dirbai lengviau' : 'Pastangas treneris įvertins po treniruotės')) },
     kid() { return (typeof currentKid !== 'undefined' && currentKid) ? currentKid : null; },
@@ -46895,6 +46914,26 @@ const Dvk = {
     }
     if (typeof loadPendingDuels === 'function') try { loadPendingDuels(); } catch (_e) { }
   },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: KidIss =====
+// v626 (savininko D1, 09-23): senas vaiko „IŠŠŪKIAI" ekranas (6 tipų statistika — TRENIRUOT. / VIENKART. / NUOLAT. tipų V2 nebėra)
+// nebeatidaromas. V2 — lapas su tuo pačiu „Aktyvūs / Archyvas" sąrašu: #kiss-box perkeliamas į lapą ir grąžinamas uždarius,
+// todėl loadChallenges, DALYVAUTI / PASIRUOŠIAU / BANDYTI DAR KARTĄ, rinkiniai ir archyvas lieka tie patys (vsc-modal z 10001 > lapas).
+// #v-ish lieka DOM'e: jame fiziškai #v-ish-duels ir #v-ish-gc-section, kuriuos Kal.applyNav8 perkelia į Grupę.
+const KidIss = {
+  home: null,
+  go() { if (typeof Kal !== 'undefined' && Kal.on()) this.open(); else nv('v', document.querySelector('.bn2 .ni:nth-child(3)'), 'v-ish'); },
+  open() {
+    const box = document.getElementById('kiss-box'); if (!box || typeof Kal === 'undefined') return;
+    if (!this.home) this.home = box.parentElement;
+    Kal.sheetOpen('kiss-sheet', `<div style="min-width:0;"><b>IŠŠŪKIAI</b><i>aktyvūs ir įveikti</i></div><button class="kal-x" onclick="Kal.sheetClose('kiss-sheet')" title="Uždaryti">${ico('uzdaryti')}</button>`,
+      '<div id="kiss-slot" style="padding:4px 0 18px;"></div>', () => KidIss.back());
+    document.getElementById('kiss-slot')?.appendChild(box);
+    if (typeof loadChallenges === 'function') Promise.resolve(loadChallenges()).catch(e => console.warn('[kiss]', e));
+  },
+  back() { const box = document.getElementById('kiss-box'); if (box && this.home && box.parentElement !== this.home) this.home.appendChild(box); },
 };
 // ===== /MODULIS =====
 

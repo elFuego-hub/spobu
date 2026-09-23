@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=625">
+<link rel="stylesheet" href="styles.css?v=626">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v625</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v626</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -1427,12 +1427,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
     
-    <!-- Tabai -->
-    <div style="display:flex;gap:4px;margin:0 16px 6px;">
-      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-streak"></use></svg> AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
-      <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dokumentas"></use></svg> ARCHYVAS <span id="v-completed-count" style="opacity:.7;">0</span></button>
-    </div>
-    
+    <!-- Tabai (v626: perkelti į #kiss-box žemiau) -->
     <div id="v-ish-duels" style="padding:0 16px;">
       <!-- Dvikovos užpildomos JS (tik kai yra aktyvių) -->
     </div>
@@ -1441,9 +1436,17 @@ window.addEventListener('unhandledrejection', function(e) {
       <!-- <svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg> Grupių iššūkis (aktyvūs, vaiko grupė) — pildo _kidGroupChallengesScreen -->
     </div>
 
+    <!-- MODULIS: KidIss (v626, savininko D1) — „Aktyvūs / Archyvas" sąrašas; V2 jį rodo lape (KidIss.open perkelia #kiss-box ir grąžina) -->
+    <div id="kiss-box">
+    <div style="display:flex;gap:4px;margin:0 16px 6px;">
+      <button class="v-ch-tab on" data-tab="active" onclick="switchKidChallengesTab(this,'active')" style="flex:1;background:rgba(255,77,0,.15);color:var(--br);border:.5px solid rgba(255,77,0,.4);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-streak"></use></svg> AKTYVŪS <span id="v-active-count" style="opacity:.7;">0</span></button>
+      <button class="v-ch-tab" data-tab="completed" onclick="switchKidChallengesTab(this,'completed')" style="flex:1;background:transparent;color:var(--mut);border:.5px solid var(--bdr);padding:5px 10px;border-radius:99px;font-size:10px;min-height:40px;font-weight:800;letter-spacing:.5px;cursor:pointer;"><svg class="ico" aria-hidden="true" style="vertical-align:-.1em;margin-right:4px;"><use href="#i-dokumentas"></use></svg> ARCHYVAS <span id="v-completed-count" style="opacity:.7;">0</span></button>
+    </div>
+
     <div id="v-challenges-list" style="padding:0 16px;">
       <div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Kraunama...</div>
     </div>
+    </div><!-- /#kiss-box -->
   </div>
   <div class="bn2">
     <div class="ni" onclick="nv('v',this,'v-main')"><span class="ic"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
@@ -4766,7 +4769,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=625"></script>
+<script src="app.js?v=626"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
