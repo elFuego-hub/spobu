@@ -11351,18 +11351,10 @@ async function updateProfileCounts() {
   try {
     const chSummaryEl = document.getElementById('v-prof-challenges-summary');
     if (chSummaryEl && currentKid?.id) {
-      const { data: subs } = await sb.from('challenge_submissions')
-        .select('challenge_id')
-        .eq('kid_id', currentKid.id)
-        .eq('status', 'approved');
-      // Unikalūs iššūkiai (ne submission'ai - vienas iššūkis gali turėti kelis)
-      const uniqueChallenges = new Set((subs || []).map(s => s.challenge_id));
-      const { data: dWins } = await sb.from('duels')
-        .select('winner_id')
-        .or(`challenger_id.eq.${currentKid.id},opponent_id.eq.${currentKid.id}`)
-        .eq('status', 'completed');
-      const wins = (dWins || []).filter(d => d.winner_id === currentKid.id).length;
-      const total = uniqueChallenges.size + wins;
+      // v629: ta pati V2 santrauka kaip „Iššūkiai" lange (savaitės + mėnesio + grupių + dvikovų pergalės + ankstesni)
+      const { data: sum } = await sb.rpc('kid_challenge_summary', { p_kid: currentKid.id });
+      const n = x => Number(x) || 0;
+      const total = sum ? n(sum.weekly?.n) + n(sum.monthly?.n) + n(sum.group?.n) + n(sum.duels?.wins) + n(sum.other?.n) : 0;
       chSummaryEl.textContent = `${total} įveikta`;
     }
   } catch(e) {
@@ -11568,7 +11560,7 @@ async function openBadgesModal(kidId, kidName) {
 async function openChallengeTypesModal(kidId, kidName) {
   const targetKidId = kidId || currentKid?.id;
   const isOwn = !kidId || kidId === currentKid?.id;
-  const titleText = isOwn ? ''+ico('tikslas')+' IŠŠŪKIAI · PAGAL TIPUS' : `${ico('tikslas')} ${escapeHtml((kidName || 'DRAUGO').toUpperCase())} IŠŠŪKIAI`;
+  const titleText = isOwn ? ''+ico('tikslas')+' MANO IŠŠŪKIAI' : `${ico('tikslas')} ${escapeHtml((kidName || 'DRAUGO').toUpperCase())} IŠŠŪKIAI`;
   
   const existing = document.getElementById('prof-challenges-modal');
   if (existing) existing.remove();
@@ -11590,66 +11582,28 @@ async function openChallengeTypesModal(kidId, kidName) {
   `;
   document.body.appendChild(modal);
   
-  // Užkrauti duomenis
+  // Užkrauti duomenis — v629: V2 santrauka iš serverio (kid_challenge_summary: pats / tėvai / grupės draugas / štabas),
+  // vietoj V1 tipų (treniruotės / vienkartiniai / nuolatiniai) ir tiesioginio kito vaiko pateikimų skaitymo
   try {
     const body = document.getElementById('prof-challenges-modal-body');
     if (!body || !targetKidId) return;
-    
-    // Iššūkių pateikimai (approved) pagal tipą
-    const { data: subs } = await sb.from('challenge_submissions')
-      .select('challenge_id, exp_gain, status, challenges(type, exp_reward)')
-      .eq('kid_id', targetKidId)
-      .eq('status', 'approved');
-    
-    const typeStats = {
-      training:  { count: 0, exp: 0 },
-      weekly:    { count: 0, exp: 0 },
-      monthly:   { count: 0, exp: 0 },
-      one_time:  { count: 0, exp: 0 },
-      permanent: { count: 0, exp: 0 }
-    };
-    
-    // Unikalūs iššūkiai pagal tipą (count = unikalūs, exp = visų submission'ų suma)
-    const seenChallenges = {};  // type -> Set(challenge_id)
-    (subs || []).forEach(s => {
-      const type = s.challenges?.type;
-      if (type && typeStats[type]) {
-        // EXP - visų submission'ų suma
-        typeStats[type].exp += (s.exp_gain || s.challenges?.exp_reward || 0);
-        // Count - tik unikalūs iššūkiai
-        if (!seenChallenges[type]) seenChallenges[type] = new Set();
-        if (s.challenge_id && !seenChallenges[type].has(s.challenge_id)) {
-          seenChallenges[type].add(s.challenge_id);
-          typeStats[type].count++;
-        }
-      }
-    });
-    
-    // Dvikovos
-    const { data: duels } = await sb.from('duels')
-      .select('winner_id, status')
-      .or(`challenger_id.eq.${targetKidId},opponent_id.eq.${targetKidId}`)
-      .eq('status', 'completed');
-    
-    let duelWins = 0, duelExp = 0;
-    (duels || []).forEach(d => {
-      if (d.winner_id === targetKidId) { duelWins++; duelExp += DUEL_EXP.winner; }
-      else if (!d.winner_id) duelExp += DUEL_EXP.draw;
-      else duelExp += DUEL_EXP.loser;
-    });
-    
-    const cards = [
-      { icon: ''+ico('treniruote')+'', label: 'Treniruotės', color: '#FF4D00', ...typeStats.training },
-      { icon: ''+ico('greitis')+'', label: 'Savaitiniai', color: '#4FC3F7', ...typeStats.weekly },
-      { icon: ''+ico('menesinis')+'', label: 'Mėnesiniai', color: '#BA68C8', ...typeStats.monthly },
-      { icon: ''+ico('zvaigzde')+'', label: 'Vienkartiniai', color: '#FFD700', ...typeStats.one_time },
-      { icon: ''+ico('nuolatinis')+'', label: 'Nuolatiniai', color: '#66BB6A', ...typeStats.permanent },
-      { icon: ''+ico('dvikova')+'', label: 'Dvikovos', color: '#EC407A', count: duelWins, exp: duelExp }
-    ];
-    
-    const totalCount = cards.reduce((s, c) => s + c.count, 0);
+    const { data: sum, error: sErr } = await sb.rpc('kid_challenge_summary', { p_kid: targetKidId });
+    if (sErr) throw sErr;
+    if (!sum) { body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Šio vaiko iššūkių santrauka tau nerodoma</div>'; return; }
+    const on = k => typeof KidGate === 'undefined' || KidGate.on(k);
+    const n = x => Number(x) || 0;
+    const w = sum.weekly || {}, m = sum.monthly || {}, g = sum.group || {}, d = sum.duels || {}, o = sum.other || {};
+    const cards = [];
+    if (on('challenges')) {
+      cards.push({ icon: ico('greitis'), label: 'Savaitės (Strava)', color: '#4FC3F7', count: n(w.n), sub: n(w.tiers) ? `${n(w.tiers)} ${_ltPl(n(w.tiers), 'pakopa', 'pakopos', 'pakopų')}` : 'įveikta', exp: n(w.exp) });
+      cards.push({ icon: ico('menesinis'), label: 'Mėnesio pasiekimai', color: '#BA68C8', count: n(m.n), sub: 'išmokta', exp: n(m.exp) });
+    }
+    if (on('gc')) cards.push({ icon: ico('grupe'), label: 'Grupių iššūkiai', color: '#66BB6A', count: n(g.n), sub: 'baigta', exp: n(g.exp) });
+    if (on('duels')) cards.push({ icon: ico('dvikova'), label: 'Dvikovos', color: '#EC407A', count: n(d.wins), sub: `pergalės iš ${n(d.n)}`, exp: n(d.exp) });
+    if (n(o.n) > 0) cards.push({ icon: ico('zvaigzde'), label: 'Ankstesni iššūkiai', color: '#FFD700', count: n(o.n), sub: 'iki V2', exp: n(o.exp) });
+    const totalCount = n(w.n) + n(m.n) + n(g.n) + n(d.wins) + n(o.n);
     const totalExp = cards.reduce((s, c) => s + c.exp, 0);
-    
+
     body.innerHTML = `
       <div style="background:linear-gradient(135deg,rgba(255,77,0,.12),rgba(255,140,0,.04));border:.5px solid rgba(255,77,0,.3);border-radius:12px;padding:12px;text-align:center;margin-bottom:12px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#FF7A33;line-height:1;">${totalCount}</div>
@@ -11659,15 +11613,17 @@ async function openChallengeTypesModal(kidId, kidName) {
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
         ${cards.map(c => `
           <div style="background:linear-gradient(135deg,${c.color}1f,${c.color}08);border:.5px solid ${c.color}55;border-radius:12px;padding:12px 8px;text-align:center;">
-            <div style="font-size:26px;line-height:1;margin-bottom:4px;">${emojiToIco(c.icon)}</div>
+            <div style="font-size:26px;line-height:1;margin-bottom:4px;color:${c.color};">${c.icon}</div>
             <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${c.color};line-height:1;">${c.count}</div>
             <div style="font-size:8px;color:var(--mut);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-top:3px;">${c.label}</div>
+            <div style="font-size:9px;color:var(--mut);font-weight:700;margin-top:2px;">${escapeHtml(c.sub)}</div>
             <div style="font-size:9px;color:${c.color};opacity:.8;font-weight:700;margin-top:3px;">+${c.exp.toLocaleString('lt-LT')} EXP</div>
           </div>
         `).join('')}
       </div>
+      ${cards.length ? '' : '<div style="text-align:center;padding:20px;color:var(--mut);font-size:11px;">Iššūkiai klube išjungti</div>'}
     `;
-    
+
     // Atnaujint mygtuko santrauką (tik savo profilyje)
     if (isOwn) {
       const summaryEl = document.getElementById('v-prof-challenges-summary');
