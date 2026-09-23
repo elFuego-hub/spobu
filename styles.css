@@ -932,3 +932,14 @@ body.portal-v{--ico-accent:var(--br);}
 .dvk-att{border:1px solid rgba(236,64,122,.35);border-left:3px solid #EC407A;border-radius:12px;padding:10px 4px 6px;margin-bottom:12px;background:rgba(236,64,122,.06);}
 .dvk-att-t{font-size:10px;font-weight:900;letter-spacing:1px;color:#EC407A;padding:0 8px 4px;}
 /* ===== /MODULIS ===== */
+/* ===== MODULIS: Susit (v627) — 14+ susitikimai: žiedelis kalendoriuje, kvietimo forma ===== */
+.kal-d .sus-dot,.kal-v-d .sus-dot{position:absolute;bottom:5px;left:6px;width:7px;height:7px;border-radius:50%;border:2px solid #14B8A6;box-sizing:border-box;}
+.sus-form label{display:block;font-size:10px;font-weight:900;letter-spacing:.6px;color:var(--mut);margin:12px 0 5px;}
+.sus-form label i{font-style:normal;font-weight:700;letter-spacing:0;}
+.sus-form input:not([type=checkbox]),.sus-form select{width:100%;box-sizing:border-box;min-height:44px;padding:9px 12px;font-size:16px;color:var(--txt,#fff);background:var(--card);border:1px solid var(--bdr);border-radius:12px;}
+.sus-form .kal-chip{margin:0 6px 6px 0;}
+.sus-rules{margin-top:14px;padding:10px 12px;border:1px solid rgba(20,184,166,.45);border-left:3px solid #14B8A6;border-radius:12px;background:rgba(20,184,166,.07);font-size:11px;line-height:1.5;color:var(--txt,#fff);}
+.sus-rules b{display:block;font-size:10px;letter-spacing:.8px;color:#14B8A6;margin-bottom:4px;}
+.sus-form .sus-chk{display:flex;align-items:center;gap:8px;margin:8px 0 0;font-size:12px;letter-spacing:0;color:var(--txt,#fff);min-height:44px;}
+.sus-form .sus-chk input{width:22px;height:22px;flex-shrink:0;}
+/* ===== /MODULIS ===== */

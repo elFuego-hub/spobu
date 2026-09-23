@@ -599,7 +599,7 @@ async function _checkSelfSignupFlag(){
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfSignupFlag, 1500); });
 
 // ── 📜 Sutikimų žurnalas (server-consents.sql) — BDAR įrodymas: kas/kada/kokia versija ──
-const POLICY_VERSION = 'v1.2';   // v621: 2026-09-23 papildyta (Strava, pastangos, AI planai, postai, klubo info, SPOBU pokalbiai)   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
+const POLICY_VERSION = 'v1.3';   // v627: 2026-09-23 Strava Kelio rekordams + vaikas susieja pats (S2), 14+ susitikimai; v621: v1.2 (Strava, pastangos, AI planai, postai, klubo info, SPOBU pokalbiai)   // kelti kartu su privatumo-politika.html / naudojimo-taisykles.html
 const SUPPORT_EMAIL = 'info@spobu.lt';   // reali dėžutė nuo 2026-08-18 (iv.lt catch-all persiuntimas)
 // 🎁 v439: parduotuvės BANDYMO REŽIMAS — planai su kainomis paslėpti (kainodara neskelbiama iki
 // mokėjimų įjungimo). Sausį su payments_live → pakeisti į false, pilnas langas grįžta pats.
@@ -1730,6 +1730,7 @@ function openParentHelpModal() {
   const faq = [
     ['Kaip matau vaiko progresą?', 'Kalendoriuje — kada buvo, kiek EXP ir pastangų kiekvieną dieną (spauskite dieną). „Kelias" — statistika pagal kategorijas. „Pasiekimai" — naujausi medaliai, iššūkiai ir rekordai.'],
     ['Kas yra pastangos ir automatiniai iššūkiai?', 'Po treniruotės treneris įvertina pastangas: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP (matote, jei klubas įjungęs). Lankomumo, varžybų, egzamino ir Strava iššūkiai užsiskaito patys, kitus vaikas pateikia, treneris tvirtina.'],
+    ['Vaikas susiejo Strava — ką tai reiškia?', 'Vaikas gali pats susieti savo Strava (Profilis → Strava) — jums ateina pranešimas. SPOBU mato tik veiklų tipą, pavadinimą, atstumą, trukmę, datą, geriausio kilometro laiką ir nuorodą: iš jų užsiskaito iššūkiai ir Kelio rekordai (1 km, ilgas bėgimas, dviratis, žygis). Įtartinus rezultatus tikrina treneris. Atsieti galite bet kada: Profilis → Strava → Atsieti.'],   // v627 (3A, S2)
     ['Kodėl negaliu pateikti rezultatų?', 'Tu esi stebėtojas — pateikti iššūkius/rezultatus gali tik pats vaikas savo paskyroje. Tu matai progresą ir palaikai.'],
     ['Kaip pridėti antrą vaiką?', 'Paspausk avatarą viršuje → „Pridėti vaiką" ir užpildyk anketą — ją patvirtins klubas. Jei vaikas jau turi SPOBU paskyrą, paprašyk jo kodo ir spausk „Su kodu".'],
     ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsas turi būti įdiegtas į pradžios ekraną ir duotas pranešimų leidimas.'],
@@ -1856,9 +1857,10 @@ function openHelpModal(who) {
     // v624 (23A/29A): V2 tekstai — automatiškai užsiskaito tik savaitės Strava iššūkiai (V2 lankomumo / varžybų / egzamino iššūkių nekuria, v613)
     kid: [
       ['Kaip gaunu EXP ir keliu lygį?', 'Lankyk treniruotes ir stenkis — treneris įvertina pastangas (iš visų jėgų +20 · gerai +14 · lengviau +8), už visas savaitės treniruotes +15, už visas mėnesio +100. Dar — iššūkiai, rekordai Kelio lange, varžybos ir dvikovos. Visi skaičiai: Nustatymai → „Kaip veikia SPOBU".'],
-      ['Kurie iššūkiai skaičiuojasi patys?', 'Savaitės Strava iššūkiai ' + ((typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? 'užsiskaito patys' : 'ateina patys (patvirtina treneris)') + ', jei susietas Strava (iki 14 m. susieja tėvai). Kitus pažymi tu, patvirtina treneris.'],
+      ['Kurie iššūkiai skaičiuojasi patys?', 'Savaitės Strava iššūkiai ' + ((typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? 'užsiskaito patys' : 'ateina patys (patvirtina treneris)') + ', jei susietas Strava (susieji pats Profilyje — tėvams nusiunčiamas pranešimas). Kelio rekordai (1 km, ilgas bėgimas, dviratis, žygis) iš Strava ' + ((typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? 'užsiskaito patys' : 'ateina treneriui') + '. Kitus pažymi tu, patvirtina treneris.'],
       ['Kaip pateikiu rezultatą?', '„Kelias" lange pasirink sritį ir pratimą, įrašyk naują rekordą. Treneris jį patvirtins.'],
       ...((typeof KidGate === 'undefined' || KidGate.on('duels')) ? [['Kas yra dvikova?', '1 prieš 1 su grupės draugu (atsispaudimai, pritūpimai, presas, lenta, bėgimas). Grupės lange iškviesk draugą ir pasirink treniruotę — joje treneris įvertins ir įves rezultatus. Pergalė +50 · lygiosios +35 · pralaimėjus +25 EXP.']] : []),
+      ...((typeof Susit !== 'undefined' && Susit.kidOk()) ? [['Kas yra 14+ susitikimai?', 'Kalendoriuje „Pakviesti sportuoti" — pasirink veiklą (prasibėgam, krepšinis…), dieną, laiką ir vietą. Kvietimą mato klubo 14+ nariai; kas nori, spaudžia „Eisiu". Tai ne klubo treniruotė: susitik viešoje vietoje, pasakyk tėvams, telefonų ir adresų nerašyk. EXP už tai nėra.']] : []),   // MODULIS: Susit (v627)
       ['Kodėl mano lygis žemas?', 'Lygis auga nuo surinkto EXP — kuo daugiau treniruojiesi, atlieki iššūkių ir gerini rekordus, tuo greičiau kyla. Reitinguose iš pradžių matai savo amžiaus ir lyties draugus. OSU! '+ico('dirzas')+''],
       ['Kas mato mano vardą?', 'Reitinguose ir paieškoje — Anonimas (jei tėvai jį įjungę). Savo grupės draugai tave mato. Treneris ir klubas visada mato tavo vardą. Kaip tu rodomas — Nustatymai → Privatumas; keičia tėvai.'],
       ['Kaip pasidalinti pasiekimu?', 'Varpelyje prie patvirtinto rekordo, iššūkio, varžybų rezultato ar laimėtos dvikovos spausk „Pasidalinti" — sukursi kortelę su nuotrauka, kurią gali dėti į Instagram/TikTok.'],
@@ -15478,11 +15480,12 @@ const CLUB_FLAG_DEFS = [
   { k:'effort_visible_to_parents', t:''+ico('tikslas')+' Tėvai mato pastangų vertinimą', d:'Eilutė „dirbo iš visų jėgų" tėvų kalendoriuje ir Pasiekimuose. Numatyta: įjungta.', info:'Tėvai mato pastangų vertinimą — po treniruotės trenerio įvertintos pastangos (iš visų jėgų / gerai / lengviau) ir EXP už jas rodomi tėvams. Vaikas savo pastangas mato visada.<br><br>Išjungus: tėvams dingsta tik pastangų eilutė, EXP lieka.' },
   { k:'trainer_posts_enabled', t:''+ico('nuotrauka')+' Trenerių postai', d:'Treneris po treniruotės dalinasi nuotrauka su viena eilute — grupei, Facebook, Instagram. Numatyta: įjungta.', info:'Trenerių postai — po treniruotės treneris pasidaro postą: nuotrauka + viena eilutė, ir pasidalina tėvų grupės pokalbyje, Facebook ar Instagram. Vaikų vardai Facebook / Instagram — tik tų, kurių tėvai davė sutikimą.<br><br>Išjungus: treneriai nebematys „Postai" mygtuko. Klubo Postų studija lieka.' },
   { sec:'IŠŠŪKIAI' },
-  { k:'strava_auto_approve', t:''+ico('atnaujinti')+' Strava rezultatai tvirtinami automatiškai', d:'Susietos Strava bėgimai, ėjimai, dviratis — be trenerio. Numatyta: įjungta.', info:'Strava rezultatai tvirtinami automatiškai — kai vaikas (ar tėvas) susieja Strava, bėgimo / ėjimo / dviračio iššūkių veiklos ateina pačios ir, jei atitinka tikslą, patvirtinamos iš karto (EXP kaip įprasta). Treneris suvestinėje mato STRAVA žymą.<br><br>Išjungus: Strava veiklos vis tiek ateina, bet lieka „laukia" — tvirtina treneris.' },   // V2 7b (v552)
+  { k:'strava_auto_approve', t:''+ico('atnaujinti')+' Strava rezultatai tvirtinami automatiškai', d:'Susietos Strava bėgimai, ėjimai, dviratis ir Kelio rekordai — be trenerio. Numatyta: įjungta.', info:'Strava rezultatai tvirtinami automatiškai — kai vaikas (ar tėvas) susieja Strava, bėgimo / ėjimo / dviračio iššūkių veiklos ateina pačios ir, jei atitinka tikslą, patvirtinamos iš karto (EXP kaip įprasta). Kelio rekordai (geriausias 1 km, ilgiausias bėgimas, dviratis, žygis) — taip pat. Įtartinus (neįtikėtinas tempas ar rezultatas, kito žmogaus Strava) sistema automatiškai NEtvirtina — jie ateina treneriui su priežastimi. Treneris suvestinėje mato STRAVA žymą.<br><br>Išjungus: Strava veiklos ir rekordai vis tiek ateina, bet lieka „laukia" — tvirtina treneris.' },   // V2 7b (v552)
   { k:'duels_enabled', t:''+ico('dvikova')+' Dvikovos', d:'Vaikai kviečia grupės draugą į dvikovą treniruotėje; rezultatus įveda treneris.', info:'Dvikovos — vaikas iškviečia savo grupės draugą į 1-prieš-1 pratimų varžytuves (atsispaudimai, pritūpimai, presas, lenta, bėgimas) konkrečioje treniruotėje per artimiausias 14 d. Dvikova matoma abiejų vaikų ir trenerio kalendoriuje; treniruotėje treneris įveda abiejų rezultatus (dienos lape arba lankomumo lange, prieš pastangas) — nugalėtoją ir EXP (+50 / +35 / +25) skaičiuoja sistema. Nepriimta iki treniruotės — neįvyksta.<br><br>Išjungus: vaikai nebegalės kurti ar priimti dvikovų, dvikovos dings iš kalendorių ir lankomumo lango, pranešimai nesiunčiami.' },   // v625 (1A)
   { sec:'VAIKAMS IR TĖVAMS' },
   { k:'kid_trainer_chat_enabled', t:''+ico('zinutes')+' Vaikų žinutės treneriui', d:'Vaikas gali parašyti savo treneriui. Numatyta: įjungta.', info:'Vaikų žinutės treneriui — vaikas gali parašyti SAVO treneriui: iš varpelio („Žinutės" tabo) arba nustatymuose prie trenerio vardo spausdamas „Rašyti". Treneris atsako įprastame žinučių lange.<br><br>Vaikai TARPUSAVYJE susirašinėti negali — tai užrakinta sistemos lygiu.<br><br>Išjungus: vaikai nebegalės pradėti pokalbio ar atsakinėti, treneriui esami pokalbiai lieka matomi.' },
   { k:'birthdays_enabled', t:''+ico('gimtadienis')+' Gimtadienių priminimai', d:'Artėjantys vaikų gimtadieniai (per 7 d.) trenerio ir klubo varpelyje. Numatyta: įjungta.', info:'Gimtadienių priminimai — artėjantys (per 7 d.) vaikų gimtadieniai rodomi trenerio ir klubo varpelyje, kad spėtumėte pasveikinti.<br><br>Išjungus: priminimų nebebus.' },
+  { k:'kid_meetups_enabled', def:false, t:''+ico('grupe')+' 14+ susitikimai', d:'14+ nariai kviečia vieni kitus kartu pasportuoti (prasibėgam, krepšinis). Numatyta: išjungta.', info:'Paaugliai nuo 14 m. gali pakviesti klubo draugus kartu pasportuoti: veikla, laikas, vieta. Kvietimus mato tik klubo 14+ nariai, treneriai ir klubas; dalyvių tėvai mato savo vaiko kvietimus. Jaunesni nei 14 m. ir jų tėvai nemato nieko.<br><br>Tai NE klubo renginiai — klubas ir SPOBU jų neorganizuoja ir neprižiūri. Telefonų, adresų ir nuorodų rašyti neleidžiama; netinkamą kvietimą galite paslėpti kalendoriaus dienos lape. EXP už susitikimus nėra.<br><br>Išjungus: kvietimai dingsta vaikams (treneriai ir klubas istoriją mato).' },   // MODULIS: Susit (v627, 2A)
   { sec:'RENGINIAI' },
   { k:'competitions_enabled', t:''+ico('medalis')+' Varžybos', d:'Varžybų kūrimas ir rezultatai.', info:'Varžybos — kumite/kata renginiai su registracija ir rezultatais (vietos, medaliai).<br><br>Išjungus: nebebus galima kurti varžybų, o vaikai jų nebematys.' },
   { k:'belt_grading_enabled', t:''+ico('dirzas')+' Diržų laikymas', d:'Diržo testų registravimas.', info:'Diržų laikymas — egzaminai naujam kyu/diržui gauti.<br><br>Išjungus: nebebus galima registruoti diržų laikymo ir jų rezultatų.' },
@@ -15834,6 +15837,8 @@ function showClubFlagInfo(k){
 
 async function toggleClubFlag(flag, val){
   if (_ownerOnly()) return;
+  // v627 (2A): 14+ susitikimai — įjungiant klubas patvirtina, kad supranta, kas tai yra
+  if (flag === 'kid_meetups_enabled' && val && !(await appConfirm('Įjungti 14+ susitikimus?\n\nPaaugliai nuo 14 m. galės kviesti klubo draugus kartu pasportuoti. Tai NE klubo renginiai — klubas ir SPOBU jų neorganizuoja ir neprižiūri. Kvietimus matysite kalendoriuje ir galėsite paslėpti. EXP už juos nėra.', { okText: 'ĮJUNGTI' }))) { if (typeof loadClubSettings === 'function') loadClubSettings(); return; }
   // 💶 v452: mokesčių jungiklis eina per RPC — ji kartu užfiksuoja, nuo kurio mėnesio
   // skaičiuoti skolą (kad seni vaikai iš karto neatrodytų skolingi).
   if (flag === 'fees_enabled') {
@@ -20660,7 +20665,7 @@ async function loadKidPendingSubmissions() {
   // 3) competition_results (varžybos)
   const [exRes, chRes, coRes] = await Promise.all([
     sb.from('result_submissions')
-      .select('id, new_value, old_pr, exp_gain, created_at, exercises(name, unit, career_categories(name, icon))')
+      .select('id, new_value, old_pr, exp_gain, created_at, source, exercises(name, unit, career_categories(name, icon))')
       .eq('kid_id', currentKid.id)
       .eq('status', 'pending')
       .order('created_at', {ascending: false})
@@ -20735,10 +20740,10 @@ async function loadKidPendingSubmissions() {
       const catIcon = emojiToIco(s.exercises?.career_categories?.icon) || ''+ico('jega')+'';
       
       html += `<div onclick="nv('v',document.querySelector('.bn2 .ni:nth-child(2)'),'v-kar')" style="background:var(--card);border-radius:8px;padding:6px 4px;border:.5px solid rgba(255,77,0,.3);cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.2);text-align:center;min-width:0;position:relative;">
-        <button onclick="event.stopPropagation();cancelKidPendingSubmission('${s.id}')" title="Atšaukti pateikimą" style="position:absolute;top:1px;right:1px;background:none;border:none;color:var(--mut);font-size:11px;line-height:1;padding:3px 5px;cursor:pointer;">✕</button>
+        ${s.source === 'strava' ? '' : `<button onclick="event.stopPropagation();cancelKidPendingSubmission('${s.id}')" title="Atšaukti pateikimą" style="position:absolute;top:1px;right:1px;background:none;border:none;color:var(--mut);font-size:11px;line-height:1;padding:3px 5px;cursor:pointer;">✕</button>`}   <!-- v627 (3A): Strava įrašo vaikas neatšaukia — tikrina treneris -->
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:2px;">
           <span style="font-size:12px;line-height:1;">${catIcon}</span>
-          <span style="font-size:7px;background:rgba(255,77,0,.2);color:#FF7A33;padding:1px 5px;border-radius:99px;font-weight:800;">PR</span>
+          <span style="font-size:7px;background:rgba(255,77,0,.2);color:#FF7A33;padding:1px 5px;border-radius:99px;font-weight:800;">${s.source === 'strava' ? 'STRAVA' : 'PR'}</span>
         </div>
         <div style="font-size:9px;font-weight:800;color:white;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(exName)}</div>
         <div style="font-size:7px;color:var(--mut);margin-top:1px;">+${s.exp_gain || 0} EXP · ${time}</div>
@@ -21172,7 +21177,7 @@ async function loadPendingSubmissions() {
         <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">DELTA</div><div style="font-family:'Bebas Neue',sans-serif;font-size:${deltaRaw == null ? 15 : 24}px;color:${deltaGood ? 'var(--grn)' : 'var(--br)'};">${deltaTxt}</div></div>
         <div style="text-align:center;"><div style="font-size:10px;color:var(--mut);">EXP</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--br);">+${expG}</div></div>
       </div>
-      ${s.comment?`<div style="font-size:11px;color:var(--mut);margin-bottom:10px;">${ico('zinutes')} ${escapeHtml(s.comment)}</div>`:''}
+      ${s.source === 'strava' && typeof Strava !== 'undefined' ? Strava.subHtml(s) : (s.comment?`<div style="font-size:11px;color:var(--mut);margin-bottom:10px;">${ico('zinutes')} ${escapeHtml(s.comment)}</div>`:'')}
       <div style="display:flex;gap:8px;">
         <button class="bsm" style="flex:1;background:var(--grn);color:white;" onclick="approveSubmission('${s.id}')">${ico('atlikta')} Patvirtinti</button>
         <button class="bsm" style="flex:1;background:rgba(255,77,0,.1);color:var(--br);border:.5px solid rgba(255,77,0,.3);" onclick="openRejectModal('${s.id}')">✗ Atmesti</button>
@@ -24147,7 +24152,8 @@ function openKidInfo(which) {
         ((typeof KidGate === 'undefined' || KidGate.on('duels')) ? row('<i style="width:8px;height:8px;border-radius:50%;background:#EC407A;display:block;"></i>', 'Rožinis taškas', 'Tą dieną tavo dvikova. Paspausk dieną — pamatysi, su kuo ir ar priimta. Rezultatus įveda treneris treniruotėje.') : '') +   // v625 (1A)
         row(''+ico('varzybos')+'', 'Spalvotos dienos', 'Violetinė — varžybos, mėlyna — stovykla ar seminaras, auksinė — diržo testas. Paspausk — pamatysi detales ir ar dalyvausi.') +
         row(''+ico('treniruote')+'', 'Šiandien', 'Oranžinė kortelė — šiandienos treniruotė: ką darysim, kodėl ir ką pasiimti. Kai treneris patvirtina, matai visą eigą.') +
-        row(''+ico('ranka')+'', 'Spausk dieną', 'Atsidaro dienos lapas: EXP išskaidymas, pastangos, treniruotės blokai su trukmėmis.');
+        row(''+ico('ranka')+'', 'Spausk dieną', 'Atsidaro dienos lapas: EXP išskaidymas, pastangos, treniruotės blokai su trukmėmis.') +
+        ((typeof Susit !== 'undefined' && Susit.kidOk()) ? row('<i style="width:9px;height:9px;border-radius:50%;border:2px solid #14B8A6;display:block;box-sizing:border-box;"></i>', 'Žalsvas žiedelis', 'Tą dieną klubo 14+ kvietimas sportuoti. Dienos lape — kas kviečia, kur ir kas eina; „Eisiu" ar „Pakviesti sportuoti šią dieną".') : '');   // MODULIS: Susit (v627)
       break;
     case 'grupe':
       title = ''+ico('pagalba')+' GRUPĖ';
@@ -24163,7 +24169,7 @@ function openKidInfo(which) {
         // v624 (23A/29A): V2 — automatiškai tik savaitės Strava iššūkiai (ir tik jei klubas leidžia strava_auto_approve)
         row(''+ico('atnaujinti')+'', 'Savaitės — per Strava', 'Savaitės Strava iššūkiai ' + ((typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? 'užsiskaito patys' : 'ateina patys, o patvirtina treneris') + ', jei susietas Strava. 3 pakopos pagal tavo amžių ir lytį: +15, iš viso +20, iš viso +25 EXP.') +
         row(''+ico('tikslas')+'', 'Kitus pažymi tu', 'Atlieki → pažymi rezultatą → treneris patvirtina → gauni EXP. Mėnesio pasiekimai (kata, spyriai): spausk „Pasiruošiau", treneris patikrins treniruotėje ir pažymės „Išmoko".') +
-        row(''+ico('vieta')+'', 'Strava', 'Bėgimas, ėjimas, dviratis, plaukimas ir treniruotės. Iki 14 m. Strava susieja tėvai savo SPOBU paskyroje, 14+ — pats Profilyje. Rankiniai Strava įrašai (be GPS) nesiskaito.') +
+        row(''+ico('vieta')+'', 'Strava', 'Bėgimas, ėjimas, dviratis, plaukimas ir treniruotės + Kelio rekordai (1 km, ilgas bėgimas, dviratis, žygis). Susieji pats Profilyje (tėvams nusiunčiamas pranešimas) arba tėvai savo paskyroje. Rankiniai Strava įrašai (be GPS) nesiskaito; įtartinus rekordus sistema siunčia treneriui patikrinti.') +
         row(''+ico('kalendorius')+'', 'Trukmė', 'Savaitės iššūkis trunka iki sekmadienio, mėnesio — iki mėnesio galo.') +
         row(''+ico('ranka')+'', 'Sąžiningai', 'Pažymėk tik tai, ką tikrai padarei — treneris peržiūri kiekvieną rankinį pateikimą.');
       break;
@@ -26231,8 +26237,9 @@ async function openKidDetailsModal(kidId) {
   if (kdChBtn) kdChBtn.style.display = isTrainerView ? '' : 'none';
   const kdPendCard = document.getElementById('kd-pending-card');
   if (kdPendCard) {
-    kdPendCard.style.display = isTrainerView ? 'block' : 'none';
-    if (isTrainerView) loadKidPendingApprovals(kidId); // be await — pildosi fone
+    const canReview = isTrainerView || currentProfile?.role === 'club_admin';   // v627 (3A): klubas — atsarginis tikrintojas (vaikas be trenerio)
+    kdPendCard.style.display = canReview ? 'block' : 'none';
+    if (canReview) loadKidPendingApprovals(kidId); // be await — pildosi fone
   }
 
   document.getElementById('kid-details-modal').style.display = 'block';
@@ -26262,7 +26269,7 @@ async function loadKidPendingApprovals(kidId) {
   // 3 šaltiniai lygiagrečiai (kaip tr-pat tabuose, tik filtruota per šį vaiką)
   const [rsR, csR, crR] = await Promise.all([
     sb.from('result_submissions')
-      .select('id, new_value, old_pr, exp_gain, exercises(name, unit)')
+      .select('id, new_value, old_pr, exp_gain, source, meta, exercises(name, unit)')
       .eq('kid_id', kidId).eq('status', 'pending')
       .order('created_at', { ascending: false }),
     sb.from('challenge_submissions')
@@ -26289,7 +26296,7 @@ async function loadKidPendingApprovals(kidId) {
   (rsR.data || []).forEach(s => rows.push({
     kind: 'career', id: s.id,
     label: `${ico('treniruote')} ${s.exercises?.name || 'Pratimas'}`,
-    value: `${s.old_pr != null ? s.old_pr + ' → ' : ''}${s.new_value}${s.exercises?.unit ? ' ' + s.exercises.unit : ''} · +${s.exp_gain || 0} EXP`
+    value: `${s.old_pr != null ? s.old_pr + ' → ' : ''}${s.new_value}${s.exercises?.unit ? ' ' + s.exercises.unit : ''} · +${s.exp_gain || 0} EXP${s.source === 'strava' ? ' · STRAVA' + (Array.isArray(s.meta?.why) && s.meta.why.length ? ' ⚠ ' + escapeHtml(s.meta.why[0]) : '') : ''}`   // v627 (3A)
   }));
   (csR.data || []).forEach(s => rows.push({
     kind: 'challenge', id: s.id,
@@ -26347,9 +26354,9 @@ async function kdRejectPending(kind, id) {
   // Atmetimo laukai identiški tr-pat srautams (cr / rejectChallengeSubmission / rejectCompetitionResult)
   let error = null;
   if (kind === 'career') {
-    ({ error } = await sb.from('result_submissions').update({
-      status: 'rejected', rejection_reason: reason, reviewed_at: new Date().toISOString()
-    }).eq('id', id).eq('status', 'pending'));
+    let rj;
+    ({ data: rj, error } = await sb.rpc('result_submission_reject', { p_id: id, p_reason: reason, p_comment: null }));   // v627: per RPC — kaip tvirtinimas
+    if (!error && !(rj && rj.rejected)) error = { message: 'Neatmesta — jau peržiūrėta' };
     if (!error) loadPendingSubmissions();
   } else if (kind === 'challenge') {
     ({ error } = await sb.from('challenge_submissions').update({
@@ -34737,6 +34744,7 @@ function subscribeTrainerNotifications() {
     ch.on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'result_submissions'
     }, payload => {
+      if (payload.new && payload.new.auto_approved) return;   // v627 (3A): Strava užskaitė pati — tvirtinti nereikia
       showToast(''+ico('pastas')+' Naujas rezultatas laukia patvirtinimo!', 'success', 4000);
       if (typeof updateTrainerNotifBadge === 'function') updateTrainerNotifBadge(true);
       if (typeof loadTrainerHome === 'function') loadTrainerHome();
@@ -34827,7 +34835,7 @@ function subscribeKidNotifications() {
       if (sub.status === 'approved') {
         if (_isSeen('ex', sub.id)) return; // jau parodyta (gyvai ar kaip praleista)
         _addSeen('ex', sub.id);
-        showToast(`${ico('patvirtinta')} TRENERIS PATVIRTINO\n\n${exName}\n+${sub.exp_gain} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
+        showToast(`${ico('patvirtinta')} ${(sub.source === 'strava' && sub.auto_approved) ? 'STRAVA UŽSKAITĖ' : 'TRENERIS PATVIRTINO'}\n\n${exName}\n+${sub.exp_gain} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
         await loadKidData();
       } else if (sub.status === 'rejected') {
         const reason = escapeHtml(sub.rejection_reason || 'be priežasties');
@@ -35147,11 +35155,10 @@ async function cr() {
   if (!rejectTargetId) return;
   const reason = document.querySelector('#rmo .ch.on')?.textContent || 'Nepateikta priežastis';
   const comment = document.getElementById('reject-comment')?.value || '';
-  const { error } = await sb.from('result_submissions').update({
-    status:'rejected', rejection_reason:reason,
-    rejection_comment:comment, reviewed_at:new Date().toISOString()
-  }).eq('id', rejectTargetId).eq('status', 'pending');
+  // v627: atmetimas per RPC — tas pats teisių ratas kaip tvirtinimo (asistentas, grupės treneris, klubo savininkas)
+  const { data: rj, error } = await sb.rpc('result_submission_reject', { p_id: rejectTargetId, p_reason: reason, p_comment: comment || null });
   if (error) { showToast(ico('klaida')+' ' + _userError(error), 'error'); return; } // anksčiau klaida buvo nutylima
+  if (!rj || !rj.rejected) { showToast(ico('klaida')+' Neatmesta — jau peržiūrėta', 'error', 5000); loadPendingSubmissions(); return; }
   cm();
   showToast('Grąžinta pataisyti — vaikas matys priežastį', 'success');
   loadPendingSubmissions();
@@ -35186,6 +35193,7 @@ async function getKidAgeGroup() {
 }
 
 async function showExercises(categoryId, categoryName) {
+  if (typeof Strava !== 'undefined' && currentProfile?.role === 'kid') Strava.prime(Strava.kidId());   // v627 (3A): Kelio rekordai iš Strava — būsena žymei + sinchronizacija, jei >10 min
   document.getElementById('exo-title').textContent = categoryName.toUpperCase();
   document.getElementById('exo-list').style.display = 'block';
   document.getElementById('exo-form').style.display = 'none';
@@ -35338,7 +35346,7 @@ function renderExoList() {
         ${ex.report_text ? `<div style="font-size:10px;color:#9a9aa8;margin-top:6px;line-height:1.5;background:rgba(0,0,0,.25);border-left:2px solid #FF7A33;padding:6px 9px;border-radius:0 8px 8px 0;">${ico('statistika')} <b style="color:#c9c9d4;">Ataskaitoje:</b> ${_richLite(ex.report_text)}</div>` : ''}
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
           ${sc ? `<span style="font-size:8.5px;font-weight:800;letter-spacing:.4px;border:1px solid ${sc[0]}55;color:${sc[0]};border-radius:20px;padding:2px 8px;">${sc[1]}</span>` : ''}
-          ${ex.strava ? `<span style="font-size:8.5px;font-weight:800;border:1px solid #7a3414;color:#ff7a3d;border-radius:20px;padding:2px 8px;">${ico('vieta')} STRAVA ĮRODYMAS</span>` : ''}
+          ${ex.strava ? ((typeof Strava !== 'undefined' && Strava.exoHtml) ? Strava.exoHtml(ex) : '') : ''}   <!-- v627 (3A): Strava žymė pagal susiejimą -->
         </div>
         <div style="display:flex;gap:5px;margin-top:9px;">${tierHtml}</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
@@ -35521,15 +35529,16 @@ async function submitExerciseResult() {
 
   // 🙏 Trenerio apsauga: dublikatas to paties pratimo + per daug laukiančių pateikimų
   const { data: pendSubs } = await sb.from('result_submissions')
-    .select('id, exercise_id')
+    .select('id, exercise_id, source')
     .eq('kid_id', kidId)
     .eq('status', 'pending');
-  if ((pendSubs || []).some(p => p.exercise_id === currentExercise.id)) {
+  const manPend = (pendSubs || []).filter(p => p.source !== 'strava');   // v627 (3A): Strava įrašai rankinio neblokuoja (atskiri indeksai)
+  if (manPend.some(p => p.exercise_id === currentExercise.id)) {
     showToast(''+ico('laukia')+' Šio pratimo rezultatas jau laukia trenerio patvirtinimo', 'error', 4000);
     _sfree(); return;
   }
-  if ((pendSubs || []).length >= 5) {
-    showToast(`${ico('patinka')} Jau laukia ${pendSubs.length} pateikimai — palauk, kol treneris patvirtins`, 'error', 4500);
+  if (manPend.length >= 5) {
+    showToast(`${ico('patinka')} Jau laukia ${manPend.length} pateikimai — palauk, kol treneris patvirtins`, 'error', 4500);
     _sfree(); return;
   }
 
@@ -36086,7 +36095,7 @@ async function showMissedEvents() {
         .eq('kid_id', kidId).eq('approval_status', 'approved')
         .order('approved_at', { ascending: false }).limit(40),
       sb.from('result_submissions')
-        .select('id, exp_gain, exercise_id, reviewed_at')
+        .select('id, exp_gain, exercise_id, reviewed_at, source, auto_approved')
         .eq('kid_id', kidId).eq('status', 'approved')
         .order('reviewed_at', { ascending: false }).limit(40),
       sb.from('duels')
@@ -36159,7 +36168,7 @@ async function showMissedEvents() {
         // ⛔ Žalio NEBERODOM — varžybų medalio/dalyvavimo šventę parodo detectNewMedals (žemiau, atsibudus)
       } else if (ev.type === 'exercise') {
         const exName = escapeHtml(_exNameMap[ev.data.exercise_id] || 'Pratimas');
-        showToast(`${ico('patvirtinta')} TRENERIS PATVIRTINO\n\n${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
+        showToast(`${ico('patvirtinta')} ${(ev.data.source === 'strava' && ev.data.auto_approved) ? 'STRAVA UŽSKAITĖ' : 'TRENERIS PATVIRTINO'}\n\n${exName}\n+${ev.data.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
       } else if (ev.type === 'duel') {
         if (typeof KidGate !== 'undefined' && !KidGate.on('duels')) continue;   // v623 (15A)
         const won = ev.data.winner_id === kidId;
@@ -38823,7 +38832,7 @@ async function loadAllNotifications(force) {
       .limit(20),
     // 🤖 SISTEMA - patvirtinti IR atmesti PR (result_submissions)
     sb.from('result_submissions')
-      .select('id, new_value, exp_gain, reviewed_at, status, rejection_reason, rejection_comment, exercises(name)') // ⚡ W3-1: + trenerio komentaras
+      .select('id, new_value, exp_gain, reviewed_at, status, rejection_reason, rejection_comment, source, auto_approved, exercises(name, unit, lower_is_better, strava)') // ⚡ W3-1: + trenerio komentaras; v627 (3A): + Strava
       .eq('kid_id', currentKid.id)
       .in('status', ['approved', 'rejected'])
       .gte('reviewed_at', cutoffISO)
@@ -38956,7 +38965,7 @@ async function loadAllNotifications(force) {
         time: s.reviewed_at,
         link: 'v-ish',
         // v626 (D1): dalinimasis per varpelį (vietoj seno Iššūkių ekrano)
-        share: (s.exp_gain || 0) > 0 ? { ic: 'tikslas', ex: s.challenges?.title || 'Iššūkis', val: s.numeric_value ? `${s.numeric_value} ${s.challenges?.target_unit || ''}`.trim() : 'ĮVEIKTA', exp: s.exp_gain || 0 } : null
+        share: (s.exp_gain || 0) > 0 ? { ic: 'tikslas', ex: s.challenges?.title || 'Iššūkis', val: KidIss.shareVal(s), exp: s.exp_gain || 0 } : null
       });
     }
   });
@@ -39023,11 +39032,11 @@ async function loadAllNotifications(force) {
       sistema.push({
         id: `apprPr-${s.id}`,
         icon: ''+ico('jega')+'',
-        title: 'PR patvirtintas',
-        body: `${escapeHtml(s.exercises?.name || 'Pratimas')}: ${escapeHtml(String(s.new_value ?? ''))} · +${s.exp_gain || 0} EXP`, // v401 (B4)
+        title: (s.source === 'strava' && s.auto_approved) ? 'Strava užskaitė rekordą' : 'PR patvirtintas',   // v627 (3A)
+        body: `${escapeHtml(s.exercises?.name || 'Pratimas')}: ${s.source === 'strava' && typeof Strava !== 'undefined' ? Strava.recVal(s.new_value, s.exercises) : escapeHtml(String(s.new_value ?? ''))} · +${s.exp_gain || 0} EXP`, // v401 (B4)
         time: s.reviewed_at,
         link: 'v-kar',
-        share: { ex: s.exercises?.name || 'Pratimas', val: String(s.new_value ?? ''), exp: s.exp_gain || 0 }
+        share: { ex: s.exercises?.name || 'Pratimas', val: s.source === 'strava' && typeof Strava !== 'undefined' ? Strava.recVal(s.new_value, s.exercises) : String(s.new_value ?? ''), exp: s.exp_gain || 0 }
       });
     }
   });
@@ -42392,7 +42401,8 @@ const Kal = {
       const cnt = (o.count && ses.length) ? `<u><em style="font-style:normal;font-size:9.5px;font-weight:900;line-height:1;color:var(--mut);">${ses.length}</em></u>` : '';
       const sub = evs.length ? `<span class="ev">${this.evTag(evs[0])}</span>` : '';
       const dvk = (o.duels && typeof Dvk !== 'undefined') ? Dvk.trCell(ds) : '';   // MODULIS: Dvk (v625) — tik trenerio kalendoriui (opt-in; klubo gridHtml be jo)
-      cells += `<div class="${cls.join(' ')}" onclick="Kal.openDay('${ds}')"><b>${d}</b>${dots ? `<u>${dots}</u>` : cnt}${sub}${dvk}</div>`;
+      const sus = (o.meets && typeof Susit !== 'undefined') ? Susit.trCell(ds) : '';   // MODULIS: Susit (v627) — trenerio ir klubo kalendoriui (opt-in)
+      cells += `<div class="${cls.join(' ')}" onclick="Kal.openDay('${ds}')"><b>${d}</b>${dots ? `<u>${dots}</u>` : cnt}${sub}${dvk}${sus}</div>`;
     }
     const legend = (o.noLegend ? '' : (this.st.groups || []).map(gr => `<span><i style="background:${this.col(gr.color)};"></i>${this.esc(gr.name)}</span>`).join(''))
       + `<span style="color:#FF7A33;"><i style="background:#FF7A33;border-radius:50%;"></i>${this.esc(o.attnLabel || 'nepatvirtinta')}</span>`
@@ -42468,6 +42478,7 @@ const Kal = {
       if (typeof Pavad !== 'undefined' && Pavad.on()) { try { await Pavad.load(r.from, r.to); await Pavad.merge(); } catch (_e) { } }   // MODULIS: Pavad (v585) — pavadavimai
       if (typeof Past !== 'undefined' && Past.on()) { try { await Past.load((this.st.sessions || []).map(x => x.session_id)); } catch (_e) { } }   // MODULIS: Past (v600) — klubo pastabos treniruotėms
       if (typeof Dvk !== 'undefined' && Dvk.on()) { try { await Dvk.load(r.from, r.to); } catch (e) { console.warn('[kal-tr] dvikovos', e.message || e); } }   // MODULIS: Dvk (v625) — po Pavad (pavaduojamos grupės)
+      if (typeof Susit !== 'undefined') { try { await Susit.load(r.from, r.to, 'Kal'); } catch (_e) { } }   // MODULIS: Susit (v627) — 14+ kvietimai (paslėpti gali štabas)
       this.render();
     } catch (e) {
       console.error('[kal-tr]', e);
@@ -42490,7 +42501,7 @@ const Kal = {
       ? `<div class="kal-cta" onclick="Planas.openWizard()"><div class="ic">${ico('prideti')}</div><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Planuoti treniruotes</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">10–15 min klausimų — AI paruoš visą etapą</div></div>${ico('toliau')}</div>`
       : `<div class="kal-empty plan"><div class="ic">${ico('prideti')}</div><b>PLANO DAR NĖRA</b><i>Atsakyk į 10–15 min klausimų — AI paruoš visą etapą, tu tik patvirtinsi.</i><span class="kal-b o" onclick="Planas.openWizard()">Planuoti treniruotes</span></div>`);
     const evBlock = (this.st.events || []).length >= 3 ? this.evListHtml(today) : this.nextHtml(today);   // v557: perkrautam mėnesiui — sąrašas vietoj vienos eilutės
-    c.innerHTML = head + chips + this.gridHtml({ duels: true }) + this.warnHtml(today) + (typeof Pavad !== 'undefined' ? Pavad.cardsHtml() : '') + evBlock + cta + this.todayHtml(today) + this.chHtml();   // MODULIS: Pavad (v585)
+    c.innerHTML = head + chips + this.gridHtml({ duels: true, meets: true }) + this.warnHtml(today) + (typeof Pavad !== 'undefined' ? Pavad.cardsHtml() : '') + evBlock + cta + this.todayHtml(today) + this.chHtml();   // MODULIS: Pavad (v585)
     if (typeof _updateTrainerNotifCounts === 'function') try { _updateTrainerNotifCounts(); } catch (_e) { }   // v580: varpelio skaičius naujai sukurtame badge
     this.st.dir = 0;
     this.afterRender(c);
@@ -42735,7 +42746,8 @@ const Kal = {
     const ses = this.sessionsOn(dateStr);
     const evs = this.eventsOn(dateStr);
     const dvk = typeof Dvk !== 'undefined' ? Dvk.trDayHtml(dateStr) : '';   // MODULIS: Dvk (v625) — dvikovos VIRŠ treniruočių (rezultatai prieš lankomumą ir pastangas)
-    const body = (evs.map(ev => this.evCardHtml(ev)).join('') + dvk + (ses.length ? `${dvk ? '<div class="kal-sec"><b>TRENIRUOTĖS</b><span></span></div>' : ''}<div class="kal-rows">${ses.map(s => this.rowHtml(s, dateStr, { blocks: true })).join('<hr>')}</div>` : ''))
+    const sus = typeof Susit !== 'undefined' ? Susit.staffDayHtml(dateStr, 'Kal') : '';   // MODULIS: Susit (v627)
+    const body = (evs.map(ev => this.evCardHtml(ev)).join('') + dvk + sus + (ses.length ? `${(dvk || sus) ? '<div class="kal-sec"><b>TRENIRUOTĖS</b><span></span></div>' : ''}<div class="kal-rows">${ses.map(s => this.rowHtml(s, dateStr, { blocks: true })).join('<hr>')}</div>` : ''))
       || '<div class="kal-empty"><b>Šią dieną treniruočių nėra</b></div>';
     const m = Number(dateStr.slice(5, 7)) - 1, d = Number(dateStr.slice(8, 10));
     const sub = `${d} ${this.MONG[m]} · ${ses.length ? ses.length + ' ' + _ltPl(ses.length, 'treniruotė', 'treniruotės', 'treniruočių') : (evs.length ? 'renginys' : 'laisva diena')}`;
@@ -42953,7 +42965,8 @@ Object.assign(Kal, {
         const clubId = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || this.st.group?.club_id || null;
         const needCh = this.ownCh && (!this.st.chAt || Date.now() - this.st.chAt > 60000);   // v623 (12A): iššūkiai nuo mėnesio nepriklauso — 60 s atmintis
         const dvkTo = (typeof Dvk !== 'undefined') ? [r.to, Kal.addDays(Dvk.today(), 14)].sort()[1] : r.to;   // MODULIS: Dvk — ir artimiausia dvikova kitą mėnesį
-        const [ses, evs, exp, intents, ch, stk, dvk] = await Promise.all([
+        const susTo = [r.to, Kal.addDays((typeof Dvk !== 'undefined' ? Dvk.today() : this.K.ymd(new Date())), 14)].sort()[1];   // MODULIS: Susit (v627) — ir artimiausi kvietimai kitą mėnesį
+        const [ses, evs, exp, intents, ch, stk, dvk, sus] = await Promise.all([
           this.st.group ? this.K.monthSessions({ groups: [this.st.group], from: r.from, to: r.to, kidId: kid }) : Promise.resolve([]),
           this.K.monthEvents(clubId, r.from, r.to).catch(() => []),
           this.loadExp(kid, r.from, r.to).catch(e => { console.warn('[kal-kid] exp', e); return { exp: {}, att: {} }; }),
@@ -42961,6 +42974,7 @@ Object.assign(Kal, {
           needCh ? this.loadCh(kid, clubId).catch(e => { console.warn('[kal-kid] ch', e); return null; }) : Promise.resolve(null),
           this.K.attStreak(kid).catch(e => { console.warn('[kal-kid] serija', e.message || e); return null; }),   // v624 (28A): ta pati kaip Pagrindinyje
           (typeof Dvk !== 'undefined') ? Dvk.forKid(kid, r.from, dvkTo).catch(e => { console.warn('[kal-kid] dvikovos', e.message || e); return []; }) : Promise.resolve([]),   // v625 (1A)
+          (typeof Susit !== 'undefined') ? Susit.forKid(kid, r.from, susTo).catch(e => { console.warn('[kal-kid] susitikimai', e.message || e); return []; }) : Promise.resolve([]),   // MODULIS: Susit (v627, 2A)
         ]);
         if ((stale = isStale())) return;   // finally perkraus su naujais parametrais
         // v623 (15A): klubo jungikliai — išjungtų renginių tipų nerodom; lankomumas išjungtas — jokio „buvo / nebuvo" (EXP eilutės lieka)
@@ -42969,6 +42983,7 @@ Object.assign(Kal, {
         this.st.sessions = ses; this.st.events = kg ? (evs || []).filter(ev => kg.event(ev)) : evs; this.st.exp = exp.exp || {}; this.st.att = attOff ? {} : (exp.att || {}); this.st.intents = intents.intents; this.st.rsvp = intents.rsvp;
         this.st.streakN = attOff ? 0 : stk;
         this.st.duels = dvk || [];   // MODULIS: Dvk (v625)
+        this.st.meets = sus || [];   // MODULIS: Susit (v627)
         if (ch) { this.st.ch = this.chTiles(ch.active, ch.progress, ch.subs); this.st.chAt = Date.now(); }
         this.render();
       } catch (e) {
@@ -43091,6 +43106,7 @@ Object.assign(Kal, {
         if (evs.length) { cls.push('ev', evs[0].cls); if (!wasHere) inner += `<span class="ev">${K.evTag(evs[0])}</span>`; }
         if (ses.length && ds > today) { cls.push('up'); inner += '<span class="bar"></span>'; }
         if (typeof Dvk !== 'undefined') inner += Dvk.kidCell(this, ds);   // MODULIS: Dvk (v625) — rožinis taškas
+        if (typeof Susit !== 'undefined') inner += Susit.kidCell(this, ds);   // MODULIS: Susit (v627) — žalsvas žiedelis
         cells += `<div class="${cls.join(' ')}" onclick="${this.ns}.openDay('${ds}')">${inner}</div>`;
       }
       const head = `<div class="kal-head" style="padding-top:4px;"><div style="min-width:0;"><div class="kal-mon">${K.MON[r.m - 1].toUpperCase()}${r.y !== new Date().getFullYear() ? ` <i>${String(r.y).slice(2)}</i>` : ''}</div><div class="kal-sub"><span>${K.esc(this.name())}</span>${this.st.group ? `<s>/</s><span>${K.esc(this.st.group.name)}</span>` : ''}${marked ? `<s>/</s><span>${this.T.wasN} ${was} iš ${marked}</span>` : ''}</div></div>
@@ -43100,7 +43116,7 @@ Object.assign(Kal, {
       const expRow = `<div class="kal-exp-row"><span>EXP ${K.MONA[r.m - 1]}</span><span><b data-count="${Math.max(0, monthExp)}">0</b><em>EXP</em></span></div>`;
       const anim = this.st.dir ? (this.st.dir > 0 ? ' out-r' : ' out-l') : '';
       const grid = `<div class="kal-grid${anim}"><div class="kal-dow">${K.DOW.map(x => `<span>${x}</span>`).join('')}</div><div class="kal-cells">${cells}</div>${legend}${expRow}</div>`;
-      c.innerHTML = this.kidsHtml() + head + grid + this.effHtml(r) + this.todayHtml(today) + (typeof Dvk !== 'undefined' ? Dvk.kidTodayHtml(this, today) : '') + this.compHtml(today) + this.etapasBtn() + this.chHtml();
+      c.innerHTML = this.kidsHtml() + head + grid + this.effHtml(r) + this.todayHtml(today) + (typeof Dvk !== 'undefined' ? Dvk.kidTodayHtml(this, today) : '') + (typeof Susit !== 'undefined' ? Susit.kidTodayHtml(this, today) : '') + this.compHtml(today) + this.etapasBtn() + this.chHtml();
       this.st.dir = 0;
       K.afterRender(c);
     },
@@ -43185,8 +43201,10 @@ Object.assign(Kal, {
       if (!this.st.busy && document.getElementById(this.scr)?.classList.contains('on')) this.render();   // v623 (17A c): nepiešiam krovimo viduryje
     },
     chHtml() {
-      const K = this.K; if (!(this.st.ch || []).length) return '';
+      const K = this.K;
       if (typeof KidGate !== 'undefined' && !KidGate.on('challenges')) return '';   // v623 (15A)
+      // v627 (peržiūra): be aktyvių — vis tiek įėjimas į archyvą (įveikti iššūkiai, dvikovų archyvas)
+      if (!(this.st.ch || []).length) return (this === Kal.kid && this.st.chAt) ? `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span><em class="o kal-all" onclick="KidIss.go('completed')">Archyvas →</em></div><div class="kal-empty">Aktyvių iššūkių dabar nėra — treneris paskirs naujų</div>` : '';
       const TL = { weekly: 'SAVAITĖS', monthly: 'MĖNESIO', training: 'TRENIRUOTĖS', one_time: 'VIENKARTINIS' };
       // v623 (13A): „Visi →" — į Iššūkių langą (rankiniai pateikimai, „Pasiruošiau", archyvas)
       return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span><em class="o kal-all" onclick="${this.chNav}">Visi →</em></div><div class="kal-tiles">${this.st.ch.map(c => { const pct = (c.tv && c.done != null) ? Math.min(100, Math.round(c.done * 100 / c.tv)) : (c.pending ? 60 : 0); return `<div class="kal-tile" onclick="${this.chNav}"><div class="tt"><span>${TL[c.type] || 'IŠŠŪKIS'}</span>${K.srcTag(c.vk)}</div><div class="tn">${K.esc(c.title)}</div><div class="kal-bar"><span data-w="${pct}" style="width:0;background:#22C55E;"></span></div><div class="tc">${c.tv && c.done != null ? `${c.done} / ${Number(c.tv)}${c.tu ? ' ' + K.esc(c.tu) : ''}${c.pending ? ' · laukia trenerio' : ''}` : (c.pending ? 'pateikta · laukia trenerio' : 'vyksta')}${c.left != null ? ' · liko ' + c.left + ' d.' : ''} · <b style="color:#FFD700;">${c.tiers ? (c.done != null ? 'pakopa ' + Iss.tierOf(c.tiers, c.done) + '/' + c.tiers.length + ' · ' : '') + c.tiers.map(t => '+' + Number(t.exp)).join('/') : '+' + Number(c.exp)}</b></div></div>`; }).join('')}</div>`;
@@ -43215,6 +43233,7 @@ Object.assign(Kal, {
         if (!conf) parts.push('<div class="kal-empty">Treniruotės turinys atsiras, kai treneris ją patvirtins.</div>');
       });
       if (typeof Dvk !== 'undefined') { const dv = Dvk.kidDayHtml(this, ds); if (dv) parts.push(dv); }   // MODULIS: Dvk (v625)
+      if (typeof Susit !== 'undefined') { const su = Susit.kidDayHtml(this, ds); if (su) parts.push(su); }   // MODULIS: Susit (v627)
       evs.forEach(ev => parts.push(this.eventHtml(ev, ds, today)));
       if (!parts.length) parts.push('<div class="kal-empty"><b>Šią dieną treniruočių nėra</b></div>');
       const m = Number(ds.slice(5, 7)) - 1, d = Number(ds.slice(8, 10));
@@ -43392,6 +43411,7 @@ Object.assign(Kal, {
           this.K.monthSessions({ groups: this.st.groups, from: r.from, to: r.to }),
           this.K.monthEvents(this.clubId(), r.from, r.to).catch(() => []),
           (async () => { if (typeof Pavad !== 'undefined') { try { await Pavad.load(r.from, r.to); } catch (_e) { } } })()   // MODULIS: Pavad (v585) — nepriklauso nuo treniruočių, kraunam kartu
+          , (async () => { if (typeof Susit !== 'undefined') { try { await Susit.load(r.from, r.to, 'Kal.club'); } catch (_e) { } } })()   // MODULIS: Susit (v627) — 14+ kvietimai
         ]);
         this.st.sessions = ses; this.st.events = evs;
         // registracijos į varžybas (dalyvaus / ne) — vienas kvietimas mėnesiui; lygiagrečiai su pastabomis
@@ -43426,7 +43446,7 @@ Object.assign(Kal, {
         <div class="kal-hbtn"><button onclick="Kal.club.shift(-1)" title="Ankstesnis mėnuo">${ico('atgal')}</button><button onclick="Kal.club.shift(1)" title="Kitas mėnuo">${ico('toliau')}</button></div></div>`;
       const chips = this.filterHtml();   // v609: treneriai → jų grupės
       // tinklelis — bendras Kal.gridHtml, tik dienos onclick → klubo lapas
-      const grid = K.gridHtml({ count: visG.length > 6, noLegend: visG.length > 6, maxDots: 4, attn, attnLabel: 'reikia dėmesio' }).replace(/onclick="Kal\.openDay\(/g, 'onclick="Kal.club.openDay(');
+      const grid = K.gridHtml({ count: visG.length > 6, noLegend: visG.length > 6, maxDots: 4, attn, attnLabel: 'reikia dėmesio', meets: true }).replace(/onclick="Kal\.openDay\(/g, 'onclick="Kal.club.openDay(');
       const today = K.ymd(new Date());
       const evList = this.st.events.length ? this.st.events.map(ev => this.eventRow(ev, today)).join('') : '<div class="kal-empty">Šį mėnesį renginių nėra — sukurk per „+ Renginys".</div>';
       const cta = `<div class="kal-cta" onclick="Kal.club.openNew()"><div class="ic">${ico('prideti')}</div><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Naujas renginys</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Varžybos · stovykla · seminaras · diržo testas — mato visi</div></div>${ico('toliau')}</div>`;   // v555: „+ Renginys" iš antraštės į CTA juostą (antraštė 46 px netilpo)
@@ -43454,7 +43474,7 @@ Object.assign(Kal, {
       const evs = this.st.events.filter(ev => String(ev.date) <= ds && ds <= String(ev.endDate || ev.date));
       // v555: bendras dienos lapas (Kal.sheetOpen) ir .kal-row eilutės — kaip treneriui, tik su trenerio vardu ir klubo veiksmais
       const cards = evs.map(ev => `<div class="kal-card ${ev.cls}"><div style="font-size:14px;font-weight:900;">${K.esc(ev.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${K.esc(ev.label)}${ev.location ? ' · ' + K.esc(ev.location) : ''}${ev.deadline ? ' · registracija iki ' + K.esc(ev.deadline) : ''}${ev.price ? ' · ' + K.esc(ev.price) : ''}</div>${this.st.reg[ev.id] ? `<div style="font-size:10.5px;color:var(--grn);font-weight:800;margin-top:5px;">${this.st.reg[ev.id].go} dalyvaus · ${this.st.reg[ev.id].no} ne</div>` : ''}<div class="kal-acts"><span class="kal-b" onclick="Kal.sheetClose('kal-k-day', true);nv('k',null,'k-events')">Atidaryti Renginiuose</span></div></div>`).join('')
-        + this.dayRows(ses, ds, today);   // v609: sutrauktos eilutės, „Reikia dėmesio" viršuje, vienas priminimas treneriui
+        + this.dayRows(ses, ds, today) + (typeof Susit !== 'undefined' ? Susit.staffDayHtml(ds, 'Kal.club') : '');   // MODULIS: Susit (v627); v609: sutrauktos eilutės, „Reikia dėmesio" viršuje, vienas priminimas treneriui
       const m = Number(ds.slice(5, 7)) - 1, d = Number(ds.slice(8, 10));
       const sub = `${d} ${K.MONG[m]} · ${ses.length ? ses.length + ' ' + _ltPl(ses.length, 'treniruotė', 'treniruotės', 'treniruočių') : (evs.length ? 'renginys' : 'laisva diena')}`;
       K.sheetOpen('kal-k-day', `<div style="min-width:0;"><b>${K.DNOM[K.dayNo(ds) - 1].toUpperCase()}</b><i>${K.esc(sub)}</i></div><button class="kal-x" onclick="Kal.sheetClose('kal-k-day')" title="Uždaryti">${ico('uzdaryti')}</button>`, cards || '<div class="kal-empty"><b>Šią dieną nieko nėra</b></div>');
@@ -44079,7 +44099,7 @@ const Iss = {
         }).join('')}
         <div style="padding:4px 16px 10px;font-size:10.5px;color:var(--mut);line-height:1.45;">${mon
           ? `${ico('ispejimas')} Kai vaikas išmoko — iššūkio suvestinėje (kalendoriaus plytelė arba Treniruotės → Iššūkiai) paspausk „Išmoko" prie vardo: EXP išsiunčiama iškart. Vaikas gali ir pats pateikti „parodžiau" — tada patvirtini.`
-          : `${ico('ispejimas')} Užskaito pati, kai vaiko Strava susieta (Profilis → Strava). 14+ susieja pats vaikas, jaunesniems — tėvai savo SPOBU paskyroje. Nesusietiems rodoma užuomina ir jie pateikia ranka — tvirtini tu. Rankiniai Strava įrašai neužskaitomi.`}</div>`;
+          : `${ico('ispejimas')} Užskaito pati, kai vaiko Strava susieta (Profilis → Strava — susieja pats vaikas arba tėvai). Nesusietiems rodoma užuomina ir jie pateikia ranka — tvirtini tu. Rankiniai Strava įrašai neužskaitomi.`}</div>`;
       if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">${mon ? '+40 EXP už išmoktą' : 'Pakopos +15 / +20 / +25 EXP pagal amžių ir lytį'} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${mon ? 'mėnesio pabaigos' : 'sekmadienio'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti${s.kid ? ' · ' + Iss.esc(s.kid.first_name || 'vaikui') : (s.group ? ' · ' + Iss.esc(s.group.name || 'grupei') : ' grupei')}${n ? ' · ' + n : ''}`}</button>`;
     },
     async assign() {
@@ -44508,10 +44528,42 @@ const Strava = {
   isStrava(ch) { return /^strava_/.test(String(ch?.verify_kind || '')); },
   linkedFor(ch) { const s = this.st.status[(ch && ch.target_kid_id) || this.kidId()]; return !!(s && s.linked && !s.sync_error); },
   mark() { return `<span style="font-size:9px;font-weight:900;letter-spacing:.6px;color:#FC4C02;white-space:nowrap;">POWERED BY STRAVA</span>`; },
-  // v622 (6A): amžius kaip visur appse (calculateAge + birth_year); nežinomas → null
-  age(k) { if (!k) return null; if (k.birth_date && typeof calculateAge === 'function') return calculateAge(k.birth_date); return k.birth_year ? new Date().getFullYear() - k.birth_year : null; },
-  // v622 (6A): iki 14 m. vaikas pats Strava nesusieja — susieja tėvai (edge irgi tikrina: strava-auth 403 under14). Nežinomas amžius → kaip iki 14.
-  selfBlocked() { if (currentProfile?.role !== 'kid') return false; const a = this.age(currentKid); return a === null || a < 14; },
+  // v627 (3A, S2 — savininkas 09-23): Strava vaikas susieja PATS bet kokio amžiaus, tėvams siunčiamas pranešimas (edge strava-auth),
+  // tėvai mato „susiejo vaikas" ir gali atsieti. v622 amžiaus riba (iki 14 m. — tik tėvai) išimta.
+  // ── Kelio rekordai (3A): 4 pratimai su exercises.strava — geriausias 1 km ir ilgiausia viena veikla; serveris tikrina įtartinus ──
+  isKmTime(ex) { return /1\s*km/i.test(String(ex?.name || '')) && !!ex?.lower_is_better; },
+  // reikšmė žmogui: 1 km sekundės → m:ss, kiti — km
+  recVal(v, ex) {
+    const n = Number(v); if (!isFinite(n)) return this.esc(v);
+    if (this.isKmTime(ex) || /^sek/i.test(String(ex?.unit || '')) && ex?.strava) return `${Math.floor(n / 60)}:${String(Math.round(n) % 60).padStart(2, '0')}`;
+    return `${String(Math.round(n * 100) / 100).replace('.', ',')} ${this.esc(ex?.unit || 'km')}`;
+  },
+  // Kelio pratimo kortelės Strava žyma + paaiškinimas (vaikui pagal susiejimo būseną; kitiems — statinė)
+  exoHtml(ex) {
+    const chip = t => `<span style="font-size:8.5px;font-weight:800;border:1px solid #7a3414;color:#ff7a3d;border-radius:20px;padding:2px 8px;">${ico('vieta')} ${t}</span>`;
+    const kid = currentProfile?.role === 'kid', s = (this.on() && kid) ? this.st.status[this.kidId()] : null;
+    if (!s) return chip('STRAVA ĮRODYMAS');
+    const what = this.isKmTime(ex) ? 'geriausias kilometras iš bėgimų' : 'ilgiausia viena veikla';
+    const hint = t => `<div style="flex-basis:100%;font-size:9.5px;color:#ff9a66;line-height:1.45;margin-top:2px;">${t}</div>`;
+    if (s.linked && !s.sync_error) {
+      const auto = (typeof flagOn !== 'function' || flagOn('strava_auto_approve')) && s.athlete_ok !== false;
+      return chip(auto ? 'STRAVA · SKAIČIUOJASI PATS' : 'STRAVA · PATVIRTINS TRENERIS')
+        + hint(`Rekordas iš Strava (${what}) ${auto ? 'užsiskaito pats' : 'ateina treneriui patvirtinti'} — tik GPS veiklos po susiejimo; įtartinus tikrina treneris.`);
+    }
+    return `<span onclick="event.stopPropagation();document.getElementById('exo')?.classList.remove('open');Strava.goProfile()" style="cursor:pointer;font-size:8.5px;font-weight:900;border:1px solid #FC4C02;color:#FC4C02;border-radius:20px;padding:2px 8px;">Susiek Strava →</span>`
+      + hint(`Susiek Strava Profilyje — rekordas (${what}) užsiskaitys pats.`);
+  },
+  // trenerio laukiančio pateikimo Strava įrodymas: veikla, nuoroda, įtarimo priežastys (meta — iš edge strava-sync, tekstas escape'inamas)
+  subHtml(s) {
+    const m = (s && s.meta && typeof s.meta === 'object') ? s.meta : {}, why = Array.isArray(m.why) ? m.why : [];
+    const dur = x => { const n = Math.round(Number(x) || 0), p = v => String(v).padStart(2, '0'); return n <= 0 ? '' : (n >= 3600 ? `${Math.floor(n / 3600)}:${p(Math.floor(n / 60) % 60)}:${p(n % 60)}` : `${Math.floor(n / 60)}:${p(n % 60)}`); };
+    const d = m.date ? new Date(m.date) : null;
+    const facts = [m.name ? this.esc(String(m.name).slice(0, 60)) : '', m.km != null && isFinite(Number(m.km)) ? `${String(Number(m.km)).replace('.', ',')} km` : '',
+      dur(m.moving_s), m.best1k_s ? '1 km ' + dur(m.best1k_s) : '', d && isFinite(d.getTime()) ? d.toLocaleDateString('lt-LT') : ''].filter(Boolean).join(' · ');
+    const id = /^\d{1,20}$/.test(String(s?.strava_activity_id || '')) ? String(s.strava_activity_id) : '';
+    return `<div style="font-size:11px;color:var(--mut);margin-bottom:10px;line-height:1.5;"><span style="font-size:9px;font-weight:900;color:#FC4C02;background:rgba(252,76,2,.14);border-radius:6px;padding:2px 6px;">STRAVA</span> ${facts}${id ? ` · <a href="https://www.strava.com/activities/${id}" target="_blank" rel="noopener" style="color:#FC4C02;font-weight:900;">Žiūrėti →</a>` : ''}`
+      + (why.length ? `<div style="color:#FF7A33;font-weight:800;margin-top:4px;">${ico('ispejimas')} Įtartina: ${why.map(w => this.esc(w)).join(' · ')}</div>` : '') + `</div>`;
+  },
   // v622 (22A): kokios veiklos skaičiuojasi — pagal iššūkio Strava rūšis (verify_meta.strava_sports)
   sportWord(ch) {
     const sp = (ch && ch.verify_meta && Array.isArray(ch.verify_meta.strava_sports)) ? ch.verify_meta.strava_sports : [];
@@ -44526,28 +44578,19 @@ const Strava = {
   how(w) { const self = /(ės|os)$/.test(w || '') ? 'pačios' : 'patys'; return (typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? `skaičiuosis ${self}` : `ateis ${self}, patvirtins treneris`; },
   hintHtml(ch) {
     const w = this.sportWord(ch);
-    const t = this.selfBlocked() ? `📱 Paprašyk tėvų susieti Strava — ${w} ${this.how(w)}` : `📱 Susiek Strava Profilyje — ${w} ${this.how(w)}`;
+    const t = `📱 Susiek Strava Profilyje — ${w} ${this.how(w)}`;
     return `<div style="clear:both;font-size:9.5px;color:#4FC3F7;margin-top:6px;cursor:pointer;" onclick="event.stopPropagation();Strava.goProfile()">${t}</div>`;
-  },
-  // v622 (6A): vaikui iki 14 m. — paaiškinimas (tėvų prašymo mechanizmo appse nėra; tėvai susieja savo Profilyje)
-  async askParents() {
-    let hasParent = null;
-    try { const { data } = await sb.rpc('kid_request_overview'); if (data && data.has_kid) hasParent = !!data.has_parent; } catch (_e) { }
-    const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ic}</div><div class="tx"><b class="t">${t}</b>${d}</div></div>`;
-    openInfoSubmodal('STRAVA · TĖVAMS', `<div class="hlp-intro">Iki 14 metų Strava su SPOBU susieja tėvai — vaiko duomenims reikia tėvų sutikimo.</div>`
-      + row(ico('grupe'), 'Parodyk tėvams', 'Tėvų SPOBU programėlėje: <b>Profilis → Strava</b> prie tavo vardo → <b>Susieti Strava</b>.')
-      + row(ico('vieta'), 'Kas bus toliau', 'Tavo bėgimai, ėjimai, dviratis, plaukimas ir treniruotės ' + this.how('') + '. Kol nesusieta — pažymėk rezultatą pats, treneris patvirtins.')
-      + (hasParent === false ? `<div class="hlp-intro" style="margin-top:8px;">Tavo tėvai dar neprisijungę prie SPOBU — paprašyk trenerio pagalbos.</div>` : ''));
   },
   goProfile() { if (currentProfile?.role === 'parent') nv('t', null, 't-prof'); else nv('v', null, 'v-prof'); },
   async errText(error) { let d = error?.message || String(error); try { if (error?.context && error.context.json) { const j = await error.context.json(); if (j?.error) d = j.error; } } catch (_e) { } return d; },
   async start(kidId) {
-    if (this.selfBlocked()) { this.askParents(); return; }   // v622 (6A)
     if (this.st.busy) return;
+    // v627 (3A, S2): patvirtinimas abiem — vaikas susieja pats (tėvams nusiunčiamas pranešimas), tėvas — vaiko paskyrą
+    const seen = 'veiklų tipą, pavadinimą, atstumą, trukmę, datą, geriausio kilometro laiką ir nuorodą (taip pat patikrinsime, ar Strava paskyros vardas ir lytis sutampa su vaiko — vardas nesaugomas)';
     if (currentProfile?.role === 'parent') {
       const k = (typeof parentKids !== 'undefined' ? parentKids : []).find(x => x.id === kidId);
-      if (!(await appConfirm(`Susieti Strava — ${k?.first_name || 'vaikas'}?\n\nSPOBU matys tik veiklų tipą, pavadinimą, atstumą, trukmę, datą ir nuorodą — kad iššūkiai užsiskaitytų patys. Strava lange prisijunkite prie vaiko Strava paskyros. Atsieti galima bet kada.`, { okText: 'SUSIETI' }))) return;
-    }
+      if (!(await appConfirm(`Susieti Strava — ${k?.first_name || 'vaikas'}?\n\nSPOBU matys tik ${seen} — kad iššūkiai ir Kelio rekordai užsiskaitytų patys. Strava lange prisijunkite prie vaiko Strava paskyros. Atsieti galima bet kada.`, { okText: 'SUSIETI' }))) return;
+    } else if (!(await appConfirm(`Susieti savo Strava?\n\nSPOBU matys tik ${seen} — kad iššūkiai ir Kelio rekordai užsiskaitytų patys. Tėvams nusiųsime pranešimą, kad susiejai. Jungk tik SAVO Strava paskyrą — kitų žmonių veiklas tikrins treneris. Atsieti galima bet kada.`, { okText: 'SUSIETI' }))) return;
     this.st.busy = true;
     try {
       const { data, error } = await sb.functions.invoke('strava-auth', { body: { action: 'start', kid_id: kidId, return_to: location.origin } });
@@ -44578,7 +44621,14 @@ const Strava = {
       await this.status(kidId, true);
       if (!silent) {
         if (data.skipped === 'rate') showToast('Strava jau sinchronizuota — kitą kartą po 10 min.', 'success');
-        else if (data.created) showToast(`${ico('patvirtinta')} Iš Strava: ${data.created} ${_ltPl(data.created, 'veikla', 'veiklos', 'veiklų')}${data.approved ? ' · patvirtinta ' + data.approved : ''}`, 'success', 5000);
+        else if (data.created || data.rec_approved || data.rec_pending) {
+          // v627 (3A): + Kelio rekordai (rec_approved — užskaityta, rec_pending — laukia trenerio)
+          const parts = [];
+          if (data.created) parts.push(`${data.created} ${_ltPl(data.created, 'veikla', 'veiklos', 'veiklų')}${data.approved ? ' · patvirtinta ' + data.approved : ''}`);
+          if (data.rec_approved) parts.push(`${data.rec_approved} ${_ltPl(data.rec_approved, 'rekordas', 'rekordai', 'rekordų')}${data.rec_exp ? ' +' + data.rec_exp + ' EXP' : ''}`);
+          if (data.rec_pending) parts.push(`${data.rec_pending} ${_ltPl(data.rec_pending, 'rekordas laukia', 'rekordai laukia', 'rekordų laukia')} trenerio`);
+          showToast(`${ico('patvirtinta')} Iš Strava: ${parts.join(' · ')}`, 'success', 5000);
+        }
         else showToast(`Strava: naujų veiklų nėra (peržiūrėta ${data.activities || 0})`, 'success');
       }
       if (data.created && currentProfile?.role === 'kid' && typeof loadChallenges === 'function') loadChallenges();
@@ -44593,26 +44643,30 @@ const Strava = {
     if (s.linked && !s.sync_error && (!s.last_sync_at || Date.now() - new Date(s.last_sync_at).getTime() > 10 * 60 * 1000)) this.sync(kidId, true);
   },
   cardHtml(kidId, s, k) {
-    const parent = currentProfile?.role === 'parent', blocked = this.selfBlocked();
+    const parent = currentProfile?.role === 'parent';
     const who = parent && k ? `${this.esc(k.first_name || 'Vaikas')} · ` : '';
     // v622: automatinis patvirtinimas tik kai klubas leidžia (strava_auto_approve); kitaip — atkeliauja treneriui
     const auto = (typeof flagOn !== 'function') || flagOn('strava_auto_approve');
     const how = auto ? 'užsiskaitys patys' : 'ateis patys (patvirtins treneris)';
+    // v627 (3A): Strava — ir iššūkiams, ir Kelio rekordams (be iššūkių klube — tik rekordai)
+    const chOn = typeof KidGate === 'undefined' || KidGate.on('challenges');
+    const what = chOn ? 'Iššūkiai ir Kelio rekordai (bėgimas, ėjimas, dviratis, plaukimas)' : 'Kelio rekordai (1 km, ilgas bėgimas, dviratis, žygis)';
     const ico_ = `<div style="width:34px;height:34px;border-radius:11px;background:rgba(252,76,2,.16);display:flex;align-items:center;justify-content:center;color:#FC4C02;flex-shrink:0;font-weight:900;font-size:15px;">S</div>`;
     if (!s.linked) {
-      const sub = blocked ? 'Iki 14 metų Strava susieja tėvai savo SPOBU paskyroje' : `Bėgimo, ėjimo, dviračio, plaukimo ir treniruočių iššūkiai ${how} iš ${parent ? 'vaiko' : 'tavo'} Strava veiklų`;
-      const btn = blocked ? `<span class="kal-b o" onclick="Strava.askParents()">Paprašyk tėvų susieti</span>` : `<span class="kal-b o" onclick="Strava.start('${kidId}')">Susieti Strava</span>`;
-      return `<div class="kal-card" style="margin:6px 12px;"><div style="display:flex;align-items:center;gap:10px;">${ico_}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${who}Strava nesusieta</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${sub}</div></div></div><div class="kal-acts" style="align-items:center;">${btn}<span style="margin-left:auto;">${this.mark()}</span></div></div>`;
+      const sub = `${what} ${how} iš ${parent ? 'vaiko' : 'tavo'} Strava veiklų`;
+      return `<div class="kal-card" style="margin:6px 12px;"><div style="display:flex;align-items:center;gap:10px;">${ico_}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${who}Strava nesusieta</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${sub}</div></div></div><div class="kal-acts" style="align-items:center;"><span class="kal-b o" onclick="Strava.start('${kidId}')">Susieti Strava</span><span style="margin-left:auto;">${this.mark()}</span></div></div>`;
     }
-    const err = s.sync_error === 'revoked' ? (blocked ? 'Strava atšaukė prieigą — paprašyk tėvų susieti iš naujo' : 'Strava atšaukė prieigą — susiek iš naujo') : (s.sync_error === 'rate_limit' ? 'Strava limitas — bandysim naktį' : (s.sync_error ? 'Klaida: ' + this.esc(s.sync_error) : ''));
-    const reBtn = blocked ? `<span class="kal-b o" onclick="Strava.askParents()">Paprašyk tėvų</span>` : `<span class="kal-b o" onclick="Strava.start('${kidId}')">Susieti iš naujo</span>`;
-    const byParent = (!parent && s.linked_by && s.linked_by !== currentUser?.id) ? ' · susiejo tėvai' : '';
-    return `<div class="kal-card" style="margin:6px 12px;border-color:rgba(252,76,2,.4);"><div style="display:flex;align-items:center;gap:10px;">${ico_}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${who}Strava susieta ${auto ? '<span class="kal-tag ok">AUTO</span>' : ''}</div><div style="font-size:10.5px;color:${err ? '#FF7A33' : 'var(--mut)'};font-weight:700;margin-top:2px;">${err || (s.last_sync_at ? 'Sinchronizuota ' + this.fmt(s.last_sync_at) : 'Dar nesinchronizuota')}${s.last_activity_at && !err ? ' · paskutinė veikla ' + this.fmt(s.last_activity_at) : ''}${byParent}</div></div></div><div class="kal-acts" style="align-items:center;">${s.sync_error === 'revoked' ? reBtn : `<span class="kal-b g" onclick="Strava.sync('${kidId}')">${this.st.syncing[kidId] ? 'Sinchronizuojama…' : 'Sinchronizuoti dabar'}</span>`}<span class="kal-b" onclick="Strava.unlink('${kidId}')">Atsieti</span><span style="margin-left:auto;">${this.mark()}</span></div></div>`;
+    const err = s.sync_error === 'revoked' ? 'Strava atšaukė prieigą — susiek iš naujo' : (s.sync_error === 'rate_limit' ? 'Strava limitas — bandysim naktį' : (s.sync_error ? 'Klaida: ' + this.esc(s.sync_error) : ''));
+    const reBtn = `<span class="kal-b o" onclick="Strava.start('${kidId}')">Susieti iš naujo</span>`;
+    // v627 (S2): kas susiejo — vaikui „susiejo tėvai", tėvui „susiejo vaikas" (tėvai gali atsieti)
+    const by = !s.linked_by || s.linked_by === currentUser?.id ? '' : (parent ? (k && k.user_id && s.linked_by === k.user_id ? ' · susiejo vaikas' : ' · susiejo kitas tėvas') : ' · susiejo tėvai');
+    const alien = s.athlete_ok === false ? `<div style="font-size:10px;color:#FF7A33;font-weight:800;margin-top:3px;">${ico('ispejimas')} Strava paskyra panaši į kito žmogaus — rekordus tvirtins treneris</div>` : '';
+    return `<div class="kal-card" style="margin:6px 12px;border-color:rgba(252,76,2,.4);"><div style="display:flex;align-items:center;gap:10px;">${ico_}<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">${who}Strava susieta ${auto && s.athlete_ok !== false ? '<span class="kal-tag ok">AUTO</span>' : ''}</div><div style="font-size:10.5px;color:${err ? '#FF7A33' : 'var(--mut)'};font-weight:700;margin-top:2px;">${err || (s.last_sync_at ? 'Sinchronizuota ' + this.fmt(s.last_sync_at) : 'Dar nesinchronizuota')}${s.last_activity_at && !err ? ' · paskutinė veikla ' + this.fmt(s.last_activity_at) : ''}${by}</div>${alien}</div></div><div class="kal-acts" style="align-items:center;">${s.sync_error === 'revoked' ? reBtn : `<span class="kal-b g" onclick="Strava.sync('${kidId}')">${this.st.syncing[kidId] ? 'Sinchronizuojama…' : 'Sinchronizuoti dabar'}</span>`}<span class="kal-b" onclick="Strava.unlink('${kidId}')">Atsieti</span><span style="margin-left:auto;">${this.mark()}</span></div></div>`;
   },
   async render() {
     const kid = document.getElementById('stv-v-card'), par = document.getElementById('stv-t-row');
     const hide = el => { if (el) el.style.display = 'none'; };
-    if (!this.on() || (typeof KidGate !== 'undefined' && !KidGate.on('challenges'))) { hide(kid); hide(par); return; }   // v623 (15A): Strava — tik iššūkiams
+    if (!this.on()) { hide(kid); hide(par); return; }   // v627 (3A): kortelė ir be iššūkių — Kelio rekordams
     if (currentProfile?.role === 'parent') {
       // v622 (6A): kortelė KIEKVIENAM vaikui (su jo ID) — anksčiau viena aktyviam vaikui ir po vaiko keitimo mygtukai likdavo su senu ID
       if (!par) return;
@@ -44639,13 +44693,13 @@ const Strava = {
     if (!/^[a-z_0-9]{1,20}$/.test(reason)) reason = '';
     if (!q) return;
     try { history.replaceState(null, '', location.pathname); } catch (_e) { }
-    const R = { denied: 'Strava prieiga atmesta', scope: 'Reikia leidimo skaityti veiklas (activity:read_all)', athlete_taken: 'Ši Strava paskyra jau susieta su kitu vaiku', token: 'Strava neatidavė tokenų — bandyk dar kartą', db: 'Nepavyko įrašyti — bandyk dar kartą', nocode: 'Strava negrąžino kodo', under14: 'Iki 14 m. Strava susieja tėvai savo SPOBU paskyroje', forbidden: 'Susieti gali tik vaikas (14+) arba jo tėvai' };
+    const R = { denied: 'Strava prieiga atmesta', scope: 'Reikia leidimo skaityti veiklas (activity:read_all)', athlete_taken: 'Ši Strava paskyra jau susieta su kitu vaiku', token: 'Strava neatidavė tokenų — bandyk dar kartą', db: 'Nepavyko įrašyti — bandyk dar kartą', nocode: 'Strava negrąžino kodo', under14: 'Iki 14 m. Strava susieja tėvai savo SPOBU paskyroje', forbidden: 'Susieti gali tik vaikas arba jo tėvai' };
     // v622 (6A): kuriam vaikui buvo susieta (tėvas gali turėti kelis) — išsaugota prieš Strava langą
     let back = null, sk = null;
     try { back = sessionStorage.getItem('stv_return'); sk = sessionStorage.getItem('stv_kid'); sessionStorage.removeItem('stv_return'); sessionStorage.removeItem('stv_kid'); } catch (_e) { }
     const kidId = sk || this.kidId();
     if (q === 'ok') {
-      showToast(ico('patvirtinta') + ' Strava susieta! Veiklos skaičiuosis automatiškai', 'success', 5000);
+      showToast(ico('patvirtinta') + ' Strava susieta! Veiklos ir Kelio rekordai skaičiuosis automatiškai' + (currentProfile?.role === 'kid' ? ' · tėvams nusiųstas pranešimas' : ''), 'success', 5000);
       if (kidId) { this.st.status[kidId] = null; this.sync(kidId, true); }
       if (typeof logConsent === 'function') logConsent('strava', { kid_id: kidId, source: currentProfile?.role === 'parent' ? 'strava_parent' : 'strava_kid' });   // sutikimo įrodymas
     } else {
@@ -46690,7 +46744,7 @@ const KidInfo = {
       + row('lankomumas', 'Lankomumo premijos', `Buvai visose savaitės treniruotėse — ${b('+15')}, visose mėnesio — ${b('+100')}. Neįvykusios treniruotės neskaičiuojamos.`);
     if (this.on('challenges')) h += row('tikslas', 'Iššūkiai', `Savaitės (Strava): 3 pakopos pagal tavo amžių ir lytį — pasiekęs 1-ą gauni ${b('+15')}, 2-ą — iš viso ${b('+20')}, 3-ią — iš viso ${b('+25')}. Savaitės iššūkis su vienu tikslu (pvz. greitas kilometras) — ${b('+20')}. Mėnesio pasiekimas (kata, spyriai) — ${b('+40')}, kai treneris pažymi „Išmoko". Strava veiklos ${auto ? 'užsiskaito pačios' : 'ateina pačios, patvirtina treneris'}.`)
       + row('streak', 'Iššūkių serijos', `Savaitės iš eilės: kas 2 — ${b('+20')}, kas 4 — ${b('+40')}, 24 — ${b('+300')}. Mėnesiai iš eilės: nuo 2-o — ${b('+30')}, kas 3 — ${b('+60')}, 9 (sezonas) — ${b('+450')}.`);
-    h += row('augimas', 'Rekordai (Kelias)', `Pratimo EXP — iki ${b('100')}: bronza 25 · sidabras 50 · auksas 75 · MAX 100 (pagal tavo amžiaus ir lyties normatyvą). Pagerinęs rekordą gauni skirtumą. Patvirtina treneris.`);
+    h += row('augimas', 'Rekordai (Kelias)', `Pratimo EXP — iki ${b('100')}: bronza 25 · sidabras 50 · auksas 75 · MAX 100 (pagal tavo amžiaus ir lyties normatyvą). Pagerinęs rekordą gauni skirtumą. Patvirtina treneris${auto ? ' — o 1 km, ilgas bėgimas, dviratis ir žygis iš susietos Strava užsiskaito patys' : ''}.`);   // v627 (3A)
     if (this.on('comp')) h += row('trofejai', 'Varžybos', `Vietinės: 1 vieta ${b('+150')} · 2 — ${b('+100')} · 3 — ${b('+70')} · dalyvavimas ${b('+40')} (kumitė dar +3 už pergalę, +1 už pralaimėtą kovą). Vidutinės 400 / 250 / 180 / 100, Europos 1000 / 700 / 500 / 300.`);
     if (this.on('belt')) h += row('dirzas', 'Diržo egzaminas', `Išlaikius: 9–1 kyu ${b('+100…+400')}, 1–5 dan ${b('+1000…+3000')}. Neišlaikius vis tiek ${b('+25…+100')} — už drąsą.`);
     if (this.on('duels')) h += row('dvikova', 'Dvikovos', `Pergalė ${b('+50')} · lygiosios ${b('+35')} · pralaimėjus ${b('+25')}. Vyksta treniruotėje, rezultatus įveda treneris. Iškviesti gali kartą per 7 d., priimti — be ribos.`);
@@ -46843,7 +46897,7 @@ const Dvk = {
     await this.names(this.st.tr.flatMap(x => [x.challenger_id, x.opponent_id]));
   },
   vis(x) { return typeof Kal === 'undefined' || Kal.st.sel === 'all' || x.group_id === Kal.st.sel || x.chosen_trainer_id === currentUser?.id; },
-  trCell(ds) { return this.on() && this.st.tr.some(x => x.session_date === ds && ['pending', 'active', 'submitted'].includes(x.status) && this.vis(x)) ? '<span class="dvk-dot"></span>' : ''; },
+  trCell(ds) { return this.st.tr.some(x => x.session_date === ds && ['pending', 'active', 'submitted'].includes(x.status) && this.vis(x)) ? '<span class="dvk-dot"></span>' : ''; },
   trTag(x) {
     if (x.status === 'completed') return '<span class="kal-tag ok">ĮVERTINTA</span>';
     if (x.status === 'expired' || (x.status === 'pending' && this.past(x))) return '<span class="kal-tag mut">NEĮVYKO</span>';
@@ -46924,16 +46978,270 @@ const Dvk = {
 // #v-ish lieka DOM'e: jame fiziškai #v-ish-duels ir #v-ish-gc-section, kuriuos Kal.applyNav8 perkelia į Grupę.
 const KidIss = {
   home: null,
-  go() { if (typeof Kal !== 'undefined' && Kal.on()) this.open(); else nv('v', document.querySelector('.bn2 .ni:nth-child(3)'), 'v-ish'); },
-  open() {
+  go(tab) {
+    if (typeof KidGate !== 'undefined' && !KidGate.on('challenges')) { showToast('Iššūkiai klube išjungti', 'info'); return; }   // v627 (peržiūra): klubo jungiklis
+    if (typeof Kal !== 'undefined' && Kal.on()) this.open(tab); else nv('v', document.querySelector('.bn2 .ni:nth-child(3)'), 'v-ish'); },
+  open(tab) {
     const box = document.getElementById('kiss-box'); if (!box || typeof Kal === 'undefined') return;
     if (!this.home) this.home = box.parentElement;
     Kal.sheetOpen('kiss-sheet', `<div style="min-width:0;"><b>IŠŠŪKIAI</b><i>aktyvūs ir įveikti</i></div><button class="kal-x" onclick="Kal.sheetClose('kiss-sheet')" title="Uždaryti">${ico('uzdaryti')}</button>`,
       '<div id="kiss-slot" style="padding:4px 0 18px;"></div>', () => KidIss.back());
     document.getElementById('kiss-slot')?.appendChild(box);
-    if (typeof loadChallenges === 'function') Promise.resolve(loadChallenges()).catch(e => console.warn('[kiss]', e));
+    // v627 (peržiūra): „Archyvas →" — iškart ARCHYVO skirtukas (switchKidChallengesTab pats perkrauna sąrašą)
+    const tb = box.querySelector(`.v-ch-tab[data-tab="${tab === 'completed' ? 'completed' : 'active'}"]`);
+    if (tb && typeof switchKidChallengesTab === 'function') switchKidChallengesTab(tb, tab === 'completed' ? 'completed' : 'active');
+    else if (typeof loadChallenges === 'function') Promise.resolve(loadChallenges()).catch(e => console.warn('[kiss]', e));
   },
-  back() { const box = document.getElementById('kiss-box'); if (box && this.home && box.parentElement !== this.home) this.home.appendChild(box); },
+  // v627 (peržiūra): lape paliekama statinė kopija, kad uždarymo animacijoje sąrašas nedingtų (tikrasis blokas grįžta namo iškart)
+  back() {
+    const box = document.getElementById('kiss-box'); if (!box || !this.home || box.parentElement === this.home) return;
+    const slot = document.getElementById('kiss-slot');
+    if (slot) { const c = box.cloneNode(true); c.removeAttribute('id'); c.querySelectorAll('[id]').forEach(e => e.removeAttribute('id')); c.querySelectorAll('[onclick]').forEach(e => e.removeAttribute('onclick')); slot.appendChild(c); }
+    this.home.appendChild(box);
+  },
+  // v627 (peržiūra): kortelės „Dalintis" reikšmė — išmokimo iššūkis ne „1", pakopinis / kaupiamas ne vienos veiklos skaičius
+  shareVal(s) {
+    const c = (s && s.challenges) || {}, u = String(c.target_unit || '').trim();
+    if (typeof katIsLearn === 'function' && katIsLearn(c.instructions)) return 'IŠMOKTA';
+    if (c.allow_partial) {
+      const tiers = (typeof Iss !== 'undefined' && Iss.tiersOf) ? Iss.tiersOf(c) : null;
+      if (tiers) return 'PAKOPA ĮVEIKTA';
+      return Number(c.target_value) > 0 ? `${Number(c.target_value)} ${u}`.trim() : 'ĮVEIKTA';
+    }
+    if (!s.numeric_value || (Number(s.numeric_value) === 1 && !u)) return 'ĮVEIKTA';
+    return `${s.numeric_value} ${u}`.trim();
+  },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: Susit =====
+// v627 (2A, savininko sprendimai 09-23, PLANAS-VAIKO-PAPILDYMAI): 14+ klubo nariai kviečia vieni kitus kartu pasportuoti
+// („prasibėgam", „krepšinis"). Be tėvų patvirtinimo, mato visas klubas (14+), be EXP. Klubo jungiklis `kid_meetups_enabled` —
+// NUMATYTAI IŠJUNGTA ir griežtas (flagOnStrict; serveryje spobu_club_flag_strict). Tikslas — susipažinti ir sportuoti kartu;
+// klubas ir SPOBU susitikimų neorganizuoja (taisyklėse — atsakomybės ribojimas, vaikas sutinka prieš pirmą kvietimą).
+// Serveris: server-SUSITIKIMAI-14-2026-09-23.sql + -sarasas: skaitymas `kid_meetup_list` (vardai „Vardas P."), rašymas TIK per RPC
+// kid_meetup_create / join / leave / cancel / hide / unhide — amžius (birth_date, Vilniaus data), tekstai (be nuorodų / @ / telefonų),
+// laikas (po 30 min.–14 d., 07–21 val.), limitai tikrinami serveryje. Kas mato: 14+ vaikas — savo klubo kvietimus (kalendoriuje,
+// šiandienos kortelėje, dienos lape); tėvai — tik savo vaiko (be veiksmų); treneris ir klubas — visus klubo (dienos lape, „Paslėpti").
+// Viena vardų erdvė `Susit`, DOM prefiksas `sus-`, jokių naujų globalių (taisyklė 7).
+const Susit = {
+  st: { tr: [], ns: null },
+  ACT: { run: ['🏃', 'Prasibėgam'], basketball: ['🏀', 'Krepšinis'], football: ['⚽', 'Futbolas'], bike: ['🚴', 'Dviratis'], walk: ['🚶', 'Pasivaikščiojimas'], workout: ['💪', 'Treniruotė lauke'], swim: ['🏊', 'Plaukimas'], other: ['✨', 'Kita'] },
+  RULES: 'Tai NE klubo treniruotė — klubas ir SPOBU šių susitikimų neorganizuoja ir neprižiūri. Susitik viešoje vietoje, pasakyk tėvams, kur ir su kuo eini. Nerašyk telefono, adreso ar nuorodų. Tavo vardą ir kvietimą matys klubo 14+ nariai, treneriai, klubas ir dalyvių tėvai. EXP už susitikimus nėra.',
+  on() { return typeof flagOnStrict === 'function' && flagOnStrict('kid_meetups_enabled'); },
+  esc(s) { return escapeHtml(String(s == null ? '' : s)); },
+  age(k) { return k && k.birth_date && typeof calculateAge === 'function' ? calculateAge(k.birth_date) : null; },
+  kidOk() { return currentProfile?.role === 'kid' && this.on() && (this.age(typeof currentKid !== 'undefined' ? currentKid : null) || 0) >= 14; },
+  today() { return (typeof Dvk !== 'undefined' && Dvk.today) ? Dvk.today() : Kal.ymd(new Date()); },
+  // Vilniaus data / laikas iš ISO
+  vp(iso) {
+    try {
+      const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Vilnius', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
+      return { ds: `${p.year}-${p.month}-${p.day}`, hm: `${p.hour}:${p.minute}` };
+    } catch (_e) { const d = new Date(iso); return { ds: Kal.ymd(d), hm: d.toTimeString().slice(0, 5) }; }
+  },
+  // Vilniaus sienos laikas → ISO (be DST perėjimo minučių — pakanka 07–21 val.)
+  vIso(ds, hm) {
+    const [y, m, d] = ds.split('-').map(Number), [h, mi] = hm.split(':').map(Number);
+    const guess = Date.UTC(y, m - 1, d, h, mi);
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Vilnius', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(new Date(guess)).map(x => [x.type, x.value]));
+    const wall = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
+    return new Date(guess - (wall - guess)).toISOString();
+  },
+  act(x) { return this.ACT[x.activity] || this.ACT.other; },
+  name(x) { return x.title || this.act(x)[1]; },
+  async list(from, to) {
+    const f = new Date(from + 'T00:00:00Z'); f.setUTCDate(f.getUTCDate() - 1);
+    const t = new Date(to + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + 2);
+    const { data, error } = await sb.rpc('kid_meetup_list', { p_from: f.toISOString(), p_to: t.toISOString() });
+    if (error) throw error;
+    return (Array.isArray(data) ? data : []).map(x => Object.assign(x, this.vp(x.starts_at))).filter(x => x.ds >= from && x.ds <= to);
+  },
+
+  // ── Vaiko / tėvo kalendorius (K = Kal.kid arba Kal.parent) ──
+  async forKid(kidId, from, to) {
+    if (!kidId || !this.on()) return [];
+    if (currentProfile?.role === 'kid' && !this.kidOk()) return [];
+    const l = await this.list(from, to);
+    // tėvams — tik tie, kuriuos sukūrė ar prie kurių prisijungė ŠIS vaikas (kitų vaikų kvietimai — ne jų reikalas)
+    return currentProfile?.role === 'parent' ? l.filter(x => x.creator_kid_id === kidId || (x.members || []).some(m => m.kid_id === kidId)) : l;
+  },
+  kidCell(K, ds) { return (K.st.meets || []).some(x => x.ds === ds && x.status === 'open') ? '<span class="sus-dot"></span>' : ''; },
+  tag(x, K) {
+    if (x.status === 'cancelled') return '<span class="kal-tag mut">ATŠAUKTA</span>';
+    if (x.status === 'hidden') return '<span class="kal-tag mut">PASLĖPĖ KLUBAS</span>';
+    if (x.ds < this.today()) return '<span class="kal-tag mut">ĮVYKO</span>';
+    if (x.mine) return '<span class="kal-tag ok">TAVO</span>';
+    if (x.joined) return '<span class="kal-tag ok">EINI</span>';
+    const kid = K && K.kidId ? K.kidId() : null;
+    if (kid && currentProfile?.role === 'parent') return x.creator_kid_id === kid ? '<span class="kal-tag ai">KVIEČIA</span>' : '<span class="kal-tag ok">EINA</span>';
+    return `<span class="kal-tag ai">${x.count}${x.max_people ? '/' + x.max_people : ''} EINA</span>`;
+  },
+  rowHtml(x, o) {
+    const a = this.act(x), fut = x.status === 'open' && (x.ds > this.today() || (x.ds === this.today() && x.hm > ((typeof Dvk !== 'undefined' && Dvk.nowHm) ? Dvk.nowHm() : '00:00')));
+    const names = (x.members || []).map(m => this.esc(m.name)).join(', ');
+    const full = x.max_people && x.count >= x.max_people;
+    let acts = '';
+    if (o.kid && fut) acts = x.mine ? `<span class="kal-b" onclick="Susit.cancel('${x.id}','${x.ds}')">Atšaukti</span>`
+      : (x.joined ? `<span class="kal-b" onclick="Susit.leave('${x.id}','${x.ds}')">Nebeisiu</span>` : (full ? '<span class="kal-tag mut">VIETŲ NEBĖRA</span>' : `<span class="kal-b g" onclick="Susit.join('${x.id}','${x.ds}')">Eisiu</span>`));
+    if (o.staff && x.staff) acts += x.status === 'hidden' ? `<span class="kal-b" onclick="Susit.unhide('${x.id}','${x.ds}')">Grąžinti</span>` : (x.status === 'open' ? `<span class="kal-b" onclick="Susit.hide('${x.id}','${x.ds}')">Paslėpti</span>` : '');
+    return `<div class="kal-row"><div class="gr" style="background:#14B8A6;"></div><div class="bd"><div class="nm"><span>${a[0]} ${this.esc(this.name(x))}</span>${this.tag(x, o.K)}</div>`
+      + `<div class="mt">${this.esc(x.hm)} · ${Number(x.duration_min) || 60} min · ${ico('vieta')} ${this.esc(x.place)}</div>`
+      + (x.note ? `<div class="mt">„${this.esc(x.note)}"</div>` : '')
+      + `<div class="mt">Kviečia ${this.esc(x.creator_name)}${names ? ' · eina: ' + names : ''}${x.max_people ? ` (${x.count}/${x.max_people})` : ''}</div>`
+      + (x.status === 'hidden' && x.hidden_reason && (o.staff || x.mine) ? `<div class="mt" style="color:#FF7A33;">Klubas: ${this.esc(x.hidden_reason)}</div>` : '')
+      + (acts ? `<div class="kal-acts">${acts}</div>` : '') + `</div></div>`;
+  },
+  kidDayHtml(K, ds) {
+    if (!this.on()) return '';
+    const kid = K.ns === 'Kal.kid' && this.kidOk();
+    const list = (K.st.meets || []).filter(x => x.ds === ds);
+    const canNew = kid && this.days().includes(ds);
+    if (!list.length && !canNew) return '';
+    return `<div class="kal-sec"><b>SUSITIKIMAI 14+</b>${list.length ? `<em class="o">${list.length}</em>` : ''}<span></span></div>`
+      + (list.length ? `<div class="kal-rows" style="padding-bottom:6px;">${list.map(x => this.rowHtml(x, { kid, K })).join('<hr>')}</div>` : '')
+      + (canNew ? `<div style="padding:2px 16px 10px;"><span class="kal-b o" onclick="Susit.openNew('${ds}')">${ico('prideti')} Pakviesti sportuoti šią dieną</span></div>` : '');
+  },
+  // šiandienos kortelė: artimiausi kvietimai (vaikui — klubo atviri, tėvui — savo vaiko) + „Pakviesti"
+  kidTodayHtml(K, today) {
+    if (!this.on()) return '';
+    const kid = K.ns === 'Kal.kid' && this.kidOk();
+    if (K.ns === 'Kal.kid' && !kid) return '';
+    const up = (K.st.meets || []).filter(x => x.status === 'open' && x.ds >= today).sort((a, b) => (a.ds + a.hm).localeCompare(b.ds + b.hm)).slice(0, 3);
+    if (!up.length && !kid) return '';
+    const rows = up.map(x => { const a = this.act(x); return `<div class="kal-card" style="border-left:3px solid #14B8A6;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="${K.ns}.openDay('${x.ds}')"><div style="font-size:20px;flex-shrink:0;">${a[0]}</div><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">${this.esc(this.name(x))} · ${this.esc((typeof Dvk !== 'undefined' ? Dvk.label(x.ds, x.hm) : x.ds + ' ' + x.hm))}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${this.esc(x.place)} · kviečia ${this.esc(x.creator_name)} · eina ${x.count}${x.max_people ? '/' + x.max_people : ''}</div></div>${this.tag(x, K)}</div>`; }).join('');
+    const cta = kid ? `<div class="kal-cta" onclick="Susit.openNew()"><div class="ic">${ico('prideti')}</div><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">Pakviesti sportuoti</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Prasibėgam, krepšinis, dviratis… — pamatys klubo 14+ nariai</div></div></div>` : '';
+    return `<div class="kal-sec"><b>SUSITIKIMAI 14+</b><em>${K.ns === 'Kal.kid' ? 'KLUBO' : 'VAIKO'}</em><span></span></div>` + rows + cta;
+  },
+
+  // ── Naujas kvietimas ──
+  // serverio langas: po 30 min. – 14 d., pradžia 07:00–20:59 (Vilniaus) → dienos 0..13, šiandien — tik laikai ≥ dabar + 30 min.
+  slots(ds) {
+    const all = []; for (let h = 7; h <= 20; h++) { all.push(`${String(h).padStart(2, '0')}:00`); all.push(`${String(h).padStart(2, '0')}:30`); }
+    if (ds !== this.today()) return all;
+    const nm = (typeof Dvk !== 'undefined' && Dvk.nowHm) ? Dvk.nowHm() : new Date().toTimeString().slice(0, 5);
+    const [h, m] = nm.split(':').map(Number), lim = h * 60 + m + 31;
+    return all.filter(x => { const [a, b] = x.split(':').map(Number); return a * 60 + b >= lim; });
+  },
+  days() { const t0 = this.today(); return Array.from({ length: 14 }, (_, i) => Kal.addDays(t0, i)).filter(d => this.slots(d).length); },
+  pickDay(ds) {
+    const sel = document.getElementById('sus-n-time'); if (!sel) return;
+    const cur = sel.value, sl = this.slots(ds);
+    sel.innerHTML = sl.map(x => `<option value="${x}"${x === (sl.includes(cur) ? cur : (sl.includes('17:00') ? '17:00' : sl[0])) ? ' selected' : ''}>${x}</option>`).join('');
+  },
+  _new: null,
+  openNew(ds) {
+    if (!this.kidOk()) return;
+    const days = this.days(); if (!days.length) return;
+    const d0 = ds && days.includes(ds) ? ds : days[0];
+    this._new = { a: 'run' };
+    let accepted = false; try { accepted = localStorage.getItem('spobu_sus_rules_' + (currentUser?.id || '')) === 'v1'; } catch (_e) { }
+    const times = this.slots(d0), t17 = times.includes('17:00') ? '17:00' : times[0];
+    const opt = (v, t, sel) => `<option value="${v}"${sel ? ' selected' : ''}>${this.esc(t)}</option>`;
+    const lab = x => (typeof Dvk !== 'undefined' ? Dvk.label(x) : x);
+    const body = `<div class="sus-form" style="padding:4px 16px 18px;">
+      <label>VEIKLA</label><div class="kal-chips" style="padding:0;flex-wrap:wrap;">${Object.keys(this.ACT).map(k => `<span class="kal-chip${k === 'run' ? ' on' : ''}" data-sus-a="${k}" onclick="Susit.pickAct('${k}')">${this.ACT[k][0]} ${this.ACT[k][1]}</span>`).join('')}</div>
+      <label id="sus-n-title-l">PAVADINIMAS <i>(nebūtina)</i></label><input id="sus-n-title" maxlength="60" autocomplete="off" placeholder="Pvz. Rytinis 5 km">
+      <div style="display:flex;gap:8px;"><div style="flex:1.4;"><label>DIENA</label><select id="sus-n-day" onchange="Susit.pickDay(this.value)">${days.map(x => opt(x, lab(x), x === d0)).join('')}</select></div>
+      <div style="flex:1;"><label>LAIKAS</label><select id="sus-n-time">${times.map(x => opt(x, x, x === t17)).join('')}</select></div></div>
+      <div style="display:flex;gap:8px;"><div style="flex:1;"><label>TRUKMĖ</label><select id="sus-n-dur">${[30, 45, 60, 90, 120].map(x => opt(x, x + ' min', x === 60)).join('')}</select></div>
+      <div style="flex:1;"><label>KIEK ŽMONIŲ</label><select id="sus-n-max">${opt('', 'Neribota', true)}${[2, 3, 4, 5, 6, 8, 10, 12, 15, 20].map(x => opt(x, 'iki ' + x, false)).join('')}</select></div></div>
+      <label>VIETA</label><input id="sus-n-place" maxlength="80" autocomplete="off" placeholder="Viešoje vietoje, pvz. Vingio parkas prie fontano">
+      <label>PASTABA <i>(nebūtina)</i></label><input id="sus-n-note" maxlength="120" autocomplete="off" placeholder="Pvz. lėtas tempas, pasiimk vandens">
+      <div class="sus-rules" id="sus-n-rules"${accepted ? ' style="display:none;"' : ''}><b>${ico('ispejimas')} TAISYKLĖS</b><div>${this.esc(this.RULES)}</div><label class="sus-chk"><input type="checkbox" id="sus-n-ok"> Perskaičiau ir sutinku</label></div>
+      <button class="btn btng" style="margin-top:14px;width:100%;" id="sus-n-go" onclick="Susit.submit()">Siųsti kvietimą</button>
+      <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.45;">Telefonų, adresų ir nuorodų rašyti negalima — susitarkit treniruotėje.</div></div>`;
+    Kal.sheetOpen('sus-new', `<div style="min-width:0;"><b>PAKVIESTI SPORTUOTI</b><i>mato klubo 14+ nariai</i></div><button class="kal-x" onclick="Kal.sheetClose('sus-new')" title="Uždaryti">${ico('uzdaryti')}</button>`, body);
+  },
+  pickAct(k) {
+    if (!this.ACT[k] || !this._new) return;
+    this._new.a = k;
+    document.querySelectorAll('#sus-new [data-sus-a]').forEach(el => el.classList.toggle('on', el.dataset.susA === k));
+    const l = document.getElementById('sus-n-title-l'); if (l) l.innerHTML = k === 'other' ? 'PAVADINIMAS' : 'PAVADINIMAS <i>(nebūtina)</i>';
+  },
+  showRules() { const r = document.getElementById('sus-n-rules'); if (r) { r.style.display = ''; r.scrollIntoView({ block: 'center', behavior: 'smooth' }); } },
+  rulesOk() { try { localStorage.setItem('spobu_sus_rules_' + (currentUser?.id || ''), 'v1'); } catch (_e) { } },
+  isTerms(e) { return /taisykl/i.test(String(e?.message || '')) || e?.hint === 'terms'; },
+  async submit() {
+    if (!this._new || this._busy) return;
+    const v = id => String(document.getElementById(id)?.value || '').trim();
+    const a = this._new.a, title = v('sus-n-title'), place = v('sus-n-place'), note = v('sus-n-note');
+    const rulesBox = document.getElementById('sus-n-rules'), okEl = document.getElementById('sus-n-ok');
+    if (a === 'other' && title.length < 2) { showToast(ico('klaida') + ' Parašyk pavadinimą', 'error'); return; }
+    if (place.length < 2) { showToast(ico('klaida') + ' Parašyk vietą', 'error'); return; }
+    if (rulesBox && rulesBox.style.display !== 'none' && !okEl?.checked) { showToast(ico('klaida') + ' Pažymėk, kad sutinki su taisyklėmis', 'error'); return; }
+    const ds = v('sus-n-day'), hm = v('sus-n-time'), max = v('sus-n-max');
+    const btn = document.getElementById('sus-n-go');
+    this._busy = true; if (btn) { btn.disabled = true; btn.textContent = 'SIUNČIAMA...'; }
+    try {
+      const { error } = await sb.rpc('kid_meetup_create', { p_activity: a, p_title: title || null, p_starts_at: this.vIso(ds, hm), p_duration_min: Number(v('sus-n-dur')) || 60,
+        p_place: place, p_note: note || null, p_max_people: max ? Number(max) : null, p_accept: !!okEl?.checked });
+      if (error) {
+        if (this.isTerms(error)) { this.showRules(); throw new Error('Pažymėk, kad sutinki su taisyklėmis'); }
+        throw error;
+      }
+      this.rulesOk();
+      Kal.sheetClose('sus-new', true);
+      showToast(ico('patvirtinta') + ' Kvietimas išsiųstas klubo 14+ nariams', 'success', 4000);
+      await this.after(ds, 'Kal.kid');
+    } catch (e) { showToast(ico('klaida') + ' ' + escapeHtml(typeof _userError === 'function' ? _userError(e) : (e.message || 'Nepavyko')), 'error', 6000); }
+    finally { this._busy = false; if (btn) { btn.disabled = false; btn.textContent = 'Siųsti kvietimą'; } }
+  },
+
+  // ── Veiksmai ──
+  async rpc(fn, args, ds, ns, ok) {
+    if (this._busy) return false;
+    this._busy = true;
+    try {
+      const { error } = await sb.rpc(fn, args);
+      if (error) throw error;
+      if (ok) showToast(ico('patvirtinta') + ' ' + ok, 'success');
+      await this.after(ds, ns);
+      return true;
+    } catch (e) {
+      if (fn === 'kid_meetup_join' && this.isTerms(e)) { this._busy = false; return 'terms'; }
+      showToast(ico('klaida') + ' ' + escapeHtml(typeof _userError === 'function' ? _userError(e) : (e.message || 'Nepavyko')), 'error', 6000);
+      return false;
+    } finally { this._busy = false; }
+  },
+  async join(id, ds) {
+    const r = await this.rpc('kid_meetup_join', { p_id: id, p_accept: false }, ds, 'Kal.kid', 'Eisi — autorius gaus pranešimą');
+    if (r !== 'terms') return;
+    if (!(await appConfirm('Susitikimų taisyklės\n\n' + this.RULES, { okText: 'SUTINKU' }))) return;
+    if (await this.rpc('kid_meetup_join', { p_id: id, p_accept: true }, ds, 'Kal.kid', 'Eisi — autorius gaus pranešimą')) this.rulesOk();
+  },
+  leave(id, ds) { return this.rpc('kid_meetup_leave', { p_id: id }, ds, 'Kal.kid', 'Pažymėta — nebeisi'); },
+  async cancel(id, ds) {
+    if (!(await appConfirm('Atšaukti kvietimą? Tie, kas žadėjo eiti, gaus pranešimą.', { okText: 'ATŠAUKTI' }))) return;
+    return this.rpc('kid_meetup_cancel', { p_id: id }, ds, 'Kal.kid', 'Kvietimas atšauktas');
+  },
+  async hide(id, ds) {
+    const reason = await appPrompt('Kodėl slepiate? (autorius pamatys; neprivaloma)');
+    if (reason === null || reason === undefined) return;
+    return this.rpc('kid_meetup_hide', { p_id: id, p_reason: String(reason || '').slice(0, 200) || null }, ds, this.st.ns, 'Kvietimas paslėptas');
+  },
+  unhide(id, ds) { return this.rpc('kid_meetup_unhide', { p_id: id }, ds, this.st.ns, 'Kvietimas grąžintas'); },
+  // po veiksmo — perkrauti tą kalendorių ir atidaryti tą pačią dieną
+  async after(ds, ns) {
+    try {
+      if (ns === 'Kal.club' && Kal.club) { Kal.sheetClose('kal-k-day', true); await Kal.club.reload(); if (ds) Kal.club.openDay(ds); return; }
+      if (ns === 'Kal') { Kal.sheetClose('kal-day', true); await Kal.reload(); if (ds) Kal.openDay(ds); return; }
+      if (Kal.kid) { Kal.sheetClose('kal-v-day', true); await Kal.kid.reload(); if (ds && document.getElementById(Kal.kid.cid)) Kal.kid.openDay(ds); }
+    } catch (e) { console.warn('[susit] after', e); }
+  },
+
+  // ── Treneris (Kal) ir klubas (Kal.club): visi klubo kvietimai, „Paslėpti" ──
+  async load(from, to, ns) {
+    this.st.tr = []; this.st.ns = ns || 'Kal';   // štabui — ir išjungus jungiklį (istorija, „Paslėpti" prieš įjungiant vėl)
+    try { this.st.tr = await this.list(from, to); } catch (e) { console.warn('[susit] load', e.message || e); }
+  },
+  trCell(ds) { return this.on() && this.st.tr.some(x => x.ds === ds && x.status === 'open') ? '<span class="sus-dot"></span>' : ''; },
+  staffDayHtml(ds, ns) {
+    this.st.ns = ns || this.st.ns || 'Kal';
+    const list = this.st.tr.filter(x => x.ds === ds); if (!list.length) return '';
+    return `<div class="kal-sec"><b>SUSITIKIMAI 14+</b><em class="o">${list.length}</em><span></span></div><div style="font-size:10px;color:var(--mut);padding:0 18px 6px;line-height:1.4;">Vaikų pačių kvietimai — ne klubo treniruotė. Netinkamą gali paslėpti.</div>`
+      + `<div class="kal-rows" style="padding-bottom:8px;">${list.map(x => this.rowHtml(x, { staff: true })).join('<hr>')}</div>`;
+  },
 };
 // ===== /MODULIS =====
 
