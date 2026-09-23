@@ -15036,8 +15036,15 @@ const CLUB_NOTIF_SK = { system:'cns', events:'cne', messages:'cnm' };
 let clubNotifications = null;
 let _clubNotifCacheTs = 0;
 
+// v619: vienas vykdomas krovimas (Pagrindinis, kalendorius, ženkliukas ir varpelis nebekrauna to paties lygiagrečiai) + 60 s atmintis;
+// naujienos (žinutės realtime, 5 min. laikmatis — KNotif.bump) atnaujina priverstinai
 async function _fetchClubNotifications(force){
-  if (!force && clubNotifications && (Date.now() - _clubNotifCacheTs) < 8000) return clubNotifications;
+  if (!force && clubNotifications && (Date.now() - _clubNotifCacheTs) < 60000) return clubNotifications;
+  if (_fetchClubNotifications._p) return _fetchClubNotifications._p;
+  _fetchClubNotifications._p = _fetchClubNotificationsRun();
+  try { return await _fetchClubNotifications._p; } finally { _fetchClubNotifications._p = null; }
+}
+async function _fetchClubNotificationsRun(){
   const empty = { system:[], trainers:[], events:[], messages:[] };
   if (!currentClub?.id){ clubNotifications = empty; return clubNotifications; }
   const clubId = currentClub.id;
@@ -15233,7 +15240,9 @@ function _updateClubNotifCounts(){
 }
 
 async function loadClubNotifications(){
-  await _fetchClubNotifications(false);
+  // v619: iškart paskutinis sąrašas, po to atnaujinam (jei senesnis nei 15 s)
+  if (clubNotifications) { _updateClubNotifCounts(); renderClubNotifTab(clubNotifTab); }
+  await _fetchClubNotifications(!!clubNotifications && (Date.now() - _clubNotifCacheTs) > 15000);
   _updateClubNotifCounts();
   renderClubNotifTab(clubNotifTab);
 }
@@ -29986,12 +29995,11 @@ async function loadClubMainDashboard(){
   // 2) VAIKŲ ŠVIESOFORAS (lankomumas — iš eilės praleistos, slenksčiai clubFlags)
   (async()=>{ try {
     setTxt('km-kids-total', kidsCount);
-    const { data: groups } = await sb.from('groups').select('id').eq('club_id', cid);
-    const gIds=(groups||[]).map(x=>x.id); let y=0,rd=0;
-    if (gIds.length){
-      const cut=new Date(Date.now()-60*86400000).toISOString().split('T')[0];
-      const { data: att } = await sb.from('attendance').select('kid_id, present, session_date').in('group_id', gIds).gte('session_date', cut);
-      const byKid={}; (att||[]).forEach(r=>{ (byKid[r.kid_id]=byKid[r.kid_id]||[]).push(r); });
+    // v619: Anal.att60 — aktyvios grupės, puslapiais (buvo iki 1000 eil. ir su neaktyviomis grupėmis), tik dabartiniai klubo vaikai
+    const [att, kNow] = await Promise.all([Anal.att60(), _getClubKids()]);
+    const own = new Set(kNow.map(k => k.id)); let y=0,rd=0;
+    if (att.length){
+      const byKid={}; att.forEach(r=>{ if (own.has(r.kid_id)) (byKid[r.kid_id]=byKid[r.kid_id]||[]).push(r); });
       const YEL=Math.max(1,parseInt(clubFlags?.inactive_yellow)||3), RED=Math.max(YEL+1,parseInt(clubFlags?.inactive_red)||5);
       Object.values(byKid).forEach(rs=>{ rs.sort((a,b)=>a.session_date<b.session_date?1:(a.session_date>b.session_date?-1:0)); let s=0; for(const r of rs){ if(!r.present)s++; else break; } if(s>=RED)rd++; else if(s>=YEL)y++; });
     }
@@ -30095,6 +30103,8 @@ let _clubGroupsRankBy = 'overall';
 // pasikeitė. force = true — po pakeitimų (grupė sukurta / ištrinta, vaikas pridėtas / pašalintas / priskirtas).
 // Funkcijos savybė `_p` — vykdomas pažadas (ne naujas globalus kintamasis, taisyklė 7).
 async function loadClubGroups(force){
+  if (force && typeof Kal !== 'undefined' && Kal.club && Kal.club.st) Kal.club.st.groupsAt = 0;   // v619: pakeitus grupes kalendorius krauna jas iš naujo
+  if (force && typeof Anal !== 'undefined') Anal.st.gAt = 0;
   const el = document.getElementById('k-groups-list');
   if (!el || !currentClub?.id) return;
   if (loadClubGroups._p) { if (!force) return loadClubGroups._p; try { await loadClubGroups._p; } catch(_){} }
@@ -30510,12 +30520,12 @@ async function loadClubInactiveKids(){
   const el = document.getElementById('k-inactive-list'); if(!el||!currentClub?.id) return;
   el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Kraunama...</div>';
   try {
-    const { data: groups } = await sb.from('groups').select('id').eq('club_id', currentClub.id);
-    const gIds = (groups||[]).map(g=>g.id);
+    // v619: Anal.att60 — aktyvios grupės, puslapiais (buvo iki 1000 eil.), tik dabartiniai klubo vaikai
+    const gIds = (await Anal.groups()).map(g=>g.id);
     if (!gIds.length){ el.innerHTML='<div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Nėra grupių.</div>'; return; }
-    const cut = new Date(Date.now()-60*86400000).toISOString().split('T')[0];
-    const { data: att } = await sb.from('attendance').select('kid_id, present, session_date').in('group_id', gIds).gte('session_date', cut);
-    const rows = att||[];
+    const [att60, kNow] = await Promise.all([Anal.att60(), _getClubKids()]);
+    const own = new Set(kNow.map(k => k.id));
+    const rows = att60.filter(r => own.has(r.kid_id));
     if (!rows.length){ el.innerHTML='<div style="text-align:center;color:var(--mut);padding:20px;font-size:12px;">Per 60 d. lankomumas nežymėtas.</div>'; return; }
     const byKid = {}; rows.forEach(r=>{ (byKid[r.kid_id]=byKid[r.kid_id]||[]).push(r); });
     const YEL = Math.max(1, parseInt(clubFlags?.inactive_yellow)||3);
@@ -30527,9 +30537,7 @@ async function loadClubInactiveKids(){
       return { kid, streak, lastPresent };
     }).filter(x=>x.streak>=YEL).sort((a,b)=>b.streak-a.streak);
     if (!streaks.length){ el.innerHTML='<div style="text-align:center;color:var(--grn);padding:24px;font-size:13px;">'+ico('gimtadienis')+' Visi vaikai lanko reguliariai</div>'; return; }
-    const ids = streaks.map(s=>s.kid);
-    const { data: kd } = await sb.from('kids').select('id, first_name, last_name').in('id', ids);
-    const nameMap = {}; (kd||[]).forEach(k=>{ nameMap[k.id]=`${k.first_name||'Vaikas'} ${k.last_name||''}`.trim(); });
+    const nameMap = {}; kNow.forEach(k=>{ nameMap[k.id]=escapeHtml(`${k.first_name||'Vaikas'} ${k.last_name||''}`.trim()); });   // v619: vardai iš jau turimo sąrašo, ištrinti
     const redN = streaks.filter(x=>x.streak>=RED).length, yelN = streaks.length-redN;
     el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px;"><span style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1.2px;">NELANKO IŠ EILĖS — VERTA SUSISIEKTI</span><span style="font-size:11px;font-weight:700;"><span class="dot dot-bad"></span> ${redN} 🟡 ${yelN}</span></div>` + streaks.map(x=>{
       const red = x.streak>=RED, col = red?'#EF4444':'#EAB308'; const nm = nameMap[x.kid]||'Vaikas';
@@ -42408,16 +42416,17 @@ const Kal = {
     const gids = gs.map(gr => gr.id);
     if (!gids.length) return out;
 
-    let attQ = sb.from('attendance').select('group_id, session_date, present, effort_exp').in('group_id', gids).gte('session_date', from).lte('session_date', to).limit(4000);
-    if (kidId) attQ = attQ.eq('kid_id', kidId);
+    // v619: puslapiais — serveris vienu kartu grąžina daugiausia 1000 eil. (.limit(4000) jos neapeina): 20 grupių klubas ≈ 3 600
+    // lankomumo eilučių per mėnesį — be to dalis dienų atrodydavo „nepažymėtos"; treniruotės — buvo .limit(500)
+    const _all = build => _fetchAll(build).then(data => ({ data }), error => ({ data: null, error }));
     const [sesRes, attRes] = await Promise.all([
       kidId
         ? sb.rpc('spobu_kid_sessions', { p_kid: kidId, p_from: from, p_to: to })
-        : sb.from('training_plan_sessions')
+        : _all(() => sb.from('training_plan_sessions')
           .select('id, plan_id, group_id, session_date, starts_at, duration_min, title, why_text, bring_text, blocks, status')
           .in('group_id', gids).gte('session_date', from).lte('session_date', to)
-          .order('session_date', { ascending: true }).limit(500),
-      attQ
+          .order('session_date', { ascending: true }).order('id')),
+      _all(() => { let q = sb.from('attendance').select('group_id, session_date, present, effort_exp').in('group_id', gids).gte('session_date', from).lte('session_date', to).order('id'); if (kidId) q = q.eq('kid_id', kidId); return q; })
     ]);
     if (sesRes.error) throw sesRes.error;
     if (attRes.error) throw attRes.error;
@@ -43385,6 +43394,7 @@ Object.assign(Kal, {
       if (g.error) throw g.error;
       this.st.trainers = {}; (t.data || []).forEach(x => { this.st.trainers[x.id] = `${x.profiles?.first_name || ''} ${x.profiles?.last_name || ''}`.trim() || 'Treneris'; });
       this.st.groups = g.data || [];
+      this.st.groupsAt = Date.now(); this.st.groupsClub = cid;   // v619: kalendoriaus 60 s atmintis
       return this.st.groups;
     },
     trainerName(g) { return g ? (this.st.trainers[g.trainer_id] || 'be trenerio') : ''; },
@@ -43401,20 +43411,22 @@ Object.assign(Kal, {
       this.st.busy = true;
       c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut);font-size:12px;">Kraunama...</div>';
       try {
-        await this.loadGroups();
+        // v619: grupės — 60 s atmintis (mėnesio perjungimas ir grįžimas jų nebekrauna); bangos 4–5 → 2–3
+        if (!(this.st.groupsAt && Date.now() - this.st.groupsAt < 60000 && this.st.groupsClub === this.clubId() && (this.st.groups || []).length)) await this.loadGroups();
         const r = this.K.range(this.st.ym);
         const [ses, evs] = await Promise.all([
           this.K.monthSessions({ groups: this.st.groups, from: r.from, to: r.to }),
-          this.K.monthEvents(this.clubId(), r.from, r.to).catch(() => [])
+          this.K.monthEvents(this.clubId(), r.from, r.to).catch(() => []),
+          (async () => { if (typeof Pavad !== 'undefined') { try { await Pavad.load(r.from, r.to); } catch (_e) { } } })()   // MODULIS: Pavad (v585) — nepriklauso nuo treniruočių, kraunam kartu
         ]);
         this.st.sessions = ses; this.st.events = evs;
-        if (typeof Pavad !== 'undefined') { try { await Pavad.load(r.from, r.to); } catch (_e) { } }   // MODULIS: Pavad (v585) — klubas mato ir priskiria
-        if (typeof Past !== 'undefined' && Past.on()) { try { await Past.load(ses.map(x => x.session_id)); } catch (_e) { } }   // MODULIS: Past (v600) — pastabos treniruotėms
-        // registracijos į varžybas (dalyvaus / ne) — vienas kvietimas mėnesiui
+        // registracijos į varžybas (dalyvaus / ne) — vienas kvietimas mėnesiui; lygiagrečiai su pastabomis
         this.st.reg = {};
         const compIds = evs.filter(e => e.kind === 'comp').map(e => e.id);
+        const _regP = compIds.length ? sb.from('competition_results').select('competition_id, status').in('competition_id', compIds).limit(2000) : null;
+        if (typeof Past !== 'undefined' && Past.on()) { try { await Past.load(ses.map(x => x.session_id)); } catch (_e) { } }   // MODULIS: Past (v600) — pastabos treniruotėms
         if (compIds.length) {
-          const { data } = await sb.from('competition_results').select('competition_id, status').in('competition_id', compIds).limit(2000);
+          const { data } = await _regP;
           (data || []).forEach(x => { const v = this.st.reg[x.competition_id] || (this.st.reg[x.competition_id] = { go: 0, no: 0 }); if (x.status === 'planning' || x.status === 'participated') v.go++; else if (x.status === 'wont_attend') v.no++; });
         }
         // bendras tinklelis naudoja Kal.st (trenerio/klubo portalai tame pačiame appse nesikerta)
@@ -45775,6 +45787,14 @@ const Anal = {
   },
   // aktyvus = per `days` d. buvo treniruotėje, įrašė rekordą arba pateikė iššūkį (ne atmestą)
   async active(ids, days) {
+    // v619: tas pats skaičiavimas Vaikams, Augimui ir Pulsui — 60 s atmintis + vienas vykdomas
+    const key = `${this.cid()}:${days}:${ids.length}`, c = this.st.actC;
+    if (c && c.key === key && (c.p || Date.now() - c.at < 60000)) return c.p || c.set;
+    const p = this.activeRun(ids, days);
+    this.st.actC = { key, p };
+    try { const set = await p; this.st.actC = { key, at: Date.now(), set }; return set; } catch (e) { this.st.actC = null; throw e; }
+  },
+  async activeRun(ids, days) {
     const cutI = this.iso(days), cutD = this.day(days), own = new Set(ids);
     const [att, kr, cs] = await Promise.all([
       this.att60(),
