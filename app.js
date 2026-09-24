@@ -18843,6 +18843,7 @@ function openStatWithFilter(tabName, skillId) {
     statFilters.scope = 'club';
     statFilters.weight = 'all';              // anksčiau likdavo senas svorio filtras
     statFilters.skillId = skillId || null;   // anksčiau likdavo senas skillId
+    statFilters.group = null;                // v633: grupės filtras — tik iš Grupės nuorodos (KidGrupe.openRanks)
     statSeasonFilter = 'season';
     _syncStatSeasonBtns('season');
     if (typeof StatPaieska !== 'undefined') StatPaieska.st.q.kid = '';   // sena paieška kitaip rodytų „Nieko nerasta"
@@ -18874,6 +18875,7 @@ function openMainStat() {
   statFilters.scope = 'club';
   statFilters.skillId = null;
   statFilters.weight = 'all';
+  statFilters.group = null;   // v633: grupės filtras — tik iš Grupės nuorodos (KidGrupe.openRanks)
 
   // Nukelia į statistikos page
   g('v', 'v-stat');
@@ -19265,6 +19267,8 @@ function renderFiltersUI(tabType) {
     </div>
   `;
   
+  if (typeof KidGrupe !== 'undefined') html += KidGrupe.statChips();   // MODULIS: KidGrupe (v633) — vaikui „Visas klubas / Mano grupė"
+
   // Amžiaus grupė (dropdown) - kompaktiška
   html += `
     <select onchange="setStatFilter('ageGroup',this.value)" class="inp" style="margin-bottom:5px;padding:5px 8px;font-size:10px;height:auto;">
@@ -24116,6 +24120,7 @@ function openKidInfo(which) {
         ((typeof KidGate === 'undefined' || KidGate.on('duels')) ? row(''+ico('dvikova')+'', 'Dvikova', '1 prieš 1 su grupės draugu: bakstelėk draugą sąraše → „Iškviesti" ir pasirink treniruotę — joje treneris įves abiejų rezultatus. Pergalė +50 · lygiosios +35 · pralaimėjus +25. Iškviesti gali kartą per 7 d.') : '') +
         ((typeof KidGate === 'undefined' || KidGate.on('gc')) ? row(''+ico('tikslas')+'', 'Grupių iššūkiai', 'Klubo paskelbtos grupių varžytuvės — visa grupė renka taškus kartu.') : '') +
         row(''+ico('kalendorius')+'', 'Grupės savaitė', 'Kaip visai grupei sekasi šią savaitę: lankomumas ir įveikti iššūkiai. Herojai — kas daugiausia treniravosi, dirbo iš visų jėgų ir įveikė iššūkių.') +   // MODULIS: KidGrupe (v631)
+        row(''+ico('trofejai')+'', 'Grupės reitingai', 'Nuoroda po draugų sąrašu — Statistika tik tavo grupėje: bendras, Kelias, iššūkiai, varžybos.') +   // v633
         row('👏', 'Pagirk draugą', 'Bakstelėk draugą ir pasirink pagyrimą — jis gaus pranešimą. Kiekvienam draugui kartą per dieną, iš viso iki 5 per dieną.') +
         row(''+ico('grupe')+'', 'Komandos draugai', 'Kas treniruojasi su tavimi ir kaip jiems sekasi. Bakstelėk draugą — pamatysi jo kortelę.');
       break;
@@ -47425,7 +47430,33 @@ const KidGrupe = {
       if (error) throw error;
       el.innerHTML = data ? this.html(data) : '';
     } catch (e) { console.warn('[KidGrupe]', e); el.innerHTML = ''; } finally { this.busy = false; }
+    this.ranksLink();
   },
+  // v633 (savininko „A" 09-24): grupės reitingai — ne atskiras rūšiavimas Grupėje, o esama Statistika su grupės filtru
+  // (serveris leaderboard_entries p_group, tik savo klubas; zondas: savo grupė 4, kito klubo grupė 0)
+  ranksLink() {
+    const el = document.getElementById('kg-ranks'), kid = this.kid(); if (!el) return;
+    if (!kid?.group_id) { el.style.display = 'none'; return; }
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><span style="color:#FFD700;flex:none;">${ico('trofejai')}</span><div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:900;">Grupės reitingai</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Bendras, Kelias, iššūkiai, varžybos — tik tavo grupėje</div></div>${ico('toliau')}</div>`;
+    el.style.display = '';
+  },
+  openRanks() {
+    const kid = this.kid(); if (!kid?.group_id || typeof statFilters === 'undefined') return;
+    // grupė maža — visi kartu (be lyties / amžiaus), klubo mastu, grupės filtras
+    Object.assign(statFilters, { gender: 'all', ageGroup: 'all', scope: 'club', skillId: null, weight: 'all', group: kid.group_id });
+    if (typeof StatPaieska !== 'undefined') StatPaieska.st.q.kid = '';
+    kidStatPage = 1;
+    g('v', 'v-stat');
+    if (typeof loadKidTierGate === 'function') loadKidTierGate();
+    setTimeout(() => { if (typeof switchStatTab === 'function') switchStatTab('overall'); }, 100);
+  },
+  // Statistikos filtrų eilutė vaikui (renderFiltersUI)
+  statChips() {
+    const kid = this.kid(); if (currentProfile?.role !== 'kid' || !kid?.group_id || typeof chipStyle !== 'function') return '';
+    const on = statFilters.group === kid.group_id;
+    return `<div style="display:flex;gap:4px;margin-bottom:5px;"><button onclick="setStatFilter('group',null)" style="flex:1;${chipStyle(!on)}">${ico('klubas')} Visas klubas</button><button onclick="KidGrupe.statGroup()" style="flex:1;${chipStyle(on)}">${ico('grupe')} Mano grupė</button></div>`;
+  },
+  statGroup() { const kid = this.kid(); if (kid?.group_id) setStatFilter('group', kid.group_id); },
   html(d) {
     const n = x => this.num(x), att = this.on('attendance'), chOn = this.on('challenges');
     const poss = n(d.members) * n(d.sessions), pct = poss ? Math.min(100, Math.round(n(d.present) * 100 / poss)) : 0;
