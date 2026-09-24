@@ -10496,6 +10496,10 @@ async function renderMyDuels(opts) {
     return;
   }
 
+  // v634 (arena): Grupėje priimtos datuotos dvikovos rodomos arenoje (KidGrupe.arena) — čia lieka kvietimai ir senos be datos (rezultatą įveda vaikas)
+  // (peržiūra v634: + priimtos, kurių diena praėjo — laukia trenerio įvertinimo; arena jų nerodo)
+  if (grupe && typeof KidGrupe !== 'undefined' && Array.isArray(duels)) { const keep = duels.filter(d => d.status === 'pending' || !d.session_date || (typeof Dvk !== 'undefined' && Dvk.past(d))); duels.length = 0; keep.forEach(d => duels.push(d)); }
+
   if (!duels || duels.length === 0) {
     if (grupe) el.innerHTML = '';
     return;
@@ -10530,7 +10534,7 @@ async function renderMyDuels(opts) {
     };
     
     if (!isArchive) {
-      html += `<div style="font-size:9px;color:#EC407A;font-weight:800;letter-spacing:1px;margin-bottom:6px;padding-left:2px;">${ico('dvikova')} AKTYVIOS DVIKOVOS</div>`;
+      html += `<div style="font-size:9px;color:#EC407A;font-weight:800;letter-spacing:1px;margin-bottom:6px;padding-left:2px;">${ico('dvikova')} ${(grupe && typeof KidGrupe !== 'undefined') ? 'TAVO KVIETIMAI' : 'AKTYVIOS DVIKOVOS'}</div>`;
     }
     
     const duelCards = duels.map(d => {
@@ -42864,6 +42868,7 @@ Object.assign(Kal, {
           typeof renderMyDuels === 'function' ? renderMyDuels({ grupe: true }) : null,   // v622 (9A): piešia į #v-ish-duels (Grupėje)
           typeof renderProfileExtras === 'function' ? renderProfileExtras() : null,
           typeof KidGrupe !== 'undefined' ? KidGrupe.load() : null,   // MODULIS: KidGrupe (v631) — grupės savaitė + herojai
+          typeof KidGrupe !== 'undefined' ? KidGrupe.arena() : null,  // v634 — savaitės arena (grupės dvikovos + grupių iššūkis)
         ]);
       } catch (e) { console.warn('[Kal.kid.grupe]', e); }
       this.grupeEmpty();
@@ -42871,6 +42876,7 @@ Object.assign(Kal, {
     // v622 (9A): tik dvikovos (po priėmimo / atmetimo / rezultato / kvietimo) — be kitų 3 krovėjų
     async duels() {
       try { if (typeof renderMyDuels === 'function') await renderMyDuels({ grupe: true }); } catch (e) { console.warn('[Kal.kid.duels]', e); }
+      try { if (typeof KidGrupe !== 'undefined') await KidGrupe.arena(); } catch (e) { }   // v634 arena
       this.grupeEmpty();
     },
     // v622 (9A): tuščia būsena — dvikovos atskirai nuo grupių iššūkių; išjungtų dvikovų neminim
@@ -42881,10 +42887,11 @@ Object.assign(Kal, {
       const card = document.getElementById('v-group-challenge-card'), gcs = document.getElementById('v-ish-gc-section'), du = document.getElementById('v-ish-duels');
       const hasGc = !!(gcOn && ((card && card.style.display !== 'none') || (gcs && gcs.innerText.trim())));
       const hasDu = !!(duelsOn && du && du.innerText.trim());
+      const ar = document.getElementById('kg-arena'), hasAr = !!(ar && ar.innerText.trim());   // v634 arena
       // v623 (15A): antraštė pagal įjungtas funkcijas; abi išjungtos — bloko nėra
       const t = document.getElementById('kal-v-grupe-gc-t');
       if (t) { t.style.display = (duelsOn || gcOn) ? '' : 'none'; const tx = t.lastChild; if (tx && tx.nodeType === 3) tx.textContent = duelsOn && gcOn ? 'GRUPĖS DVIKOVOS IR IŠŠŪKIAI' : (duelsOn ? 'DVIKOVOS' : 'GRUPIŲ IŠŠŪKIAI'); }
-      if (hasDu || (!duelsOn && hasGc) || (!duelsOn && !gcOn)) { em.style.display = 'none'; return; }
+      if (hasDu || hasAr || (!duelsOn && hasGc) || (!duelsOn && !gcOn)) { em.style.display = 'none'; return; }
       em.textContent = duelsOn
         ? 'Dvikovų dar nėra — iškviesk draugą iš sąrašo žemiau.' + (hasGc || !gcOn ? '' : ' Grupių iššūkius skelbia treneris arba klubas.')
         : 'Šiuo metu grupių iššūkių nėra — juos skelbia treneris arba klubas.';
@@ -47457,6 +47464,94 @@ const KidGrupe = {
     return `<div style="display:flex;gap:4px;margin-bottom:5px;"><button onclick="setStatFilter('group',null)" style="flex:1;${chipStyle(!on)}">${ico('klubas')} Visas klubas</button><button onclick="KidGrupe.statGroup()" style="flex:1;${chipStyle(on)}">${ico('grupe')} Mano grupė</button></div>`;
   },
   statGroup() { const kid = this.kid(); if (kid?.group_id) setStatFilter('group', kid.group_id); },
+  // ── v634 „Savaitės arena" (savininko A 09-24: „jei nedalyvavai, vis tiek matysi — kaip grupės feed'as") ──
+  // Visos savo grupės šios savaitės dvikovos (SQL kid_group_duels: baigtos + priimtos būsimos; kvietimai — ne) ir grupių iššūkis:
+  // 2 grupės — juosta, 3+ — top 3 + tavo grupė + „iki N vietos trūksta". Seni du grupių iššūkio blokai (#kal-v-grupe-gc) paslepiami.
+  async arena() {
+    const el = document.getElementById('kg-arena'), kid = this.kid(); if (!el) return;
+    const gcWrap = document.getElementById('kal-v-grupe-gc'); if (gcWrap) gcWrap.style.display = 'none';
+    if (!kid?.group_id) { el.innerHTML = ''; return; }
+    const duelsOn = typeof flagOn !== 'function' || flagOn('duels_enabled'), gcOn = typeof flagOn !== 'function' || flagOn('group_challenges_enabled');
+    try {
+      const [dR, gcs] = await Promise.all([
+        duelsOn ? sb.rpc('kid_group_duels', { p_group: kid.group_id }) : Promise.resolve({ data: [] }),
+        gcOn ? this.gcData(kid.group_id) : Promise.resolve([]),
+      ]);
+      if (dR && dR.error) throw dR.error;
+      el.innerHTML = this.arenaHtml(Array.isArray(dR && dR.data) ? dR.data : [], gcs || [], duelsOn);
+    } catch (e) { console.warn('[KidGrupe.arena]', e); el.innerHTML = ''; if (gcWrap) gcWrap.style.display = ''; }
+  },
+  async gcData(gid) {
+    const { data: parts } = await sb.from('club_challenge_groups').select('challenge_id').eq('group_id', gid);
+    if (!parts || !parts.length) return [];
+    const ids = parts.map(p => p.challenge_id), cut = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+    // aktyvūs + (peržiūra v634) neseniai baigęsi (≤14 d.) — kad nedingtų vieta ir gautas EXP (anksčiau rodė archyvo blokas)
+    const [aR, fR] = await Promise.all([
+      sb.from('club_challenges').select('id, title, unit, ends_on, winner_exp, exp_awarded, is_active').in('id', ids).eq('is_active', true).order('created_at', { ascending: false }).limit(3),
+      sb.from('club_challenges').select('id, title, unit, ends_on, winner_exp, exp_awarded, is_active').in('id', ids).eq('is_active', false).gte('ends_on', cut).order('ends_on', { ascending: false }).limit(2),
+    ]);
+    const chs = [...(aR.data || []), ...(fR.data || [])];
+    const out = [];
+    for (const ch of (chs || [])) { const { data: st } = await sb.rpc('club_challenge_standings', { challenge_uuid: ch.id }); out.push({ ch, st: st || [] }); }
+    return out;
+  },
+  fmtV(v) { const x = Number(v); return (v !== null && v !== undefined && Number.isFinite(x)) ? String(Math.round(x * 10) / 10).replace('.', ',') : '–'; },
+  arenaHtml(duels, gcs, duelsOn) {
+    const T = typeof DUEL_TYPES !== 'undefined' ? DUEL_TYPES : {}, WD = ['sk', 'pr', 'an', 'tr', 'kt', 'pn', 'št'];
+    const day = s => { const d = new Date(String(s || '') + 'T00:00:00'); return isNaN(d) ? '' : `${WD[d.getDay()]} ${String(s).slice(5)}`; };
+    const nm = (e, side) => e.me === side ? 'Tu' : this.esc(e[side] || 'Draugas');
+    // be datos (senos) — tik dalyvio „Tavo kvietimai" bloke (peržiūra v634)
+    const up = duels.filter(e => e.status !== 'completed' && e.date).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+    const done = duels.filter(e => e.status === 'completed');
+    const card = e => {
+      const t = T[e.type] || { name: 'Dvikova' };
+      const head = `<div style="font-size:10px;color:var(--mut);font-weight:700;">${this.esc(t.name)}${e.date ? ' · ' + this.esc(day(e.date)) : ''}</div>`;
+      if (e.status !== 'completed') {
+        return `<div style="border:1px dashed var(--bdr);border-radius:10px;padding:8px 10px;margin-bottom:6px;">${head}<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:3px;font-size:12.5px;font-weight:800;"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${e.me === 'ch' ? 'color:#FF7A33;' : ''}">${nm(e, 'ch')}</span><span style="flex:none;color:var(--mut);font-size:11px;">vs</span><span style="flex:1;min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${e.me === 'op' ? 'color:#FF7A33;' : ''}">${nm(e, 'op')}</span></div><div style="font-size:10px;color:var(--mut);margin-top:3px;">${e.status === 'submitted' ? 'Laukia trenerio patvirtinimo' : 'Laukia treniruotės'}</div></div>`;
+      }
+      const w = e.win;
+      const side = s => `<span style="flex:1;min-width:0;${s === 'op' ? 'text-align:right;' : ''}font-size:12.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${w === s ? '#22C55E' : 'var(--mut)'};">${w === s && s === 'ch' ? ico('trofejai') + ' ' : ''}${nm(e, s)}${w === s && s === 'op' ? ' ' + ico('trofejai') : ''}</span>`;
+      let foot = '';
+      if (e.me) { const r = w === 'draw' ? ['Lygiosios', 35, '#FF7A33'] : (w === e.me ? ['Laimėjai', 50, '#22C55E'] : ['Kitą kartą!', 25, 'var(--mut)']); foot = `<div style="font-size:10px;font-weight:800;color:${r[2]};margin-top:3px;">${r[0]} · +${r[1]} EXP</div>`; }
+      else if (w === 'draw') foot = `<div style="font-size:10px;color:var(--mut);margin-top:3px;">Lygiosios</div>`;
+      return `<div style="border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;margin-bottom:6px;">${head}<div style="display:flex;align-items:center;margin-top:3px;">${side('ch')}<span style="flex:none;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;padding:0 8px;">${this.fmtV(e.ch_val)} : ${this.fmtV(e.op_val)}</span>${side('op')}</div>${foot}</div>`;
+    };
+    if (!up.length && !done.length && !gcs.some(g => (g.st || []).length)) return '';   // nieko — lieka bendra tuščia būsena
+    let h = '';
+    if (duelsOn) {
+      h += `<div style="font-size:9.5px;font-weight:800;letter-spacing:1px;color:#EC407A;margin:2px 0 6px;">${ico('dvikova')} ŠIOS SAVAITĖS DVIKOVOS</div>`;
+      h += (up.length || done.length) ? up.map(card).join('') + done.map(card).join('') : `<div style="font-size:11px;color:var(--mut);margin-bottom:6px;">Šią savaitę dvikovų dar nebuvo — iškviesk draugą iš sąrašo žemiau.</div>`;
+    }
+    gcs.forEach(g => { h += this.gcHtml(g.ch, g.st); });
+    return `<div class="kal-card" style="margin:0 12px 8px;">${h}</div>`;
+  },
+  gcHtml(ch, st) {
+    const n = x => this.num(x), kidG = this.kid()?.group_id, rows = (st || []).slice().sort((a, b) => n(a.rnk) - n(b.rnk));
+    if (!rows.length) return '';
+    const mine = rows.find(r => r.g_id === kidG) || null, avg = r => String(n(r.avg_kid)).replace('.', ',');
+    const left = ch.ends_on ? Math.max(0, Math.ceil((new Date(ch.ends_on + 'T23:59:59') - new Date()) / 86400000)) : null;
+    const titleArg = this.esc(JSON.stringify(String(ch.title || '')));
+    if (ch.is_active === false) {   // baigęsi (≤14 d.): tavo grupės vieta ir gautas EXP
+      const rk = mine ? n(mine.rnk) : null, exp = (rk && ch.exp_awarded && typeof _gcTierExp === 'function') ? _gcTierExp(ch.winner_exp, rk) : 0;
+      return `<div style="border-top:.5px solid var(--bdr);margin-top:8px;padding-top:7px;display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="min-width:0;"><div style="font-size:9.5px;font-weight:800;letter-spacing:1px;color:var(--mut);">${ico('trofejai')} BAIGĖSI · ${this.esc(String(ch.title || '').toUpperCase())}</div><div style="font-size:11.5px;font-weight:800;margin-top:2px;">${rk ? `Tavo grupė ${rk} vieta iš ${rows.length}` : `${rows.length} grupės`}${exp ? ` · <span style="color:#FFD700;">+${exp} EXP</span>` : ''}</div></div><span style="flex:none;font-size:10px;color:var(--br);font-weight:800;cursor:pointer;" onclick="viewChallengeStandings('${ch.id}', ${titleArg})">Lentelė ›</span></div>`;
+    }
+    let h = `<div style="font-size:9.5px;font-weight:800;letter-spacing:1px;color:#EAB308;margin:8px 0 6px;">${ico('trofejai')} GRUPIŲ IŠŠŪKIS ·${this.esc(String(ch.title || '').toUpperCase())}</div>`;
+    if (rows.length === 2) {
+      const me = mine || rows[0], other = rows.find(r => r !== me), s = n(me.avg_kid) + n(other.avg_kid), pct = s > 0 ? Math.round(n(me.avg_kid) * 100 / s) : 50;
+      h += `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;"><span style="color:${n(me.avg_kid) >= n(other.avg_kid) ? '#22C55E' : 'white'};">${this.esc(me.g_name)} ${avg(me)}</span><span style="color:var(--mut);">${avg(other)} ${this.esc(other.g_name)}</span></div>`
+        + `<div style="height:6px;border-radius:3px;overflow:hidden;margin-top:4px;background:rgba(255,255,255,.1);"><div style="height:100%;width:${pct}%;background:#22C55E;"></div></div>`;
+    } else {
+      const top = rows.slice(0, 3), extra = mine && !top.includes(mine) ? mine : null;
+      const row = r => { const my = !!mine && r.g_id === mine.g_id; return `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px ${my ? '6px' : '0'};${my ? 'margin:0 -6px;background:rgba(34,197,94,.14);border-radius:8px;font-weight:800;color:#22C55E;' : ''}"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n(r.rnk)}. ${this.esc(r.g_name)}${my ? ' · tavo' : ''}</span><span>${avg(r)}</span></div>`; };
+      h += top.map(row).join('') + (extra ? `<div style="text-align:center;color:var(--mut);font-size:11px;">···</div>` + row(extra) : '');
+      if (mine && n(mine.rnk) > 1) {
+        const above = rows.filter(r => n(r.rnk) < n(mine.rnk)).pop();
+        if (above) h += `<div style="font-size:10.5px;font-weight:800;margin-top:5px;">Iki ${n(above.rnk)} vietos trūksta ${String(Math.round((n(above.avg_kid) - n(mine.avg_kid)) * 10) / 10).replace('.', ',')}</div>`;
+      } else if (mine && rows.length > 1) h += `<div style="font-size:10.5px;font-weight:800;margin-top:5px;color:#22C55E;">Jūs pirmi — laikykitės!</div>`;
+    }
+    h += `<div style="font-size:10px;color:var(--mut);margin-top:5px;display:flex;justify-content:space-between;gap:6px;"><span>${rows.length > 2 ? rows.length + ' grupės · ' : ''}vidurkis vaikui${left != null ? ' · liko ' + left + ' d.' : ''}</span><span style="color:var(--br);font-weight:800;cursor:pointer;white-space:nowrap;" onclick="viewChallengeStandings('${ch.id}', ${titleArg})">Visa lentelė ›</span></div>`;
+    return h;
+  },
   html(d) {
     const n = x => this.num(x), att = this.on('attendance'), chOn = this.on('challenges');
     const poss = n(d.members) * n(d.sessions), pct = poss ? Math.min(100, Math.round(n(d.present) * 100 / poss)) : 0;
