@@ -47478,7 +47478,8 @@ const KidGrupe = {
         gcOn ? this.gcData(kid.group_id) : Promise.resolve([]),
       ]);
       if (dR && dR.error) throw dR.error;
-      el.innerHTML = this.arenaHtml(Array.isArray(dR && dR.data) ? dR.data : [], gcs || [], duelsOn);
+      this.arenaLast = [Array.isArray(dR && dR.data) ? dR.data : [], gcs || [], duelsOn];
+      el.innerHTML = this.arenaHtml(...this.arenaLast);
     } catch (e) { console.warn('[KidGrupe.arena]', e); el.innerHTML = ''; if (gcWrap) gcWrap.style.display = ''; }
   },
   async gcData(gid) {
@@ -47495,6 +47496,8 @@ const KidGrupe = {
     for (const ch of (chs || [])) { const { data: st } = await sb.rpc('club_challenge_standings', { challenge_uuid: ch.id }); out.push({ ch, st: st || [] }); }
     return out;
   },
+  arenaOpen: false, arenaLast: null,
+  arenaToggle() { this.arenaOpen = !this.arenaOpen; const el = document.getElementById('kg-arena'); if (el && this.arenaLast) el.innerHTML = this.arenaHtml(...this.arenaLast); },
   fmtV(v) { const x = Number(v); return (v !== null && v !== undefined && Number.isFinite(x)) ? String(Math.round(x * 10) / 10).replace('.', ',') : '–'; },
   arenaHtml(duels, gcs, duelsOn) {
     const T = typeof DUEL_TYPES !== 'undefined' ? DUEL_TYPES : {}, WD = ['sk', 'pr', 'an', 'tr', 'kt', 'pn', 'št'];
@@ -47503,24 +47506,27 @@ const KidGrupe = {
     // be datos (senos) — tik dalyvio „Tavo kvietimai" bloke (peržiūra v634)
     const up = duels.filter(e => e.status !== 'completed' && e.date).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
     const done = duels.filter(e => e.status === 'completed');
-    const card = e => {
-      const t = T[e.type] || { name: 'Dvikova' };
-      const head = `<div style="font-size:10px;color:var(--mut);font-weight:700;">${this.esc(t.name)}${e.date ? ' · ' + this.esc(day(e.date)) : ''}</div>`;
-      if (e.status !== 'completed') {
-        return `<div style="border:1px dashed var(--bdr);border-radius:10px;padding:8px 10px;margin-bottom:6px;">${head}<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:3px;font-size:12.5px;font-weight:800;"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${e.me === 'ch' ? 'color:#FF7A33;' : ''}">${nm(e, 'ch')}</span><span style="flex:none;color:var(--mut);font-size:11px;">vs</span><span style="flex:1;min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${e.me === 'op' ? 'color:#FF7A33;' : ''}">${nm(e, 'op')}</span></div><div style="font-size:10px;color:var(--mut);margin-top:3px;">${e.status === 'submitted' ? 'Laukia trenerio patvirtinimo' : 'Laukia treniruotės'}</div></div>`;
-      }
-      const w = e.win;
-      const side = s => `<span style="flex:1;min-width:0;${s === 'op' ? 'text-align:right;' : ''}font-size:12.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${w === s ? '#22C55E' : 'var(--mut)'};">${w === s && s === 'ch' ? ico('trofejai') + ' ' : ''}${nm(e, s)}${w === s && s === 'op' ? ' ' + ico('trofejai') : ''}</span>`;
-      let foot = '';
-      if (e.me) { const r = w === 'draw' ? ['Lygiosios', 35, '#FF7A33'] : (w === e.me ? ['Laimėjai', 50, '#22C55E'] : ['Kitą kartą!', 25, 'var(--mut)']); foot = `<div style="font-size:10px;font-weight:800;color:${r[2]};margin-top:3px;">${r[0]} · +${r[1]} EXP</div>`; }
-      else if (w === 'draw') foot = `<div style="font-size:10px;color:var(--mut);margin-top:3px;">Lygiosios</div>`;
-      return `<div style="border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;margin-bottom:6px;">${head}<div style="display:flex;align-items:center;margin-top:3px;">${side('ch')}<span style="flex:none;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;padding:0 8px;">${this.fmtV(e.ch_val)} : ${this.fmtV(e.op_val)}</span>${side('op')}</div>${foot}</div>`;
+    // v635 (savininko „A" 09-24, po 3 kompaktiškų variantų demo): LAUKIA — žymos; REZULTATAI — viena eilutė dvikovai,
+    // 3 naujausios + „Rodyti visas"; laimėtojas žalias su taure, tavo eilutė su žalia juostele (EXP — varpelyje / pop-up'e)
+    const G = '#22C55E', lbl = t => `<div style="font-size:9.5px;color:var(--mut);font-weight:800;letter-spacing:.5px;margin-bottom:4px;">${t}</div>`;
+    const tag = e => { const t = T[e.type] || { name: 'Dvikova' }; return `<span class="kal-b" title="${this.esc(t.name)}" style="padding:3px 9px;font-size:10.5px;${e.me ? 'border-color:' + G + ';color:' + G + ';' : ''}">${this.esc(day(e.date).split(' ')[0])} · ${nm(e, 'ch')}–${nm(e, 'op')}${e.status === 'submitted' ? ' · laukia trenerio' : ''}</span>`; };
+    const row = e => {
+      const w = e.win, t = T[e.type] || { name: 'Dvikova' };
+      const side = s => `<span style="flex:1;min-width:0;${s === 'op' ? 'text-align:right;' : ''}font-size:12.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${w === s ? G : 'var(--mut)'};">${w === s && s === 'ch' ? ico('trofejai') + ' ' : ''}${nm(e, s)}${w === s && s === 'op' ? ' ' + ico('trofejai') : ''}</span>`;
+      return `<div title="${this.esc(t.name + (e.date ? ' · ' + day(e.date) : '') + (w === 'draw' ? ' · lygiosios' : ''))}" style="display:flex;align-items:center;gap:4px;padding:7px 8px;border-bottom:.5px solid var(--bdr);${e.me ? 'background:rgba(34,197,94,.07);box-shadow:inset 3px 0 0 ' + G + ';' : ''}">${side('ch')}<span style="flex:none;min-width:52px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;">${this.fmtV(e.ch_val)} : ${this.fmtV(e.op_val)}</span>${side('op')}</div>`;
     };
     if (!up.length && !done.length && !gcs.some(g => (g.st || []).length)) return '';   // nieko — lieka bendra tuščia būsena
     let h = '';
     if (duelsOn) {
-      h += `<div style="font-size:9.5px;font-weight:800;letter-spacing:1px;color:#EC407A;margin:2px 0 6px;">${ico('dvikova')} ŠIOS SAVAITĖS DVIKOVOS</div>`;
-      h += (up.length || done.length) ? up.map(card).join('') + done.map(card).join('') : `<div style="font-size:11px;color:var(--mut);margin-bottom:6px;">Šią savaitę dvikovų dar nebuvo — iškviesk draugą iš sąrašo žemiau.</div>`;
+      const n = up.length + done.length;
+      h += `<div style="font-size:9.5px;font-weight:800;letter-spacing:1px;color:#EC407A;margin:2px 0 7px;">${ico('dvikova')} ŠIOS SAVAITĖS DVIKOVOS${n ? ' · ' + n : ''}</div>`;
+      if (!n) h += `<div style="font-size:11px;color:var(--mut);margin-bottom:6px;">Šią savaitę dvikovų dar nebuvo — iškviesk draugą iš sąrašo žemiau.</div>`;
+      if (up.length) h += lbl('LAUKIA') + `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:${done.length ? 9 : 4}px;">${up.map(tag).join('')}</div>`;
+      if (done.length) {
+        const L = this.arenaOpen ? done : done.slice(0, 3);
+        h += lbl('REZULTATAI') + `<div style="border:.5px solid var(--bdr);border-radius:10px;overflow:hidden;">${L.map(row).join('')}</div>`
+          + (done.length > 3 ? `<div onclick="KidGrupe.arenaToggle()" style="text-align:center;font-size:11px;font-weight:800;color:var(--br);padding:7px 0 0;cursor:pointer;">${this.arenaOpen ? 'Suskleisti ▲' : 'Rodyti visas (' + done.length + ') ▼'}</div>` : '');
+      }
     }
     gcs.forEach(g => { h += this.gcHtml(g.ch, g.st); });
     return `<div class="kal-card" style="margin:0 12px 8px;">${h}</div>`;
