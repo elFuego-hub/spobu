@@ -9847,30 +9847,33 @@ async function detectNewMedals() {
   const lsKey = `spobu_kid_${currentKid.id}_lastMedalId`;
   
   // Visi patvirtinti rezultatai (medaliai 1-3 IR dalyvavimas 4+)
-  const { data: results } = await sb.from('competition_results')
+  const { data: results, error: medErr } = await sb.from('competition_results')
     .select('id, placement, competition_id, approved_at, exp_gained, status')
     .eq('kid_id', currentKid.id)
     .eq('approval_status', 'approved')
     .eq('status', 'participated')
     .order('approved_at', { ascending: false })
     .limit(5);
-  
+
   console.log('🔵 [medals] gautų rezultatų:', results?.length || 0);
-  
-  if (!results || results.length === 0) return;
+  if (medErr) return;   // v630 (peržiūra): nepavykusi užklausa ≠ „rezultatų nėra" — kitaip '-' vėliau parodytų senus medalius
+
+  // v630 (gyvas E2E): atskaitos taškas ('-') ir TUŠČIAM sąrašui — kitaip PIRMAS vaiko medalis įrenginyje būdavo tyliai „suvalgomas"
+  if (!results || results.length === 0) { try { if (localStorage.getItem(lsKey) === null) localStorage.setItem(lsKey, '-'); } catch (e) { } return; }
   
   const lastKnownMedalId = localStorage.getItem(lsKey);
   console.log('🔵 [medals] lastKnown:', lastKnownMedalId);
   
   if (!lastKnownMedalId) {
-    // Pirmas kartas - tik nustato baseline, neparodo
+    // Pirmas kartas (įrenginys jau turėjo rezultatų iki v630) - tik nustato baseline, neparodo
     localStorage.setItem(lsKey, results[0].id);
     return;
   }
   
   // Surasti naujus medalius (po paskutinio žinomo)
   const lastKnownIdx = results.findIndex(r => r.id === lastKnownMedalId);
-  const newMedals = lastKnownIdx === -1 
+  const newMedals = lastKnownMedalId === '-' ? results.slice()   // v630: anksčiau rezultatų nebuvo → visi nauji
+    : lastKnownIdx === -1 
     ? results.slice(0, 1) 
     : results.slice(0, lastKnownIdx);
   
@@ -11911,7 +11914,7 @@ function showChallengePopup(challenge, onClose) {
     }
   }
   
-  // Tikslas (v598: pakopiniams — 3 · 6 · 9 km ir +15 / +20 / +25 EXP)
+  // Tikslas (v598: pakopiniams — 3 · 6 · 9 km; v630: EXP prieaugis +15 · +5 · +5 — DB kaupia iki 25)
   const _tiers = (typeof Iss !== 'undefined' && Iss.tiersOf) ? Iss.tiersOf(challenge) : null;
   const targetText = challenge.target_value 
     ? (_tiers ? `${ico('tikslas')} ${_tiers.map(t => t.v).join(' · ')} ${escapeHtml(challenge.target_unit || '')}` : `${ico('tikslas')} ${challenge.target_value} ${escapeHtml(challenge.target_unit || '')}`)
@@ -11919,7 +11922,7 @@ function showChallengePopup(challenge, onClose) {
   
   // EXP atlygis
   const expText = challenge.exp_reward 
-    ? (_tiers ? `${ico('premium-plus')} ${_tiers.map(t => '+' + t.exp).join(' / ')} EXP` : `${ico('premium-plus')} +${challenge.exp_reward} EXP`)
+    ? (_tiers ? `${ico('premium-plus')} ${Iss.tierGainsTxt(_tiers)} EXP` : `${ico('premium-plus')} +${challenge.exp_reward} EXP`)
     : '';
   
   // Sukuriam popup'ą
@@ -12254,7 +12257,7 @@ function _showApprovalStdNow(opts) {
     <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:3px;color:${t.color};margin-bottom:6px;">${t.label}</div>
     <div style="font-size:14px;color:white;font-weight:800;line-height:1.25;margin-bottom:${opts.progress ? '6px' : '12px'};">${escapeHtml(opts.title || 'Iššūkis')}</div>
     ${opts.progress ? `<div style="display:inline-block;padding:4px 14px;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.15);border-radius:99px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:white;margin-bottom:12px;">${escapeHtml(opts.progress)}</div>` : ''}
-    ${tiers && exp > 0 ? `<div style="font-size:11px;color:${t.color};font-weight:800;margin:2px 0 6px;">${completed ? `${tiers.length} pakopa iš ${tiers.length} · šį kartą +${exp}, iš viso +${expBig} EXP` : `${tierK} pakopa iš ${tiers.length} pasiekta${tierNext ? ` · kita: ${tierNext.v} ${unitTxt} → +${tierNext.exp} EXP` : ''}`}</div>` : ''}
+    ${tiers && exp > 0 ? `<div style="font-size:11px;color:${t.color};font-weight:800;margin:2px 0 6px;">${completed ? `${tiers.length} pakopa iš ${tiers.length} · šį kartą +${exp}, iš viso +${expBig} EXP` : `${tierK} pakopa iš ${tiers.length} pasiekta${tierNext ? ` · kita: ${tierNext.v} ${unitTxt} → +${Iss.tierGain(tiers, tierK)} EXP` : ''}`}</div>` : ''}
     <div style="height:1px;background:linear-gradient(90deg,transparent,${t.color},transparent);margin:4px 0 12px;"></div>
     ${expBig > 0 ? `
     <div style="display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:${opts.streakExp ? '6px' : '12px'};">
@@ -12262,7 +12265,7 @@ function _showApprovalStdNow(opts) {
       <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:${t.color};line-height:1;text-shadow:0 0 16px ${t.color};">+${expBig}</div>
       <div style="font-size:13px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">EXP</div>
     </div>` : (completed ? '' : `
-    <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:12px;">${tierNext ? `Įskaityta · iki ${tierK + 1} pakopos (${tierNext.v} ${unitTxt}) liko ${String(Math.max(0, Math.round((Number(tierNext.v) - (opts.prog || 0)) * 10) / 10)).replace('.', ',')} ${unitTxt} → +${tierNext.exp} EXP` : 'Progresas įskaitytas · EXP gausi pasiekęs tikslą'}</div>`)}
+    <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:12px;">${tierNext ? `Įskaityta · iki ${tierK + 1} pakopos (${tierNext.v} ${unitTxt}) liko ${String(Math.max(0, Math.round((Number(tierNext.v) - (opts.prog || 0)) * 10) / 10)).replace('.', ',')} ${unitTxt} → +${Iss.tierGain(tiers, tierK)} EXP` : 'Progresas įskaitytas · EXP gausi pasiekęs tikslą'}</div>`)}
     ${opts.streakExp ? `<div style="display:inline-block;padding:5px 14px;background:${t.color}22;border:1px solid ${t.color}66;border-radius:99px;font-size:11px;color:${t.color};font-weight:800;margin-bottom:12px;">${ico('streak')} Serija: ${opts.streakCount ?? '–'} · bonusas +${opts.streakExp}</div>`
       : (opts.streakNext && opts.streakCount != null ? `<div style="display:inline-block;padding:5px 14px;background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.18);border-radius:99px;font-size:11px;color:rgba(255,255,255,.75);font-weight:800;margin-bottom:12px;">${ico('streak')} Serija: ${opts.streakCount} · dar ${opts.streakNext.in} ${STREAK_UNIT[opts.type] || ''} iki +${opts.streakNext.prize}</div>` : '')}
     ${completed ? `<div style="margin:0 -6px 12px;padding:7px;background:linear-gradient(90deg,rgba(34,197,94,.18),rgba(34,197,94,.08));border:1px solid rgba(34,197,94,.4);border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#22C55E;">${ico('trofejai')} IŠŠŪKIS ĮVEIKTAS!</div>` : ''}
@@ -13674,7 +13677,7 @@ async function loadChallenges() {
           <div style="height:6px;background:var(--bdr);border-radius:99px;overflow:hidden;">
             <div style="height:100%;background:linear-gradient(90deg,${color},${isPartialFullyDone ? '#16A34A' : '#FFB300'});width:${pct.toFixed(1)}%;transition:width .4s ease;box-shadow:0 0 8px ${color}66;"></div>
           </div>
-          ${(typeof Iss !== 'undefined' && Iss.tiersOf(ch)) ? `<div style="display:flex;gap:6px;margin-top:6px;">${Iss.tiersOf(ch).map(t => `<span style="flex:1;text-align:center;font-size:10px;font-weight:800;border-radius:8px;padding:3px 0;${progressValue >= Number(t.v) ? 'background:rgba(34,197,94,.18);color:#22C55E;' : 'background:rgba(255,255,255,.05);color:var(--mut);'}">${progressValue >= Number(t.v) ? ico('atlikta') + ' ' : ''}${Number(t.v)} ${escapeHtml(ch.target_unit || '')} · +${Number(t.exp)}</span>`).join('')}</div>` : ''}
+          ${(typeof Iss !== 'undefined' && Iss.tiersOf(ch)) ? `<div style="display:flex;gap:6px;margin-top:6px;">${Iss.tiersOf(ch).map((t, ti, ta) => `<span style="flex:1;text-align:center;font-size:10px;font-weight:800;border-radius:8px;padding:3px 0;${progressValue >= Number(t.v) ? 'background:rgba(34,197,94,.18);color:#22C55E;' : 'background:rgba(255,255,255,.05);color:var(--mut);'}">${progressValue >= Number(t.v) ? ico('atlikta') + ' ' : ''}${Number(t.v)} ${escapeHtml(ch.target_unit || '')} · +${Iss.tierGain(ta, ti)}</span>`).join('')}</div>` : ''}
         </div>
       `;
     }
@@ -34861,8 +34864,9 @@ function subscribeKidNotifications() {
       // ⛔ Generinio žalio NEBERODOM. Tinkamą grįžtamąjį ryšį parodo
       // checkForNewApprovedSubmissions: tarpinis toast / tipo popup / įveikimo šventė
       // per _celebQueue (PR-05; detectNewChallenges ištrinta v518 — challenge_completions DB nėra).
+      // v630 (gyvas E2E): pirma patvirtinimo pop-up'as („+40 EXP"), tik tada loadKidData — kitaip lygio šventė „2 → 3" užšokdavo prieš priežastį
+      if (typeof checkForNewApprovedSubmissions === 'function') await checkForNewApprovedSubmissions().catch(() => {});
       await loadKidData();
-      if (typeof checkForNewApprovedSubmissions === 'function') checkForNewApprovedSubmissions();
       if (typeof checkForNewRejectedSubmissions === 'function') checkForNewRejectedSubmissions(); // 🔄 v400: gyvas atmetimas
     })
     .on('postgres_changes', {
@@ -34897,13 +34901,8 @@ function subscribeKidNotifications() {
       if (!adj) return;
       if (_isSeen('adj', adj.id)) return;
       _addSeen('adj', adj.id);
-      const amt = adj.exp_change || 0;
       if (/^Dvikova \(/.test(adj.reason || '')) { await loadKidData(); return; }   // v625: dvikovą jau švenčia dvikovos pop-up — ne „trenerio įvertinimas"
-      if (amt >= 0) {
-        showToast(`${ico('zvaigzde')} TRENERIO ĮVERTINIMAS\n\n${escapeHtml(adj.reason || '')}\n+${amt} EXP`, 'success', null, { confetti: 15, sound: 'exp' });
-      } else {
-        showToast(`${ico('ispejimas')} TRENERIO PASTABA\n\n${escapeHtml(adj.reason || '')}\n${amt} EXP`, 'error', null, { sound: 'send' });
-      }
+      if (typeof KidExp !== 'undefined') KidExp.toast(adj);   // v630: aiškus tekstas (pastangos / lankomumo premija / trenerio įvertinimas), ne „effort:2026-09-24"
       await loadKidData();
     })
     .subscribe();
@@ -36012,6 +36011,7 @@ async function resubscribeKidChannels() {
 // 📬 Parodyti praleistus įvykius (po vieną su pauzėmis)
 async function showMissedEvents() {
   if (!sb || !currentUser || !currentKid) return;
+  if (typeof KidExp !== 'undefined') KidExp.missed();   // v630: trenerio EXP, gautas kol programėlė buvo uždaryta (savas dedup + pirmo karto atskaita)
   if (_missedEventsRunning) return; // race apsauga: antras kvietimas išeina iškart
   _missedEventsRunning = true;
   try {
@@ -39016,7 +39016,7 @@ async function loadAllNotifications(force) {
         id: `newCh-${ch.id}`,
         icon: typeIcon,
         title: `Naujas ${challengeTypeWords[ch.type]?.toLowerCase() || ''} iššūkis`,
-        body: `${escapeHtml(ch.title || 'Iššūkis')}${(typeof Iss !== 'undefined' && Iss.tiersOf(ch)) ? ' · ' + Iss.tiersOf(ch).map(t => t.v).join(' · ') + ' ' + escapeHtml(ch.target_unit || '') + ' → ' + Iss.tiersOf(ch).map(t => '+' + t.exp).join(' / ') + ' EXP' : (ch.exp_reward ? ' · +' + ch.exp_reward + ' EXP' : '')}`, // v400: escapeHtml; v598 pakopos
+        body: `${escapeHtml(ch.title || 'Iššūkis')}${(typeof Iss !== 'undefined' && Iss.tiersOf(ch)) ? ' · ' + Iss.tiersOf(ch).map(t => t.v).join(' · ') + ' ' + escapeHtml(ch.target_unit || '') + ' → ' + Iss.tierGainsTxt(Iss.tiersOf(ch)) + ' EXP' : (ch.exp_reward ? ' · +' + ch.exp_reward + ' EXP' : '')}`, // v400: escapeHtml; v598 pakopos
         time: ch.created_at,
         link: 'v-ish'
       });
@@ -39094,6 +39094,9 @@ async function loadAllNotifications(force) {
       });
     }
   } catch (e) { /* nekritinis */ }
+
+  // v630: trenerio EXP (pastangos, lankomumo premija, „už elgesį") → Sistema — anksčiau matėsi tik gyvai (MODULIS: KidExp)
+  if (typeof KidExp !== 'undefined') { try { sistema.push(...(await KidExp.bellItems(cutoffISO, seenIds))); } catch (e) { /* nekritinis */ } }
 
   // 💬 ŽINUTĖS + KLUBO PRANEŠIMAI → 💬 Žinutės (tik kur esu pokalbio narys)
   if (msgsRes.data && msgsRes.data.length > 0) {
@@ -43142,7 +43145,7 @@ Object.assign(Kal, {
       if (!(this.st.ch || []).length) return (this === Kal.kid && this.st.chAt) ? `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span><em class="o kal-all" onclick="KidIss.go('completed')">Archyvas →</em></div><div class="kal-empty">Aktyvių iššūkių dabar nėra — treneris paskirs naujų</div>` : '';
       const TL = { weekly: 'SAVAITĖS', monthly: 'MĖNESIO', training: 'TRENIRUOTĖS', one_time: 'VIENKARTINIS' };
       // v623 (13A): „Visi →" — į Iššūkių langą (rankiniai pateikimai, „Pasiruošiau", archyvas)
-      return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span><em class="o kal-all" onclick="${this.chNav}">Visi →</em></div><div class="kal-tiles">${this.st.ch.map(c => { const pct = (c.tv && c.done != null) ? Math.min(100, Math.round(c.done * 100 / c.tv)) : (c.pending ? 60 : 0); return `<div class="kal-tile" onclick="${this.chNav}"><div class="tt"><span>${TL[c.type] || 'IŠŠŪKIS'}</span>${K.srcTag(c.vk)}</div><div class="tn">${K.esc(c.title)}</div><div class="kal-bar"><span data-w="${pct}" style="width:0;background:#22C55E;"></span></div><div class="tc">${c.tv && c.done != null ? `${c.done} / ${Number(c.tv)}${c.tu ? ' ' + K.esc(c.tu) : ''}${c.pending ? ' · laukia trenerio' : ''}` : (c.pending ? 'pateikta · laukia trenerio' : 'vyksta')}${c.left != null ? ' · liko ' + c.left + ' d.' : ''} · <b style="color:#FFD700;">${c.tiers ? (c.done != null ? 'pakopa ' + Iss.tierOf(c.tiers, c.done) + '/' + c.tiers.length + ' · ' : '') + c.tiers.map(t => '+' + Number(t.exp)).join('/') : '+' + Number(c.exp)}</b></div></div>`; }).join('')}</div>`;
+      return `<div class="kal-sec"><b>IŠŠŪKIAI</b><span></span><em class="o kal-all" onclick="${this.chNav}">Visi →</em></div><div class="kal-tiles">${this.st.ch.map(c => { const pct = (c.tv && c.done != null) ? Math.min(100, Math.round(c.done * 100 / c.tv)) : (c.pending ? 60 : 0); return `<div class="kal-tile" onclick="${this.chNav}"><div class="tt"><span>${TL[c.type] || 'IŠŠŪKIS'}</span>${K.srcTag(c.vk)}</div><div class="tn">${K.esc(c.title)}</div><div class="kal-bar"><span data-w="${pct}" style="width:0;background:#22C55E;"></span></div><div class="tc">${c.tv && c.done != null ? `${c.done} / ${Number(c.tv)}${c.tu ? ' ' + K.esc(c.tu) : ''}${c.pending ? ' · laukia trenerio' : ''}` : (c.pending ? 'pateikta · laukia trenerio' : 'vyksta')}${c.left != null ? ' · liko ' + c.left + ' d.' : ''} · <b style="color:#FFD700;">${c.tiers ? (c.done != null ? 'pakopa ' + Iss.tierOf(c.tiers, c.done) + '/' + c.tiers.length + ' · ' : '') + Iss.tierGainsTxt(c.tiers, '/') : '+' + Number(c.exp)}</b></div></div>`; }).join('')}</div>`;
     },
     shift(d) { const r = this.K.range(this.st.ym); const x = new Date(r.y, r.m - 1 + d, 1); this.st.ym = `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}`; this.st.dir = d; const g = document.querySelector('#' + this.cid + ' .kal-grid'); if (g && !this.K.reduced()) g.classList.add(d > 0 ? 'out-l' : 'out-r'); this.reload(); },
 
@@ -43830,7 +43833,7 @@ const Iss = {
   LT: { weekly: 'SAVAITĖS IŠŠŪKIAI', monthly: 'MĖNESIO IŠŠŪKIAI' },
   on() { return typeof Kal !== 'undefined' && Kal.on(); },
   // v597 (savininko „A" 2026-09-22): PAKOPOS savaitės Strava kaupiamiems iššūkiams — 3 slenksčiai iš VAIKO amžiaus juostos ir lyties,
-  // EXP 15/20/25 (kiekviena pakopa kartą — DB trigeris update_challenge_progress pagal verify_meta.tiers); mėnesio pasiekimas 40;
+  // EXP 15/20/25 — KAUPIAMA suma (vaikas gauna +15, +5, +5; DB trigeris update_challenge_progress pagal verify_meta.tiers, v630 tekstai); mėnesio pasiekimas 40;
   // savaitės vienkartinis (fx, pvz. greitas km) 20. Katalogo kreivė su mažėjančia grąža V2 kelyje nebenaudojama.
   TIER: { exp: [15, 20, 25], girls: 0.85, monthlyExp: 40, weeklyFxExp: 20 },
   tierRound(v) { return Math.max(1, v >= 20 ? katRoundTarget(v) : Math.round(v)); },
@@ -43851,6 +43854,10 @@ const Iss = {
     return out.length === t.length ? out : null;
   },
   tierOf(tiers, progress) { let k = 0; (tiers || []).forEach((t, i) => { if (Number(progress || 0) >= Number(t.v)) k = i + 1; }); return k; },
+  // v630 (gyvas E2E 09-24, savininkas: „palikti 25, taisyti tekstą"): tiers[].exp — KAUPIAMA suma (DB update_challenge_progress ima pasiektų
+  // pakopų MAX, riba exp_reward = 25), todėl vaikui rodom PRIEAUGĮ +15 · +5 · +5 (anksčiau „+15 / +20 / +25" — atrodė kaip 60 EXP)
+  tierGain(tiers, i) { const t = tiers || [], cur = t[i] ? Number(t[i].exp) || 0 : 0, prev = (i > 0 && t[i - 1]) ? Number(t[i - 1].exp) || 0 : 0; return Math.max(0, cur - prev); },
+  tierGainsTxt(tiers, sep) { return (tiers || []).map((t, i, a) => '+' + this.tierGain(a, i)).join(sep || ' · '); },
   // v622 (14A): vaikui skirti iššūkiai — NE visas klubas. V2 grupės iššūkis = paslėptas tėvinis (is_active=false) + kopija kiekvienam
   // vaikui (target_audience='specific_kid', target_kid_id, parent_challenge_id). (A) target_kid_id = vaikas (kopijos + tiesioginiai);
   // (B) seni grupės/klubo iššūkiai BE kopijų (aktyvūs, target_kid_id IS NULL, parent_challenge_id IS NULL) — auditorija per challengeMatchesKid.
@@ -44020,7 +44027,7 @@ const Iss = {
         if (mon || it.fx || it.learn || !it.base || !s.sel[it.key]) return '';
         const seedG = katSeedTarget(it, katAgeBandIdx(s.kids), 'medium'), ratio = seedG > 0 ? this.target(it) / seedG : 1;
         const parts = (s.kid ? [null] : [0, 1, 2]).map(b => { const t = Iss.tierPlan(it, s.kid || null, ratio, b == null ? katAgeBandIdx(s.kids) : b); return t ? `${b == null ? '' : KAT_BANDS[b] + ' m. '}${t.map(x => x.v).join('·')}` : ''; }).filter(Boolean);
-        return `<div class="s" style="color:var(--br);font-weight:700;">Pakopos: ${parts.join(' | ')} ${Iss.esc(it.unit || '')}${it.unit === 'km' && !s.kid ? ' · ♀ −15 %' : ''} → +15 / +20 / +25 EXP</div>`;
+        return `<div class="s" style="color:var(--br);font-weight:700;">Pakopos: ${parts.join(' | ')} ${Iss.esc(it.unit || '')}${it.unit === 'km' && !s.kid ? ' · ♀ −15 %' : ''} → ${Iss.tierGainsTxt(Iss.TIER.exp.map(e => ({ exp: e })))} EXP (iki ${Iss.TIER.exp[2]})</div>`;
       };
       const groups = Planas.st.groups || [];
       const gChips = !s.kid && groups.length ? `<div class="no-scrollbar" style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 8px;">${groups.map(g => `<span class="kal-b${s.group && g.id === s.group.id ? ' o' : ''}" style="flex:none;" onclick="Iss.create.setGroup('${g.id}')">${Iss.esc(g.name || 'Grupė')}</span>`).join('')}</div>` : '';
@@ -44035,7 +44042,7 @@ const Iss = {
         <div style="padding:4px 16px 10px;font-size:10.5px;color:var(--mut);line-height:1.45;">${mon
           ? `${ico('ispejimas')} Kai vaikas išmoko — iššūkio suvestinėje (kalendoriaus plytelė arba Treniruotės → Iššūkiai) paspausk „Išmoko" prie vardo: EXP išsiunčiama iškart. Vaikas gali ir pats pateikti „parodžiau" — tada patvirtini.`
           : `${ico('ispejimas')} Užskaito pati, kai vaiko Strava susieta (Profilis → Strava — susieja pats vaikas arba tėvai). Nesusietiems rodoma užuomina ir jie pateikia ranka — tvirtini tu. Rankiniai Strava įrašai neužskaitomi.`}</div>`;
-      if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">${mon ? '+40 EXP už išmoktą' : 'Pakopos +15 / +20 / +25 EXP pagal amžių ir lytį'} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${mon ? 'mėnesio pabaigos' : 'sekmadienio'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti${s.kid ? ' · ' + Iss.esc(s.kid.first_name || 'vaikui') : (s.group ? ' · ' + Iss.esc(s.group.name || 'grupei') : ' grupei')}${n ? ' · ' + n : ''}`}</button>`;
+      if (foot) foot.innerHTML = `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-bottom:8px;">${mon ? '+40 EXP už išmoktą' : 'Pakopos ' + Iss.tierGainsTxt(Iss.TIER.exp.map(e => ({ exp: e }))) + ' EXP (iki ' + Iss.TIER.exp[2] + ') pagal amžių ir lytį'} · ${s.kids.length} ${_ltPl(s.kids.length, 'vaikas', 'vaikai', 'vaikų')} · galioja iki ${mon ? 'mėnesio pabaigos' : 'sekmadienio'}</div><button class="pl-cta" ${n && left && !s.busy ? '' : 'disabled style="opacity:.45;"'} onclick="Iss.create.assign()">${s.busy ? 'Skiriama…' : `Skirti${s.kid ? ' · ' + Iss.esc(s.kid.first_name || 'vaikui') : (s.group ? ' · ' + Iss.esc(s.group.name || 'grupei') : ' grupei')}${n ? ' · ' + n : ''}`}</button>`;
     },
     async assign() {
       const s = this.st; if (s.busy) return; const items = this.items(s.type).filter(it => s.sel[it.key]); if (!items.length) return;
@@ -47225,6 +47232,98 @@ const KidCard = {
   },
 };
 // ===== /MODULIS =====
+
+// ===== MODULIS: KidExp =====
+// v630 (gyvas vaiko E2E 2026-09-24): trenerio / sistemos EXP (kid_exp_adjustments) vaikui — vienas tekstas gyvam pranešimui,
+// varpeliui ir „praleistiems" (kai programėlė buvo uždaryta). Anksčiau gyvai rodė žalią priežastį („effort:2026-09-24"),
+// o uždarius programėlę įrašas dingdavo visai. Dvikova turi savo pop-up'ą; stovykla ir grupių iššūkis — savo varpelio įrašus.
+// Push „už elgesį" — serveryje (server-PUSH-dvikova-elgesys-2026-09-24.sql). Vardų erdvė KidExp, naujų globalių nėra.
+const KidExp = {
+  LIVE_SKIP: /^Dvikova \(/,
+  BELL_SKIP: /^(Dvikova \(|Stovykla:|Grupių iššūkis:)/,
+  busy: false,
+  esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : ''; },
+  effLabel(amt) {
+    const E = (typeof Kal !== 'undefined' && Kal.EFF) ? Kal.EFF : null; if (!E) return '';
+    const k = Object.keys(E).find(x => Number(E[x].exp) === Math.abs(Number(amt) || 0));
+    return k ? E[k].lb.charAt(0).toUpperCase() + E[k].lb.slice(1) : '';
+  },
+  // → { ic, head (pranešimui), title (varpeliui), body (jau išvalytas HTML'ui), ok }
+  fmt(reason, amt) {
+    const r = String(reason || '').trim(), a = Number(amt) || 0;
+    let m = r.match(/^effort:\d{4}-(\d{2})-(\d{2})$/);
+    if (m) {
+      const lb = a > 0 ? this.effLabel(a) : '';
+      return { ic: 'jega', head: a >= 0 ? 'PASTANGOS TRENIRUOTĖJE' : 'PASTANGŲ ĮVERTINIMAS PATAISYTAS', title: a >= 0 ? 'Pastangos treniruotėje' : 'Pastangos pataisytos',
+        body: `${lb ? lb + ' · ' : ''}${m[1]}-${m[2]} treniruotė`, ok: a >= 0 };
+    }
+    m = r.match(/^Pilnas (savaitės|mėnesio) lankomumas/i);
+    if (m) return { ic: 'lankomumas', head: 'LANKOMUMO PREMIJA', title: 'Lankomumo premija', body: `Pilnas ${m[1].toLowerCase()} lankomumas — nepraleidai nė vienos treniruotės!`, ok: a >= 0 };
+    if (/^Lankomumo premija atšaukta/i.test(r)) return { ic: 'lankomumas', head: 'LANKOMUMO PREMIJA ATŠAUKTA', title: 'Lankomumo premija atšaukta', body: 'Treneris pataisė lankomumą — premija perskaičiuota', ok: false };   // server-B3 (trainer_id null)
+    m = r.match(/^Stovykla:\s*(.*)$/);
+    if (m) return { ic: 'stovykla', head: 'STOVYKLA PATVIRTINTA', title: 'Stovykla patvirtinta', body: this.esc(m[1] || 'Stovykla'), ok: a >= 0 };
+    m = r.match(/^Grupių iššūkis:\s*(.*)$/);
+    if (m) return { ic: 'trofejai', head: 'GRUPIŲ IŠŠŪKIS BAIGĖSI', title: 'Grupių iššūkis baigėsi', body: this.esc(m[1] || ''), ok: a >= 0 };
+    if (/^Karjeros archyvas/.test(r)) return { ic: 'archyvas', head: 'KELIO ARCHYVAS', title: 'Kelio archyvas', body: this.esc(r), ok: true };
+    return a >= 0
+      ? { ic: 'zvaigzde', head: 'TRENERIO ĮVERTINIMAS', title: 'Trenerio įvertinimas', body: this.esc(r || 'Už pastangas'), ok: true }
+      : { ic: 'ispejimas', head: 'TRENERIO PASTABA', title: 'Trenerio pastaba', body: this.esc(r || 'Pasikalbėk su treneriu'), ok: false };
+  },
+  amtTxt(a) { a = Number(a) || 0; return (a > 0 ? '+' : '') + a + ' EXP'; },
+  toast(adj) {
+    if (!adj || this.LIVE_SKIP.test(adj.reason || '')) return;
+    const f = this.fmt(adj.reason, adj.exp_change);
+    showToast(`${ico(f.ic)} ${f.head}\n\n${f.body}\n${this.amtTxt(adj.exp_change)}`, f.ok ? 'success' : 'error', null, f.ok ? { confetti: 15, sound: 'exp' } : { sound: 'send' });
+  },
+  // Praleisti (programėlė buvo uždaryta): ≤2 — po vieną, daugiau — viena suvestinė. Pirmą kartą įrenginyje po v630 senesni nei 3 min. tik pažymimi.
+  async missed() {
+    if (this.busy || !currentKid?.id || typeof _isSeen !== 'function') return;
+    this.busy = true;
+    try {
+      const cut = new Date(Date.now() - 14 * 86400000).toISOString();
+      const { data, error } = await sb.from('kid_exp_adjustments').select('id, exp_change, reason, created_at')
+        .eq('kid_id', currentKid.id).gte('created_at', cut).order('created_at', { ascending: false }).limit(30);
+      if (error || !data) return;
+      const rows = data.filter(a => Number(a.exp_change) && !this.LIVE_SKIP.test(a.reason || ''));
+      const k = `spobu_kid_${currentKid.id}_adj_init`;
+      let init = null; try { init = localStorage.getItem(k); } catch (e) { }
+      if (!init) {
+        const now = Date.now();
+        rows.forEach(a => { if (now - new Date(a.created_at).getTime() >= 180000) _addSeen('adj', a.id); });
+        try { localStorage.setItem(k, '1'); } catch (e) { }
+      }
+      const fresh = rows.filter(a => !_isSeen('adj', a.id)).reverse();
+      if (!fresh.length) return;
+      fresh.forEach(a => _addSeen('adj', a.id));
+      if (fresh.length <= 2) { fresh.forEach(a => this.toast(a)); return; }
+      const sum = fresh.reduce((s, a) => s + (Number(a.exp_change) || 0), 0);
+      showToast(`${ico('zvaigzde')} KOL TAVĘS NEBUVO\n\n${fresh.length} ${_ltPl(fresh.length, 'įrašas', 'įrašai', 'įrašų')} — pastangos, premijos, trenerio įvertinimai (rasi varpelyje)\n${this.amtTxt(sum)}`,
+        sum >= 0 ? 'success' : 'info', null, sum > 0 ? { confetti: 15, sound: 'exp' } : { sound: 'send' });
+    } catch (e) { /* nekritinis */ } finally { this.busy = false; }
+  },
+  // Varpelio „Sistema" įrašai; pirmą kartą po v630 senesni nei 3 min. pažymimi perskaitytais (kad realiems vaikams neiššoktų 10+ senų)
+  async bellItems(cutoffISO, seenIds) {
+    if (!currentKid?.id) return [];
+    const { data, error } = await sb.from('kid_exp_adjustments').select('id, exp_change, reason, created_at')
+      .eq('kid_id', currentKid.id).gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(30);
+    if (error || !data) return [];
+    const items = data.filter(a => Number(a.exp_change) && !this.BELL_SKIP.test(a.reason || '')).map(a => {
+      const f = this.fmt(a.reason, a.exp_change);
+      return { id: `adj-${a.id}`, icon: ico(f.ic), title: f.title, body: `${f.body} · ${this.amtTxt(a.exp_change)}`, time: a.created_at, link: null };
+    });
+    const k = `spobu_kid_${currentKid.id}_adj_bell_init`;
+    let init = null; try { init = localStorage.getItem(k); } catch (e) { }
+    if (!init) {
+      const now = Date.now(), old = items.filter(i => now - new Date(i.time).getTime() >= 180000).map(i => i.id);
+      if (old.length && typeof KidInfo !== 'undefined') KidInfo.seen(old);
+      if (seenIds) old.forEach(i => seenIds.add(i));
+      try { localStorage.setItem(k, '1'); } catch (e) { }
+    }
+    return items;
+  },
+};
+// ===== /MODULIS =====
+
 
 // ════════════════════════════════════════
 // PALEISTI
