@@ -33,11 +33,12 @@ const SHARE_BADGES = {
   parent:    { word: null,         bg: '#FFD700', fg: '#1a0a00' },  // word = mėnesio etiketė
   challenge: { word: 'IŠŠŪKIS',    bg: '#0EA5E9', fg: '#fff'    },
   club:      { word: 'SUVESTINĖ',  bg: '#22C55E', fg: '#fff'    },
-  event:     { word: 'RENGINYS',   bg: '#A855F7', fg: '#fff'    }
+  event:     { word: 'RENGINYS',   bg: '#A855F7', fg: '#fff'    },
+  duel:      { word: 'DVIKOVA',    bg: '#EC407A', fg: '#fff'    }   // v637 trenerio dvikovos postas
 };
 
 // Formatas: 4:5 asmeniniam turiniui, 1:1 institucijos turiniui. Trečio nėra.
-const SHARE_RATIO = { kid: '4/5', parent: '4/5', challenge: '4/5', club: '1/1', event: '1/1' };
+const SHARE_RATIO = { kid: '4/5', parent: '4/5', challenge: '4/5', club: '1/1', event: '1/1', duel: '4/5' };
 
 // kind    — SHARE_BADGES raktas
 // inner   — kortelės vidus (laisvas)
@@ -52,11 +53,12 @@ function shareFrame(kind, inner, opts) {
   const word = o.word || k.word;
   const photo = o.photo || null;
 
-  const bg = photo
+  // v637: overlay — permatomas fonas (rėmelis dedamas ant vaizdo įrašo), scrim paliekamas
+  const bg = o.overlay ? 'background:transparent;' : (photo
     ? "background-image:url('" + photo + "');background-size:cover;background-position:center;"
-    : 'background:linear-gradient(165deg,#15151c,#0b0b0f 55%);';
+    : 'background:linear-gradient(165deg,#15151c,#0b0b0f 55%);');
 
-  const scrim = photo
+  const scrim = (photo || o.overlay)
     ? '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.62),rgba(0,0,0,.28) 42%,rgba(10,10,10,.94));"></div>'
     : '';
 
@@ -44706,6 +44708,8 @@ const Strava = {
 // „{dienos} treniruotė". Jokių skaičių, vardų, EXP. Tik skaitymas. Ankstesnės v561–v563 kortelės (pasakojimas, FB
 // režimas, „Pratimas iš arti") savininko atmestos kaip per daug teksto — pašalintos.
 // Taisyklė 7: viena vardų erdvė `Postai`, DOM prefiksas `pst-`, jokių naujų globalių.
+// v637 (savininkas 09-24): + DVIKOVOS postas (openDuel; viena / visos dienos; vardų taisyklė FB / IG) ir nuotrauka AR VAIZDO
+// ĮRAŠAS su rėmeliu (makeVideo: kadrai + permatomas rėmelis → MediaRecorder) — abiem postams.
 const Postai = {
   st: null,
   on() { return typeof Kal !== 'undefined' && Kal.on(); },
@@ -44715,27 +44719,30 @@ const Postai = {
   dash(s) { return String(s || '').replace(/\s*—\s*/g, ' — ').replace(/\s+/g, ' ').trim(); },
   dmon(d) { const m = (typeof Kal !== 'undefined' && Kal.MONG) ? Kal.MONG[d.getMonth()].toLowerCase() : ''; return `${d.getDate()} ${m.slice(0, 4)}.`; },
   titleOf() { const s = this.st; if (!s) return ''; return s.title ? this.dash(s.title) : `${this.KILM[s.now.getDay()]} treniruotė`; },
-  textOf() { const s = this.st; if (!s) return ''; const g = s.group.name || 'Grupė'; const t = s.title ? this.dash(s.title) : `${this.KILM[s.now.getDay()]} treniruotė`; if (s.target === 'group') return s.title ? `${g} šiandien: ${t} 🥋` : `${g}: ${t} 🥋`; return `${s.clubName ? s.clubName + ' · ' : ''}${g}: ${t} 🥋 #karate #vaikusportas #spobu`; },
+  textOf() { const s = this.st; if (!s) return ''; if (s.kind === 'duel') return this.duelText(); const g = s.group.name || 'Grupė'; const t = s.title ? this.dash(s.title) : `${this.KILM[s.now.getDay()]} treniruotė`; if (s.target === 'group') return s.title ? `${g} šiandien: ${t} 🥋` : `${g}: ${t} 🥋`; return `${s.clubName ? s.clubName + ' · ' : ''}${g}: ${t} 🥋 #karate #vaikusportas #spobu`; },
   TARGETS: [['group', 'Grupei', 'tėvų pokalbis'], ['fb', 'Facebook', '+ klubas, #žymos'], ['ig', 'Instagram', '+ klubas, #žymos']],
   targetsHtml() { const s = this.st; return `<div id="pst-targets" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">${this.TARGETS.map(([k, t, sub]) => `<div onclick="Postai.setTarget('${k}')" style="text-align:center;border:.5px solid ${s.target === k ? '#FF7A33' : 'var(--bdr)'};background:${s.target === k ? 'rgba(255,122,51,.12)' : 'var(--card)'};color:${s.target === k ? '#FF9E40' : 'rgba(255,255,255,.85)'};border-radius:11px;padding:8px 4px;font-size:11px;font-weight:800;cursor:pointer;">${t}<div style="font-size:9px;color:var(--mut);font-weight:700;margin-top:2px;">${sub}</div></div>`).join('')}</div>`; },
-  setTarget(k) { const s = this.st; if (!s) return; s.target = k; const tg = document.getElementById('pst-targets'); if (tg) tg.outerHTML = this.targetsHtml(); const inp = document.getElementById('pst-text'); if (inp) inp.value = this.textOf(); },
+  // dvikovos poste vardai priklauso nuo auditorijos → kortelė perpiešiama
+  setTarget(k) { const s = this.st; if (!s) return; s.target = k; const tg = document.getElementById('pst-targets'); if (tg) tg.outerHTML = this.targetsHtml(); const inp = document.getElementById('pst-text'); if (inp) inp.value = this.textOf(); if (s.kind === 'duel') this.render(); },
+  foot() { return `${this.targetsHtml()}<button class="pl-cta" id="pst-cta" onclick="Postai.share()">${ico('siusti')} Dalintis</button>
+       <div style="text-align:center;margin-top:8px;"><span onclick="Postai.download()" style="font-size:10.5px;color:var(--mut);cursor:pointer;text-decoration:underline;">Atsisiųsti</span></div>`; },
+  body(sub) { return `
+      <div style="padding:0 16px 6px;font-size:11px;color:var(--mut);">${sub}</div>
+      <div id="pst-mode"></div>
+      <div id="pst-prev" style="margin:0 16px;background:#12100e;border-radius:14px;padding:8px;display:flex;justify-content:center;overflow:hidden;"><div style="padding:40px;color:var(--mut);font-size:11px;">Ruošiama…</div></div>
+      <div id="pst-photo-row" style="margin:10px 16px 0;"></div>
+      <div style="margin:10px 16px 0;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;color:var(--mut);margin-bottom:5px;">ŽINUTĖ · viena eilutė</div><input id="pst-text" class="inp" maxlength="160" style="margin:0;font-size:12px;" value=""></div>`; },
 
-  // Lapas: peržiūra · nuotrauka · viena eilutė · Siųsti. opts.auto — atidaryta automatiškai po lankomumo
+  // Lapas: peržiūra · nuotrauka / vaizdo įrašas · viena eilutė · Siųsti. opts.auto — atidaryta automatiškai po lankomumo
   async open(groupId, opts) {
     if (!this.on()) return;
     if (typeof flagOn === 'function' && !flagOn('trainer_posts_enabled')) { if (!(opts && opts.auto)) showToast(ico('uzrakinta') + ' Klubas išjungė trenerių postus', 'error', 4000); return; }
     const g = (typeof trainerGroupsCache !== 'undefined' ? (trainerGroupsCache || []) : []).find(x => x.id === groupId);
     if (!g) { if (!(opts && opts.auto)) showToast(ico('ispejimas') + ' Pirma atidaryk grupę', 'error'); return; }
     document.getElementById('att-share-hint')?.remove();
-    this.st = { groupId, group: g, now: new Date(), title: null, logo: null, clubName: '', photo: null, canvas: null, busy: false, auto: !!(opts && opts.auto), target: 'group' };
-    Planas.sheet('pst-mini', 'POSTAS', `
-      <div style="padding:0 16px 6px;font-size:11px;color:var(--mut);">${this.esc(g.name || '')}${this.st.auto ? ' · lankomumas pažymėtas — pasidalink su tėvais' : ''}</div>
-      <div id="pst-prev" style="margin:0 16px;background:#12100e;border-radius:14px;padding:8px;display:flex;justify-content:center;overflow:hidden;"><div style="padding:40px;color:var(--mut);font-size:11px;">Ruošiama…</div></div>
-      <div id="pst-photo-row" style="margin:10px 16px 0;"></div>
-      <div style="margin:10px 16px 0;"><div style="font-size:9px;font-weight:800;letter-spacing:1.5px;color:var(--mut);margin-bottom:5px;">ŽINUTĖ · viena eilutė</div><input id="pst-text" class="inp" maxlength="140" style="margin:0;font-size:12px;" value=""></div>`,
-      `${this.targetsHtml()}<button class="pl-cta" onclick="Postai.share()">${ico('siusti')} Dalintis</button>
-       <div style="text-align:center;margin-top:8px;"><span onclick="Postai.download()" style="font-size:10.5px;color:var(--mut);cursor:pointer;text-decoration:underline;">Atsisiųsti paveikslą</span></div>`,
-      { z: 100006 });
+    this.reset();
+    this.st = { kind: 'training', groupId, group: g, now: new Date(), title: null, logo: null, clubName: '', photo: null, video: null, videoOut: null, canvas: null, busy: false, auto: !!(opts && opts.auto), target: 'group' };
+    Planas.sheet('pst-mini', 'POSTAS', this.body(`${this.esc(g.name || '')}${this.st.auto ? ' · lankomumas pažymėtas — pasidalink su tėvais' : ''}`), this.foot(), { z: 100006 });
     this.photoRow();
     await this.load();
     const inp = document.getElementById('pst-text'); if (inp && !inp.value) inp.value = this.textOf();
@@ -44746,7 +44753,7 @@ const Postai = {
     try {
       const cid = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || currentProfile?.club_id || null;
       const [ses, logo, club] = await Promise.all([
-        sb.from('training_plan_sessions').select('title, session_date, training_plans!inner(status)').eq('group_id', s.groupId).eq('session_date', this.ymd(s.now)).eq('status', 'confirmed').eq('training_plans.status', 'active').limit(1),
+        s.kind === 'duel' ? Promise.resolve({ data: [] }) : sb.from('training_plan_sessions').select('title, session_date, training_plans!inner(status)').eq('group_id', s.groupId).eq('session_date', this.ymd(s.now)).eq('status', 'confirmed').eq('training_plans.status', 'active').limit(1),
         typeof _shareClubLogo === 'function' ? _shareClubLogo() : Promise.resolve(null),
         cid ? sb.from('clubs').select('name').eq('id', cid).maybeSingle() : Promise.resolve({ data: null }),
       ]);
@@ -44756,63 +44763,232 @@ const Postai = {
       s.logo = logo || null;
     } catch (e) { console.warn('[postai]', e); }
   },
-  // Kortelės vidus: viskas apačioje, ant nuotraukos (shareFrame duoda foną, scrim ir SPOBU juostą)
+  // Kortelės vidus: viskas apačioje, ant nuotraukos / vaizdo (shareFrame duoda foną, scrim ir SPOBU juostą)
   inner() {
     const s = this.st;
+    if (s.kind === 'duel') return this.duelInner();
     return `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 16px 12px;">
       <div style="font-size:10px;font-weight:900;letter-spacing:2.5px;color:rgba(255,255,255,.78);text-transform:uppercase;text-shadow:0 1px 8px rgba(0,0,0,.6);">${this.esc(s.group.name || '')} · ${this.esc(this.dmon(s.now))}</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;color:#fff;margin-top:5px;text-transform:uppercase;text-shadow:0 2px 14px rgba(0,0,0,.7);">${this.esc(this.titleOf())}</div>
     </div>`;
   },
+  frameKind() { return this.st && this.st.kind === 'duel' ? 'duel' : 'club'; },
+  frameWord() { const s = this.st; if (!s || s.kind !== 'duel') return 'TRENIRUOTĖ'; return this.duelList().length > 1 ? 'DVIKOVOS' : 'DVIKOVA'; },
+  // overlay=true — permatomas fonas (rėmelis vaizdo įrašui)
+  async snap(overlay) {
+    const s = this.st;
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-9999px;top:0;width:360px;z-index:-1;';
+    host.innerHTML = shareFrame(this.frameKind(), this.inner(), { photo: overlay ? null : (s.photo || null), clubLogo: s.logo || null, word: this.frameWord(), overlay: !!overlay });
+    document.body.appendChild(host);
+    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_e) { }
+    try { return await _h2cIsolated(host.firstElementChild, { backgroundColor: overlay ? null : '#0b0b0f', scale: 3, useCORS: true, logging: false }); }
+    finally { host.remove(); }
+  },
   async render() {
     const s = this.st; const prev = document.getElementById('pst-prev'); if (!s || !prev) return;
+    const tok = (s.rtok = (s.rtok || 0) + 1);
     try {
       if (typeof html2canvas !== 'function') { prev.innerHTML = '<div style="padding:30px;color:var(--mut);font-size:11px;">Peržiūra neprieinama</div>'; return; }
-      const host = document.createElement('div');
-      host.style.cssText = 'position:fixed;left:-9999px;top:0;width:360px;z-index:-1;';
-      host.innerHTML = shareFrame('club', this.inner(), { photo: s.photo || null, clubLogo: s.logo || null, word: 'TRENIRUOTĖ' });
-      document.body.appendChild(host);
-      try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_e) { }
-      const cv = await _h2cIsolated(host.firstElementChild, { backgroundColor: '#0b0b0f', scale: 3, useCORS: true, logging: false });
-      host.remove();
-      s.canvas = cv;
-      prev.innerHTML = `<img src="${cv.toDataURL('image/png')}" style="width:100%;max-width:300px;border-radius:10px;display:block;">`;
+      if (s.video) {
+        const ov = await this.snap(true); if (tok !== s.rtok) return;
+        s.canvas = null; s.overlay = ov; s.videoOut = null;
+        prev.innerHTML = `<div style="position:relative;width:100%;max-width:300px;aspect-ratio:${ov.width}/${ov.height};border-radius:10px;overflow:hidden;background:#000;"><video src="${s.video}" autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video><img src="${ov.toDataURL('image/png')}" style="position:absolute;inset:0;width:100%;height:100%;"></div>`;
+      } else {
+        const cv = await this.snap(false); if (tok !== s.rtok) return;
+        s.canvas = cv; s.overlay = null;
+        prev.innerHTML = `<img src="${cv.toDataURL('image/png')}" style="width:100%;max-width:300px;border-radius:10px;display:block;">`;
+      }
+      this.cta();
     } catch (e) { console.warn('[postai] render', e); prev.innerHTML = '<div style="padding:30px;color:var(--mut);font-size:11px;">Nepavyko paruošti</div>'; }
+  },
+  cta(txt) {
+    const b = document.getElementById('pst-cta'), s = this.st; if (!b || !s) return;
+    b.innerHTML = txt || (s.video ? (s.videoOut ? `${ico('siusti')} Dalintis vaizdo įrašu` : `${ico('nuotrauka')} Paruošti vaizdo įrašą su rėmeliu`) : `${ico('siusti')} Dalintis`);
   },
   photoRow() {
     const s = this.st; const r = document.getElementById('pst-photo-row'); if (!s || !r) return;
+    const has = !!(s.photo || s.video);
     r.innerHTML = `<div style="display:flex;gap:7px;">
-      <button onclick="Postai.pickPhoto()" style="flex:1;background:${s.photo ? 'var(--card)' : 'rgba(255,122,51,.14)'};border:.5px ${s.photo ? 'solid var(--bdr)' : 'dashed rgba(255,122,51,.6)'};color:${s.photo ? 'rgba(255,255,255,.85)' : '#FF9E40'};border-radius:11px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('nuotrauka')} ${s.photo ? 'Keisti nuotrauką' : 'Pridėti nuotrauką iš salės'}</button>
-      ${s.photo ? `<button onclick="Postai.clearPhoto()" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:11px;padding:12px 14px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">Be nuotraukos</button>` : ''}
-    </div>`;
+      <button onclick="Postai.pickPhoto()" style="flex:1;background:${has ? 'var(--card)' : 'rgba(255,122,51,.14)'};border:.5px ${has ? 'solid var(--bdr)' : 'dashed rgba(255,122,51,.6)'};color:${has ? 'rgba(255,255,255,.85)' : '#FF9E40'};border-radius:11px;padding:12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('nuotrauka')} ${has ? (s.video ? 'Keisti vaizdo įrašą' : 'Keisti nuotrauką') : 'Nuotrauka ar vaizdo įrašas iš salės'}</button>
+      ${has ? `<button onclick="Postai.clearPhoto()" style="flex:none;background:var(--card);border:.5px solid var(--bdr);color:var(--mut);border-radius:11px;padding:12px 14px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;">Be ${s.video ? 'vaizdo' : 'nuotraukos'}</button>` : ''}
+    </div>${s.video ? `<div style="font-size:10px;color:var(--mut);margin-top:6px;line-height:1.45;">Rėmelis uždedamas ant vaizdo įrašo telefone — iki 30 s, trunka tiek, kiek įrašas. Neužverk lango, kol ruošiama.</div>` : ''}`;
   },
   pickPhoto() {
-    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*,video/*';
     inp.onchange = () => {
-      const f = inp.files && inp.files[0]; if (!f) return;
+      const f = inp.files && inp.files[0]; if (!f) return; const s = this.st; if (!s) return;
+      if (/^video\//.test(f.type || '')) {
+        if (typeof MediaRecorder === 'undefined' || typeof HTMLCanvasElement === 'undefined' || !HTMLCanvasElement.prototype.captureStream) { showToast(ico('ispejimas') + ' Šiame telefone vaizdo rėmelio padaryti nepavyks — pridėk nuotrauką', 'error', 5000); return; }
+        if (s.video) { try { URL.revokeObjectURL(s.video); } catch (_e) { } }
+        s.video = URL.createObjectURL(f); s.photo = null; s.videoOut = null;
+        this.photoRow(); this.render(); return;
+      }
       const rd = new FileReader();
-      rd.onload = () => { const img = new Image(); img.onload = () => { const s = this.st; if (!s) return; s.photo = this.shrink(img); this.photoRow(); this.render(); }; img.onerror = () => { const s = this.st; if (s) { s.photo = rd.result; this.photoRow(); this.render(); } }; img.src = rd.result; };
+      rd.onload = () => { const img = new Image(); img.onload = () => { const s2 = this.st; if (!s2) return; this.dropVideo(); s2.photo = this.shrink(img); this.photoRow(); this.render(); }; img.onerror = () => { const s2 = this.st; if (s2) { this.dropVideo(); s2.photo = rd.result; this.photoRow(); this.render(); } }; img.src = rd.result; };
       rd.readAsDataURL(f);
     };
     inp.click();
   },
   // telefono nuotrauka 4000 px — sumažinam iki 1440 px, kad html2canvas ×3 nestrigtų
   shrink(img) { const M = 1440, w = img.naturalWidth || img.width, h = img.naturalHeight || img.height; const k = Math.min(1, M / Math.max(w, h)); if (k >= 1) return img.src; const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.9); },
-  clearPhoto() { const s = this.st; if (!s) return; s.photo = null; this.photoRow(); this.render(); },
+  dropVideo() { const s = this.st; if (!s) return; if (s.video) { try { URL.revokeObjectURL(s.video); } catch (_e) { } } s.video = null; s.videoOut = null; s.overlay = null; },
+  clearPhoto() { const s = this.st; if (!s) return; this.dropVideo(); s.photo = null; this.photoRow(); this.render(); },
+  reset() { if (this.st) { this.st.cancel = true; this.dropVideo(); } },
   text() { const el = document.getElementById('pst-text'); return (el ? el.value : '').trim(); },
+  fname(ext) { return `spobu-${this.st && this.st.kind === 'duel' ? 'dvikova' : 'treniruote'}.${ext}`; },
   // Web Share: PNG + viena eilutė; tekstas į iškarpinę BE await prieš share (WebKit aktyvacija)
   async share() {
-    const s = this.st; if (!s || !s.canvas) { showToast(ico('ispejimas') + ' Palauk, ruošiama'); return; }
+    const s = this.st; if (!s) return;
+    if (s.video) { if (s.videoOut) return this.shareVideo(); return this.makeVideo(); }
+    if (!s.canvas) { showToast(ico('ispejimas') + ' Palauk, ruošiama'); return; }
     const text = this.text();
     try { if (text && navigator.clipboard) navigator.clipboard.writeText(text).catch(() => { }); } catch (_e) { }
     try {
       const blob = await new Promise(res => s.canvas.toBlob(res, 'image/png'));
-      const file = new File([blob], 'spobu-treniruote.png', { type: 'image/png' });
+      const file = new File([blob], this.fname('png'), { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share(text ? { files: [file], text, title: 'SPOBU' } : { files: [file], title: 'SPOBU' }); document.getElementById('pst-mini')?.remove(); if (text && s.target !== 'group') showToast(ico('atlikta') + ' Tekstas nukopijuotas — įklijuok į įrašą, jei programa jo neįdėjo', 'success', 4000); }
       else { this.download(); if (text) showToast(ico('atlikta') + ' Paveikslas atsisiųstas, žinutė nukopijuota', 'success', 4000); }
     } catch (e) { if (e && e.name !== 'AbortError') this.download(); }
   },
-  download() { const s = this.st; if (!s || !s.canvas) return; const a = document.createElement('a'); a.href = s.canvas.toDataURL('image/png'); a.download = 'spobu-treniruote.png'; a.click(); showToast(ico('atlikta') + ' Atsisiųsta'); },
+  // ── v637: vaizdo įrašas su rėmeliu (savininkas 09-24: „į FB su fotke ar vaizdo įrašu, kad būtų kaip rėmelis") ──
+  // Telefone: <video> kadrai + permatomas rėmelis (html2canvas) → canvas.captureStream + garsas (WebAudio) → MediaRecorder
+  // (mp4, jei telefonas moka, kitaip webm). Iki 30 s, realiu laiku. Dalinimas — atskiru paspaudimu (Web Share reikalauja gesto).
+  async makeVideo() {
+    const s = this.st; if (!s || !s.video || s.recording) return;
+    if (!s.overlay) { showToast(ico('ispejimas') + ' Palauk, ruošiama'); return; }
+    const ov = s.overlay, W = ov.width, H = ov.height;
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const ctx = c.getContext('2d');
+    const v = document.createElement('video'); v.src = s.video; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto';
+    let ac = null; const stream = c.captureStream(30);
+    try {   // garsas: sinchroniškai paspaudimo metu (Safari), kitaip — be garso
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) { ac = new AC(); const src = ac.createMediaElementSource(v), dst = ac.createMediaStreamDestination(); src.connect(dst); dst.stream.getAudioTracks().forEach(t => stream.addTrack(t)); if (ac.resume) ac.resume(); }
+    } catch (_e) { v.muted = true; }
+    const playP = v.play();
+    const mime = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(m => { try { return MediaRecorder.isTypeSupported(m); } catch (_e) { return false; } }) || '';
+    s.recording = true; s.cancel = false;
+    try {
+      try { await playP; } catch (_e) { v.muted = true; await v.play(); }   // naršyklė neleido su garsu — be garso
+      const dur = Math.min(30, isFinite(v.duration) && v.duration > 0 ? v.duration : 30);
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 5000000 } : undefined);
+      const chunks = []; rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      const stopped = new Promise(res => { rec.onstop = res; });
+      const draw = () => {
+        const vw = v.videoWidth || W, vh = v.videoHeight || H, k = Math.max(W / vw, H / vh), dw = vw * k, dh = vh * k;
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+        try { ctx.drawImage(v, (W - dw) / 2, (H - dh) / 2, dw, dh); } catch (_e) { }
+        ctx.drawImage(ov, 0, 0, W, H);
+      };
+      draw(); rec.start(500);
+      await new Promise(res => {
+        const tick = () => {
+          if (this.st !== s || s.cancel || v.ended || v.currentTime >= dur) return res();
+          draw(); this.cta(`${ico('laikmatis')} Ruošiama… ${Math.floor(v.currentTime)} / ${Math.round(dur)} s`);
+          setTimeout(tick, 33);   // ~30 kadrų/s (rAF sustotų paslėptame lange)
+        };
+        tick();
+      });
+      v.pause(); rec.stop(); await stopped;
+      if (this.st !== s || s.cancel) return;
+      const type = (mime.split(';')[0]) || 'video/webm';
+      s.videoOut = new File([new Blob(chunks, { type })], this.fname(type.includes('mp4') ? 'mp4' : 'webm'), { type });
+      this.cta(); showToast(ico('atlikta') + ' Vaizdo įrašas paruoštas — spausk „Dalintis vaizdo įrašu"', 'success', 4500);
+    } catch (e) {
+      console.warn('[postai] video', e); showToast(ico('klaida') + ' Nepavyko paruošti vaizdo įrašo — pabandyk trumpesnį arba nuotrauką', 'error', 5000); this.cta();
+    } finally {
+      s.recording = false; try { stream.getTracks().forEach(t => t.stop()); } catch (_e) { } try { if (ac) ac.close(); } catch (_e) { }
+    }
+  },
+  async shareVideo() {
+    const s = this.st; if (!s || !s.videoOut) return;
+    const text = this.text();
+    try { if (text && navigator.clipboard) navigator.clipboard.writeText(text).catch(() => { }); } catch (_e) { }
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [s.videoOut] })) { await navigator.share(text ? { files: [s.videoOut], text, title: 'SPOBU' } : { files: [s.videoOut], title: 'SPOBU' }); if (text && s.target !== 'group') showToast(ico('atlikta') + ' Tekstas nukopijuotas — įklijuok į įrašą', 'success', 4000); }
+      else { this.download(); if (text) showToast(ico('atlikta') + ' Vaizdo įrašas atsisiųstas, žinutė nukopijuota', 'success', 4000); }
+    } catch (e) { if (e && e.name !== 'AbortError') this.download(); }
+  },
+  download() {
+    const s = this.st; if (!s) return;
+    if (s.video) { if (!s.videoOut) { showToast(ico('ispejimas') + ' Pirma paruošk vaizdo įrašą'); return; } const u = URL.createObjectURL(s.videoOut), a = document.createElement('a'); a.href = u; a.download = s.videoOut.name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 4000); showToast(ico('atlikta') + ' Atsisiųsta'); return; }
+    if (!s.canvas) return; const a = document.createElement('a'); a.href = s.canvas.toDataURL('image/png'); a.download = this.fname('png'); a.click(); showToast(ico('atlikta') + ' Atsisiųsta');
+  },
+
+  // ── v637: DVIKOVOS POSTAS (savininkas 09-24: „kad dvikovas galėtų pasidalinti kai pažymi"; maketai 1–4 patvirtinti) ──
+  // Atidaro „Pasidalinti" prie ĮVERTINTOS dvikovos (Dvk.trRow — dienos lapas ir lankomumo langas). Viena dvikova arba visos
+  // tos dienos (iki 4). Vardų taisyklė: Grupei — vardai (be pavardžių); FB / IG — tik jei ABIEJŲ vaikų tėvai įjungę
+  // „Vardas klubo viešuose įrašuose" (kids.media_consent), kitaip — rezultatas be vardų. Tik skaitymas.
+  async openDuel(duelId) {
+    if (!this.on() || !/^[0-9a-f-]{36}$/i.test(String(duelId || ''))) return;
+    if (typeof flagOn === 'function' && !flagOn('trainer_posts_enabled')) { showToast(ico('uzrakinta') + ' Klubas išjungė trenerių postus', 'error', 4000); return; }
+    try {
+      const { data: d0, error } = await sb.from('duels').select('id, group_id, session_date').eq('id', duelId).maybeSingle();
+      if (error || !d0 || !d0.group_id || !d0.session_date) { showToast(ico('ispejimas') + ' Dvikova nerasta', 'error'); return; }
+      const [dR, gR] = await Promise.all([
+        sb.from('duels').select('id, challenger_id, opponent_id, duel_type, winner_id, challenger_value, opponent_value, completed_at').eq('group_id', d0.group_id).eq('session_date', d0.session_date).eq('status', 'completed').order('completed_at').limit(20),
+        sb.from('groups').select('id, name').eq('id', d0.group_id).maybeSingle(),
+      ]);
+      const duels = (dR.data || []); if (!duels.some(x => x.id === duelId)) { showToast(ico('ispejimas') + ' Dvikova dar neįvertinta', 'error'); return; }
+      const ids = [...new Set(duels.flatMap(x => [x.challenger_id, x.opponent_id]))];
+      const { data: ks } = await sb.from('kids').select('id, first_name, media_consent').in('id', ids);
+      const kids = {}; (ks || []).forEach(k => { kids[k.id] = k; });
+      this.reset();
+      this.st = { kind: 'duel', groupId: d0.group_id, group: gR.data || { name: '' }, now: new Date(d0.session_date + 'T12:00:00'), duels, sel: duelId, mode: 'one', kids, title: null, logo: null, clubName: '', photo: null, video: null, videoOut: null, canvas: null, busy: false, target: 'group' };
+      Planas.sheet('pst-mini', 'DVIKOVOS POSTAS', this.body(`${this.esc(this.st.group.name || '')} · ${this.esc(this.dmon(this.st.now))}`), this.foot(), { z: 100007 });
+      this.modeRow(); this.photoRow();
+      await this.load();
+      const inp = document.getElementById('pst-text'); if (inp) inp.value = this.textOf();
+      await this.render();
+    } catch (e) { console.warn('[postai] duel', e); showToast(ico('klaida') + ' Nepavyko atidaryti', 'error'); }
+  },
+  modeRow() {
+    const s = this.st, el = document.getElementById('pst-mode'); if (!s || !el) return;
+    if (s.kind !== 'duel' || s.duels.length < 2) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div style="display:flex;gap:6px;margin:0 16px 8px;">${[['one', 'Tik šią'], ['day', `Visas dienos (${s.duels.length})`]].map(([k, t]) => `<span class="kal-b${s.mode === k ? ' o' : ''}" onclick="Postai.setMode('${k}')" style="flex:1;text-align:center;cursor:pointer;">${t}</span>`).join('')}</div>`;
+  },
+  setMode(m) { const s = this.st; if (!s || s.kind !== 'duel') return; s.mode = m === 'day' ? 'day' : 'one'; this.modeRow(); const inp = document.getElementById('pst-text'); if (inp) inp.value = this.textOf(); this.render(); },
+  duelList() { const s = this.st; if (!s || s.kind !== 'duel') return []; return s.mode === 'day' ? s.duels.slice(0, 4) : s.duels.filter(x => x.id === s.sel); },
+  dName(id) { const k = this.st && this.st.kids[id]; return String((k && k.first_name) || '').trim() || 'Sportininkas'; },
+  canNameDuel(x) { const s = this.st; if (s.target === 'group') return true; const a = s.kids[x.challenger_id], b = s.kids[x.opponent_id]; return !!(a && a.media_consent && b && b.media_consent); },
+  dv(x) { const n = Number(x); return isFinite(n) ? String(Math.round(n * 10) / 10).replace('.', ',') : '–'; },
+  duelInner() {
+    const s = this.st, L = this.duelList(), T = typeof DUEL_TYPES !== 'undefined' ? DUEL_TYPES : {};
+    const sh = 'text-shadow:0 2px 12px rgba(0,0,0,.75);';
+    const head = `<div style="font-size:10px;font-weight:900;letter-spacing:2.5px;color:rgba(255,255,255,.78);text-transform:uppercase;${sh}">${this.esc(s.group.name || '')} · ${this.esc(this.dmon(s.now))}</div>`;
+    if (L.length === 1) {
+      const x = L[0], t = T[x.duel_type] || { name: 'Dvikova', unit: '' }, named = this.canNameDuel(x);
+      const wA = x.winner_id === x.challenger_id, wB = x.winner_id === x.opponent_id, A = this.dName(x.challenger_id), B = this.dName(x.opponent_id);
+      const nm = (n, w, right) => `<span style="flex:1;min-width:0;font-family:'Bebas Neue',sans-serif;font-size:25px;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${right ? 'text-align:right;' : ''}color:${w ? '#22C55E' : 'rgba(255,255,255,.72)'};${sh}">${this.esc(n.toUpperCase())}</span>`;
+      const score = `${this.dv(x.challenger_value)} : ${this.dv(x.opponent_value)}`;
+      const res = !x.winner_id ? 'Lygiosios' : (named ? 'Laimėjo ' + (wA ? A : B) : '');
+      return `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 16px 12px;">${head}
+        <div style="font-size:12px;font-weight:800;color:#FF9E40;margin-top:5px;${named ? '' : 'text-align:center;'}${sh}">${this.esc(named ? t.name : t.name + ' · dvikova')}</div>
+        ${named ? `<div style="display:flex;align-items:center;gap:8px;margin-top:3px;">${nm(A, wA, false)}<span style="flex:none;font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;color:#fff;${sh}">${score}</span>${nm(B, wB, true)}</div>`
+                : `<div style="font-family:'Bebas Neue',sans-serif;font-size:50px;line-height:1;text-align:center;color:#fff;margin-top:4px;${sh}">${score}</div><div style="text-align:center;font-size:12px;font-weight:800;color:rgba(255,255,255,.85);${sh}">Draugiška kova treniruotėje</div>`}
+        <div style="font-size:10px;color:rgba(255,255,255,.62);font-weight:700;margin-top:3px;${named ? '' : 'text-align:center;'}${sh}">${this.esc(t.unit || '')}${t.moreIsBetter === false ? ' · mažiau — geriau' : ''}</div>
+        ${res ? `<div style="font-size:13px;font-weight:900;color:#22C55E;margin-top:4px;${named ? '' : 'text-align:center;'}${sh}">${this.esc(res)}</div>` : ''}
+      </div>`;
+    }
+    const rows = L.map(x => {
+      const t = T[x.duel_type] || { name: 'Dvikova' }, named = this.canNameDuel(x), wA = x.winner_id === x.challenger_id, wB = x.winner_id === x.opponent_id;
+      const sc = `<span style="flex:none;font-family:'Bebas Neue',sans-serif;font-size:19px;padding:0 8px;color:#fff;">${this.dv(x.challenger_value)}:${this.dv(x.opponent_value)}</span>`;
+      const cell = (n, w, right) => `<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${right ? 'text-align:right;' : ''}color:${w ? '#22C55E' : 'rgba(255,255,255,.72)'};">${this.esc(n)}</span>`;
+      return `<div style="display:flex;align-items:center;font-size:12.5px;font-weight:800;border-top:.5px solid rgba(255,255,255,.18);padding:5px 0;${sh}">${named ? cell(this.dName(x.challenger_id), wA, false) + sc + cell(this.dName(x.opponent_id), wB, true) : cell(t.name, false, false) + sc}</div>`;
+    }).join('');
+    const more = s.duels.length > L.length ? `<div style="font-size:10px;color:rgba(255,255,255,.62);font-weight:700;margin-top:3px;">+${s.duels.length - L.length} daugiau</div>` : '';
+    return `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 16px 12px;">${head}
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:#fff;margin:5px 0 6px;${sh}">ŠIOS TRENIRUOTĖS DVIKOVOS</div>${rows}${more}</div>`;
+  },
+  duelText() {
+    const s = this.st, L = this.duelList(), T = typeof DUEL_TYPES !== 'undefined' ? DUEL_TYPES : {}, g = s.group.name || 'Grupė';
+    const grp = s.target === 'group', pre = grp ? `${g}: ` : `${s.clubName ? s.clubName + ' · ' : ''}${g}: `, tags = grp ? '' : ' #karate #vaikusportas #spobu';
+    if (s.mode === 'day' && s.duels.length > 1) { const n = s.duels.length; return `${pre}šiandien ${n} ${_ltPl(n, 'dvikova', 'dvikovos', 'dvikovų')} treniruotėje 🥊${tags}`; }
+    const x = L[0]; if (!x) return `${pre}dvikova 🥊${tags}`;
+    const t = String((T[x.duel_type] || { name: 'dvikova' }).name).toLowerCase(), named = this.canNameDuel(x);
+    const res = !x.winner_id ? 'lygiosios' : (named ? 'laimėjo ' + this.dName(x.winner_id) : '');
+    return `${pre}${grp ? 'dvikova' : 'treniruotės dvikova'} — ${t}${res ? ', ' + res : ''} 🥊${tags}`;
+  },
 };
 // ===== /MODULIS =====
 
@@ -46897,7 +47073,8 @@ const Dvk = {
         ? `<div class="dvk-judge"><label>${this.esc(a)}<input type="text" inputmode="decimal" autocomplete="off" id="dvk-a-${x.id}" value="${this.esc(x.challenger_value ?? '')}"></label><label>${this.esc(b)}<input type="text" inputmode="decimal" autocomplete="off" id="dvk-b-${x.id}" value="${this.esc(x.opponent_value ?? '')}"></label><em>${this.esc(t.unit)}${t.moreIsBetter === false ? ' · mažiau — geriau' : ''}</em></div><div class="kal-acts"><span class="kal-b g" onclick="Dvk.judge('${x.id}')">Įvertinti</span><span class="kal-b" onclick="Dvk.notHeld('${x.id}')">Neįvyko</span></div>`
         : '<div class="mt">Priimta — įvertinsi treniruotėje</div>';
     } else if (x.status === 'pending') body = `<div class="mt">${this.past(x) ? 'Nepriimta laiku' : 'Laukia, ar ' + this.esc(b) + ' priims'}</div>`;
-    else if (x.status === 'completed') body = `<div class="mt">${this.esc(a)} ${this.esc(x.challenger_value ?? '–')} · ${this.esc(x.opponent_value ?? '–')} ${this.esc(b)} ${this.esc(t.unit)} · ${x.winner_id == null ? 'lygiosios' : 'laimėjo ' + this.esc(this.nm(x.winner_id))}</div>`;
+    else if (x.status === 'completed') body = `<div class="mt">${this.esc(a)} ${this.esc(x.challenger_value ?? '–')} · ${this.esc(x.opponent_value ?? '–')} ${this.esc(b)} ${this.esc(t.unit)} · ${x.winner_id == null ? 'lygiosios' : 'laimėjo ' + this.esc(this.nm(x.winner_id))}</div>`
+      + ((typeof Postai !== 'undefined' && Postai.on() && (typeof flagOn !== 'function' || flagOn('trainer_posts_enabled'))) ? `<div class="kal-acts"><span class="kal-b" onclick="Postai.openDuel('${x.id}')">${ico('siusti')} Pasidalinti</span></div>` : '');   // v637 dvikovos postas
     return `<div class="kal-row"><div class="gr" style="background:#EC407A;"></div><div class="bd"><div class="nm"><span>${this.esc(a)} vs ${this.esc(b)}</span>${this.trTag(x)}</div><div class="mt">${this.esc(t.name)}${x.note ? ' · „' + this.esc(x.note) + '"' : ''}</div>${body}</div></div>`;
   },
   trDayHtml(ds) {
