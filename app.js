@@ -10411,7 +10411,7 @@ async function renderProfileExtras() {
           <div onclick="openFriendModal('${m.id}')" style="display:flex;align-items:center;gap:6px;padding:4px 9px;${idx < total - 1 ? 'border-bottom:.5px solid var(--bdr);' : ''}cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
             <div style="width:22px;height:22px;border-radius:50%;${m.avatar_url ? `background-image:url('${_safeUrl(m.avatar_url)}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,${stage.color}88,${stage.color}44);`}color:white;font-family:'Bebas Neue',sans-serif;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${m.avatar_url ? '' : escapeHtml(letter)}</div>
             <div style="flex:1;min-width:0;">
-              <div style="font-size:10px;font-weight:800;color:white;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(name)}</div>
+              <div style="font-size:10px;font-weight:800;color:white;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m._rank ? `<span style="color:var(--mut);font-weight:700;">#${m._rank}</span> ` : ''}${escapeHtml(name)}</div>
               <div style="font-size:7px;color:var(--mut);margin-top:1px;">${stage.emoji} ${stage.name} · ${(m.total_exp || 0).toLocaleString('lt-LT')} EXP</div>
             </div>
             <div style="text-align:right;flex-shrink:0;">
@@ -10425,7 +10425,15 @@ async function renderProfileExtras() {
       
       // Rodyti pirmus 4
       const SHOW = 3;
-      const visibleMates = mates.slice(0, SHOW);
+      // v636 (savininko „1" 09-24): didelėje grupėje — ne 3 lyderiai, o draugai ŠALIA tavęs (vienas prieš ir vienas po;
+      // pirmam — du po, paskutiniam — du prieš), su vieta #N — kad tikslas būtų pasiekiamas. Mažoje grupėje (≤3 draugai) — visi.
+      allKids.forEach((k, i) => { k._rank = i + 1; });
+      const nearMode = mates.length > SHOW && myIdx >= 0;
+      let visibleMates = mates.slice(0, SHOW);
+      if (nearMode) {
+        const lo = Math.max(0, Math.min(myIdx - 1, allKids.length - 3));
+        visibleMates = allKids.slice(lo, lo + 3).filter(k => k.id !== currentKid.id);
+      }
       
       let html = `
         ${groupHeaderHtml}
@@ -10437,6 +10445,7 @@ async function renderProfileExtras() {
             <div style="font-size:10px;color:white;font-weight:800;margin-top:1px;">#${myRank} iš ${totalInGroup} sportininkų</div>
           </div>
         </div>
+        ${nearMode ? `<div style="font-size:8px;color:var(--mut);font-weight:800;letter-spacing:.5px;padding:5px 9px 1px;">ŠALIA TAVĘS</div>` : ''}
         ${visibleMates.map((m, i) => renderMateRow(m, i, visibleMates.length)).join('')}
       `;
       
@@ -10818,7 +10827,7 @@ function openTeammatesModal() {
       <div onclick="document.getElementById('teammates-modal').remove();openFriendModal('${m.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border-radius:10px;margin-bottom:5px;cursor:pointer;-webkit-tap-highlight-color:rgba(255,77,0,.15);">
         <div style="width:34px;height:34px;border-radius:50%;${m.avatar_url ? `background-image:url('${_safeUrl(m.avatar_url)}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,${stage.color}88,${stage.color}44);`}color:white;font-family:'Bebas Neue',sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid ${stage.color}66;">${m.avatar_url ? '' : escapeHtml(letter)}</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:800;color:white;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(name)}</div>
+          <div style="font-size:12px;font-weight:800;color:white;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m._rank ? `<span style="color:var(--mut);font-weight:700;">#${m._rank}</span> ` : ''}${escapeHtml(name)}</div>
           <div style="font-size:9px;color:var(--mut);margin-top:2px;">${stage.emoji} ${stage.name} · ${(m.total_exp || 0).toLocaleString('lt-LT')} EXP · ${escapeHtml(m.kyu || 'Mu kyu')}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
