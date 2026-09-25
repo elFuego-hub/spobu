@@ -43466,18 +43466,8 @@ Kal.parent = Object.assign(Object.create(Kal.kid), {
     if (typeof TevPrem !== 'undefined') TevPrem.profLocks();   // v652 (P5): „Visa statistika" / „Reitingai" — PREMIUM žymė
     const k = this.kid();
     const nm = document.getElementById('kal-t-prof-kids'); if (nm) nm.textContent = (typeof parentKids !== 'undefined' ? parentKids : []).map(x => x.first_name || 'Vaikas').join(', ') + ' · pridėti ar pakviesti';
-    const rec = document.getElementById('kal-t-prof-rec'); if (!rec) return;
-    rec.textContent = 'Kraunama…';
-    try {
-      const { data, error } = await sb.from('competition_results').select('placement, wins, losses, competitions(competition_type)').eq('kid_id', k.id).eq('approval_status', 'approved').eq('status', 'participated').limit(500);
-      if (error) throw error;
-      if (this.kid()?.id !== k.id) return;   // v640: kol krovėsi, perjungtas vaikas
-      // v640 (tėvų auditas N12, 16A): kaip vaiko KidRek — tik varžybos (kumite / kata), be diržų egzaminų
-      const rows = (data || []).filter(r => { const t = r.competitions?.competition_type; return t === 'kumite' || t === 'kata'; });
-      const g = rows.filter(r => r.placement === 1).length, s = rows.filter(r => r.placement === 2).length, b = rows.filter(r => r.placement === 3).length;
-      const w = rows.reduce((n, r) => n + (r.wins || 0), 0), l = rows.reduce((n, r) => n + (r.losses || 0), 0);
-      rec.textContent = rows.length ? `${rows.length} ${_ltPl(rows.length, 'varžyba', 'varžybos', 'varžybų')} · ${g} auksas · ${s} sidabras · ${b} bronza · kovos ${w}–${l}` : 'Dar nedalyvavo';
-    } catch (e) { console.warn('[kal-parent] rekordas', e); rec.textContent = '—'; }
+    // v657: „Varžybos ir rekordas" — ta pati kortelė kaip vaiko Profilyje, paspaudus langas kaip vaiko Varžybos (MODULIS: TevVarz)
+    if (typeof TevVarz !== 'undefined') TevVarz.profCard();
   },
 });
 
@@ -47752,6 +47742,147 @@ const KidRek = {
 };
 // ===== /MODULIS =====
 
+// ===== MODULIS: TevVarz =====
+// v657 (savininkas 09-26: „profilyje turi būti kaip pas vaiką — rekordas rodomas, paspaudus nukelia giliau į langą kaip pas vaiką"):
+// tėvo Profilyje — ta pati kortelė „Varžybos ir rekordas" kaip vaiko (KidRek.html), paspaudus — langas kaip vaiko Varžybos
+// (kumite / kata hero, laimėjimų lentelė pagal lygį, ARTĖJANČIOS · LAUKIA · ATLIKTOS). Tėvui tik peržiūra: ketinimą ir rezultatą
+// pateikia vaikas (arba treneris), prie medalio — „Pasidalinti" (TevDalin). Skaičiuojami tik trenerio patvirtinti rezultatai.
+// Jungikliai — ParentGate / KidGate.compType. Vardų erdvė TevVarz, DOM prefiksas tev-vz-.
+const TevVarz = {
+  seq: 0, st: null, tab: null, more: false,
+  esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : ''; },
+  kid() { return (typeof parentActiveKid !== 'undefined' && parentActiveKid) ? parentActiveKid : null; },
+  on(k) { return typeof ParentGate === 'undefined' || ParentGate.on(k); },
+  okType(t) { return typeof KidGate === 'undefined' || KidGate.compType(t); },
+  today() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; },
+  async data(k) {
+    const clubId = k.club_id || (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null);
+    const [rR, cR] = await Promise.all([
+      sb.from('competition_results').select('competition_id, status, placement, wins, losses, exp_gained, belt_passed, new_kyu, approval_status, competitions(id, title, competition_type, event_date, level, location)').eq('kid_id', k.id).limit(500),
+      clubId ? sb.from('competitions').select('id, title, competition_type, event_date, level, location').eq('club_id', clubId).eq('is_active', true).order('event_date').limit(300) : Promise.resolve({ data: [] }),
+    ]);
+    if (rR.error) throw rR.error;
+    if (cR.error) throw cR.error;
+    const res = {}, comps = {};
+    (rR.data || []).forEach(r => { res[r.competition_id] = r; if (r.competitions) comps[r.competition_id] = r.competitions; });   // ir archyvuotos varžybos, kuriose dalyvavo
+    (cR.data || []).forEach(c => { comps[c.id] = c; });
+    const today = this.today(), up = [], pend = [], done = [];
+    Object.values(comps).filter(c => this.okType(c.competition_type)).forEach(c => {
+      const r = res[c.id], fin = r && (r.status === 'participated' || r.status === 'didnt_attend');
+      if (fin) done.push(c); else if (c.event_date < today) { if (cR.data && cR.data.some(x => x.id === c.id)) pend.push(c); } else up.push(c);
+    });
+    up.sort((a, b) => String(a.event_date).localeCompare(String(b.event_date)));
+    pend.sort((a, b) => String(b.event_date).localeCompare(String(a.event_date)));
+    done.sort((a, b) => String(b.event_date).localeCompare(String(a.event_date)));
+    // Rekordas — kaip KidRek: tik patvirtinti kumite / kata rezultatai
+    const s = { kw: 0, kl: 0, aw: 0, al: 0, g: 0, sv: 0, b: 0, n: 0, kn: 0, an: 0, ke: 0, ae: 0, km: [0, 0, 0], am: [0, 0, 0], lv: { local: [0, 0, 0], medium: [0, 0, 0], european: [0, 0, 0] } };
+    done.forEach(c => {
+      const r = res[c.id], t = c.competition_type; if (r.status !== 'participated' || r.approval_status !== 'approved' || (t !== 'kumite' && t !== 'kata')) return;
+      const w = Number(r.wins) || 0, l = Number(r.losses) || 0, e = Number(r.exp_gained) || 0, p = r.placement;
+      s.n++;
+      if (t === 'kumite') { s.kw += w; s.kl += l; s.kn++; s.ke += e; } else { s.aw += w; s.al += l; s.an++; s.ae += e; }
+      if (p >= 1 && p <= 3) {
+        (t === 'kumite' ? s.km : s.am)[p - 1]++;
+        if (p === 1) s.g++; else if (p === 2) s.sv++; else s.b++;
+        const lv = s.lv[c.level] || s.lv.local; lv[p - 1]++;
+      }
+    });
+    return { s, res, up, pend, done, next: up[0] || null };
+  },
+  // Profilio kortelė — tas pats KidRek.html kaip vaiko Profilyje
+  async profCard() {
+    const el = document.getElementById('kal-t-prof-rec-row'), k = this.kid();
+    if (!el || !k || typeof KidRek === 'undefined') return;
+    const comp = this.on('comp'), belt = this.on('belt'); if (!comp && !belt) return;
+    const my = ++this.seq;
+    try {
+      const d = await this.data(k); if (my !== this.seq || this.kid()?.id !== k.id) return;
+      const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+      el.innerHTML = KidRek.html(d.s, k, d.next, comp, belt, d0);
+    } catch (e) { console.warn('[TevVarz] kortelė', e); }
+  },
+  async open() {
+    const k = this.kid(); if (!k || typeof _pfSheet !== 'function') return;
+    _pfSheet('tev-vz-sheet', `${ico('trofejai')} ${this.esc(String(k.first_name || 'Vaiko').toUpperCase())} VARŽYBOS`, '<div id="tev-vz-body"><div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Kraunama…</div></div>');
+    try { this.st = await this.data(k); } catch (e) {
+      console.warn('[TevVarz]', e);
+      const b = document.getElementById('tev-vz-body'); if (b) b.innerHTML = '<div style="text-align:center;padding:24px;color:var(--mut);font-size:12px;">Nepavyko įkelti varžybų</div>';
+      return;
+    }
+    if (this.kid()?.id !== k.id) return;
+    this.st.kid = k; this.more = false;
+    this.tab = this.st.up.length ? 'up' : (this.st.pend.length ? 'pend' : 'done');
+    this.paint();
+  },
+  setTab(t) { this.tab = t; this.more = false; this.paint(); },
+  showMore() { this.more = true; this.paint(); },
+  paint() {
+    const b = document.getElementById('tev-vz-body'), d = this.st; if (!b || !d) return;
+    const E = x => this.esc(x), s = d.s, k = d.kid, comp = this.on('comp');
+    const MC = ['#FFD700', '#C0C0C0', '#CD7F32'], MI = ['ico-gold', 'ico-silver', 'ico-bronze'];
+    const mini = arr => `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding-top:5px;border-top:.5px solid rgba(255,255,255,.08);">${arr.map((n, i) => `<div style="text-align:center;padding:2px 0;"><div style="font-size:11px;line-height:1;">${ico('medalis', MI[i])}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:13px;line-height:1;color:${n > 0 ? MC[i] : 'rgba(255,255,255,.3)'};margin-top:2px;">${n}</div></div>`).join('')}</div>`;
+    const pct = (w, l) => (w + l) > 0 ? Math.round(w / (w + l) * 100) : 0;
+    const col = (lb, icn, c, w, l, n, e, m, side) => `<div style="${side}"><div style="font-size:8px;color:${c};letter-spacing:1.5px;font-weight:800;">${ico(icn)} ${lb}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${c};line-height:1;margin:3px 0 2px;letter-spacing:2px;">${w} - ${l}</div><div style="font-size:8px;color:rgba(255,255,255,.7);">${pct(w, l)}% · ${n} varž.</div><div style="font-size:9px;color:${c};font-weight:800;margin:2px 0 6px;">+${e.toLocaleString('lt-LT')} EXP</div>${mini(m)}</div>`;
+    let h = '';
+    if (comp) {
+      h += `<div style="padding:12px;background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.25);border-radius:16px;text-align:center;position:relative;overflow:hidden;margin-bottom:10px;"><div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#FFD700;"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${col('KUMITE', 'dvikova', '#EF4444', s.kw, s.kl, s.kn, s.ke, s.km, 'padding-right:8px;border-right:1px solid rgba(255,255,255,.15);')}${col('KATA', 'kata', '#4FC3F7', s.aw, s.al, s.an, s.ae, s.am, 'padding-left:8px;')}</div></div>`;
+      const LV = [['local', 'miestas', 'Vietinės'], ['medium', 'miestas', 'Vidutinės'], ['european', 'svetaine', 'Europos']];
+      const cell = (n, i) => `<div style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:14px;color:${n > 0 ? MC[i] : 'rgba(255,255,255,.3)'};">${n}</div>`;
+      h += `<div style="font-size:10px;font-weight:800;color:var(--mut);letter-spacing:1px;padding:2px 2px 6px;">${ico('trofejai')} LAIMĖJIMŲ LENTELĖ</div><div style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:12px;"><div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;padding:6px 10px;background:rgba(255,255,255,.05);font-size:9px;font-weight:800;color:var(--mut);border-bottom:.5px solid var(--bdr);"><div>Lygis</div>${MI.map(c => `<div style="text-align:center;">${ico('medalis', c)}</div>`).join('')}</div>${LV.map((l, j) => `<div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;padding:6px 10px;font-size:10px;font-weight:700;${j < 2 ? 'border-bottom:.5px solid var(--bdr);' : ''}"><div>${ico(l[1])} ${l[2]}</div>${s.lv[l[0]].map(cell).join('')}</div>`).join('')}</div>`;
+    }
+    const bi = this.on('belt') && typeof getBeltInfo === 'function' ? getBeltInfo(k.kyu) : null;
+    if (bi) h += `<div style="font-size:11px;color:var(--mut);font-weight:700;margin:-4px 2px 10px;">${ico('dirzas')} Diržas: <b style="color:#fff;">${E(k.kyu || 'Mu kyu')}</b></div>`;
+    const TB = [['up', 'kalendorius', 'ARTĖJANČIOS', d.up], ['pend', 'laukia', 'LAUKIA', d.pend], ['done', 'patvirtinta', 'ATLIKTOS', d.done]];
+    h += `<div style="display:flex;gap:4px;margin-bottom:8px;">${TB.map(t => { const on = this.tab === t[0]; return `<button onclick="TevVarz.setTab('${t[0]}')" style="flex:1;background:${on ? 'rgba(255,77,0,.15)' : 'transparent'};color:${on ? 'var(--br)' : 'var(--mut)'};border:.5px solid ${on ? 'rgba(255,77,0,.4)' : 'var(--bdr)'};padding:5px 4px;border-radius:99px;font-size:9.5px;min-height:40px;font-weight:800;letter-spacing:.2px;cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;">${ico(t[1])} ${t[2]} ${t[3].length}</button>`; }).join('')}</div>`;
+    const list = (TB.find(t => t[0] === this.tab) || TB[2])[3], LIM = 3;
+    const shown = this.more ? list : list.slice(0, LIM);
+    h += shown.map(c => this.card(c, d.res[c.id], k)).join('');
+    if (!list.length) h += `<div style="text-align:center;padding:26px 10px;color:var(--mut);font-size:12px;">${this.tab === 'up' ? 'Artėjančių varžybų nėra.' : this.tab === 'pend' ? 'Nieko nelaukia rezultato.' : 'Dar nedalyvavo varžybose.'}</div>`;
+    if (!this.more && list.length > LIM) h += `<button onclick="TevVarz.showMore()" style="width:100%;padding:9px;background:transparent;border:.5px dashed rgba(255,77,0,.4);color:#FF7A33;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;border-radius:10px;margin-top:2px;font-family:inherit;">DAUGIAU (${list.length - LIM}) ›</button>`;
+    h += `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-top:12px;line-height:1.45;">${this.tab === 'pend' ? 'Rezultatą pateikia vaikas savo paskyroje (Varžybos) arba treneris.' : this.tab === 'up' ? 'Ar dalyvaus — pažymi vaikas savo paskyroje (Varžybos).' : 'Rekordas ir EXP — tik trenerio patvirtinti rezultatai.'}</div>`;
+    b.innerHTML = h;
+  },
+  card(c, r, k) {
+    const E = x => this.esc(x), today = this.today(), past = c.event_date < today;
+    const TC = { kumite: ['#EF4444', 'rgba(239,68,68,.08)', 'rgba(239,68,68,.3)', 'dvikova', 'Kumite'], kata: ['#4FC3F7', 'rgba(79,195,247,.08)', 'rgba(79,195,247,.3)', 'kata', 'Kata'], belt_test: ['#FFD700', 'rgba(255,215,0,.08)', 'rgba(255,215,0,.3)', 'dirzas', 'Diržo testas'] };
+    const LVC = { local: ['#9CA3AF', 'miestas', 'Vietinė'], medium: ['#FF7A33', 'miestas', 'Vidutinė'], european: ['#BA68C8', 'svetaine', 'Europos'] };
+    const t = TC[c.competition_type] || TC.kumite, lv = c.level ? (LVC[c.level] || LVC.local) : null;
+    const dd = Math.round((new Date(c.event_date + 'T00:00:00') - new Date(today + 'T00:00:00')) / 86400000);
+    const when = !past ? (dd === 0 ? `${ico('streak')} Šiandien` : dd === 1 ? `${ico('laikmatis')} Rytoj` : `${ico('laikmatis')} Liko ${dd} d.`) : `${ico('kalendorius')} Prieš ${-dd} d.`;
+    const bdg = (txt, fg, bg) => `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-size:11px;font-weight:800;border-radius:99px;color:${fg};background:${bg};">${txt}</span>`;
+    let st = '', sh = '';
+    if (this.tab === 'up') {
+      st = r && r.status === 'planning' ? bdg(`${ico('tikslas')} Planuoja dalyvauti`, 'var(--grn)', 'rgba(34,197,94,.15)') : r && r.status === 'wont_attend' ? bdg(`${ico('isjungta')} Nedalyvaus`, '#EF4444', 'rgba(239,68,68,.15)') : bdg(`${ico('laukia')} Dar nepažymėjo`, 'var(--mut)', 'rgba(255,255,255,.07)');
+    } else if (this.tab === 'pend') {
+      st = bdg(`${ico('laukia')} Laukia rezultato`, '#FF9E40', 'rgba(255,122,51,.14)');
+    } else if (r && r.status === 'didnt_attend') {
+      st = bdg(`${ico('isjungta')} Nebuvo`, '#EF4444', 'rgba(239,68,68,.15)');
+    } else if (r && r.approval_status === 'pending') {
+      st = bdg(`${ico('laukia')} Treneris tikrina${r.placement ? ': ' + r.placement + ' vieta' : ''}`, '#FF9E40', 'rgba(255,122,51,.14)');
+    } else if (r && r.approval_status === 'rejected') {
+      st = bdg(`${ico('kartoti')} Grąžinta pataisyti`, '#FF7A33', 'rgba(255,140,0,.15)');
+    } else if (r) {
+      const MED = { 1: ['Aukso medalis', '#FFD700', 'ico-gold'], 2: ['Sidabro medalis', '#C0C0C0', 'ico-silver'], 3: ['Bronzos medalis', '#CD7F32', 'ico-bronze'] }, m = MED[r.placement];
+      const wl = (Number(r.wins) || 0) + (Number(r.losses) || 0) > 0 ? ` · kovos ${Number(r.wins) || 0}–${Number(r.losses) || 0}` : '';
+      const ex = Number(r.exp_gained) > 0 ? ` (+${Number(r.exp_gained)} EXP)` : '';
+      if (c.competition_type === 'belt_test') {
+        st = bdg(r.belt_passed ? `${ico('dirzas')} Išlaikė${r.new_kyu ? ' (' + E(r.new_kyu) + ')' : ''}${ex}` : `${ico('dirzas')} Neišlaikė`, 'var(--grn)', 'rgba(34,197,94,.15)');
+        if (r.belt_passed && typeof TevDalin !== 'undefined') sh = TevDalin.btn({ kidId: k.id, kind: 'belt', head: 'Išlaikė diržo egzaminą', sub: r.new_kyu || '', color: '#FF9E40', date: c.event_date + 'T12:00:00' });
+      } else {
+        st = bdg(m ? `${ico('medalis', m[2])} ${r.placement} vieta${wl}${ex}` : `${ico('patvirtinta')} Dalyvavo${wl}${ex}`, m ? m[1] : 'var(--grn)', m ? 'rgba(255,215,0,.1)' : 'rgba(34,197,94,.15)');
+        if (m && typeof TevDalin !== 'undefined') sh = TevDalin.btn({ kidId: k.id, kind: 'medal', head: m[0], sub: c.title || '', color: m[1], date: c.event_date + 'T12:00:00' });
+      }
+    }
+    const dt = typeof formatDateLT === 'function' ? formatDateLT(c.event_date) : c.event_date;
+    return `<div style="background:${t[1]};border:.5px solid ${t[2]};border-left:3px solid ${t[0]};border-radius:10px;padding:8px 10px;margin-bottom:6px;${this.tab === 'done' ? 'opacity:.92;' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:6px;"><div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:800;line-height:1.2;">${ico(t[3])} ${E(c.title || 'Varžybos')}</div><div style="font-size:9px;color:${t[0]};margin-top:2px;font-weight:700;">${t[4]}${lv ? ` · <span style="color:${lv[0]};">${ico(lv[1])} ${lv[2]}</span>` : ''}</div></div><div style="background:${past ? 'rgba(255,255,255,.1)' : 'rgba(34,197,94,.15)'};color:${past ? 'var(--mut)' : '#22C55E'};border:.5px solid ${past ? 'var(--bdr)' : 'rgba(34,197,94,.3)'};padding:3px 8px;font-size:9px;font-weight:800;border-radius:99px;flex-shrink:0;white-space:nowrap;">${when}</div></div>
+      <div style="background:var(--bg);border-radius:8px;padding:6px 8px;margin-bottom:6px;font-size:10px;color:var(--mut);">${ico('kalendorius')} ${E(dt)}${c.location ? ' · ' + ico('vieta') + ' ' + E(c.location) : ''}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">${st}${sh}</div>
+    </div>`;
+  },
+};
+// ===== /MODULIS =====
+
 // ===== MODULIS: KidGrupe =====
 // v631 (savininkas 09-24: „grupės lange norėtųsi kažko daugiau" → pasirinko „Grupės savaitė", „Savaitės herojai", „Pagyrimai draugui 👏").
 // Strava km kitiems NErodomi (Strava API taisyklės — tik pačiam vartotojui). Duomenys — SQL kid_group_week (agregatai + herojų vardai „Vardas P." tik savo grupei, kaip „Komandos draugai") ir kid_kudos
@@ -48019,7 +48150,7 @@ const ParentGate = {
     _gateSel('#t-prof [onclick="openParentChallengeTypes()"]', ch);
     const grid = document.querySelector('#t-prof [onclick="openParentBadges()"]')?.parentElement;
     if (grid) grid.style.gridTemplateColumns = `repeat(${1 + ((cp || belt) ? 1 : 0) + (ch ? 1 : 0)},1fr)`;
-    _gateEl('kal-t-prof-rec-row', cp);   // v640: Varžybų rekordas (eilutė atidaro vaiko trofėjus)
+    _gateEl('kal-t-prof-rec-row', cp || belt);   // v657: „Varžybos ir rekordas" kortelė (TevVarz; tik diržai — „Diržai ir renginiai")
     // Visa statistika: skirtukai
     _gateSel('.parent-stat-tab[data-tab="challenges"]', ch);
     _gateSel('.parent-stat-tab[data-tab="competitions"]', cp);

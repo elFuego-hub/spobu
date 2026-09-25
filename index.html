@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=656">
+<link rel="stylesheet" href="styles.css?v=657">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v656</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v657</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3112,7 +3112,8 @@ window.addEventListener('unhandledrejection', function(e) {
       <!-- MODULIS: TevPrem (v652, P5) — id tev-pr-prof-stat / tev-pr-prof-rank: PREMIUM žymė be Premium (TevPrem.profLocks) -->
       <div class="kal-card" id="tev-pr-prof-stat" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;border-color:rgba(255,77,0,.35);" onclick="openParentKidStats()"><div class="kal-cta-ic" style="width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.16);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Visa statistika</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Sezonas · įgūdžiai · iššūkiai · varžybos</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
       <div class="kal-card" id="tev-pr-prof-rank" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;border-color:rgba(255,77,0,.35);" onclick="openParentKidStats('overall')"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.16);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Reitingai</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Vaiko kategorija · EXP, varžybos, iššūkiai, TOP įgūdis</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
-      <div class="kal-card" id="kal-t-prof-rec-row" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;" onclick="openParentTrophies()"><!-- v640 (16A): vaiko varžybų rekordas (trofėjai), ne klubo reitingas --><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:var(--mut);flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Varžybų rekordas</div><div id="kal-t-prof-rec" style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">—</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
+      <!-- MODULIS: TevVarz (v657) — „Varžybos ir rekordas" kaip vaiko Profilyje (KidRek.html); paspaudus — langas kaip vaiko Varžybos -->
+      <div class="kal-card" id="kal-t-prof-rec-row" style="margin:0 0 6px;cursor:pointer;" onclick="TevVarz.open()"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><div style="font-size:12.5px;font-weight:900;">Varžybos ir rekordas</div><div style="font-size:10.5px;color:var(--br);font-weight:800;display:flex;align-items:center;gap:3px;white-space:nowrap;">Detaliau <svg class="ico" aria-hidden="true"><use href="#i-toliau"></use></svg></div></div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:6px;">Kraunama…</div></div>
       <!-- MODULIS: TevProfilis (v642, 12A) — AI ataskaitos: Parduotuvė nebe navigacijoje; eilutė rodoma, kai yra kreditų ar paruoštų ataskaitų -->
       <div class="kal-card" id="kal-t-prof-ai" style="margin:0 0 6px;cursor:pointer;display:none;align-items:center;gap:11px;" onclick="TevProfilis.openAi()"><div style="width:34px;height:34px;border-radius:11px;background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;color:#22C55E;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Pažangos ataskaitos</div><div id="kal-t-prof-ai-sub" style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">—</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
       <!-- v653 (savininko peržiūra): eilutė „Vaikai" nuimta — vaikų keitimas, pridėjimas ir antras tėvas: burbuliukas viršuje (TevSeima) ir ⚙ (TevNust) -->
@@ -4878,7 +4879,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=656"></script>
+<script src="app.js?v=657"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
