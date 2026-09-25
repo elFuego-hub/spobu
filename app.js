@@ -953,7 +953,7 @@ async function openInviteParentModal(kidId){
     <div style="font-size:40px;">${ico('grupe')}‍${ico('vaikas')}</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin:8px 0 4px;">${forParent ? 'KODAS ANTRAM TĖVUI' : 'TAVO KODAS TĖVAMS'}</div>
     <div style="font-family:ui-monospace,Consolas,monospace;font-size:34px;font-weight:800;letter-spacing:6px;color:#4FC3F7;margin:10px 0;">${code}</div>
-    <div style="font-size:11px;color:var(--mut);line-height:1.55;margin-bottom:14px;">${forParent ? 'Perduok šį kodą antram tėvui. Jis savo SPOBU paskyroje spaudžia<br><b>„Prijungti vaiką su kodu"</b> ir įveda jį.' : 'Padiktuok šį kodą tėvams. Jie savo SPOBU paskyroje spaudžia avatarą viršuje →<br><b>„' + ico('pazymejimas') + ' Prijungti vaiką su kodu"</b> ir įveda jį.'} Kodas vienkartinis, galioja 30 min.</div>
+    <div style="font-size:11px;color:var(--mut);line-height:1.55;margin-bottom:14px;">${forParent ? 'Perduok šį kodą antram tėvui. Jis savo SPOBU paskyroje spaudžia<br><b>„Prijungti vaiką su kodu"</b> ir įveda jį.' : 'Padiktuok šį kodą tėvams. Jie savo SPOBU paskyroje spaudžia burbuliuką viršuje dešinėje →<br><b>„' + ico('pazymejimas') + ' Prijungti vaiką su kodu"</b> ir įveda jį.'} Kodas vienkartinis, galioja 30 min.</div>
     <button class="btn btng" style="width:100%;margin:0;" onclick="(navigator.clipboard?navigator.clipboard.writeText('${code}').then(()=>showToast('Nukopijuota','success')):null);">${ico('dokumentas')} Kopijuoti kodą</button>
   </div>`;
   document.body.appendChild(m);
@@ -1762,7 +1762,7 @@ function openParentHelpModal() {
     ['Ką galiu pažymėti už vaiką?', 'Renginiams ir varžyboms — „Ar dalyvaus?" kalendoriuje (vaikui iki 14 m.). Strava iššūkiai užsiskaito patys, pastangas ir kitus rezultatus įveda treneris (arba vaikas savo paskyroje).'],   // v640 (15A): buvo „tik vaikas, tu stebėtojas"
     ['Kaip gaunami EXP ir lygiai?', 'Daugiausia — treniruotėse: pastangos +20 / +14 / +8, pilna savaitė +15, pilnas mėnuo +100. Dar iššūkiai, varžybos, diržo egzaminas, dvikovos, rekordai. Visa lentelė: Nustatymai → „Kaip veikia SPOBU".'],
     ['Kokius pranešimus gausiu?', 'Trenerio ir klubo žinutes bei skelbimus ir vaiko pasiekimus (iššūkis ar pakopa, medalis, diržas, trenerio EXP, dvikova, naujas lygis) — su vaiko vardu, ne dažniau kaip kartą per valandą vienam vaikui; visi yra varpelio skiltyje „Vaikai". Išjungti: Nustatymai → „Vaiko pasiekimai".'],
-    ['Kaip pridėti antrą vaiką?', 'Paspausk avatarą viršuje → „Pridėti vaiką" ir užpildyk anketą — ją patvirtins klubas. Jei vaikas jau turi SPOBU paskyrą, paprašyk jo kodo ir spausk „Prijungti vaiką su kodu".'],
+    ['Kaip pridėti antrą vaiką?', 'Paspausk burbuliuką viršuje dešinėje → „Pridėti vaiką" ir užpildyk anketą — ją patvirtins klubas. Jei vaikas jau turi SPOBU paskyrą, paprašyk jo kodo ir spausk „Prijungti vaiką su kodu".'],
     ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsas turi būti įdiegtas į pradžios ekraną ir duotas pranešimų leidimas.'],
     ['Kaip pakeisti savo vardą?', 'Nustatymai → prie tavo paskyros paspausk „'+ico('redaguoti')+' Vardas".'],
     ['Kas yra „Anonimas statistikoje"?', 'Nustatymai → „Vaiko duomenys" → Privatumas. Įjungta (taip nustatyta iš pradžių): reitinguose ir paieškoje vietoj vaiko vardo rodoma „Anonimas". Išjungus — klubo nariai reitinge gali atidaryti vaiko sporto kortelę su profilio nuotrauka. Savo grupės draugai vaiką mato vardu — grupės sąraše ir dvikovose. Treneris ir klubas vardą mato visada. Išjungus reitinguose rodomas vardas ir pavardės raidė.'],
@@ -1991,7 +1991,7 @@ const WELCOME_CONTENT = {
     icon: 'dirzas', title: 'SVEIKI ATVYKĘ Į SPOBU!', cta: 'PRADĖTI',
     items: [
       ['kalendorius', '<b class="t">Kalendorius</b>vaiko treniruotės, ar buvo, kiek pastangų įdėjo, kas laukia. Spauskite dieną — visos detalės'],
-      ['vaikas',      'Keli vaikai? Perjunkite čipsais kalendoriaus viršuje'],
+      ['vaikas',      'Keli vaikai? Burbuliukas viršuje dešinėje perjungia vaiką, „Šeima" — visų vaikų santrauka'],   // v649 (čipsai nuimti v647)
       ['tikslas',     'EXP ir iššūkiai — dalis skaičiuojasi automatiškai (lankomumas, varžybos, Strava), kitus tvirtina treneris. Kaip viskas veikia — Nustatymai'],
       ['pranesimai',  'Vaiko pasiekimai — varpelio skiltyje <b style="color:white;">„Vaikai"</b> ir push su vaiko vardu'],   // v640 (15A)
       ['premium',     'Esate <b style="color:white;">pirmieji bandytojai</b> — jums <b style="color:white;">viskas įjungta nemokamai</b>'],
@@ -2258,7 +2258,7 @@ function refreshParentActiveScreen() {
   const sid = _activeSid || 't-main';
   if (sid === 't-kar') loadParentKidCareer();
   else if (sid === 't-feed') loadParentKidFeed();
-  else if (sid === 't-prof') loadParentKidProfile();
+  else if (sid === 't-prof') { loadParentKidProfile(); if (typeof Strava !== 'undefined') Strava.render(); }   // v649: Strava kortelė — pasirinkto vaiko
   else if (sid === 't-shop' && typeof loadParentShopCredits === 'function') loadParentShopCredits();
   else if (sid === 't-grupe' && typeof TevGrupe !== 'undefined') TevGrupe.load();   // v642 (13A)
   else if (sid === 't-seima' && typeof TevSeima !== 'undefined') TevSeima.load();   // v647: Šeimos langas
@@ -23969,7 +23969,7 @@ function openParentInfo(which) {
         (effVis ? row(''+ico('jega')+'', 'Pastangos', 'Treneris po treniruotės įvertina: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP. Suvestinė mėnesiui — po tinkleliu, detalės — dienos lape.') : '') +
         row(''+ico('treniruote')+'', 'Šiandien', 'Oranžinė kortelė — šiandienos treniruotė: tema, kodėl ir ką pasiimti. Rodoma, kai treneris ją patvirtina.') +
         (g('comp') || g('belt') ? row(''+ico('varzybos')+'', g('comp') ? 'Varžybos' : 'Diržo egzaminai', 'Violetinė diena — renginys. Kortelėje „Ar dalyvaus?" — atsakykite už vaiką iki 14 m.; vaikas ir treneris matys.') : '') +
-        row(''+ico('atnaujinti')+'', 'Keli vaikai', 'Čipsai kalendoriaus viršuje perjungia vaiką.') +
+        row(''+ico('atnaujinti')+'', 'Keli vaikai', 'Burbuliukas viršuje dešinėje perjungia vaiką; „‹ Šeima" — visų vaikų santrauka.') +   // v649 (čipsai nuimti v647)
         row(''+ico('ranka')+'', 'Spauskite dieną', effVis ? 'Dienos lapas: EXP išskaidymas, pastangos, treniruotės eiga blokais.' : 'Dienos lapas: EXP išskaidymas, treniruotės eiga blokais.');
       break;
     case 'feed':
@@ -44644,13 +44644,15 @@ const Strava = {
     const hide = el => { if (el) el.style.display = 'none'; };
     if (!this.on()) { hide(kid); hide(par); return; }   // v627 (3A): kortelė ir be iššūkių — Kelio rekordams
     if (currentProfile?.role === 'parent') {
-      // v622 (6A): kortelė KIEKVIENAM vaikui (su jo ID) — anksčiau viena aktyviam vaikui ir po vaiko keitimo mygtukai likdavo su senu ID
+      // v649: tik PASIRINKTO vaiko kortelė (nuo v647 vaikas perjungiamas burbuliuku; anksčiau — kiekvienam vaikui, 6 vaikų tėvui 5 kortelės).
+      // v622 (6A) problema „mygtukai su senu ID" — perjungus vaiką kortelė perpiešiama iš refreshParentActiveScreen (t-prof)
       if (!par) return;
-      const ks = (typeof parentKids !== 'undefined' ? parentKids : []).filter(x => x && x.id && x.approval_status === 'approved');
-      if (!ks.length) { hide(par); return; }
-      const sts = await Promise.all(ks.map(x => this.status(x.id)));
+      const x = (typeof parentActiveKid !== 'undefined') ? parentActiveKid : null;
+      if (!x || !x.id || x.approval_status !== 'approved') { hide(par); return; }
+      const s = await this.status(x.id);
+      if ((typeof parentActiveKid !== 'undefined' && parentActiveKid ? parentActiveKid.id : null) !== x.id) return;   // kol krovėsi — perjungtas vaikas
       par.style.display = '';
-      par.innerHTML = ks.map((x, i) => this.cardHtml(x.id, sts[i], x).replace('margin:6px 12px;', 'margin:6px 0 0;')).join('');
+      par.innerHTML = this.cardHtml(x.id, s, x).replace('margin:6px 12px;', 'margin:6px 0 0;');
       return;
     }
     const kidId = this.kidId();
@@ -48409,7 +48411,7 @@ const TevSeima = {
     });
     h += `<div onclick="TevSeima.close(); if (typeof openAddKidWizard === 'function') openAddKidWizard();" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:14px;cursor:pointer;border:.5px dashed rgba(255,77,0,.5);color:#FF7A33;"><div style="width:42px;height:42px;border-radius:50%;background:rgba(255,77,0,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">${ico('prideti')}</div><span style="font-size:14px;font-weight:800;">Pridėti vaiką</span></div>`;
     const lnk = (click, icon, t) => `<span onclick="${click}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 8px;border-radius:12px;border:.5px solid var(--bdr);font-size:11.5px;font-weight:800;color:var(--mut);cursor:pointer;text-align:center;">${ico(icon)} ${t}</span>`;
-    h += `<div style="display:flex;gap:6px;">${lnk("TevSeima.close(); if (typeof openLinkKidByCode === 'function') openLinkKidByCode();", 'pazymejimas', 'Turiu vaiko kodą')}${act ? lnk(`TevSeima.close(); openInviteParentModal('${act.id}');`, 'grupe', 'Pakviesti antrą tėvą') : ''}</div>`;
+    h += `<div style="display:flex;gap:6px;">${lnk("TevSeima.close(); if (typeof openLinkKidByCode === 'function') openLinkKidByCode();", 'pazymejimas', 'Prijungti vaiką su kodu')}${act ? lnk(`TevSeima.close(); openInviteParentModal('${act.id}');`, 'grupe', 'Pakviesti antrą tėvą') : ''}</div>`;
     const m = document.createElement('div'); m.id = 'parent-kid-switcher';
     m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:99998;display:flex;align-items:flex-end;justify-content:center;';
     m.innerHTML = `<div style="width:100%;max-width:480px;max-height:85vh;overflow-y:auto;box-sizing:border-box;background:var(--card);border-top:.5px solid var(--bdr);border-radius:24px 24px 0 0;padding:10px 14px calc(22px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:6px;">
@@ -48466,7 +48468,7 @@ const TevSeima = {
     const box = (html, btns, tone) => `<div onclick="event.stopPropagation();" style="display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;cursor:default;${tone === 'red' ? 'background:rgba(239,68,68,.08);border:.5px solid rgba(239,68,68,.45);' : 'background:rgba(255,215,0,.08);border:.5px solid rgba(255,215,0,.4);'}"><span style="display:flex;flex-shrink:0;color:${tone === 'red' ? '#EF4444' : 'var(--gld)'};">${ico('ispejimas')}</span><div style="flex:1;min-width:0;font-size:12.5px;line-height:1.35;">${html}</div>${btns}</div>`;
     const btn = (click, t, main) => `<span onclick="${click}" style="flex-shrink:0;padding:6px 11px;border-radius:99px;font-size:12px;font-weight:800;cursor:pointer;${main ? 'background:#FF4D00;color:#fff;' : 'border:.5px solid var(--bdr);color:var(--txt);'}">${t}</span>`;
     if (k.approval_status === 'rejected') need.push(box('<b>Anketa atmesta</b><br><span style="color:var(--mut);">Peržiūrėkite ir pataisykite</span>', btn(`showKidDetail('${k.id}')`, 'Peržiūrėti', true), 'red'));
-    else if (k.approval_status === 'pending') lines.unshift(L('laukia', 'Anketa laukia trenerio patvirtinimo', '', '#FF7A33'));
+    else if (k.approval_status === 'pending') lines.unshift(L('laukia', 'Anketa laukia klubo patvirtinimo', '', '#FF7A33'));   // v649: kaip Kalendoriaus juostoje
     if (comp) {
       const dl = comp.deadline ? ` · registracija iki ${this.esc(String(comp.deadline).slice(5, 10))}` : '';
       need.push(box(`<b>Ar dalyvaus? ${this.esc(comp.title)}</b><br><span style="color:var(--mut);">${this.esc(typeof Dvk !== 'undefined' ? Dvk.At(comp.date) : comp.date)}${dl}</span>`,
