@@ -943,3 +943,7 @@ body.portal-v{--ico-accent:var(--br);}
 .sus-form .sus-chk{display:flex;align-items:center;gap:8px;margin:8px 0 0;font-size:12px;letter-spacing:0;color:var(--txt,#fff);min-height:44px;}
 .sus-form .sus-chk input{width:22px;height:22px;flex-shrink:0;}
 /* ===== /MODULIS ===== */
+
+/* ===== MODULIS: TevPrem (v650) — tėvų Premium sluoksniai; Kelyje kortelė lygiuojama su „KELIO EXP" (12 px) ===== */
+.tev-pr-kelbox .kal-card{margin:0 12px 8px;}
+/* ===== /MODULIS ===== */
