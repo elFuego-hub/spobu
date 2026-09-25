@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=639">
+<link rel="stylesheet" href="styles.css?v=644">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v639</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v644</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2482,7 +2482,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <a class="vdn-item" data-sid="t-main" onclick="nv('t',null,'t-main')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span> Pagrindinis</a>
       <a class="vdn-item" data-sid="t-kar"  onclick="nv('t',null,'t-kar')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span> Kelias</a>
       <a class="vdn-item" data-sid="t-feed" onclick="nv('t',null,'t-feed')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-medalis"></use><use href="#i-medalis"></use></svg></span> Pasiekimai</a>
-      <a class="vdn-item" data-sid="t-shop" onclick="nv('t',null,'t-shop')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-parduotuve"></use><use href="#i-parduotuve"></use></svg></span> Parduotuvė</a>
+      <a class="vdn-item" data-sid="t-grupe" onclick="nv('t',null,'t-grupe')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-grupe"></use><use href="#i-grupe"></use></svg></span> Grupė</a>
       <a class="vdn-item" data-sid="t-prof" onclick="nv('t',null,'t-prof')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-profilis"></use><use href="#i-profilis"></use></svg></span> Profilis</a>
     </nav>
     <div class="vdn-bottom">
@@ -2638,7 +2638,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni on" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-grupe')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupė</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -2687,7 +2687,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-grupe')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupė</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -2722,13 +2722,41 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-grupe')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupė</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
 
+<!-- ===== MODULIS: TevGrupe — tėvo skirtukas „Grupė" (v642, tėvų auditas 13A, maketas A): vaiko grupės savaitė, herojai, arena — tik skaityti ===== -->
+<div class="sc" id="t-grupe">
+  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">GRUPĖ</div>
+    <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openParentInfo('grupe')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+        <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
+      </div>
+      <div onclick="openParentSettings()" style="width:40px;height:40px;background:rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+    </div>
+  </div>
+  <div class="sa">
+    <div id="tev-gr-content" style="padding:10px 4px 8px;">
+      <div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Kraunama...</div>
+    </div>
+  </div>
+  <div class="bn2">
+    <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('t',this,'t-grupe')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupė</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
+  </div>
+</div>
+<!-- ===== /MODULIS ===== -->
+
 <!-- ════════════════════════════════════════ -->
-<!-- <svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg> PARDUOTUVĖ — prenumeratos / ataskaitos (vizualas, backend vėliau) -->
+<!-- <svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg> PARDUOTUVĖ — v642 (12A): pasiekiama iš Profilio („AI ataskaitos"), ne iš navigacijos -->
 <!-- ════════════════════════════════════════ -->
 <div class="sc" id="t-shop">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
@@ -2901,8 +2929,9 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-grupe')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupė</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div><!-- v642 (12A): Parduotuvė — iš Profilio („AI ataskaitos"), ne navigacijoje -->
+
   </div>
 </div>
 
@@ -2985,7 +3014,9 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="kal-t-prof" style="display:none;margin:0 12px 10px;">
       <div class="kal-card" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;border-color:rgba(255,77,0,.35);" onclick="openParentKidStats()"><div class="kal-cta-ic" style="width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.16);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Visa statistika</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Sezonas · įgūdžiai · iššūkiai · varžybos</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
       <div class="kal-card" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;border-color:rgba(255,77,0,.35);" onclick="openParentKidStats('overall')"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.16);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Reitingai</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Vaiko kategorija · EXP, varžybos, iššūkiai, TOP įgūdis</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
-      <div class="kal-card" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;" onclick="openParentKidStats('competitions')"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:var(--mut);flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Varžybų rekordas</div><div id="kal-t-prof-rec" style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">—</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
+      <div class="kal-card" id="kal-t-prof-rec-row" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;" onclick="openParentTrophies()"><!-- v640 (16A): vaiko varžybų rekordas (trofėjai), ne klubo reitingas --><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:var(--mut);flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Varžybų rekordas</div><div id="kal-t-prof-rec" style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">—</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
+      <!-- MODULIS: TevProfilis (v642, 12A) — AI ataskaitos: Parduotuvė nebe navigacijoje; eilutė rodoma, kai yra kreditų ar paruoštų ataskaitų -->
+      <div class="kal-card" id="kal-t-prof-ai" style="margin:0 0 6px;cursor:pointer;display:none;align-items:center;gap:11px;" onclick="TevProfilis.openAi()"><div style="width:34px;height:34px;border-radius:11px;background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;color:#22C55E;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">AI ataskaitos</div><div id="kal-t-prof-ai-sub" style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">—</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
       <div class="kal-card" style="margin:0;cursor:pointer;display:flex;align-items:center;gap:11px;" onclick="openParentKidSwitcher()"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:var(--mut);flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Vaikai</div><div id="kal-t-prof-kids" style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">—</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
       <div id="stv-t-row" style="display:none;"></div><!-- MODULIS: Strava (v552, V2 7b) — Strava kortelė tėvų profilyje -->
     </div>
@@ -2998,7 +3029,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-grupe')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupė</span><div class="nd"></div></div>
     <div class="ni on" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
   </div>
 </div>
@@ -3391,14 +3422,14 @@ window.addEventListener('unhandledrejection', function(e) {
           <div style="font-size:24px;"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg>‍<svg class="ico" aria-hidden="true"><use href="#i-vaikas"></use></svg></div>
           <div>
             <div style="font-weight:900;font-size:13px;">Ne, neturi telefono</div>
-            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Treneris pildys rezultatus,<br>aš stebėsiu per savo paskyrą.</div>
+            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Treneris žymi lankomumą ir pastangas,<br>viską matysite savo paskyroje.</div>
           </div>
         </div>
         <div class="rw-role-opt" onclick="akSelectPhone(this, true)" data-phone="true">
           <div style="font-size:24px;"><svg class="ico" aria-hidden="true"><use href="#i-vaikas"></use></svg><svg class="ico" aria-hidden="true"><use href="#i-programele"></use></svg></div>
           <div>
             <div style="font-weight:900;font-size:13px;">Taip, turi telefoną</div>
-            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Vaikas pats teiks rezultatus<br>per savo paskyrą.</div>
+            <div style="font-size:11px;color:var(--mut);line-height:1.4;">Vaikas gaus laišką ir galės prisijungti pats:<br>kalendorius, iššūkiai, Strava, grupė.</div>
           </div>
         </div>
       </div>
@@ -4749,7 +4780,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=639"></script>
+<script src="app.js?v=644"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
