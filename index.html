@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=646">
+<link rel="stylesheet" href="styles.css?v=647">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v646</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v647</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2483,6 +2483,9 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
     <nav class="vdn-nav">
+      <a class="vdn-item" data-sid="t-seima" onclick="nv('t',null,'t-seima')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span> Šeima</a><!-- v647 (TevSeima) -->
+      <a class="vdn-item" data-sid="t-shop" onclick="nv('t',null,'t-shop')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-parduotuve"></use><use href="#i-parduotuve"></use></svg></span> Parduotuvė</a>
+      <div id="tdn-kid-sep" style="margin:12px 14px 4px;font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--mut);">VAIKAS</div>
       <a class="vdn-item" data-sid="t-main" onclick="nv('t',null,'t-main')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-namai"></use><use href="#i-namai"></use></svg></span> Pagrindinis</a>
       <a class="vdn-item" data-sid="t-kar"  onclick="nv('t',null,'t-kar')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-augimas"></use><use href="#i-augimas"></use></svg></span> Kelias</a>
       <a class="vdn-item" data-sid="t-feed" onclick="nv('t',null,'t-feed')"><span class="vdn-ico"><svg class="ico ico-duo" aria-hidden="true"><use class="duo" href="#i-medalis"></use><use href="#i-medalis"></use></svg></span> Pasiekimai</a>
@@ -2498,17 +2501,46 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ════════════════════════════════════════ -->
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg> TĖVŲ PAGRINDINIS — Hero + suvestinė + vaikų greitos kortelės -->
 <!-- ════════════════════════════════════════ -->
+<!-- ===== MODULIS: TevSeima (v647, savininko navigacija A „Šeimos namai") — šeimos lygis: santrauka apie kiekvieną vaiką; turinį piešia TevSeima.load() ===== -->
+<div class="sc" id="t-seima">
+  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px;">
+    <div style="display:flex;align-items:center;gap:7px;"><svg class="mark" style="font-size:26px;" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;line-height:1;color:var(--txt);">SPOBU</span></div>
+    <div style="display:flex;gap:5px;align-items:center;">
+      <div onclick="openParentInfo('seima')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
+      <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
+        <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
+      </div>
+      <div onclick="openParentKidSwitcher()" class="tk-pill" title="Pasirinkti vaiką" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">
+        <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;min-width:14px;height:14px;padding:0 3px;box-sizing:border-box;border-radius:99px;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
+      </div>
+    </div>
+  </div>
+  <div class="sa">
+    <div style="padding:2px 16px 10px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1.5px;line-height:1;">ŠEIMA</div><div style="font-size:11.5px;color:var(--mut);font-weight:700;margin-top:3px;">Kas naujo pas jūsų vaikus</div></div>
+    <div id="tev-se-content" style="padding:0 12px 16px;"><div style="text-align:center;padding:30px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
+  </div>
+  <div class="bn2">
+    <div class="ni on" onclick="nv('t',this,'t-seima')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Šeima</span><div class="nd"></div></div>
+    <div class="ni" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
+    <div class="ni" onclick="openParentSettings()"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></span><span class="lb">Nustatymai</span><div class="nd"></div></div>
+  </div>
+</div>
+<!-- ===== /MODULIS ===== -->
+
 <div class="sc on" id="t-main">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-signalas"></use></svg> <svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <!-- TOP BAR: SPOBU logo + <svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> + <svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> + vaiko avataro pill -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 8px;">
-    <div style="display:flex;align-items:center;gap:7px;"><svg class="mark" style="font-size:26px;" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;line-height:1;color:var(--txt);">SPOBU</span></div>
+    <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;margin-right:6px;"><!-- MODULIS: TevSeima (v647) — „‹ Šeima" + kieno ekranas -->
+      <button type="button" class="tev-se-back" onclick="TevSeima.go()" aria-label="Į šeimos langą" style="flex-shrink:0;display:flex;align-items:center;gap:2px;height:34px;padding:0 10px 0 6px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);color:var(--txt);font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg>Šeima</button>
+      <div style="min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;line-height:1.1;">KALENDORIUS</div><div class="tev-se-kid" style="font-size:10.5px;color:var(--mut);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div></div>
+    </div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openParentInfo('main')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:40px;height:40px;background:rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" title="Pasirinkti vaiką" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2653,12 +2685,14 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="t-kar">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px 6px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">KELIAS</div>
+    <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;margin-right:6px;"><!-- MODULIS: TevSeima (v647) — „‹ Šeima" + kieno ekranas -->
+      <button type="button" class="tev-se-back" onclick="TevSeima.go()" aria-label="Į šeimos langą" style="flex-shrink:0;display:flex;align-items:center;gap:2px;height:34px;padding:0 10px 0 6px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);color:var(--txt);font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg>Šeima</button>
+      <div style="min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;line-height:1.1;">KELIAS</div><div class="tev-se-kid" style="font-size:10.5px;color:var(--mut);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div></div>
+    </div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:40px;height:40px;background:rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2705,13 +2739,15 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="t-feed">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PASIEKIMAI</div>
+    <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;margin-right:6px;"><!-- MODULIS: TevSeima (v647) — „‹ Šeima" + kieno ekranas -->
+      <button type="button" class="tev-se-back" onclick="TevSeima.go()" aria-label="Į šeimos langą" style="flex-shrink:0;display:flex;align-items:center;gap:2px;height:34px;padding:0 10px 0 6px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);color:var(--txt);font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg>Šeima</button>
+      <div style="min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;line-height:1.1;">PASIEKIMAI</div><div class="tev-se-kid" style="font-size:10.5px;color:var(--mut);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div></div>
+    </div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openParentInfo('feed')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:40px;height:40px;background:rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2735,13 +2771,15 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="t-grupe">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">GRUPĖ</div>
+    <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;margin-right:6px;"><!-- MODULIS: TevSeima (v647) — „‹ Šeima" + kieno ekranas -->
+      <button type="button" class="tev-se-back" onclick="TevSeima.go()" aria-label="Į šeimos langą" style="flex-shrink:0;display:flex;align-items:center;gap:2px;height:34px;padding:0 10px 0 6px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);color:var(--txt);font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg>Šeima</button>
+      <div style="min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;line-height:1.1;">GRUPĖ</div><div class="tev-se-kid" style="font-size:10.5px;color:var(--mut);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div></div>
+    </div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openParentInfo('grupe')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:40px;height:40px;background:rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
     </div>
   </div>
   <div class="sa">
@@ -2765,13 +2803,12 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="t-shop">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PARDUOTUVĖ</div>
+    <div style="min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PARDUOTUVĖ</div><div class="tev-se-shopkid" style="font-size:10.5px;color:var(--mut);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div></div><!-- v647 (TevSeima): kuriam vaikui perkama; Nustatymai — apatiniame meniu -->
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openParentInfo('shop')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:40px;height:40px;background:rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -2930,11 +2967,9 @@ window.addEventListener('unhandledrejection', function(e) {
 
   </div>
   <div class="bn2">
-    <div class="ni" onclick="nv('t',this,'t-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Pagrindinis</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-kar')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-augimas"></use></svg></span><span class="lb">Kelias</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-feed')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></span><span class="lb">Pasiekimai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('t',this,'t-grupe')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span><span class="lb">Grupė</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('t',this,'t-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div><!-- v642 (12A): Parduotuvė — iš Profilio („AI ataskaitos"), ne navigacijoje -->
+    <div class="ni" onclick="nv('t',this,'t-seima')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Šeima</span><div class="nd"></div></div>
+    <div class="ni on" onclick="nv('t',this,'t-shop')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-parduotuve"></use></svg></span><span class="lb">Parduotuvė</span><div class="nd"></div></div>
+    <div class="ni" onclick="openParentSettings()"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></span><span class="lb">Nustatymai</span><div class="nd"></div></div><!-- v647 (TevSeima): Parduotuvė — šeimos lygis -->
 
   </div>
 </div>
@@ -2945,13 +2980,15 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="sc" id="t-prof">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;">PROFILIS</div>
+    <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;margin-right:6px;"><!-- MODULIS: TevSeima (v647) — „‹ Šeima" + kieno ekranas -->
+      <button type="button" class="tev-se-back" onclick="TevSeima.go()" aria-label="Į šeimos langą" style="flex-shrink:0;display:flex;align-items:center;gap:2px;height:34px;padding:0 10px 0 6px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);color:var(--txt);font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg>Šeima</button>
+      <div style="min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;line-height:1.1;">PROFILIS</div><div class="tev-se-kid" style="font-size:10.5px;color:var(--mut);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div></div>
+    </div>
     <div style="display:flex;gap:5px;align-items:center;">
       <div onclick="openParentInfo('prof')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
       </div>
-      <div onclick="openParentSettings()" style="width:40px;height:40px;background:rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:.5px solid var(--bdr);"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
       <div onclick="openParentKidSwitcher()" class="tk-pill" style="position:relative;cursor:pointer;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#FF4D00,#FFA500);border:1.5px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:white;background-size:cover;background-position:center;">JP
         <span class="tk-pill-c" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#FFEB3B;color:#000;border:1.5px solid var(--bg);font-size:8px;font-weight:900;display:none;align-items:center;justify-content:center;line-height:1;">1</span>
       </div>
@@ -4784,7 +4821,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=646"></script>
+<script src="app.js?v=647"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
