@@ -15227,7 +15227,7 @@ function _updateClubNotifCounts(){
   if (badge2){ badge2.textContent = total>99?'99+':total; badge2.style.display = total?'flex':'none'; }
   const badge3 = document.getElementById('kt-notif-badge-count');
   if (badge3){ badge3.textContent = total>99?'99+':total; badge3.style.display = total?'flex':'none'; }
-  ['kev-notif-badge-count','kst-notif-badge-count'].forEach(id=>{  // renginiai + analitika
+  ['kev-notif-badge-count','kst-notif-badge-count','kkal-notif-badge-count'].forEach(id=>{  // renginiai + analitika + kalendorius (v646)
     const b = document.getElementById(id);
     if (b){ b.textContent = total>99?'99+':total; b.style.display = total?'flex':'none'; }
   });
@@ -39144,7 +39144,8 @@ function updateNotifCounts(seenIds) {
   });
   
   // Atnaujint globalų badge (pagrindinis + karjeros + bet kuris kitas)
-  const badgeIds = ['v-notif-badge-count', 'v-prof-notif-badge', 'v-kar-notif-badge', 'v-ish-notif-badge', 'v-comp-notif-badge', 'vdn-notif-badge', 't-notif-badge'];
+  // v646: + Kalendorius (v-kal) ir Grupė (v-grupe) — jų varpeliai skaičiaus nerodė
+  const badgeIds = ['v-notif-badge-count', 'v-prof-notif-badge', 'v-kar-notif-badge', 'v-ish-notif-badge', 'v-comp-notif-badge', 'v-kal-notif-badge', 'v-grupe-notif-badge', 'vdn-notif-badge', 't-notif-badge'];
   badgeIds.forEach(id => {
     const badge = document.getElementById(id);
     if (!badge) return;
