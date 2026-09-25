@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=651">
+<link rel="stylesheet" href="styles.css?v=652">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v651</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v652</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2840,83 +2840,111 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="font-size:10.5px;color:var(--mut);margin-top:3px;">Esate pirmieji Spobu bandytojai</div>
       <div style="font-size:9.5px;font-weight:900;letter-spacing:1px;margin-top:10px;color:var(--grn);">✔ VISADA NEMOKAMA — IR PO BANDYMO</div>
       <ul style="list-style:none;margin:4px 0 0;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Vaiko žaidimas: iššūkiai, rekordai, dvikovos</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Lygis, diržas, serijos ir šventės</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Trenerio žinutės ir pranešimai</li>
+        <!-- v652 (Premium P5): sąrašai pagal PREMIUM-TEVAMS-PLANAS §1a (kas lieka nemokama / kas vėliau — Premium) -->
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Tvarkaraštis, lankomumas, žinutės ir pranešimai</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Vaiko EXP, lygis, diržas, serija ir pastangos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Kelias, rekordai ir iššūkiai su progresu</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;">✓</span> Vaiko programėlė — visa</li>
       </ul>
-      <div style="font-size:9.5px;font-weight:900;letter-spacing:1px;margin-top:10px;color:#FF7A33;">🎁 BANDYMO METU — DOVANŲ</div>
+      <div style="font-size:9.5px;font-weight:900;letter-spacing:1px;margin-top:10px;color:#FF7A33;">🎁 BANDYMO METU — DOVANŲ (VĖLIAU — PREMIUM)</div>
       <ul style="list-style:none;margin:4px 0 0;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:#FF7A33;font-weight:900;">✓</span> Gili progreso statistika ir istorija</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:#FF7A33;font-weight:900;">✓</span> Mėnesio suvestinės, percentiliai, reitingai</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:#FF7A33;font-weight:900;">✓</span> Pasiekimų dienoraštis, mėnesio kortelė ir PDF</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:#FF7A33;font-weight:900;">✓</span> Grupė, visa statistika ir reitingai</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:#FF7A33;font-weight:900;">✓</span> Kelias+, Iššūkiai+, pastangų tendencija, sezono apžvalga</li>
       </ul>
       <!-- v502: pažadas „gausite pranešimą su dovana" pašalintas — kreditų dalinimo terminas
            dar nenuspręstas, tad tėvams nieko nežadam. Grąžinti galima tada, kai bus sprendimas. -->
     </div>
 
     <div id="shop-plans-full">
+    <!-- MODULIS: TevPrem (v652, Premium P5 — PREMIUM-TEVAMS-PLANAS §1): pakopos ir kainos; skaičius pildo _applyPricesToUI iš prices lentelės,
+         pirkimas — TevPrem.buy (mokėjimų tiekėjas — atskiras darbas). Rodoma tik mokamoje versijoje (platform_settings.payments_live = true). -->
     <div class="st">PLANAI</div>
 
-    <!-- FREE -->
+    <!-- NEMOKAMA -->
     <div style="margin:0 16px 11px;background:var(--card);border:.5px solid var(--bdr);border-radius:16px;padding:15px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;">NEMOKAMA</div>
-      <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Vaiko žaidimas ir ryšys</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--grn);margin:8px 0 6px;">0€</div>
-      <ul style="list-style:none;margin:0 0 12px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Vaiko žaidimas: iššūkiai, rekordai, dvikovos</li>
+      <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Viskas, be ko negalima — visada</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--grn);margin:8px 0 6px;">0 €</div>
+      <ul style="list-style:none;margin:0 0 4px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Tvarkaraštis, lankomumas, „Ar dalyvaus?"</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Vaiko EXP, lygis, diržas, serija ir pastangos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Kelias — pratimai, rekordai, pakopos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Iššūkiai su progresu, trofėjai, ženkliukai</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Trenerio žinutės ir pranešimai</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Laimėjimai realiu laiku (medaliai, lygiai)</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Lygis, diržas, serijos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Vaiko programėlė — visa ir nemokama</li>
       </ul>
-      <button onclick="setKidTier('free')" style="width:100%;text-align:center;padding:11px;border-radius:11px;font-size:11.5px;font-weight:800;background:var(--bg);color:var(--mut);border:.5px solid var(--bdr);box-sizing:border-box;cursor:pointer;">Rinktis Nemokamą</button>
     </div>
 
     <!-- PREMIUM -->
     <div style="margin:0 16px 11px;background:var(--card);border:.5px solid var(--bdr);border-radius:16px;padding:15px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;color:#4FC3F7;">PREMIUM</div>
-      <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Pažink vaiko progresą giliau</div>
-      <div style="margin:9px 0 6px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:30px;">6,99€</span><span style="font-size:11px;color:var(--mut);"> /mėn</span></div>
+      <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Viskas, ką vaikas pasiekė — ir ką tai reiškia</div>
+      <div style="margin:9px 0 6px;"><span id="ps-prem-y" style="font-family:'Bebas Neue',sans-serif;font-size:30px;">39 €</span><span style="font-size:11px;color:var(--mut);"> / metus · arba <span id="ps-prem-m">7,99 €</span> / mėn.</span></div>
       <ul style="list-style:none;margin:0 0 12px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
         <li style="padding:3px 0 3px 20px;position:relative;color:var(--mut);"><span style="position:absolute;left:0;">·</span> Viskas iš Nemokamos</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> <svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> Mėnesio pasiekimų suvestinė</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Gili progreso statistika ir istorija</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> <svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg> Bendraamžių percentiliai</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Pilni reitingai ir tendencijos</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Pasiekimų dienoraštis, mėnesio kortelė ir PDF</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Grupė — savaitė, herojai, arena</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Visa statistika ir reitingai tarp bendraamžių</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Kelias+ ir Iššūkiai+ — ką rodo skaičiai ir ką daryti</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Pastangų tendencija ir visa sezono apžvalga</li>
       </ul>
       <div style="background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(34,197,94,.04));border:1px solid rgba(34,197,94,.45);border-radius:12px;padding:12px 14px;margin-bottom:10px;text-align:center;">
-        <div style="font-size:10px;font-weight:900;color:var(--grn);letter-spacing:.5px;"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> GERIAUSIA VERTĖ — UŽ METUS IŠ KARTO</div>
-        <div style="margin-top:6px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#fff;">41,94€</span> <span style="font-size:13px;color:var(--mut);text-decoration:line-through;">83,88€</span></div>
-        <div style="font-size:10.5px;color:#d6d6dd;margin-top:3px;">–50 % · tik <b style="color:#fff;">≈3,50€/mėn</b> · sutaupai <b style="color:var(--grn);">41,94€</b></div>
+        <div style="font-size:10px;font-weight:900;color:var(--grn);letter-spacing:.5px;"><svg class="ico" aria-hidden="true"><use href="#i-streak"></use></svg> MOKANT UŽ METUS IŠ KARTO</div>
+        <div style="margin-top:6px;"><span id="ps-prem-y2" style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#fff;">39 €</span> <span id="ps-prem-12m" style="font-size:13px;color:var(--mut);text-decoration:line-through;">95,88 €</span></div>
+        <div style="font-size:10.5px;color:#d6d6dd;margin-top:3px;">lyginant su mėnesine — sutaupai <b id="ps-prem-save" style="color:var(--grn);">56,88 €</b></div>
       </div>
-      <button onclick="setKidTier('premium')" style="width:100%;padding:13px;border-radius:11px;font-size:12.5px;font-weight:800;background:linear-gradient(90deg,#22C55E,#16A34A);color:#fff;border:none;cursor:pointer;margin-bottom:7px;box-shadow:0 6px 16px rgba(34,197,94,.3);">Užsisakyti metams · 41,94€ (–50 %)</button>
-      <button onclick="setKidTier('premium')" style="width:100%;padding:11px;border-radius:11px;font-size:11.5px;font-weight:800;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);cursor:pointer;">Mėnesinis · 6,99€/mėn</button>
+      <button id="ps-prem-btn-y" onclick="TevPrem.buy('premium_annual')" style="width:100%;padding:13px;border-radius:11px;font-size:12.5px;font-weight:800;background:linear-gradient(90deg,#22C55E,#16A34A);color:#fff;border:none;cursor:pointer;margin-bottom:7px;box-shadow:0 6px 16px rgba(34,197,94,.3);">Užsisakyti metams · 39 €</button>
+      <button id="ps-prem-btn-m" onclick="TevPrem.buy('premium_monthly')" style="width:100%;padding:11px;border-radius:11px;font-size:11.5px;font-weight:800;background:rgba(255,255,255,.08);color:#fff;border:.5px solid var(--bdr);cursor:pointer;">Mėnesinė · 7,99 € / mėn.</button>
     </div>
 
     <!-- PREMIUM+ -->
     <div style="margin:0 16px 11px;position:relative;background:linear-gradient(160deg,rgba(255,77,0,.15),rgba(255,140,0,.04) 60%,var(--card));border:1.5px solid var(--br);border-radius:16px;padding:15px;box-shadow:0 8px 30px rgba(255,77,0,.18);">
       <div style="position:absolute;top:-9px;right:14px;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:white;font-size:9px;font-weight:900;letter-spacing:.5px;padding:3px 10px;border-radius:20px;">★ GERIAUSIA VERTĖ</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;line-height:1;color:var(--gld);">PREMIUM+</div>
-      <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Visa vaiko sportinė kelionė — ekspertų rankose</div>
-      <div style="margin:9px 0 6px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:30px;">81€</span><span style="font-size:11px;color:var(--mut);"> /metams (12 mėn) · ≈6,75€/mėn</span></div>
+      <div style="font-size:10.5px;color:var(--mut);margin-top:2px;">Premium ir asmeninės programos vaikui</div>
+      <div style="margin:9px 0 6px;"><span id="ps-plus-v" style="font-family:'Bebas Neue',sans-serif;font-size:30px;">69 €</span><span style="font-size:11px;color:var(--mut);"> / metus</span></div>
       <ul style="list-style:none;margin:0 0 10px;padding:0;font-size:11.5px;color:#d6d6dd;line-height:1.5;">
         <li style="padding:3px 0 3px 20px;position:relative;color:var(--mut);"><span style="position:absolute;left:0;">·</span> Viskas iš Premium</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> <svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg> 3 ketvirtinės AI ataskaitos (tęstinės)</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> <svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg> 3 namų treniruočių planai</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> <svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg> 3 AI ataskaitos per metus (tęstinės)</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> <svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg> Namų treniruočių planas</li>
         <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> <svg class="ico" aria-hidden="true"><use href="#i-vasara"></use></svg> Vasaros treniruočių programa</li>
-        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> Pristatoma automatiškai, visus metus</li>
+        <li style="padding:3px 0 3px 20px;position:relative;"><span style="position:absolute;left:0;color:var(--grn);font-weight:900;"><svg class="ico" aria-hidden="true"><use href="#i-atlikta"></use></svg></span> „10 min namuose" po kiekvienos treniruotės</li>
       </ul>
       <div style="background:rgba(0,0,0,.28);border:.5px solid var(--bdr);border-radius:10px;padding:9px 11px;margin:2px 0 9px;font-size:10.5px;color:var(--mut);">
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span><svg class="ico" aria-hidden="true"><use href="#i-premium-plus"></use></svg> Premium (statistika) metams</span><span id="ps-annual-v" style="color:#cfcfd6;font-weight:600;">41.94€</span></div>
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span id="ps-rep-l"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg> 3 ataskaitos (3 × 9.99€)</span><span id="ps-rep-v" style="color:#cfcfd6;font-weight:600;">29.97€</span></div>
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span id="ps-home-l"><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg> 3 namų planai (3 × 19.99€)</span><span id="ps-home-v" style="color:#cfcfd6;font-weight:600;">59.97€</span></div>
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span><svg class="ico" aria-hidden="true"><use href="#i-vasara"></use></svg> Vasaros programa</span><span id="ps-sum-v" style="color:#cfcfd6;font-weight:600;">29.99€</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0 2px;margin-top:3px;border-top:.5px solid var(--bdr);"><span style="color:white;font-weight:700;">Viskas atskirai</span><span id="ps-total-v" style="text-decoration:line-through;">161.87€</span></div>
-        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span style="color:var(--gld);font-weight:900;font-size:12px;">Su Premium+</span><span style="color:var(--gld);font-weight:900;font-size:12px;">81.00€</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span><svg class="ico" aria-hidden="true"><use href="#i-premium-plus"></use></svg> Premium metams</span><span id="ps-annual-v" style="color:#cfcfd6;font-weight:600;">39 €</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span id="ps-rep-l"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg> 3 AI ataskaitos (3 × 12,99 €)</span><span id="ps-rep-v" style="color:#cfcfd6;font-weight:600;">38,97 €</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span><svg class="ico" aria-hidden="true"><use href="#i-treniruote"></use></svg> Namų planas</span><span id="ps-home-v" style="color:#cfcfd6;font-weight:600;">19,99 €</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span><svg class="ico" aria-hidden="true"><use href="#i-vasara"></use></svg> Vasaros programa</span><span id="ps-sum-v" style="color:#cfcfd6;font-weight:600;">19,99 €</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0 2px;margin-top:3px;border-top:.5px solid var(--bdr);"><span style="color:white;font-weight:700;">Viskas atskirai</span><span id="ps-total-v" style="text-decoration:line-through;">117,95 €</span></div>
+        <div style="display:flex;justify-content:space-between;padding:2px 0;"><span style="color:var(--gld);font-weight:900;font-size:12px;">Su Premium+</span><span id="ps-plus-v2" style="color:var(--gld);font-weight:900;font-size:12px;">69 €</span></div>
       </div>
-      <div style="text-align:center;background:rgba(34,197,94,.15);color:var(--grn);font-size:10px;font-weight:800;padding:6px;border-radius:8px;margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg> –50% NUOLAIDA · sutaupai 80.87€ (viskas viename, automatiškai)</div>
-      <button onclick="setKidTier('premium_plus')" style="width:100%;padding:12px;border-radius:11px;font-size:12px;font-weight:800;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:white;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(255,77,0,.4);">Gauti Premium+ <svg class="ico" aria-hidden="true"><use href="#i-premium"></use></svg></button>
-      <div style="text-align:center;font-size:9px;color:var(--mut);margin-top:7px;"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg> Galima kas mėnesį · rekomenduojama kas 3 mėn.</div>
+      <div style="text-align:center;background:rgba(34,197,94,.15);color:var(--grn);font-size:10px;font-weight:800;padding:6px;border-radius:8px;margin-bottom:10px;"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg> Sutaupai <span id="ps-plus-save">48,95 €</span> · „10 min namuose" — tik Premium+</div>
+      <button id="ps-plus-btn" onclick="TevPrem.buy('premium_plus')" style="width:100%;padding:12px;border-radius:11px;font-size:12px;font-weight:800;background:linear-gradient(90deg,#FF4D00,#FF7A33);color:white;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(255,77,0,.4);">Gauti Premium+ · 69 €</button>
+    </div>
+
+    <!-- ŠEIMOMS SU KELIAIS VAIKAIS -->
+    <div style="margin:0 16px 11px;background:var(--card);border:.5px solid var(--bdr);border-radius:16px;padding:13px 15px;">
+      <div style="font-size:10px;font-weight:900;letter-spacing:.8px;color:var(--mut);"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg> KELI VAIKAI ŠEIMOJE</div>
+      <div style="font-size:11.5px;color:#d6d6dd;line-height:1.55;margin-top:6px;">
+        <b style="color:#4FC3F7;">Premium:</b> 2-as vaikas −50 % (<span id="ps-fam-2">19,50 €</span> / metus arba <span id="ps-fam-2m">3,99 €</span> / mėn.), 3-ias ir kiti — nemokamai.<br>
+        <b style="color:var(--gld);">Premium+:</b> 2-as ir kiti vaikai −30 % (<span id="ps-fam-plus">48,30 €</span> kiekvienam).<br>
+        <span style="color:var(--mut);">Galima derinti: vienam vaikui Premium+, kitiems — Premium su nuolaida.</span>
+      </div>
     </div>
     </div><!-- /shop-plans-full -->
+
+    <!-- MODULIS: TevPrem (v652, P5) — pirma AI ataskaita dovanų (rodo TevPrem.shopPaint: mokama versija, klubas įjungęs AI, dovana dar nepaimta) -->
+    <div id="tev-pr-first-ai" style="display:none;margin:0 16px 11px;background:linear-gradient(135deg,rgba(34,197,94,.14),rgba(34,197,94,.03));border:1px solid rgba(34,197,94,.4);border-radius:14px;padding:12px 13px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:11px;background:rgba(34,197,94,.14);display:flex;align-items:center;justify-content:center;color:#22C55E;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:800;color:white;">Pirma AI ataskaita — dovanų</div>
+          <div style="font-size:10px;color:var(--mut);margin-top:1px;line-height:1.35;">Vienąkart kiekvienam vaikui, kai jis treniruojasi bent 2 mėn.</div>
+        </div>
+      </div>
+      <button onclick="TevPrem.firstAi()" style="width:100%;margin-top:10px;background:linear-gradient(90deg,#22C55E,#16A34A);color:#fff;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">Gauti nemokamai ›</button>
+    </div>
 
     <div class="st" id="shop-onetime-title">PERKI VIENĄ KARTĄ</div>
 
@@ -2932,7 +2960,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div id="shop-cnt-report" style="flex-shrink:0;"></div>
       </div>
       <div id="shop-act-report" style="margin-top:10px;">
-        <button onclick="openReportOrderModal()" style="width:100%;background:var(--br);color:white;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">Užsisakyti · 9,99€ ›</button>
+        <button onclick="openReportOrderModal()" style="width:100%;background:var(--br);color:white;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">Užsisakyti · 12,99 € ›</button>
       </div>
     </div>
 
@@ -2964,7 +2992,7 @@ window.addEventListener('unhandledrejection', function(e) {
         <div id="shop-cnt-summer" style="flex-shrink:0;"></div>
       </div>
       <div id="shop-act-summer" style="margin-top:10px;">
-        <button onclick="openSummerInfoModal()" style="width:100%;background:var(--br);color:white;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">Sužinoti · 29,99€ ›</button>
+        <button onclick="openSummerInfoModal()" style="width:100%;background:var(--br);color:white;border:none;padding:11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">Sužinoti · 19,99 € ›</button>
       </div>
     </div>
 
@@ -3056,8 +3084,9 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     <!-- ===== MODULIS: Kal — tėvų profilio eilutės (v541, V2 5 etapas): statistika ir reitingai persikelia čia iš Pagrindinio; rodoma tik su plans_enabled ===== -->
     <div id="kal-t-prof" style="display:none;margin:0 12px 10px;">
-      <div class="kal-card" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;border-color:rgba(255,77,0,.35);" onclick="openParentKidStats()"><div class="kal-cta-ic" style="width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.16);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Visa statistika</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Sezonas · įgūdžiai · iššūkiai · varžybos</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
-      <div class="kal-card" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;border-color:rgba(255,77,0,.35);" onclick="openParentKidStats('overall')"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.16);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Reitingai</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Vaiko kategorija · EXP, varžybos, iššūkiai, TOP įgūdis</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
+      <!-- MODULIS: TevPrem (v652, P5) — id tev-pr-prof-stat / tev-pr-prof-rank: PREMIUM žymė be Premium (TevPrem.profLocks) -->
+      <div class="kal-card" id="tev-pr-prof-stat" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;border-color:rgba(255,77,0,.35);" onclick="openParentKidStats()"><div class="kal-cta-ic" style="width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.16);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Visa statistika</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Sezonas · įgūdžiai · iššūkiai · varžybos</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
+      <div class="kal-card" id="tev-pr-prof-rank" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;border-color:rgba(255,77,0,.35);" onclick="openParentKidStats('overall')"><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,77,0,.16);display:flex;align-items:center;justify-content:center;color:#FF7A33;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Reitingai</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">Vaiko kategorija · EXP, varžybos, iššūkiai, TOP įgūdis</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
       <div class="kal-card" id="kal-t-prof-rec-row" style="margin:0 0 6px;cursor:pointer;display:flex;align-items:center;gap:11px;" onclick="openParentTrophies()"><!-- v640 (16A): vaiko varžybų rekordas (trofėjai), ne klubo reitingas --><div style="width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:var(--mut);flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-medalis"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">Varžybų rekordas</div><div id="kal-t-prof-rec" style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">—</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
       <!-- MODULIS: TevProfilis (v642, 12A) — AI ataskaitos: Parduotuvė nebe navigacijoje; eilutė rodoma, kai yra kreditų ar paruoštų ataskaitų -->
       <div class="kal-card" id="kal-t-prof-ai" style="margin:0 0 6px;cursor:pointer;display:none;align-items:center;gap:11px;" onclick="TevProfilis.openAi()"><div style="width:34px;height:34px;border-radius:11px;background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;color:#22C55E;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-dokumentas"></use></svg></div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:900;">AI ataskaitos</div><div id="kal-t-prof-ai-sub" style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">—</div></div><svg class="ico" aria-hidden="true" style="color:var(--mut);"><use href="#i-toliau"></use></svg></div>
@@ -4824,7 +4853,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=651"></script>
+<script src="app.js?v=652"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
