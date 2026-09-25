@@ -946,4 +946,5 @@ body.portal-v{--ico-accent:var(--br);}
 
 /* ===== MODULIS: TevPrem (v650) — tėvų Premium sluoksniai; Kelyje kortelė lygiuojama su „KELIO EXP" (12 px) ===== */
 .tev-pr-kelbox .kal-card,.tev-pr-box .kal-card{margin:0 12px 8px;}
+.tev-pr-exobox .kal-card{margin:0 0 9px;}
 /* ===== /MODULIS ===== */
