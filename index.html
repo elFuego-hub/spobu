@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=637">
+<link rel="stylesheet" href="styles.css?v=639">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v637</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v639</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -2513,6 +2513,8 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="sa">
     <!-- ===== MODULIS: Kal — tėvų KALENDORIUS t-main viduje (v541, V2 5 etapas). Turinį generuoja Kal.parent.render();
          rodomas tik su plans_enabled (Kal.parent.mount), tada senas turinys #tk-legacy slepiamas. Tab'o etiketė lieka „Pagrindinis" iki 8 etapo. ===== -->
+    <!-- Anketos būsenos juosta (atmesta / laukia) — matoma ir su V2 kalendoriumi (v638, 10A) -->
+    <div id="tk-approval-banner" style="display:none;margin:10px 16px 0;"></div>
     <div id="kal-t-content" style="display:none;"></div>
     <!-- ===== /MODULIS ===== -->
     <div id="tk-legacy">
@@ -2545,7 +2547,7 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-klaida"></use></svg>/<svg class="ico" aria-hidden="true"><use href="#i-laukia"></use></svg> Anketos būsenos juosta (rejected/pending) — pildoma loadParentKidMain -->
-    <div id="tk-approval-banner" style="display:none;margin:10px 16px 0;"></div>
+    <!-- v638 (tėvų auditas N3, 10A): #tk-approval-banner perkeltas virš #kal-t-content — kitaip su V2 kalendoriumi jis buvo paslėptas kartu su #tk-legacy -->
     <!-- ===== MODULIS: planas — tėvų kortelė „Šio mėnesio tikslas" (v529) ===== -->
     <div id="pl-parent-card" style="display:none;margin:10px 16px 0;"></div>
     <!-- ===== /MODULIS ===== -->
@@ -4747,7 +4749,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=637"></script>
+<script src="app.js?v=639"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
