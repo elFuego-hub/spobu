@@ -27230,27 +27230,27 @@ async function loadAdminClubs() {
   }
 
   _admClubsCache = {};
-  const html = clubs.map(c => {
-    _admClubsCache[c.id] = c;
-    return `
-    <div class="cd" style="margin-bottom:12px;padding:14px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-        <div style="width:44px;height:44px;border-radius:12px;background:var(--blu);display:flex;align-items:center;justify-content:center;font-size:20px;">${c.sports?.icon || ''+ico('klubas')+''}</div>
-        <div style="flex:1;">
-          <div style="font-size:14px;font-weight:900;">${escapeHtml(c.name || '')}</div>
-          <div style="font-size:11px;color:var(--mut);">${escapeHtml(c.city || '–')} · ${escapeHtml(c.sports?.name || '')}</div>
-          ${!c.sport_id ? `<div style="font-size:10.5px;color:#EAB308;font-weight:800;margin-top:3px;">${ico('ispejimas')} Be sporto šakos — tėvai klubo NEMATO „Pridėti vaiką" vediklyje</div>` : ''}
-        </div>
-        <div class="bg ${c.is_active ? 'gn' : 'mu'}">${c.is_active ? 'Aktyvus' : 'Neaktyvus'}</div>
-      </div>
-      <div style="display:flex;gap:8px;font-size:11px;color:var(--mut);align-items:center;">
-        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ico('pastas')} ${escapeHtml(c.contact_email || '–')}${c.invite_code ? ' · kodas ' + escapeHtml(c.invite_code) : ''}</span>
-        <button class="aerr-tool" style="padding:4px 10px;flex-shrink:0;" onclick="openAdminClubEdit('${c.id}')">${ico('redaguoti')} Redaguoti</button>
-      </div>
+  clubs.forEach(c => { _admClubsCache[c.id] = c; });
+  // v661 (P3, maketas A): V2 eilutės — vaikai, M1 lankomumas 7 d., paskutinė veikla, įspėjimai; paspaudus — klubo lapas
+  const safe = p => Promise.resolve(p).then(r => r, () => ({ data: null }));
+  const [cmp, m1] = await Promise.all([safe(sb.rpc('admin_club_compare')), safe(sb.rpc('admin_clubs_m1', { p_days: 7 }))]);
+  const cmpBy = {}; (cmp.data || []).forEach(r => { cmpBy[r.club_id] = r; });
+  const m1By = {}; (m1.data || []).forEach(r => { m1By[r.club_id] = r; });
+  const ago = t => t ? (typeof _agoLT === 'function' ? _agoLT(t) : new Date(t).toLocaleDateString('lt-LT')) : '—';
+  const rows = clubs.map(c => {
+    const s = cmpBy[c.id] || {}, m = m1By[c.id] || {};
+    const pct = m.sched ? Math.round(m.marked / m.sched * 100) : null;
+    const m1Tag = m.sched ? `<span class="kal-tag" style="background:${pct >= 80 ? 'rgba(34,197,94,.14)' : 'rgba(255,77,0,.16)'};color:${pct >= 80 ? '#4ade4a' : '#FF7A33'};">M1 ${m.marked}/${m.sched}</span>` : `<span class="kal-tag" style="background:rgba(234,179,8,.14);color:#EAB308;">be grupių tvarkaraščio</span>`;
+    const warn = [!c.sport_id ? 'be sporto šakos — tėvai klubo nemato vedlyje' : '', !c.is_active ? 'neaktyvus' : ''].filter(Boolean);
+    return `<div class="kal-row" style="cursor:pointer;" onclick="Adm.clubSheet('${c.id}')">
+      <div class="time"><b>${s.kids_cnt != null ? s.kids_cnt : '—'}</b><i>VAIKŲ</i></div>
+      <div class="gr" style="background:${c.is_demo ? '#6b6b6b' : '#FF7A33'};"></div>
+      <div class="bd"><div class="nm">${escapeHtml(c.name || '')} ${m1Tag}${c.is_demo ? '<span class="kal-tag">DEMO</span>' : ''}</div>
+        <div class="mt">${escapeHtml(c.city || '–')} · ${escapeHtml(c.sports?.name || 'sporto šaka nepasirinkta')} · veikla ${ago(s.last_event)}${s.trainers_cnt != null ? ' · ' + s.trainers_cnt + ' tren.' : ''}</div>
+        ${warn.length ? `<div class="mt" style="color:#EAB308;">${ico('ispejimas')} ${escapeHtml(warn.join(' · '))}</div>` : ''}</div>
     </div>`;
-  }).join('');
-
-  document.getElementById('a-clubs-list').innerHTML = html;
+  });
+  document.getElementById('a-clubs-list').innerHTML = `<div class="kal-rows" style="padding:0 2px 10px;">${rows.join('<hr>')}</div>`;
 }
 
 // ════════════════════════════════════════
@@ -29121,16 +29121,8 @@ async function openAdminClubEdit(id){
   // v659: sporto šaka redaguojama (be jos tėvai klubo nemato vedlyje); komisijos / bonusų laukų nebėra (3A)
   let sports = [];
   try { const { data } = await sb.from('sports').select('id, name, icon').eq('is_active', true).order('name'); sports = data || []; } catch(_){}
-  const old = document.getElementById('adm-club-edit'); if (old) old.remove();
-  const m = document.createElement('div'); m.id = 'adm-club-edit';
-  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100001;align-items:center;justify-content:center;padding:20px;';
-  m.onclick = (e) => { if (e.target === m) m.remove(); };
-  const num = (id2, lbl, val) => `<div style="flex:1;min-width:100px;"><label class="lbl">${lbl}</label><input class="inp" id="${id2}" type="number" step="0.5" value="${val}" style="margin:0;padding:7px;"></div>`;
-  m.innerHTML = `<div style="width:100%;max-width:520px;background:var(--bg);border:1px solid var(--bdr);border-radius:16px;max-height:90vh;overflow-y:auto;padding:18px 20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div style="font-size:14px;font-weight:800;">${ico('redaguoti')} ${_aaiEsc(c.name || 'Klubas')}</div>
-      <button onclick="document.getElementById('adm-club-edit').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button>
-    </div>
+  // v661 (P3): V2 lapas (Planas.sheet) vietoj rankinio modalo; + KInfo laukai (aprašymas, Facebook, Instagram)
+  const body = `
     <label class="lbl">PAVADINIMAS</label>
     <input class="inp" id="ace-name" value="${_aaiEsc(c.name || '')}" style="margin-bottom:8px;">
     <div style="display:flex;gap:8px;">
@@ -29145,11 +29137,17 @@ async function openAdminClubEdit(id){
     <input class="inp" id="ace-address" value="${_aaiEsc(c.address || '')}" style="margin-bottom:8px;">
     <label class="lbl">IBAN</label>
     <input class="inp" id="ace-iban" value="${_aaiEsc(c.iban || '')}" style="margin-bottom:8px;">
+    <label class="lbl">APRAŠYMAS (tėvai mato profilyje)</label>
+    <textarea class="inp" id="ace-desc" rows="3" maxlength="600" style="margin-bottom:8px;resize:vertical;">${_aaiEsc(c.description || '')}</textarea>
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;"><label class="lbl">FACEBOOK</label><input class="inp" id="ace-fb" value="${_aaiEsc(c.facebook_url || '')}" placeholder="https://facebook.com/..." style="margin:0 0 8px;"></div>
+      <div style="flex:1;"><label class="lbl">INSTAGRAM</label><input class="inp" id="ace-ig" value="${_aaiEsc(c.instagram_url || '')}" placeholder="https://instagram.com/..." style="margin:0 0 8px;"></div>
+    </div>
     <div class="aerr-meta" style="margin-bottom:10px;">Kvietimo kodas: <b>${_aaiEsc(c.invite_code || '—')}</b></div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;margin-bottom:14px;"><input type="checkbox" id="ace-active" ${c.is_active ? 'checked' : ''}> Klubas aktyvus</label>
-    <button class="btn btng" style="width:100%;margin:0;" onclick="saveAdminClubEdit('${id}')">${ico('issaugoti')} Išsaugoti</button>
-  </div>`;
-  document.body.appendChild(m);
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;margin-bottom:6px;"><input type="checkbox" id="ace-active" ${c.is_active ? 'checked' : ''}> Klubas aktyvus</label>`;
+  const foot = `<span class="kal-b" onclick="document.getElementById('adm-club-edit').remove()">Atšaukti</span>
+    <span class="kal-b o" onclick="saveAdminClubEdit('${id}')">${ico('issaugoti')} Išsaugoti</span>`;
+  Planas.sheet('adm-club-edit', 'REDAGUOTI KLUBĄ', body, foot, { sub: c.name || '', z: 100012 });
 }
 
 async function saveAdminClubEdit(id){
@@ -29162,17 +29160,25 @@ async function saveAdminClubEdit(id){
     sport_id: val('ace-sport') || null,
     address: (val('ace-address') || '').trim() || null,
     iban: (val('ace-iban') || '').trim().replace(/\s+/g, ' ') || null,
+    description: (val('ace-desc') || '').trim().slice(0, 600) || null,
+    facebook_url: (val('ace-fb') || '').trim() || null,
+    instagram_url: (val('ace-ig') || '').trim() || null,
     is_active: !!document.getElementById('ace-active')?.checked
   };
   // v659: komisijos / bonusų laukų nebėra (3A — kainodaros taryba)
   if (!payload.name){ showToast(ico('klaida')+' Pavadinimas privalomas', 'error'); return; }
+  // v661: socialinės nuorodos — tik https (rodomos tėvams kaip nuorodos)
+  for (const [k, lbl] of [['facebook_url', 'Facebook'], ['instagram_url', 'Instagram']]){
+    if (payload[k] && !/^https:\/\/[^\s"'<>]+$/i.test(payload[k])){ showToast(ico('klaida')+' ' + lbl + ' — nuoroda turi prasidėti https://', 'error'); return; }
+  }
   const { data: rows, error } = await sb.from('clubs').update(payload).eq('id', id).select('id');   // v496: tylios sėkmės sargas
   if (error){ showToast(ico('klaida')+' ' + _userError(error), 'error'); return; }
   if (!rows || !rows.length){ showToast(ico('ispejimas')+' Nepakeista (RLS?)', 'error'); return; }
   logAdminAction('club_edit', 'club', id, { name: payload.name, sport_id: payload.sport_id, is_active: payload.is_active });
   showToast(ico('issaugoti')+' Klubas atnaujintas', 'success');
   document.getElementById('adm-club-edit')?.remove();
-  loadAdminClubs();
+  await loadAdminClubs();
+  if (document.getElementById('adm-club-sheet')) Adm.clubSheet(id);   // v661: atviras klubo lapas atsinaujina
 }
 
 // ════════════════════════════════════════
@@ -50070,6 +50076,9 @@ const Adm = {
       ['statistika', 'Analitika', '„Analitika →" — aktyvūs vaikai, DAU / WAU, piltuvėlis, klubų palyginimas, kohortos.'],
       ['pranesimai', 'Varpelis', 'Klubų žinutės, naujos klaidos, pirkimai, atsiliepimai, AI ataskaitos.']]],
     'a-clubs': ['KLUBAI', 'Visi klubai ir jų duomenys.', [
+      ['lankomumas', 'Eilutė', 'Vaikų skaičius, M1 — kiek treniruočių pažymėta per 7 d. pagal grupių tvarkaraštį (tikslas ≥ 80 %), paskutinė veikla.'],
+      ['klubas', 'Klubo lapas', 'Paspaudus: lankomumas 7 / 30 d., V2 naudojimas (planai, pastangos, automatiniai tvirtinimai, dvikovos, 14+ susitikimai, pavadavimai), grupės, žmonės, vaikai, jungikliai, info ir SPOBU gija.'],
+      ['nustatymai', 'Jungikliai', 'Demo klube — iškart; realiame klube — tik savininkui sutikus (patvirtinimas + auditas).'],
       ['prideti', 'Naujas klubas', '„+" viršuje — klubas, sporto šaka ir savininko kvietimas. Savininkas gauna laišką slaptažodžiui.'],
       ['redaguoti', 'Redaguoti', 'Pavadinimas, miestas, kontaktai, sporto šaka (be jos tėvai klubo nemato vedlyje), adresas, IBAN.']]],
     'a-users': ['ŽMONĖS', 'Visos paskyros ir palaikymas.', [
@@ -50103,8 +50112,86 @@ const Adm = {
     openInfoSubmodal(ico('pagalba') + ' ' + h[0], `<div class="hlp-intro">${h[1]}</div>` + h[2].map(r => row(r[0], r[1], r[2])).join(''));
   },
 
+  // ── P3 (v661): klubo lapas (maketas A) — server-ADMIN-P3-klubai-2026-09-26.sql (admin_club_overview) ──
+  clubOv: {},   // klubo id → paskutinis admin_club_overview (jungiklių perjungimui)
+  async clubSheet(id) {
+    const { data: o, error } = await sb.rpc('admin_club_overview', { p_club: id });
+    if (error || !o) { showToast(ico('klaida') + ' ' + (error ? _userError(error) : 'Klubas nerastas'), 'error'); return; }
+    this.clubOv[id] = o;
+    const c = o.club || {}, m = o.m1 || {}, u = o.usage30 || {}, k = o.kids || {}, st = o.settings || {};
+    const esc = s => escapeHtml(String(s == null ? '' : s));
+    const sec = t => `<div class="kal-sec" style="padding:12px 0 6px;"><b>${t}</b><span></span></div>`;
+    const DAYS = ['', 'Pr', 'An', 'Tr', 'Kt', 'Pn', 'Št', 'Sk'];
+    // M1 — lankomumas (FAZE-2 M1: ≥ 80 % treniruočių pažymėta be raginimų)
+    const p7 = m.sched7 ? Math.round(m.marked7 / m.sched7 * 100) : null;
+    const m1ok = p7 !== null && p7 >= 80;
+    const m1 = !(o.groups || []).length
+      ? `<div class="kal-warn" style="margin:0 0 4px;cursor:default;"><i>!</i><div><div class="t1">Klubas neturi grupių</div><div class="t2">Be grupių ir tvarkaraščio lankomumo ir M1 nėra.</div></div></div>`
+      : `<div class="kal-warn${m1ok ? ' ok' : ''}" style="margin:0 0 4px;cursor:default;"><i>${m1ok ? ico('patvirtinta') : '!'}</i><div>
+          <div class="t1">Lankomumas: ${m.marked7 || 0} iš ${m.sched7 || 0} treniruočių pažymėta (7 d.)</div>
+          <div class="t2">30 d.: ${m.marked30 || 0} iš ${m.sched30 || 0}${m.extra30 ? ' · + ' + m.extra30 + ' ne pagal tvarkaraštį' : ''} · paskutinė pažymėta: ${m.last_marked ? esc(m.last_marked) : '—'}</div></div></div>`;
+    const tile = (v, l) => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;">${v}</div><div style="font-size:9.5px;font-weight:800;letter-spacing:.8px;color:var(--mut);margin-top:3px;">${l}</div></div>`;
+    const effort = u.present ? Math.round(u.effort / u.present * 100) + '%' : '—';
+    const usage = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">${tile(u.plans_active || 0, 'PLANAI')}${tile(u.sessions_confirmed || 0, 'PATVIRT. TRENIR.')}${tile(effort, 'PASTANGOS')}${tile(u.auto_approvals || 0, 'AUTO TVIRT.')}${tile((u.duels || 0) + (u.duels_expired ? '<span style="font-size:12px;color:var(--mut);"> / ' + u.duels_expired + ' baigėsi</span>' : ''), 'DVIKOVOS')}${tile(u.meetups || 0, '14+ SUSITIK.')}${tile(u.subs_open || 0, 'PAVADAV. ATVIRI')}${tile(u.feedback || 0, 'ATSILIEPIMAI')}</div>`;
+    const row = (nm, mt, extra) => `<div class="kal-row"><div class="bd"><div class="nm">${nm}</div>${mt ? `<div class="mt">${mt}</div>` : ''}</div>${extra || ''}</div>`;
+    const groups = (o.groups || []).map(g => row(esc(g.name) + (g.active ? '' : ' <span class="kal-tag">neaktyvi</span>'),
+      `${esc(g.trainer || 'be trenerio')} · ${g.kids} vaik.${g.assistants ? ' · +' + g.assistants + ' asist.' : ''} · ${(g.days || []).map(d => DAYS[d] || d).join(' ')}${g.time ? ' ' + esc(g.time) : ''}`)).join('<hr>');
+    const ago = d => d ? esc(d) : 'nebuvo';
+    const people = [
+      o.owner ? row(esc(o.owner.name || 'Savininkas') + ' <span class="kal-tag">SAVININKAS</span>', esc(o.owner.email || '') + (o.owner.status && o.owner.status !== 'active' ? ' · ' + esc(o.owner.status) : '')) : row('<span style="color:#EAB308;">Savininkas nepriskirtas</span>', 'Klubo admino kvietimas nepriimtas arba ištrintas'),
+      ...(o.managers || []).map(x => row(esc(x.name) + ' <span class="kal-tag">VADYBININKAS</span>', '')),
+      ...(o.trainers || []).map(t => row(esc(t.name) + (t.active === false ? ' <span class="kal-tag">išjungtas</span>' : ''), `${t.groups} grup. · paskutinį kartą appse: ${ago(t.last_day)}`))
+    ].join('<hr>');
+    // Jungikliai: klubo ekrano aprašai (CLUB_FLAG_DEFS) + kiti club_settings stulpeliai (be klubo UI)
+    const defs = (typeof CLUB_FLAG_DEFS !== 'undefined' ? CLUB_FLAG_DEFS : []);
+    const known = new Set(defs.filter(d => d.k).map(d => d.k));
+    const tg = (key, on) => `<span onclick="Adm.clubFlag('${id}','${key}',${on ? 'false' : 'true'})" style="flex-shrink:0;width:42px;height:24px;border-radius:99px;background:${on ? '#0ca30c' : 'rgba(255,255,255,.15)'};position:relative;cursor:pointer;display:inline-block;"><span style="position:absolute;top:3px;${on ? 'right:3px' : 'left:3px'};width:18px;height:18px;border-radius:50%;background:#fff;"></span></span>`;
+    let flags = '';
+    defs.forEach(d => {
+      if (d.sec) { flags += `<div style="font-size:10px;font-weight:900;letter-spacing:1.2px;color:var(--mut);padding:10px 0 2px;">${esc(d.sec)}</div>`; return; }
+      if (!(d.k in st)) return;
+      flags += `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:.5px solid var(--bdr);"><div style="flex:1;min-width:0;font-size:12.5px;font-weight:800;">${d.t}</div>${tg(d.k, st[d.k] === true)}</div>`;
+    });
+    const other = Object.keys(st).filter(key => !known.has(key) && typeof st[key] === 'boolean').sort();
+    if (other.length) {
+      flags += `<div style="font-size:10px;font-weight:900;letter-spacing:1.2px;color:var(--mut);padding:10px 0 2px;">KITI (KLUBO EKRANE NĖRA)</div>`;
+      other.forEach(key => { flags += `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:.5px solid var(--bdr);"><div style="flex:1;min-width:0;font-size:12px;font-weight:700;font-family:ui-monospace,Consolas,monospace;">${esc(key)}</div>${tg(key, st[key] === true)}</div>`; });
+    }
+    const info = [
+      c.description ? `<div style="font-size:12.5px;line-height:1.5;margin-bottom:6px;">${esc(c.description)}</div>` : '<div class="mt" style="font-size:11px;color:var(--mut);">Aprašymo nėra</div>',
+      `<div class="mt" style="font-size:11px;color:var(--mut);line-height:1.6;">${[c.address, c.contact_phone, c.contact_email, c.iban ? 'IBAN ' + c.iban : ''].filter(Boolean).map(esc).join(' · ') || '—'}<br>${c.facebook_url ? 'FB ✓' : 'FB —'} · ${c.instagram_url ? 'IG ✓' : 'IG —'} · kodas ${esc(c.invite_code || '—')}</div>`
+    ].join('');
+    const body = m1 + sec('V2 NAUDOJIMAS · 30 D.') + usage
+      + sec('GRUPĖS · ' + (o.groups || []).length) + ((o.groups || []).length ? `<div class="kal-rows" style="padding:0;">${groups}</div>` : '<div class="kal-empty" style="margin:0;"><b>Grupių nėra</b><i>Grupes kuria klubas arba treneris.</i></div>')
+      + sec('ŽMONĖS') + `<div class="kal-rows" style="padding:0;">${people}</div>`
+      + sec('VAIKAI · ' + (k.total || 0)) + `<div class="mt" style="font-size:11.5px;color:var(--mut);">be paskyros ${k.no_account || 0} · be grupės ${k.no_group || 0} · laukia patvirtinimo ${k.pending || 0}</div>`
+      + sec('JUNGIKLIAI') + (c.is_demo ? '' : `<div class="mt" style="font-size:11px;color:#EAB308;margin-bottom:4px;">${ico('ispejimas')} Realus klubas — keisk tik savininkui sutikus (K8); kiekvienas keitimas rašomas į auditą.</div>`) + flags
+      + sec('INFO') + info;
+    const foot = `<span class="kal-b" onclick="openAdminClubEdit('${id}')">${ico('redaguoti')} Redaguoti</span>
+      <span class="kal-b" onclick="_openSpobuThread('${id}')">${ico('zinutes')} SPOBU gija</span>`;
+    const sub = [c.city, (_admClubsCache[id] || {}).sports?.name, c.is_demo ? 'DEMO' : ''].filter(Boolean).join(' · ');
+    Planas.sheet('adm-club-sheet', esc(c.name || 'Klubas').toUpperCase(), body, foot, { sub: esc(sub), z: 100008 });
+  },
+  async clubFlag(id, key, val) {
+    const o = this.clubOv[id] || {}, c = o.club || {};
+    const def = (typeof CLUB_FLAG_DEFS !== 'undefined' ? CLUB_FLAG_DEFS : []).find(d => d.k === key);
+    const lbl = def ? String(def.t).replace(/<[^>]+>/g, '').trim() : key;
+    if (!c.is_demo) {
+      const ok = await appConfirm(`„${c.name || 'Klubas'}" — realus klubas.\n\n${lbl}: ${val ? 'ĮJUNGTI' : 'IŠJUNGTI'}\n\nAr klubo savininkas šį pakeitimą patvirtino? Pakeitimas įrašomas į auditą.`);
+      if (!ok) return;
+    }
+    const { error } = await sb.rpc('admin_club_settings_set', { p_club: id, p_patch: { [key]: val } });
+    if (error) { showToast(ico('klaida') + ' ' + _userError(error), 'error'); return; }
+    showToast(ico('patvirtinta') + ' ' + lbl + ': ' + (val ? 'įjungta' : 'išjungta'), 'success');
+    this.clubSheet(id);
+  },
+
   // ── LIVE lemputė ──
-  chan(name, status) { this.live[name] = status; this.led(); },
+  chan(name, status) {
+    this.live[name] = status; this.led();
+    // v661: Šiandien LIVE lemputė atsinaujina, kai kanalai prisijungia (anksčiau pirmo įkėlimo metu likdavo pilka)
+    if (document.getElementById('adm-health')?.offsetParent) { clearTimeout(this._ht); this._ht = setTimeout(() => this.health(), 1500); }
+  },
   led() {
     const el = document.getElementById('ast-live'); if (!el) return;
     const v = Object.values(this.live);
