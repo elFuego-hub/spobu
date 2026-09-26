@@ -50129,6 +50129,7 @@ const Adm = {
     'a-ai': ['AI', 'AI apžvalga, ataskaitų peržiūra — tėvai mato tik patvirtintas.', [
       ['statistika', 'Apžvalga (30 d.)', 'Ataskaitos: laukia, vid. minutės iki peržiūros, kiek pataisyta ir atmesta. Planai / blokai / iššūkiai: AI užklausos, kiek kartų vietoj AI įdėtas šablonas, klaidos. Kaštai pagal modelį — kainas įvedi „Kainos →". AI klaida (pvz. baigėsi kreditai) — push tau.'],
       ['treniruote', 'Trenerių planai', 'Kiekvienas planas: treniruotės (patvirtinta, pravesta — pažymėta atlikta arba grupei pažymėtas lankomumas), blokai — AI, iš trenerio papkės ar užrakinti, laikas pagal tipą, dažniausi pratimai, AI kaina, trenerio atsakymai vedlyje. Signalai: praėjusios nepatvirtintos, be lankomumo, artimiausios 7 d. be blokų, šablonas vietoj AI.'],
+      ['patinka', 'Trenerių įvertinimai', 'Po treniruotės treneris pažymi 👍 / 😐 / 👎, kuris blokas neveikė (per sunku, per lengva, nuobodu, per ilgas, neaiškus) ir ką keistų. Viršuje — paskutinės 30 d. iš visų klubų („Visi →" su filtru 👎), plano lape — prie kiekvienos treniruotės ir trenerio nuolatinės taisyklės AI.'],
       ['patvirtinta', 'Patvirtinti','Tėvai gauna push. Prieš tai — peržiūrėk arba redaguok.'],
       ['isjungta', 'Atmesti', 'Galutinai: tėvui grąžinamas kreditas ir jis gauna pranešimą. Norint naujos versijos — Retry.'],
       ['mokslas', 'Žinių bazė', 'Žinios AI ataskaitoms ir planams; tema „treniruote" — Kyokushin planams.']]],
@@ -50878,6 +50879,7 @@ const Adm = {
     const { data, error } = await sb.rpc('admin_plans_overview', { p_days: 180 });
     if (error || !data) { box.innerHTML = head + `<div class="kal-empty"><b>Planų nepavyko įkelti</b><i>${escapeHtml(_userError(error || {}))}</i></div>`; return; }
     this.plansData = data;
+    this.fbFeed();   // v669: paskutiniai trenerių įvertinimai virš planų (paspaudus — plano lapas iš plansData)
     const ps = data.plans || [];
     if (!ps.length) { box.innerHTML = head + '<div class="kal-empty"><b>Planų dar nėra</b><i>Treneriai juos kuria Kalendoriuje su AI vedliu.</i></div>'; return; }
     box.innerHTML = head + `<div class="kal-rows">${ps.map(p => {
@@ -50890,21 +50892,71 @@ const Adm = {
         <div class="mt">${escapeHtml(p.club || '')} · ${escapeHtml(p.group || 'be grupės')} · ${escapeHtml(p.trainer || '')}</div>
         <div class="mt">${d(p.period_start)} → ${d(p.period_end)} · ${tot} treniruočių · patvirtinta ${conf} · pravesta ${+s.held || 0}/${+s.past || 0}</div>
         <div style="height:5px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;margin:5px 0 4px;"><i style="display:block;height:100%;width:${tot ? Math.round(conf / tot * 100) : 0}%;background:#4ade4a;"></i></div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;">${p.is_demo ? tag('DEMO', 'rgba(255,255,255,.08)', 'var(--mut)') : ''}${tag('AI ' + ((+b.total || 0) - (+b.folder || 0)), 'rgba(57,135,229,.15)', '#7fb2f0')}${+b.folder ? tag('PAPKĖ ' + b.folder, 'rgba(74,222,74,.12)', '#4ade4a') : ''}${cost ? tag(escapeHtml(cost.toUpperCase()), 'rgba(255,255,255,.08)', 'var(--mut)') : ''}${sig ? tag(ico('ispejimas') + ' ' + sig, 'rgba(250,178,25,.15)', '#fab219') : ''}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">${p.is_demo ? tag('DEMO', 'rgba(255,255,255,.08)', 'var(--mut)') : ''}${tag('AI ' + ((+b.total || 0) - (+b.folder || 0)), 'rgba(57,135,229,.15)', '#7fb2f0')}${+b.folder ? tag('PAPKĖ ' + b.folder, 'rgba(74,222,74,.12)', '#4ade4a') : ''}${cost ? tag(escapeHtml(cost.toUpperCase()), 'rgba(255,255,255,.08)', 'var(--mut)') : ''}${sig ? tag(ico('ispejimas') + ' ' + sig, 'rgba(250,178,25,.15)', '#fab219') : ''}${p.fb && +p.fb.count ? tag('👍 ' + (+p.fb.good || 0) + ' · 😐 ' + (+p.fb.ok || 0) + ' · 👎 ' + (+p.fb.bad || 0), 'rgba(255,255,255,.08)', 'var(--txt)') : ''}</div>
       </div></div>`;
     }).join('')}</div>`;
+  },
+  // ── v669: trenerių įvertinimai (session_feedback — adminas skaito per sf_club_admin_read) ──
+  FR: { good: ['👍', 'Gerai', '#4ade4a'], ok: ['😐', 'Taip sau', '#fab219'], bad: ['👎', 'Blogai', '#ff6b6b'] },
+  VERD: { hard: 'per sunku', easy: 'per lengva', boring: 'nuobodu', long: 'per ilgas', unclear: 'neaiškus' },
+  fbReasons(f) {
+    return (Array.isArray(f.blocks) ? f.blocks : []).filter(x => x && x.verdict).map(x => escapeHtml((x.title || (this.BT[x.type] || this.BT.kita)[0]) + ' — ' + (this.VERD[x.verdict] || x.verdict))).join(' · ');
+  },
+  fbRow(f) {
+    const r = this.FR[f.rating] || ['•', f.rating, 'var(--mut)'], s = f.training_plan_sessions || {}, pr = f.profiles || {}, g = f.groups || {};
+    const who = [((pr.first_name || '') + ' ' + (pr.last_name ? pr.last_name[0] + '.' : '')).trim(), (g.clubs || {}).name, g.name].filter(Boolean).map(x => escapeHtml(x)).join(' · ');
+    const why = this.fbReasons(f);
+    return `<div class="kal-row" style="cursor:pointer;align-items:flex-start;" onclick="Adm.planSheet('${s.plan_id || ''}')"><div style="font-size:18px;line-height:1.2;flex-shrink:0;">${r[0]}</div><div class="bd" style="flex:1;min-width:0;">
+      <div class="nm">${escapeHtml(s.title || 'Treniruotė')}</div>
+      <div class="mt">${who}${s.session_date ? ' · ' + String(s.session_date).slice(5) : ''}</div>
+      ${why ? `<div class="mt" style="color:${r[2]};white-space:normal;">${why}</div>` : ''}${f.text ? `<div class="mt" style="white-space:normal;">„${escapeHtml(String(f.text).slice(0, 200))}"</div>` : ''}</div></div>`;
+  },
+  async fbFeed() {
+    let box = document.getElementById('adm-ai-fb');
+    if (!box) { const pl = document.getElementById('adm-ai-plans'); if (!pl) return; box = document.createElement('div'); box.id = 'adm-ai-fb'; pl.before(box); }
+    const since = new Date(Date.now() - 30 * 864e5).toISOString();
+    const { data, error } = await sb.from('session_feedback')
+      .select('id, rating, text, blocks, created_at, training_plan_sessions(title, session_date, plan_id), profiles(first_name, last_name), groups(name, clubs(name))')
+      .gte('created_at', since).order('created_at', { ascending: false }).limit(100);
+    const head = '<div class="kal-sec" style="padding:10px 18px 6px;"><b>TRENERIŲ ĮVERTINIMAI · 30 D.</b><span></span>' + ((data || []).length > 3 ? `<em class="o kal-all" onclick="Adm.fbAll('all')">Visi (${data.length}) →</em>` : '') + '</div>';
+    if (error) { box.innerHTML = head + `<div class="kal-empty"><b>Įvertinimų nepavyko įkelti</b><i>${escapeHtml(_userError(error))}</i></div>`; return; }
+    this.fbData = data || [];
+    if (!this.fbData.length) { box.innerHTML = head + '<div class="kal-empty"><b>Įvertinimų dar nėra</b><i>Treneris po treniruotės pažymi 👍 / 😐 / 👎 ir kodėl.</i></div>'; return; }
+    const n = k => this.fbData.filter(f => f.rating === k).length;
+    box.innerHTML = head + `<div style="display:flex;gap:6px;padding:0 18px 8px;">${['good', 'ok', 'bad'].map(k => `<span class="kal-tag" style="background:rgba(255,255,255,.07);color:${this.FR[k][2]};font-size:11px;padding:4px 10px;">${this.FR[k][0]} ${n(k)}</span>`).join('')}</div>
+      <div class="kal-rows">${this.fbData.slice(0, 3).map(f => this.fbRow(f)).join('')}</div>`;
+  },
+  fbAll(k) {
+    const list = (this.fbData || []).filter(f => k === 'all' || f.rating === k);
+    const chips = [['all', 'Visi'], ['bad', '👎'], ['ok', '😐'], ['good', '👍']].map(([id, t]) => `<button class="aerr-f${id === k ? ' on' : ''}" onclick="Adm.fbAll('${id}')">${t}</button>`).join('');
+    const body = `<div style="display:flex;gap:6px;margin-bottom:10px;">${chips}</div>${list.length ? `<div class="kal-rows">${list.map(f => this.fbRow(f)).join('')}</div>` : '<div class="kal-empty"><b>Pagal šį filtrą nėra</b></div>'}`;
+    const ex = document.getElementById('adm-fb-sheet-body');
+    if (ex) { ex.innerHTML = body; return; }
+    Planas.sheet('adm-fb-sheet', 'TRENERIŲ ĮVERTINIMAI', body, '', { sub: 'paskutinės 30 d.', z: 100006 });
   },
   async planSheet(id) {
     const p = ((this.plansData || {}).plans || []).find(x => x.id === id); if (!p) return;
     const sub = [p.club, p.group, p.trainer].filter(Boolean).join(' · ');
     Planas.sheet('adm-plan-sheet', escapeHtml(p.title || 'Planas').toUpperCase(), '<div class="kal-empty"><b>Kraunama…</b></div>', '', { sub: escapeHtml(sub), z: 100008 });
-    const [ss, an] = await Promise.all([
+    const [ss, an, tp] = await Promise.all([
       sb.from('training_plan_sessions').select('id, week_no, seq, title, session_date, status, done_at, blocks').eq('plan_id', id).order('week_no').order('seq'),
-      p.group_id && p.created_by ? sb.from('trainer_plan_answers').select('answers').eq('trainer_id', p.created_by).eq('group_id', p.group_id).maybeSingle() : Promise.resolve({ data: null })
+      p.group_id && p.created_by ? sb.from('trainer_plan_answers').select('answers').eq('trainer_id', p.created_by).eq('group_id', p.group_id).maybeSingle() : Promise.resolve({ data: null }),
+      p.created_by ? sb.from('trainer_prefs').select('text, created_at').eq('trainer_id', p.created_by).eq('is_active', true).order('created_at', { ascending: false }).limit(20) : Promise.resolve({ data: [] })
     ]);
     const body = document.getElementById('adm-plan-sheet-body'); if (!body) return;
     if (ss.error) { body.innerHTML = `<div class="kal-empty"><b>Nepavyko įkelti</b><i>${escapeHtml(_userError(ss.error))}</i></div>`; return; }
     const sess = ss.data || [], s = p.s || {}, b = p.b || {};
+    // v669: trenerio įvertinimai šio plano treniruotėms (session_feedback — admino RLS skaitymas)
+    const fbR = sess.length ? await sb.from('session_feedback').select('session_id, rating, text, blocks, created_at').in('session_id', sess.map(x => x.id)) : { data: [] };
+    const fbBy = {}; (fbR.data || []).forEach(f => { fbBy[f.session_id] = f; });
+    const fbList = Object.values(fbBy), fbN = k => fbList.filter(f => f.rating === k).length;
+    const vc = {}; fbList.forEach(f => (Array.isArray(f.blocks) ? f.blocks : []).forEach(x => { if (x && x.verdict) vc[x.verdict] = (vc[x.verdict] || 0) + 1; }));
+    const topV = Object.entries(vc).sort((a, c) => c[1] - a[1])[0];
+    const fbHtml = fbList.length ? `<div style="display:flex;gap:6px;margin-bottom:6px;">${['good', 'ok', 'bad'].map(k => `<span class="kal-tag" style="background:rgba(255,255,255,.07);color:${this.FR[k][2]};font-size:11px;padding:4px 10px;">${this.FR[k][0]} ${fbN(k)}</span>`).join('')}</div>
+      <div class="aerr-meta" style="white-space:normal;line-height:1.6;">Įvertinta ${fbList.length} iš ${+s.past || 0} praėjusių${topV ? ' · dažniausia priežastis: ' + escapeHtml(this.VERD[topV[0]] || topV[0]) + ' (' + topV[1] + ')' : ''}</div>`
+      : '<div class="aerr-meta">Treneris šio plano treniruočių dar neįvertino.</div>';
+    const prefs = (tp && tp.data) || [];
+    const prefHtml = prefs.length ? prefs.map(r => `<div style="padding:6px 0;border-bottom:.5px solid var(--bdr);font-size:12px;line-height:1.45;">„${escapeHtml(String(r.text || '').slice(0, 300))}"<div class="aerr-meta">${r.created_at ? new Date(r.created_at).toLocaleDateString('lt-LT') : ''}</div></div>`).join('') : '';
     const blocksOf = x => Array.isArray(x.blocks) ? x.blocks : [];
     const exCnt = {}; sess.forEach(x => blocksOf(x).forEach(bl => (Array.isArray(bl.exercise_ids) ? bl.exercise_ids : []).forEach(e => { exCnt[e] = (exCnt[e] || 0) + 1; })));
     const top = Object.entries(exCnt).sort((a, c) => c[1] - a[1]).slice(0, 5);
@@ -50928,18 +50980,20 @@ const Adm = {
     const STL = x => x.done_at ? ['PRAVESTA', 'rgba(74,222,74,.12)', '#4ade4a'] : (x.status === 'confirmed' ? ['PATVIRTINTA', 'rgba(57,135,229,.15)', '#7fb2f0']
       : (x.session_date && x.session_date < today ? ['JUODRAŠTIS · PRAĖJO', 'rgba(250,178,25,.15)', '#fab219'] : ['JUODRAŠTIS', 'rgba(255,255,255,.08)', 'var(--mut)']));
     const wHtml = Object.keys(weeks).sort((a, c) => a - c).map(w => `<div style="font-size:12px;font-weight:800;margin:10px 0 4px;">${+w ? w + ' savaitė' : 'Be savaitės'}</div>` + weeks[w].map(x => {
-      const st = STL(x), bl = blocksOf(x);
+      const st = STL(x), bl = blocksOf(x), fb = fbBy[x.id], fr = fb ? (this.FR[fb.rating] || null) : null;
+      const fbIn = fb ? `<div style="padding:6px 8px;margin:4px 0;border-radius:8px;background:rgba(255,255,255,.04);font-size:11.5px;line-height:1.45;"><b style="color:${fr ? fr[2] : 'var(--txt)'};">${fr ? fr[0] + ' ' + fr[1] : escapeHtml(fb.rating)}</b>${this.fbReasons(fb) ? ' · ' + this.fbReasons(fb) : ''}${fb.text ? `<div class="aerr-meta" style="white-space:normal;">„${escapeHtml(String(fb.text).slice(0, 300))}"</div>` : ''}</div>` : '';
       const bHtml = bl.map(q => { const src = q.locked ? ico('uzrakinta') + ' užrakinta' : (q.block_id ? 'papkė' : 'AI');
         return `<div style="padding:5px 0 5px 10px;border-left:2px solid ${(this.BT[q.type] || this.BT.kita)[1]};margin:4px 0;font-size:11.5px;line-height:1.45;"><b>${escapeHtml(q.title || (this.BT[q.type] || this.BT.kita)[0])}</b> · ${+q.minutes || 0}′ · <span class="aerr-meta" style="display:inline;">${src}</span><div class="aerr-meta" style="white-space:normal;">${escapeHtml(String(q.text || '').slice(0, 220))}</div></div>`; }).join('');
       return `<div style="padding:7px 0;border-bottom:.5px solid var(--bdr);">
-        <div style="display:flex;gap:8px;align-items:center;${bl.length ? 'cursor:pointer;' : ''}" ${bl.length ? 'onclick="const n=this.nextElementSibling;n.style.display=n.style.display===\'none\'?\'\':\'none\'"' : ''}>
+        <div style="display:flex;gap:8px;align-items:center;${bl.length || fb ? 'cursor:pointer;' : ''}" ${bl.length || fb ? 'onclick="const n=this.nextElementSibling;n.style.display=n.style.display===\'none\'?\'\':\'none\'"' : ''}>
           <span class="aerr-meta" style="display:inline;min-width:38px;">${x.session_date ? String(x.session_date).slice(5) : '—'}</span>
-          <span style="flex:1;min-width:0;font-size:12.5px;font-weight:700;">${escapeHtml(x.title || 'Treniruotė')}</span>
+          <span style="flex:1;min-width:0;font-size:12.5px;font-weight:700;">${escapeHtml(x.title || 'Treniruotė')}${fr ? ' <span title="' + fr[1] + '">' + fr[0] + '</span>' : ''}</span>
           <span class="kal-tag" style="background:${st[1]};color:${st[2]};">${st[0]}</span></div>
-        <div style="display:none;">${bHtml || ''}</div>
-        <div class="aerr-meta">${bl.length ? bl.length + ' blokai ▸' : 'blokų nėra'}</div></div>`;
+        <div style="display:none;">${fbIn}${bHtml || ''}</div>
+        <div class="aerr-meta">${bl.length ? bl.length + ' blokai' : 'blokų nėra'}${fb ? ' · įvertinimas' : ''}${bl.length || fb ? ' ▸' : ''}</div></div>`;
     }).join('')).join('');
-    body.innerHTML = sec('SIGNALAI') + warn + sec('LAIKAS PAGAL BLOKO TIPĄ') + bar + sec('KĄ DARĖ TRENERIS IR AI') + facts
+    body.innerHTML = sec('SIGNALAI') + warn + sec('TRENERIO ĮVERTINIMAI') + fbHtml + sec('LAIKAS PAGAL BLOKO TIPĄ') + bar + sec('KĄ DARĖ TRENERIS IR AI') + facts
+      + (prefHtml ? sec('TRENERIO TAISYKLĖS AI') + prefHtml : '')
       + (ansHtml ? sec('TRENERIO ATSAKYMAI VEDLYJE') + ansHtml : '') + sec('TRENIRUOTĖS') + (wHtml || '<div class="kal-empty"><b>Treniruočių nėra</b></div>');
   }
 };
