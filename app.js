@@ -28883,7 +28883,9 @@ async function loadAdminNudges(){
   ]);
   const items = [];
   // Cron/serverio alertai (nauji viršuje; ✓ pažymi matytu)
-  const alertIco = { error_spike: ''+ico('alertas')+'', review_sla: ''+ico('laikmatis')+'', big_purchase: ''+ico('pinigai')+'', digest: ''+ico('pastas')+'' };
+  const alertIco = { error_spike: ''+ico('alertas')+'', review_sla: ''+ico('laikmatis')+'', big_purchase: ''+ico('pinigai')+'', digest: ''+ico('pastas')+'',
+    // v662 (P4): nauji serverio įspėjimai
+    auto_approval_revoke: ico('isjungta'), cron_fail: ico('laikmatis'), strava_fail: ico('atnaujinti'), edge_fail: ico('alertas'), feedback: ico('bug') };
   (al.data || []).filter(a => !a.seen && a.kind !== 'digest').forEach(a => {
     items.push({ html: `${alertIco[a.kind] || ''+ico('zyma')+''} <b>${_aaiEsc(a.title || a.kind)}</b>${a.body ? ' — ' + _aaiEsc(a.body) : ''} <span class="aerr-meta" style="display:inline;">${typeof _agoLT === 'function' ? _agoLT(a.created_at) : ''}</span>`, alertId: a.id });
   });
@@ -35985,6 +35987,8 @@ function nv(p,el,sid){
   if (sid === 'a-users' && typeof loadAdminUsers === 'function') loadAdminUsers();
   if (sid === 'a-platform' && typeof loadAdminPlatform === 'function') loadAdminPlatform();
   if (sid === 'a-clubs' && typeof loadAdminClubs === 'function') loadAdminClubs();   // v659: klubų sąrašas atsinaujina atidarius
+  if (sid === 'a-platform' && typeof Adm !== 'undefined') Adm.sysHealth();   // v662 (P4): sistemos sveikata
+  if (sid === 'a-prof' && typeof Adm !== 'undefined') Adm.profRender();      // v662 (P4): push šiame įrenginyje
   // 👶 TĖVAI: naujų ekranų loaderiai (vaiko peržiūra)
   if (sid === 't-main' && typeof loadParentKidMain === 'function') loadParentKidMain();
   if (sid === 't-kar' && typeof loadParentKidCareer === 'function') loadParentKidCareer();
@@ -50066,8 +50070,17 @@ const Adm = {
     try { const t0 = performance.now(); const r = await sb.from('profiles').select('id', { count: 'exact', head: true }).limit(1); const ms = Math.round(performance.now() - t0); db = r.error ? ['bad', 'DB klaida'] : [ms < 400 ? 'ok' : 'warn', 'DB ' + ms + ' ms']; } catch (_) { db = ['bad', 'DB klaida']; }
     try { const { data } = await sb.rpc('admin_cron_health'); const st = (data || []).map(j => this.cronState(j).led); cron = [st.includes('bad') ? 'bad' : (st.includes('warn') ? 'warn' : 'ok'), 'CRON ' + st.filter(x => x === 'ok').length + '/' + st.filter(x => x).length]; } catch (_) {}
     try { const { count } = await sb.from('client_errors').select('id', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 864e5).toISOString()).or('status.is.null,status.eq.new'); err = [(count || 0) ? 'warn' : 'ok', 'KLAIDOS 24 H: ' + (count || 0)]; } catch (_) {}
+    // v662 (P4): PUSH (ar šis adminas gauna push) ir STRAVA (sinchronizavimo šviežumas)
+    const s = await this.sysLoad();
+    const p = s?.push || {}, st = s?.strava || {};
+    const stAge = st.last_run ? (Date.now() - new Date(st.last_run).getTime()) / 36e5 : null;
+    const push = s ? [p.me ? 'ok' : 'warn', p.me ? 'PUSH' : 'PUSH IŠJ.'] : ['', 'PUSH —'];
+    const stHung = st.last_run && !st.last_finished && stAge > 0.5;
+    const strava = !s ? ['', 'STRAVA —'] : (!st.links ? ['', 'STRAVA 0'] : [(stAge === null || stAge > 26 || stHung || st.last_errors || st.last_error) ? 'warn' : 'ok', 'STRAVA ' + st.links]);
     el.innerHTML = chip(db[0], db[1], 'Duomenų bazės atsakas') + chip(lv.length ? (lvBad ? 'bad' : 'ok') : '', 'LIVE', lv.length ? Object.entries(this.live).map(([k, s]) => k + ': ' + s).join('\n') : 'Realtime dar neprijungtas')
-      + chip(cron[0], cron[1], 'Cron darbai pagal tvarkaraštį (Sistema)') + chip(err[0], err[1], 'Naujos kliento klaidos per 24 val.');
+      + chip(cron[0], cron[1], 'Cron darbai pagal tvarkaraštį (Sistema)') + chip(err[0], err[1], 'Naujos kliento klaidos per 24 val.')
+      + chip(push[0], push[1], p.me ? 'Svarbūs įspėjimai ateina į šį įrenginį' : 'Push šiam adminui neįjungtas — Profilis (⚙)')
+      + chip(strava[0], strava[1], st.links ? 'Susietų Strava paskyrų: ' + st.links + ' · paskutinis sinchronizavimas ' + (st.last_run ? new Date(st.last_run).toLocaleString('lt-LT') : 'niekada') : 'Susietų Strava paskyrų nėra');
   },
   HELP: {
     'a-main': ['ŠIANDIEN', 'Kas reikalauja tavęs šiandien — vienu žvilgsniu.', [
@@ -50093,6 +50106,7 @@ const Adm = {
       ['isjungta', 'Atmesti', 'Galutinai: tėvui grąžinamas kreditas ir jis gauna pranešimą. Norint naujos versijos — Retry.'],
       ['mokslas', 'Žinių bazė', 'Žinios AI ataskaitoms ir planams; tema „treniruote" — Kyokushin planams.']]],
     'a-platform': ['SISTEMA', 'Platformos jungikliai ir gyvybė.', [
+      ['radaras', 'Sistemos sveikata', 'Push (ar tu gauni), Strava sinchronizavimas, edge / push užklausos per 24 val., laiškai, nematyti įspėjimai. Problemos ateina push\'u: klaidų šuolis, cron / Strava / edge klaida, 🐞, T15.'],
       ['irankiai', 'Jungikliai', 'Maintenance, min. versija, 14+ registracija, mokėjimai gyvai (tik su pasiruošimo sąrašu).'],
       ['laikmatis', 'Cron', 'Būsena pagal tikrą tvarkaraštį; sezoniniai laukia savo laiko. Pg_net darbų „sėkmė" = užklausa išsiųsta.'],
       ['zinutes', 'Klubams', 'Naujienos visiems ar vienam klubui, tiesioginė SPOBU gija.'],
@@ -50104,12 +50118,59 @@ const Adm = {
       ['statistika', 'Aktyvumas', 'Aktyvūs vaikai (≥1 EXP įvykis per savaitę), DAU / WAU / MAU, tėvų WAU.'],
       ['klubas', 'Klubų palyginimas', 'Vaikai (ir be grupės), aktyvūs, Premium, pajamos be testinių.']]],
     'a-prof': ['PROFILIS', 'Tavo admino paskyra.', [
+      ['pranesimai', 'Pranešimai į telefoną', 'Įjunk kiekviename įrenginyje, kuriame nori gauti įspėjimus (telefone — įdiegtoje SPOBU programėlėje). „Siųsti bandomąjį" patikrina.'],
       ['uzrakinta', 'Slaptažodis', 'Keisk čia. Admino būsena ir rolė — tik per SQL.']]]
   },
   help(sid) {
     const h = this.HELP[sid] || this.HELP['a-main'];
     const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ico(ic)}</div><div class="tx"><b class="t">${t}</b>${d}</div></div>`;
     openInfoSubmodal(ico('pagalba') + ' ' + h[0], `<div class="hlp-intro">${h[1]}</div>` + h[2].map(r => row(r[0], r[1], r[2])).join(''));
+  },
+
+  // ── P4 (v662): sistemos sveikata ir push adminui (9A) — server-ADMIN-P4-sistema-push-2026-09-26.sql ──
+  sys: null,   // paskutinis admin_system_health
+  async sysLoad() {
+    try { const { data, error } = await sb.rpc('admin_system_health'); if (!error && data) this.sys = data; } catch (_) {}
+    return this.sys;
+  },
+  async sysHealth() {
+    const el = document.getElementById('adm-sys-health'); if (!el) return;
+    const s = await this.sysLoad();
+    if (!s) { el.innerHTML = '<div style="text-align:center;padding:10px;color:var(--mut);font-size:11px;">Sveikatos nepavyko įkelti</div>'; return; }
+    const esc = x => escapeHtml(String(x == null ? '' : x));
+    const led = st => `<span class="aerr-led ${st}"></span>`;
+    const line = (st, t, d) => `<div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:.5px solid var(--bdr);">${led(st)}<div style="flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:800;">${t}</div><div class="aerr-meta" style="white-space:normal;">${d}</div></div></div>`;
+    const kv = o => Object.entries(o || {}).map(([k, n]) => esc(k) + ': ' + (+n || 0)).join(' · ') || '—';
+    const p = s.push || {}, st = s.strava || {}, net = s.net24 || {};
+    const netBad = Object.entries(net).filter(([k]) => !/^2\d\d$/.test(k)).reduce((a, [, n]) => a + (+n || 0), 0);
+    const stAge = st.last_run ? (Date.now() - new Date(st.last_run).getTime()) / 36e5 : null;
+    const stHung = st.last_run && !st.last_finished && stAge > 0.5;   // paleistas, bet nebaigtas (edge nulūžo?)
+    const stSt = !st.links ? '' : ((stAge === null || stAge > 26 || stHung || st.last_errors || st.last_error) ? 'warn' : 'ok');
+    el.innerHTML =
+      line(p.me ? 'ok' : 'warn', 'Push į šį įrenginį: ' + (p.me ? 'įjungta' : 'IŠJUNGTA'), (p.me ? 'Svarbūs įspėjimai ateina į telefoną.' : 'Įjunk Profilyje (⚙) — kitaip įspėjimai matomi tik varpelyje.') + ' Adminų su push: ' + (p.admins || 0) + ' · prenumeratos: ' + kv(p.by_role))
+      + line(stSt, 'Strava', st.links ? `Susieta: ${st.links}${st.with_error ? ' · su klaida: ' + st.with_error : ''} · paskutinis sinchronizavimas: ${st.last_run ? esc(new Date(st.last_run).toLocaleString('lt-LT')) : 'niekada'}${st.last_errors ? ' · klaidų: ' + st.last_errors : ''}${st.last_error ? ' · ' + esc(st.last_error) : ''}` : 'Susietų paskyrų nėra — cron darbas eina, bet nieko nesinchronizuoja.')
+      + line(netBad ? 'warn' : 'ok', 'Edge / push užklausos (24 val.)', kv(net) + (netBad ? ' — yra nesėkmių' : ''))
+      + line('', 'Laiškai (7 d.)', kv(s.email7))
+      + line(s.alerts_unseen ? 'warn' : 'ok', 'Įspėjimai ir 🐞', `Nematytų įspėjimų: ${s.alerts_unseen || 0} · naujų atsiliepimų: ${s.feedback_new || 0}`);
+  },
+  async profRender() {
+    const el = document.getElementById('adm-prof-push'); if (!el) return;
+    const sup = typeof pushSupported === 'function' && pushSupported();
+    const on = sup && typeof isPushEnabled === 'function' ? await isPushEnabled() : false;
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:12px;">
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">${ico('pranesimai')} Push šiame įrenginyje ${on ? '<span class="aerr-st ok">ĮJUNGTA</span>' : ''}</div>
+        <div class="aerr-meta" style="white-space:normal;">${sup ? 'Ateina tik svarbiausi: klaidų šuolis, klubo žinutė SPOBU gijoje, 🐞, cron / Strava / edge klaida, T15 įspėjimas.' : 'Ši naršyklė push nepalaiko — telefone įsidiek SPOBU kaip programėlę (Pridėti į pradžios ekraną).'}</div></div>
+        ${sup ? `<div onclick="Adm.pushToggle()" style="flex-shrink:0;width:46px;height:26px;border-radius:99px;background:${on ? '#0ca30c' : 'rgba(255,255,255,.15)'};position:relative;cursor:pointer;"><div style="position:absolute;top:3px;${on ? 'right:3px' : 'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;"></div></div>` : ''}
+      </div>${on ? `<button class="aerr-tool" style="width:100%;margin-top:10px;" onclick="Adm.pushTest()">${ico('siusti')} Siųsti bandomąjį pranešimą</button>` : ''}`;
+  },
+  async pushToggle() {
+    if (typeof toggleAppPush === 'function') await toggleAppPush();
+    this.profRender();
+  },
+  async pushTest() {
+    const { data, error } = await sb.rpc('admin_push_test');
+    if (error) { showToast(ico('klaida') + ' ' + _userError(error), 'error'); return; }
+    showToast(data ? ico('pranesimai') + ' Išsiųsta — turėtų ateiti per kelias sekundes' : ico('ispejimas') + ' Šis įrenginys neužregistruotas — įjunk push dar kartą', data ? 'success' : 'error', 5000);
   },
 
   // ── P3 (v661): klubo lapas (maketas A) — server-ADMIN-P3-klubai-2026-09-26.sql (admin_club_overview) ──
