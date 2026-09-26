@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=666">
+<link rel="stylesheet" href="styles.css?v=667">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v666</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v667</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -3030,8 +3030,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="min-width:0;"><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;line-height:1.1;">PROFILIS</div><div class="tev-se-kid" style="font-size:10.5px;color:var(--mut);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div></div>
     </div>
     <div style="display:flex;gap:5px;align-items:center;">
-      <!-- MODULIS: TevNust (v653) — vaiko nustatymai -->
-      <div onclick="TevNust.kidOpen()" title="Vaiko nustatymai" aria-label="Vaiko nustatymai" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></div>
+      <!-- MODULIS: TevNust — v667: vaiko nustatymų ⚙ iš antraštės perkeltas į Profilio apačią (#tev-nu-prof) -->
       <div onclick="openParentInfo('prof')" style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" title="Apie šį langą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
       <div onclick="toggleParentNotifications()" style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
         <div class="tk-notif-badge" style="position:absolute;top:-3px;right:-3px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</div>
@@ -3113,6 +3112,12 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- ===== /MODULIS ===== -->
     <!-- ===== MODULIS: KInfo — klubo kortelė tėvams (v612; rodoma, kai klubas užpildė informaciją) ===== -->
     <div id="kinfo-t" style="display:none;"></div>
+    <!-- ===== /MODULIS ===== -->
+    <!-- ===== MODULIS: TevNust — vaiko nustatymai Profilio apačioje (v667, savininko sprendimas B 09-26: mažas mygtukas + ką čia pakeisite) ===== -->
+    <div id="tev-nu-prof" style="text-align:center;margin:16px 16px 76px;">
+      <button type="button" onclick="TevNust.kidOpen()" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;border:.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.05);color:var(--txt);font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;min-height:38px;"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> Vaiko nustatymai</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:7px;line-height:1.45;">Čia pakeisite vaiko duomenis ir sveikatą, avarinį kontaktą, privatumą, matysite, kas mato vaiką (antras tėvas), ir parašysite treneriui.</div>
+    </div>
     <!-- ===== /MODULIS ===== -->
   </div>
   <div class="bn2">
@@ -4805,7 +4810,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=666"></script>
+<script src="app.js?v=667"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

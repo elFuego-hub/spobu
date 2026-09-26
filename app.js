@@ -964,7 +964,7 @@ async function openInviteParentModal(kidId){
     <div style="font-size:40px;">${ico('grupe')}‍${ico('vaikas')}</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin:8px 0 4px;">${forParent ? 'KODAS ANTRAM TĖVUI' : 'TAVO KODAS TĖVAMS'}</div>
     <div style="font-family:ui-monospace,Consolas,monospace;font-size:34px;font-weight:800;letter-spacing:6px;color:#4FC3F7;margin:10px 0;">${code}</div>
-    <div style="font-size:11px;color:var(--mut);line-height:1.55;margin-bottom:14px;">${forParent ? 'Perduok šį kodą antram tėvui. Jis savo SPOBU paskyroje spaudžia<br><b>„Prijungti vaiką su kodu"</b> ir įveda jį.' : 'Padiktuok šį kodą tėvams. Jie savo SPOBU paskyroje spaudžia burbuliuką viršuje dešinėje →<br><b>„' + ico('pazymejimas') + ' Prijungti vaiką su kodu"</b> ir įveda jį.'} Kodas vienkartinis, galioja 30 min.</div>
+    <div style="font-size:11px;color:var(--mut);line-height:1.55;margin-bottom:14px;">${forParent ? 'Perduokite šį kodą antram tėvui. Jis susikuria savo SPOBU paskyrą, spaudžia<br><b>„Prijungti vaiką su kodu"</b> (pradžios ekrane arba burbuliuke viršuje dešinėje) ir įveda jį. Jis matys viską apie vaiką ir gaus pranešimus; atšaukti galite vaiko nustatymuose („Kas mato vaiką").' : 'Padiktuok šį kodą tėvams. Jie savo SPOBU paskyroje spaudžia burbuliuką viršuje dešinėje →<br><b>„' + ico('pazymejimas') + ' Prijungti vaiką su kodu"</b> ir įveda jį.'} Kodas vienkartinis, galioja 30 min.</div>
     <button class="btn btng" style="width:100%;margin:0;" onclick="(navigator.clipboard?navigator.clipboard.writeText('${code}').then(()=>showToast('Nukopijuota','success')):null);">${ico('dokumentas')} Kopijuoti kodą</button>
   </div>`;
   document.body.appendChild(m);
@@ -978,7 +978,7 @@ function openLinkKidByCode(){
   m.onclick = (ev) => { if (ev.target === m) m.remove(); };
   m.innerHTML = `<div style="width:100%;max-width:360px;background:var(--bg);border:.5px solid var(--bdr);border-radius:20px;padding:22px;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:6px;">${ico('pazymejimas')} VAIKO KODAS</div>
-    <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Vaikas (14+) savo profilyje paspaudė „Pakviesti tėvą" ir gavo 6 ženklų kodą — įvesk jį čia.</div>
+    <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-bottom:12px;">Įveskite 6 ženklų kodą, kurį gavote iš vaiko tėvo ar mamos (vaiko nustatymai → „Pakviesti antrą tėvą") arba iš paties vaiko (14+, „Pakviesti tėvą"). Kodas galioja 30 min.</div>
     <input class="inp" id="lkc-code" maxlength="6" placeholder="A7K2M9" style="text-transform:uppercase;text-align:center;font-size:20px;letter-spacing:5px;font-weight:800;margin-bottom:12px;">
     <button class="btn btng" style="width:100%;margin:0;" onclick="submitLinkKidByCode()">Prisijungti prie vaiko</button>
   </div>`;
@@ -991,7 +991,7 @@ async function submitLinkKidByCode(){
   try {
     const { data, error } = await sb.rpc('link_parent_by_code', { p_code: code });
     if (error) throw error;
-    if (!data){ showToast(ico('klaida')+' Kodas netinka arba pasibaigęs (galioja 30 min) — paprašyk vaiko sugeneruoti naują', 'error', 6000); return; }
+    if (!data){ showToast(ico('klaida')+' Kodas netinka arba pasibaigęs (galioja 30 min) — paprašykite sugeneruoti naują', 'error', 6000); return; }
     showToast(ico('patvirtinta')+' Prisijungei prie: ' + escapeHtml(data) + '!', 'success', 5000);
     document.getElementById('link-kid-modal')?.remove();
     if (typeof loadParentData === 'function') await loadParentData();
@@ -1502,7 +1502,7 @@ async function openParentSettings() {
             <div style="font-size:18px;color:var(--mut);">›</div>
           </div>
         </div>
-        <div style="padding:8px 16px 0;font-size:10.5px;color:var(--mut);line-height:1.45;">${ico('info')} Vaiko duomenys, treneriai ir antras tėvas — vaiko Profilyje, ${ico('nustatymai')} viršuje.</div>
+        <div style="padding:8px 16px 0;font-size:10.5px;color:var(--mut);line-height:1.45;">${ico('info')} Vaiko duomenys, treneriai ir kas mato vaiką — vaiko Profilio apačioje, „${ico('nustatymai')} Vaiko nustatymai".</div>
         <div style="padding:8px 16px 0;">
           <div onclick="openChangePasswordModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
             <div style="font-size:28px;">${ico('uzrakinta')}</div>
@@ -1776,7 +1776,7 @@ function openParentHelpModal() {
     ['Kaip pridėti antrą vaiką?', 'Paspausk burbuliuką viršuje dešinėje → „Pridėti vaiką" ir užpildyk anketą — ją patvirtins klubas. Jei vaikas jau turi SPOBU paskyrą, paprašyk jo kodo ir spausk „Prijungti vaiką su kodu".'],
     ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsas turi būti įdiegtas į pradžios ekraną ir duotas pranešimų leidimas.'],
     ['Kaip pakeisti savo vardą?', 'Nustatymai → prie tavo paskyros paspausk „'+ico('redaguoti')+' Vardas".'],
-    ['Kas yra „Anonimas statistikoje"?', 'Vaiko Profilis → ⚙ viršuje → „Vaiko duomenys" → Privatumas. Įjungta (taip nustatyta iš pradžių): reitinguose ir paieškoje vietoj vaiko vardo rodoma „Anonimas". Išjungus — klubo nariai reitinge gali atidaryti vaiko sporto kortelę su profilio nuotrauka. Savo grupės draugai vaiką mato vardu — grupės sąraše ir dvikovose. Treneris ir klubas vardą mato visada. Išjungus reitinguose rodomas vardas ir pavardės raidė.'],
+    ['Kas yra „Anonimas statistikoje"?', 'Vaiko Profilis → apačioje „Vaiko nustatymai" → „Vaiko duomenys" → Privatumas. Įjungta (taip nustatyta iš pradžių): reitinguose ir paieškoje vietoj vaiko vardo rodoma „Anonimas". Išjungus — klubo nariai reitinge gali atidaryti vaiko sporto kortelę su profilio nuotrauka. Savo grupės draugai vaiką mato vardu — grupės sąraše ir dvikovose. Treneris ir klubas vardą mato visada. Išjungus reitinguose rodomas vardas ir pavardės raidė.'],
     ['Kas yra pažangos ataskaitos?', 'Mėnesio apžvalga — „Pasiekimų" lange (Premium dalis). Pažangos ataskaitą (fizinis pasirengimas, patarimai) galite užsakyti, kai klubas ar SPOBU skiria kreditą — ją patikrina žmogus, paruoštą gausite pranešimu.']
   ];
   const old = document.getElementById('parent-help-modal'); if (old) old.remove();
@@ -2094,7 +2094,7 @@ function openParentInfoModal() {
       </div>
       <div style="padding:16px 18px 28px;">
         ${sec(''+ico('kalendorius')+'', 'KĄ MATAI', '<b style="color:white;">Kalendorius</b> — kada vaikas buvo treniruotėje ir kiek EXP gavo kiekvieną dieną (spauskite dieną — išskaidymas), kas laukia. <b style="color:white;">Pasiekimai</b> — mėnesio apžvalga: pasiekimai, „mėnuo žodžiais", ką grupė darė su treneriu ir kodėl, mėnesio kortelė ir PDF. <b style="color:white;">Grupė</b> — grupės savaitė ir arena. <b style="color:white;">Kelias</b> — pratimų rekordai. <b style="color:white;">Profilis</b> — lygis, diržas, varžybos ir rekordas, statistika, sezono apžvalga, Strava. <b style="color:white;">Šeima</b> („‹ Šeima") — visų vaikų santrauka, Parduotuvė ir Nustatymai.')}
-        ${sec(''+ico('tikslas')+'', 'TAVO ROLĖ', 'Palaikyk ir padėk: renginiams atsakyk „Ar dalyvaus?" (vaikui iki 14 m.), rašyk treneriui (varpelis → „Rašyti treneriui"). Tu valdai vaiko duomenis: sveikatą, avarinį kontaktą, svorį ir privatumą (vaiko Profilis → ⚙ viršuje); Strava susiejimas — kortelė vaiko Profilyje. Iššūkius su Strava vaikas užsiskaito automatiškai, kitus rezultatus įveda treneris.')}
+        ${sec(''+ico('tikslas')+'', 'TAVO ROLĖ', 'Palaikyk ir padėk: renginiams atsakyk „Ar dalyvaus?" (vaikui iki 14 m.), rašyk treneriui (varpelis → „Rašyti treneriui"). Tu valdai vaiko duomenis: sveikatą, avarinį kontaktą, svorį ir privatumą, matai, kas mato vaiką (vaiko Profilis → apačioje „Vaiko nustatymai"); Strava susiejimas — kortelė vaiko Profilyje. Iššūkius su Strava vaikas užsiskaito automatiškai, kitus rezultatus įveda treneris.')}
         ${sec(''+ico('dirzas')+'', 'KAIP GAUNAMI EXP', 'Daugiausia — treniruotėse: pastangos (+20 / +14 / +8), pilna savaitė (+15) ir mėnuo (+100). Taip pat iššūkiai (Strava pakopos +15 · +5 · +5), varžybos, diržo egzaminas, dvikovos, rekordai. Visa lentelė — Nustatymai → <b style="color:white;">„Kaip veikia SPOBU"</b>.')}
         ${sec(''+ico('pranesimai')+'', 'PRANEŠIMAI', 'Vaiko pasiekimai (iššūkis ar pakopa, medalis, diržas, trenerio EXP, dvikova, naujas lygis) ateina į varpelio skiltį <b style="color:white;">„Vaikai"</b> ir push pranešimu su vaiko vardu — ne dažniau kaip kartą per valandą vienam vaikui. Išjungti push: Nustatymai → „Vaiko pasiekimai". Trenerio ir klubo žinutės — kitose varpelio skiltyse.')}
         ${sec(''+ico('apsauga')+'', 'PRIVATUMAS', 'Vaiko vardą visada mato treneris, klubas ir grupės draugai. „Anonimas statistikoje" (įjungta iš pradžių) — kitų klubo narių reitinguose vietoj vardo „Anonimas". „Vardas klubo viešuose įrašuose" (išjungta iš pradžių) — įjungus, vardas gali būti klubo Facebook / Instagram įrašuose. Kitų vaikų telefonų ir el. paštų nematote nei jūs, nei kiti tėvai.')}
@@ -2254,9 +2254,10 @@ async function loadParentKidsList() {
   parentKids = [];
   if (!currentProfile) return;
   const { data: links } = await sb.from('kid_parent_links')
-    .select('kid_id').eq('parent_id', currentProfile.id);
+    .select('kid_id, is_primary').eq('parent_id', currentProfile.id);
   const kidIds = (links || []).map(l => l.kid_id);
   _parentKidIdSet = new Set(kidIds);
+  if (typeof TevNust !== 'undefined') TevNust.prim = new Set((links || []).filter(l => l.is_primary).map(l => l.kid_id));   // v667: kviesti antrą tėvą — tik pagrindinis
   if (kidIds.length === 0) return;
   const { data: kids } = await sb.from('kids')
     .select('*').in('id', kidIds).order('total_exp', { ascending: false });
@@ -7660,7 +7661,7 @@ async function akSubmit() {
       </div>
       <div style="background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:12px;margin-bottom:12px;">
         <div style="font-weight:800;font-size:12px;margin-bottom:4px;">${ico('apsauga')} Privatumas (galite keisti bet kada)</div>
-        <div style="font-size:11px;color:var(--mut);line-height:1.5;">Reitinguose kitiems klubo nariams — <b style="color:white;">„Anonimas"</b>. Vardas klubo Facebook / Instagram įrašuose — <b style="color:white;">išjungta</b>. Treneris, klubas ir grupės draugai vaiką mato vardu. Keisti: vaiko Profilis → ⚙ → Vaiko duomenys.</div>
+        <div style="font-size:11px;color:var(--mut);line-height:1.5;">Reitinguose kitiems klubo nariams — <b style="color:white;">„Anonimas"</b>. Vardas klubo Facebook / Instagram įrašuose — <b style="color:white;">išjungta</b>. Treneris, klubas ir grupės draugai vaiką mato vardu. Keisti: vaiko Profilis → „Vaiko nustatymai" → Vaiko duomenys.</div>
       </div>
     `;   // v640 (tėvų auditas T5, 15A): numatytieji privatumo nustatymai pasakomi iškart
     
@@ -24168,7 +24169,7 @@ function openParentInfo(which) {
         (g('comp') || g('belt') ? row(''+ico('trofejai')+'', g('comp') ? 'Varžybos ir rekordas' : 'Diržai ir renginiai', 'Kumite ir kata pergalės, medaliai, diržas, kitos varžybos. Paspaudus — visos varžybos: „Ar dalyvaus?", rezultatai, „Pasidalinti" prie medalio.') : '') +
         row(''+ico('trofejai')+'', 'Sezono apžvalga', 'Sezono pabaigoje — vaiko sezonas vienoje vietoje ir PDF' + ((typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? '.' : ' (Premium).')) +
         row(''+ico('dokumentas')+'', 'Pažangos ataskaitos', 'Eilutė atsiranda, kai turite ataskaitų ar kreditų — užsakyti ir perskaityti.') +
-        row(''+ico('nustatymai')+'', 'Vaiko nustatymai (⚙ viršuje)', 'Vaiko duomenys (sveikata, avarinis kontaktas, svoris, privatumas), kaip vaiką mato kiti, antras tėvas, treneriai.') +
+        row(''+ico('nustatymai')+'', 'Vaiko nustatymai (apačioje)', 'Vaiko duomenys (sveikata, avarinis kontaktas, svoris, privatumas), kaip vaiką mato kiti, kas mato vaiką (antras tėvas — pakviesti ar atšaukti), treneriai.') +
         row(''+ico('vaikas')+'', 'Keli vaikai', 'Burbuliukas viršuje dešinėje — perjungti vaiką, pridėti, prijungti su kodu.') +
         row(''+ico('greitis')+'', 'Strava', 'Susieti vaiko Strava — iššūkiai ir Kelio rekordai užsiskaito patys. Atsieti galite bet kada.') +
         row(''+ico('pranesimai')+'', 'Pranešimai', 'Vaiko pasiekimai — varpelio skiltyje „Vaikai" ir push su vaiko vardu. Išjungti: „‹ Šeima" → Nustatymai → „Vaiko pasiekimai".');
@@ -48679,7 +48680,7 @@ const TevDalin = Object.assign(Object.create(Postai), {
 // Vardų erdvė TevIvykiai, naujų globalių nėra; DOM id prefiksas tev-iv-.
 const TevIvykiai = {
   COLORS: ['#3B82F6', '#A855F7', '#22C55E', '#F59E0B', '#EC407A', '#14B8A6'],
-  ICO: { challenge: 'tikslas', comp: 'medalis', belt: 'dirzas', coach: 'zvaigzde', duel: 'dvikova', duel_invite: 'dvikova', level: 'augimas', reminder: 'laikmatis', season: 'trofejai' },   // v650: + Premium priminimai; v651: + sezono apžvalga
+  ICO: { challenge: 'tikslas', comp: 'medalis', belt: 'dirzas', coach: 'zvaigzde', duel: 'dvikova', duel_invite: 'dvikova', level: 'augimas', reminder: 'laikmatis', season: 'trofejai', access: 'grupe' },   // v667: + prisijungė kitas tėvas   // v650: + Premium priminimai; v651: + sezono apžvalga
   filter: 'all', rows: [], sub: null, _opened: false,   // _opened — šiame varpelio atidaryme jau perjungta į „Vaikai"
   esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : ''; },
   kids() { return (typeof parentKids !== 'undefined' && Array.isArray(parentKids)) ? parentKids : []; },
@@ -48886,7 +48887,7 @@ const TevSeima = {
     });
     h += `<div onclick="TevSeima.close(); if (typeof openAddKidWizard === 'function') openAddKidWizard();" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:14px;cursor:pointer;border:.5px dashed rgba(255,77,0,.5);color:#FF7A33;"><div style="width:42px;height:42px;border-radius:50%;background:rgba(255,77,0,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">${ico('prideti')}</div><span style="font-size:14px;font-weight:800;">Pridėti vaiką</span></div>`;
     const lnk = (click, icon, t) => `<span onclick="${click}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 8px;border-radius:12px;border:.5px solid var(--bdr);font-size:11.5px;font-weight:800;color:var(--mut);cursor:pointer;text-align:center;">${ico(icon)} ${t}</span>`;
-    h += `<div style="display:flex;gap:6px;">${lnk("TevSeima.close(); if (typeof openLinkKidByCode === 'function') openLinkKidByCode();", 'pazymejimas', 'Prijungti vaiką su kodu')}${act ? lnk(`TevSeima.close(); openInviteParentModal('${act.id}');`, 'grupe', 'Pakviesti antrą tėvą') : ''}</div>`;
+    h += `<div style="display:flex;gap:6px;">${lnk("TevSeima.close(); if (typeof openLinkKidByCode === 'function') openLinkKidByCode();", 'pazymejimas', 'Prijungti vaiką su kodu')}${act && (typeof TevNust === 'undefined' || TevNust.canInvite(act.id)) ? lnk(`TevSeima.close(); openInviteParentModal('${act.id}');`, 'grupe', 'Pakviesti antrą tėvą') : ''}</div>`;
     const m = document.createElement('div'); m.id = 'parent-kid-switcher';
     m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:99998;display:flex;align-items:flex-end;justify-content:center;';
     m.innerHTML = `<div style="width:100%;max-width:480px;max-height:85vh;overflow-y:auto;box-sizing:border-box;background:var(--card);border-top:.5px solid var(--bdr);border-radius:24px 24px 0 0;padding:10px 14px calc(22px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:6px;">
@@ -49624,6 +49625,8 @@ const MenPdf = {
 // visiems vaikų klubams — perkelta iš vaiko Profilio); vaiko Profilio antraštėje ⚙ — TO vaiko nustatymai (vaiko duomenys, kaip mato
 // kiti, antras tėvas, treneriai). Anksčiau vaiko dalykai buvo šeimos Nustatymuose ir rodė tik aktyvų vaiką. Vardų erdvė TevNust, DOM prefiksas tev-nu-.
 const TevNust = {
+  prim: null,   // v667: vaikai, kurių pagrindinis tėvas — aš (loadParentKidsList)
+  canInvite(kidId) { return !this.prim || this.prim.has(kidId); },
   esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : ''; },
   kid() { return (typeof parentActiveKid !== 'undefined' && parentActiveKid) ? parentActiveKid : null; },
   close() { const m = document.getElementById('tev-nu-sheet'); if (m) m.remove(); },
@@ -49645,15 +49648,17 @@ const TevNust = {
       <span style="color:var(--mut);display:flex;flex-shrink:0;">${ico('toliau')}</span></div>`;
   },
 
-  // ── Vaiko Profilis → ⚙ ──
+  // ── Vaiko Profilis → „Vaiko nustatymai" (v667: mygtukas Profilio apačioje, #tev-nu-prof) ──
   async kidOpen() {
     const k = this.kid(); if (!k) { showToast('Pirma pasirinkite vaiką', 'error'); return; }
     const id = this.esc(k.id);
+    const sec = t => `<div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--mut);margin:8px 2px 2px;">${t}</div>`;
     const body = this.row('TevNust.close(); parentEditActiveKid();', 'profilis', 'Vaiko duomenys', 'Svoris, sveikata, alergijos, traumos, avarinis kontaktas, privatumas')
       + this.row(`TevNust.close(); TevProfilis.preview('${id}');`, 'apsauga', 'Kaip vaiką mato kiti', 'Sporto kortelė klubo nariams ir „Anonimas statistikoje"')
-      + this.row(`TevNust.close(); openInviteParentModal('${id}');`, 'grupe', 'Pakviesti antrą tėvą', 'Kad ir kitas tėvas matytų vaiką ir gautų pranešimus')
-      + `<div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--mut);margin:8px 2px 2px;">TRENERIAI</div><div id="tev-nu-trainers" style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;color:var(--mut);padding:4px 2px;">Kraunama…</div></div>`;
+      + sec('KAS MATO VAIKĄ') + `<div id="tev-nu-parents" style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;color:var(--mut);padding:4px 2px;">Kraunama…</div></div>`
+      + sec('TRENERIAI') + `<div id="tev-nu-trainers" style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;color:var(--mut);padding:4px 2px;">Kraunama…</div></div>`;
     this.sheet(`${this.esc(k.first_name || 'Vaikas')} — nustatymai`, body);
+    this.parentsLoad(k);
     try {
       const list = typeof getParentActiveKidTrainers === 'function' ? await getParentActiveKidTrainers() : [];
       const box = document.getElementById('tev-nu-trainers'); if (!box || this.kid()?.id !== k.id) return;
@@ -49662,6 +49667,46 @@ const TevNust = {
         return this.row(`TevNust.close(); parentStartTrainerChat('${this.esc(t.id)}','${safe}');`, 'dirzas', this.esc(t.name || 'Treneris'), 'Parašyti žinutę');
       }).join('') : '<div style="font-size:11px;color:var(--mut);padding:4px 2px;">Dar nepriskirtas treneris.</div>';
     } catch (e) { const box = document.getElementById('tev-nu-trainers'); if (box) box.innerHTML = '<div style="font-size:11px;color:var(--br);padding:4px 2px;">Nepavyko įkelti trenerių.</div>'; }
+  },
+
+  // v667 (savininko sprendimas 09-26 „Palikti ir sutvarkyti"): kas mato vaiką — kid_parents_list; kviesti ir atšaukti gali tik
+  // pagrindinis tėvas, ne pagrindinis gali atsisakyti savo prieigos (kid_parent_revoke). server-TEVAI-antras-tevas-2026-09-26.sql
+  async parentsLoad(k) {
+    const box = () => document.getElementById('tev-nu-parents');
+    try {
+      const { data, error } = await sb.rpc('kid_parents_list', { p_kid: k.id });
+      if (error) throw error;
+      if (!box() || this.kid()?.id !== k.id) return;
+      const list = data || [], me = list.find(p => p.is_me), prim = !!me?.is_primary;
+      const btn = (click, t, c) => `<span onclick="event.stopPropagation(); ${click}" style="flex-shrink:0;font-size:10.5px;font-weight:800;color:${c};border:.5px solid ${c}66;border-radius:99px;padding:4px 10px;cursor:pointer;">${t}</span>`;
+      const rows = list.map(p => {
+        const nm = this.esc(p.name || 'Tėvas'), pid = this.esc(p.parent_id), tag = p.is_primary ? 'pagrindinis' : 'prisijungė su kodu';
+        const act = !p.is_primary && prim && !p.is_me ? btn(`TevNust.revoke('${pid}', false)`, 'Atšaukti', '#EF4444')
+          : (!p.is_primary && p.is_me ? btn(`TevNust.revoke('${pid}', true)`, 'Atsisakyti', '#EF4444') : '');
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;border:.5px solid var(--bdr);background:rgba(255,255,255,.03);"><span style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ico('profilis')}</span><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">${nm}${p.is_me ? ' <span style="color:var(--mut);font-weight:700;">(jūs)</span>' : ''}</div><div style="font-size:11px;color:var(--mut);margin-top:2px;">${tag}</div></div>${act}</div>`;
+      }).join('');
+      const inv = prim ? this.row(`TevNust.close(); openInviteParentModal('${this.esc(k.id)}');`, 'grupe', 'Pakviesti antrą tėvą', 'Matys viską apie vaiką (ir sveikatos duomenis) ir gaus pranešimus. Atšaukti galite čia.')
+        : `<div style="font-size:11px;color:var(--mut);padding:2px 2px;line-height:1.45;">Pakviesti kitą tėvą gali pagrindinis tėvas.</div>`;
+      box().innerHTML = rows + inv;
+    } catch (e) {
+      console.warn('[tev-nu] tėvai', e);
+      if (box()) box().innerHTML = '<div style="font-size:11px;color:var(--br);padding:4px 2px;">Nepavyko įkelti.</div>';
+    }
+  },
+  async revoke(pid, self) {
+    const k = this.kid(); if (!k) return;
+    const nm = this.esc(k.first_name || 'Vaikas');
+    const q = self ? `Atsisakyti prieigos prie vaiko (${nm})? Nebematysite jo duomenų ir negausite pranešimų. Grįžti galėsite tik su nauju kodu.`
+      : `Atšaukti šio tėvo prieigą prie vaiko (${nm})? Jis nebematys vaiko duomenų ir negaus pranešimų.`;
+    if (!(await appConfirm(q, { okText: self ? 'ATSISAKYTI PRIEIGOS' : 'ATŠAUKTI PRIEIGĄ', cancelText: 'Palikti' }))) return;
+    try {
+      const { data, error } = await sb.rpc('kid_parent_revoke', { p_kid: k.id, p_parent: pid });
+      if (error) throw error;
+      if (!data) { showToast(ico('info') + ' Prieiga jau atšaukta', 'info'); }
+      else showToast(ico('patvirtinta') + (self ? ' Prieigos atsisakėte' : ' Prieiga atšaukta'), 'success');
+      if (self) { this.close(); if (typeof loadParentData === 'function') await loadParentData(); return; }
+      this.parentsLoad(k);
+    } catch (e) { showToast(ico('klaida') + ' ' + this.esc(e?.message || 'Nepavyko'), 'error', 5000); }
   },
 
   // ── Šeimos Nustatymai → „Klubo informacija" (visų vaikų klubai; kortelė — ta pati kaip buvo Profilyje, KInfo) ──
