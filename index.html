@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=664">
+<link rel="stylesheet" href="styles.css?v=665">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v664</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v665</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -4177,6 +4177,9 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-size:10px;color:var(--mut);font-weight:700;">TĖVAI</div>
       </div>
     </div>
+    <!-- MODULIS: Adm (v665, P7) — skaičiai be demo klubo ir adminų (7A) -->
+    <div class="aerr-meta" id="adm-stats-note" style="padding:0 18px 12px;margin-top:-6px;"></div>
+    <!-- /MODULIS Adm -->
 
     <!-- <svg class="ico" aria-hidden="true"><use href="#i-kompiuteris"></use></svg> Dashboard grid: desktop'e 2 kolonos (kairė — darbo eilė, dešinė — veiksmai+veikla); mobile — įprastas stulpelis -->
     <div class="adash">
@@ -4312,6 +4315,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="adm-head" data-sid="a-analytics"></div>
   <div class="sa">
     <div id="a-analytics-content">
+      <!-- MODULIS: Adm (v665, P7) — demo jungiklis (7A) + piloto rodikliai M1–M7 pagal savaites (11A) -->
+      <div id="adm-demo-bar" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:0 16px 12px;"></div>
+      <div class="kal-sec" style="padding:4px 18px 6px;"><b>PILOTO RODIKLIAI M1–M7</b><span></span><em class="o kal-all" onclick="Adm.help('a-analytics')">Kas tai? →</em></div>
+      <div id="adm-pilot" style="padding:0 16px 8px;"></div>
+      <!-- /MODULIS Adm -->
       <div id="ana-kpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;"></div>
       <div class="st">NORTH STAR — AKTYVŪS VAIKAI PER SAVAITĘ (≥1 EXP ĮVYKIS)</div>
       <div class="cd" style="padding:14px 16px;"><div id="ana-ns-chart" style="overflow-x:auto;"></div></div>
@@ -4377,24 +4385,28 @@ window.addEventListener('unhandledrejection', function(e) {
   <div class="adm-head" data-sid="a-users"></div>
   <div class="sa">
     <div id="a-users-content">
+      <!-- MODULIS: Adm (v665, P7) — Žmonės čipsai: Vartotojai · Vaikai · Sutikimai · 14+ · Palaikymas -->
+      <div id="adm-ppl-chips" style="display:flex;gap:6px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none;"></div>
+      <div id="adm-ppl-kids" class="adm-ppl" style="display:none;"></div>
+      <div id="adm-ppl-cons" class="adm-ppl" style="display:none;"></div>
+      <div id="adm-ppl-meet" class="adm-ppl" style="display:none;"></div>
+      <!-- /MODULIS Adm -->
+      <div id="adm-ppl-users" class="adm-ppl">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
         <input class="inp" id="au-search" placeholder="🔍 Vardas..." style="margin:0;flex:1;min-width:150px;max-width:260px;padding:8px 11px;" oninput="renderAdminUsers()">
         <button class="aerr-f au-f on" data-f="all" onclick="setAuFilter('all')">Visi</button>
         <button class="aerr-f au-f" data-f="parent" onclick="setAuFilter('parent')">Tėvai</button>
         <button class="aerr-f au-f" data-f="trainer" onclick="setAuFilter('trainer')">Treneriai</button>
-        <button class="aerr-f au-f" data-f="kid" onclick="setAuFilter('kid')">Vaikai</button>
+        <button class="aerr-f au-f" data-f="kid" onclick="setAuFilter('kid')">Vaikų paskyros</button>
         <button class="aerr-f au-f" data-f="club_admin" onclick="setAuFilter('club_admin')">Klubai</button>
         <button class="aerr-f" title="auth.users be profilio — sudeginti el. paštai" onclick="openOrphanAuthUsers()">🧹 Auth našlaičiai</button>
       </div>
-      <div class="adash">
-      <div class="adash-col">
         <div class="st">VARTOTOJAI <span id="au-count" class="aerr-meta" style="display:inline;"></span></div>
         <div id="au-list" style="padding:0 16px;"><div style="text-align:center;padding:30px;color:var(--mut);font-size:12px;">Kraunama...</div></div>
       </div>
-      <div class="adash-col">
-        <div class="st">SUPPORT — ATSILIEPIMAI</div>
+      <div id="adm-ppl-sup" class="adm-ppl" style="display:none;">
+        <div class="st">PALAIKYMAS — ATSILIEPIMAI IR 🐞</div>
         <div class="cd" id="au-feedback" style="padding:8px 14px;"></div>
-      </div>
       </div>
     </div>
   </div>
@@ -4793,7 +4805,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=664"></script>
+<script src="app.js?v=665"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
