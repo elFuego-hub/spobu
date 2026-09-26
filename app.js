@@ -49984,9 +49984,9 @@ const Adm = {
   PARENT: { 'a-analytics': 'a-main', 'a-errors': 'a-platform', 'a-prof': 'a-main' },   // poskyris → skyrius (grįžimas, pažymėjimas)
   HEAD: {
     'a-main': ['ŠIANDIEN', ''], 'a-clubs': ['KLUBAI', 'klubai · nustatymai · naujas klubas'],
-    'a-users': ['ŽMONĖS', 'vartotojai · vaikai · sutikimai · 14+ · palaikymas'], 'a-fin': ['PINIGAI', 'pajamos · kainos · korekcijos'],
+    'a-users': ['ŽMONĖS', 'paskyros · vaikai · sutikimai'], 'a-fin': ['PINIGAI', 'pajamos · kainos · korekcijos'],
     'a-ai': ['AI', 'ataskaitos · peržiūra · žinių bazė'], 'a-platform': ['SISTEMA', 'jungikliai · cron · deploy · auditas'],
-    'a-errors': ['KLAIDOS', 'kliento klaidų telemetrija'], 'a-analytics': ['ANALITIKA', 'M1–M7 · aktyvumas · piltuvėlis · klubai'],
+    'a-errors': ['KLAIDOS', 'kliento klaidų telemetrija'], 'a-analytics': ['ANALITIKA', 'M1–M7 · aktyvumas · klubai'],
     'a-prof': ['PROFILIS', 'paskyra · nustatymai']
   },
   sec(sid) { return this.PARENT[sid] !== undefined ? this.PARENT[sid] : sid; },
@@ -50649,7 +50649,7 @@ const Adm = {
     const nm = ((k.first_name || '') + ' ' + (k.last_name || '')).trim() || 'Vaikas';
     const ST = { approved: 'patvirtintas', pending: 'laukia patvirtinimo', rejected: 'atmestas' };
     const row = (l, v) => `<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:.5px solid var(--bdr);font-size:12.5px;"><span style="color:var(--mut);">${l}</span><b style="text-align:right;">${v}</b></div>`;
-    const body = row('Klubas', escapeHtml(k.club_name || '—') + (k.is_demo ? ' · demo' : ''))
+    const body = row('Klubas', escapeHtml(k.club_name || '—'))
       + row('Grupė', escapeHtml(k.group_name || 'be grupės'))
       + row('Gimimo metai', k.birth_year || '—')
       + row('Vaiko paskyra', k.has_account ? 'yra' : 'nėra (tvarko tėvai / treneris)')

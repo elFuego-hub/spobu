@@ -948,3 +948,9 @@ body.portal-v{--ico-accent:var(--br);}
 .tev-pr-kelbox .kal-card,.tev-pr-box .kal-card{margin:0 12px 8px;}
 .tev-pr-exobox .kal-card{margin:0 0 9px;}
 /* ===== /MODULIS ===== */
+
+/* ===== MODULIS: Adm (v665) — admino lapai (Planas.sheet su id „adm-…"): šoninės paraštės turiniui ===== */
+.kal-dim[id^="adm-"] .kal-sheet .body{padding-left:18px;padding-right:18px;}
+.kal-dim[id^="adm-"] .kal-sheet .body .kal-rows{padding-left:0;padding-right:0;}
+.kal-dim[id^="adm-"] .kal-sheet .body .kal-empty{margin-left:0;margin-right:0;}
+/* ===== /MODULIS ===== */
