@@ -1764,7 +1764,7 @@ function openParentHelpModal() {
   // SUPPORT_EMAIL — globalus const (viršuje, prie POLICY_VERSION)
   // v443: mailto nuorodos pakeistos contactSupport() / openParentReportModal srautais
   const faq = [
-    ['Kaip matau vaiko progresą?', 'Kalendoriuje — kada buvo, kiek EXP ir pastangų kiekvieną dieną (spauskite dieną). „Kelias" — statistika pagal kategorijas. „Pasiekimai" — naujausi medaliai, iššūkiai ir rekordai.'],
+    ['Kaip matau vaiko progresą?', 'Kalendoriuje — kada buvo, kiek EXP ir pastangų kiekvieną dieną (spauskite dieną). „Kelias" — pratimų rekordai 7 kategorijose. „Pasiekimai" — mėnesio apžvalga: pasiekimai, „mėnuo žodžiais", ką grupė darė su treneriu, kortelė ir PDF. „Šeima" — visų vaikų santrauka.'],
     ['Kas yra pastangos ir automatiniai iššūkiai?', 'Po treniruotės treneris įvertina pastangas: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP (matote, jei klubas įjungęs). Lankomumo, varžybų, egzamino ir Strava iššūkiai užsiskaito patys, kitus vaikas pateikia, treneris tvirtina.'],
     ['Vaikas susiejo Strava — ką tai reiškia?', 'Vaikas gali pats susieti savo Strava (Profilis → Strava) — jums ateina pranešimas. SPOBU mato tik veiklų tipą, pavadinimą, atstumą, trukmę, datą, geriausio kilometro laiką ir nuorodą: iš jų užsiskaito iššūkiai ir Kelio rekordai (1 km, ilgas bėgimas, dviratis, žygis). Įtartinus rezultatus tikrina treneris. Atsieti galite bet kada: Profilis → Strava → Atsieti.'],   // v627 (3A, S2)
     ['Ką galiu pažymėti už vaiką?', 'Renginiams ir varžyboms — „Ar dalyvaus?" kalendoriuje (vaikui iki 14 m.). Strava iššūkiai užsiskaito patys, pastangas ir kitus rezultatus įveda treneris (arba vaikas savo paskyroje).'],   // v640 (15A): buvo „tik vaikas, tu stebėtojas"
@@ -1773,8 +1773,8 @@ function openParentHelpModal() {
     ['Kaip pridėti antrą vaiką?', 'Paspausk burbuliuką viršuje dešinėje → „Pridėti vaiką" ir užpildyk anketą — ją patvirtins klubas. Jei vaikas jau turi SPOBU paskyrą, paprašyk jo kodo ir spausk „Prijungti vaiką su kodu".'],
     ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsas turi būti įdiegtas į pradžios ekraną ir duotas pranešimų leidimas.'],
     ['Kaip pakeisti savo vardą?', 'Nustatymai → prie tavo paskyros paspausk „'+ico('redaguoti')+' Vardas".'],
-    ['Kas yra „Anonimas statistikoje"?', 'Nustatymai → „Vaiko duomenys" → Privatumas. Įjungta (taip nustatyta iš pradžių): reitinguose ir paieškoje vietoj vaiko vardo rodoma „Anonimas". Išjungus — klubo nariai reitinge gali atidaryti vaiko sporto kortelę su profilio nuotrauka. Savo grupės draugai vaiką mato vardu — grupės sąraše ir dvikovose. Treneris ir klubas vardą mato visada. Išjungus reitinguose rodomas vardas ir pavardės raidė.'],
-    ['Kas yra pažangos ataskaitos?', 'Mėnesio suvestinė visada yra „Pasiekimų" lange. Pažangos ataskaitą (fizinis pasirengimas, patarimai) galite užsakyti, kai klubas ar SPOBU skiria kreditą — ją patikrina žmogus, paruoštą gausite pranešimu.']
+    ['Kas yra „Anonimas statistikoje"?', 'Vaiko Profilis → ⚙ viršuje → „Vaiko duomenys" → Privatumas. Įjungta (taip nustatyta iš pradžių): reitinguose ir paieškoje vietoj vaiko vardo rodoma „Anonimas". Išjungus — klubo nariai reitinge gali atidaryti vaiko sporto kortelę su profilio nuotrauka. Savo grupės draugai vaiką mato vardu — grupės sąraše ir dvikovose. Treneris ir klubas vardą mato visada. Išjungus reitinguose rodomas vardas ir pavardės raidė.'],
+    ['Kas yra pažangos ataskaitos?', 'Mėnesio apžvalga — „Pasiekimų" lange (Premium dalis). Pažangos ataskaitą (fizinis pasirengimas, patarimai) galite užsakyti, kai klubas ar SPOBU skiria kreditą — ją patikrina žmogus, paruoštą gausite pranešimu.']
   ];
   const old = document.getElementById('parent-help-modal'); if (old) old.remove();
   const m = document.createElement('div');
@@ -1913,7 +1913,7 @@ function openHelpModal(who) {
     ['Kaip skaičiuojami trenerių taškai?', 'Pažymėta treniruotė (lankomumas + pastangos) +3 · atsiliepimas po treniruotės +2 · patvirtinta treniruotė, sukurtas iššūkis ar rankinis patvirtinimas +1. Automatiniai užskaitymai (Strava, lankomumo užduotys) taškų neduoda. Pakopos: Padėjėjas 200 → Asistentas 500 → Instruktorius 1 000 → Senpajus 1 800 → Mokytojas 2 900 → Meistras 4 200 → Sensėjus 6 000. Reitingas — Analitikoje.'],
     ['Kaip veikia pavadavimai?', 'Treneris dienos lape spaudžia „Reikia pavadavimo". Kiti klubo treneriai kalendoriuje mato kortelę ir gali paimti patys („Pavaduosiu"), o tu Kalendoriaus sekcijoje PAVADAVIMAI priskiri pavaduotoją. Pavaduotojas tą dieną žymi lankomumą ir pastangas.'],
     ['Kur klubo jungikliai?', 'Profilis → Klubo nustatymai: 5 grupės — Treniruotės (treneriai kuria planus, lankomumas ir pastangos, pastangos tėvams, trenerių postai), Iššūkiai (Strava automatinis tvirtinimas, dvikovos), Vaikams ir tėvams, Renginiai, Narystė ir mokesčiai. Prie kiekvieno — '+ico('info')+' su paaiškinimu. Pakeitimas galioja visam klubui iš karto.'],
-    ['Ką tėvai mato apie klubą?', 'Profilis → Klubo informacija: adresas, telefonas, el. paštas, trumpas aprašymas, Facebook / Instagram. Užpildžius tėvai savo Profilyje mato klubo kortelę (adresas atsidaro žemėlapyje, telefonu galima skambinti), o kvietimo poste atsiranda adresas ir telefonas.'],
+    ['Ką tėvai mato apie klubą?', 'Profilis → Klubo informacija: adresas, telefonas, el. paštas, trumpas aprašymas, Facebook / Instagram. Užpildžius tėvai mato klubo kortelę (Šeima → Nustatymai → „Klubo informacija") (adresas atsidaro žemėlapyje, telefonu galima skambinti), o kvietimo poste atsiranda adresas ir telefonas.'],
     ['Kaip parašyti treneriui?', 'Klubas → Treneriai → treneris → „Rašyti treneriui". Iš kalendoriaus dienos lapo — „Priminti" (nepatvirtintos treniruotės). Visiems — Pagrindinis → „Rašyti pranešimą" (tėvams, treneriams, vaikams ar visiems).'],
     ['Kaip rasti vaiką statistikoje?', 'Visa statistika → paieškos laukas virš sąrašo: vardas ar pavardė (lietuviškos raidės nesvarbios). Klubas ir treneriai randa visus, taip pat anonimus; vaikai ir tėvai anonimų neranda.'],
     ['Kas yra „Trenerių prieiga"?', 'Paskyros meniu pažymi trenerius, kurie gali administruoti klubą — jie iš savo Nustatymų atsidaro klubo vaizdą. Savininko funkcijos (klubo nustatymai, trenerių prieiga, vediklis) jiems paslėptos.'],
@@ -2000,7 +2000,7 @@ const WELCOME_CONTENT = {
     items: [
       ['kalendorius', '<b class="t">Kalendorius</b>vaiko treniruotės, ar buvo, kiek pastangų įdėjo, kas laukia. Spauskite dieną — visos detalės'],
       ['vaikas',      'Keli vaikai? Burbuliukas viršuje dešinėje perjungia vaiką, „Šeima" — visų vaikų santrauka'],   // v649 (čipsai nuimti v647)
-      ['tikslas',     'EXP ir iššūkiai — dalis skaičiuojasi automatiškai (lankomumas, varžybos, Strava), kitus tvirtina treneris. Kaip viskas veikia — Nustatymai'],
+      ['tikslas',     'EXP ir iššūkiai — dalis skaičiuojasi automatiškai (lankomumas, varžybos, Strava), kitus tvirtina treneris. Kaip viskas veikia — Šeimos lange → Nustatymai'],
       ['pranesimai',  'Vaiko pasiekimai — varpelio skiltyje <b style="color:white;">„Vaikai"</b> ir push su vaiko vardu'],   // v640 (15A)
       ['premium',     'Esate <b style="color:white;">pirmieji bandytojai</b> — jums <b style="color:white;">viskas įjungta nemokamai</b>'],
       ['bug',         'Radę klaidą: Pagalba → „Pranešti problemą". Atsakymą gausite ten pat („Mano žinutės")']
@@ -2090,12 +2090,12 @@ function openParentInfoModal() {
         <button onclick="document.getElementById('parent-info-modal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">${ico('uzdaryti')}</button>
       </div>
       <div style="padding:16px 18px 28px;">
-        ${sec(''+ico('kalendorius')+'', 'KĄ MATAI', '<b style="color:white;">Kalendorius</b> — kada vaikas buvo treniruotėje ir kiek EXP gavo kiekvieną dieną (spauskite dieną — išskaidymas), kas laukia. <b style="color:white;">Pasiekimai</b> — mėnesio apžvalga: pasiekimai, „mėnuo žodžiais", ką grupė darė su treneriu ir kodėl, mėnesio kortelė ir PDF. <b style="color:white;">Grupė</b> — grupės savaitė ir arena. <b style="color:white;">Kelias</b> — pratimų rekordai. <b style="color:white;">Profilis</b> — lygis, diržas, reitingai, Strava.')}
-        ${sec(''+ico('tikslas')+'', 'TAVO ROLĖ', 'Palaikyk ir padėk: renginiams atsakyk „Ar dalyvaus?" (vaikui iki 14 m.), rašyk treneriui (varpelis → „Rašyti treneriui"). Tu valdai vaiko duomenis: sveikatą, avarinį kontaktą, svorį, privatumą ir Strava susiejimą (vaiko Profilis → ⚙ viršuje). Iššūkius su Strava vaikas užsiskaito automatiškai, kitus rezultatus įveda treneris.')}
+        ${sec(''+ico('kalendorius')+'', 'KĄ MATAI', '<b style="color:white;">Kalendorius</b> — kada vaikas buvo treniruotėje ir kiek EXP gavo kiekvieną dieną (spauskite dieną — išskaidymas), kas laukia. <b style="color:white;">Pasiekimai</b> — mėnesio apžvalga: pasiekimai, „mėnuo žodžiais", ką grupė darė su treneriu ir kodėl, mėnesio kortelė ir PDF. <b style="color:white;">Grupė</b> — grupės savaitė ir arena. <b style="color:white;">Kelias</b> — pratimų rekordai. <b style="color:white;">Profilis</b> — lygis, diržas, varžybos ir rekordas, statistika, sezono apžvalga, Strava. <b style="color:white;">Šeima</b> („‹ Šeima") — visų vaikų santrauka, Parduotuvė ir Nustatymai.')}
+        ${sec(''+ico('tikslas')+'', 'TAVO ROLĖ', 'Palaikyk ir padėk: renginiams atsakyk „Ar dalyvaus?" (vaikui iki 14 m.), rašyk treneriui (varpelis → „Rašyti treneriui"). Tu valdai vaiko duomenis: sveikatą, avarinį kontaktą, svorį ir privatumą (vaiko Profilis → ⚙ viršuje); Strava susiejimas — kortelė vaiko Profilyje. Iššūkius su Strava vaikas užsiskaito automatiškai, kitus rezultatus įveda treneris.')}
         ${sec(''+ico('dirzas')+'', 'KAIP GAUNAMI EXP', 'Daugiausia — treniruotėse: pastangos (+20 / +14 / +8), pilna savaitė (+15) ir mėnuo (+100). Taip pat iššūkiai (Strava pakopos +15 · +5 · +5), varžybos, diržo egzaminas, dvikovos, rekordai. Visa lentelė — Nustatymai → <b style="color:white;">„Kaip veikia SPOBU"</b>.')}
         ${sec(''+ico('pranesimai')+'', 'PRANEŠIMAI', 'Vaiko pasiekimai (iššūkis ar pakopa, medalis, diržas, trenerio EXP, dvikova, naujas lygis) ateina į varpelio skiltį <b style="color:white;">„Vaikai"</b> ir push pranešimu su vaiko vardu — ne dažniau kaip kartą per valandą vienam vaikui. Išjungti push: Nustatymai → „Vaiko pasiekimai". Trenerio ir klubo žinutės — kitose varpelio skiltyse.')}
         ${sec(''+ico('apsauga')+'', 'PRIVATUMAS', 'Vaiko vardą visada mato treneris, klubas ir grupės draugai. „Anonimas statistikoje" (įjungta iš pradžių) — kitų klubo narių reitinguose vietoj vardo „Anonimas". „Vardas klubo viešuose įrašuose" (išjungta iš pradžių) — įjungus, vardas gali būti klubo Facebook / Instagram įrašuose. Kitų vaikų telefonų ir el. paštų nematote nei jūs, nei kiti tėvai.')}
-        ${sec(''+ico('statistika')+'', 'PAŽANGOS ATASKAITOS', 'Kai klubas ar SPOBU skiria kreditą, galite užsakyti vaiko fizinio pasirengimo ataskaitą — ją patikrina žmogus, paruoštą gausite pranešimu. Mėnesio suvestinė visada yra „Pasiekimuose" (galite pasidalinti kortele).')}
+        ${sec(''+ico('statistika')+'', 'PAŽANGOS ATASKAITOS', 'Kai klubas ar SPOBU skiria kreditą, galite užsakyti vaiko fizinio pasirengimo ataskaitą — ją patikrina žmogus, paruoštą gausite pranešimu; ataskaitos — vaiko Profilyje („Pažangos ataskaitos"). Mėnesio apžvalga — „Pasiekimuose" (Premium dalis; galite pasidalinti kortele).')}
       </div>
     </div>`;
   m.onclick = (e) => { if (e.target === m) m.remove(); };
@@ -3787,7 +3787,7 @@ async function loadParentKidFeed() {
       + `<div onclick="nv('t',null,'t-main')" style="margin-top:4px;padding:10px;border-radius:10px;border:.5px solid var(--bdr);text-align:center;font-size:11px;font-weight:800;color:var(--mut);cursor:pointer;">Kiekviena treniruotė ir pastangos — Kalendoriuje ›</div>`;   // v639 (8A): kieno srautas
     if (typeof MenPdf !== 'undefined') MenPdf.groupFill(k, _pfPdf);
     _pfLoadGroupChallengeLive(k); // 🏆 v435: vykstančio grupių iššūkio gyva vieta (fire-and-forget)
-  } catch (e) { console.warn('parent feed', e); list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Klaida kraunant feed</div>'; }
+  } catch (e) { console.warn('parent feed', e); list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--br);font-size:11px;">Nepavyko įkelti Pasiekimų — pabandykite dar kartą</div>'; }
 }
 
 // 🏆 v435: tėvui — kaip vaiko grupei sekasi VYKSTANČIAME grupių iššūkyje (savininko pastaba:
@@ -5481,7 +5481,7 @@ function gateScreen(screenId, locked, ctaHtml){
     sc.appendChild(g);
   }
 }
-const _PG_PARENT = '<div class="pg-card"><div class="pg-emoji">'+ico('medalis')+'</div><div class="pg-title">PASIEKIMAI</div><div class="pg-sub">Mėnesio apžvalga, pasiekimai, treniruočių tikslai, mėnesio kortelė ir PDF — su Premium. Kalendorius, EXP ir Kelias lieka nemokami.</div><button class="pg-btn" onclick="TevPrem.pay(\'pas\')">'+ico('premium-plus')+' Premium — 39 € / metus</button></div>';
+const _PG_PARENT = '<div class="pg-card"><div class="pg-emoji">'+ico('medalis')+'</div><div class="pg-title">PASIEKIMAI</div><div class="pg-sub">Mėnesio apžvalga, pasiekimai, treniruočių tikslai, mėnesio kortelė ir PDF — su Premium. Kalendorius, EXP ir Kelias lieka nemokami.</div><button class="pg-btn" onclick="TevPrem.pay(\'pas\')">'+ico('premium-plus')+' Premium — 39 € / metus arba 7,99 € / mėn.</button></div>';
 const _PG_KID = '<div class="pg-card"><div class="pg-emoji">'+ico('uzrakinta')+'</div><div class="pg-title">ŠIĄ DALĮ ATRAKINA TĖVAI</div><div class="pg-sub">Detali statistika atsirakins, kai tėvai įjungs planą.</div><button class="pg-btn" onclick="showToast(\'Paprašyk tėvų — jie žinos ką daryti '+ico('premium-plus')+'\',\'\',4000)">Sužinoti</button></div>';
 function gateElement(elId, locked, ctaHtml){
   const el = document.getElementById(elId);
@@ -5745,7 +5745,9 @@ async function submitReportOrder(btn){
       }
     } else { throw new Error((data && data.error) || 'Tuščias atsakymas'); }
   } catch (e) {
-    if (status) { status.style.display = 'block'; status.style.color = 'var(--br)'; status.textContent = '❌ ' + (e?.message || e); }
+    // v658: techninės klaidos (edge „AI generavimas nepavyko…", tinklas) tėvui — suprantamu tekstu; prasmingos (kreditas, duomenys) — kaip yra
+    const _em = String(e?.message || e || ''); console.warn('[ataskaita]', _em);
+    if (status) { status.style.display = 'block'; status.style.color = 'var(--br)'; status.textContent = '❌ ' + (/AI generavimas|fetch|network|non-2xx|Edge Function|Tuščias atsakymas/i.test(_em) ? 'Nepavyko paruošti ataskaitos — pabandykite vėliau arba parašykite info@spobu.lt' : _em); }
   } finally {
     // #P1: sėkmės atveju (dataset.done) mygtuko NEbeatrakinam; klaidos atveju — leidžiam bandyti dar kartą
     if (btn.dataset.done !== '1') { btn.disabled = false; btn.textContent = '✨ Generuoti ataskaitą'; }
@@ -7655,7 +7657,7 @@ async function akSubmit() {
       </div>
       <div style="background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:12px;margin-bottom:12px;">
         <div style="font-weight:800;font-size:12px;margin-bottom:4px;">${ico('apsauga')} Privatumas (galite keisti bet kada)</div>
-        <div style="font-size:11px;color:var(--mut);line-height:1.5;">Reitinguose kitiems klubo nariams — <b style="color:white;">„Anonimas"</b>. Vardas klubo Facebook / Instagram įrašuose — <b style="color:white;">išjungta</b>. Treneris, klubas ir grupės draugai vaiką mato vardu. Keisti: Profilis → Vaiko duomenys.</div>
+        <div style="font-size:11px;color:var(--mut);line-height:1.5;">Reitinguose kitiems klubo nariams — <b style="color:white;">„Anonimas"</b>. Vardas klubo Facebook / Instagram įrašuose — <b style="color:white;">išjungta</b>. Treneris, klubas ir grupės draugai vaiką mato vardu. Keisti: vaiko Profilis → ⚙ → Vaiko duomenys.</div>
       </div>
     `;   // v640 (tėvų auditas T5, 15A): numatytieji privatumo nustatymai pasakomi iškart
     
@@ -24085,11 +24087,17 @@ function openParentInfo(which) {
     case 'main':
     case 'kal':
       title = ''+ico('pagalba')+' KALENDORIUS';
+      // v658 (galutinė tėvo paskyros patikra): + viršutinė juosta, dvikovos, etapas, iššūkiai, Premium blokai
       html = intro(effVis ? 'Vaiko mėnuo vienu žvilgsniu: kada buvo, kiek pastangų įdėjo, kas laukia.' : 'Vaiko mėnuo vienu žvilgsniu: kada buvo, kiek EXP gavo, kas laukia.') +
+        row(''+ico('dirzas')+'', 'Juosta viršuje', 'Lygis ir EXP, vieta tarp bendraamžių klube, treniruočių serija iš eilės.') +
         row('<i style="width:10px;height:10px;border-radius:2px;background:#22C55E;display:block;"></i>', 'Žalia diena su +EXP', 'Vaikas buvo treniruotėje; skaičius — tos dienos EXP. Perbrauktas skaičius — treniruotė buvo, vaiko nebuvo.') +
         (effVis ? row(''+ico('jega')+'', 'Pastangos', 'Treneris po treniruotės įvertina: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP. Suvestinė mėnesiui — po tinkleliu, detalės — dienos lape.') : '') +
         row(''+ico('treniruote')+'', 'Šiandien', 'Oranžinė kortelė — šiandienos treniruotė: tema ir ką pasiimti. Rodoma, kai treneris ją patvirtina. Treniruotės tikslas („kodėl") — Pasiekimuose.') +
-        (g('comp') || g('belt') ? row(''+ico('varzybos')+'', g('comp') ? 'Varžybos' : 'Diržo egzaminai', 'Violetinė diena — renginys. Kortelėje „Ar dalyvaus?" — atsakykite už vaiką iki 14 m.; vaikas ir treneris matys.') : '') +
+        (g('comp') || g('belt') ? row(''+ico('varzybos')+'', g('comp') ? 'Varžybos ir renginiai' : 'Diržo egzaminai', 'Violetinė diena — varžybos, mėlyna — stovykla, auksinė — diržo testas. „Ar dalyvaus?" — atsakykite už vaiką čia arba Šeimos lange; vaikas ir treneris matys.') : '') +
+        (g('duels') ? row('<i style="width:8px;height:8px;border-radius:50%;background:#EC407A;display:block;"></i>', 'Dvikova', 'Rožinis taškas — tą dieną vaiko dvikova su grupės draugu. Rezultatus įveda treneris treniruotėje.') : '') +
+        row(''+ico('tikslas')+'', 'Mūsų etapas', 'Grupės etapo tikslas ir savaitės — kaip treneris suplanavo mėnesį.') +
+        (g('challenges') ? row(''+ico('issukiai')+'', 'Iššūkiai', 'Vaiko savaitės ir mėnesio iššūkiai su progresu; „Visi →" — kiek iššūkių įveikta pagal rūšį ir surinkti EXP. Savaitės Strava iššūkiai užsiskaito patys, kai susieta Strava.') : '') +
+        row(''+ico('zvaigzde')+'', 'PREMIUM blokai', 'Pastangų tendencija ir Iššūkiai+ (sezono istorija, Strava analizė, palyginimas su grupe, priminimai)' + ((typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? ' — bandymo metu nemokamai.' : ' — su Premium.')) +
         row(''+ico('atnaujinti')+'', 'Keli vaikai', 'Burbuliukas viršuje dešinėje perjungia vaiką; „‹ Šeima" — visų vaikų santrauka.') +   // v649 (čipsai nuimti v647)
         row(''+ico('ranka')+'', 'Spauskite dieną', effVis ? 'Dienos lapas: EXP išskaidymas, pastangos, treniruotės eiga blokais.' : 'Dienos lapas: EXP išskaidymas, treniruotės eiga blokais.');
       break;
@@ -24105,13 +24113,24 @@ function openParentInfo(which) {
         row(''+ico('dokumentas')+'', 'Visi skaičiai ir PDF', 'Visi mėnesio skaičiai ir spausdinama ataskaita (su treniruočių puslapiu).') +
         row(''+ico('zvaigzde')+'', 'PREMIUM žymė', (typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? 'Pažymėtos Premium dalys — bandymo laikotarpiu nemokamai.' : 'Pažymėtos dalys — su Premium.');
       break;
-    case 'seima':   // v647 (navigacija A „Šeimos namai")
+    case 'kar':   // v658: „?" ir Kelyje (kaip kituose tėvo languose)
+      title = ''+ico('pagalba')+' KELIAS';
+      html = intro('Vaiko fizinio pasirengimo kelias: pratimų rekordai 7 kategorijose. Tik peržiūra — rezultatus pateikia vaikas, patvirtina treneris.') +
+        row(''+ico('greitis')+'', 'Kelio EXP', 'Kiekviena kategorija — iki 600 EXP (Bronze 100 · Silver 300 · Gold 500 · Master 600); iš viso 4 200. Medaliai viršuje — kiek kategorijų pasiekė tą pakopą.') +
+        row(''+ico('ranka')+'', '7 kategorijos', 'Spauskite kategoriją — pratimai, vaiko rezultatai ir amžiaus normos.') +
+        row(''+ico('vieta')+'', 'Strava rekordai', 'Bėgimo, ėjimo, dviračio ir žygio rekordai užsiskaito patys, kai susieta Strava (Profilyje). Rankiniai įrašai be GPS nesiskaito.') +
+        row(''+ico('zvaigzde')+'', 'Kelias+ (PREMIUM)', 'Vieta tarp bendraamžių, rekordų tendencija, silpniausia sritis ir ką daryti, kitas tikslas' + ((typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? ' — bandymo metu nemokamai.' : ' — su Premium.'));
+      break;
+    case 'seima':   // v647 (navigacija A „Šeimos namai"); v658 — + skelbimai, sezono apžvalga, apatinė juosta
       title = ''+ico('pagalba')+' ŠEIMA';
       html = intro('Visų jūsų vaikų santrauka vienoje vietoje. Paspaudę vaiko kortelę — pereisite į jo ekranus.') +
         row(''+ico('pranesimai')+'', 'Nauji įvykiai', 'Kas naujo pas vaiką nuo paskutinio karto: medaliai, pakopos, trenerio žinutės.') +
         row(''+ico('kalendorius')+'', 'Artimiausia treniruotė', 'Kada ir kur kita grupės treniruotė.') +
         row(''+ico('ispejimas')+'', 'Ko reikia iš jūsų', 'Atsakymai „Ar dalyvaus?" į varžybas, anketos būsena.') +
-        row(''+ico('grupe')+'', 'Vaikų perjungimas', 'Viršuje dešinėje — burbuliukas: visi vaikai su sporto šaka, klubu ir naujų įvykių skaičiumi.');
+        row(''+ico('trofejai')+'', 'Sezono apžvalga', 'Kai sezono apžvalga paruošta — eilutė vaiko kortelėje.') +
+        row(''+ico('skelbimas')+'', 'Klubo skelbimai ir žinutės', 'Nauji klubo skelbimai ir trenerių žinutės; atsidaro varpelyje.') +
+        row(''+ico('grupe')+'', 'Vaikų perjungimas', 'Viršuje dešinėje — burbuliukas: visi vaikai su sporto šaka, klubu ir naujų įvykių skaičiumi; ten pat — pridėti vaiką.') +
+        row(''+ico('nustatymai')+'', 'Apačioje', 'Parduotuvė — Premium, ataskaitos ir programos. Nustatymai — jūsų paskyra, pranešimai, klubo informacija, gidas.');
       break;
     case 'grupe':   // v642 (13A)
       title = ''+ico('pagalba')+' GRUPĖ';
@@ -24126,10 +24145,12 @@ function openParentInfo(which) {
       title = ''+ico('pagalba')+' PARDUOTUVĖ';
       // v640 (15A): be „Premium / Netrukus" — bandymo metu viskas nemokama; AI ataskaitos — kai skiriamas kreditas
       html = intro('Pažangos ataskaita, namų treniruočių planas ir vasaros programa — asmeniškai vaikui, iš jo klubo duomenų.') +
+        // v658: bandymo bloko paaiškinimas (ką tėvai mato parduotuvės viršuje)
+        ((typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? row('🎁', 'Bandymo laikotarpis', 'Dabar jūsų šeimai viskas įjungta. „Visada nemokama" dalis tokia ir liks; „Dovanų" dalis vėliau bus Premium.') : '') +
         ((typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? row(ico('info'), 'Netrukus', 'Kas tai ir iš ko ruošiama — parduotuvėje „Ataskaitos ir programos". Kainos bus paskelbtos vėliau.') : '') +
         // v652 (Premium P5): mokamoje versijoje — pakopos ir dovana (bandymo metu nerodoma)
         ((typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? '' :
-          row(ico('premium-plus'), 'Premium ir Premium+', 'Nemokamai lieka viskas, be ko negalima: tvarkaraštis, lankomumas, EXP, Kelias, iššūkiai, žinutės. Premium — Pasiekimai (mėnesio apžvalga ir treniruočių tikslai), Grupė, statistika ir įžvalgos; Premium+ — dar AI ataskaitos, namų planas, vasaros programa ir „10 min namuose".') +
+          row(ico('premium-plus'), 'Premium ir Premium+', 'Nemokamai lieka viskas, be ko negalima: tvarkaraštis, lankomumas, EXP, Kelias, iššūkiai, žinutės. Premium — Pasiekimai (mėnesio apžvalga ir treniruočių tikslai), Grupė, statistika ir įžvalgos; Premium+ — dar pažangos ataskaitos, namų planas, vasaros programa ir „10 min namuose".') +
           row(ico('dokumentas'), 'Pirma pažangos ataskaita — dovanų', 'Vienąkart kiekvienam vaikui, kai jis treniruojasi bent 2 mėn. (jei klubas įjungęs ataskaitas).')) +
         row(''+ico('statistika')+'', 'Pažangos ataskaita', 'Kai klubas ar SPOBU skiria kreditą, čia galite užsakyti vaiko pažangos ataskaitą. Ją patikrina žmogus, paruoštą gausite pranešimu.') +
         row(''+ico('dokumentas')+'', 'Mano ataskaitos', 'Visos paruoštos ataskaitos — čia pat.');
@@ -24140,11 +24161,14 @@ function openParentInfo(which) {
       html = intro('Aktyvaus vaiko kortelė ir viskas apie jį.') +
         row(''+ico('dirzas')+'', 'Vaiko kortelė', 'Lygis, EXP, diržas, trofėjai, ženkliukai ir iššūkiai.') +
         row(''+ico('statistika')+'', 'Visa statistika ir reitingai', 'Vaiko vieta tarp bendraamžių klube — tie patys skaičiai, kuriuos mato vaikas.' + ((typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? '' : ' Tėvams — su Premium.')) +
-        (g('comp') ? row(''+ico('trofejai')+'', 'Varžybų rekordas', 'Medaliai ir dalyvavimai varžybose.') : '') +
+        // v658: „Varžybos ir rekordas" (TevVarz, v657), sezono apžvalga, pažangos ataskaitos; pranešimų nustatymai — Šeimos lange
+        (g('comp') || g('belt') ? row(''+ico('trofejai')+'', g('comp') ? 'Varžybos ir rekordas' : 'Diržai ir renginiai', 'Kumite ir kata pergalės, medaliai, diržas, kitos varžybos. Paspaudus — visos varžybos: „Ar dalyvaus?", rezultatai, „Pasidalinti" prie medalio.') : '') +
+        row(''+ico('trofejai')+'', 'Sezono apžvalga', 'Sezono pabaigoje — vaiko sezonas vienoje vietoje ir PDF' + ((typeof SHOP_TRIAL_MODE !== 'undefined' && SHOP_TRIAL_MODE) ? '.' : ' (Premium).')) +
+        row(''+ico('dokumentas')+'', 'Pažangos ataskaitos', 'Eilutė atsiranda, kai turite ataskaitų ar kreditų — užsakyti ir perskaityti.') +
         row(''+ico('nustatymai')+'', 'Vaiko nustatymai (⚙ viršuje)', 'Vaiko duomenys (sveikata, avarinis kontaktas, svoris, privatumas), kaip vaiką mato kiti, antras tėvas, treneriai.') +
-        row(''+ico('vaikas')+'', 'Vaikai', 'Burbuliukas viršuje dešinėje — perjungti vaiką, pridėti, prijungti su kodu.') +
+        row(''+ico('vaikas')+'', 'Keli vaikai', 'Burbuliukas viršuje dešinėje — perjungti vaiką, pridėti, prijungti su kodu.') +
         row(''+ico('greitis')+'', 'Strava', 'Susieti vaiko Strava — iššūkiai ir Kelio rekordai užsiskaito patys. Atsieti galite bet kada.') +
-        row(''+ico('pranesimai')+'', 'Pranešimai', 'Vaiko pasiekimai — varpelio skiltyje „Vaikai" ir push su vaiko vardu (Nustatymai → „Vaiko pasiekimai").');
+        row(''+ico('pranesimai')+'', 'Pranešimai', 'Vaiko pasiekimai — varpelio skiltyje „Vaikai" ir push su vaiko vardu. Išjungti: „‹ Šeima" → Nustatymai → „Vaiko pasiekimai".');
       break;
     default:
       title = ''+ico('pagalba')+' INFO'; html = intro('Paaiškinimas.');
@@ -35094,7 +35118,7 @@ function subscribeParentNotifications() {
       if (!req || !_parentKidIdSet.has(req.kid_id)) return;
       if (_isSeen('preqR', req.id)) return;
       _addSeen('preqR', req.id);
-      showToast(''+ico('patinka')+' Vaikas prašo AI ataskaitos — žiūrėk prašymus', 'success', 6000);
+      showToast(''+ico('patinka')+' Vaikas prašo ataskaitos ar programos — žiūrėkite prašymus', 'success', 6000);
       if (typeof openParentRequestsModal === 'function') openParentRequestsModal();
     })
     .subscribe();
@@ -35143,10 +35167,10 @@ function subscribeParentNotifications() {
       if (rep.status !== 'done') return;
       if (_isSeen('prep', rep.id)) return;
       _addSeen('prep', rep.id);
-      const tLabel = rep.type === 'plan' ? ''+ico('treniruote')+' Namų planas' : (rep.type === 'summer' ? ''+ico('vasara')+' Vasaros programa' : ''+ico('dokumentas')+' AI diagnostika');
+      const tLabel = rep.type === 'plan' ? ''+ico('treniruote')+' Namų planas' : (rep.type === 'summer' ? ''+ico('vasara')+' Vasaros programa' : ''+ico('dokumentas')+' Pažangos ataskaita');
       const pk = (parentKids || []).find(k => k.id === rep.kid_id);
       const kidName = pk ? (pk.first_name || '') : '';
-      showToast(ico('patvirtinta')+' ' + tLabel + (kidName ? ' (' + escapeHtml(kidName) + ')' : '') + ' paruošta! Rasi Profilyje → Ataskaitos.', 'success', 7000);
+      showToast(ico('patvirtinta')+' ' + tLabel + (kidName ? ' (' + escapeHtml(kidName) + ')' : '') + ' paruošta! Rasite vaiko Profilyje → „Pažangos ataskaitos".', 'success', 7000);
       if (typeof loadMyReports === 'function') loadMyReports();  // jei atidarytas ataskaitų sąrašas — atsinaujina
       if (typeof TevProfilis !== 'undefined') TevProfilis.aiRow();   // v642 (12A)
     })
@@ -36262,9 +36286,9 @@ async function showParentMissedEvents() {
           if (_isSeen('prep', rep.id)) return;
           _addSeen('prep', rep.id);
           if (firstRun && rep.reviewed_at && (Date.now() - new Date(rep.reviewed_at).getTime()) > 180000) return;
-          const tLabel = rep.type === 'plan' ? ''+ico('treniruote')+' Namų planas' : (rep.type === 'summer' ? ''+ico('vasara')+' Vasaros programa' : ''+ico('dokumentas')+' AI diagnostika');
+          const tLabel = rep.type === 'plan' ? ''+ico('treniruote')+' Namų planas' : (rep.type === 'summer' ? ''+ico('vasara')+' Vasaros programa' : ''+ico('dokumentas')+' Pažangos ataskaita');
           const pk = (parentKids || []).find(k => k.id === rep.kid_id);
-          showToast(ico('patvirtinta')+' ' + tLabel + (pk ? ' (' + escapeHtml(pk.first_name || '') + ')' : '') + ' paruošta! Rasi Profilyje → Ataskaitos.', 'success', 6500);
+          showToast(ico('patvirtinta')+' ' + tLabel + (pk ? ' (' + escapeHtml(pk.first_name || '') + ')' : '') + ' paruošta! Rasite vaiko Profilyje → „Pažangos ataskaitos".', 'success', 6500);
         });
       }
     } catch (e) { /* tylu — nekritinis */ }
@@ -43357,7 +43381,7 @@ Object.assign(Kal, {
 // išjungtas — regresija = v534. Profilyje — eilutės Visa statistika / Reitingai / Varžybų rekordas / Vaikai (`kal-t-prof`).
 Kal.parent = Object.assign(Object.create(Kal.kid), {
   st: { ym: null, group: null, sessions: [], events: [], exp: {}, att: {}, busy: false, ch: [], intents: {}, rsvp: {}, plan: null, again: false, chAt: 0 },
-  cid: 'kal-t-content', ns: 'Kal.parent', scr: 't-main', chNav: "nv('t',null,'t-feed')", ownCh: true, evNav: '',   // v641 (11A): vaiko iššūkių plytelės su pakopomis ir tėvui (Iss.forKid — tėvas savo vaiko iššūkius mato); „Atidaryti Varžybose" — nėra
+  cid: 'kal-t-content', ns: 'Kal.parent', scr: 't-main', chNav: "openParentChallengeTypes()", ownCh: true,   // v658: „Visi →" — vaiko iššūkiai (buvo Pasiekimai, kur sąrašo nėra) evNav: '',   // v641 (11A): vaiko iššūkių plytelės su pakopomis ir tėvui (Iss.forKid — tėvas savo vaiko iššūkius mato); „Atidaryti Varžybose" — nėra
   noWhy: true,   // v655 (savininko sprendimas 09-26): tėvo Kalendoriuje „kodėl" nerodomas — jis Pasiekimuose (MenPdf, Premium); vaikui ir treneriui lieka
   rk: {},   // v641 (11A): vaiko reitingų atmintis { [kidId]: { at, exp, expN, comp, compN } } — 5 min
   // v641 (tėvų auditas N8, savininko 11A, maketas A): plona vaiko juosta virš mėnesio — LVL, EXP iki kito, čipsai (reitingas tarp bendraamžių, serija, varžybos)
@@ -47814,6 +47838,13 @@ const TevVarz = {
     this.tab = this.st.up.length ? 'up' : (this.st.pend.length ? 'pend' : 'done');
     this.paint();
   },
+  // v658: „Ar dalyvaus?" — tas pats kelias kaip Šeimos lange (TevSeima.intent → competition_results, submitted_role='parent')
+  async intent(compId, v) {
+    const k = this.kid(); if (!k || typeof TevSeima === 'undefined' || !TevSeima.intent) return;
+    await TevSeima.intent(k.id, compId, v);
+    try { const d = await this.data(k); if (this.kid()?.id !== k.id) return; d.kid = k; this.st = d; this.paint(); } catch (e) { console.warn('[TevVarz] intent', e); }
+    this.profCard();
+  },
   setTab(t) { this.tab = t; this.more = false; this.paint(); },
   showMore() { this.more = true; this.paint(); },
   paint() {
@@ -47839,7 +47870,7 @@ const TevVarz = {
     h += shown.map(c => this.card(c, d.res[c.id], k)).join('');
     if (!list.length) h += `<div style="text-align:center;padding:26px 10px;color:var(--mut);font-size:12px;">${this.tab === 'up' ? 'Artėjančių varžybų nėra.' : this.tab === 'pend' ? 'Nieko nelaukia rezultato.' : 'Dar nedalyvavo varžybose.'}</div>`;
     if (!this.more && list.length > LIM) h += `<button onclick="TevVarz.showMore()" style="width:100%;padding:9px;background:transparent;border:.5px dashed rgba(255,77,0,.4);color:#FF7A33;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;border-radius:10px;margin-top:2px;font-family:inherit;">DAUGIAU (${list.length - LIM}) ›</button>`;
-    h += `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-top:12px;line-height:1.45;">${this.tab === 'pend' ? 'Rezultatą pateikia vaikas savo paskyroje (Varžybos) arba treneris.' : this.tab === 'up' ? 'Ar dalyvaus — pažymi vaikas savo paskyroje (Varžybos).' : 'Rekordas ir EXP — tik trenerio patvirtinti rezultatai.'}</div>`;
+    h += `<div style="font-size:10.5px;color:var(--mut);text-align:center;margin-top:12px;line-height:1.45;">${this.tab === 'pend' ? 'Rezultatą pateikia vaikas savo paskyroje (Varžybos) arba treneris.' : this.tab === 'up' ? '„Ar dalyvaus?" — atsakyti galite jūs arba vaikas; treneris mato atsakymą.' : 'Rekordas ir EXP — tik trenerio patvirtinti rezultatai.'}</div>`;
     b.innerHTML = h;
   },
   card(c, r, k) {
@@ -47852,7 +47883,11 @@ const TevVarz = {
     const bdg = (txt, fg, bg) => `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-size:11px;font-weight:800;border-radius:99px;color:${fg};background:${bg};">${txt}</span>`;
     let st = '', sh = '';
     if (this.tab === 'up') {
-      st = r && r.status === 'planning' ? bdg(`${ico('tikslas')} Planuoja dalyvauti`, 'var(--grn)', 'rgba(34,197,94,.15)') : r && r.status === 'wont_attend' ? bdg(`${ico('isjungta')} Nedalyvaus`, '#EF4444', 'rgba(239,68,68,.15)') : bdg(`${ico('laukia')} Dar nepažymėjo`, 'var(--mut)', 'rgba(255,255,255,.07)');
+      st = r && r.status === 'planning' ? bdg(`${ico('tikslas')} Dalyvaus`, 'var(--grn)', 'rgba(34,197,94,.15)') : r && r.status === 'wont_attend' ? bdg(`${ico('isjungta')} Nedalyvaus`, '#EF4444', 'rgba(239,68,68,.15)') : bdg(`${ico('laukia')} Ar dalyvaus?`, '#FF9E40', 'rgba(255,122,51,.12)');
+      const cid = String(c.id).replace(/[^0-9a-f-]/gi, ''), btn = (v, txt, fg, bg, bd) => `<button onclick="TevVarz.intent('${cid}','${v}')" style="flex:1;background:${bg};color:${fg};border:.5px solid ${bd};padding:8px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:800;font-family:inherit;min-height:36px;">${txt}</button>`;
+      const yes = btn('planning', `${ico('tikslas')} Taip`, 'var(--grn)', 'rgba(34,197,94,.1)', 'rgba(34,197,94,.3)'), no = btn('wont_attend', `${ico('isjungta')} Ne`, '#EF4444', 'rgba(239,68,68,.1)', 'rgba(239,68,68,.3)');
+      if (!r || (r.status !== 'planning' && r.status !== 'wont_attend')) sh = `<div style="display:flex;gap:6px;width:100%;margin-top:6px;">${yes}${no}</div>`;
+      else sh = `<span onclick="TevVarz.intent('${cid}','${r.status === 'planning' ? 'wont_attend' : 'planning'}')" style="font-size:10.5px;color:var(--mut);font-weight:800;cursor:pointer;text-decoration:underline;">Keisti atsakymą</span>`;
     } else if (this.tab === 'pend') {
       st = bdg(`${ico('laukia')} Laukia rezultato`, '#FF9E40', 'rgba(255,122,51,.14)');
     } else if (r && r.status === 'didnt_attend') {
@@ -49016,7 +49051,7 @@ const TevPrem = {
         if (typeof redeemReport === 'function') redeemReport();
         return;
       }
-      const M = { early: `Pirmą ataskaitą galėsite gauti, kai ${nm} treniruosis 2 mėn. (liko ${Number(r.days) || 0} d.)`, claimed: 'Dovanota ataskaita jau paimta', off: 'Klubas AI ataskaitų dar neįjungė', trial: 'Bandymo metu ataskaitos dovanojamos kitaip', kid: `${nm} dar nepatvirtintas klube`, link: 'Šis vaikas nesusietas su jūsų paskyra' };
+      const M = { early: `Pirmą ataskaitą galėsite gauti, kai ${nm} treniruosis 2 mėn. (liko ${Number(r.days) || 0} d.)`, claimed: 'Dovanota ataskaita jau paimta', off: 'Klubas pažangos ataskaitų dar neįjungė', trial: 'Bandymo metu ataskaitos dovanojamos kitaip', kid: `${nm} dar nepatvirtintas klube`, link: 'Šis vaikas nesusietas su jūsų paskyra' };
       showToast(`${ico('info')} ${M[r.err] || 'Nepavyko'}`, 'info', 5500);
       if (r.err === 'claimed' && typeof TevProfilis !== 'undefined') TevProfilis.aiRow();
     } catch (e) { showToast(`${ico('klaida')} ${this.esc(typeof _userError === 'function' ? _userError(e) : (e.message || 'Klaida'))}`, 'error'); }
