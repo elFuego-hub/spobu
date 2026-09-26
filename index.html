@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=658">
+<link rel="stylesheet" href="styles.css?v=659">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v658</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v659</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -533,17 +533,7 @@ window.addEventListener('unhandledrejection', function(e) {
     
     <label class="lbl">IBAN (mokėjimams)</label>
     <input class="inp" type="text" id="cclub-iban" placeholder="LT12 1000 0000 0000 0000">
-    
-    <label class="lbl">KOMISINIS % <span style="color:var(--mut);">(default 10%)</span></label>
-    <input class="inp" type="number" id="cclub-commission" placeholder="10" value="10" min="0" max="100" step="0.1">
-
-    <div style="font-size:11px;font-weight:800;color:var(--mut);letter-spacing:1px;margin:14px 0 6px;">TRENERIŲ BONUSO MODELIS (klubui)</div>
-    <label class="lbl">BONUSAS % <span style="color:var(--mut);">(nuo apyvartos, default 10%)</span></label>
-    <input class="inp" type="number" id="cclub-bonus" placeholder="10" value="10" min="0" max="100" step="0.1">
-    <label class="lbl">PAPILDOMAS BONUSAS % <span style="color:var(--mut);">(jei pasiekta krepšelio riba, default 5%)</span></label>
-    <input class="inp" type="number" id="cclub-bonus-extra" placeholder="5" value="5" min="0" max="100" step="0.1">
-    <label class="lbl">VID. KREPŠELIO RIBA € <span style="color:var(--mut);">(papildomam bonusui, default 40€)</span></label>
-    <input class="inp" type="number" id="cclub-basket" placeholder="40" value="40" min="0" step="1">
+    <!-- v659: komisijos / trenerių bonuso laukai nuimti (kainodaros taryba — klubams piniginės komisijos nėra; admino auditas 3A) -->
 
     <button class="btn btng" id="cclub-submit" style="margin:8px 0 0;width:100%;" onclick="submitNewClub()">SUKURTI KLUBĄ</button>
     <button class="btn btnd" style="margin:8px 0 0;width:100%;" onclick="closeCreateClub()">Atšaukti</button>
@@ -4226,7 +4216,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="st">VEIKSMAI</div>
     <div class="cd" style="padding:12px;">
       <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openCreateClub()"><svg class="ico" aria-hidden="true"><use href="#i-prideti"></use></svg> Sukurti naują klubą</button>
-      <button class="btn btnd" style="margin:0;width:100%;" onclick="g('a','a-clubs')"><svg class="ico" aria-hidden="true"><use href="#i-klubas"></use></svg> Valdyti klubus</button>
+      <button class="btn btnd" style="margin:0;width:100%;" onclick="nv('a',null,'a-clubs')"><svg class="ico" aria-hidden="true"><use href="#i-klubas"></use></svg> Valdyti klubus</button>
     </div>
 
     <div class="st">NAUJAUSIA VEIKLA</div>
@@ -4249,7 +4239,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: KLUBAI -->
 <div class="sc" id="a-clubs">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">KLUBAI</div>
+  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">KLUBAI</div>
     <button class="bb" onclick="openCreateClub()" style="background:var(--br);border-color:var(--br);color:white;">+</button>
   </div>
   <div class="sa">
@@ -4300,7 +4290,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: KLAIDOS (Blokas B) -->
 <div class="sc" id="a-errors">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg> KLAIDOS</div></div>
+  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg> KLAIDOS</div></div>
   <div class="sa">
     <div id="a-errors-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -4309,7 +4299,6 @@ window.addEventListener('unhandledrejection', function(e) {
         <button class="aerr-f" data-f="ack" onclick="setAdminErrFilter('ack')">Peržiūrėtos</button>
         <button class="aerr-f" data-f="fixed" onclick="setAdminErrFilter('fixed')">Sutvarkytos</button>
         <div style="flex:1;"></div>
-        <button class="aerr-tool" onclick="registerDeploy()"><svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> Registruoti deploy</button>
         <button class="aerr-tool" onclick="pruneAdminErrors()"><svg class="ico" aria-hidden="true"><use href="#i-valyti"></use></svg> Valyti senas (30d+)</button>
       </div>
       <div id="a-errors-list" style="padding:0 16px;">
@@ -4329,7 +4318,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: FINANSAI (Blokas C) -->
 <div class="sc" id="a-fin">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg> FINANSAI</div></div>
+  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg> FINANSAI</div></div>
   <div class="sa">
     <div id="a-fin-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -4338,23 +4327,16 @@ window.addEventListener('unhandledrejection', function(e) {
         <button class="aerr-f afin-p" data-p="year" onclick="setAfinPeriod('year')">Metai</button>
         <button class="aerr-f afin-p" data-p="all" onclick="setAfinPeriod('all')">Visi</button>
         <div style="flex:1;"></div>
+        <label id="afin-test-lbl" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mut);cursor:pointer;"><input type="checkbox" id="afin-show-test" onchange="renderAdminFinance()"> Rodyti testinius</label>
         <button class="aerr-tool" onclick="openAfinAdjModal()"><svg class="ico" aria-hidden="true"><use href="#i-prideti"></use></svg> Korekcija</button>
-        <button class="aerr-tool" onclick="backfillPurchases()"><svg class="ico" aria-hidden="true"><use href="#i-kodas"></use></svg> Backfill</button>
       </div>
+      <div id="afin-test-note" class="aerr-meta" style="padding:0 16px 10px;white-space:normal;display:none;"></div>
       <div id="afin-kpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;"></div>
       <div class="st">PAJAMOS PAGAL MĖNESĮ (12 MĖN.)</div>
       <div class="cd" style="padding:14px 16px;"><div id="afin-chart" style="overflow-x:auto;"></div></div>
       <div class="adash">
       <div class="adash-col">
-        <div class="st"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg> BONUSŲ LEDGERIS</div>
-        <div class="cd" style="padding:12px 14px;">
-          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
-            <input type="month" id="afin-period" class="inp" style="margin:0;width:150px;padding:7px;" onchange="loadAfinPayouts()">
-            <button class="aerr-tool" onclick="recalcPayouts()"><svg class="ico" aria-hidden="true"><use href="#i-atnaujinti"></use></svg> Perskaičiuoti</button>
-            <button class="aerr-tool" onclick="exportPayoutsCSV()"><svg class="ico" aria-hidden="true"><use href="#i-zemyn"></use></svg> CSV</button>
-          </div>
-          <div id="afin-payouts"><div style="text-align:center;padding:14px;color:var(--mut);font-size:11px;">Kraunama...</div></div>
-        </div>
+        <!-- v659: BONUSŲ LEDGERIS nuimtas (3A — komisijos modelio nebėra; cron spobu-payouts sustabdytas, club_payouts lentelė lieka istorijai) -->
         <div class="st">KOREKCIJOS</div>
         <div class="cd" id="afin-adjustments" style="padding:8px 14px;"></div>
       </div>
@@ -4381,7 +4363,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: ANALITIKA (Blokas D) -->
 <div class="sc" id="a-analytics">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> ANALITIKA</div></div>
+  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> ANALITIKA</div></div>
   <div class="sa">
     <div id="a-analytics-content">
       <div id="ana-kpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;"></div>
@@ -4415,7 +4397,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: AI STUDIJA (Blokas E) -->
 <div class="sc" id="a-ai">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg> AI STUDIJA</div></div>
+  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg> AI STUDIJA</div></div>
   <div class="sa">
     <div id="a-ai-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -4456,7 +4438,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: VARTOTOJAI (Blokas F) -->
 <div class="sc" id="a-users">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg> VARTOTOJAI</div></div>
+  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg> VARTOTOJAI</div></div>
   <div class="sa">
     <div id="a-users-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -4492,7 +4474,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ADMIN: PLATFORMA (Blokas H) -->
 <div class="sc" id="a-platform">
   <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="g('a','a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> PLATFORMA</div></div>
+  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> PLATFORMA</div></div>
   <div class="sa">
     <div id="a-platform-content">
       <div class="adash">
@@ -4880,7 +4862,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=658"></script>
+<script src="app.js?v=659"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
