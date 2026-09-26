@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=659">
+<link rel="stylesheet" href="styles.css?v=660">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v659</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v660</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -4112,17 +4112,8 @@ window.addEventListener('unhandledrejection', function(e) {
   <!-- <svg class="ico" aria-hidden="true"><use href="#i-kompiuteris"></use></svg> ADMIN DESKTOP ŠONINĖ NAVIGACIJA (matoma tik ≥1024px per body.portal-a) -->
   <aside id="a-desktop-nav">
     <div class="vdn-logo"><svg class="mark" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">SPOBU</span> <span style="font-size:11px;color:var(--pur);letter-spacing:2px;">ADMIN</span></div>
-    <nav class="vdn-nav">
-      <a class="vdn-item" data-sid="a-main" onclick="adminNvDesktop('a-main')"><span class="vdn-ico"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span> Apžvalga</a>
-      <a class="vdn-item" data-sid="a-errors" onclick="adminNvDesktop('a-errors')"><span class="vdn-ico"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg></span> Klaidos</a>
-      <a class="vdn-item" data-sid="a-fin" onclick="adminNvDesktop('a-fin')"><span class="vdn-ico"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></span> Finansai</a>
-      <a class="vdn-item" data-sid="a-analytics" onclick="adminNvDesktop('a-analytics')"><span class="vdn-ico"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg></span> Analitika</a>
-      <a class="vdn-item" data-sid="a-ai" onclick="adminNvDesktop('a-ai')"><span class="vdn-ico"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span> AI studija</a>
-      <a class="vdn-item" data-sid="a-users" onclick="adminNvDesktop('a-users')"><span class="vdn-ico"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg></span> Vartotojai</a>
-      <a class="vdn-item" data-sid="a-clubs" onclick="adminNvDesktop('a-clubs')"><span class="vdn-ico"><svg class="ico" aria-hidden="true"><use href="#i-klubas"></use></svg></span> Klubai</a>
-      <a class="vdn-item" data-sid="a-platform" onclick="adminNvDesktop('a-platform')"><span class="vdn-ico"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg></span> Platforma</a>
-      <a class="vdn-item" data-sid="a-prof" onclick="adminNvDesktop('a-prof')"><span class="vdn-ico"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span> Profilis</a>
-    </nav>
+    <!-- MODULIS: Adm (v660) — 6 skyriai + poskyriai; pildo Adm.frame() -->
+    <nav class="vdn-nav adm-dnav"></nav>
     <div id="adn-sysfoot">v— · SPOBU<br><span id="adn-sysfoot-user">—</span></div>
     <div class="vdn-bottom">
       <button onclick="toggleAdminNotifications()" class="vdn-btn"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> Pranešimai <span id="adn-notif-badge" class="vdn-badge">0</span></button>
@@ -4132,20 +4123,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <div class="df"><div class="ds"><div class="ph">
 <!-- ADMIN: PAGRINDINIS -->
 <div class="sc on" id="a-main">
-  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-signalas"></use></svg> <svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px;">
-    <div>
-      <div style="font-size:11px;color:var(--mut);font-weight:700;letter-spacing:1px;">ADMINISTRATORIUS</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;" id="a-name">ADMIN <svg class="ico" aria-hidden="true"><use href="#i-premium"></use></svg></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div style="cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="openAdminInfo()" title="Apie portalą"><svg class="ico" aria-hidden="true"><use href="#i-pagalba"></use></svg></div>
-      <div style="position:relative;cursor:pointer;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:13px;" onclick="toggleAdminNotifications()" id="ah-notif-btn" title="Pranešimai"><svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg>
-        <span id="ah-notif-badge-count" style="display:none;position:absolute;top:-5px;right:-5px;background:#FF4D00;color:white;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;align-items:center;justify-content:center;padding:0 4px;">0</span>
-      </div>
-      <div style="width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--pur);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--pur);" id="a-avatar">A</div>
-    </div>
-  </div>
+  <div class="adm-head" data-sid="a-main"></div>
 
   <!-- <svg class="ico" aria-hidden="true"><use href="#i-pranesimai"></use></svg> ADMIN VARPELIO MODALAS (perkeliamas į body atidarius; pattern = klubo kh-notif-section) -->
   <div style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.85);align-items:flex-end;justify-content:center;" id="ah-notif-section">
@@ -4169,6 +4147,13 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 
   <div class="sa">
+    <!-- MODULIS: Adm (v660) — Šiandien: sveikatos lemputės + darbo eilė viršuje (pildo Adm.health / loadAdminNudges) -->
+    <div id="adm-health" style="display:flex;gap:6px;flex-wrap:wrap;padding:0 18px 10px;"></div>
+    <div class="kal-sec" style="padding:2px 18px 6px;"><b>DARBO EILĖ</b><span></span><em class="o kal-all" onclick="nv('a',null,'a-analytics')">ANALITIKA →</em></div>
+    <div class="cd" id="a-nudges" style="padding:8px 14px;">
+      <div style="text-align:center;padding:10px;color:var(--mut);font-size:12px;">Kraunama...</div>
+    </div>
+    <!-- /MODULIS Adm -->
     <!-- Greita statistika -->
     <div id="a-stats-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;">
       <div style="background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;">
@@ -4208,17 +4193,7 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
 
     <div class="adash-col">
-    <div class="st"><svg class="ico" aria-hidden="true"><use href="#i-ispejimas"></use></svg> REIKIA DĖMESIO</div>
-    <div class="cd" id="a-nudges" style="padding:8px 14px;">
-      <div style="text-align:center;padding:10px;color:var(--mut);font-size:12px;">Kraunama...</div>
-    </div>
-
-    <div class="st">VEIKSMAI</div>
-    <div class="cd" style="padding:12px;">
-      <button class="btn" style="margin:0 0 8px 0;width:100%;" onclick="openCreateClub()"><svg class="ico" aria-hidden="true"><use href="#i-prideti"></use></svg> Sukurti naują klubą</button>
-      <button class="btn btnd" style="margin:0;width:100%;" onclick="nv('a',null,'a-clubs')"><svg class="ico" aria-hidden="true"><use href="#i-klubas"></use></svg> Valdyti klubus</button>
-    </div>
-
+    <!-- v660: REIKIA DĖMESIO → „Darbo eilė" viršuje; VEIKSMAI → Klubai (+ antraštėje) ir apatinė navigacija -->
     <div class="st">NAUJAUSIA VEIKLA</div>
     <div class="cd" id="a-recent-activity">
       <div style="text-align:center;padding:12px;color:var(--mut);font-size:13px;">Veikla atsiras kai bus klubų</div>
@@ -4227,39 +4202,23 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
     <div style="height:16px;"></div>
   </div>
-  <div class="bn2">
-    <div class="ni on" onclick="nv('a',this,'a-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Apžvalga</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg></span><span class="lb">Klaidos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></span><span class="lb">Finansai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span><span class="lb">AI</span><div class="nd"></div></div>
-    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
-  </div>
+  <div class="bn2 adm-nav"></div>
 </div>
 
 <!-- ADMIN: KLUBAI -->
 <div class="sc" id="a-clubs">
-  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt">KLUBAI</div>
-    <button class="bb" onclick="openCreateClub()" style="background:var(--br);border-color:var(--br);color:white;">+</button>
-  </div>
+  <div class="adm-head" data-sid="a-clubs"></div>
   <div class="sa">
     <div id="a-clubs-list" style="padding:0 16px;">
       <div style="text-align:center;padding:40px;color:var(--mut);">Kraunama...</div>
     </div>
   </div>
-  <div class="bn2">
-    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Apžvalga</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg></span><span class="lb">Klaidos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></span><span class="lb">Finansai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span><span class="lb">AI</span><div class="nd"></div></div>
-    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
-  </div>
+  <div class="bn2 adm-nav"></div>
 </div>
 
 <!-- ADMIN: PROFILIS -->
 <div class="sc" id="a-prof">
-  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div style="padding:12px 20px 6px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">PROFILIS</div></div>
+  <div class="adm-head" data-sid="a-prof"></div>
   <div class="sa">
     <div class="hero" style="background:linear-gradient(135deg,var(--pur),#7C3AED);">
       <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:white;margin:0 auto 10px;" id="a-prof-avatar">A</div>
@@ -4278,19 +4237,12 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
   </div>
-  <div class="bn2">
-    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Apžvalga</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg></span><span class="lb">Klaidos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></span><span class="lb">Finansai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span><span class="lb">AI</span><div class="nd"></div></div>
-    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
-  </div>
+  <div class="bn2 adm-nav"></div>
 </div>
 
 <!-- ADMIN: KLAIDOS (Blokas B) -->
 <div class="sc" id="a-errors">
-  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg> KLAIDOS</div></div>
+  <div class="adm-head" data-sid="a-errors"></div>
   <div class="sa">
     <div id="a-errors-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -4306,19 +4258,12 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
   </div>
-  <div class="bn2">
-    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Apžvalga</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('a',this,'a-errors')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg></span><span class="lb">Klaidos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></span><span class="lb">Finansai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span><span class="lb">AI</span><div class="nd"></div></div>
-    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
-  </div>
+  <div class="bn2 adm-nav"></div>
 </div>
 
 <!-- ADMIN: FINANSAI (Blokas C) -->
 <div class="sc" id="a-fin">
-  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg> FINANSAI</div></div>
+  <div class="adm-head" data-sid="a-fin"></div>
   <div class="sa">
     <div id="a-fin-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -4351,19 +4296,12 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
   </div>
-  <div class="bn2">
-    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Apžvalga</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg></span><span class="lb">Klaidos</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('a',this,'a-fin')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></span><span class="lb">Finansai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span><span class="lb">AI</span><div class="nd"></div></div>
-    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
-  </div>
+  <div class="bn2 adm-nav"></div>
 </div>
 
 <!-- ADMIN: ANALITIKA (Blokas D) -->
 <div class="sc" id="a-analytics">
-  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-statistika"></use></svg> ANALITIKA</div></div>
+  <div class="adm-head" data-sid="a-analytics"></div>
   <div class="sa">
     <div id="a-analytics-content">
       <div id="ana-kpis" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px 14px;"></div>
@@ -4385,19 +4323,12 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
   </div>
-  <div class="bn2">
-    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Apžvalga</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg></span><span class="lb">Klaidos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></span><span class="lb">Finansai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span><span class="lb">AI</span><div class="nd"></div></div>
-    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
-  </div>
+  <div class="bn2 adm-nav"></div>
 </div>
 
 <!-- ADMIN: AI STUDIJA (Blokas E) -->
 <div class="sc" id="a-ai">
-  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg> AI STUDIJA</div></div>
+  <div class="adm-head" data-sid="a-ai"></div>
   <div class="sa">
     <div id="a-ai-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -4426,19 +4357,12 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
   </div>
-  <div class="bn2">
-    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Apžvalga</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg></span><span class="lb">Klaidos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></span><span class="lb">Finansai</span><div class="nd"></div></div>
-    <div class="ni on" onclick="nv('a',this,'a-ai')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span><span class="lb">AI</span><div class="nd"></div></div>
-    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
-  </div>
+  <div class="bn2 adm-nav"></div>
 </div>
 
 <!-- ADMIN: VARTOTOJAI (Blokas F) -->
 <div class="sc" id="a-users">
-  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-grupe"></use></svg> VARTOTOJAI</div></div>
+  <div class="adm-head" data-sid="a-users"></div>
   <div class="sa">
     <div id="a-users-content">
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 10px;">
@@ -4462,19 +4386,12 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
   </div>
-  <div class="bn2">
-    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Apžvalga</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg></span><span class="lb">Klaidos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></span><span class="lb">Finansai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span><span class="lb">AI</span><div class="nd"></div></div>
-    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
-  </div>
+  <div class="bn2 adm-nav"></div>
 </div>
 
 <!-- ADMIN: PLATFORMA (Blokas H) -->
 <div class="sc" id="a-platform">
-  <div class="sb"><span>9:41</span><span><svg class="ico" aria-hidden="true"><use href="#i-baterija"></use></svg></span></div>
-  <div class="tb"><div class="bb" onclick="nv('a',null,'a-main')"><svg class="ico" aria-hidden="true"><use href="#i-atgal"></use></svg></div><div class="tt"><svg class="ico" aria-hidden="true"><use href="#i-nustatymai"></use></svg> PLATFORMA</div></div>
+  <div class="adm-head" data-sid="a-platform"></div>
   <div class="sa">
     <div id="a-platform-content">
       <div class="adash">
@@ -4505,13 +4422,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
   </div>
-  <div class="bn2">
-    <div class="ni" onclick="nv('a',this,'a-main')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-namai"></use></svg></span><span class="lb">Apžvalga</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-errors')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-alertas"></use></svg></span><span class="lb">Klaidos</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-fin')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-pinigai"></use></svg></span><span class="lb">Finansai</span><div class="nd"></div></div>
-    <div class="ni" onclick="nv('a',this,'a-ai')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-ai"></use></svg></span><span class="lb">AI</span><div class="nd"></div></div>
-    <div class="ni" onclick="openAdminMore()"><span class="ic">⋯</span><span class="lb">Daugiau</span><div class="nd"></div></div>
-  </div>
+  <div class="bn2 adm-nav"></div>
 </div>
 </div></div></div></div>
 
@@ -4862,7 +4773,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=659"></script>
+<script src="app.js?v=660"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

@@ -1227,8 +1227,10 @@ async function afterLogin() {
   // Pagal rolę krauname tinkamą duomenis
   try {
     if (profile.role === 'admin') {
+      Adm.frame();                     // MODULIS: Adm (v660) — V2 antraštės, 6 skyriai, šoninis meniu
       await loadAdminData();
       op('a');
+      Adm.health();                    // MODULIS: Adm (v660) — Šiandien lemputės
       subscribeAdminNotifications();   // 📡 admin realtime (Blokas A)
       updateAdminNotifBadge(true);     // ${ico('pranesimai')} varpelio badge
       loadAdminActivity();             // ${ico('naujienos')} gyvas veiklos srautas
@@ -27017,9 +27019,8 @@ async function loadAdminData() {
   const aProfAvatar = document.getElementById('a-prof-avatar');
   const aProfName = document.getElementById('a-prof-name');
   
-  if (!aName) console.error('❌ [loadAdminData] a-name elementas nerastas!');
-  if (!aAvatar) console.error('❌ [loadAdminData] a-avatar elementas nerastas!');
-  
+  // v660: a-name / a-avatar nebėra (V2 antraštė — Adm.headHtml); laukai lieka pasirenkami
+
   if (aName) aName.textContent = name;
   if (aAvatar) aAvatar.textContent = (currentProfile.first_name?.[0] || 'A').toUpperCase();
   if (aProfAvatar) aProfAvatar.textContent = (currentProfile.first_name?.[0] || 'A').toUpperCase();
@@ -27399,6 +27400,7 @@ function _updateAdminNotifCounts(){
   if (badge){ badge.textContent = total>99?'99+':total; badge.style.display = total?'flex':'none'; }
   const dBadge = document.getElementById('adn-notif-badge');
   if (dBadge){ dBadge.textContent = total>99?'99+':total; dBadge.classList.toggle('on', total>0); }
+  if (typeof Adm !== 'undefined') Adm.bell(total);   // v660: varpelis kiekvieno ekrano V2 antraštėje
 }
 
 async function loadAdminNotifications(){
@@ -35894,6 +35896,7 @@ function nv(p,el,sid){
     else a.classList.remove('on');
   });
   // v647 (TevSeima): Parduotuvė — šeimos lygio meniu (Šeima · Parduotuvė · Nustatymai); v642 „pažymėti Profilį" nebereikia
+  if (p === 'a' && typeof Adm !== 'undefined') Adm.navSync(sid);   // MODULIS: Adm (v660) — poskyriams pažymimas jų skyrius
 
   // Special-case loaders
   if (sid === 'tr-challenges' && typeof loadTrainerOwnChallenges === 'function') {
@@ -35968,6 +35971,7 @@ function nv(p,el,sid){
   // 👑 ADMIN: ekranų loaderiai (Blokas A; B–H funkcijas pildys vėliau — typeof guard)
   if (sid === 'a-main' && typeof loadAdminActivity === 'function') loadAdminActivity();
   if (sid === 'a-main' && typeof loadAdminNudges === 'function') loadAdminNudges();
+  if (sid === 'a-main' && typeof Adm !== 'undefined') Adm.health();   // v660: Šiandien lemputės
   if (sid === 'a-errors' && typeof loadAdminErrors === 'function') loadAdminErrors();
   if (sid === 'a-fin' && typeof loadAdminFinance === 'function') loadAdminFinance();
   if (sid === 'a-analytics' && typeof loadAdminAnalytics === 'function') loadAdminAnalytics();
@@ -49990,6 +49994,115 @@ const Adm = {
   live: {},        // realtime kanalas → paskutinė būsena (SUBSCRIBED / CHANNEL_ERROR / TIMED_OUT / CLOSED)
   userClub: {},    // Vartotojai: profilio id → klubas (vaikams / tėvams iš kids)
 
+  // ── P2 (v660): karkasas — 6 skyriai (1A), V2 antraštė su ? · 🔔 · ⚙, „?" kiekvienam ekranui ──
+  SEC: [['a-main', 'Šiandien', 'namai'], ['a-clubs', 'Klubai', 'klubas'], ['a-users', 'Žmonės', 'grupe'],
+        ['a-fin', 'Pinigai', 'pinigai'], ['a-ai', 'AI', 'ai'], ['a-platform', 'Sistema', 'irankiai']],
+  PARENT: { 'a-analytics': 'a-main', 'a-errors': 'a-platform', 'a-prof': 'a-main' },   // poskyris → skyrius (grįžimas, pažymėjimas)
+  HEAD: {
+    'a-main': ['ŠIANDIEN', ''], 'a-clubs': ['KLUBAI', 'klubai · nustatymai · naujas klubas'],
+    'a-users': ['ŽMONĖS', 'vartotojai · palaikymas · BDAR'], 'a-fin': ['PINIGAI', 'pajamos · kainos · korekcijos'],
+    'a-ai': ['AI', 'ataskaitos · peržiūra · žinių bazė'], 'a-platform': ['SISTEMA', 'jungikliai · cron · deploy · auditas'],
+    'a-errors': ['KLAIDOS', 'kliento klaidų telemetrija'], 'a-analytics': ['ANALITIKA', 'aktyvumas · piltuvėlis · klubai'],
+    'a-prof': ['PROFILIS', 'paskyra · nustatymai']
+  },
+  sec(sid) { return this.PARENT[sid] !== undefined ? this.PARENT[sid] : sid; },
+  frame() {
+    document.querySelectorAll('#pa .adm-head[data-sid]').forEach(h => { h.outerHTML = this.headHtml(h.dataset.sid); });
+    document.querySelectorAll('#pa .sc[id^="a-"]').forEach(sc => { const n = sc.querySelector(':scope > .adm-nav'); if (n) n.innerHTML = this.navHtml(sc.id); });
+    const d = document.querySelector('#a-desktop-nav .adm-dnav'); if (d) d.innerHTML = this.dnavHtml();
+    this.setDate();
+  },
+  headHtml(sid) {
+    const h = this.HEAD[sid] || [sid.toUpperCase(), ''];
+    const back = this.PARENT[sid];
+    const extra = sid === 'a-clubs' ? `<button onclick="openCreateClub()" title="Naujas klubas">${ico('prideti')}</button>` : '';
+    return `<div class="kal-head adm-hd" data-sid="${sid}">
+      <div style="min-width:0;display:flex;gap:10px;align-items:flex-start;">
+        ${back ? `<div class="kal-hbtn" style="padding-top:6px;"><button onclick="nv('a',null,'${back}')" title="Atgal">${ico('atgal')}</button></div>` : ''}
+        <div style="min-width:0;"><div class="kal-sub" style="margin:0 0 5px;">${sid === 'a-main' ? 'Administratorius' : 'Admin'}</div>
+          <div class="kal-mon" style="font-size:40px;">${h[0]}</div>
+          <div class="kal-sub"><span class="adm-hsub">${h[1]}</span></div></div>
+      </div>
+      <div class="kal-hbtn">${extra}
+        <button onclick="Adm.help('${sid}')" title="Kas čia?">${ico('pagalba')}</button>
+        <button onclick="toggleAdminNotifications()" title="Pranešimai" style="position:relative;">${ico('pranesimai')}<span class="adm-bell-n" style="display:none;position:absolute;top:-4px;right:-4px;background:#FF4D00;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:99px;align-items:center;justify-content:center;padding:0 4px;">0</span></button>
+        <button onclick="nv('a',null,'a-prof')" title="Nustatymai">${ico('nustatymai')}</button>
+      </div></div>`;
+  },
+  navHtml(sid) {
+    const cur = this.sec(sid);
+    return this.SEC.map(([s, l, i]) => `<div class="ni${s === cur ? ' on' : ''}" onclick="nv('a',this,'${s}')"><span class="ic">${ico(i)}</span><span class="lb">${l}</span><div class="nd"></div></div>`).join('');
+  },
+  dnavHtml() {
+    const sub = { 'a-main': [['a-analytics', 'Analitika', 'statistika']], 'a-platform': [['a-errors', 'Klaidos', 'alertas']] };
+    const item = (s, l, i, isSub) => `<a class="vdn-item" data-sid="${s}" onclick="adminNvDesktop('${s}')"${isSub ? ' style="padding-left:34px;font-size:12px;opacity:.85;"' : ''}><span class="vdn-ico">${ico(i)}</span> ${l}</a>`;
+    return this.SEC.map(([s, l, i]) => item(s, l, i) + (sub[s] || []).map(x => item(x[0], x[1], x[2], true)).join('')).join('') + item('a-prof', 'Profilis', 'profilis');
+  },
+  navSync(sid) {   // nv() pažymi tik tiesiogines nuorodas — poskyriui (Analitika, Klaidos) pažymim jo skyrių
+    const cur = this.sec(sid);
+    document.querySelectorAll('#pa .adm-nav .ni').forEach(n => n.classList.toggle('on', (n.getAttribute('onclick') || '').includes(`'${cur}'`)));
+    if (sid === 'a-main') this.setDate();
+  },
+  setDate() {
+    const el = document.querySelector('#pa .adm-hd[data-sid="a-main"] .adm-hsub'); if (!el) return;
+    const d = new Date(), wd = ['sekmadienis', 'pirmadienis', 'antradienis', 'trečiadienis', 'ketvirtadienis', 'penktadienis', 'šeštadienis'][d.getDay()];
+    el.textContent = wd + ', ' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  },
+  bell(total) {
+    document.querySelectorAll('#pa .adm-bell-n').forEach(b => { b.textContent = total > 99 ? '99+' : total; b.style.display = total ? 'flex' : 'none'; });
+  },
+  // Šiandien — sveikatos lemputės (P4 pridės Push ir Strava)
+  async health() {
+    const el = document.getElementById('adm-health'); if (!el) return;
+    const chip = (st, t, tip) => `<span title="${_aaiEsc(tip || '')}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:99px;background:var(--card);border:.5px solid var(--bdr);font-size:10.5px;font-weight:800;letter-spacing:.5px;color:var(--mut);"><span class="aerr-led ${st}"></span>${t}</span>`;
+    const lv = Object.values(this.live), lvBad = lv.some(s => s !== 'SUBSCRIBED');
+    let db = ['', 'DB —'], cron = ['', 'CRON —'], err = ['', 'KLAIDOS —'];
+    try { const t0 = performance.now(); const r = await sb.from('profiles').select('id', { count: 'exact', head: true }).limit(1); const ms = Math.round(performance.now() - t0); db = r.error ? ['bad', 'DB klaida'] : [ms < 400 ? 'ok' : 'warn', 'DB ' + ms + ' ms']; } catch (_) { db = ['bad', 'DB klaida']; }
+    try { const { data } = await sb.rpc('admin_cron_health'); const st = (data || []).map(j => this.cronState(j).led); cron = [st.includes('bad') ? 'bad' : (st.includes('warn') ? 'warn' : 'ok'), 'CRON ' + st.filter(x => x === 'ok').length + '/' + st.filter(x => x).length]; } catch (_) {}
+    try { const { count } = await sb.from('client_errors').select('id', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 864e5).toISOString()).or('status.is.null,status.eq.new'); err = [(count || 0) ? 'warn' : 'ok', 'KLAIDOS 24 H: ' + (count || 0)]; } catch (_) {}
+    el.innerHTML = chip(db[0], db[1], 'Duomenų bazės atsakas') + chip(lv.length ? (lvBad ? 'bad' : 'ok') : '', 'LIVE', lv.length ? Object.entries(this.live).map(([k, s]) => k + ': ' + s).join('\n') : 'Realtime dar neprijungtas')
+      + chip(cron[0], cron[1], 'Cron darbai pagal tvarkaraštį (Sistema)') + chip(err[0], err[1], 'Naujos kliento klaidos per 24 val.');
+  },
+  HELP: {
+    'a-main': ['ŠIANDIEN', 'Kas reikalauja tavęs šiandien — vienu žvilgsniu.', [
+      ['radaras', 'Lemputės', 'DB atsakas, realtime (LIVE), cron darbai, naujos klaidos per 24 val. Geltona — pažiūrėk, raudona — veik.'],
+      ['ispejimas', 'Darbo eilė', 'Serverio įspėjimai (klaidų šuolis, vėluojančios AI ataskaitos, T15) ir tai, ką pastebi sistema: klubai be veiklos, tėvai be vaiko. ✓ pažymi matytu.'],
+      ['statistika', 'Analitika', '„Analitika →" — aktyvūs vaikai, DAU / WAU, piltuvėlis, klubų palyginimas, kohortos.'],
+      ['pranesimai', 'Varpelis', 'Klubų žinutės, naujos klaidos, pirkimai, atsiliepimai, AI ataskaitos.']]],
+    'a-clubs': ['KLUBAI', 'Visi klubai ir jų duomenys.', [
+      ['prideti', 'Naujas klubas', '„+" viršuje — klubas, sporto šaka ir savininko kvietimas. Savininkas gauna laišką slaptažodžiui.'],
+      ['redaguoti', 'Redaguoti', 'Pavadinimas, miestas, kontaktai, sporto šaka (be jos tėvai klubo nemato vedlyje), adresas, IBAN.']]],
+    'a-users': ['ŽMONĖS', 'Visos paskyros ir palaikymas.', [
+      ['grupe', 'Vartotojai', 'Paieška, kortelė: vaikai, pirkimai, atsiliepimai. Treneriu ar klubo savininku — tik parinkus klubą; admino rolė — tik per SQL.'],
+      ['trinti', 'Trynimas ir BDAR', 'Vaiko eksportas ir trynimas kortelėje. Trenerio, vedančio grupes, trinti negalima — pirma perduok grupes.'],
+      ['pastas', 'Palaikymas', 'Atsiliepimai ir 🐞: atsakymą vartotojas mato „Mano žinutės".']]],
+    'a-fin': ['PINIGAI', 'Pajamos ir kainos.', [
+      ['pinigai', 'Pajamos', 'Kol mokėjimai išjungti, visi pirkimai testiniai — numatytai neskaičiuojami („Rodyti testinius").'],
+      ['nustatymai', 'Kainodara', 'Kainos taikomos naujiems pirkimams; keitimas su patvirtinimu ir audito įrašu.']]],
+    'a-ai': ['AI', 'Pažangos ataskaitų peržiūra — tėvai mato tik patvirtintas.', [
+      ['patvirtinta', 'Patvirtinti', 'Tėvai gauna push. Prieš tai — peržiūrėk arba redaguok.'],
+      ['isjungta', 'Atmesti', 'Galutinai: tėvui grąžinamas kreditas ir jis gauna pranešimą. Norint naujos versijos — Retry.'],
+      ['mokslas', 'Žinių bazė', 'Žinios AI ataskaitoms ir planams; tema „treniruote" — Kyokushin planams.']]],
+    'a-platform': ['SISTEMA', 'Platformos jungikliai ir gyvybė.', [
+      ['irankiai', 'Jungikliai', 'Maintenance, min. versija, 14+ registracija, mokėjimai gyvai (tik su pasiruošimo sąrašu).'],
+      ['laikmatis', 'Cron', 'Būsena pagal tikrą tvarkaraštį; sezoniniai laukia savo laiko. Pg_net darbų „sėkmė" = užklausa išsiųsta.'],
+      ['zinutes', 'Klubams', 'Naujienos visiems ar vienam klubui, tiesioginė SPOBU gija.'],
+      ['alertas', 'Klaidos', 'Kliento klaidų telemetrija — šoniniame meniu arba per varpelį.']]],
+    'a-errors': ['KLAIDOS', 'Kliento klaidos, sugrupuotos pagal pranešimą.', [
+      ['alertas', 'Būsenos', 'Nauja → peržiūrėta → sutvarkyta. Varpelis skaičiuoja tik naujas.'],
+      ['valyti', 'Valymas', 'Senesnės nei 30 d. klaidos trinamos mygtuku.']]],
+    'a-analytics': ['ANALITIKA', 'Platformos skaičiai.', [
+      ['statistika', 'Aktyvumas', 'Aktyvūs vaikai (≥1 EXP įvykis per savaitę), DAU / WAU / MAU, tėvų WAU.'],
+      ['klubas', 'Klubų palyginimas', 'Vaikai (ir be grupės), aktyvūs, Premium, pajamos be testinių.']]],
+    'a-prof': ['PROFILIS', 'Tavo admino paskyra.', [
+      ['uzrakinta', 'Slaptažodis', 'Keisk čia. Admino būsena ir rolė — tik per SQL.']]]
+  },
+  help(sid) {
+    const h = this.HELP[sid] || this.HELP['a-main'];
+    const row = (ic, t, d) => `<div class="hlp-row"><div class="ic">${ico(ic)}</div><div class="tx"><b class="t">${t}</b>${d}</div></div>`;
+    openInfoSubmodal(ico('pagalba') + ' ' + h[0], `<div class="hlp-intro">${h[1]}</div>` + h[2].map(r => row(r[0], r[1], r[2])).join(''));
+  },
+
   // ── LIVE lemputė ──
   chan(name, status) { this.live[name] = status; this.led(); },
   led() {
@@ -50055,13 +50168,13 @@ const Adm = {
         .then(ok => { if (ok) savePlatformSetting('payments_live', false); });
       return;
     }
-    const body = `<div class="kal-warn" style="margin-bottom:10px;"><b>Įjungus — VISAI platformai iškart:</b><br>
-      • tėvams įsijungia Premium užraktai (Kelias+, Iššūkiai+, dienoraštis, statistika);<br>
-      • parduotuvėje lieka tik mokamas pirkimas — bandymo režimo nebelieka;<br>
-      • 🐞 „Pranešti problemą" tėvams ir treneriams dingsta;<br>
-      • pirma pažangos ataskaita — dovanų (claim_first_report);<br>
-      • nauji pirkimai — tikros pajamos (nebe testiniai);<br>
-      • atidarytos tėvų programėlės persikrauna.</div>
+    const body = `<div class="kal-warn" style="margin:0 0 10px;cursor:default;align-items:flex-start;"><i>!</i><div><div class="t1">Įjungus — VISAI platformai iškart</div>
+      <div class="t2" style="font-size:11px;line-height:1.55;">• tėvams įsijungia Premium užraktai (Kelias+, Iššūkiai+, dienoraštis, statistika)<br>
+      • parduotuvėje lieka tik mokamas pirkimas — bandymo režimo nebelieka<br>
+      • 🐞 „Pranešti problemą" tėvams ir treneriams dingsta<br>
+      • pirma pažangos ataskaita — dovanų (claim_first_report)<br>
+      • nauji pirkimai — tikros pajamos (nebe testiniai)<br>
+      • atidarytos tėvų programėlės persikrauna</div></div></div>
       <div class="kal-sec" style="padding:4px 0;">PASIRUOŠIMAS — PAŽYMĖK VISKĄ</div>
       ${this.PAY_READY.map(([k, t]) => `<label style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:.5px solid var(--bdr);font-size:13px;cursor:pointer;"><input type="checkbox" class="adm-pay-ck" data-k="${k}" onchange="Adm.payLiveCheck()" style="margin-top:3px;"> <span>${t}</span></label>`).join('')}`;
     const foot = `<span class="kal-b" onclick="document.getElementById('adm-pay-sheet').remove()">Atšaukti</span>
@@ -50126,7 +50239,7 @@ const Adm = {
     let people = [];
     if (cand.size) { const { data } = await sb.from('profiles').select('id, first_name, last_name, role, status').in('id', [...cand]).in('role', ['trainer', 'club_admin']); people = (data || []).filter(x => (x.status || 'active') === 'active'); }
     const cName = {}; (cl.data || []).forEach(c => cName[c.id] = c.name);
-    const body = `<div class="kal-warn" style="margin-bottom:10px;">Treneris <b>${escapeHtml(name || '')}</b> veda grupių: ${gs.length}. Kol jos neperduotos, trinti negalima — kitaip dingtų grupių lankomumas, planai ir istorija.</div>
+    const body = `<div class="kal-warn" style="margin:0 0 10px;cursor:default;align-items:flex-start;"><i>!</i><div><div class="t1">${escapeHtml(name || 'Treneris')} veda grupių: ${gs.length}</div><div class="t2" style="font-size:11px;line-height:1.5;">Kol jos neperduotos, trinti negalima — kitaip dingtų grupių lankomumas, planai ir istorija.</div></div></div>
       <div class="aerr-meta" style="margin-bottom:6px;">${gs.map(g => escapeHtml(g.name || '') + ' · ' + escapeHtml(cName[g.club_id] || '')).join('<br>')}</div>
       ${people.length ? `<label class="lbl">PERDUOTI TRENERIUI</label><select class="inp" id="adm-tr-to">${people.map(x => `<option value="${x.id}">${escapeHtml(((x.first_name || '') + ' ' + (x.last_name || '')).trim())} · ${x.role === 'club_admin' ? 'klubo savininkas' : 'treneris'}</option>`).join('')}</select>`
         : '<div class="kal-empty"><b>Šiame klube kito trenerio nėra</b><i>Pirma pakviesk trenerį į klubą, tada perduok grupes.</i></div>'}`;
