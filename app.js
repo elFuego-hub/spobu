@@ -28889,7 +28889,7 @@ async function loadAdminNudges(){
   // Cron/serverio alertai (nauji viršuje; ✓ pažymi matytu)
   const alertIco = { error_spike: ''+ico('alertas')+'', review_sla: ''+ico('laikmatis')+'', big_purchase: ''+ico('pinigai')+'', digest: ''+ico('pastas')+'',
     // v662 (P4): nauji serverio įspėjimai
-    auto_approval_revoke: ico('isjungta'), cron_fail: ico('laikmatis'), strava_fail: ico('atnaujinti'), edge_fail: ico('alertas'), feedback: ico('bug') };
+    auto_approval_revoke: ico('isjungta'), cron_fail: ico('laikmatis'), strava_fail: ico('atnaujinti'), edge_fail: ico('alertas'), feedback: ico('bug'), ai_fail: ico('ai') };
   (al.data || []).filter(a => !a.seen && a.kind !== 'digest').forEach(a => {
     items.push({ html: `${alertIco[a.kind] || ''+ico('zyma')+''} <b>${_aaiEsc(a.title || a.kind)}</b>${a.body ? ' — ' + _aaiEsc(a.body) : ''} <span class="aerr-meta" style="display:inline;">${typeof _agoLT === 'function' ? _agoLT(a.created_at) : ''}</span>`, alertId: a.id });
   });
@@ -35990,6 +35990,7 @@ function nv(p,el,sid){
   if (sid === 'a-clubs' && typeof loadAdminClubs === 'function') loadAdminClubs();   // v659: klubų sąrašas atsinaujina atidarius
   if (sid === 'a-platform' && typeof Adm !== 'undefined') { Adm.sysHealth(); Adm.platformExtra(); }   // v662–v663: sveikata, socialiniai tinklai
   if (sid === 'a-fin' && typeof Adm !== 'undefined') Adm.money();   // v663 (P5): Premium, mokėjimai, gruodžio pranešimas
+  if (sid === 'a-ai' && typeof Adm !== 'undefined') Adm.aiOverview();   // v664 (P6): AI apžvalga
   if (sid === 'a-prof' && typeof Adm !== 'undefined') Adm.profRender();      // v662 (P4): push šiame įrenginyje
   // 👶 TĖVAI: naujų ekranų loaderiai (vaiko peržiūra)
   if (sid === 't-main' && typeof loadParentKidMain === 'function') loadParentKidMain();
@@ -50103,7 +50104,8 @@ const Adm = {
       ['issukiai', 'Premium priminimai', 'Kasdien 17:00 push tikriems tėvams apie nebaigtus iššūkius — įjungi tu.'],
       ['pinigai', 'Pajamos', 'Kol mokėjimai išjungti, visi pirkimai testiniai — numatytai neskaičiuojami („Rodyti testinius"). Prenumeratos — pagal planą: metinė, mėnesinė, Premium+.'],
       ['nustatymai', 'Kainodara', 'Kainos taikomos naujiems pirkimams; keitimas su patvirtinimu ir audito įrašu.']]],
-    'a-ai': ['AI', 'Pažangos ataskaitų peržiūra — tėvai mato tik patvirtintas.', [
+    'a-ai': ['AI', 'AI apžvalga, ataskaitų peržiūra — tėvai mato tik patvirtintas.', [
+      ['statistika', 'Apžvalga (30 d.)', 'Ataskaitos: laukia, vid. minutės iki peržiūros, kiek pataisyta ir atmesta. Planai / blokai / iššūkiai: AI užklausos, kiek kartų vietoj AI įdėtas šablonas, klaidos. Kaštai pagal modelį — kainas įvedi „Kainos →". AI klaida (pvz. baigėsi kreditai) — push tau.'],
       ['patvirtinta', 'Patvirtinti', 'Tėvai gauna push. Prieš tai — peržiūrėk arba redaguok.'],
       ['isjungta', 'Atmesti', 'Galutinai: tėvui grąžinamas kreditas ir jis gauna pranešimą. Norint naujos versijos — Retry.'],
       ['mokslas', 'Žinių bazė', 'Žinios AI ataskaitoms ir planams; tema „treniruote" — Kyokushin planams.']]],
@@ -50161,7 +50163,7 @@ const Adm = {
     const on = sup && typeof isPushEnabled === 'function' ? await isPushEnabled() : false;
     el.innerHTML = `<div style="display:flex;align-items:center;gap:12px;">
         <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">${ico('pranesimai')} Push šiame įrenginyje ${on ? '<span class="aerr-st ok">ĮJUNGTA</span>' : ''}</div>
-        <div class="aerr-meta" style="white-space:normal;">${sup ? 'Ateina tik svarbiausi: klaidų šuolis, klubo žinutė SPOBU gijoje, 🐞, cron / Strava / edge klaida, T15 įspėjimas.' : 'Ši naršyklė push nepalaiko — telefone įsidiek SPOBU kaip programėlę (Pridėti į pradžios ekraną).'}</div></div>
+        <div class="aerr-meta" style="white-space:normal;">${sup ? 'Ateina tik svarbiausi: klaidų šuolis, klubo žinutė SPOBU gijoje, 🐞, cron / Strava / edge / AI klaida, T15 įspėjimas.' : 'Ši naršyklė push nepalaiko — telefone įsidiek SPOBU kaip programėlę (Pridėti į pradžios ekraną).'}</div></div>
         ${sup ? `<div onclick="Adm.pushToggle()" style="flex-shrink:0;width:46px;height:26px;border-radius:99px;background:${on ? '#0ca30c' : 'rgba(255,255,255,.15)'};position:relative;cursor:pointer;"><div style="position:absolute;top:3px;${on ? 'right:3px' : 'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;"></div></div>` : ''}
       </div>${on ? `<button class="aerr-tool" style="width:100%;margin-top:10px;" onclick="Adm.pushTest()">${ico('siusti')} Siųsti bandomąjį pranešimą</button>` : ''}`;
   },
@@ -50310,6 +50312,69 @@ const Adm = {
     for (const [u, l] of [[fb, 'Facebook'], [ig, 'Instagram']]) if (u && !/^https:\/\/[^\s"'<>]+$/i.test(u)) { showToast(ico('klaida') + ' ' + l + ' — tik https:// nuoroda', 'error'); return; }
     await savePlatformSetting('social_links', { fb: fb || null, ig: ig || null });
     this.platformExtra();
+  },
+
+  // ── P6 (v664): AI apžvalga (maketas A) — server-ADMIN-P6-ai-2026-09-26.sql, edge generate-plan → ai_usage_log ──
+  aiOv: null,
+  async aiOverview() {
+    const el = document.getElementById('adm-ai-ov'); if (!el) return;
+    const { data: o, error } = await sb.rpc('admin_ai_overview', { p_days: 30 });
+    if (error || !o) { el.innerHTML = `<div class="kal-empty" style="margin:0 18px 10px;"><b>AI apžvalgos nepavyko įkelti</b><i>${escapeHtml(error ? _userError(error) : '')}</i></div>`; return; }
+    this.aiOv = o;
+    const esc = x => escapeHtml(String(x == null ? '' : x));
+    const r = o.reports || {}, ai = o.ai || {}, pl = o.plans_legacy || {}, le = o.last_error, pr = o.prices || {};
+    const tile = (v, l) => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;">${v}</div><div style="font-size:9.5px;font-weight:800;letter-spacing:.8px;color:var(--mut);margin-top:3px;">${l}</div></div>`;
+    const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+    const recent = le && le.at && (Date.now() - new Date(le.at).getTime()) < 7 * 864e5;
+    // tokenai ir kaštai pagal modelį (ataskaitos + planai)
+    const models = {};
+    [o.report_models || {}, o.ai_models || {}].forEach(src => Object.entries(src).forEach(([m, v]) => {
+      const x = models[m] = models[m] || { n: 0, in: 0, out: 0 }; x.n += +v.n || 0; x.in += +v.in || 0; x.out += +v.out || 0;
+    }));
+    const rate = +pr.usd_eur || 0, mp = pr.models || {};
+    let total = 0, priced = true;
+    const rows = Object.entries(models).filter(([m]) => m !== 'template').sort((a, b) => b[1].in - a[1].in).map(([m, v]) => {
+      const p = mp[m]; let cost = '';
+      if (p && isFinite(+p.in) && isFinite(+p.out) && rate) { const c = (v.in / 1e6 * +p.in + v.out / 1e6 * +p.out) * rate; total += c; cost = ' · ' + c.toFixed(2) + ' €'; } else priced = false;
+      return `<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:.5px solid var(--bdr);font-size:12px;"><span style="font-family:ui-monospace,Consolas,monospace;">${esc(m)}</span><span>${Math.round(v.in / 1000)}k / ${Math.round(v.out / 1000)}k tok.${cost}</span></div>`;
+    }).join('');
+    el.innerHTML = `
+      ${recent ? `<div class="kal-warn" style="margin:0 16px 10px;cursor:default;align-items:flex-start;"><i>!</i><div><div class="t1">Paskutinė AI klaida — ${esc(new Date(le.at).toLocaleString('lt-LT'))}</div><div class="t2" style="font-size:11px;">${esc(le.fn)}: ${esc(le.text)}</div></div></div>` : ''}
+      <div class="kal-sec" style="padding:2px 18px 6px;"><b>ATASKAITOS · 30 D.</b><span></span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 16px 8px;">
+        ${tile((r.pending || 0) + (r.pending_20h ? `<span style="font-size:12px;color:#FF7A33;"> · ${r.pending_20h} &gt;20 h</span>` : ''), 'LAUKIA')}${tile(r.review_min != null ? r.review_min + ' min' : '—', 'IKI PERŽIŪROS')}${tile(pct(r.edited || 0, r.done || 0), 'PATAISYTA')}${tile(pct(r.rejected || 0, (r.done || 0) + (r.rejected || 0)), 'ATMESTA')}</div>
+      <div class="kal-sec" style="padding:6px 18px 6px;"><b>PLANAI IR IŠŠŪKIAI · 30 D.</b><span></span></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 16px 6px;">${tile(ai.requests || 0, 'AI UŽKLAUSOS')}${tile(ai.fallback || 0, 'ŠABLONAS VIETOJ AI')}${tile(ai.errors || 0, 'KLAIDOS')}</div>
+      <div class="aerr-meta" style="padding:0 18px 8px;white-space:normal;">${Object.entries(ai.by_kind || {}).map(([k, n]) => esc({ plan: 'planai', block: 'blokai', challenges: 'iššūkiai' }[k] || k) + ': ' + n).join(' · ') || 'Žurnalas pildomas nuo naujo generate-plan įkėlimo'}${pl.total ? ' · iki žurnalo (ai_context): ' + pl.total + ', šablonas ' + (pl.fallback || 0) : ''}</div>
+      <div class="kal-sec" style="padding:6px 18px 6px;"><b>KAŠTAI · 30 D.</b><span></span><em class="o kal-all" onclick="Adm.aiPrices()">KAINOS →</em></div>
+      <div class="cd" style="margin:0 16px 12px;padding:6px 14px;">${rows || '<div class="aerr-meta" style="padding:6px 0;">AI tokenų per 30 d. nėra</div>'}
+        <div class="aerr-meta" style="padding-top:6px;white-space:normal;">${rows ? (priced ? 'Iš viso: <b>' + total.toFixed(2) + ' €</b>' : 'Kainos nustatytos ne visiems modeliams — „Kainos →"') : ''}</div></div>`;
+  },
+  aiPrices() {
+    const o = this.aiOv || {}, pr = o.prices || {}, mp = pr.models || {};
+    const names = [...new Set([...Object.keys(o.report_models || {}), ...Object.keys(o.ai_models || {}), ...Object.keys(mp)])].filter(m => m && m !== 'template' && m !== '?');
+    const esc = x => _aaiEsc(String(x == null ? '' : x));
+    const row = (m, i) => `<div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:8px;">
+        <div style="flex:2;min-width:0;"><label class="lbl">MODELIS</label><input class="inp adm-aip-m" value="${esc(m)}" style="margin:0;padding:7px;font-family:ui-monospace,Consolas,monospace;font-size:12px;"></div>
+        <div style="flex:1;"><label class="lbl">ĮVESTIS $</label><input class="inp adm-aip-in" type="number" step="0.01" min="0" value="${esc(mp[m]?.in ?? '')}" style="margin:0;padding:7px;"></div>
+        <div style="flex:1;"><label class="lbl">IŠVESTIS $</label><input class="inp adm-aip-out" type="number" step="0.01" min="0" value="${esc(mp[m]?.out ?? '')}" style="margin:0;padding:7px;"></div></div>`;
+    const body = `<div class="aerr-meta" style="white-space:normal;margin-bottom:8px;">Kainos už 1 mln. tokenų (USD) — iš Anthropic kainų puslapio. Naudojamos tik kaštų skaičiavimui admine.</div>
+      ${(names.length ? names : ['']).map(row).join('')}${row('')}
+      <label class="lbl">USD → EUR KURSAS</label><input class="inp" id="adm-aip-rate" type="number" step="0.001" min="0" value="${esc(pr.usd_eur ?? '')}" placeholder="pvz. 0.92" style="margin:0 0 6px;">`;
+    const foot = `<span class="kal-b" onclick="document.getElementById('adm-aip-sheet').remove()">Atšaukti</span>
+      <span class="kal-b o" onclick="Adm.aiPricesSave()">${ico('issaugoti')} Išsaugoti</span>`;
+    Planas.sheet('adm-aip-sheet', 'AI KAINOS', body, foot, { sub: 'už 1 mln. tokenų', z: 100010 });
+  },
+  async aiPricesSave() {
+    const ms = [...document.querySelectorAll('#adm-aip-sheet .adm-aip-m')], ins = [...document.querySelectorAll('#adm-aip-sheet .adm-aip-in')], outs = [...document.querySelectorAll('#adm-aip-sheet .adm-aip-out')];
+    const models = {};
+    ms.forEach((m, i) => { const name = m.value.trim(); const a = parseFloat(ins[i].value), b = parseFloat(outs[i].value);
+      if (name && isFinite(a) && isFinite(b) && a >= 0 && b >= 0) models[name.slice(0, 60)] = { in: a, out: b }; });
+    const rate = parseFloat(document.getElementById('adm-aip-rate')?.value);
+    if (!(rate > 0 && rate < 10)) { showToast(ico('klaida') + ' Įvesk USD → EUR kursą (pvz. 0.92)', 'error'); return; }
+    await savePlatformSetting('ai_prices', { usd_eur: rate, models, updated: new Date().toISOString().slice(0, 10) });
+    document.getElementById('adm-aip-sheet')?.remove();
+    this.aiOverview();
   },
 
   // ── P3 (v661): klubo lapas (maketas A) — server-ADMIN-P3-klubai-2026-09-26.sql (admin_club_overview) ──
