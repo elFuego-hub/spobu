@@ -27820,9 +27820,12 @@ function renderAdminFinance(){
   const chEl = document.getElementById('afin-chart');
   if (chEl) chEl.innerHTML = _afinBarChart(months);
   // Pagal tipą
-  const tl = { report: ''+ico('dokumentas')+' Pažangos ataskaita', homeplan: ''+ico('treniruote')+' Namų planas', summer: ''+ico('vasara')+' Vasaros programa', subscription: ''+ico('premium-plus')+' Prenumerata', bundle: ''+ico('paketas')+' Rinkinys' };
+  // v663 (P5): prenumeratos pagal planą — Premium metinė / mėnesinė / Premium+ (pagal sumą: ≥ Premium+ kaina)
+  const tl = { report: ''+ico('dokumentas')+' Pažangos ataskaita', homeplan: ''+ico('treniruote')+' Namų planas', summer: ''+ico('vasara')+' Vasaros programa', sub_y: ''+ico('premium')+' Premium metinė', sub_m: ''+ico('premium')+' Premium mėnesinė', sub_plus: ''+ico('premium-plus')+' Premium+', bundle: ''+ico('paketas')+' Rinkinys' };
+  const plusPrice = +(_afinPrices.premium_plus_annual?.amount_eur) || 69;
+  const kindOf = p => p.item_type !== 'subscription' ? (p.item_type || '?') : (p.plan === 'monthly' ? 'sub_m' : ((+p.amount_eur || 0) >= plusPrice - 0.01 ? 'sub_plus' : 'sub_y'));
   const byT = {};
-  paid.forEach(p => { const t = p.item_type || '?'; if (!byT[t]) byT[t] = { cnt: 0, sum: 0 }; byT[t].cnt++; byT[t].sum += (+p.amount_eur || 0); });
+  paid.forEach(p => { const t = kindOf(p); if (!byT[t]) byT[t] = { cnt: 0, sum: 0 }; byT[t].cnt++; byT[t].sum += (+p.amount_eur || 0); });
   const btEl = document.getElementById('afin-bytype');
   if (btEl) btEl.innerHTML = Object.keys(byT).length ? Object.entries(byT).sort((a, b) => b[1].sum - a[1].sum).map(([t, v]) =>
     `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid var(--bdr);font-size:12px;"><span>${tl[t] || escapeHtml(t)}</span><span style="text-align:right;"><b style="color:#4ade4a;">${v.sum.toFixed(2)} €</b> <span class="aerr-meta" style="display:inline;">· ${v.cnt} vnt.</span></span></div>`).join('')
@@ -28659,6 +28662,7 @@ async function openAdminUserCard(id){
       ${kids.length ? `<div class="aerr-meta" style="margin-bottom:4px;">VAIKAI</div>` + kids.map(k => `
         <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--bdr);font-size:12px;">
           <div style="flex:1;min-width:0;">${escapeHtml((k.first_name || '') + ' ' + (k.last_name || ''))} <span class="aerr-meta" style="display:inline;">· ${k.total_exp || 0} EXP · lvl ${k.current_level || 1} · ${escapeHtml(k.subscription_tier || 'free')}</span></div>
+          <button class="aerr-tool" style="padding:4px 8px;" title="Premium ranka (pakopa, kreditai)" onclick="Adm.tierSheet('${k.id}')">${ico('premium')}</button>
           <button class="aerr-tool" style="padding:4px 8px;" title="GDPR eksportas" onclick="exportKidData('${k.id}','${((k.first_name || '') + '-' + (k.last_name || '')).replace(/['"<>\\]/g, '')}')">${ico('paketas')}</button>
           <button class="aerr-tool" style="padding:4px 8px;color:#ff9c9c;" title="IŠTRINTI VISKĄ" onclick="deleteKidCascadeUI('${k.id}','${(k.first_name || '').replace(/['"<>\\]/g, '')}')">${ico('trinti')}</button>
         </div>`).join('') : ''}
@@ -30083,18 +30087,15 @@ async function loadClubMainDashboard(){
 
   // 4) VERSLAS (bonusas + KPI) — vadybininkas nemato; bandymo režimu (v461) blokas paslėptas visai
   if (!_clubManagerMode && !((typeof SHOP_TRIAL_MODE !== 'undefined') && SHOP_TRIAL_MODE)) (async()=>{ try {
-    const { data: purch } = await sb.from('purchases').select('item_type, amount_eur').eq('club_id', cid);
-    const rows=purch||[];
-    const apyvarta=rows.reduce((s,r)=>s+(parseFloat(r.amount_eur)||0),0);
+    // v663 (admino P5, 3A): klubo bonuso modelio nebėra (kainodaros taryba) — rodom tik Premium šeimas; testiniai pirkimai neskaičiuojami
+    const { data: purch } = await sb.from('purchases').select('item_type, amount_eur, is_test, kid_id').eq('club_id', cid);
+    const rows=(purch||[]).filter(r=>!r.is_test && (parseFloat(r.amount_eur)||0)>0);
     const subs=rows.filter(r=>r.item_type==='subscription').length;
     const reps=rows.filter(r=>['report','homeplan','summer'].includes(r.item_type)).length;
-    const basePct=currentClub.bonus_pct??10, extraPct=currentClub.bonus_extra_pct??5, target=currentClub.basket_target_eur??40;
-    const avg=kidsCount?apyvarta/kidsCount:0, reached=kidsCount>0&&avg>=target;
-    const bonus=apyvarta*basePct/100 + (reached?apyvarta*extraPct/100:0);
-    const need=reached?0:Math.max(0,(target*kidsCount)-apyvarta);
-    setTxt('km-bonus','€'+Math.round(bonus).toLocaleString('lt-LT')); setTxt('km-subs',subs); setTxt('km-reports',reps);
-    const bar=document.getElementById('km-kpi-bar'); if(bar) bar.style.width=Math.min(100, target>0?avg/target*100:0)+'%';
-    setTxt('km-kpi-need', reached?''+ico('patvirtinta')+' Tikslas pasiektas — pilnas bonusas':('Iki papildomo bonuso (vid. krepšelis €'+target+') liko €'+Math.round(need).toLocaleString('lt-LT')));
+    const fam=new Set(rows.filter(r=>r.item_type==='subscription'&&r.kid_id).map(r=>r.kid_id)).size;
+    setTxt('km-bonus', String(fam)); setTxt('km-subs',subs); setTxt('km-reports',reps);
+    const bar=document.getElementById('km-kpi-bar'); if(bar && bar.parentElement) bar.parentElement.style.display='none';
+    setTxt('km-kpi-need', 'Premium — šeimų pasirinkimas; klubui niekas nekainuoja');
   } catch(e){ console.warn('[km-business]',e); } })();
 
   // 5) TOP BŪRELIAI (Σ grupės total_exp)
@@ -35987,7 +35988,8 @@ function nv(p,el,sid){
   if (sid === 'a-users' && typeof loadAdminUsers === 'function') loadAdminUsers();
   if (sid === 'a-platform' && typeof loadAdminPlatform === 'function') loadAdminPlatform();
   if (sid === 'a-clubs' && typeof loadAdminClubs === 'function') loadAdminClubs();   // v659: klubų sąrašas atsinaujina atidarius
-  if (sid === 'a-platform' && typeof Adm !== 'undefined') Adm.sysHealth();   // v662 (P4): sistemos sveikata
+  if (sid === 'a-platform' && typeof Adm !== 'undefined') { Adm.sysHealth(); Adm.platformExtra(); }   // v662–v663: sveikata, socialiniai tinklai
+  if (sid === 'a-fin' && typeof Adm !== 'undefined') Adm.money();   // v663 (P5): Premium, mokėjimai, gruodžio pranešimas
   if (sid === 'a-prof' && typeof Adm !== 'undefined') Adm.profRender();      // v662 (P4): push šiame įrenginyje
   // 👶 TĖVAI: naujų ekranų loaderiai (vaiko peržiūra)
   if (sid === 't-main' && typeof loadParentKidMain === 'function') loadParentKidMain();
@@ -46740,22 +46742,19 @@ const Anal = {
     const el = document.getElementById('k-verslas-content'); if (!el || !this.cid()) return;
     this.load(el);
     try {
-      const c = currentClub, [pr, kids, gs] = await Promise.all([sb.from('purchases').select('kid_id, item_type, amount_eur').eq('club_id', c.id), _getClubKids(), this.groups()]);
+      // v663 (admino P5, 3A): klubo bonuso nebėra (kainodaros taryba — klubui piniginės komisijos nėra); testiniai pirkimai neskaičiuojami
+      const c = currentClub, [pr, kids, gs] = await Promise.all([sb.from('purchases').select('kid_id, item_type, amount_eur, is_test').eq('club_id', c.id), _getClubKids(), this.groups()]);
       if (pr.error) throw pr.error;
-      const rows = pr.data || [], isRep = t => ['report', 'homeplan', 'summer'].includes(t);
-      const apy = rows.reduce((s, r) => s + (parseFloat(r.amount_eur) || 0), 0), subs = rows.filter(r => r.item_type === 'subscription').length, reps = rows.filter(r => isRep(r.item_type)).length;
-      const kn = kids.length, basePct = c.bonus_pct != null ? c.bonus_pct : 10, extraPct = c.bonus_extra_pct != null ? c.bonus_extra_pct : 5, target = c.basket_target_eur != null ? c.basket_target_eur : 40;
-      const avg = kn ? apy / kn : 0, base = apy * basePct / 100, reached = kn > 0 && avg >= target, extra = reached ? apy * extraPct / 100 : 0, need = reached ? 0 : Math.max(0, target * kn - apy);
+      const rows = (pr.data || []).filter(r => !r.is_test && (parseFloat(r.amount_eur) || 0) > 0), isRep = t => ['report', 'homeplan', 'summer'].includes(t);
+      const subs = rows.filter(r => r.item_type === 'subscription').length, reps = rows.filter(r => isRep(r.item_type)).length;
+      const fam = new Set(rows.filter(r => r.item_type === 'subscription' && r.kid_id).map(r => r.kid_id)).size, kn = kids.length;
       const kG = {}; kids.forEach(k => { kG[k.id] = k.group_id; });
       const gT = {}; gs.forEach(x => { gT[x.id] = x.trainer_id; });
       const per = {}; rows.forEach(r => { const t = gT[kG[r.kid_id]]; if (!t) return; const x = per[t] = per[t] || { subs: 0, reps: 0 }; if (r.item_type === 'subscription') x.subs++; if (isRep(r.item_type)) x.reps++; });
       const tt = Object.entries(per).map(([id, v]) => Object.assign({ name: this.tName(id) }, v)).sort((a, b) => b.subs - a.subs || b.reps - a.reps);
-      const eur = n => Math.round(n).toLocaleString('lt-LT'), pctT = target > 0 ? Math.min(100, Math.round(avg / target * 100)) : 0;
-      const card = reached
-        ? `<div style="background:rgba(34,197,94,.1);border:.5px solid rgba(34,197,94,.35);border-radius:14px;padding:14px;margin-bottom:14px;text-align:center;"><div style="font-size:10px;color:var(--mut);letter-spacing:1px;">KLUBO BONUSAS</div><div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--grn);line-height:1;margin:4px 0;">${eur(base + extra)}€</div><div style="font-size:10px;color:var(--mut);">bazinis ${eur(base)}€ + papildomas ${eur(extra)}€ (krepšelis ${eur(avg)}€ ≥ ${eur(target)}€)</div></div>`
-        : `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:14px;"><div style="text-align:center;"><div style="font-size:10px;color:var(--mut);letter-spacing:1px;">KLUBO BONUSAS</div><div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:#fff;line-height:1;margin:4px 0;">${eur(base)}€</div><div style="font-size:10px;color:var(--mut);">bazinis ${basePct}% nuo apyvartos</div></div><div style="margin-top:12px;"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut);margin-bottom:4px;"><span>Vid. krepšelis ${eur(avg)}€</span><span>Tikslas ${eur(target)}€</span></div><div style="height:8px;background:var(--bg);border-radius:5px;overflow:hidden;"><div style="width:${pctT}%;height:100%;background:var(--br);border-radius:5px;"></div></div><div style="font-size:10px;color:var(--br);text-align:center;margin-top:6px;">Liko ${eur(need)}€ apyvartos iki +${extraPct}% bonuso</div></div></div>`;
+      const card = `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;margin-bottom:14px;text-align:center;"><div style="font-size:10px;color:var(--mut);letter-spacing:1px;">PREMIUM VAIKŲ</div><div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:#fff;line-height:1;margin:4px 0;">${fam}${kn ? ` <span style="font-size:18px;color:var(--mut);">iš ${kn}</span>` : ''}</div><div style="font-size:10px;color:var(--mut);">Premium — šeimų pasirinkimas; klubui niekas nekainuoja</div></div>`;
       const tr = tt.length ? tt.map(t => `<div style="display:flex;align-items:center;padding:9px 12px;font-size:12px;color:#fff;border-top:.5px solid var(--bdr);"><div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.esc(t.name)}</div><div style="width:46px;text-align:center;">${t.subs}</div><div style="width:46px;text-align:center;">${t.reps}</div></div>`).join('') : '<div style="padding:12px;text-align:center;color:var(--mut);font-size:11px;">Dar nėra pardavimų</div>';
-      el.innerHTML = card + this.grid(3, this.kpi('Prenumeratos', subs) + this.kpi('Ataskaitos', reps) + this.kpi('Vid. krepšelis', eur(avg) + '€'))
+      el.innerHTML = card + this.grid(3, this.kpi('Prenumeratos', subs) + this.kpi('Ataskaitos', reps) + this.kpi('Premium vaikų', fam))
         + this.hd('PAGAL TRENERĮ (jo grupių vaikai)') + this.box(`<div style="display:flex;padding:7px 12px;font-size:9px;color:var(--mut);letter-spacing:.5px;"><div style="flex:1;">Treneris</div><div style="width:46px;text-align:center;">${ico('premium-plus')}</div><div style="width:46px;text-align:center;">${ico('dokumentas')}</div></div>${tr}`);
     } catch (e) { this.fail(el, e, 'biz'); }
   },
@@ -50098,8 +50097,11 @@ const Adm = {
       ['grupe', 'Vartotojai', 'Paieška, kortelė: vaikai, pirkimai, atsiliepimai. Treneriu ar klubo savininku — tik parinkus klubą; admino rolė — tik per SQL.'],
       ['trinti', 'Trynimas ir BDAR', 'Vaiko eksportas ir trynimas kortelėje. Trenerio, vedančio grupes, trinti negalima — pirma perduok grupes.'],
       ['pastas', 'Palaikymas', 'Atsiliepimai ir 🐞: atsakymą vartotojas mato „Mano žinutės".']]],
-    'a-fin': ['PINIGAI', 'Pajamos ir kainos.', [
-      ['pinigai', 'Pajamos', 'Kol mokėjimai išjungti, visi pirkimai testiniai — numatytai neskaičiuojami („Rodyti testinius").'],
+    'a-fin': ['PINIGAI', 'Premium, pajamos ir kainos.', [
+      ['premium', 'Premium', 'Kiek vaikų nemokamai / Premium / Premium+, kreditai, pirma ataskaita dovanų. „Suteikti / atimti Premium" — ranka (skundas, klaida, klubo licencija): pakopa + kreditai, būtina priežastis, auditas; pirkimo įrašo nekuria.'],
+      ['pranesimai', 'Gruodžio pranešimas', 'Tėvams ir klubams apie Premium nuo sausio. Peržiūrėk, taisyk, patvirtink — cron gruodį siunčia tik patvirtintą ir vieną kartą. Pakeitus tekstą — vėl juodraštis.'],
+      ['issukiai', 'Premium priminimai', 'Kasdien 17:00 push tikriems tėvams apie nebaigtus iššūkius — įjungi tu.'],
+      ['pinigai', 'Pajamos', 'Kol mokėjimai išjungti, visi pirkimai testiniai — numatytai neskaičiuojami („Rodyti testinius"). Prenumeratos — pagal planą: metinė, mėnesinė, Premium+.'],
       ['nustatymai', 'Kainodara', 'Kainos taikomos naujiems pirkimams; keitimas su patvirtinimu ir audito įrašu.']]],
     'a-ai': ['AI', 'Pažangos ataskaitų peržiūra — tėvai mato tik patvirtintas.', [
       ['patvirtinta', 'Patvirtinti', 'Tėvai gauna push. Prieš tai — peržiūrėk arba redaguok.'],
@@ -50171,6 +50173,143 @@ const Adm = {
     const { data, error } = await sb.rpc('admin_push_test');
     if (error) { showToast(ico('klaida') + ' ' + _userError(error), 'error'); return; }
     showToast(data ? ico('pranesimai') + ' Išsiųsta — turėtų ateiti per kelias sekundes' : ico('ispejimas') + ' Šis įrenginys neužregistruotas — įjunk push dar kartą', data ? 'success' : 'error', 5000);
+  },
+
+  // ── P5 (v663): Pinigai ir Premium (maketas A, 6A) — server-ADMIN-P5-pinigai-2026-09-26.sql ──
+  prem: null,
+  TIER: { free: 'Nemokama', premium: 'Premium', premium_plus: 'Premium+' },
+  async money() {
+    const el = document.getElementById('adm-money'); if (!el) return;
+    const { data: s, error } = await sb.rpc('admin_premium_summary');
+    if (error || !s) { el.innerHTML = `<div class="kal-empty" style="margin:0 18px 10px;"><b>Premium suvestinės nepavyko įkelti</b><i>${escapeHtml(error ? _userError(error) : '')}</i></div>`; return; }
+    this.prem = s;
+    const esc = x => escapeHtml(String(x == null ? '' : x));
+    const t = s.tiers || {}, cr = s.credits || {}, a = s.announce || {};
+    const tile = (v, l) => `<div style="background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:8px 4px;text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;">${v}</div><div style="font-size:9.5px;font-weight:800;letter-spacing:.8px;color:var(--mut);margin-top:3px;">${l}</div></div>`;
+    const stL = { draft: ['JUODRAŠTIS', 'warn'], approved: ['PATVIRTINTA — išsiųs gruodį', 'ok'], sending: ['SIUNČIAMA', 'warn'], sent: ['IŠSIŲSTA', 'ok'] }[a.status || 'draft'] || [esc(a.status), ''];
+    const tg = (on, fn) => `<div onclick="${fn}" style="flex-shrink:0;width:46px;height:26px;border-radius:99px;background:${on ? '#0ca30c' : 'rgba(255,255,255,.15)'};position:relative;cursor:pointer;"><div style="position:absolute;top:3px;${on ? 'right:3px' : 'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;"></div></div>`;
+    el.innerHTML = `
+      <div class="kal-sec" style="padding:2px 18px 6px;"><b>PREMIUM</b><span></span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 16px 8px;">
+        ${tile(t.free || 0, 'NEMOKAMA')}${tile(t.premium || 0, 'PREMIUM')}${tile(t.premium_plus || 0, 'PREMIUM+')}${tile((cr.report || 0) + (cr.homeplan || 0) + (cr.summer || 0), 'KREDITŲ')}</div>
+      <div class="aerr-meta" style="padding:0 18px 8px;white-space:normal;">Kreditai: ataskaitos ${cr.report || 0} · namų planai ${cr.homeplan || 0} · vasaros ${cr.summer || 0} · pirma ataskaita dovanų: ${s.first_claimed || 0} · pirkimo prašymų: ${s.requests_open || 0} · suteikta ranka: ${s.grants || 0}</div>
+      <div class="kal-warn${s.payments_live ? ' ok' : ''}" style="margin:0 16px 10px;cursor:pointer;" onclick="nv('a',null,'a-platform')"><i>${s.payments_live ? ico('patvirtinta') : '!'}</i><div><div class="t1">${s.payments_live ? 'Mokėjimai gyvi — pirkimai tikri' : 'Bandymo režimas — mokėjimai išjungti'}</div><div class="t2">${s.payments_live ? 'Premium užraktai tėvams veikia' : 'Premium užraktai miega, pirkimai testiniai. Įjungiama Sistemoje su pasiruošimo sąrašu →'}</div></div></div>
+      <div class="cd" style="margin:0 16px 10px;padding:12px 14px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span class="aerr-st ${stL[1]}">${stL[0]}</span><span style="font-size:10.5px;font-weight:900;letter-spacing:1px;color:var(--mut);">GRUODŽIO PRANEŠIMAS</span></div>
+        <div style="font-size:13px;font-weight:800;">${esc(a.parents?.title || '—')}</div>
+        <div class="aerr-meta" style="white-space:normal;">Tėvams + klubams · push ir skelbimas programėlėje · siunčia cron gruodį 10:00 (tik patvirtintą)</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+          ${a.status === 'sent' || a.status === 'sending' ? '' : `<span class="kal-b" onclick="Adm.announceSheet()">${ico('redaguoti')} Peržiūrėti ir taisyti</span>`}
+          ${a.status === 'draft' ? `<span class="kal-b o" onclick="Adm.announceAct('approve')">${ico('patvirtinta')} Patvirtinti</span>` : ''}
+          ${a.status === 'approved' ? `<span class="kal-b" onclick="Adm.announceAct('unapprove')">${ico('atgal')} Atšaukti patvirtinimą</span>` : ''}
+        </div></div>
+      <div class="cd" style="margin:0 16px 10px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:800;">${ico('pranesimai')} Premium iššūkių priminimai ${s.prem_ch_reminders ? '<span class="aerr-st ok">ĮJUNGTA</span>' : ''}</div>
+        <div class="aerr-meta" style="white-space:normal;">Kasdien 17:00 push tėvams apie nebaigtus savaitės / mėnesio iššūkius (tikriems tėvams).</div></div>
+        ${tg(s.prem_ch_reminders, `Adm.remindToggle(${s.prem_ch_reminders ? 'true' : 'false'})`)}</div>
+      <div style="display:flex;gap:6px;padding:0 16px 12px;"><span class="kal-b" onclick="Adm.tierSheet()">${ico('premium')} Suteikti / atimti Premium</span></div>`;
+  },
+  async remindToggle(cur) {
+    const ok = await appConfirm(cur ? 'Išjungti Premium iššūkių priminimus?' : 'Įjungti Premium iššūkių priminimus?\n\nKasdien 17:00 tikri tėvai gaus push apie nebaigtus savaitės / mėnesio iššūkius.');
+    if (!ok) return;
+    await savePlatformSetting('prem_ch_reminders', !cur);
+    this.money();
+  },
+  announceSheet() {
+    const a = (this.prem || {}).announce || {};
+    const esc = x => _aaiEsc(String(x == null ? '' : x));
+    const blk = (aud, lbl) => `<div class="kal-sec" style="padding:10px 0 6px;"><b>${lbl}</b><span></span></div>
+      <label class="lbl">ANTRAŠTĖ (≤ 80)</label><input class="inp" id="adm-an-${aud}-title" maxlength="80" value="${esc(a[aud]?.title)}" style="margin-bottom:8px;">
+      <label class="lbl">TEKSTAS PROGRAMĖLĖJE (≤ 700)</label><textarea class="inp" id="adm-an-${aud}-text" maxlength="700" rows="5" style="margin-bottom:8px;resize:vertical;">${esc(a[aud]?.text)}</textarea>
+      <label class="lbl">PUSH (≤ 180)</label><textarea class="inp" id="adm-an-${aud}-push" maxlength="180" rows="2" style="margin-bottom:6px;resize:vertical;">${esc(a[aud]?.push)}</textarea>`;
+    const body = `<div class="aerr-meta" style="white-space:normal;margin-bottom:6px;">Išsaugojus pakeitimus pranešimas vėl tampa juodraščiu — jį reikia patvirtinti. Cron gruodį siunčia tik patvirtintą ir tik vieną kartą.</div>`
+      + blk('parents', 'TĖVAMS') + blk('clubs', 'KLUBAMS');
+    const foot = `<span class="kal-b" onclick="document.getElementById('adm-an-sheet').remove()">Atšaukti</span>
+      <span class="kal-b o" onclick="Adm.announceSave()">${ico('issaugoti')} Išsaugoti juodraštį</span>`;
+    Planas.sheet('adm-an-sheet', 'GRUODŽIO PRANEŠIMAS', body, foot, { sub: 'Premium nuo sausio', z: 100010 });
+  },
+  async announceSave() {
+    const v = x => document.getElementById('adm-an-' + x)?.value || '';
+    const val = { parents: { title: v('parents-title'), text: v('parents-text'), push: v('parents-push') },
+                  clubs: { title: v('clubs-title'), text: v('clubs-text'), push: v('clubs-push') } };
+    const { error } = await sb.rpc('admin_premium_announce', { p_action: 'save', p_value: val });
+    if (error) { showToast(ico('klaida') + ' ' + _userError(error), 'error', 6000); return; }
+    document.getElementById('adm-an-sheet')?.remove();
+    showToast(ico('issaugoti') + ' Išsaugota kaip juodraštis — patvirtink, kai tekstas galutinis', 'success', 5000);
+    this.money();
+  },
+  async announceAct(action) {
+    const msg = action === 'approve'
+      ? 'Patvirtinti gruodžio Premium pranešimą?\n\nGruodžio 1 d. 10:00 (LT) jis bus išsiųstas VISIEMS tėvams ir klubams (push + skelbimas programėlėje). Iki tol dar galėsi atšaukti.'
+      : 'Atšaukti patvirtinimą? Pranešimas vėl taps juodraščiu ir nebus siunčiamas.';
+    if (!(await appConfirm(msg))) return;
+    const { error } = await sb.rpc('admin_premium_announce', { p_action: action, p_value: null });
+    if (error) { showToast(ico('klaida') + ' ' + _userError(error), 'error', 6000); return; }
+    showToast(ico('patvirtinta') + (action === 'approve' ? ' Patvirtinta — išsiųs gruodį' : ' Grąžinta į juodraštį'), 'success');
+    this.money();
+  },
+  // Premium ranka (6A): vaiko paieška (serveryje), pakopa + kreditai, būtina priežastis
+  tierSheet(kidId) {
+    const body = `<div class="aerr-meta" style="white-space:normal;margin-bottom:8px;">Skundas, klaida, klubo licencija. Pirkimo įrašas nekuriamas; kiekvienas keitimas — audite su priežastimi.</div>
+      <div id="adm-tier-find"${kidId ? ' style="display:none;"' : ''}><label class="lbl">VAIKAS</label>
+        <input class="inp" id="adm-tier-q" placeholder="Vardas arba pavardė" oninput="clearTimeout(Adm._tq);Adm._tq=setTimeout(()=>Adm.tierSearch(),350)" style="margin-bottom:6px;">
+        <div id="adm-tier-res" class="kal-rows" style="padding:0;"></div></div>
+      <div id="adm-tier-form"></div>`;
+    Planas.sheet('adm-tier-sheet', 'PREMIUM RANKA', body, '', { sub: 'pakopa ir kreditai', z: 100012 });
+    if (kidId) this.tierPick(kidId);
+  },
+  async tierSearch() {
+    const q = (document.getElementById('adm-tier-q')?.value || '').trim(); const box = document.getElementById('adm-tier-res'); if (!box) return;
+    if (q.length < 2) { box.innerHTML = ''; return; }
+    const like = '"%' + q.replace(/["%_,()\\*]/g, '') + '%"';   // PostgREST or(): reikšmė kabutėse (tarpai), be specialių ženklų
+    const { data } = await sb.from('kids').select('id, first_name, last_name, subscription_tier, clubs(name)').or(`first_name.ilike.${like},last_name.ilike.${like}`).order('first_name').limit(15);
+    box.innerHTML = (data || []).map(k => `<div class="kal-row" style="cursor:pointer;" onclick="Adm.tierPick('${k.id}')"><div class="bd"><div class="nm">${escapeHtml(((k.first_name || '') + ' ' + (k.last_name || '')).trim())}</div><div class="mt">${escapeHtml(k.clubs?.name || 'be klubo')} · ${escapeHtml(this.TIER[k.subscription_tier] || 'Nemokama')}</div></div></div>`).join('<hr>') || '<div class="aerr-meta">Nerasta</div>';
+  },
+  async tierPick(kidId) {
+    const [{ data: k }, { data: e }] = await Promise.all([
+      sb.from('kids').select('id, first_name, last_name, subscription_tier, clubs(name)').eq('id', kidId).maybeSingle(),
+      sb.from('kid_entitlements').select('tier, report_credits, homeplan_credits, summer_credits').eq('kid_id', kidId).maybeSingle()]);
+    const f = document.getElementById('adm-tier-form'); if (!f || !k) return;
+    const fd = document.getElementById('adm-tier-find'); if (fd) fd.style.display = 'none';
+    const cur = (e && e.tier) || k.subscription_tier || 'free';
+    const num = (id, lbl, have) => `<div style="flex:1;"><label class="lbl">${lbl} (yra ${have || 0})</label><input class="inp" id="${id}" type="number" step="1" min="-12" max="12" value="0" style="margin:0;padding:7px;text-align:center;"></div>`;
+    f.innerHTML = `<div class="kal-row"><div class="bd"><div class="nm">${escapeHtml(((k.first_name || '') + ' ' + (k.last_name || '')).trim())}</div><div class="mt">${escapeHtml(k.clubs?.name || 'be klubo')} · dabar: ${escapeHtml(this.TIER[cur] || cur)}</div></div></div>
+      <label class="lbl" style="margin-top:8px;">PAKOPA</label>
+      <select class="inp" id="adm-tier-t" style="margin-bottom:8px;">${Object.entries(this.TIER).map(([v, l]) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">${num('adm-tier-r', '+ ATASKAITOS', e?.report_credits)}${num('adm-tier-h', '+ NAMŲ PLANAI', e?.homeplan_credits)}${num('adm-tier-s', '+ VASAROS', e?.summer_credits)}</div>
+      <label class="lbl">PRIEŽASTIS *</label><input class="inp" id="adm-tier-why" placeholder="pvz. skundas dėl ataskaitos, klubo licencija" style="margin-bottom:10px;">
+      <span class="kal-b o" style="width:100%;" onclick="Adm.tierGo('${kidId}')">${ico('patvirtinta')} Išsaugoti</span>`;
+  },
+  async tierGo(kidId) {
+    const n = id => parseInt(document.getElementById(id)?.value || '0', 10) || 0;
+    const tier = document.getElementById('adm-tier-t')?.value, why = (document.getElementById('adm-tier-why')?.value || '').trim();
+    if (why.length < 3) { showToast(ico('klaida') + ' Nurodyk priežastį', 'error'); return; }
+    if (!(await appConfirm(`Pakopa: ${this.TIER[tier] || tier}; kreditai: ataskaitos ${n('adm-tier-r')}, namų planai ${n('adm-tier-h')}, vasaros ${n('adm-tier-s')}.\nPriežastis: ${why}\n\nIšsaugoti?`))) return;
+    const { error } = await sb.rpc('admin_set_kid_tier', { p_kid: kidId, p_tier: tier, p_reason: why, p_report: n('adm-tier-r'), p_homeplan: n('adm-tier-h'), p_summer: n('adm-tier-s') });
+    if (error) { showToast(ico('klaida') + ' ' + _userError(error), 'error', 6000); return; }
+    document.getElementById('adm-tier-sheet')?.remove();
+    showToast(ico('patvirtinta') + ' Išsaugota (audite)', 'success');
+    if (document.getElementById('adm-money')?.offsetParent) this.money();
+  },
+  // Sistema: socialiniai tinklai (platform_settings.social_links) ir aktyvūs tėvų / klubų skelbimai
+  async platformExtra() {
+    const el = document.getElementById('adm-plat-extra'); if (!el) return;
+    const { data } = await sb.from('platform_settings').select('key, value').in('key', ['social_links', 'parent_announcement', 'club_announcement']);
+    const m = {}; (data || []).forEach(r => { m[r.key] = r.value; });
+    const sl = m.social_links || {}, esc = x => _aaiEsc(String(x == null ? '' : x));
+    const ann = (k, l) => m[k] && m[k].title ? `<div class="aerr-meta" style="white-space:normal;margin-top:6px;"><b>${l}:</b> ${esc(m[k].title)} — ${esc(String(m[k].text || '').slice(0, 90))}…</div>` : '';
+    el.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:140px;"><label class="lbl">FACEBOOK</label><input class="inp" id="adm-sl-fb" value="${esc(sl.fb)}" placeholder="https://facebook.com/spobu.lt" style="margin:0;"></div>
+        <div style="flex:1;min-width:140px;"><label class="lbl">INSTAGRAM</label><input class="inp" id="adm-sl-ig" value="${esc(sl.ig)}" placeholder="https://instagram.com/..." style="margin:0;"></div></div>
+      <button class="aerr-tool" style="width:100%;margin-top:8px;" onclick="Adm.socialSave()">${ico('issaugoti')} Išsaugoti nuorodas</button>
+      <div class="aerr-meta" style="white-space:normal;margin-top:6px;">Tėvai mato jas Šeimos nustatymuose; tuščia — nerodoma.</div>
+      ${ann('parent_announcement', 'Tėvų skelbimas (aktyvus)')}${ann('club_announcement', 'Klubų skelbimas (aktyvus)')}`;
+  },
+  async socialSave() {
+    const fb = (document.getElementById('adm-sl-fb')?.value || '').trim(), ig = (document.getElementById('adm-sl-ig')?.value || '').trim();
+    for (const [u, l] of [[fb, 'Facebook'], [ig, 'Instagram']]) if (u && !/^https:\/\/[^\s"'<>]+$/i.test(u)) { showToast(ico('klaida') + ' ' + l + ' — tik https:// nuoroda', 'error'); return; }
+    await savePlatformSetting('social_links', { fb: fb || null, ig: ig || null });
+    this.platformExtra();
   },
 
   // ── P3 (v661): klubo lapas (maketas A) — server-ADMIN-P3-klubai-2026-09-26.sql (admin_club_overview) ──
