@@ -6542,6 +6542,12 @@ async function openAddKidWizard() {
   document.getElementById('ak-has-phone').value = 'false';
   document.getElementById('ak-kid-email-section').style.display = 'none';
   
+  // v674 (E2E pakartotinė patikra 09-27): po sėkmingo pridėjimo mygtukas likdavo išjungtas „KURIAMA..." —
+  // antro vaiko (brolio / sesers) be perkrovimo pateikti nebuvo galima
+  const _akBtn = document.getElementById('ak-submit-btn');
+  if (_akBtn) { _akBtn.disabled = false; _akBtn.textContent = 'PRIDĖTI VAIKĄ'; }
+  const _akErr = document.getElementById('ak-err'); if (_akErr) _akErr.style.display = 'none';
+
   akShowScreen(1);
   document.getElementById('add-kid-modal').style.display = 'block';
 }
