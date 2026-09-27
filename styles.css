@@ -511,6 +511,8 @@ body.full-mobile-preview #a-desktop-nav, body.full-mobile-preview #a-statusbar {
 .btn{display:block;width:calc(100% - 32px);margin:8px 16px;background:var(--br);color:white;border:none;border-radius:99px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;}
 .btnd{background:var(--card);color:var(--txt);border:.5px solid var(--bdr);}
 .btng{background:var(--grn);}
+/* v676: .btn su inline width:100% (vaiko prieiga, rezultatų „Siųsti", ataskaitos) išlįsdavo 16 px už kortelės — be šoninių paraščių */
+.btn[style*="width:100%"]{margin-left:0;margin-right:0;}
 .bsm{padding:7px 14px;border-radius:99px;font-size:12px;font-weight:800;border:none;cursor:pointer;font-family:'Nunito',sans-serif;}
 .kg{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 16px;}
 .kp{background:var(--card);border-radius:16px;border:.5px solid var(--bdr);padding:14px;}

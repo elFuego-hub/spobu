@@ -8544,11 +8544,17 @@ async function _loadKidDataRun() {
     console.log('🎉 LEVEL UP detected!');
     // ⚡ W1-2 (F5-02): lastLevel žymim TIK parodžius šventimą — jei reload/storm nužudo setTimeout,
     // praleistas šventimas parodomas kitą prisijungimą (nebe prarandamas)
-    setTimeout(() => {
-      try { showLevelUpCelebration(newLevel, lastKnownLevel); }
-      finally { localStorage.setItem(lsKey('lastLevel'), newLevel); }
-    }, 800);
-  } else {
+    // v676 (VP-06): du loadKidData per <1 s (pvz. dvikovos įvertinimas = 2 realtime įvykiai) — tas pats lygis švenčiamas tik kartą
+    const pend = `${currentKid.id}:${newLevel}`;
+    if (showLevelUpCelebration._pend !== pend) {
+      showLevelUpCelebration._pend = pend;
+      setTimeout(() => {
+        try { showLevelUpCelebration(newLevel, lastKnownLevel); }
+        finally { localStorage.setItem(lsKey('lastLevel'), newLevel); }
+      }, 800);
+    }
+  } else if (newLevel >= lastKnownLevel) {
+    // v676 (VP-11): lygis nukrito — raktas lieka aukščiausias švęstas, kad vėl pakilus šventė nesikartotų
     localStorage.setItem(lsKey('lastLevel'), newLevel);
   }
   
@@ -8582,11 +8588,17 @@ async function _loadKidDataRun() {
     const newIdx = STAGES.findIndex(s => s.name === newStage);
     if (newIdx > oldIdx) {
       console.log('🌟 STAGE UP detected!', lastKnownStage, '→', newStage);
-      setTimeout(() => {
-        try { showStageUpCelebration(newStage, lastKnownStage); }
-        finally { localStorage.setItem(lsKey('lastStage'), newStage); } // ⚡ W1-2: žymim tik parodžius
-      }, 1600);
+      const pend = `${currentKid.id}:${newStage}`;   // v676 (VP-06): kaip lygiui
+      if (showStageUpCelebration._pend !== pend) {
+        showStageUpCelebration._pend = pend;
+        setTimeout(() => {
+          try { showStageUpCelebration(newStage, lastKnownStage); }
+          finally { localStorage.setItem(lsKey('lastStage'), newStage); } // ⚡ W1-2: žymim tik parodžius
+        }, 1600);
+      }
       _stageMarkDeferred = true;
+    } else if (oldIdx >= 0 && newIdx < oldIdx) {
+      _stageMarkDeferred = true;   // v676 (VP-11): nukrito — raktas lieka aukščiausias švęstas
     }
   }
   if (!_stageMarkDeferred) localStorage.setItem(lsKey('lastStage'), newStage);
@@ -9146,7 +9158,7 @@ function _showStageUpCelebrationNow(newStageName, oldStageName = '') {
       <!-- Didelis kanji -->
       <div style="--stage-color:${stage.color};font-family:'Noto Serif JP','Hiragino Mincho ProN',serif;font-size:88px;font-weight:900;line-height:1;color:${stage.color};margin:6px 0 10px;animation:stageKanjiPulse 2.2s ease-in-out infinite;">${stage.kanji}</div>
       
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:white;line-height:1;">TU TAPAI</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:white;line-height:1;">TAVO PERIODAS</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:3px;color:${stage.color};line-height:1.1;text-shadow:0 0 20px ${stage.color};">${stage.emoji} ${stage.name.toUpperCase()}</div>
       
       <div style="font-size:10px;color:rgba(255,255,255,.7);letter-spacing:1.5px;font-weight:700;margin-top:10px;">${stage.meaning || ''}</div>
@@ -9202,13 +9214,13 @@ const COMPETITION_REWARDS = {
     icon: ''+ico('medalis')+'', 
     title: 'SIDABRO MEDALIS!', 
     bgGradient: 'linear-gradient(135deg, #C0C0C0, #808080)',
-    message: 'Antroji vieta yra įrodymas, kad tu - vienas geriausių. Toliau dirbk – auksas laukia!'
+    message: 'Antroji vieta – įrodymas, kad esi tarp geriausių. Toliau dirbk – auksas laukia!'
   },
   3: { 
     icon: ''+ico('medalis')+'', 
     title: 'BRONZOS MEDALIS!', 
     bgGradient: 'linear-gradient(135deg, #CD7F32, #8B4513)',
-    message: 'Trečioji vieta - tai pamoka, kad gali dar daugiau. Tu ant pjedestalo – tu jau čempionas.'
+    message: 'Trečioji vieta – tai pamoka, kad gali dar daugiau. Tu ant pakylos – tai jau čempionų lygis.'
   }
 };
 
@@ -9302,7 +9314,7 @@ const BELT_REWARDS = {
 };
 
 const BELT_MESSAGES = {
-  'mu kyu': 'Sveikas atvęs į karatė kelią! Baltas diržas - tavo pirmas žingsnis.',
+  'mu kyu': 'Sveiki atvykę į karatė kelią! Baltas diržas – tavo pirmas žingsnis.',
   '10 kyu': 'Sveikas atvykęs į karatė kelią! Oranžinis diržas - tavo pradžia.',
   '9 kyu':  'Pirmas egzaminas išlaikytas! Mėlyna juostelė rodo, kad jau pažengei.',
   '8 kyu':  'Mėlynas kaip dangus - tavo žinios plečiasi. Toliau!',
@@ -9312,7 +9324,7 @@ const BELT_MESSAGES = {
   '4 kyu':  'Žalias kaip gyvybė - tu pasiekei svarbų lygį.',
   '3 kyu':  'Žalias su ruda juostele - tavo technika tobulinasi kasdien.',
   '2 kyu':  'Rudas kaip žemė - tu jau patyręs karatietis.',
-  '1 kyu':  'Rudas su juoda juostele - paskutinis žingsnis prieš juodą diržas!',
+  '1 kyu':  'Rudas su juoda juostele – paskutinis žingsnis prieš juodą diržą!',
   '1 dan':  'JUODAS DIRŽAS! Shodan - tu pasiekei tai, ko siekė tūkstančiai. Tu - meistras.',
   '2 dan':  'Nidan - aukštesnis meistro lygis. Tu jau mokytojas kitiems.',
   '3 dan':  'Sandan - tavo žinios neribotos. Tu - karatė pasaulio dalis.',
@@ -9460,25 +9472,31 @@ async function detectNewMedals() {
   
   const lastKnownMedalId = localStorage.getItem(lsKey);
   console.log('🔵 [medals] lastKnown:', lastKnownMedalId);
-  
-  if (!lastKnownMedalId) {
-    // Pirmas kartas (įrenginys jau turėjo rezultatų iki v630) - tik nustato baseline, neparodo
-    localStorage.setItem(lsKey, results[0].id);
-    return;
+  // v676 (VP-08): matyti rezultatai — parašų rinkinys (id | vieta | EXP), ne vienas „paskutinis id":
+  // atmestas / ištrintas rezultatas nebešvenčia senojo iš naujo, o pataisyta vieta švenčiama kaip nauja
+  const sigKey = `spobu_kid_${currentKid.id}_seen_medal_sigs`;
+  const sig = r => `${r.id}|${r.placement ?? '-'}|${r.exp_gained ?? 0}`;
+  let seen = null; try { seen = JSON.parse(localStorage.getItem(sigKey) || 'null'); } catch (e) { }
+  if (!Array.isArray(seen)) {
+    if (!lastKnownMedalId) {
+      // Pirmas kartas (įrenginys jau turėjo rezultatų iki v630) - tik nustato baseline, neparodo
+      seen = results.map(sig);
+    } else {
+      // perėjimas nuo vieno id: matyta = paskutinis žinomas ir senesni; '-' → nieko; dingo → nešvenčiam senų
+      const idx = lastKnownMedalId === '-' ? results.length : results.findIndex(r => r.id === lastKnownMedalId);
+      seen = idx === -1 ? results.map(sig) : results.slice(idx).map(sig);
+    }
   }
-  
-  // Surasti naujus medalius (po paskutinio žinomo)
-  const lastKnownIdx = results.findIndex(r => r.id === lastKnownMedalId);
-  const newMedals = lastKnownMedalId === '-' ? results.slice()   // v630: anksčiau rezultatų nebuvo → visi nauji
-    : lastKnownIdx === -1 
-    ? results.slice(0, 1) 
-    : results.slice(0, lastKnownIdx);
-  
-  console.log('🔵 [medals] naujų medalių:', newMedals.length);
-  
-  if (newMedals.length === 0) return;
+  const seenSet = new Set(seen);
+  const newMedals = results.filter(r => !seenSet.has(sig(r)));
+  try {
+    localStorage.setItem(sigKey, JSON.stringify([...new Set([...results.map(sig), ...seen])].slice(0, 60)));
+    localStorage.setItem(lsKey, results[0].id);
+  } catch (e) { }
 
-  localStorage.setItem(lsKey, results[0].id);
+  console.log('🔵 [medals] naujų medalių:', newMedals.length);
+
+  if (newMedals.length === 0) return;
   if (typeof KidGate !== 'undefined' && !KidGate.on('comp')) return;   // v623 (15A): varžybos išjungtos — be pop-up (pagrindas atnaujintas)
 
   // Gauti varžybų pavadinimą + tipą
@@ -9507,7 +9525,7 @@ async function detectNewMedals() {
       if (medal.placement >= 1 && medal.placement <= 3) {
         showCompetitionCelebration(medal.placement, title, exp);
       } else if (comp?.competition_type === 'kumite' || comp?.competition_type === 'kata') {
-        showParticipationCelebration(title, exp, medal.placement);
+        showParticipationCelebration(title, exp, medal.placement, comp?.competition_type);
       }
     }, 1500 + idx * 500);
   });
@@ -9517,15 +9535,15 @@ async function detectNewMedals() {
 // 🥋 DALYVAVIMO CELEBRATION - 4+ vieta, motyvuojantis
 // ════════════════════════════════════════
 // v395 (V1-01): per eilę — kaip ir kiti šventimai
-function showParticipationCelebration(competitionTitle = '', expEarned = 0, placement = 0) {
-  _celebEnqueue(() => _showParticipationCelebrationNow(competitionTitle, expEarned, placement));
+function showParticipationCelebration(competitionTitle = '', expEarned = 0, placement = 0, kind = '') {
+  _celebEnqueue(() => _showParticipationCelebrationNow(competitionTitle, expEarned, placement, kind));
 }
 function closeParticipationCelebration() {
   const m = document.getElementById('participation-modal');
   if (m) m.remove();
   _celebDone(); // v395 (V1-01)
 }
-function _showParticipationCelebrationNow(competitionTitle = '', expEarned = 0, placement = 0) {
+function _showParticipationCelebrationNow(competitionTitle = '', expEarned = 0, placement = 0, kind = '') {
   let modal = document.getElementById('participation-modal');
   if (modal) modal.remove();
   
@@ -9554,13 +9572,13 @@ function _showParticipationCelebrationNow(competitionTitle = '', expEarned = 0, 
       
       <div style="font-size:54px;line-height:1;margin-bottom:8px;">${ico('dirzas')}</div>
       
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:white;line-height:1.1;">TU KOVOJAI!</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:white;line-height:1.1;">${kind === 'kata' ? 'TU PASIRODEI!' : 'TU KOVOJAI!'}</div>
       ${placement ? `<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;">${placement} vieta · ${escapeHtml(competitionTitle)}</div>` : `<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;">${escapeHtml(competitionTitle)}</div>`}
       
       <div style="height:1px;background:linear-gradient(90deg,transparent,${accent},transparent);margin:16px 0;"></div>
       
       <div style="font-size:12px;color:rgba(255,255,255,.9);line-height:1.55;margin-bottom:14px;">
-        Šįkart medalis nepasidavė — bet tu išėjai į tatamį ir kovojai. <b style="color:${accent};">Tai jau pergalė.</b><br><br>
+        Šįkart medalis nepasidavė — bet tu išėjai į tatamį ir ${kind === 'kata' ? 'pasirodei prieš teisėjus' : 'kovojai'}. <b style="color:${accent};">Tai jau pergalė.</b><br><br>
         Kiekvienos varžybos daro tave stipresnį. Kitą kartą bus geriau. ${ico('jega')}
       </div>
       
@@ -11388,13 +11406,14 @@ async function checkForNewChallenges() {
   try {
 
   const lsKey = `spobu_kid_${currentKid.id}_seen_challenge_ids`;
+  const firstRun = localStorage.getItem(lsKey) === null;   // v676 (VP-15): naujas įrenginys — atskaitos taškas be „NAUJI IŠŠŪKIAI" bangos
   const seenIds = new Set(lsGetArr(lsKey));
-  
+
   // v622 (14A): tik šiam vaikui skirti AKTYVŪS (ne visas klubas su kitų vaikų kopijomis)
   const chRes = await Iss.forKid(currentKid, { activeOnly: true, limit: 300 });
   if (chRes.error) { console.error('[challenge popup] Klaida:', chRes.error); return; }
   const allChallenges = chRes.rows;
-  if (!allChallenges.length) return;
+  if (!allChallenges.length) { if (firstRun) try { localStorage.setItem(lsKey, '[]'); } catch (_e) { } return; }
   
   // FILTRUOJAM pagal target_audience (kam taikomas iššūkis)
   const myGroupId = currentKid.group_id;
@@ -11431,7 +11450,7 @@ async function checkForNewChallenges() {
   allChallenges.forEach(ch => seenIds.add(ch.id));
   try { localStorage.setItem(lsKey, JSON.stringify([...seenIds].slice(-1500))); } catch (_e) { }
 
-  if (eligibleChallenges.length === 0) return;
+  if (firstRun || eligibleChallenges.length === 0) return;
 
   // 🗂️ v400: rodom PO VIENĄ (queue), bet SUGRUPUOTAI — gyvai matuota 12 pop-upų banga (~2 min):
   //  - rinkinio nariai ([set:] žymė) → VIENAS pop-upas visam rinkiniui;
@@ -11642,7 +11661,7 @@ function showChallengeSetPopup(rows, onClose) {
   _showGroupedNewChPopup({
     header: `${ico('tikslas')} NAUJAS IŠŠŪKIS`, icon: '🏋️', color: '#FF4D00',
     title: 'ŠIANDIENOS RINKINYS',
-    sub: `${rows.length} pratim${rows.length === 1 ? 'as' : 'ai'} · +${totalExp} EXP${expiresText ? ' · ' + expiresText : ''}`,
+    sub: `${rows.length} ${_ltPl(rows.length, 'pratimas', 'pratimai', 'pratimų')} · +${totalExp} EXP${expiresText ? ' · ' + expiresText : ''}`,
     rows: rows.map(r => ({ icon: emojiToIco(r.icon) || ico('tikslas'), title: r.title, exp: r.exp_reward }))
   }, onClose);
 }
@@ -11827,7 +11846,7 @@ function _showApprovalStdNow(opts) {
     box-shadow: 0 20px 60px rgba(0,0,0,.7), 0 0 60px ${t.color}44;
     opacity: 0; transition: opacity .4s, transform .4s cubic-bezier(.34,1.56,.64,1);`;
   popup.innerHTML = `
-    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${ico('atlikta')} ${opts.strava ? 'STRAVA UŽSKAITĖ' : 'TRENERIS PATVIRTINO'}</div>
+    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${ico('atlikta')} ${opts.strava ? 'STRAVA UŽSKAITĖ' : opts.auto ? 'UŽSKAITYTA AUTOMATIŠKAI' : 'TRENERIS PATVIRTINO'}</div>
     <div style="font-size:40px;line-height:1;margin-bottom:4px;filter:drop-shadow(0 0 14px ${t.color});">${t.icon}</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:3px;color:${t.color};margin-bottom:6px;">${t.label}</div>
     <div style="font-size:14px;color:white;font-weight:800;line-height:1.25;margin-bottom:${opts.progress ? '6px' : '12px'};">${escapeHtml(opts.title || 'Iššūkis')}</div>
@@ -11840,7 +11859,7 @@ function _showApprovalStdNow(opts) {
       <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:${t.color};line-height:1;text-shadow:0 0 16px ${t.color};">+${expBig}</div>
       <div style="font-size:13px;color:rgba(255,255,255,.7);font-weight:800;letter-spacing:1px;">EXP</div>
     </div>` : (completed ? '' : `
-    <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:12px;">${tierNext ? `Įskaityta · iki ${tierK + 1} pakopos (${tierNext.v} ${unitTxt}) liko ${String(Math.max(0, Math.round((Number(tierNext.v) - (opts.prog || 0)) * 10) / 10)).replace('.', ',')} ${unitTxt} → +${Iss.tierGain(tiers, tierK)} EXP` : 'Progresas įskaitytas · EXP gausi pasiekęs tikslą'}</div>`)}
+    <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:12px;">${tierNext ? `Įskaityta · iki ${tierK + 1} pakopos (${tierNext.v} ${unitTxt}) liko ${String(Math.max(0, Math.round((Number(tierNext.v) - (opts.prog || 0)) * 10) / 10)).replace('.', ',')} ${unitTxt} → +${Iss.tierGain(tiers, tierK)} EXP` : 'Progresas įskaitytas · EXP gausi, kai pasieksi tikslą'}</div>`)}
     ${opts.streakExp ? `<div style="display:inline-block;padding:5px 14px;background:${t.color}22;border:1px solid ${t.color}66;border-radius:99px;font-size:11px;color:${t.color};font-weight:800;margin-bottom:12px;">${ico('streak')} Serija: ${opts.streakCount ?? '–'} · bonusas +${opts.streakExp}</div>`
       : (opts.streakNext && opts.streakCount != null ? `<div style="display:inline-block;padding:5px 14px;background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.18);border-radius:99px;font-size:11px;color:rgba(255,255,255,.75);font-weight:800;margin-bottom:12px;">${ico('streak')} Serija: ${opts.streakCount} · dar ${opts.streakNext.in} ${STREAK_UNIT[opts.type] || ''} iki +${opts.streakNext.prize}</div>` : '')}
     ${completed ? `<div style="margin:0 -6px 12px;padding:7px;background:linear-gradient(90deg,rgba(34,197,94,.18),rgba(34,197,94,.08));border:1px solid rgba(34,197,94,.4);border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#22C55E;">${ico('trofejai')} IŠŠŪKIS ĮVEIKTAS!</div>` : ''}
@@ -11885,13 +11904,14 @@ async function _checkForNewApprovedSubmissionsInner() {
   // pranešimas dingdavo vien dėl laiko lango (dedup'ą ir taip daro seen_approved_sub_ids).
   const cut = new Date(Date.now() - 30 * 86400000).toISOString();
 
-  const { data: subs } = await sb.from('challenge_submissions')
+  const { data: subs, error: subsErr } = await sb.from('challenge_submissions')
     .select('id, challenge_id, numeric_value, exp_gain, reviewed_at, source, auto_approved, challenges(title, type, target_value, target_unit, allow_partial, exp_reward, instructions, verify_meta)')
     .eq('kid_id', currentKid.id)
     .eq('status', 'approved')
     .gte('reviewed_at', cut)
     .order('reviewed_at', { ascending: false })
     .limit(10);
+  if (subsErr) return;   // v676 (VP-09): nepavykusi užklausa ≠ „patvirtinimų nėra" — kitaip tuščias atskaitos taškas vėliau iššaudavo senus
 
   if (!subs?.length) {
     // v401 (C7): baseline rašomas ir TUŠČIAM sąrašui (v400 dėsnis) — kitaip firstRun likdavo
@@ -11996,6 +12016,9 @@ async function _checkForNewApprovedSubmissionsInner() {
   // pop-upas su suma; anksčiau partial užsibaigus tarpinės dalys dubliavo šventimus — E2E-2)
   const byCh = {};
   singles.forEach(sub => { (byCh[sub.challenge_id] = byCh[sub.challenge_id] || []).push(sub); });
+  // v676 (VP-01): šaltinis — Strava (source) / automatiškai (T15: auto_approved be Strava) / treneris; ir nepakopiniams
+  const _srcOf = (list) => { const strava = list.some(x => x.source === 'strava'); return { strava, auto: !strava && list.some(x => x.auto_approved) }; };
+  const _numLt = (v) => String(v).replace('.', ',');
   for (const subsOfCh of Object.values(byCh)) {
     const ch = subsOfCh[0].challenges;
     const isPartial = ch?.allow_partial === true;
@@ -12007,13 +12030,13 @@ async function _checkForNewApprovedSubmissionsInner() {
       const progress = progressMap[subsOfCh[0].challenge_id];
       const isCompleted = progress?.is_completed === true;
       const progStr = ch?.target_value
-        ? `${Math.min(progress?.total_progress || 0, ch.target_value)}/${ch.target_value} ${unit}`.trim()
+        ? `${_numLt(Math.min(progress?.total_progress || 0, ch.target_value))}/${_numLt(ch.target_value)} ${unit}`.trim()
         : null;
       showApprovalStd({
         type: ch?.type, title: ch?.title || 'Iššūkis', progress: progStr,
         exp: expSum || (isCompleted ? (ch?.exp_reward || 0) : 0),   // v597: pakopų EXP ateina dalimis — rodom gautą ir nebaigus
         tiers: (typeof Iss !== 'undefined' && Iss.tiersOf) ? Iss.tiersOf(ch) : null, prog: progress?.total_progress || 0, expTotal: progress?.exp_awarded || 0, unit,   // v598 pakopos
-        strava: subsOfCh.some(x => x.source === 'strava' || x.auto_approved),
+        ..._srcOf(subsOfCh),
         streakExp: streakSum, completed: isCompleted, ..._stOpts(ch?.type)
       });
     } else {
@@ -12021,8 +12044,9 @@ async function _checkForNewApprovedSubmissionsInner() {
       const nv = subsOfCh[0].numeric_value;
       showApprovalStd({
         type: ch?.type, title: ch?.title || 'Iššūkis',
-        progress: nv ? `${nv} ${unit}`.trim() : null,
-        exp: expSum || ch?.exp_reward || 0, streakExp: streakSum, completed: true, ..._stOpts(ch?.type)
+        // v676: „Išmoko" / T15 įrašo 1 be vieneto — tokio „1" nerodom; trupmenos su kableliu
+        progress: (nv && (unit || Number(nv) !== 1)) ? `${_numLt(nv)} ${unit}`.trim() : null,
+        exp: expSum || ch?.exp_reward || 0, streakExp: streakSum, completed: true, ..._srcOf(subsOfCh), ..._stOpts(ch?.type)
       });
     }
   }
@@ -12041,13 +12065,14 @@ async function checkForNewRejectedSubmissions() {
   const seenIds = new Set(lsGetArr(lsKey));
   const cut = new Date(Date.now() - 30 * 86400000).toISOString();
 
-  const { data: subs } = await sb.from('challenge_submissions')
+  const { data: subs, error: subsErr } = await sb.from('challenge_submissions')
     .select('id, challenge_id, rejection_reason, reviewed_at, challenges(title, type, instructions)')
     .eq('kid_id', currentKid.id)
     .eq('status', 'rejected')
     .gte('reviewed_at', cut)
     .order('reviewed_at', { ascending: false })
     .limit(10);
+  if (subsErr) return;   // v676 (VP-09): kaip patvirtinimams
 
   if (!subs?.length) {
     // ⚠️ baseline įrašomas ir TUŠČIAM sąrašui — kitaip firstRun liktų amžinai true
@@ -12259,11 +12284,16 @@ async function checkForCompletedDuels() {
     .order('completed_at', { ascending: false });
   
   if (duels && duels.length > 0) {
-    const newDuels = duels.filter(d => !seenIds.has(d.id));
-    if (newDuels.length > 0) {
-      showDuelResultPopup(newDuels[0], currentKid.id);
-      localStorage.setItem(lsKey, JSON.stringify(duels.map(d => d.id)));
-    }
+    // v676 (VP-07): naujas įrenginys — atskaitos taškas be pop-up'o; kiekvienai naujai (iki 3) — savo pop-up'as;
+    // jau parodytos showMissedEvents toast'u ('du') praleidžiamos, o parodytos čia pažymimos 'du' — kad nebūtų dublio
+    const firstRun = localStorage.getItem(lsKey) === null;
+    const toasted = (id) => typeof _isSeen === 'function' && _isSeen('du', id);
+    const newDuels = firstRun ? [] : duels.filter(d => !seenIds.has(d.id) && !toasted(d.id));
+    newDuels.slice(0, 3).reverse().forEach(d => {
+      showDuelResultPopup(d, currentKid.id);
+      if (typeof _addSeen === 'function') _addSeen('du', d.id);
+    });
+    if (firstRun || newDuels.length || duels.some(d => !seenIds.has(d.id))) localStorage.setItem(lsKey, JSON.stringify(duels.map(d => d.id)));
   }
   
   // 2) Nauji iškvietimai — PRIIMTI / ATMESTI / VĖLIAU popup.
@@ -12492,14 +12522,14 @@ function showStreakBonusPopup(bonus, submissionInfo, onClose) {
   
   popup.innerHTML = `
     <!-- ${ico('patvirtinta')} TRENERIO PATVIRTINIMAS -->
-    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${ico('atlikta')} TRENERIS PATVIRTINO</div>
-    
+    <div style="font-size:11px;color:#22C55E;letter-spacing:2px;font-weight:800;margin-bottom:8px;">${ico('atlikta')} IŠŠŪKIS ĮSKAITYTAS</div>
+
     <!-- IŠŠŪKIO PAVADINIMAS -->
     <div style="font-size:13px;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:14px;line-height:1.3;">${challengeTitle}</div>
     
     <!-- DIDELIS ICON + STREAK COUNT -->
     <div style="font-size:56px;line-height:1;margin-bottom:4px;filter:drop-shadow(0 0 16px ${cfg.color});">${cfg.icon}</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:3px;color:${cfg.color};margin-bottom:2px;">${cfg.label} STREAK</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:3px;color:${cfg.color};margin-bottom:2px;">${({ training: 'TRENIRUOČIŲ', weekly: 'SAVAITINĖ', monthly: 'MĖNESINĖ' })[bonus.streak_type] || 'TRENIRUOČIŲ'} SERIJA</div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:white;line-height:1;letter-spacing:2px;text-shadow:0 0 20px ${cfg.color};">${bonus.streak_count}</div>
     
     <div style="height:1px;background:linear-gradient(90deg,transparent,${cfg.color},transparent);margin:14px 0;"></div>
@@ -12512,7 +12542,7 @@ function showStreakBonusPopup(bonus, submissionInfo, onClose) {
     </div>
     ` : ''}
     <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:${cfg.color}22;border-radius:10px;margin-bottom:10px;border:1px solid ${cfg.color}66;">
-      <span style="font-size:11px;color:${cfg.color};font-weight:800;">${cfg.icon} Streak bonus</span>
+      <span style="font-size:11px;color:${cfg.color};font-weight:800;">${cfg.icon} Serijos premija</span>
       <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${cfg.color};text-shadow:0 0 8px ${cfg.color}66;">+${bonus.exp_awarded}</span>
     </div>
     
@@ -12521,7 +12551,7 @@ function showStreakBonusPopup(bonus, submissionInfo, onClose) {
       VISO +${totalExp} EXP
     </div>
     
-    <div style="margin-top:12px;font-size:10px;color:rgba(255,255,255,.5);line-height:1.4;">Spauskit kad uždaryti</div>
+    <div style="margin-top:12px;font-size:10px;color:rgba(255,255,255,.5);line-height:1.4;">Spausk, kad uždarytum</div>
   `;
   
   document.body.appendChild(popup);
@@ -13052,7 +13082,7 @@ async function loadChallenges() {
         <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;">
           <div style="font-size:20px;">${ico('treniruote')}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12.5px;font-weight:800;color:white;">${rows.length} pratim${rows.length === 1 ? 'as' : 'ai'} · +${totalExp} EXP</div>
+            <div style="font-size:12.5px;font-weight:800;color:white;">${rows.length} ${_ltPl(rows.length, 'pratimas', 'pratimai', 'pratimų')} · +${totalExp} EXP</div>
             <div style="font-size:9px;color:var(--mut);">${timeLeft} · pažymėk ką atlikai ir pateik</div>
           </div>
         </div>
@@ -15711,7 +15741,7 @@ async function submitNewClubChallenge(){
   // Dalyvaujančios grupės
   const { error: gErr } = await sb.from('club_challenge_groups').insert(groupIds.map(gid=>({ challenge_id: created.id, group_id: gid })));
   if (gErr){ showToast(ico('ispejimas')+' Iššūkis sukurtas, bet grupių priskyrimas nepavyko: '+gErr.message,'error',5500); }
-  else { showToast(ico('patvirtinta')+' Iššūkis sukurtas','success'); _pushGroupsKids(groupIds, ''+ico('trofejai')+' Naujas grupių iššūkis!', (title||'Iššūkis') + ' — tavo grupė dalyvauja!'); }  // push dalyvaujančių grupių vaikams
+  else { showToast(ico('patvirtinta')+' Iššūkis sukurtas','success'); _pushGroupsKids(groupIds, '🏆 Naujas grupių iššūkis!', (title||'Iššūkis') + ' — tavo grupė dalyvauja!'); }  // push dalyvaujančių grupių vaikams
   document.getElementById('club-gc-modal')?.remove();
   loadClubGroupChallenges();
 }
@@ -15795,7 +15825,7 @@ async function finalizeClubChallengeUI(id, title){
   showToast(''+ico('finisas')+' Iššūkis užbaigtas','success');
   // 🔔 Push visiems dalyvavusių grupių vaikams, kad iššūkis baigėsi + EXP
   try { const { data: st } = await sb.rpc('club_challenge_standings', { challenge_uuid: id });
-    _pushGroupsKids((st||[]).map(r=>r.g_id), ''+ico('trofejai')+' Grupių iššūkis baigėsi!', (title||'Iššūkis') + ' — pažiūrėk savo grupės vietą ir EXP!'); } catch(_){}
+    _pushGroupsKids((st||[]).map(r=>r.g_id), '🏆 Grupių iššūkis baigėsi!', (title||'Iššūkis') + ' — pažiūrėk savo grupės vietą ir EXP!'); } catch(_){}
   loadClubGroupChallenges();
 }
 
@@ -15823,7 +15853,7 @@ function _showClubChallengeResultPopup(title, rank, totalGroups, groupName, isWi
     <div style="background:rgba(255,255,255,.05);border-radius:14px;padding:16px;margin-bottom:16px;">
       <div style="font-size:12px;color:var(--mut);margin-bottom:4px;">${escapeHtml(groupName||'Tavo būrelis')}</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--br);">${rank} vieta <span style="font-size:18px;color:var(--mut);">iš ${totalGroups}</span></div>
-      ${(exp)?`<div style="font-size:13px;color:var(--grn);font-weight:800;margin-top:8px;">+${exp} EXP visam būreliui!</div>`:''}
+      ${(exp)?`<div style="font-size:13px;color:var(--grn);font-weight:800;margin-top:8px;">+${exp} EXP kiekvienam!</div>`:''}
     </div>
     <button onclick="document.getElementById('clubch-result-modal').remove()" class="btn btng" style="width:100%;margin:0;">PUIKU!</button>
   </div>`;
@@ -23767,7 +23797,7 @@ async function _fetchTrainerNotifications(force) {
 
   // 🏆 Varžybų tabas = nauji klubo varžybų pranešimai + laukiantys rezultatai (rūšiuota pagal laiką)
   const compItems = [
-    ...(ncR.data || []).map(c => ({ id: 'newco-' + c.id, icon: ''+ico('trofejai')+'', title: 'Nauja varžyba', sub: `${c.title || 'Varžyba'}${c.event_date ? ' · ' + new Date(c.event_date).toLocaleDateString('lt-LT') : ''}`, ts: c.created_at })),
+    ...(ncR.data || []).map(c => ({ id: 'newco-' + c.id, icon: ''+ico('trofejai')+'', title: 'Naujos varžybos', sub: `${c.title || 'Varžybos'}${c.event_date ? ' · ' + new Date(c.event_date).toLocaleDateString('lt-LT') : ''}`, ts: c.created_at })),
     ...(crR.data || []).map(s => ({ id: 'cr-' + s.id, icon: ''+ico('laukia')+'', title: `${kidName(s.kid_id)} — varžybų rezultatas`, sub: 'Laukia patvirtinimo', ts: s.created_at }))
   ].sort((a, b) => new Date(b.ts) - new Date(a.ts));
 
@@ -33320,7 +33350,7 @@ function subscribeKidNotifications() {
       if (sub.status === 'approved') {
         if (_isSeen('ex', sub.id)) return; // jau parodyta (gyvai ar kaip praleista)
         _addSeen('ex', sub.id);
-        showToast(`${ico('patvirtinta')} ${(sub.source === 'strava' && sub.auto_approved) ? 'STRAVA UŽSKAITĖ' : 'TRENERIS PATVIRTINO'}\n\n${exName}\n+${sub.exp_gain} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
+        showToast(`${ico('patvirtinta')} ${(sub.source === 'strava' && sub.auto_approved) ? 'STRAVA UŽSKAITĖ' : 'TRENERIS PATVIRTINO'}\n\n${exName}\n+${sub.exp_gain || 0} EXP`, 'success', null, { confetti: 20, sound: 'exp' });
         await loadKidData();
       } else if (sub.status === 'rejected') {
         const reason = escapeHtml(sub.rejection_reason || 'be priežasties');
@@ -34584,7 +34614,9 @@ async function showMissedEvents() {
   try {
     const kidId = currentKid.id;
     const userId = currentUser.id;
-    const firstRun = !localStorage.getItem('spobu_missed_init');
+    // v676 (H14): atskaitos taškas kiekvienam vaikui — broliams viename įrenginyje nebeiššoka seni kito vaiko įvykiai
+    const initKey = `spobu_missed_init_${kidId}`;
+    const firstRun = !localStorage.getItem(initKey);
 
     // Naujausi įvykiai pagal tipą (BE laiko filtro — dedup vykdom per ID, ne laiką)
     const [chs, cps, exs, dus, msgs] = await Promise.all([
@@ -34635,11 +34667,12 @@ async function showMissedEvents() {
     // PIRMAS PALEIDIMAS: baseline — pažymim senus (>3 min) matytais, rodom tik labai šviežius.
     // (Kad neužverstume vaiko sena istorija pirmą kartą, bet test'as veiktų iškart.)
     if (firstRun) {
+      if ([chs, cps, exs, dus, msgs].some(r => r && r.error)) return;   // v676 (VP-09): be pilnų duomenų atskaitos taško nerašom
       const nowMs = Date.now();
       const fresh = new Set(events.filter(e => e.ts && (nowMs - new Date(e.ts).getTime()) < 180000).map(e => e.sk + ':' + e.id));
       events.forEach(e => { if (!fresh.has(e.sk + ':' + e.id)) _addSeen(e.sk, e.id); });
       events = events.filter(e => fresh.has(e.sk + ':' + e.id));
-      localStorage.setItem('spobu_missed_init', '1');
+      localStorage.setItem(initKey, '1');
     }
 
     // Surūšiuoti chronologiškai (seniausi pirma)
@@ -37509,7 +37542,7 @@ async function loadAllNotifications(force) {
       issukiai.push({
         id: `apprCh-${s.id}`,
         icon: ''+ico('patvirtinta')+'',
-        title: `${typeLabel} ${(s.source === 'strava' || s.auto_approved) ? 'užskaitytas (Strava)' : 'patvirtintas'}`,   // v598
+        title: `${typeLabel} ${s.source === 'strava' ? 'užskaitytas (Strava)' : s.auto_approved ? 'užskaitytas automatiškai' : 'patvirtintas'}`,   // v598; v676 (VP-01): T15 — ne Strava
         body: `${escapeHtml(s.challenges?.title || 'Iššūkis')} · +${s.exp_gain || 0} EXP`,
         time: s.reviewed_at,
         link: 'v-ish',
@@ -37571,7 +37604,7 @@ async function loadAllNotifications(force) {
       sistema.push({
         id: `rejPr-${s.id}`,
         icon: ''+ico('klaida')+'',
-        title: 'PR atmestas',
+        title: 'Rekordas grąžintas',
         // ⚡ W3-1 (F5-03): trenerio komentaras vaikui — anksčiau rašytas, bet NIEKUR nerodytas
         body: `${escapeHtml(s.exercises?.name || 'Pratimas')} · ${escapeHtml(s.rejection_reason || 'be priežasties')}${s.rejection_comment ? ' — „' + escapeHtml(s.rejection_comment) + '"' : ''}`, // v401 (B4)
         time: s.reviewed_at,
@@ -37581,7 +37614,7 @@ async function loadAllNotifications(force) {
       sistema.push({
         id: `apprPr-${s.id}`,
         icon: ''+ico('jega')+'',
-        title: (s.source === 'strava' && s.auto_approved) ? 'Strava užskaitė rekordą' : 'PR patvirtintas',   // v627 (3A)
+        title: (s.source === 'strava' && s.auto_approved) ? 'Strava užskaitė rekordą' : 'Rekordas patvirtintas',   // v627 (3A)
         body: `${escapeHtml(s.exercises?.name || 'Pratimas')}: ${s.source === 'strava' && typeof Strava !== 'undefined' ? Strava.recVal(s.new_value, s.exercises) : escapeHtml(String(s.new_value ?? ''))} · +${s.exp_gain || 0} EXP`, // v401 (B4)
         time: s.reviewed_at,
         link: 'v-kar',
@@ -37601,8 +37634,8 @@ async function loadAllNotifications(force) {
     sistema.push({
       id: `streak-${s.id}`,
       icon: cfg.icon,
-      title: `${cfg.label} streak bonusas`,
-      body: `Streak ${s.streak_count} · +${s.exp_awarded || 0} EXP`,
+      title: ({ training: 'Treniruočių', weekly: 'Savaitinės', monthly: 'Mėnesinės' })[s.streak_type] ? `${({ training: 'Treniruočių', weekly: 'Savaitinės', monthly: 'Mėnesinės' })[s.streak_type]} serijos premija` : 'Serijos premija',   // v676: be „streak"
+      body: `Serija ${s.streak_count} · +${s.exp_awarded || 0} EXP`,
       time: s.created_at,
       link: 'v-main' // Nukelti į pagrindinį (kur matosi streak skaičiai)
     });
@@ -37643,7 +37676,7 @@ async function loadAllNotifications(force) {
     varzybos.push({
       id: `newCo-${co.id}`, ctype: co.competition_type,   // v623 (15A)
       icon: levelLabels[co.level] || ''+ico('trofejai')+'',
-      title: 'Nauja varžyba',
+      title: 'Naujos varžybos',
       body: `${escapeHtml(co.title || 'Varžyba')} · ${new Date(co.event_date).toLocaleDateString('lt-LT')}`, // v401 (B4)
       time: co.created_at,
       link: 'v-comp'
@@ -45990,6 +46023,7 @@ const KidExp = {
     if (!adj || this.LIVE_SKIP.test(adj.reason || '')) return;
     const f = this.fmt(adj.reason, adj.exp_change);
     showToast(`${ico(f.ic)} ${f.head}\n\n${f.body}\n${this.amtTxt(adj.exp_change)}`, f.ok ? 'success' : 'error', null, f.ok ? { confetti: 15, sound: 'exp' } : { sound: 'send' });
+    if (adj.id && typeof KidInfo !== 'undefined') KidInfo.seen([`adj-${adj.id}`]);   // v676 (VP-22): parodyta — varpelyje nebe „nauja"
   },
   // Praleisti (programėlė buvo uždaryta): ≤2 — po vieną, daugiau — viena suvestinė. Pirmą kartą įrenginyje po v630 senesni nei 3 min. tik pažymimi.
   async missed() {
@@ -46013,7 +46047,8 @@ const KidExp = {
       fresh.forEach(a => _addSeen('adj', a.id));
       if (fresh.length <= 2) { fresh.forEach(a => this.toast(a)); return; }
       const sum = fresh.reduce((s, a) => s + (Number(a.exp_change) || 0), 0);
-      showToast(`${ico('zvaigzde')} KOL TAVĘS NEBUVO\n\n${fresh.length} ${_ltPl(fresh.length, 'įrašas', 'įrašai', 'įrašų')} — pastangos, premijos, trenerio įvertinimai (rasi varpelyje)\n${this.amtTxt(sum)}`,
+      const what = fresh.every(a => Number(a.exp_change) < 0) ? 'trenerio pastabos ir pataisymai' : 'pastangos, premijos, trenerio įvertinimai';   // v676 (VP-18)
+      showToast(`${ico('zvaigzde')} KOL TAVĘS NEBUVO\n\n${fresh.length} ${_ltPl(fresh.length, 'įrašas', 'įrašai', 'įrašų')} — ${what} (rasi varpelyje)\n${this.amtTxt(sum)}`,
         sum >= 0 ? 'success' : 'info', null, sum > 0 ? { confetti: 15, sound: 'exp' } : { sound: 'send' });
     } catch (e) { /* nekritinis */ } finally { this.busy = false; }
   },
@@ -46023,7 +46058,16 @@ const KidExp = {
     const { data, error } = await sb.from('kid_exp_adjustments').select('id, exp_change, reason, created_at')
       .eq('kid_id', currentKid.id).gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(30);
     if (error || !data) return [];
-    const items = data.filter(a => Number(a.exp_change) && !this.BELL_SKIP.test(a.reason || '')).map(a => {
+    // v676 (VP-17): pastangų pataisymai tai pačiai treniruotei (20 → 14 → 20 rašo skirtumus) — vienas įrašas su galutine suma;
+    // id ir laikas — naujausio pataisymo (nauja pataisa vėl „nauja")
+    const eff = {}, rows = [];
+    data.forEach(a => {
+      const m = String(a.reason || '').trim().match(/^effort:(\d{4}-\d{2}-\d{2})$/);
+      if (!m) { rows.push(a); return; }
+      if (eff[m[1]]) { eff[m[1]].exp_change += Number(a.exp_change) || 0; return; }
+      eff[m[1]] = { ...a, exp_change: Number(a.exp_change) || 0 }; rows.push(eff[m[1]]);
+    });
+    const items = rows.filter(a => Number(a.exp_change) && !this.BELL_SKIP.test(a.reason || '')).map(a => {
       const f = this.fmt(a.reason, a.exp_change);
       return { id: `adj-${a.id}`, icon: ico(f.ic), title: f.title, body: `${f.body} · ${this.amtTxt(a.exp_change)}`, time: a.created_at, link: null };
     });
