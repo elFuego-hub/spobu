@@ -548,7 +548,8 @@ async function openMyMessages(){
 // ── H1-H2: platformos juostos (maintenance / skelbimas / min. versija) ──
 async function loadPlatformGuards(){
   try {
-    const { data } = await sb.from('platform_settings').select('key, value');
+    // v672 (našumas E1): tas pats pažadas kaip _checkSelfSignupFlag prisijungus (buvo 2 platform_settings užklausos)
+    const { data } = await Krov.once('platform_settings', () => sb.from('platform_settings').select('key, value'), 5000);
     const map = {}; (data || []).forEach(r => { map[r.key] = r.value; });
     window._platformSettings = map;
     if (map.payments_live === true) SHOP_TRIAL_MODE = false;   // v652 (P5): mokama versija įsijungia jungikliu DB (tik tiksliai true)
@@ -606,10 +607,18 @@ function applyPlatformGuards(role){
 async function _checkSelfSignupFlag(){
   try {
     if (typeof sb === 'undefined' || !sb) return;
-    const { data } = await sb.from('platform_settings').select('value').eq('key', 'self_signup_14_enabled').maybeSingle();
+    let val = null;
+    if (typeof currentUser !== 'undefined' && currentUser) {   // v672 (našumas E1): prisijungus — iš bendro loadPlatformGuards pažado (Krov)
+      const { data: all } = await Krov.once('platform_settings', () => sb.from('platform_settings').select('key, value'), 5000);
+      const row = (all || []).find(r => r.key === 'self_signup_14_enabled');
+      val = row ? row.value : null;
+    } else {
+      const { data } = await sb.from('platform_settings').select('value').eq('key', 'self_signup_14_enabled').maybeSingle();
+      val = data ? data.value : null;
+    }
     const el = document.getElementById('kid-selfreg-entry');
-    if (el) el.style.display = (data && data.value === true) ? 'block' : 'none';
-    window._ss14 = !!(data && data.value === true);   // v670 (E2E S-03): klubo ekranai klubo kodą rodo tik kai 14+ registracija įjungta platformoje
+    if (el) el.style.display = (val === true) ? 'block' : 'none';
+    window._ss14 = val === true;   // v670 (E2E S-03): klubo ekranai klubo kodą rodo tik kai 14+ registracija įjungta platformoje
   } catch(e){}
 }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(_checkSelfSignupFlag, 1500); });
@@ -1004,8 +1013,9 @@ async function submitLinkKidByCode(){
 async function _checkParentPurchaseRequests(){
   try {
     if (!currentProfile || currentProfile.role !== 'parent') return;
-    const { data: links } = await sb.from('kid_parent_links').select('kid_id').eq('parent_id', currentUser.id);
-    const kidIds = (links || []).map(l => l.kid_id);
+    // v672 (našumas E1): tie patys kid_parent_links, kuriuos ką tik įkėlė loadParentKidsList (_parentKidIdSet) — antra užklausa tik jei jų nėra
+    let kidIds = (typeof _parentKidIdSet !== 'undefined' && _parentKidIdSet.size) ? [..._parentKidIdSet] : null;
+    if (!kidIds) { const { data: links } = await sb.from('kid_parent_links').select('kid_id').eq('parent_id', currentUser.id); kidIds = (links || []).map(l => l.kid_id); }
     if (!kidIds.length) return;
     const { data: reqs } = await sb.from('purchase_requests').select('id').in('kid_id', kidIds).eq('status', 'pending').limit(5);
     if (reqs && reqs.length && !sessionStorage.getItem('spobu_preq_shown')){
@@ -1193,17 +1203,6 @@ async function afterLogin() {
     return;
   }
   
-  // Jei yra club_id – atskirai gauname klubą
-  if (profile.club_id) {
-    console.log('🏢 [afterLogin] 3. Kraunam club_id:', profile.club_id);
-    const { data: club, error: clubErr } = await sb.from('clubs')
-      .select('id, name, city')
-      .eq('id', profile.club_id)
-      .single();
-    console.log('📦 [afterLogin] club:', club, 'error:', clubErr);
-    if (club) currentProfile.clubs = club;
-  }
-  
   document.getElementById('logout-email').textContent = currentUser.email;
 
   // AUTO-NUKREIPIMAS pagal rolę
@@ -1218,11 +1217,18 @@ async function afterLogin() {
 
   console.log('🎯 [afterLogin] 4. Kraunam duomenis pagal rolę:', profile.role);
 
-  await loadClubFlags(); // 🚩 klubo feature-flags (visom rolėm; trūkstant — viskas įjungta)
+  // v672 (našumas E1, MODULIS Krov): klubas + klubo feature-flags + platformos nustatymai — VIENA banga (buvo 3 nuoseklios;
+  // nepriklausomi: get_club_flags klubą nustato serveryje, platform_settings — bendri). Tvarka po jų nepakitusi.
+  const [_clubR] = await Promise.all([
+    profile.club_id ? sb.from('clubs').select('id, name, city').eq('id', profile.club_id).single() : Promise.resolve({ data: null, error: null }),
+    loadClubFlags(),       // 🚩 klubo feature-flags (visom rolėm; trūkstant — viskas įjungta)
+    loadPlatformGuards()   // 🌐 AD-SHARED: platformos juostos
+  ]);
+  if (profile.club_id) console.log('📦 [afterLogin] club:', _clubR.data, 'error:', _clubR.error);
+  if (_clubR.data) currentProfile.clubs = _clubR.data;
   if (typeof Kal !== 'undefined') Kal.applyNav();   // MODULIS: Kal (v535) — „Iššūkiai" → „Kalendorius" (tik su plans_enabled)
 
   // 🌐 AD-SHARED: platformos juostos + kainos + ping + atsakymai (visom rolėm)
-  await loadPlatformGuards();
   if (!applyPlatformGuards(profile.role)) return;  // ${ico('irankiai')} maintenance — ne-admin sustoja čia
   loadPrices();            // ${ico('pinigai')} C5: kainos iš DB
   pingActivity();          // ${ico('statistika')} D1: DAU/WAU/MAU ping
@@ -1248,8 +1254,8 @@ async function afterLogin() {
       if (typeof _maybeClubOnboarding === 'function') _maybeClubOnboarding();  // ${ico('startas')} pradžios vediklis naujam klubui
       setTimeout(() => maybeShowWelcome('club_admin'), 1600); // 👋 vėliau nei vediklis (DB + 600ms) — konfliktą tikrina viduje
     } else if (profile.role === 'trainer') {
-      await loadTrainerData();
-      await _detectClubManager(); // ${ico('raktas')} deleguota klubo prieiga (club_managers)
+      // v672 (našumas E1): lygiagrečiai (nepriklausomi) — buvo 2 nuoseklūs laukimai prieš op('tr')
+      await Promise.all([loadTrainerData(), _detectClubManager()]); // ${ico('raktas')} deleguota klubo prieiga (club_managers)
       subscribeTrainerNotifications(); // po duomenų — realtime tik papildomas, negali blokuoti portalo
       op('tr');
       _checkClubChallengeResultsTrainer(); // ${ico('trofejai')} grupių iššūkio pabaigos pop-up (vieną kartą)
@@ -1291,7 +1297,7 @@ async function afterLogin() {
       }
     } else if (profile.role === 'parent') {
       // Tėvų paskyra
-      await loadParentData();
+      await loadParentData({ boot: true });
       subscribeParentNotifications();
       op('t');
       if (typeof TevSeima !== 'undefined') TevSeima.boot();   // v647: keli vaikai → Šeimos langas, vienas — vaiko erdvė
@@ -1346,7 +1352,7 @@ function showTab(portal, tabId) {
   if (tab) tab.classList.add('on');
 }
 
-async function loadParentData() {
+async function loadParentData(opts) {
   if (!currentProfile) return;
   // Užkrauti tėvo vaikus (kid_parent_links → kids); klaida nenulaužia viso portalo (3.1 #2)
   try { await loadParentKidsList(); } catch(e) { console.error('loadParentKidsList:', e); }
@@ -1355,8 +1361,11 @@ async function loadParentData() {
   const _keptKid = parentActiveKid && parentKids.find(k => k.id === parentActiveKid.id);
   parentActiveKid = _keptKid || (parentKids.length > 0 ? parentKids[0] : null);
   renderParentKidPill();
-  loadParentKidMain();
-  if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+  // v672 (našumas E1): prisijungus su keliais vaikais pirmas ekranas — Šeima (TevSeima.boot), vaiko kalendorius t-main nematomas →
+  // Kal.parent nekraunam (E0: ~32 užklausos iš 60); atidarius vaiką nv → t-main → loadParentKidMain() jį prijungia kaip anksčiau.
+  loadParentKidMain({ noKal: !!(opts && opts.boot) && parentKids.length > 1 });
+  // v672 (našumas E1): tuo atveju varpelį po akimirkos suskaičiuoja TevSeima.load (nv → t-seima) — antras kvietimas buvo dublis (−3 užkl.)
+  if (!(opts && opts.boot && parentKids.length > 1) && typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
   // 💻 Desktop side nav user info (kaip vaiko vdn-*)
   applyAvatarById('tdn-avatar', currentProfile?.avatar_url || null, currentProfile?.first_name?.[0] || '?');
   const _tdnN = document.getElementById('tdn-name'); if (_tdnN) _tdnN.textContent = currentProfile?.first_name || '–';
@@ -2265,6 +2274,9 @@ async function loadParentKidsList() {
   if (_le) { console.warn('[tev] vaikų ryšiai:', _le.message); if (typeof TevSeima !== 'undefined') TevSeima.loadErr = true; return; }
   const kidIds = (links || []).map(l => l.kid_id);
   _parentKidIdSet = new Set(kidIds);
+  // v673 (našumas E1-2): tėvo Realtime kanalai filtruojami pagal vaikus — pasikeitus sąrašui (pridėtas / pašalintas vaikas) perprenumeruojam
+  if (typeof _parentChannelsSubscribed !== 'undefined' && _parentChannelsSubscribed && Krov.parentSubKids != null
+    && Krov.parentSubKids !== [...kidIds].sort().join(',') && typeof resubscribeParentChannels === 'function') resubscribeParentChannels();
   if (typeof TevNust !== 'undefined') TevNust.prim = new Set((links || []).filter(l => l.is_primary).map(l => l.kid_id));   // v667: kviesti antrą tėvą — tik pagrindinis
   if (kidIds.length === 0) { parentKids = []; return; }
   const { data: kids, error: _ke } = await sb.from('kids')
@@ -2456,13 +2468,16 @@ function openParentKidSwitcher() {
 let _careerCatsCache = null;
 async function getCareerCategories() {
   if (_careerCatsCache) return _careerCatsCache;
-  try {
-    // 📂 v512: pridėtas .order('sort_order') — dalis vartotojų (loadCategories, loadBadges)
-    // rėmėsi rikiavimu, tad kešas turi grąžinti tą pačią tvarką, kokią duodavo jų sava užklausa.
-    const { data } = await sb.from('career_categories').select('*').order('sort_order');
-    _careerCatsCache = data || [];
-  } catch (e) { _careerCatsCache = null; }  // #1: klaidos NEcacheinam ([] būtų truthy → įstrigtų visai sesijai)
-  return _careerCatsCache;
+  // v672 (našumas E1): lygiagretūs kvietėjai (loadCategories ∥ updateProfileCounts) — vienas krovimas
+  return Krov.once('careerCats', async () => {
+    try {
+      // 📂 v512: pridėtas .order('sort_order') — dalis vartotojų (loadCategories, loadBadges)
+      // rėmėsi rikiavimu, tad kešas turi grąžinti tą pačią tvarką, kokią duodavo jų sava užklausa.
+      const { data } = await sb.from('career_categories').select('*').order('sort_order');
+      _careerCatsCache = data || [];
+    } catch (e) { _careerCatsCache = null; }  // #1: klaidos NEcacheinam ([] būtų truthy → įstrigtų visai sesijai)
+    return _careerCatsCache;
+  });
 }
 
 // 📊 v512: vaiko EXP per kategoriją (kid_records). Kraunant vaiko pagrindinį ekraną tą PAČIĄ
@@ -2477,13 +2492,16 @@ async function getKidCatRecords(kidId) {
   if (!kidId) return [];
   const c = _kidCatRecsCache;
   if (c && c.kidId === kidId && (Date.now() - c.at) < KID_CAT_RECS_TTL) return c.rows;
-  const { data, error } = await sb.from('kid_records')
-    .select('category_id, category_exp, medal').eq('kid_id', kidId);
-  if (error || !data) return [];          // klaidos NEcacheinam (kaip getCareerCategories)
-  _kidCatRecsCache = { kidId, rows: data, at: Date.now() };
-  return data;
+  // v672 (našumas E1): lygiagretūs kvietėjai (loadCategories, updateProfileCounts, loadRankings) — vienas krovimas (E0: kid_records 2× vienu metu)
+  return Krov.once('kidcat:' + kidId, async () => {
+    const { data, error } = await sb.from('kid_records')
+      .select('category_id, category_exp, medal').eq('kid_id', kidId);
+    if (error || !data) return [];          // klaidos NEcacheinam (kaip getCareerCategories)
+    _kidCatRecsCache = { kidId, rows: data, at: Date.now() };
+    return data;
+  });
 }
-function clearKidCatRecords(){ _kidCatRecsCache = null; }
+function clearKidCatRecords(){ _kidCatRecsCache = null; if (typeof Krov !== 'undefined') Krov.drop('kidcat:'); }
 
 // ❌/⏳ Tėvo home: vaiko anketos būsenos juosta (rejected → taisyti; pending → laukia klubo)
 function _renderParentApprovalBanner(k){
@@ -2517,14 +2535,14 @@ function _parentNoKidsHtml(){
   return '<div style="background:var(--card);border:.5px dashed var(--bdr);border-radius:12px;padding:18px;text-align:center;"><div style="font-size:30px;margin-bottom:6px;">'+ico('vaikas')+'</div><div style="font-size:12px;color:var(--mut);margin-bottom:10px;">Dar neturite pridėtų vaikų</div><button class="btn btng" style="font-size:11px;padding:8px 16px;" onclick="if(typeof openAddKidWizard===\'function\')openAddKidWizard()">+ Pridėti vaiką</button><div style="margin-top:8px;"><button class="btn" style="font-size:11px;padding:8px 12px;background:rgba(79,195,247,.12);border:.5px solid rgba(79,195,247,.4);color:#4FC3F7;" onclick="if(typeof openLinkKidByCode===\'function\')openLinkKidByCode()">'+ico('pazymejimas')+' Prijungti vaiką su kodu</button></div></div>';
 }
 
-async function loadParentKidMain() {
+async function loadParentKidMain(opts) {
   const k = parentActiveKid;
   let pName = (currentProfile?.first_name || '').trim();
   if (/^t[ėe]vas\s*\/\s*glob[ėe]jas$/i.test(pName)) pName = ''; // ignoruoti placeholder'į
   pName = pName.toUpperCase();
   const greetEl = document.getElementById('tk-greet');
   if (greetEl) greetEl.textContent = `SVEIKI, ${pName || 'TĖVAI'}! 👋`;
-  if (typeof Kal !== 'undefined' && Kal.parent) Kal.parent.mount();   // MODULIS: Kal (v541) — kalendorius vietoj seno turinio, tik su plans_enabled
+  if (typeof Kal !== 'undefined' && Kal.parent) { if (!(opts && opts.noKal)) Kal.parent.mount(); }   // MODULIS: Kal (v541) — kalendorius vietoj seno turinio, tik su plans_enabled
   // v641 (tėvų auditas N9, 11A): su V2 kalendoriumi senas #tk-legacy nebekraunamas (~14 užklausų į paslėptą bloką: 3 reitingų RPC,
   // plano kortelė, iššūkiai, laukiantys…) — LVL, reitingai, serija ir iššūkiai dabar kalendoriaus juostoje (Kal.parent.stripHtml)
   if (k && typeof Kal !== 'undefined' && Kal.parent && Kal.parent.K && Kal.parent.K.on()) {
@@ -8232,6 +8250,8 @@ async function _initArchiveButton() {
   const btn = document.getElementById('v-prof-archive-btn');
   const sumEl = document.getElementById('v-prof-archive-sum');
   if (!btn || !currentKid?.id) return;
+  // v672 (našumas E1): 6–13 archyvas atsiranda tik perėjus į 14+ (age_up_career) — kitiems vaikams užklausa kiekvieno krovimo metu buvo veltui
+  if (!(currentKid.career_band === '14+' || currentKid.career_aged_up_at)) { btn.style.display = 'none'; return; }
   try {
     const { data: meta } = await sb.from('career_archive_meta').select('*').eq('kid_id', currentKid.id).eq('age_band', '6-13').maybeSingle();
     if (!meta) { btn.style.display = 'none'; return; }
@@ -8480,15 +8500,21 @@ async function _loadKidDataRun() {
   }
   
   // 📋 Informacija + Treneriai + Draugai + Biografija
+  // v673 (našumas E1-2): V2 komandos draugai (v-prof-teammates) perkelti į Grupę (Kal.applyNav8) — jų 3 užklausos daromos atidarius
+  // Grupę (Kal.kid.grupe → renderProfileExtras); čia, kai Grupė neatidaryta, tik biografija (be užklausų)
+  const _kidV2 = typeof Kal !== 'undefined' && Kal.on();
   try {
-    renderProfileExtras();
+    renderProfileExtras((_kidV2 && !document.getElementById('v-grupe')?.classList.contains('on')) ? { bioOnly: true } : undefined);
   } catch(e) {
     console.error('[renderProfileExtras] klaida:', e);
   }
-  
+
   // 🏆 Atnaujint trofėjų/badge'ų skaičius
+  // v673 (našumas E1-2): suvestinės ir savo ženkliukų kešas — tik Profilyje (v-prof; savo ženkliukų langas atidaromas tik iš jo) →
+  // kraunama atidarius Profilį (nv) arba čia, jei jis atidarytas
   try {
-    updateProfileCounts();
+    if (!_kidV2 || document.getElementById('v-prof')?.classList.contains('on')) updateProfileCounts();
+    else Krov.drop('kid:profCounts');   // duomenys perkrauti (pvz. po patvirtinimo) — atidarius Profilį skaičiuos iš naujo
   } catch(e) {
     console.error('[updateProfileCounts] klaida:', e);
   }
@@ -9818,17 +9844,18 @@ function renderBeltFlat() {
 // ════════════════════════════════════════
 // 📋 Profilio papildomi: biografija, info, treneriai, draugai
 // ════════════════════════════════════════
-async function renderProfileExtras() {
+async function renderProfileExtras(opts) {
   if (!currentKid) return;
   console.log('[renderProfileExtras] START, group_id:', currentKid.group_id);
-  
+
   // 💬 BIOGRAFIJA - iš kids.bio (jei yra)
   const bioEl = document.getElementById('v-prof-bio');
   if (bioEl) {
     const defaultBio = '"Karatė nėra kovos sportas - tai kelias į asmenybės ugdymą."';
     bioEl.textContent = currentKid.bio || defaultBio;
   }
-  
+  if (opts && opts.bioOnly) return;   // v673 (našumas E1-2): draugai — atidarius Grupę
+
   // 🤝 KOMANDOS DRAUGAI - iš to paties grupės kiti vaikai
   const teammatesEl = document.getElementById('v-prof-teammates');
   console.log('[teammates] el:', !!teammatesEl, 'group_id:', currentKid.group_id);
@@ -14309,6 +14336,16 @@ async function _fetchClubNotificationsRun(){
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-30);
   const cutoffISO = cutoff.toISOString();
 
+  // v673 (našumas E1-2): žemiau esančių sekcijų NEPRIKLAUSOMI šaltiniai paleidžiami iš karto (buvo ~5 nuoseklios bangos po dviejų
+  // Promise.all); kiekviena sekcija laukia savo pažado — logika, tvarka ir klaidų elgesys (kiekviena savo try/catch) nepakito.
+  const _pf = p => { const q = Promise.resolve(p); q.catch(() => { }); return q; };
+  const _preK = {
+    notes: _pf(sb.rpc('club_staff_notes', { p_days: 30 })),
+    news: _pf(sb.from('platform_news').select('id, title, body, created_at').gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(5)),
+    bday: (typeof flagOn !== 'function' || flagOn('birthdays_enabled')) ? _pf(sb.from('kids').select('id, first_name, last_name, birth_date').eq('club_id', clubId)) : null,
+    att: (typeof Anal !== 'undefined') ? _pf(Anal.att60()) : null,
+    v2: (typeof KNotif !== 'undefined') ? _pf(KNotif.v2Items(clubId)) : null,
+  };
   const [trsRes, kids, compsRes, campsRes] = await Promise.all([
     sb.from('trainers').select('id, profiles!inner(first_name,last_name,status,activated_at)').eq('invited_by_club_id', clubId),
     _getClubKids(),
@@ -14323,7 +14360,7 @@ async function _fetchClubNotificationsRun(){
   const campTitle = {}; (campsRes.data||[]).forEach(c=>campTitle[c.id]=c.title); const campIds = Object.keys(campTitle);
 
   const [actR, rsvpR, gcR, repR, crR, msR, pendR, gcActiveR] = await Promise.all([
-    sb.rpc('club_trainer_activity', { club_uuid: clubId }).then(r=>r.data||[]).catch(()=>[]),
+    Krov.once('club:tact:' + clubId, () => sb.rpc('club_trainer_activity', { club_uuid: clubId }), 30000).then(r=>r.data||[]).catch(()=>[]),
     campIds.length ? sb.from('club_event_rsvp').select('id, kid_id, event_id, status, created_at').in('event_id', campIds).gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(60) : Promise.resolve({data:[]}),
     sb.from('club_challenges').select('id, title, created_at').eq('club_id', clubId).eq('is_active', false).gte('created_at', cutoffISO).order('created_at',{ascending:false}).limit(10),
     Promise.resolve({data:[]}),   // v614: ataskaitų varpelyje nerodom — užklausa išimta
@@ -14366,7 +14403,7 @@ async function _fetchClubNotificationsRun(){
   const systemItems = [...trainerItems];
   // 📝 v454: trenerių užrašai, adresuoti klubo administracijai — kad nepraslystų nepastebėti
   try {
-    const { data: notes } = await sb.rpc('club_staff_notes', { p_days: 30 });
+    const { data: notes } = await _preK.notes;   // v673: paleista pradžioje
     (notes || []).slice(0, 10).forEach(n => {
       const kur = n.kid_name ? ('apie ' + n.kid_name) : (n.group_name || 'klubui');
       systemItems.push({
@@ -14392,7 +14429,7 @@ async function _fetchClubNotificationsRun(){
   } catch(e){ /* tylim */ }
   // 📰 v483: SPOBU naujienos klubo varpelyje (30 d.)
   try {
-    const { data: nws } = await sb.from('platform_news').select('id, title, body, created_at').gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(5);
+    const { data: nws } = await _preK.news;   // v673: paleista pradžioje
     (nws || []).forEach(n => {
       systemItems.push({ id: 'pnews-' + n.id, icon: '📰', title: 'SPOBU: ' + n.title, sub: (n.body || '').slice(0, 110), ts: n.created_at });
     });
@@ -14400,7 +14437,7 @@ async function _fetchClubNotificationsRun(){
   // 🎂 v476: artėjantys gimtadieniai klubo varpelyje (7 d.)
   try {
     if (typeof flagOn !== 'function' || flagOn('birthdays_enabled')){
-      const { data: bk } = await sb.from('kids').select('id, first_name, last_name, birth_date').eq('club_id', clubId);
+      const { data: bk } = await _preK.bday;   // v673: paleista pradžioje
       _upcomingBdays(bk || [], 7).forEach(b => {
         systemItems.push({ id: 'bday-' + b.id + '-' + b.dateKey, icon: '🎂',
           title: b.diff === 0 ? `Šiandien ${b.name} gimtadienis!` : `${b.name} gimtadienis ${b.diff === 1 ? 'rytoj' : 'po ' + b.diff + ' d.'}`,
@@ -14414,7 +14451,7 @@ async function _fetchClubNotificationsRun(){
   // Neaktyvūs vaikai — agreguota, pagal lankomumo raudoną slenkstį (kaip loadClubInactiveKids)
   try {
     // v614: Anal.att60 — tik aktyvios grupės, puslapiais (buvo iki 1000 eil. ir su neaktyviomis), tik dabartiniai klubo vaikai
-    const att = (typeof Anal !== 'undefined') ? await Anal.att60() : [];
+    const att = _preK.att ? await _preK.att : [];   // v673: paleista pradžioje
     const own = new Set(kidIds);
     if (att.length){
       const byKid={}; att.forEach(r=>{ if (own.has(r.kid_id)) (byKid[r.kid_id]=byKid[r.kid_id]||[]).push(r); });
@@ -14424,7 +14461,7 @@ async function _fetchClubNotificationsRun(){
     }
   } catch(_){}
   // v614: V2 įvykiai — „Reikia pavaduotojo" (14 d.) ir nepatvirtintos treniruotės per 7 d. pagal trenerį (MODULIS: KNotif)
-  try { if (typeof KNotif !== 'undefined') systemItems.push(...await KNotif.v2Items(clubId)); } catch(e){ console.warn('[knotif] v2', e); }
+  try { if (_preK.v2) systemItems.push(...await _preK.v2); } catch(e){ console.warn('[knotif] v2', e); }
   systemItems.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
 
   // ŽINUTĖS: pokalbiai su perskaityta/neperskaityta būsena (kaip tėvo varpelis) — rodomi VISI, taškas = neperskaityta
@@ -15220,6 +15257,8 @@ async function _getClubKids(force){
   if (!cid) return []; // NEkešuojam — currentClub dar neužsikrovęs (boot race)
   const c = _clubKidsCache;
   if (c && !force && c._club === cid && Date.now() - c._at < 60000) return c;
+  // v672 (našumas E1): vienu metu kviečiantys (dashboard kortelės, varpelis, Analitika) — vienas krovimas (E0: kids 2× lygiagrečiai)
+  if (!force) return Krov.once('club:kids:' + cid, () => _getClubKids(true));
   try {
     // 🧮 v460 (B4): TIK patvirtinti vaikai — laukiantis anketos dar nėra klubo narys (null = senas įrašas = patvirtintas,
     // taip skaičiuoja ir club_fee_debts: coalesce(approval_status,'approved'))
@@ -19777,26 +19816,27 @@ async function getMyKidIds(onlyPrimary = false) {
   // be cache tai ~16 perteklinių DB užklausų. 60s TTL — pakanka užkrovimo grandinei.
   const _mkKey = `${currentUser?.id}|${onlyPrimary}`;
   const _mkC = _myKidIdsMemo[_mkKey];
-  if (_mkC && (Date.now() - _mkC.ts) < 60000) return _mkC.ids;
+  if (_mkC && (Date.now() - _mkC.ts) < 60000) return _mkC.p ? _mkC.p.then(ids => ids.slice()) : _mkC.ids;
   // 1. M:N kelias
   let mnQuery = sb.from('kid_trainers')
     .select('kid_id')
     .eq('trainer_id', currentUser.id);
   if (onlyPrimary) mnQuery = mnQuery.eq('role', 'primary');
-  
-  const { data: ktLinks } = await mnQuery;
-  const mnKidIds = (ktLinks || []).map(l => l.kid_id);
-  
   // 2. Legacy kelias - kids su assigned_trainer_id (jei not onlyPrimary, arba jei onlyPrimary - vis tiek imam, nes legacy yra primary funkcijoje)
-  const { data: legacyKids } = await sb.from('kids')
-    .select('id')
-    .eq('assigned_trainer_id', currentUser.id);
-  const legacyKidIds = (legacyKids || []).map(k => k.id);
-  
-  // 3. Suvienyti unikalūs ID
-  const _mkIds = [...new Set([...mnKidIds, ...legacyKidIds])];
-  _myKidIdsMemo[_mkKey] = { ts: Date.now(), ids: _mkIds };
-  return _mkIds;
+  // v672 (našumas E1): abu keliai LYGIAGREČIAI (buvo nuosekliai) ir bendras pažadas — vienu metu kviečiantys (Kal, grupės, varpelis)
+  // nebeina į DB po kartą; klaida neįsimenama 60 s (kitas kvietimas bando iš naujo).
+  let _bad = false;
+  const p = Promise.all([mnQuery, sb.from('kids').select('id').eq('assigned_trainer_id', currentUser.id)])
+    .then(([kt, lg]) => {
+      if (kt.error || lg.error) { _bad = true; console.warn('getMyKidIds:', (kt.error || lg.error).message); }
+      // 3. Suvienyti unikalūs ID
+      return [...new Set([...(kt.data || []).map(l => l.kid_id), ...(lg.data || []).map(k => k.id)])];
+    });
+  _myKidIdsMemo[_mkKey] = { ts: Date.now(), p };
+  let _mkIds;
+  try { _mkIds = await p; } catch (e) { if (_myKidIdsMemo[_mkKey]?.p === p) delete _myKidIdsMemo[_mkKey]; throw e; }
+  if (_myKidIdsMemo[_mkKey]?.p === p) { if (_bad) delete _myKidIdsMemo[_mkKey]; else _myKidIdsMemo[_mkKey] = { ts: Date.now(), ids: _mkIds }; }
+  return _mkIds.slice();
 }
 
 async function loadTrainerData() {
@@ -19830,7 +19870,7 @@ async function loadTrainerData() {
   // atskirai (updateTrainerNotifBadge), tad pranešimų skaičius vis tiek teisingas.
   await Promise.allSettled([
     loadNewKids(),
-    loadTrainerGroups()
+    loadTrainerGroups({ lite: true })   // v672 (našumas E1): V2 prisijungus — be tr-groups kortelių (žr. loadTrainerGroups)
   ]);
   // 🥋 Lygiai (hero + tr-stat) ir pagrindinio ekrano sekcijos — fone, nestabdo pradžios lango
   // („Šiandien" sekciją atnaujina loadTrainerGroups → loadTrainerToday)
@@ -19845,24 +19885,29 @@ async function loadNewKids() {
   // M:N sistema: tik PAGRINDINIS treneris (primary) tvirtina anketas
   // SVARBU: imam vaikus iš ABIEJŲ vietų (M:N + legacy assigned_trainer_id) ir suvienijame
   
-  // 1. M:N kelias – kid_trainers kur primary
-  const { data: ktLinks } = await sb.from('kid_trainers')
-    .select('kid_id')
-    .eq('trainer_id', currentUser.id)
-    .eq('role', 'primary');
-  const mnKidIds = (ktLinks || []).map(l => l.kid_id);
-  
-  // 2. Legacy kelias – kids kur assigned_trainer_id
-  const { data: legacyKids } = await sb.from('kids')
-    .select('id')
-    .eq('assigned_trainer_id', currentUser.id);
-  const legacyKidIds = (legacyKids || []).map(k => k.id);
-  
-  // 3. Suvienijame ir gauname pending vaikus
-  const allKidIds = [...new Set([...mnKidIds, ...legacyKidIds])];
-  
+  // v672 (našumas E1): V2 klube (žr. žemiau) 1–2 žingsnių rezultatas nenaudojamas — ten jie nebekraunami (−2 nuoseklios užklausos)
+  const _v2Club = typeof Kal !== 'undefined' && Kal.on() && currentProfile?.club_id;
+  let allKidIds = [];
+  if (!_v2Club) {
+    // 1. M:N kelias – kid_trainers kur primary
+    const { data: ktLinks } = await sb.from('kid_trainers')
+      .select('kid_id')
+      .eq('trainer_id', currentUser.id)
+      .eq('role', 'primary');
+    const mnKidIds = (ktLinks || []).map(l => l.kid_id);
+
+    // 2. Legacy kelias – kids kur assigned_trainer_id
+    const { data: legacyKids } = await sb.from('kids')
+      .select('id')
+      .eq('assigned_trainer_id', currentUser.id);
+    const legacyKidIds = (legacyKids || []).map(k => k.id);
+
+    // 3. Suvienijame ir gauname pending vaikus
+    allKidIds = [...new Set([...mnKidIds, ...legacyKidIds])];
+  }
+
   let kids = null, error = null;
-  if (typeof Kal !== 'undefined' && Kal.on() && currentProfile?.club_id) {   // v582 (savininkas 09-18): V2 klube treneris mato ir tvirtina visas klubo anketas (RLS trainer_reads_pending_club_kids)
+  if (_v2Club) {   // v582 (savininkas 09-18): V2 klube treneris mato ir tvirtina visas klubo anketas (RLS trainer_reads_pending_club_kids)
     const result = await sb.from('kids')
       .select('id, first_name, last_name, gender, birth_year, birth_date, weight_range, kyu, created_at, user_id')
       .eq('club_id', currentProfile.club_id)
@@ -20189,7 +20234,7 @@ let _myKidIdSetTr = new Set(); // trenerio vaikų ID (M:N + legacy) — tr-stat 
 // Helper: Generuoja ikonėlių eilutę kiekvienam vaikui sąraše
 // Rodoma: 📷 media (✅/🚫), 📱 telefonas (jei turi), 🏥 sveikatos pastabos (jei yra)
 
-async function loadTrainerGroups() {
+async function loadTrainerGroups(opts) {
   // 1. Užkrauname trenerio grupes
   const { data: groups, error } = await sb.from('groups')
     .select('*')
@@ -20220,7 +20265,15 @@ async function loadTrainerGroups() {
   }
   
   allTrainerKids = kids;
-  if (typeof Kal !== "undefined" && Kal.on() && Kal.st && Array.isArray(Kal.st.sessions) && document.getElementById("tr-kal")?.classList.contains("on")) Kal.render();   // MODULIS: Kal (v550) â plytelÄ ânariai" po ankstyvo kalendoriaus (8 etapas: tr-kal pradinis)
+  // v672 (našumas E1, S-07): kol Kal.reload kraunasi (busy) — nepiešti: sesijos dar tuščios → buvo „0 TRENIRUOČIŲ" ~1 s; reload nupieš pats
+  if (typeof Kal !== "undefined" && Kal.on() && Kal.st && Array.isArray(Kal.st.sessions) && !Kal.st.busy && document.getElementById("tr-kal")?.classList.contains("on")) Kal.render();   // MODULIS: Kal (v550) â plytelÄ ânariai" po ankstyvo kalendoriaus (8 etapas: tr-kal pradinis)
+  // v672 (našumas E1): prisijungus (V2) — tik grupės + vaikai (jų reikia kalendoriui). Laukiantys pagal grupę (3 užkl.) ir Grup.mount (apie 9 užkl.)
+  // rašo į tr-groups / tr-main, kurie prisijungus nematomi — juos pilnai užkrauna nv → tr-groups (loadTrainerGroups() be opts).
+  if (opts && opts.lite && Krov.trV2()) {
+    if (typeof renderTrchGroupFilter === 'function') renderTrchGroupFilter();
+    if (typeof renderTrPatGroupFilter === 'function') renderTrPatGroupFilter();
+    return;
+  }
 
   // ⏳ Laukiančių patvirtinimo skaičius per grupę — kortelėms (kad matytųsi nepaspaudus)
   const pendByGroup = {};
@@ -23214,6 +23267,7 @@ function trOpenPatTab(tab) {
 // Atidaro tr-stat (iš „VISA STATISTIKA" / KPI kortelių) ir užkrauna duomenis
 function openTrainerStatScreen(tab) {
   g('tr', 'tr-stat');
+  Krov.trBestKids();   // v672 (našumas E1): „Vaiko vieta klube" — atidarius (V2)
   if (tab && typeof switchTrainerStatTab === 'function') {
     switchTrainerStatTab(tab);
   } else if (typeof loadTrainerOverallStat === 'function') {
@@ -23361,8 +23415,12 @@ async function _trainerOverallEntries() {
   return getTrainerFilteredEntries((typeof trainerStatSeasonFilter !== 'undefined' && trainerStatSeasonFilter === 'all') ? 'total_exp' : 'season_total');
 }
 
+// v672 (našumas E1): V2 (plans_enabled) tr-main nepasiekiamas (Kal.applyNav8 jį išima iš navigacijos) — jo juostos, varžybos ir
+// laukiantys niekur nerodomi; vienintelė gyva dalis „Vaiko vieta klube" (trh-best-*) perkelta į tr-stat → kraunama atidarius
+// Statistiką (Krov.trBestKids, ne dažniau kaip kas 60 s). Buvo ~18 užklausų prisijungus, grįžus iš fono ir po KIEKVIENO realtime pateikimo.
 async function loadTrainerHome() {
   if (!currentUser) return;
+  if (Krov.trV2()) return;
   try {
     const kids = allTrainerKids || [];
     const kidIds = kids.map(k => k.id);
@@ -23518,6 +23576,7 @@ function _kidDisplayName(k) {
 // toje pačioje sesijoje (anksčiau atsinaujindavo tik badge, sąrašas — tik po reload).
 function _refreshTrhPending() {
   if (!document.getElementById('trh-pending-list')) return;
+  if (Krov.trV2()) return;   // v672 (našumas E1): V2 tr-main nerodomas — 6–8 užklausos po kiekvieno tvirtinimo buvo veltui
   try { _loadTrainerHomePending((allTrainerKids || []).map(k => k.id)); } catch (e) {}
 }
 
@@ -24502,21 +24561,26 @@ async function loadTrainerLevel() {
   if (!currentUser) return;
 
   try {
-    const myKidIds = await getMyKidIds(false);
-
-    // 5 count užklausos lygiagrečiai (head:true — be eilučių, tik skaičiai)
-    const [rs, cs, cr, ch, ak, v2] = await Promise.all([
-      sb.from('result_submissions').select('id', { count: 'exact', head: true })
-        .eq('trainer_id', currentUser.id).eq('status', 'approved'),
-      myKidIds.length ? sb.from('challenge_submissions').select('id', { count: 'exact', head: true })
-        .in('kid_id', myKidIds).eq('status', 'approved') : Promise.resolve({ count: 0 }),
-      sb.from('competition_results').select('id', { count: 'exact', head: true })
-        .eq('target_trainer_id', currentUser.id).eq('approval_status', 'approved'),
-      sb.from('challenges').select('id', { count: 'exact', head: true })
-        .eq('trainer_id', currentUser.id).is('parent_challenge_id', null),
-      myKidIds.length ? sb.from('kids').select('id', { count: 'exact', head: true })
-        .in('id', myKidIds).eq('approval_status', 'approved') : Promise.resolve({ count: 0 }),
+    // v672 (našumas E1): pirma RPC (V2 formulė serveryje); 4 HEAD skaičiavimai — TIK jei jis nepavyko (atsarginė formulė iki v592),
+    // o aktyvių vaikų skaičius = allTrainerKids (tas pats filtras: mano vaikai + approved, loadTrainerGroups). Buvo 6 užklausos, dabar 1.
+    const [myKidIds, v2] = await Promise.all([
+      getMyKidIds(false),
       sb.rpc('trainer_points_v2').then(r => (r && !r.error && r.data && r.data[0]) ? r.data[0] : null, () => null)   // v592: V2 formulė serveryje (be automatinių patvirtinimų; + treniruotės, atsiliepimai)
+    ]);
+    const _z = Promise.resolve({ count: 0 });
+    const _akOk = Array.isArray(allTrainerKids) && Array.isArray(trainerGroupsCache) && trainerGroupsCache.length > 0;
+    const [rs, cs, cr, ch, ak] = await Promise.all([
+      v2 ? _z : sb.from('result_submissions').select('id', { count: 'exact', head: true })
+        .eq('trainer_id', currentUser.id).eq('status', 'approved'),
+      (!v2 && myKidIds.length) ? sb.from('challenge_submissions').select('id', { count: 'exact', head: true })
+        .in('kid_id', myKidIds).eq('status', 'approved') : _z,
+      v2 ? _z : sb.from('competition_results').select('id', { count: 'exact', head: true })
+        .eq('target_trainer_id', currentUser.id).eq('approval_status', 'approved'),
+      v2 ? _z : sb.from('challenges').select('id', { count: 'exact', head: true })
+        .eq('trainer_id', currentUser.id).is('parent_challenge_id', null),
+      _akOk ? Promise.resolve({ count: allTrainerKids.filter(k => myKidIds.includes(k.id)).length })
+        : (myKidIds.length ? sb.from('kids').select('id', { count: 'exact', head: true })
+          .in('id', myKidIds).eq('approval_status', 'approved') : _z)
     ]);
 
     trainerApprovedTotal = (rs.count || 0) + (cs.count || 0) + (cr.count || 0);
@@ -25475,19 +25539,11 @@ async function loadAdminData() {
   if (aProfAvatar) aProfAvatar.textContent = (currentProfile.first_name?.[0] || 'A').toUpperCase();
   if (aProfName) aProfName.textContent = name;
 
-  console.log('👑 [loadAdminData] 2. Kraunam statistikas...');
+  console.log('👑 [loadAdminData] 2. Kraunam statistikas, klubus, atsiliepimus, ataskaitas...');
   // Statistikos — v665 (P7, 7A): admin_kpis — numatytai be demo klubo ir adminų (jungiklis Analitikoje)
-  try {
-    await Adm.mainStats();
-  } catch (e) {
-    console.error('❌ [loadAdminData] Statistikų klaida:', e);
-  }
-
-  console.log('👑 [loadAdminData] 3. Kraunam klubų sąrašą...');
-  // Klubų sąrašas
-  await loadAdminClubs();
-  await loadAdminFeedback();
-  await loadAdminReports();
+  // v672 (našumas E1): 4 nepriklausomi krovėjai LYGIAGREČIAI (buvo 4 nuoseklios bangos); kiekvieno klaida — konsolėje, kiti nesustoja
+  const _adm = await Promise.allSettled([Adm.mainStats(), loadAdminClubs(), loadAdminFeedback(), loadAdminReports()]);
+  ['Statistikų', 'Klubų', 'Atsiliepimų', 'Ataskaitų'].forEach((nm, i) => { if (_adm[i].status === 'rejected') console.error('❌ [loadAdminData] ' + nm + ' klaida:', _adm[i].reason); });
   console.log('✅ [loadAdminData] BAIGTA');
 }
 
@@ -25942,7 +25998,7 @@ function startAdminStatusBar(){
     } catch(e){}
   };
   tick();
-  setInterval(tick, 60000);
+  setInterval(() => { if (document.visibilityState === 'visible') tick(); }, 60000);   // v672 (našumas E1): fone — be 3 užklausų kas minutę
 }
 
 // 📰 GYVAS VEIKLOS SRAUTAS (a-recent-activity) — pirkimai + atsiliepimai + ataskaitos + naujos paskyros
@@ -27808,8 +27864,12 @@ async function loadClubData(clubIdOverride) {
   if (typeof _applyClubLogo === 'function') _applyClubLogo(club.logo_url ? club.logo_url + '?r=' + Date.now() : null);
 
   if (typeof _applyClubTrialGates === 'function') _applyClubTrialGates();   // v461: bandymo režimu slepiam pinigų blokus
-  try { await loadClubTrainers(); } catch(e) { console.error('loadClubTrainers:', e); }
-  if (typeof loadClubGroups === 'function') loadClubGroups();
+  // v672 (našumas E1): trenerių ir grupių sąrašai (k-trainers-list, k-groups-list, k-notes-strip) yra k-trainers ekrane — jį atidarius
+  // juos krauna nv; prisijungus (k-main) nebekraunam ir dashboard'as jų nebelaukia (E0: −11 užkl., −3 nuoseklios bangos).
+  if (document.getElementById('k-trainers')?.classList.contains('on')) {
+    try { await loadClubTrainers(); } catch(e) { console.error('loadClubTrainers:', e); }
+    if (typeof loadClubGroups === 'function') loadClubGroups();
+  }
   if (typeof loadClubMainDashboard === 'function') loadClubMainDashboard();  // pagrindinio dashboard (v320)
   updateClubNotifBadge(true); // ${ico('pranesimai')} varpelio badge (Blokas 8)
   if (typeof KNotif !== 'undefined') KNotif.subscribe();   // v614: gyvas varpelis (žinutės realtime + kas 5 min.)
@@ -28362,7 +28422,7 @@ async function loadClubMainDashboard(){
   // 1) TRENERIŲ ŠVIESOFORAS (club_trainer_activity: ≥7d 🔴 / ≥3d 🟡 / else 🟢)
   (async()=>{ try {
     const { data: trs } = await sb.from('trainers').select('id, profiles!inner(status)').eq('invited_by_club_id', cid);
-    let actMap={}; try { const { data: act } = await sb.rpc('club_trainer_activity', { club_uuid: cid }); (act||[]).forEach(a=>actMap[a.trainer_id]=a); } catch(_){}
+    let actMap={}; try { const { data: act } = await Krov.once('club:tact:' + cid, () => sb.rpc('club_trainer_activity', { club_uuid: cid }), 30000); (act||[]).forEach(a=>actMap[a.trainer_id]=a); } catch(_){}
     let g=0,y=0,r=0;
     // 🧮 v460 (B4): bendras skaičius = AKTYVŪS treneriai, nes lemputės skaičiuoja tik juos
     // (anksčiau į „TRENERIAI: N" pateko ir pakviesti, bet dar neprisijungę → N ≠ 🟢+🟡+🔴).
@@ -29035,7 +29095,7 @@ async function loadClubTrainers() {
   // Trenerių aktyvumas (RPC; jei SQL dar nepaleistas — be lempučių, graži degradacija)
   let actMap = {};
   try {
-    const { data: act } = await sb.rpc('club_trainer_activity', { club_uuid: currentClub.id });
+    const { data: act } = await Krov.once('club:tact:' + currentClub.id, () => sb.rpc('club_trainer_activity', { club_uuid: currentClub.id }), 30000);
     (act || []).forEach(a => { actMap[a.trainer_id] = a; });
   } catch (e) { /* funkcija dar nesukurta */ }
 
@@ -33161,7 +33221,7 @@ function subscribeTrainerNotifications() {
     }, payload => {
       if (payload.new && payload.new.auto_approved) return;   // v627 (3A): Strava užskaitė pati — tvirtinti nereikia
       showToast(''+ico('pastas')+' Naujas rezultatas laukia patvirtinimo!', 'success', 4000);
-      if (typeof updateTrainerNotifBadge === 'function') updateTrainerNotifBadge(true);
+      if (typeof _refreshTrainerBadgeSoon === 'function') _refreshTrainerBadgeSoon();   // v673 (našumas E1-2): serija įvykių → vienas varpelio atnaujinimas
       if (typeof loadTrainerHome === 'function') loadTrainerHome();
       // Atnaujinti sąrašą jei esame patvirtinimų ekrane
       if (document.getElementById('tr-pat')?.classList.contains('on')) {
@@ -33172,7 +33232,7 @@ function subscribeTrainerNotifications() {
       event: 'INSERT', schema: 'public', table: 'challenge_submissions'
     }, payload => {
       showToast(''+ico('tikslas')+' Naujas iššūkio pateikimas!', 'success', 4000);
-      if (typeof updateTrainerNotifBadge === 'function') updateTrainerNotifBadge(true);
+      if (typeof _refreshTrainerBadgeSoon === 'function') _refreshTrainerBadgeSoon();   // v673 (našumas E1-2): serija įvykių → vienas varpelio atnaujinimas
       if (typeof loadTrainerHome === 'function') loadTrainerHome();
       if (document.getElementById('tr-pat')?.classList.contains('on')) {
         loadPendingChallengeSubmissions();
@@ -33196,7 +33256,7 @@ function subscribeTrainerNotifications() {
         const preview = escapeHtml((msg.body || '').substring(0, 80));   // v615 XSS: showToast → innerHTML (pirma nukerpam, tada išvalom)
         if (typeof _addSeen === 'function') _addSeen('ms', msg.id);
         showToast(`${ico('zinutes')} NUO ${escapeHtml(senderName.toUpperCase())}${tag}\n\n${preview}`, 'info', null, { sound: 'send' });
-        if (typeof updateTrainerNotifBadge === 'function') updateTrainerNotifBadge(true);
+        if (typeof _refreshTrainerBadgeSoon === 'function') _refreshTrainerBadgeSoon();   // v673 (našumas E1-2): serija įvykių → vienas varpelio atnaujinimas
       } catch (e) { /* nekritinis */ }
     })
     .subscribe();
@@ -33232,6 +33292,9 @@ let _missedEventsRunning = false;
 function subscribeKidNotifications() {
   if (_kidChannelsSubscribed) { console.log('[realtime] jau prenumeruota — praleidžiam'); return; }
   _kidChannelsSubscribed = true;
+  // v673 (našumas E1-2): dvikovų prenumeratos filtruojamos serveryje (handleriai ir taip tikrina, ar vaikas dalyvauja)
+  const _kidF = col => currentKid?.id ? `${col}=eq.${currentKid.id}` : undefined;
+  let _kidDuelUpd = null;
   if (typeof KidGrupe !== 'undefined') KidGrupe.subscribe();   // MODULIS: KidGrupe (v631) — 👏 gyvai
   sb.channel('kid-'+currentUser.id)
     .on('postgres_changes', {
@@ -33260,7 +33323,7 @@ function subscribeKidNotifications() {
       }
     })
     .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'duels'
+      event: 'INSERT', schema: 'public', table: 'duels', filter: _kidF('opponent_id')
     }, async payload => {
       const duel = payload.new;
       if (!duel || duel.status !== 'pending') return;
@@ -33278,8 +33341,8 @@ function subscribeKidNotifications() {
       _refreshDuelViews();
     })
     .on('postgres_changes', {
-      event: 'UPDATE', schema: 'public', table: 'duels'
-    }, async payload => {
+      event: 'UPDATE', schema: 'public', table: 'duels', filter: _kidF('challenger_id')
+    }, _kidDuelUpd = async payload => {
       const duel = payload.new;
       if (!duel) return;
 
@@ -33306,6 +33369,7 @@ function subscribeKidNotifications() {
       showDuelResultPopup(duel, myKidId);
       await loadKidData();
     })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels', filter: _kidF('opponent_id') }, p => _kidDuelUpd(p))   // v673: antra pusė
     .subscribe();
   
   // 📡 ATSKIRAS KANALAS: iššūkiai + varžybos
@@ -33440,40 +33504,46 @@ function subscribeParentNotifications() {
   // v639: svarbūs vaiko įvykiai tėvui ateina SERVERIU (parent_kid_events + push, server-PUSH-tevams) — čia jų nedubliuojam.
   // v641 (tėvų auditas G1, 19A): perkrovimai SUJUNGIAMI — Strava sinchronizacija ar trenerio tvirtinimas paeiliui (N įvykių) = 1 perkrovimas per 2 s
   const refreshSoon = () => (typeof TevIvykiai !== 'undefined' && TevIvykiai.refreshSoon) ? TevIvykiai.refreshSoon() : refreshParentActiveScreen();
+  // v673 (našumas E1-2): serverio filtras pagal tėvo vaikus (klientas ir taip filtruoja _parentKidIdSet) — DB nebetikrina kiekvienos
+  // klubo eilutės kiekvienam prisijungusiam tėvui (ypač attendance: pažymėjus grupę). Pasikeitus vaikams — perprenumeruojama (loadParentKidsList).
+  const _kf = Krov.inF('kid_id', _parentKidIdSet);
+  Krov.parentSubKids = [..._parentKidIdSet].sort().join(',');
   sb.channel('parent-approvals-' + uid)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'challenge_submissions' }, payload => {
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'challenge_submissions', filter: _kf }, payload => {
       const sub = payload.new; if (!sub || !_parentKidIdSet.has(sub.kid_id)) return;
       if (sub.status === 'approved' && isActive(sub.kid_id)) refreshSoon();
     })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'competition_results' }, payload => {
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'competition_results', filter: _kf }, payload => {
       const res = payload.new; if (!res || !_parentKidIdSet.has(res.kid_id)) return;
       if (res.approval_status === 'approved' && isActive(res.kid_id)) refreshSoon();
     })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'result_submissions' }, payload => {
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'result_submissions', filter: _kf }, payload => {
       const sub = payload.new; if (!sub || !_parentKidIdSet.has(sub.kid_id)) return;
       if (sub.status === 'approved' && isActive(sub.kid_id)) refreshSoon();
     })
     // v641 (19A, P2): kalendorius atsinaujina ir po lankomumo / pastangų bei trenerio EXP (anksčiau — tik perkrovus)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, payload => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance', filter: _kf }, payload => {
       const a = payload.new || payload.old; if (a && _parentKidIdSet.has(a.kid_id) && isActive(a.kid_id)) refreshSoon();
     })
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'kid_exp_adjustments' }, payload => {
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'kid_exp_adjustments', filter: _kf }, payload => {
       const a = payload.new; if (a && _parentKidIdSet.has(a.kid_id) && isActive(a.kid_id)) refreshSoon();
     })
     .subscribe();
 
   // KANALAS 2: dvikovos — TIK TYLUS atnaujinimas, jokio toast/push
-  sb.channel('parent-duels-' + uid)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels' }, payload => {
+  const _onDuel = payload => {
       const duel = payload.new; if (!duel || duel.status !== 'completed') return;
       const kidId = _parentKidIdSet.has(duel.challenger_id) ? duel.challenger_id : (_parentKidIdSet.has(duel.opponent_id) ? duel.opponent_id : null);
       if (kidId && isActive(kidId)) refreshSoon();
-    })
+  };
+  sb.channel('parent-duels-' + uid)   // v673: dvi filtruotos prenumeratos (vaikas — iškvietėjas arba varžovas) vietoj visų klubo dvikovų
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels', filter: Krov.inF('challenger_id', _parentKidIdSet) }, _onDuel)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'duels', filter: Krov.inF('opponent_id', _parentKidIdSet) }, _onDuel)
     .subscribe();
 
   // KANALAS 2b: 🙏 vaiko pirkimo prašymai (14+) — toast + pasiūlymas atsidaryti
   sb.channel('parent-preq-' + uid)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'purchase_requests' }, payload => {
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'purchase_requests', filter: _kf }, payload => {
       const req = payload.new;
       if (!req || !_parentKidIdSet.has(req.kid_id)) return;
       if (_isSeen('preqR', req.id)) return;
@@ -33521,7 +33591,7 @@ function subscribeParentNotifications() {
 
   // KANALAS 4: AI ataskaitos — kai admin patvirtina (status → done), tėvas gauna pranešimą
   sb.channel('parent-reports-' + uid)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'reports' }, payload => {
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'reports', filter: _kf }, payload => {
       const rep = payload.new;
       if (!rep || !_parentKidIdSet.has(rep.kid_id)) return;
       if (rep.status !== 'done') return;
@@ -34201,6 +34271,7 @@ function nv(p,el,sid){
   if (sid === 'v-grupe' && typeof Kal !== 'undefined' && Kal.kid && Kal.kid.grupe) Kal.kid.grupe();   // MODULIS: Kal (v549) — vaiko grupė
   if ((sid === 'v-prof' || sid === 't-prof') && typeof Strava !== 'undefined') Strava.render();   // MODULIS: Strava (v552) — Strava kortelė profilyje
   if (sid === 'v-prof' && typeof KidRek !== 'undefined') KidRek.load();   // MODULIS: KidRek (v631) — varžybų rekordas profilyje
+  if (sid === 'v-prof' && typeof Kal !== 'undefined' && Kal.on() && typeof updateProfileCounts === 'function') Krov.once('kid:profCounts', () => updateProfileCounts(), 30000);   // v673 (našumas E1-2): suvestinės — atidarius
   if (sid === 'v-prof' && typeof Sezonas !== 'undefined') Sezonas.kidRow();   // MODULIS: Sezonas (v651) — vaiko sezono apžvalga (nemokamai)
   if (sid === 't-prof' && typeof Kal !== 'undefined' && Kal.parent) Kal.parent.applyProfile();   // MODULIS: Kal (v541) — profilio eilutės (statistika, reitingai, rekordas, vaikai)
   // v653 (savininko peržiūra): klubo kortelė tėvams — nebe Profilyje, o šeimos Nustatymuose („Klubo informacija", MODULIS: TevNust)
@@ -34222,6 +34293,7 @@ function nv(p,el,sid){
     if (typeof loadOverallStatTab === 'function') loadOverallStatTab();
     if (typeof loadKidTierGate === 'function') loadKidTierGate();
   }
+  if (sid === 'tr-stat') Krov.trBestKids();   // v672 (našumas E1): „Vaiko vieta klube" — atidarius (V2)
   if (sid === 'tr-stat' && typeof loadTrainerOverallStat === 'function') {
     loadTrainerOverallStat();
   }
@@ -34386,6 +34458,9 @@ async function handleAppResume() {
     };
     const loader = loaders[_activeSid];
     if (loader) await loader();
+    // v672 (našumas E1): v-main / v-prof krovėjas (loadKidData) pats paleidžia varžybų, medalių, patvirtinimų / atmetimų detektorius ir
+    // varpelį (loadAllNotifications) — žemiau jų antrą kartą nekviečiam (E0: vaiko grįžimas 91 užkl. > šaltas 77)
+    const _kidFull = currentProfile?.role === 'kid' && !!loader && (_activeSid === 'v-main' || _activeSid === 'v-prof');
     if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
     
     // 📡 Perregistruoti realtime kanalus (gali būti "miręs")
@@ -34399,33 +34474,33 @@ async function handleAppResume() {
     }
 
     // 🥇 Patikrint naujas varžybas, paskelbtas kol buvai išėjęs
-    if (currentProfile?.role === 'kid' && typeof checkForNewCompetitions === 'function') {
+    if (currentProfile?.role === 'kid' && !_kidFull && typeof checkForNewCompetitions === 'function') {
       checkForNewCompetitions();
     }
 
     // 🔔 Atnaujinti varpelio notifikacijų skaičių (vienas šaltinis — be konflikto)
-    if (currentProfile?.role === 'kid' && typeof loadAllNotifications === 'function') {
+    if (currentProfile?.role === 'kid' && !_kidFull && typeof loadAllNotifications === 'function') {
       loadAllNotifications();
     }
 
     // 🥇 Parodyti praleistą varžybų medalio/dalyvavimo šventę (jei patvirtinta fone)
-    if (currentProfile?.role === 'kid' && typeof detectNewMedals === 'function') {
+    if (currentProfile?.role === 'kid' && !_kidFull && typeof detectNewMedals === 'function') {
       detectNewMedals();
     }
 
     // 🎯 Parodyti praleistus iššūkių patvirtinimus (tarpinis/popup + pilno įveikimo šventė)
-    if (currentProfile?.role === 'kid' && typeof checkForNewApprovedSubmissions === 'function') {
+    if (currentProfile?.role === 'kid' && !_kidFull && typeof checkForNewApprovedSubmissions === 'function') {
       checkForNewApprovedSubmissions();
     }
     // 🔄 v400: praleisti ATMETIMAI — „grąžinta pataisyti" (BUG-1)
-    if (currentProfile?.role === 'kid' && typeof checkForNewRejectedSubmissions === 'function') {
+    if (currentProfile?.role === 'kid' && !_kidFull && typeof checkForNewRejectedSubmissions === 'function') {
       checkForNewRejectedSubmissions();
     }
     // 👨‍👩‍👧 TĖVAI: perregistruoti kanalus + atnaujinti ekraną + praleisti įvykiai
     if (currentProfile?.role === 'parent') {
       if (typeof resubscribeParentChannels === 'function') await resubscribeParentChannels();
       if (typeof refreshParentActiveScreen === 'function') refreshParentActiveScreen();
-      if (typeof updateParentNotifBadge === 'function') updateParentNotifBadge();
+      if (typeof updateParentNotifBadge === 'function' && _activeSid !== 't-seima') updateParentNotifBadge();   // v672 (našumas E1): Šeimoje TevSeima.load skaičiuoja pats
       if (typeof showParentMissedEvents === 'function') await showParentMissedEvents();
     }
 
@@ -37261,7 +37336,25 @@ async function loadAllNotifications(force) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
   const cutoffISO = cutoff.toISOString();
-  
+
+  // v672 (našumas E1): žemiau esančių sekcijų NEPRIKLAUSOMI šaltiniai paleidžiami IŠ KARTO (buvo ~8 nuoseklios bangos po pagrindinio
+  // Promise.all); kiekviena sekcija tik laukia savo pažado — logika, tvarka ir klaidų elgesys (kiekviena savo try/catch) nepakito.
+  const _pf = p => { const q = Promise.resolve(p); q.catch(() => { }); return q; };
+  const _pfClub = currentKid?.club_id || currentProfile?.club_id || _kidCompClubId;
+  const _pre = {
+    reg: _pf(sb.from('kids').select('approval_status, rejection_reason, rejected_at').eq('id', currentKid.id).single()),
+    camps: _pfClub ? _pf(sb.from('club_events').select('id, title, starts_on, created_at').eq('club_id', _pfClub).gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10)) : null,
+    campExp: _pf(sb.from('kid_exp_adjustments').select('id, exp_change, reason, created_at').eq('kid_id', currentKid.id).like('reason', 'Stovykla:%').gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10)),
+    gcNew: (_pfClub && currentKid?.group_id) ? _pf(sb.from('club_challenges').select('id, title, created_at')
+      .eq('club_id', _pfClub).eq('is_active', true).gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10)) : null,
+    gcExp: _pf(sb.from('kid_exp_adjustments').select('id, exp_change, reason, created_at')
+      .eq('kid_id', currentKid.id).like('reason', 'Grupių iššūkis:%').gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10)),
+    dw: (typeof KidGate === 'undefined' || KidGate.on('duels')) ? _pf(sb.from('duels').select('id, duel_type, completed_at')
+      .eq('winner_id', currentKid.id).eq('status', 'completed').gte('completed_at', cutoffISO).order('completed_at', { ascending: false }).limit(10)) : null,
+    kx: typeof KidExp !== 'undefined' ? _pf(KidExp.bellItems(cutoffISO, seenIds)) : null,
+    kg: typeof KidGrupe !== 'undefined' ? _pf(KidGrupe.bellItems(cutoffISO)) : null,
+  };
+
   const [approvedChRes, approvedCoRes, approvedPrRes, streakRes, newChRes, newCoRes, msgsRes] = await Promise.all([
     // 🤖 SISTEMA - patvirtinti IR atmesti iššūkių submissions (v400: + instructions rinkinio grupavimui)
     sb.from('challenge_submissions')
@@ -37322,7 +37415,7 @@ async function loadAllNotifications(force) {
   // 📋 REGISTRACIJOS ATMETIMAS — vaiko anketa atmesta klubo (rodom kaip Sistema pranešimą)
   let _regRej = null;
   try {
-    const { data: _kidReg } = await sb.from('kids').select('approval_status, rejection_reason, rejected_at').eq('id', currentKid.id).single();
+    const { data: _kidReg } = await _pre.reg;   // v672: paleista pradžioje
     if (_kidReg && _kidReg.approval_status === 'rejected') _regRej = _kidReg;
   } catch(_e){ /* ignoruojam */ }
 
@@ -37556,7 +37649,7 @@ async function loadAllNotifications(force) {
   try {
     const _bellClubId = currentKid?.club_id || currentProfile?.club_id || _kidCompClubId;
     if (!_bellClubId) throw 0;
-    const { data: _newCamps } = await sb.from('club_events').select('id, title, starts_on, created_at').eq('club_id', _bellClubId).gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10);
+    const { data: _newCamps } = await _pre.camps;   // v672: paleista pradžioje
     (_newCamps || []).forEach(cp => {
       varzybos.push({ id: `newcamp-${cp.id}`, icon: ''+ico('stovykla')+'', title: 'Nauja stovykla', body: `${escapeHtml(cp.title || 'Stovykla')}${cp.starts_on ? ' · ' + new Date(cp.starts_on).toLocaleDateString('lt-LT') : ''}`, time: cp.created_at, link: 'v-comp' });
     });
@@ -37565,7 +37658,7 @@ async function loadAllNotifications(force) {
   // ✅ STOVYKLA PATVIRTINTA (treneris patvirtino → EXP) → Varžybų tabe
   // approve_camp_attendance rašo kid_exp_adjustments su reason 'Stovykla: <pavadinimas>'
   try {
-    const { data: _campExp } = await sb.from('kid_exp_adjustments').select('id, exp_change, reason, created_at').eq('kid_id', currentKid.id).like('reason', 'Stovykla:%').gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10);
+    const { data: _campExp } = await _pre.campExp;   // v672: paleista pradžioje
     (_campExp || []).forEach(a => {
       varzybos.push({ id: `campexp-${a.id}`, icon: ''+ico('patvirtinta')+'', title: 'Stovykla patvirtinta', body: `${escapeHtml((a.reason || '').replace('Stovykla: ', ''))}${a.exp_change > 0 ? ' · +' + a.exp_change + ' EXP' : ''}`, time: a.created_at, link: 'v-comp' });
     });
@@ -37575,8 +37668,7 @@ async function loadAllNotifications(force) {
   try {
     const _gcClubId = currentKid?.club_id || currentProfile?.club_id || _kidCompClubId;
     if (_gcClubId && currentKid?.group_id) {
-      const { data: _gcNew } = await sb.from('club_challenges').select('id, title, created_at')
-        .eq('club_id', _gcClubId).eq('is_active', true).gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10);
+      const { data: _gcNew } = await _pre.gcNew;   // v672: paleista pradžioje
       if (_gcNew && _gcNew.length){
         const { data: _gcParts } = await sb.from('club_challenge_groups').select('challenge_id').eq('group_id', currentKid.group_id).in('challenge_id', _gcNew.map(c=>c.id));
         const _mySet = new Set((_gcParts||[]).map(p=>p.challenge_id));
@@ -37589,8 +37681,7 @@ async function loadAllNotifications(force) {
 
   // 🏆 GRUPIŲ IŠŠŪKIS BAIGĖSI + EXP → Iššūkių tabe (finalize rašo reason 'Grupių iššūkis: <pavadinimas> (X v.)')
   try {
-    const { data: _gcExp } = await sb.from('kid_exp_adjustments').select('id, exp_change, reason, created_at')
-      .eq('kid_id', currentKid.id).like('reason', 'Grupių iššūkis:%').gte('created_at', cutoffISO).order('created_at', { ascending: false }).limit(10);
+    const { data: _gcExp } = await _pre.gcExp;   // v672: paleista pradžioje
     (_gcExp || []).forEach(a => {
       issukiai.push({ id: `gcexp-${a.id}`, icon: ''+ico('trofejai')+'', title: 'Grupių iššūkis baigėsi', body: `${escapeHtml((a.reason || '').replace('Grupių iššūkis: ', ''))}${a.exp_change > 0 ? ' · +' + a.exp_change + ' EXP' : ''}`, time: a.created_at, link: 'v-ish' });
     });
@@ -37599,8 +37690,7 @@ async function loadAllNotifications(force) {
   // 🥊 v626 (D1): LAIMĖTOS DVIKOVOS → Sistema, su „Pasidalinti" (be varžovo vardo — jis gali būti anonimas)
   try {
     if (typeof KidGate === 'undefined' || KidGate.on('duels')) {
-      const { data: _dw } = await sb.from('duels').select('id, duel_type, completed_at')
-        .eq('winner_id', currentKid.id).eq('status', 'completed').gte('completed_at', cutoffISO).order('completed_at', { ascending: false }).limit(10);
+      const { data: _dw } = await _pre.dw;   // v672: paleista pradžioje
       (_dw || []).forEach(d => {
         const tn = (DUEL_TYPES[d.duel_type] || { name: 'Dvikova' }).name;
         sistema.push({ id: `duelWin-${d.id}`, icon: '' + ico('dvikova') + '', title: 'Dvikova laimėta!', body: `${escapeHtml(tn)} · +50 EXP`, time: d.completed_at, link: 'v-grupe',
@@ -37610,8 +37700,8 @@ async function loadAllNotifications(force) {
   } catch (e) { /* nekritinis */ }
 
   // v630: trenerio EXP (pastangos, lankomumo premija, „už elgesį") → Sistema — anksčiau matėsi tik gyvai (MODULIS: KidExp)
-  if (typeof KidExp !== 'undefined') { try { sistema.push(...(await KidExp.bellItems(cutoffISO, seenIds))); } catch (e) { /* nekritinis */ } }
-  if (typeof KidGrupe !== 'undefined') { try { sistema.push(...(await KidGrupe.bellItems(cutoffISO))); } catch (e) { /* nekritinis */ } }   // v631: 👏
+  if (typeof KidExp !== 'undefined') { try { sistema.push(...(await _pre.kx)); } catch (e) { /* nekritinis */ } }
+  if (typeof KidGrupe !== 'undefined') { try { sistema.push(...(await _pre.kg)); } catch (e) { /* nekritinis */ } }   // v631: 👏
 
   // 💬 ŽINUTĖS + KLUBO PRANEŠIMAI → 💬 Žinutės (tik kur esu pokalbio narys)
   if (msgsRes.data && msgsRes.data.length > 0) {
@@ -38682,7 +38772,11 @@ async function markAnnouncementRead(convId) {
 // ATNAUJINTI BADGE'us VISUS
 async function updateUnreadBadge() {
   if (!currentUser) return;
-  
+  // v672 (našumas E1): rašo tik į *-msg-badge / *-msg-preview / *-announcements-list — V2 jų nėra nei index.html, nei kuriama
+  // kode, o užklausa ėjo kas 30 s ir po kiekvieno nv() (E0: ~120 užkl./val. vienam atidarytam appsui). Nėra kur rašyti → į DB neinam.
+  const _ubIds = ['tr-msg-badge', 't-msg-badge', 'k-msg-badge', 'tr-msg-preview', 't-msg-preview', 'k-msg-preview', 'v-announcements-list', 'tr-announcements-list', 't-announcements-list'];
+  if (!_ubIds.some(id => document.getElementById(id))) return;
+
   // Default - "Nėra žinučių"
   ['tr', 't', 'k'].forEach(prefix => {
     const preview = document.getElementById(`${prefix}-msg-preview`);
@@ -40774,17 +40868,24 @@ const Kal = {
       this.st.groups = groups;
       if (this.st.sel !== 'all' && !groups.some(gr => gr.id === this.st.sel)) this.st.sel = 'all';
       const r = this.range(this.st.ym);
+      // v672 (našumas E1): Atsil, Pavad.load ir Susit nuo sesijų nepriklauso — startuoja kartu su jomis (buvo 5 nuoseklūs žingsniai po jų);
+      // po Pavad.merge — Past (reikia sesijų id) ∥ Dvk (reikia pavaduojamų grupių). Klaidų elgesys kaip anksčiau (kiekvienas tyli atskirai).
+      const _atsil = (typeof Atsil !== 'undefined' && Atsil.on()) ? Atsil.load().catch(() => { }) : null;   // MODULIS: Atsil (v584) — 👍/😐/👎 prie praėjusių treniruočių
+      const _pavad = (typeof Pavad !== 'undefined' && Pavad.on()) ? Pavad.load(r.from, r.to).then(() => true, () => false) : null;   // MODULIS: Pavad (v585) — pavadavimai
+      const _susit = (typeof Susit !== 'undefined') ? Susit.load(r.from, r.to, 'Kal').catch(() => { }) : null;   // MODULIS: Susit (v627) — 14+ kvietimai (paslėpti gali štabas)
       const [ses, evs, ch] = await Promise.all([
         this.monthSessions({ groups, from: r.from, to: r.to }),
         this.monthEvents(this.clubId(), r.from, r.to).catch(() => []),
         this.loadChallenges(60).catch(() => [])   // v576: visi — sekcija grupuoja pagal grupę
       ]);
       this.st.sessions = ses; this.st.events = evs; this.st.ch = ch;
-      if (typeof Atsil !== 'undefined' && Atsil.on()) { try { await Atsil.load(); } catch (_e) { } }   // MODULIS: Atsil (v584) — 👍/😐/👎 prie praėjusių treniruočių
-      if (typeof Pavad !== 'undefined' && Pavad.on()) { try { await Pavad.load(r.from, r.to); await Pavad.merge(); } catch (_e) { } }   // MODULIS: Pavad (v585) — pavadavimai
-      if (typeof Past !== 'undefined' && Past.on()) { try { await Past.load((this.st.sessions || []).map(x => x.session_id)); } catch (_e) { } }   // MODULIS: Past (v600) — klubo pastabos treniruotėms
-      if (typeof Dvk !== 'undefined' && Dvk.on()) { try { await Dvk.load(r.from, r.to); } catch (e) { console.warn('[kal-tr] dvikovos', e.message || e); } }   // MODULIS: Dvk (v625) — po Pavad (pavaduojamos grupės)
-      if (typeof Susit !== 'undefined') { try { await Susit.load(r.from, r.to, 'Kal'); } catch (_e) { } }   // MODULIS: Susit (v627) — 14+ kvietimai (paslėpti gali štabas)
+      await _atsil;
+      if (_pavad && await _pavad) { try { await Pavad.merge(); } catch (_e) { } }
+      await Promise.all([
+        (typeof Past !== 'undefined' && Past.on()) ? Past.load((this.st.sessions || []).map(x => x.session_id)).catch(() => { }) : null,   // MODULIS: Past (v600) — klubo pastabos treniruotėms
+        (typeof Dvk !== 'undefined' && Dvk.on()) ? Dvk.load(r.from, r.to).catch(e => console.warn('[kal-tr] dvikovos', e.message || e)) : null,   // MODULIS: Dvk (v625) — po Pavad (pavaduojamos grupės)
+        _susit
+      ]);
       this.render();
     } catch (e) {
       console.error('[kal-tr]', e);
@@ -41058,6 +41159,7 @@ const Kal = {
     const m = Number(dateStr.slice(5, 7)) - 1, d = Number(dateStr.slice(8, 10));
     const sub = `${d} ${this.MONG[m]} · ${ses.length ? ses.length + ' ' + _ltPl(ses.length, 'treniruotė', 'treniruotės', 'treniruočių') : (evs.length ? 'renginys' : 'laisva diena')}`;
     this.sheetOpen('kal-day', `<div style="min-width:0;"><b>${this.DNOM[this.dayNo(dateStr) - 1].toUpperCase()}</b><i>${this.esc(sub)}</i></div><button class="kal-x" onclick="Kal.closeDay()" title="Uždaryti">${ico('uzdaryti')}</button>`, body, () => { this.st.day = null; });
+    if (typeof Susit !== 'undefined') Susit.dayLazy(dateStr, () => { if (this.st.day === dateStr && document.getElementById('kal-day')) this.openDay(dateStr); });   // v672 (našumas E1)
   },
   closeDay() { this.st.day = null; this.sheetClose('kal-day'); },
 
@@ -41274,7 +41376,8 @@ Object.assign(Kal, {
         }
         const r = this.K.range(ym);
         const clubId = (typeof resolveMyClubId === 'function' ? resolveMyClubId() : null) || this.st.group?.club_id || null;
-        const needCh = this.ownCh && (!this.st.chAt || Date.now() - this.st.chAt > 60000);   // v623 (12A): iššūkiai nuo mėnesio nepriklauso — 60 s atmintis
+        const needCh = this.ownCh && (!this.st.chAt || this.st.chKid !== kid || Date.now() - this.st.chAt > 60000);   // v623 (12A): iššūkiai nuo mėnesio nepriklauso — 60 s atmintis   // v672: + atmintis pagal vaiką (tėvas perjungęs vaiką per 60 s matydavo ANKSTESNIO vaiko iššūkius)
+        if (needCh && this.st.chKid !== kid) this.st.ch = [];   // v672: kito vaiko plytelių nerodom net jei krovimas nepavyktų
         const dvkTo = (typeof Dvk !== 'undefined') ? [r.to, Kal.addDays(Dvk.today(), 14)].sort()[1] : r.to;   // MODULIS: Dvk — ir artimiausia dvikova kitą mėnesį
         const susTo = [r.to, Kal.addDays((typeof Dvk !== 'undefined' ? Dvk.today() : this.K.ymd(new Date())), 14)].sort()[1];   // MODULIS: Susit (v627) — ir artimiausi kvietimai kitą mėnesį
         const [ses, evs, exp, intents, ch, stk, dvk, sus] = await Promise.all([
@@ -41295,7 +41398,7 @@ Object.assign(Kal, {
         this.st.streakN = attOff ? 0 : stk;
         this.st.duels = dvk || [];   // MODULIS: Dvk (v625)
         this.st.meets = sus || [];   // MODULIS: Susit (v627)
-        if (ch) { this.st.ch = this.chTiles(ch.active, ch.progress, ch.subs); this.st.chAt = Date.now(); }
+        if (ch) { this.st.ch = this.chTiles(ch.active, ch.progress, ch.subs); this.st.chAt = Date.now(); this.st.chKid = kid; }
         this.render();
         if (this.st.sesErr) c.insertAdjacentHTML('afterbegin', `<div class="kal-warn" onclick="${this.ns}.reload()" style="margin-bottom:6px;"><i>!</i><div style="flex:1;min-width:0;"><div class="t1">Treniruočių nepavyko užkrauti</div><div class="t2">Silpnas ryšys arba serveris lėtas — spustelk ir bandyk dar kartą</div></div>${ico('toliau')}</div>`);   // v670 (E2E S-12)
       } catch (e) {
@@ -41510,7 +41613,7 @@ Object.assign(Kal, {
     },
     setChallenges(active, progress, subs) {
       if (!this.ownCh && this !== Kal.kid) return;
-      this.st.ch = this.chTiles(active, progress, subs); this.st.chAt = Date.now();
+      this.st.ch = this.chTiles(active, progress, subs); this.st.chAt = Date.now(); this.st.chKid = this.kid()?.id;
       if (!this.st.busy && document.getElementById(this.scr)?.classList.contains('on')) this.render();   // v623 (17A c): nepiešiam krovimo viduryje
     },
     chHtml() {
@@ -41841,6 +41944,7 @@ Object.assign(Kal, {
       const m = Number(ds.slice(5, 7)) - 1, d = Number(ds.slice(8, 10));
       const sub = `${d} ${K.MONG[m]} · ${ses.length ? ses.length + ' ' + _ltPl(ses.length, 'treniruotė', 'treniruotės', 'treniruočių') : (evs.length ? 'renginys' : 'laisva diena')}`;
       K.sheetOpen('kal-k-day', `<div style="min-width:0;"><b>${K.DNOM[K.dayNo(ds) - 1].toUpperCase()}</b><i>${K.esc(sub)}</i></div><button class="kal-x" onclick="Kal.sheetClose('kal-k-day')" title="Uždaryti">${ico('uzdaryti')}</button>`, cards || '<div class="kal-empty"><b>Šią dieną nieko nėra</b></div>');
+      if (typeof Susit !== 'undefined') Susit.dayLazy(ds, () => { if (document.getElementById('kal-k-day')) this.openDay(ds); });   // v672 (našumas E1)
     },
     // ── v609 (savininko sprendimas 09-22 „pasirenki trenerį viršuj, tada išmeta jo grupes"; asistentai ir pavadavimai — kaip siūlyta):
     //    TRENERIŲ FILTRAS klubo kalendoriuje. Viršuje treneriai (su grupių skaičiumi) + „Be trenerio"; pasirinkus — jo grupės
@@ -44469,6 +44573,7 @@ const Anal = {
   async groups(force) {
     const cid = this.cid(); if (!cid) return [];
     if (!force && this.st.g && this.st.gClub === cid && Date.now() - this.st.gAt < 60000) return this.st.g;
+    if (!force) return Krov.once('anal:g:' + cid, () => this.groups(true));   // v673 (našumas E1-2): lygiagretūs kvietėjai — vienas krovimas
     const [g, t] = await Promise.all([
       sb.from('groups').select('id, name, trainer_id, assistant_trainer_ids').eq('club_id', cid).eq('is_active', true).order('name'),
       sb.from('trainers').select('id, trainer_code, profiles!inner(first_name, last_name, status)').eq('invited_by_club_id', cid)
@@ -44484,6 +44589,7 @@ const Anal = {
   async att60(force) {
     const cid = this.cid();
     if (!force && this.st.att && this.st.attClub === cid && Date.now() - this.st.attAt < 60000) return this.st.att;
+    if (!force) return Krov.once('anal:att:' + cid, () => this.att60(true));   // v673 (našumas E1-2): E0 — attendance 2× vienu metu
     const gs = await this.groups();
     const rows = gs.length ? await this.rows('attendance', 'id, group_id, kid_id, present, session_date, effort, effort_exp', 'group_id', gs.map(g => g.id), q => q.gte('session_date', this.day(60))) : [];
     this.st.att = rows; this.st.attAt = Date.now(); this.st.attClub = cid;
@@ -44576,7 +44682,7 @@ const Anal = {
     const el = document.getElementById('k-treneriai-content'); if (!el || !this.cid()) return;
     this.load(el);
     try {
-      const [gs, kids, act] = await Promise.all([this.groups(), _getClubKids(), sb.rpc('club_trainer_activity', { club_uuid: this.cid() })]);
+      const [gs, kids, act] = await Promise.all([this.groups(), _getClubKids(), Krov.once('club:tact:' + this.cid(), () => sb.rpc('club_trainer_activity', { club_uuid: this.cid() }), 30000)]);
       const trs = this.st.t || [], actOk = !act.error, A = {};
       if (act.error) console.warn('[anal:trainer-activity]', act.error);
       (act.data || []).forEach(a => { A[a.trainer_id] = a; });
@@ -45766,7 +45872,18 @@ const Susit = {
   // ── Treneris (Kal) ir klubas (Kal.club): visi klubo kvietimai, „Paslėpti" ──
   async load(from, to, ns) {
     this.st.tr = []; this.st.ns = ns || 'Kal';   // štabui — ir išjungus jungiklį (istorija, „Paslėpti" prieš įjungiant vėl)
+    // v672 (našumas E1): jungiklis IŠJ — sąrašą imam tik atidarius dienos lapą (dayLazy), ne kiekvieno kalendoriaus krovimo metu
+    // (E0: kid_meetup_list kiekvienam trenerio / klubo paleidimui, nors taškai tinklelyje išjungus nerodomi — trCell)
+    if (!this.on()) { this.st.lazy = { from, to, done: false }; return; }
+    this.st.lazy = null;
     try { this.st.tr = await this.list(from, to); } catch (e) { console.warn('[susit] load', e.message || e); }
+  },
+  // Dienos lapas atidarytas, kai jungiklis IŠJ: vieną kartą mėnesiui užkraunam sąrašą; jei tą dieną kvietimų yra — lapą perpiešiam (reopen)
+  dayLazy(ds, reopen) {
+    const z = this.st.lazy; if (!z || z.done || this.on()) return;
+    z.done = true;
+    this.list(z.from, z.to).then(l => { if (this.st.lazy !== z) return; this.st.tr = l; if (l.some(x => x.ds === ds) && typeof reopen === 'function') reopen(); })
+      .catch(e => { z.done = false; console.warn('[susit] load', e.message || e); });
   },
   trCell(ds) { return this.on() && this.st.tr.some(x => x.ds === ds && x.status === 'open') ? '<span class="sus-dot"></span>' : ''; },
   staffDayHtml(ds, ns) {
@@ -46957,7 +47074,13 @@ const TevSeima = {
   sid() { return (typeof _activeSid !== 'undefined' && _activeSid) || 't-main'; },
   color(id) { return typeof TevIvykiai !== 'undefined' ? TevIvykiai.color(id) : '#FF4D00'; },
   sportName(n) { const s = String(n || '').trim(); return /karat/i.test(s) ? 'Karatė' : s; },
-  async loadClubs() {
+  loadClubs() {
+    // v672 (našumas E1): bendras pažadas — paint ir load kviečia tuo pačiu metu (E0: clubs 2×)
+    if (this._clP) return this._clP;
+    this._clP = this._loadClubs().finally(() => { this._clP = null; });
+    return this._clP;
+  },
+  async _loadClubs() {
     const ids = [...new Set(this.kids().map(k => k.club_id).filter(id => id && !this.clubs[id]))];
     if (!ids.length) return;
     const { data, error } = await sb.from('clubs').select('id, name, sports(name)').in('id', ids);
@@ -47470,6 +47593,10 @@ const TevPrem = {
   },
   async issData(k) {
     const c = this.ic[k.id]; if (c && Date.now() - c.at < 60000) return c;
+    // v672 (našumas E1): bendras pažadas — issFill ir effFill paleidžiami tuo pačiu metu (E0: 2× po 4 tas pačias užklausas)
+    return Krov.once('tevpr:iss:' + k.id, () => this._issLoad(k));
+  },
+  async _issLoad(k) {
     const from = this.seasonFrom(), since3 = new Date(Date.now() - 124 * 86400000).toISOString().slice(0, 10);
     const [sR, pR, aR, gR] = await Promise.all([
       // „įveikta" — kaip kid_challenge_summary (Profilis): patvirtintas pateikimas, savaitės — su EXP
@@ -49133,6 +49260,50 @@ const Adm = {
       + (prefHtml ? sec('TRENERIO TAISYKLĖS AI') + prefHtml : '')
       + (ansHtml ? sec('TRENERIO ATSAKYMAI VEDLYJE') + ansHtml : '') + sec('TRENIRUOTĖS') + (wHtml || '<div class="kal-empty"><b>Treniruočių nėra</b></div>');
   }
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: Krov (v672) — užklausų dublių šalinimas ir trumpa atmintis (PROMPTAS-NASUMAS-UZKLAUSOS E1) =====
+// Tas pats raktas vienu metu → vienas pažadas (kol vyksta); po atsakymo — atmintis `ttl` ms (0 = tik kol vyksta).
+// Klaida (atmestas pažadas arba { error }) neįsimenama — kitas kvietimas eina į DB iš naujo (klaidos nesislepia, v670).
+// Kiekvienas kvietėjas gauna savo `data` masyvo kopiją (rūšiavimas vietoje nepaveikia kitų). Raktai — vartotojo lygiu.
+// Rašymai, keičiantys duomenis, kviečia Krov.drop('raktas') arba Krov.drop('prefiksas:') (S-11 pamoka).
+// Taisyklė 7: viena vardų erdvė `Krov`, jokių naujų globalių, DOM nenaudoja.
+const Krov = {
+  _m: new Map(),
+  _k(key) { return ((typeof currentUser !== 'undefined' && currentUser && currentUser.id) || '-') + '|' + key; },
+  _cp(r) { return (r && Array.isArray(r.data)) ? Object.assign({}, r, { data: r.data.slice() }) : (Array.isArray(r) ? r.slice() : r); },
+  once(key, fn, ttl = 0) {
+    const k = this._k(key), e = this._m.get(k);
+    if (e && (e.busy || Date.now() - e.at < e.ttl)) return e.p.then(r => this._cp(r));
+    const rec = { busy: true, at: Date.now(), ttl };
+    let p; try { p = Promise.resolve(fn()); } catch (err) { p = Promise.reject(err); }
+    rec.p = p.then(r => {
+      rec.busy = false; rec.at = Date.now();
+      if ((r && r.error) || !ttl) { if (this._m.get(k) === rec) this._m.delete(k); }
+      return r;
+    }, err => { if (this._m.get(k) === rec) this._m.delete(k); throw err; });
+    this._m.set(k, rec);
+    return rec.p.then(r => this._cp(r));
+  },
+  drop(...keys) {
+    const u = this._k('');
+    keys.forEach(key => {
+      if (String(key).endsWith(':')) { [...this._m.keys()].forEach(k => { if (k.startsWith(u + key)) this._m.delete(k); }); }
+      else this._m.delete(u + key);
+    });
+  },
+  clear() { this._m.clear(); },
+
+  // ── E1 pagalbinės senam kodui (kad nekurtume naujų globalių) ──
+  // Treneris: V2 (plans_enabled) — tr-main nepasiekiamas (Kal.applyNav8), jo krovėjai nereikalingi
+  trV2() { return typeof Kal !== 'undefined' && Kal.on(); },
+  // „Vaiko vieta klube" (trh-best-*, V2 — tr-stat): kraunama atidarius Statistiką, ne dažniau kaip kas 60 s
+  trBestKids() { if (this.trV2() && typeof _loadTrainerHomeBestKids === 'function') this.once('tr:bestKids', () => _loadTrainerHomeBestKids(), 60000); },
+  // v673 (E1-2): Realtime filtras `col=in.(…)` iš id rinkinio. >100 reikšmių Realtime nepriima → be filtro (klientas filtruoja pats, kaip iki v673);
+  // tuščias rinkinys → niekam neatitinkantis id (kanalo struktūra ta pati, perprenumeruojama atsiradus vaikams)
+  inF(col, ids) { const a = [...(ids || [])].filter(Boolean); if (a.length > 100) return undefined; return col + '=in.(' + (a.length ? a.join(',') : '00000000-0000-0000-0000-000000000000') + ')'; },
+  parentSubKids: null,   // tėvo kanalų filtre esami vaikai (subscribeParentNotifications) — pasikeitus loadParentKidsList perprenumeruoja
 };
 // ===== /MODULIS =====
 
