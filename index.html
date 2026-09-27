@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=674">
+<link rel="stylesheet" href="styles.css?v=675">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v674</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v675</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -301,6 +301,13 @@ window.addEventListener('unhandledrejection', function(e) {
       <div class="wlc-logo"><svg class="mark" viewBox="0 0 64 64" aria-label="SPOBU"><circle cx="32" cy="8.5" r="5.5" fill="currentColor"/><path d="M13 34 32 17 51 34" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 55 32 38 51 55" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">SPOBU</span></div>
     </div>
     <div class="wlc-body">
+      <!-- ===== MODULIS: Pradek (v675) — kortelė „Kaip pradėti" (video tėvams, atsidaro Pradek.open) ===== -->
+      <button class="prd-card" id="prd-card" onclick="Pradek.open(true)" aria-label="Video: kaip pradėti, 1 minutė">
+        <span class="prd-thumb"><img src="brand/video/kaip-pradeti.jpg?v=1" alt="" loading="lazy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span>
+        <span class="prd-txt"><b>Kaip pradėti</b><span>1 min video tėvams</span></span>
+        <span class="prd-go" aria-hidden="true">›</span>
+      </button>
+      <!-- ===== /MODULIS ===== -->
       <div class="wlc-kicker">ČIA AUGA</div>
       <div class="wlc-word" id="wlc-word">KARATISTAI</div>
       <div class="wlc-sub">Sportas. Draugystė. Pasitikėjimas savimi.</div>
@@ -4716,7 +4723,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=674"></script>
+<script src="app.js?v=675"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->

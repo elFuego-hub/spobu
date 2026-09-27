@@ -34939,6 +34939,7 @@ function showWelcome(){
       setTimeout(() => { w.textContent = WLC_WORDS[_wlcIdx]; w.classList.remove('wlc-out'); }, 280);
     }, 2600);
   }
+  if (typeof Pradek !== 'undefined') Pradek.auto();   // v675: po QR pirmą kartą — video „Kaip pradėti"
 }
 function showLogin(){
   hideAll();document.getElementById('auth-login').style.display='';
@@ -49310,6 +49311,65 @@ const Krov = {
   // tuščias rinkinys → niekam neatitinkantis id (kanalo struktūra ta pati, perprenumeruojama atsiradus vaikams)
   inF(col, ids) { const a = [...(ids || [])].filter(Boolean); if (a.length > 100) return undefined; return col + '=in.(' + (a.length ? a.join(',') : '00000000-0000-0000-0000-000000000000') + ')'; },
   parentSubKids: null,   // tėvo kanalų filtre esami vaikai (subscribeParentNotifications) — pasikeitus loadParentKidsList perprenumeruoja
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: Pradek (v675) — video „Kaip pradėti" tėvams (savininko sprendimas 09-27: A + C) =====
+// A: kortelė pradžios ekrane (index.html #prd-card) → Pradek.open(true) — paleidžia iškart (paspaudimas = leidimas garsui).
+// C: tėvas nuskanuoja QR (→ app.spobu.lt) → pirmą kartą tame telefone video langas atsidaro pats (▶ + „Praleisti").
+//    Nerodoma: įdiegtame appse, kompiuteryje, su prisijungimo / kvietimo / Strava nuorodų parametrais, jau matytam.
+// Video — brand/video/ (deploy kopijuoja brand/ visą), gamyba video/ (montazas.sh t1 → suspausta 720p).
+const Pradek = {
+  SRC: 'brand/video/kaip-pradeti.mp4?v=1',
+  POSTER: 'brand/video/kaip-pradeti.jpg?v=1',
+  KEY: 'spobu_pradek_v1',
+  auto() {
+    try {
+      if (localStorage.getItem(this.KEY)) return;
+      const mm = q => !!(window.matchMedia && window.matchMedia(q).matches);
+      if (mm('(display-mode: standalone)') || navigator.standalone === true) return;
+      if (!mm('(pointer: coarse)')) return;
+      if (/access_token|refresh_token|type=|error/.test(location.hash) || /[?&](code|token|type|strava|demo)=/.test(location.search)) return;
+      localStorage.setItem(this.KEY, '1');
+    } catch (_) { return; }   // be localStorage automatiškai nerodom — kitaip rodytų kas kartą
+    this.open(false);
+  },
+  open(play) {
+    this.close();
+    try { localStorage.setItem(this.KEY, '1'); } catch (_) {}
+    const d = document.createElement('div');
+    d.id = 'prd-ov'; d.className = 'prd-ov';
+    d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Video: kaip pradėti');
+    d.innerHTML = `<video id="prd-vid" class="prd-vid" src="${this.SRC}" poster="${this.POSTER}" playsinline preload="metadata"></video>
+      <button class="prd-x" onclick="Pradek.close()">${play ? 'Uždaryti' : 'Praleisti'} ✕</button>
+      <button id="prd-play" class="prd-play" onclick="Pradek.play()" aria-label="Paleisti video"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></button>
+      <div id="prd-end" class="prd-end" style="display:none;">
+        <button class="btn-auth" onclick="Pradek.register()">REGISTRUOTIS</button>
+        <button class="wlc-ghost" onclick="Pradek.play(true)">ŽIŪRĖTI DAR KARTĄ</button>
+      </div>`;
+    document.body.appendChild(d);
+    const v = document.getElementById('prd-vid');
+    v.addEventListener('play', () => { this._show('prd-play', false); this._show('prd-end', false); });
+    v.addEventListener('ended', () => { v.controls = false; this._show('prd-end', true); });
+    document.addEventListener('keydown', this._esc);
+    if (play) this.play();
+  },
+  play(again) {
+    const v = document.getElementById('prd-vid'); if (!v) return;
+    if (again) { try { v.currentTime = 0; } catch (_) {} }
+    v.controls = true;
+    const p = v.play();
+    if (p && p.catch) p.catch(() => { v.controls = false; this._show('prd-play', true); });   // naršyklė neleido — lieka ▶
+  },
+  register() { this.close(); if (typeof showRegister === 'function') showRegister(); },
+  close() {
+    const d = document.getElementById('prd-ov'); if (!d) return;
+    try { d.querySelector('video').pause(); } catch (_) {}
+    d.remove();
+    document.removeEventListener('keydown', Pradek._esc);
+  },
+  _esc(e) { if (e.key === 'Escape') Pradek.close(); },
+  _show(id, on) { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; },
 };
 // ===== /MODULIS =====
 
