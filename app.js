@@ -49468,7 +49468,7 @@ const Mokymai = {
     trainer: { main: ['tr2', 'tr1'], kal: ['tr2', 'tr1'], challenges: ['tr3'], pat: ['tr3', 'tr4'], tren: ['tr5'], groups: ['tr6'], prof: ['tr6', 'tr7'] },
   },
   PLAY: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>',
-  role: null, list: [], i: 0,
+  role: null, list: [], i: 0, from: null,
   has(r) { return !!this.V[r]; },
   items(r) { return this.V[r] || []; },
   seqItems(r) { return this.items(r).filter(v => !v[3]); },
@@ -49521,11 +49521,12 @@ const Mokymai = {
     if (!this.list.length) return;
     document.getElementById('mok-sheet')?.remove();
     if (first) this.seen();
+    this.from = 'list';   // v683: iš sąrašo — „Baigti" / pabaiga / Esc grąžina į sąrašą (savininko pastaba 09-28)
     this.open(); this.load(0);   // tame pačiame paspaudime — naršyklė leidžia garsą
   },
   one(role, k) {   // „?" lango mygtukas
     const v = this.find(role, k); if (!v) return;
-    this.role = role; this.list = [v]; this.open(); this.load(0);
+    this.role = role; this.list = [v]; this.from = 'ctx'; this.open(); this.load(0);
   },
   open() {
     this.close();
@@ -49567,6 +49568,8 @@ const Mokymai = {
   // pabaigos kortelė — kur rasti (savininko: „paskutinė skaidrė nurodo, kur rasti")
   end() {
     const v = document.getElementById('mok-vid'); try { v && v.pause(); } catch (_) {}
+    // v683: atėjus iš sąrašo — atgal į sąrašą (jame ir „Visada rasi…" užuomina), ne į AČIŪ kortelę
+    if (this.from === 'list') { this.close(); this.sheet(this.role, false); return; }
     const e = document.getElementById('mok-end'); if (!e) return;
     e.innerHTML = `<div class="mok-end-t">${this.list.length > 1 ? 'VISKAS!' : 'AČIŪ!'}</div>
       <div class="mok-end-s">Video visada rasi:<br><b>Nustatymai → Mokomieji video</b><br>o apie konkretų langą — paspaudęs „?"</div>
@@ -49580,7 +49583,7 @@ const Mokymai = {
     d.remove();
     document.removeEventListener('keydown', Mokymai._esc);
   },
-  _esc(e) { if (e.key === 'Escape') Mokymai.close(); },
+  _esc(e) { if (e.key === 'Escape') { if (Mokymai.from === 'list' && document.getElementById('mok-ov')) Mokymai.end(); else Mokymai.close(); } },
   _show(id, on) { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; },
 
   // 3) Nustatymai ir „?" langai
