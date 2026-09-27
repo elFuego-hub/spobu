@@ -1535,6 +1535,7 @@ async function openParentSettings() {
             <div style="font-size:18px;color:var(--mut);">›</div>
           </div>
         </div>
+        ${typeof Mokymai !== 'undefined' ? Mokymai.settingsRow('parent') : ''}<!-- v682: Mokomieji video -->
         <div style="padding:8px 16px 0;">
           <div onclick="openParentHelpModal()" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
             <div style="font-size:28px;">${ico('pagalba')}</div>
@@ -2046,6 +2047,7 @@ const WELCOME_CONTENT = {
 
 async function maybeShowWelcome(role, force){
   try {
+    if (typeof Mokymai !== 'undefined' && Mokymai.has(role)) return Mokymai.welcome(role, force);   // v682: tėvams / treneriams — mokomųjų video sąrašas
     const cfg = WELCOME_CONTENT[role];
     if (!cfg || !currentUser?.id) return;   // admin ir nežinomos rolės — be modalo
     if (!force) {
@@ -23038,7 +23040,7 @@ function openTrInfo(which) {
     default:
       title = ''+ico('pagalba')+' INFO'; html = intro('Paaiškinimas.');
   }
-  openInfoSubmodal(title, html);
+  openInfoSubmodal(title, (typeof Mokymai !== 'undefined' ? Mokymai.ctxHtml('trainer', which) : '') + html);
 }
 
 // 💡 Tėvų langų gidas — kiekvienas langas (be Karjeros, kur jau yra) turi lemputę
@@ -23139,7 +23141,7 @@ function openParentInfo(which) {
     default:
       title = ''+ico('pagalba')+' INFO'; html = intro('Paaiškinimas.');
   }
-  openInfoSubmodal(title, html);
+  openInfoSubmodal(title, (typeof Mokymai !== 'undefined' ? Mokymai.ctxHtml('parent', which) : '') + html);
 }
 
 // 💡 Vaiko langų gidas — platesni, vaikams suprantami paaiškinimai + Osu dvasia
@@ -24313,6 +24315,7 @@ async function openTrainerSettings() {
           </div>
         </div>
 
+        ${typeof Mokymai !== 'undefined' ? Mokymai.settingsRow('trainer') : ''}<!-- v682: Mokomieji video -->
         <!-- ${ico('pagalba')} PAGALBA IR ATSILIEPIMAI -->
         <div style="padding:8px 16px 0;">
           <div onclick="openHelpModal('trainer')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
@@ -49439,6 +49442,161 @@ const Pradek = {
   },
   _esc(e) { if (e.key === 'Escape') Pradek.close(); },
   _show(id, on) { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; },
+};
+// ===== /MODULIS =====
+
+// ===== MODULIS: Mokymai (v682) — mokomieji video tėvams ir treneriams (savininko sprendimas 09-27: 1 + 2 + 3, rodyti ir esamiems) =====
+// 1) Pirmą kartą prisijungus (ir esamiems — vieną kartą per paskyrą, žymė profiles.push_prefs.videos_seen) vietoj teksto įvado
+//    (maybeShowWelcome → Mokymai.welcome): video sąrašas + „Žiūrėti iš eilės"; „Rodyti įvadą iš naujo" rodo tą patį sąrašą.
+// 2) Nustatymai → „Mokomieji video" (openParentSettings / openTrainerSettings → Mokymai.settingsRow).
+// 3) „?" languose (openParentInfo / openTrInfo → Mokymai.ctxHtml) — to ekrano video.
+// Grotuvas — vienas <video> (iOS leidžia tęsti eilę be naujo paspaudimo), „Praleisti ›" / „Baigti ✕", pabaigoje — kur rasti.
+// Failai brand/video/<k>.mp4 + <k>.jpg (plakatas) + <k>-m.jpg (miniatiūra); gamyba video/appsui.sh. Vaikas / klubas — senas įvadas.
+const Mokymai = {
+  VER: 'v1',   // pakeitus — sąrašas pirmą kartą vėl parodomas visiems tėvams ir treneriams
+  Q: '?v=1',
+  // [failas, pavadinimas, sekundės, 1 = tik sąraše (ne „iš eilės")]
+  V: {
+    parent: [['t2', 'Šeima ir vaikas', 60], ['t3', 'Kalendorius', 55], ['t4', 'EXP ir Kelias', 57], ['t5', 'Nustatymai ir antras tėvas', 55],
+             ['t6', 'Grupė ir statistika', 62], ['kaip-pradeti', 'Kaip pridėti vaiką', 98, 1]],
+    trainer: [['tr1', 'Pradžia', 44], ['tr2', 'Lankomumas ir pastangos', 42], ['tr3', 'Iššūkiai', 50], ['tr4', 'Varžybos, testavimai ir dvikovos', 63],
+              ['tr5', 'Treniruočių planas su AI', 53], ['tr6', 'Grupė ir statistika', 44], ['tr7', 'Postas grupei', 36]],
+  },
+  // „?" langas → video (openParentInfo / openTrInfo „which")
+  CTX: {
+    parent: { seima: ['t2'], main: ['t3'], kal: ['t3'], kar: ['t4'], feed: ['t4'], grupe: ['t6'], prof: ['t6', 't5'] },
+    trainer: { main: ['tr2', 'tr1'], kal: ['tr2', 'tr1'], challenges: ['tr3'], pat: ['tr3', 'tr4'], tren: ['tr5'], groups: ['tr6'], prof: ['tr6', 'tr7'] },
+  },
+  PLAY: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>',
+  role: null, list: [], i: 0,
+  has(r) { return !!this.V[r]; },
+  items(r) { return this.V[r] || []; },
+  seqItems(r) { return this.items(r).filter(v => !v[3]); },
+  find(r, k) { return this.items(r).find(v => v[0] === k); },
+  mmss(s) { s = Math.round(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); },
+  key() { return 'spobu_mok_' + (currentUser?.id || ''); },
+
+  // 1) pirmas prisijungimas
+  async welcome(role, force) {
+    try {
+      if (!this.has(role) || !currentUser?.id) return;
+      if (!force) {
+        try { if (localStorage.getItem(this.key()) === this.VER) return; } catch (_) {}
+        if (typeof Kal !== 'undefined' && Kal.prefsLoad) { try { await Kal.prefsLoad(); } catch (_) {} }
+        if (currentProfile?.push_prefs?.videos_seen === this.VER) { try { localStorage.setItem(this.key(), this.VER); } catch (_) {} return; }
+        if (document.getElementById('ageup-modal') || document.getElementById('club-onboard')) return;   // kaip senas įvadas — kitą kartą
+      }
+      this.sheet(role, true);
+    } catch (e) { console.warn('Mokymai.welcome', e); }
+  },
+  seen() {
+    try { localStorage.setItem(this.key(), this.VER); } catch (_) {}
+    if (typeof Kal !== 'undefined' && Kal.prefsSave) { try { Kal.prefsSave({ videos_seen: this.VER }); } catch (_) {} }
+  },
+  sheet(role, first) {
+    this.role = role;
+    const it = this.items(role), tot = this.seqItems(role).reduce((a, v) => a + v[2], 0);
+    const row = (v, i) => `<div class="mok-row" onclick="Mokymai.start('${role}', ${i}, false, ${first ? 1 : 0})">
+        <span class="mok-th"><img src="brand/video/${v[0]}-m.jpg${this.Q}" alt="" loading="lazy">${this.PLAY}</span>
+        <span class="mok-t">${v[1]}</span><span class="mok-d">${this.mmss(v[2])}</span></div>`;
+    const intro = role === 'trainer' ? 'Trumpi video — kaip SPOBU sutaupo tavo laiką ir parodo tavo darbą tėvams.'
+      : 'Trumpi video — kaip sekti vaiko sportą: kalendorius, EXP, grupė, nustatymai.';
+    const body = `<div style="padding:0 18px;"><div class="mok-intro">${intro}</div><div class="mok-list">${it.map(row).join('')}</div>`
+      + `<div class="mok-where">Visada rasi: <b>Nustatymai → Mokomieji video</b>, o apie konkretų langą — paspaudęs „?"</div></div>`;
+    const foot = `<button class="pl-cta" style="width:100%;" onclick="Mokymai.start('${role}', 0, true, ${first ? 1 : 0})">${this.PLAY.replace('<svg', '<svg class="mok-pi"')} ŽIŪRĖTI IŠ EILĖS · ~${Math.max(1, Math.round(tot / 60))} MIN</button>`
+      + (first ? `<button class="mok-later" onclick="Mokymai.later()">Vėliau</button>` : '');
+    document.getElementById('mok-sheet')?.remove();
+    if (typeof Planas !== 'undefined' && Planas.sheet) {
+      const m = Planas.sheet('mok-sheet', first ? (role === 'trainer' ? 'SVEIKAS, TRENERI!' : 'SVEIKI SPOBU!') : 'MOKOMIEJI VIDEO', body, foot, { z: 100002, noClose: !!first });
+      const x = m && m.querySelector('.kal-x'); if (x && first) x.onclick = () => this.later();
+    }
+  },
+  later() { document.getElementById('mok-sheet')?.remove(); this.seen(); },
+
+  // 2) grotuvas
+  start(role, i, seq, first) {
+    this.role = role;
+    const it = this.items(role);
+    this.list = seq ? this.seqItems(role) : (it[i] ? [it[i]] : []);
+    if (!this.list.length) return;
+    document.getElementById('mok-sheet')?.remove();
+    if (first) this.seen();
+    this.open(); this.load(0);   // tame pačiame paspaudime — naršyklė leidžia garsą
+  },
+  one(role, k) {   // „?" lango mygtukas
+    const v = this.find(role, k); if (!v) return;
+    this.role = role; this.list = [v]; this.open(); this.load(0);
+  },
+  open() {
+    this.close();
+    const d = document.createElement('div');
+    d.id = 'mok-ov'; d.className = 'prd-ov';
+    d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Mokomieji video');
+    d.innerHTML = `<video id="mok-vid" class="prd-vid" playsinline preload="auto"></video>
+      <div class="mok-top"><span id="mok-lbl" class="mok-lbl"></span><button class="mok-x" onclick="Mokymai.end()">Baigti ✕</button></div>
+      <button id="mok-play" class="prd-play" style="display:none;" onclick="Mokymai.resume()" aria-label="Paleisti video">${this.PLAY}</button>
+      <div class="mok-bot"><div id="mok-bar" class="mok-bar"></div><button id="mok-skip" class="mok-skip" onclick="Mokymai.next()">Praleisti ›</button></div>
+      <div id="mok-end" class="mok-endc" style="display:none;"></div>`;
+    document.body.appendChild(d);
+    const v = document.getElementById('mok-vid');
+    v.addEventListener('ended', () => this.next());
+    v.addEventListener('timeupdate', () => this.prog());
+    v.addEventListener('play', () => this._show('mok-play', false));
+    document.addEventListener('keydown', this._esc);
+  },
+  load(i) {
+    const v = document.getElementById('mok-vid'); if (!v) return;
+    this.i = i;
+    const it = this.list[i], n = this.list.length;
+    v.poster = `brand/video/${it[0]}.jpg${this.Q}`; v.src = `brand/video/${it[0]}.mp4${this.Q}`;
+    const lbl = document.getElementById('mok-lbl'); if (lbl) lbl.textContent = (n > 1 ? `${i + 1} / ${n} · ` : '') + it[1];
+    const bar = document.getElementById('mok-bar');
+    if (bar) bar.innerHTML = n > 1 ? this.list.map((_, j) => `<span class="mok-seg"><i style="width:${j < i ? 100 : 0}%;"></i></span>`).join('') : '';
+    const sk = document.getElementById('mok-skip'); if (sk) sk.textContent = i + 1 < n ? 'Praleisti ›' : 'Baigti ›';
+    this._show('mok-end', false);
+    const p = v.play();
+    if (p && p.catch) p.catch(() => this._show('mok-play', true));   // naršyklė neleido — lieka ▶
+  },
+  resume() { const v = document.getElementById('mok-vid'); if (v) { const p = v.play(); if (p && p.catch) p.catch(() => {}); } },
+  prog() {
+    const v = document.getElementById('mok-vid'), segs = document.querySelectorAll('#mok-bar .mok-seg i');
+    if (!v || !segs[this.i] || !v.duration) return;
+    segs[this.i].style.width = Math.min(100, v.currentTime / v.duration * 100) + '%';
+  },
+  next() { if (this.i + 1 < this.list.length) this.load(this.i + 1); else this.end(); },
+  // pabaigos kortelė — kur rasti (savininko: „paskutinė skaidrė nurodo, kur rasti")
+  end() {
+    const v = document.getElementById('mok-vid'); try { v && v.pause(); } catch (_) {}
+    const e = document.getElementById('mok-end'); if (!e) return;
+    e.innerHTML = `<div class="mok-end-t">${this.list.length > 1 ? 'VISKAS!' : 'AČIŪ!'}</div>
+      <div class="mok-end-s">Video visada rasi:<br><b>Nustatymai → Mokomieji video</b><br>o apie konkretų langą — paspaudęs „?"</div>
+      <button class="btn-auth" onclick="Mokymai.close()">GERAI</button>
+      <button class="wlc-ghost" onclick="Mokymai.close(); Mokymai.sheet(Mokymai.role, false);">VISI VIDEO</button>`;
+    this._show('mok-end', true);
+  },
+  close() {
+    const d = document.getElementById('mok-ov'); if (!d) return;
+    try { d.querySelector('video').pause(); } catch (_) {}
+    d.remove();
+    document.removeEventListener('keydown', Mokymai._esc);
+  },
+  _esc(e) { if (e.key === 'Escape') Mokymai.close(); },
+  _show(id, on) { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; },
+
+  // 3) Nustatymai ir „?" langai
+  settingsRow(role) {
+    if (!this.has(role)) return '';
+    return `<div style="padding:8px 16px 0;"><div onclick="Mokymai.sheet('${role}', false)" style="background:var(--card);border:.5px solid rgba(255,77,0,.45);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;">
+        <div style="font-size:28px;color:var(--br);">${ico('video')}</div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:800;color:white;">Mokomieji video</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:2px;">${this.items(role).length} trumpi video — kaip naudotis SPOBU</div></div>
+        <div style="font-size:18px;color:var(--mut);">›</div></div></div>`;
+  },
+  ctxHtml(role, which) {
+    const ks = ((this.CTX[role] || {})[which] || []).map(k => this.find(role, k)).filter(Boolean);
+    if (!ks.length) return '';
+    return `<div class="mok-ctx">${ks.map(v => `<button class="mok-cb" onclick="Mokymai.one('${role}', '${v[0]}')">${this.PLAY} Video: ${v[1]} · ${this.mmss(v[2])}</button>`).join('')}</div>`;
+  },
 };
 // ===== /MODULIS =====
 
