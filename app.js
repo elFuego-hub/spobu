@@ -2175,11 +2175,12 @@ async function loadParentKids() {
   // 🔄 Po vaiko pridėjimo/patvirtinimo — atnaujinti naują parent state + pill
   if (typeof loadParentKidsList === 'function') {
     await loadParentKidsList();
+    if (parentActiveKid) parentActiveKid = parentKids.find(k => k.id === parentActiveKid.id) || parentActiveKid;   // v677 (E2E P3-19): šviežia būsena (pvz. ką tik patvirtinta anketa)
     if (!parentActiveKid && parentKids.length > 0) parentActiveKid = parentKids[0];
     if (typeof renderParentKidPill === 'function') renderParentKidPill();
     if (typeof loadParentKidMain === 'function') loadParentKidMain();
     // v670 (E2E S-08): po vaiko pridėjimo atnaujinamas ir Šeimos langas (rodydavo „Dar neturite pridėtų vaikų")
-    if (typeof TevSeima !== 'undefined') { TevSeima.paint(); if ((typeof _activeSid !== 'undefined' ? _activeSid : '') === 't-seima') TevSeima.load(); }
+    if (typeof TevSeima !== 'undefined') { TevSeima.paint(); if ((typeof _activeSid !== 'undefined' ? _activeSid : '') === 't-seima') TevSeima.load(true); }
   }
   // Legacy t-kids-list (ekranas pašalintas) — jei nėra elemento, baigiam
   if (!document.getElementById('t-kids-list')) return;
@@ -6218,23 +6219,13 @@ async function parentStartTrainerChat(trainerId, trainerName, memberRole) {   //
   try {
     const convTitle = _parentChatTitle();
     const kidId = parentActiveKid?.id || null;
-    // 1. Ieškom esamo direct pokalbio (2 žingsnių, be embed)
+    // 1. Ieškom esamo direct pokalbio. v677 (E2E S-19): per serverį (parent_find_direct_conv) — tėvas per RLS nemato trenerio
+    //    conversation_members eilutės, todėl kliento paieška nerasdavo ir kiekvieną kartą kūrė NAUJĄ pokalbį. Serveris grąžina
+    //    to vaiko pokalbį, jei nėra — seną be vaiko (kid_id NULL; žemiau priskiriamas šiam vaikui), kitaip kuriamas naujas.
     let convId = null;
-    const { data: myMems } = await sb.from('conversation_members').select('conversation_id').eq('user_id', currentUser.id);
-    const myConvIds = (myMems || []).map(m => m.conversation_id);
-    if (myConvIds.length) {
-      const { data: trMems } = await sb.from('conversation_members')
-        .select('conversation_id').eq('user_id', trainerId).in('conversation_id', myConvIds);
-      const sharedIds = (trMems || []).map(m => m.conversation_id);
-      if (sharedIds.length) {
-        // v639 (tėvų auditas N14, 8A): KIEKVIENAM VAIKUI — savas pokalbis su treneriu. Anksčiau imtas bet kuris bendras „direct"
-        // ir jo kid_id perrašytas į aktyvų vaiką → dviem vaikams pas tą patį trenerį pokalbis „šokinėjo". Dabar: to vaiko pokalbis,
-        // jei nėra — senas be vaiko (kid_id NULL) priskiriamas šiam vaikui, kitaip kuriamas naujas.
-        const { data: directConvs } = await sb.from('conversations').select('id, kid_id').eq('type', 'direct').in('id', sharedIds);
-        const mine = (directConvs || []).find(c => kidId && c.kid_id === kidId) || (directConvs || []).find(c => !c.kid_id) || (!kidId ? (directConvs || [])[0] : null);
-        if (mine) convId = mine.id;
-      }
-    }
+    const { data: foundId, error: findErr } = await sb.rpc('parent_find_direct_conv', { p_other: trainerId, p_kid: kidId });
+    if (findErr) console.warn('[pokalbis] paieška:', findErr.message);
+    if (foundId) convId = foundId;
     if (convId) {
       // ESAMAS pokalbis (šio vaiko arba dar be vaiko) — atnaujinam pavadinimą + kid_id (kito vaiko pokalbio nebeliečiam)
       const { error: upErr } = await sb.from('conversations').update({ title: convTitle, kid_id: kidId }).eq('id', convId);
@@ -39141,12 +39132,20 @@ const Planas = {
     return `${f(s)} – ${f(e)}`;
   },
   monthOptions() {
-    const now = new Date(); const out = []; const from = now.getDate() > 15 ? 1 : 0;
+    // v677 (E2E S-18): mėnesio viduryje pirmas (numatytas) pasirinkimas — NUO ŠIANDIEN iki kito mėnesio pabaigos; anksčiau siūlė tik
+    // kitą mėnesį ir šios savaitės treniruotės likdavo be plano. Einamasis mėnuo niekada neprasideda anksčiau nei šiandien.
+    const now = new Date(); const out = []; const late = now.getDate() > 15; const from = late ? 1 : 0; const today = this.ymdToday();
+    const ymdOf = (x) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+    if (late) {
+      const endNext = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+      out.push({ ps: today, pe: ymdOf(endNext), label: `Nuo šiandien (${today.slice(5)}) iki ${ymdOf(endNext).slice(5)}` });
+    }
     for (let i = from; i < from + 4; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
       const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
       const mm = String(d.getMonth() + 1).padStart(2, '0');
-      out.push({ ps: `${d.getFullYear()}-${mm}-01`, pe: `${last.getFullYear()}-${mm}-${String(last.getDate()).padStart(2, '0')}`, label: `${d.getFullYear()} m. ${this.MONTHS[d.getMonth()]}` });
+      const ps = (i === 0 && `${d.getFullYear()}-${mm}-01` < today) ? today : `${d.getFullYear()}-${mm}-01`;
+      out.push({ ps, pe: `${last.getFullYear()}-${mm}-${String(last.getDate()).padStart(2, '0')}`, label: `${d.getFullYear()} m. ${this.MONTHS[d.getMonth()]}` });
     }
     return out;
   },
@@ -47217,8 +47216,13 @@ const TevSeima = {
   pick(id, to) { this.close(); parentSelectKid(id, to); },
 
   // ── Šeimos langas ──
-  async load() {
+  async load(_fresh) {
     const box = document.getElementById('tev-se-content'); if (!box) return;
+    // v677 (E2E P3-19): yra laukiančių anketų → sąrašas imamas šviežiai (klubas / treneris galėjo ką tik patvirtinti); vieną kartą, be ciklo
+    if (!_fresh && this.kids().some(k => k.approval_status === 'pending') && typeof loadParentKids === 'function') {
+      try { await loadParentKids(); } catch (_e) { }
+      return;   // loadParentKids pats perpiešia Šeimą (v670), kai ji atidaryta
+    }
     const seq = ++this._seq, ks = this.kids();
     if (!ks.length) { box.innerHTML = typeof _parentNoKidsHtml === 'function' ? _parentNoKidsHtml() : ''; return; }
     try {
@@ -47310,6 +47314,13 @@ const TevSeima = {
   boot() {
     this.paint();
     if (this.kids().length > 1) nv('t', null, 't-seima');
+    // v677 (E2E P3-19): tėvas gauna laišką „patvirtinta" ir grįžta į programėlę — laukiančių anketų būsena atnaujinama
+    if (!this._visHook) {
+      this._visHook = true;
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && currentProfile?.role === 'parent' && this.kids().some(k => k.approval_status === 'pending') && typeof loadParentKids === 'function') loadParentKids();
+      });
+    }
   },
   reset() { this.clubs = {}; this.unread = {}; this.evs = []; this.clubUnread = 0; this._seq++; this._cl = null; this.close(); },
 };
