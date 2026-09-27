@@ -111,7 +111,7 @@ window.addEventListener('unhandledrejection', function(e) {
   });
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=669">
+<link rel="stylesheet" href="styles.css?v=671">
 </head>
 <body>
 
@@ -276,7 +276,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 
 <!-- <svg class="ico" aria-hidden="true"><use href="#i-zyma"></use></svg> VERSIJOS ŽYMĖ — deployment patikrinimui (didinama su kiekvienu pakeitimu) -->
-<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v669</div>
+<div id="app-version" style="position:fixed;top:env(safe-area-inset-top,2px);left:4px;z-index:100000;background:rgba(0,0,0,.55);color:#FF7A33;font-family:monospace;font-size:9px;font-weight:700;padding:1px 6px;border-radius:0 0 8px 0;pointer-events:none;letter-spacing:.5px;">v671</div>
 
 <!-- DESKTOP MOBILE PREVIEW TOGGLE -->
 <!-- 📱/🖥️ rankinis perjungiklis PAŠALINTAS (savininko sprendimas 08-19: telefonas = standartas, desktop = desktop, be kitų variantų). toggleMobilePreview() ir full-mobile-preview CSS palikti — lengvam grąžinimui jei prireiktų demo. -->
@@ -361,7 +361,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="rw-screen-1">
       <div class="auth-title">REGISTRACIJA</div>
       <div style="font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5;">
-        Sukurk savo (tėvų/globėjo) paskyrą.<br>Vaikus pridėsi vėliau – kiekvienam pasirinksi sportą, klubą ir trenerį.
+        Sukurk savo (tėvų/globėjo) paskyrą.<br>Vaikus pridėsi vėliau – kiekvienam pasirinksi sportą ir klubą, o klubas priskirs grupę su treneriu.
       </div>
       
       <label class="lbl">EL. PAŠTAS</label>
@@ -437,8 +437,8 @@ window.addEventListener('unhandledrejection', function(e) {
         <div style="font-size:12px;color:var(--txt);line-height:1.5;">
           <svg class="ico" aria-hidden="true"><use href="#i-zvaigzde"></use></svg> <strong>Po registracijos:</strong><br>
           • Iš karto galėsi prisijungti<br>
-          • "Mano vaikai" ekrane spausi <strong>+ Pridėti vaiką</strong><br>
-          • Kiekvienam vaikui pasirinksi sportą, klubą ir trenerį
+          • Spausi <strong>+ Pridėti vaiką</strong><br>
+          • Kiekvienam vaikui pasirinksi sportą ir klubą — klubas patvirtins anketą ir priskirs grupę su treneriu
         </div>
       </div>
       
@@ -454,7 +454,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div class="auth-title" style="margin-bottom:14px;">REGISTRACIJA SĖKMINGA!</div>
       <div style="font-size:13px;color:var(--mut);line-height:1.6;margin-bottom:20px;">
         Tavo paskyra sukurta!<br><br>
-        Prisijunk ir spausk <strong>+ Pridėti vaiką</strong> – kiekvienam vaikui pasirinksi sportą, klubą ir trenerį.
+        Prisijunk ir spausk <strong>+ Pridėti vaiką</strong> – kiekvienam vaikui pasirinksi sportą ir klubą, o klubas priskirs grupę su treneriu.
       </div>
       <button class="btn-auth" onclick="showLogin()">EITI Į PRISIJUNGIMĄ</button>
     </div>
@@ -2090,81 +2090,6 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="ni" onclick="nv('tr',this,'tr-challenges')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-issukiai"></use></svg></span><span class="lb">Iššūkiai</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-pat')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-patvirtinta"></use></svg></span><span class="lb">Patvirtinti</span><div class="nd"></div></div>
     <div class="ni" onclick="nv('tr',this,'tr-prof')"><span class="ic"><svg class="ico" aria-hidden="true"><use href="#i-profilis"></use></svg></span><span class="lb">Profilis</span><div class="nd"></div></div>
-  </div>
-</div>
-
-<!-- ============================================ -->
-<!-- SUKURTI GRUPĘ MODALAS -->
-<!-- ============================================ -->
-<div id="create-group-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;overflow-y:auto;padding:20px;">
-  <div style="max-width:420px;margin:20px auto;background:var(--card);border-radius:20px;padding:24px;border:.5px solid var(--bdr);">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;" id="cg-modal-title">SUKURTI GRUPĘ</div>
-      <button onclick="closeCreateGroupModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
-    </div>
-    
-    <div class="err-msg" id="create-group-err"></div>
-    
-    <label class="lbl">GRUPĖS PAVADINIMAS</label>
-    <input class="inp" type="text" id="cg-name" placeholder="Pvz. Pradedantieji 6-9m." maxlength="50">
-    
-    <label class="lbl">APRAŠYMAS (neprivaloma)</label>
-    <textarea class="inp" id="cg-description" placeholder="Pvz. Vaikai pradedantieji nuo 6 iki 9 metų..." maxlength="200" style="min-height:60px;resize:vertical;"></textarea>
-    
-    <label class="lbl">SPALVA</label>
-    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px;">
-      <div class="cg-color on" onclick="selectGroupColor(this, '#FF4D00')" data-color="#FF4D00" style="background:#FF4D00;"></div>
-      <div class="cg-color" onclick="selectGroupColor(this, '#22C55E')" data-color="#22C55E" style="background:#22C55E;"></div>
-      <div class="cg-color" onclick="selectGroupColor(this, '#3B82F6')" data-color="#3B82F6" style="background:#3B82F6;"></div>
-      <div class="cg-color" onclick="selectGroupColor(this, '#A855F7')" data-color="#A855F7" style="background:#A855F7;"></div>
-      <div class="cg-color" onclick="selectGroupColor(this, '#EAB308')" data-color="#EAB308" style="background:#EAB308;"></div>
-      <div class="cg-color" onclick="selectGroupColor(this, '#EC4899')" data-color="#EC4899" style="background:#EC4899;"></div>
-    </div>
-    <input type="hidden" id="cg-color" value="#FF4D00">
-
-    <!-- <svg class="ico" aria-hidden="true"><use href="#i-kalendorius"></use></svg> Treniruočių dienos (1=Pr ... 7=Sk, multi-select) -->
-    <label class="lbl">TRENIRUOČIŲ DIENOS</label>
-    <div class="chs" style="margin-bottom:14px;" id="cg-days">
-      <div class="ch" onclick="toggleGroupDay(this)" data-day="1">Pr</div>
-      <div class="ch" onclick="toggleGroupDay(this)" data-day="2">An</div>
-      <div class="ch" onclick="toggleGroupDay(this)" data-day="3">Tr</div>
-      <div class="ch" onclick="toggleGroupDay(this)" data-day="4">Kt</div>
-      <div class="ch" onclick="toggleGroupDay(this)" data-day="5">Pn</div>
-      <div class="ch" onclick="toggleGroupDay(this)" data-day="6">Št</div>
-      <div class="ch" onclick="toggleGroupDay(this)" data-day="7">Sk</div>
-    </div>
-
-    <label class="lbl">TRENIRUOTĖS LAIKAS (neprivaloma)</label>
-    <input class="inp" type="time" id="cg-time" style="margin-bottom:14px;">
-
-    <button class="btn-auth" onclick="submitCreateGroup()" id="cg-submit-btn">SUKURTI</button>
-    <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="closeCreateGroupModal()">ATŠAUKTI</button>
-  </div>
-</div>
-
-<!-- ============================================ -->
-<!-- PRISKIRTI VAIKUS GRUPEI MODALAS -->
-<!-- ============================================ -->
-<div id="assign-kids-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;overflow-y:auto;padding:20px;">
-  <div style="max-width:480px;margin:20px auto;background:var(--card);border-radius:20px;padding:24px;border:.5px solid var(--bdr);">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;">PRISKIRTI VAIKUS</div>
-        <div style="font-size:12px;color:var(--mut);margin-top:4px;" id="ak-group-name">–</div>
-      </div>
-      <button onclick="closeAssignKidsModal()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--mut);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
-    </div>
-    
-    <div style="font-size:12px;color:var(--mut);margin-bottom:14px;line-height:1.5;">
-      Pažymėk vaikus, kuriuos nori priskirti šiai grupei. Vaikai automatiškai pašalinami iš ankstesnės grupės.
-    </div>
-    
-    <div id="assign-kids-list" style="max-height:60vh;overflow-y:auto;margin-bottom:14px;">
-      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
-    </div>
-    
-    <button class="btn-auth" onclick="submitAssignKids()">IŠSAUGOTI</button>
-    <button class="btn-auth" style="background:transparent;border:1px solid var(--bdr);color:var(--mut);margin-top:8px;" onclick="closeAssignKidsModal()">ATŠAUKTI</button>
   </div>
 </div>
 
@@ -4704,25 +4629,6 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════ -->
-<!-- IŠŠŪKIO LEADERBOARD'O MODAL'AS -->
-<!-- ════════════════════════════════════════════════════════ -->
-<div id="vlb-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10001;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
-  <div style="background:var(--bg);border:.5px solid var(--bdr);border-radius:14px;max-width:380px;width:100%;padding:0;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
-    <div style="background:linear-gradient(135deg,var(--br),#FFD700);padding:18px 20px;color:white;display:flex;align-items:center;gap:10px;">
-      <div style="font-size:28px;"><svg class="ico" aria-hidden="true"><use href="#i-trofejai"></use></svg></div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;opacity:.9;">KLUBO REITINGAS</div>
-        <div id="vlb-title" style="font-size:13px;line-height:1.2;font-weight:700;margin-top:2px;">Iššūkis</div>
-      </div>
-      <button onclick="closeChallengeLeaderboard()" style="background:rgba(0,0,0,.3);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;"><svg class="ico" aria-hidden="true"><use href="#i-uzdaryti"></use></svg></button>
-    </div>
-    <div id="vlb-list" style="padding:14px;overflow-y:auto;flex:1;">
-      <div style="text-align:center;padding:20px;color:var(--mut);">Kraunama...</div>
-    </div>
-  </div>
-</div>
-
 <!-- TRENERIO VAIKŲ SĄRAŠO MODAL'AS (klubo admin'ui) -->
 <!-- ════════════════════════════════════════════════════════ -->
 <!-- ════════════════════════════════════════════════════════ -->
@@ -4810,7 +4716,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<script src="app.js?v=669"></script>
+<script src="app.js?v=671"></script>
 </body>
 </html>
 <!-- build: 1779395400 -->
