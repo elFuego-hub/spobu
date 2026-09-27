@@ -21368,7 +21368,8 @@ async function openAttendance(groupId, dateStr){
   const kids=(allTrainerKids||[]).filter(k=>k.group_id===groupId);
   if(!kids.length){ showToast('Grupėje nėra vaikų','error'); return; }
   const _d0=(typeof dateStr==='string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) ? dateStr : _attYmd(new Date());
-  _attState={ groupId, date:_d0, group:g, kids, present:new Set(kids.map(k=>k.id)), effort:{}, prevEffort:{} };
+  // v678 (savininkas + treneris 09-27): iš pradžių NIEKAS nepažymėtas — treneris pažymi, kas atėjo (lengviau pamatyti, ko nebuvo)
+  _attState={ groupId, date:_d0, group:g, kids, present:new Set(), effort:{}, prevEffort:{} };
   const old=document.getElementById('att-modal'); if(old) old.remove();
   const m=document.createElement('div');
   m.id='att-modal';
@@ -21407,6 +21408,7 @@ async function _attReload(){
   // MODULIS: Kal (v535) — pastangos skaitomos kartu (effort_exp = idempotentiškumo raktas serveryje)
   const { data: existing } = await sb.from('attendance').select('kid_id, present, effort, effort_exp').eq('group_id',_attState.groupId).eq('session_date',_attState.date);
   if(existing && existing.length){ _attState.present=new Set(existing.filter(r=>r.present).map(r=>r.kid_id)); }
+  else _attState.present=new Set();   // v678: nepažymėta diena (ir perjungus datą) — pradedam nuo tuščio
   _attState.effort={}; _attState.prevEffort={};
   (existing||[]).forEach(r=>{ if(r.effort) _attState.effort[r.kid_id]=r.effort; if((r.effort_exp||0)>0) _attState.prevEffort[r.kid_id]=r.effort_exp; });
   const warn=document.getElementById('att-warn');
@@ -21479,6 +21481,12 @@ async function _attConfirm(){
     return;
   }
   const btn=document.getElementById('att-confirm');
+  if(btn && btn.dataset.busy) return;
+  // v678: pradžioje niekas nepažymėtas — netyčinis „Patvirtinti" be pažymėjimų įrašytų visus „nebuvo", todėl paklausiam
+  if(!_attState.present.size && _attState.kids.length){
+    const sure = await appConfirm('Niekas nepažymėtas kaip atėjęs. Ar tikrai šiandien neatėjo nė vienas vaikas?');
+    if(!sure || !_attState) return;
+  }
   if(btn){ if(btn.dataset.busy) return; btn.dataset.busy='1'; btn.disabled=true; btn.textContent='SAUGOMA...'; btn.style.opacity='.6'; }
   // v670 (E2E S-12): perkrautas serveris / trūkęs ryšys — vienas pakartotinis bandymas po 1,5 s (upsert ir pastangų RPC kartoti saugu)
   const _transient = (e) => /timeout|timed out|Failed to fetch|NetworkError|Load failed|network|upstream|50[0234]|57014/i.test(String(e?.message || '') + ' ' + String(e?.code || '') + ' ' + String(e?.status || ''));
