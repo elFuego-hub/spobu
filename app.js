@@ -1780,10 +1780,10 @@ function openParentHelpModal() {
   // v443: mailto nuorodos pakeistos contactSupport() / openParentReportModal srautais
   const faq = [
     ['Kaip matau vaiko progresą?', 'Kalendoriuje — kada buvo, kiek EXP ir pastangų kiekvieną dieną (spauskite dieną). „Kelias" — pratimų rekordai 7 kategorijose. „Pasiekimai" — mėnesio apžvalga: pasiekimai, „mėnuo žodžiais", ką grupė darė su treneriu, kortelė ir PDF. „Šeima" — visų vaikų santrauka.'],
-    ['Kas yra pastangos ir automatiniai iššūkiai?', 'Po treniruotės treneris įvertina pastangas: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP (matote, jei klubas įjungęs). Lankomumo, varžybų, egzamino ir Strava iššūkiai užsiskaito patys, kitus vaikas pateikia, treneris tvirtina.'],
+    ['Kas yra pastangos ir automatiniai iššūkiai?', 'Po treniruotės treneris įvertina pastangas: iš visų jėgų +20 · gerai +14 · lengviau +8 EXP (matote, jei klubas įjungęs). Savaitės Strava iššūkiai užsiskaito patys (jei klubas įjungęs), kitus vaikas pateikia, treneris tvirtina; varžybų ir egzamino rezultatus tvirtina treneris.'],
     ['Vaikas susiejo Strava — ką tai reiškia?', 'Vaikas gali pats susieti savo Strava (Profilis → Strava) — jums ateina pranešimas. SPOBU mato tik veiklų tipą, pavadinimą, atstumą, trukmę, datą, geriausio kilometro laiką ir nuorodą: iš jų užsiskaito iššūkiai ir Kelio rekordai (1 km, ilgas bėgimas, dviratis, žygis). Įtartinus rezultatus tikrina treneris. Atsieti galite bet kada: Profilis → Strava → Atsieti.'],   // v627 (3A, S2)
     ['Ką galiu pažymėti už vaiką?', 'Renginiams ir varžyboms — „Ar dalyvaus?" kalendoriuje (vaikui iki 14 m.). Strava iššūkiai užsiskaito patys, pastangas ir kitus rezultatus įveda treneris (arba vaikas savo paskyroje).'],   // v640 (15A): buvo „tik vaikas, tu stebėtojas"
-    ['Kaip gaunami EXP ir lygiai?', 'Daugiausia — treniruotėse: pastangos +20 / +14 / +8, pilna savaitė +15, pilnas mėnuo +100. Dar iššūkiai, varžybos, diržo egzaminas, dvikovos, rekordai. Visa lentelė: Nustatymai → „Kaip veikia SPOBU".'],
+    ['Kaip gaunami EXP ir lygiai?', 'Daugiausia — treniruotėse: pastangos +20 / +14 / +8, pilna savaitė +15, pilnas mėnuo +100 (kai treneris pažymėjo bent pusę mėnesio treniruočių). Dar iššūkiai, varžybos, diržo egzaminas, dvikovos, rekordai. Visa lentelė: Nustatymai → „Kaip veikia SPOBU".'],
     ['Kokius pranešimus gausiu?', 'Trenerio ir klubo žinutes bei skelbimus ir vaiko pasiekimus (iššūkis ar pakopa, medalis, diržas, trenerio EXP, dvikova, naujas lygis) — su vaiko vardu, ne dažniau kaip kartą per valandą vienam vaikui; visi yra varpelio skiltyje „Vaikai". Išjungti: Nustatymai → „Vaiko pasiekimai".'],
     ['Kaip pridėti antrą vaiką?', 'Paspausk burbuliuką viršuje dešinėje → „Pridėti vaiką" ir užpildyk anketą — ją patvirtins klubas. Jei vaikas jau turi SPOBU paskyrą, paprašyk jo kodo ir spausk „Prijungti vaiką su kodu".'],
     ['Negaunu push pranešimų?', 'Nustatymuose įjunk „Push pranešimai". iPhone: appsas turi būti įdiegtas į pradžios ekraną ir duotas pranešimų leidimas.'],
@@ -1898,7 +1898,7 @@ function openHelpModal(who) {
   const FAQ = {
     trainer: [
       ['Iš kur atsiranda grupės ir vaikai?', 'Grupes kuria ir vaikus priskiria KLUBAS. Tu matai tau priskirtas grupes (kaip pagrindinis treneris arba asistentas) ir valdai jų kasdienybę.'],
-      ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai pratimų rekordus, rankinius iššūkius ir varžybas. Dvikovas vertini treniruotėje — Kalendoriaus dienos lape arba lankomumo lange įvedi abiejų rezultatus. Lankomumo, varžybų, egzamino ir Strava iššūkiai užsiskaito patys — jų tvirtinti nereikia. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
+      ['Kaip patvirtinti vaikų rezultatus?', '„Patvirtinti" lange matai pratimų rekordus, rankinius iššūkius ir varžybas. Dvikovas vertini treniruotėje — Kalendoriaus dienos lape arba lankomumo lange įvedi abiejų rezultatus. Savaitės Strava iššūkiai užsiskaito patys (jei klubas įjungęs). Patvirtintą atmetus ar pakeitus — EXP perskaičiuojamas. Tvirtink atsakingai — nuo to priklauso visa statistika.'],
       ['Kaip veikia planai ir kalendorius?', 'Kalendorius — pradinis langas. „Planuoti treniruotes": 10–15 min klausimų, AI paruošia etapą; kiekvieną treniruotę patvirtini tu (kol nepatvirtinta, vaikai nemato). Dienos lapas: lankomumas, pastangos, blokai.'],
       ['Kas yra pastangos?', 'Žymėdamas lankomumą kiekvienam vaikui parenki: iš visų jėgų (+20 EXP) · gerai (+14) · lengviau (+8). Numatyta „gerai" — žymėk tik išimtis. Vaikas ir tėvai (jei klubas įjungęs) tai mato.'],
       ['Kaip skirti iššūkį?', 'Grupių lange kortelės mygtukas „Iššūkis" arba Kalendoriuje / Treniruotėse prie grupės „+". Savaitės iššūkiai (bėgimas, ėjimas, dviratis, plaukimas, treniruotė) užsiskaito per Strava patys; mėnesio pasiekimus (kata, spyriai) pažymi „Išmoko" suvestinėje. Paspaudęs vaiką — asmeninį.'],
@@ -1909,7 +1909,7 @@ function openHelpModal(who) {
     ],
     // v624 (23A/29A): V2 tekstai — automatiškai užsiskaito tik savaitės Strava iššūkiai (V2 lankomumo / varžybų / egzamino iššūkių nekuria, v613)
     kid: [
-      ['Kaip gaunu EXP ir keliu lygį?', 'Lankyk treniruotes ir stenkis — treneris įvertina pastangas (iš visų jėgų +20 · gerai +14 · lengviau +8), už visas savaitės treniruotes +15, už visas mėnesio +100. Dar — iššūkiai, rekordai Kelio lange, varžybos ir dvikovos. Visi skaičiai: Nustatymai → „Kaip veikia SPOBU".'],
+      ['Kaip gaunu EXP ir keliu lygį?', 'Lankyk treniruotes ir stenkis — treneris įvertina pastangas (iš visų jėgų +20 · gerai +14 · lengviau +8), už visas savaitės treniruotes +15, už visas mėnesio +100 (jei treneris pažymėjo bent pusę mėnesio treniruočių). Dar — iššūkiai, rekordai Kelio lange, varžybos ir dvikovos. Visi skaičiai: Nustatymai → „Kaip veikia SPOBU".'],
       ['Kurie iššūkiai skaičiuojasi patys?', 'Savaitės Strava iššūkiai ' + ((typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? 'užsiskaito patys' : 'ateina patys (patvirtina treneris)') + ', jei susietas Strava (susieji pats Profilyje — tėvams nusiunčiamas pranešimas). Kelio rekordai (1 km, ilgas bėgimas, dviratis, žygis) iš Strava ' + ((typeof flagOn !== 'function' || flagOn('strava_auto_approve')) ? 'užsiskaito patys' : 'ateina treneriui') + '. Kitus pažymi tu, patvirtina treneris.'],
       ['Kaip pateikiu rezultatą?', '„Kelias" lange pasirink sritį ir pratimą, įrašyk naują rekordą. Treneris jį patvirtins.'],
       ...((typeof KidGate === 'undefined' || KidGate.on('duels')) ? [['Kas yra dvikova?', '1 prieš 1 su grupės draugu (atsispaudimai, pritūpimai, presas, lenta, bėgimas). Grupės lange iškviesk draugą ir pasirink treniruotę — joje treneris įvertins ir įves rezultatus. Pergalė +50 · lygiosios +35 · pralaimėjus +25 EXP.']] : []),
@@ -2015,7 +2015,7 @@ const WELCOME_CONTENT = {
     items: [
       ['kalendorius', '<b class="t">Kalendorius</b>vaiko treniruotės, ar buvo, kiek pastangų įdėjo, kas laukia. Spauskite dieną — visos detalės'],
       ['vaikas',      'Keli vaikai? Burbuliukas viršuje dešinėje perjungia vaiką, „Šeima" — visų vaikų santrauka'],   // v649 (čipsai nuimti v647)
-      ['tikslas',     'EXP ir iššūkiai — dalis skaičiuojasi automatiškai (lankomumas, varžybos, Strava), kitus tvirtina treneris. Kaip viskas veikia — Šeimos lange → Nustatymai'],
+      ['tikslas',     'EXP ir iššūkiai — pastangas ir lankomumą žymi treneris, premijos ir Strava iššūkiai užsiskaito patys, rezultatus tvirtina treneris. Kaip viskas veikia — Šeimos lange → Nustatymai'],
       ['pranesimai',  'Vaiko pasiekimai — varpelio skiltyje <b style="color:white;">„Vaikai"</b> ir push su vaiko vardu'],   // v640 (15A)
       ['premium',     'Esate <b style="color:white;">pirmieji bandytojai</b> — jums <b style="color:white;">viskas įjungta nemokamai</b>'],
       ['bug',         'Radę klaidą: Pagalba → „Pranešti problemą". Atsakymą gausite ten pat („Mano žinutės")']
@@ -3347,7 +3347,7 @@ async function loadParentKidFeed() {
         return;
       }
       if (/^Karjeros archyvas/i.test(reason)) {
-        items.push({ kind: 'archive', color: '#94A3B8', icon: ''+ico('archyvas')+'', title: 'Perėjimas į 14+ — ankstesnio Kelio EXP įskaitytas', label: 'Kelio archyvas', exp: Number(a.exp_change) || 0, date: a.created_at });
+        items.push({ kind: 'archive', color: '#94A3B8', icon: ''+ico('archyvas')+'', title: `Perėjimas į 14+ — ankstesnis Kelio EXP (${Number(a.exp_change) || 0}) išsaugotas, bendras EXP nepasikeitė`, label: 'Kelio archyvas', exp: 0, date: a.created_at });   // v679 (EXP-14): ne naujas EXP — į mėnesio sumą neina
         return;
       }
       if (/^Grupių iššūkis:/i.test(reason)) {
@@ -3779,7 +3779,7 @@ function openPfDay(key) {
   // v638 (6A): lankomumo premijos ir Kelio archyvas — ne „Treneris pagyrė"
   its.filter(i => i.kind === 'bonus' || i.kind === 'archive').forEach(i => {
     const pos = (i.exp || 0) >= 0;
-    html += `<div style="margin-top:9px;font-size:12px;color:${pos ? 'var(--grn)' : '#EF4444'};">${i.icon} ${escapeHtml(i.title || '')} <b>${pos ? '+' : '−'}${Math.abs(i.exp || 0)}</b></div>`;
+    html += `<div style="margin-top:9px;font-size:12px;color:${pos ? 'var(--grn)' : '#EF4444'};">${i.icon} ${escapeHtml(i.title || '')}${i.kind === 'archive' ? '' : ` <b>${pos ? '+' : '−'}${Math.abs(i.exp || 0)}</b>`}</div>`;
   });
   // Serijos premijos + grąžinimai
   its.filter(i => i.kind === 'streak').forEach(i => { html += `<div style="margin-top:9px;font-size:11px;color:#FB923C;">${i.icon} ${escapeHtml(i.title || '')} <b>+${i.exp}</b></div>`; });
@@ -8991,7 +8991,7 @@ const LEVEL_REWARDS = {
   3:  { title: 'AUGI STIPRIAI!', icon: ''+ico('jega')+'', message: 'Stiprybė ateina ne iš to, ką gali, o iš to, ką nori pasiekti.' },
   4:  { title: 'PROGRESAS MATOMAS!', icon: ''+ico('greitis')+'', message: 'Kasdien trupučiu geriau. Tai ir yra meistriškumo paslaptis.' },
   5:  { title: 'PIRMAS DIDELIS LYGIS!', icon: ''+ico('zvaigzde')+'', message: 'Pasiekei reikšmingą lygį! Dabar jau ne tik pradedantis – jau matosi tavo darbas.' },
-  6:  { title: 'PAŽENGĘS KARATIETIS!', icon: ''+ico('dirzas')+'', message: 'Dabar tu žinai daug technikų. Bet svarbiausia – žinai, kad dar reikia mokytis daugiau.' },
+  6:  { title: 'AUGANTIS KARATIETIS!', icon: ''+ico('dirzas')+'', message: 'Dabar tu žinai daug technikų. Bet svarbiausia – žinai, kad dar reikia mokytis daugiau.' },
   7:  { title: 'KOVOS DVASIA AUGA!', icon: ''+ico('streak')+'', message: 'Tikras karatietis kovoja ne dėl pergalės, o dėl tobulėjimo.' },
   8:  { title: 'TECHNIKA ŠLIFUOJASI!', icon: ''+ico('dvikova')+'', message: 'Tu jau ne tik mokaisi judesių – tu juos jauti.' },
   9:  { title: 'ARTI MEISTRO STATUS!', icon: ''+ico('trofejai')+'', message: 'Pažiūrėk, kiek toli jau atėjai. Kiek pradedančiųjų norėtų būti tavo vietoje.' },
@@ -8999,7 +8999,7 @@ const LEVEL_REWARDS = {
   11: { title: 'TIKRAS KARATEKAS!', icon: ''+ico('ninja')+'', message: 'Karatė jau yra tavo gyvenimo dalis. Tu mąstai kaip karatietis, judi kaip karatietis.' },
   15: { title: 'ELITAS!', icon: ''+ico('premium')+'', message: 'Tik nedaugelis pasiekia tokį lygį. Tu – pavyzdys jaunesniems.' },
   20: { title: 'MEISTRO LYGIS!', icon: ''+ico('zvaigzde')+'', message: 'Tu pasiekei tai, kas iš pradžių atrodė neįmanoma. Tu esi įkvėpimas kitiems.' },
-  30: { title: 'SENSEI!', icon: '🐉', message: 'Tu pasiekei aukščiausią lygį. Nuo dabar tavo užduotis – mokyti kitus.' }
+  30: { title: 'PATYRĘS KOVOTOJAS!', icon: '🐉', message: '30 lygis — tu jau tarp patyrusių. Kelias tęsiasi iki 99 lygio ir Šlovės salės.' }
 };
 
 // Default - bendras pasveikinimas jei nėra specialaus
@@ -12712,11 +12712,7 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
       earnedExp = approved?.exp_gain || 0;
     }
 
-    // 🛡️ FALLBACK
-    if (earnedExp === 0 && ch.exp_reward) {
-      earnedExp = ch.exp_reward;
-      console.warn(`[challenge stats] FALLBACK EXP "${ch.title}" (${ch.type}): naudojam exp_reward=${ch.exp_reward}`);
-    }
+    // v679 (EXP patikra): be „exp_reward" atsarginio — rodoma TIK serverio įskaityta EXP (atmesta / grąžinta = 0)
 
     totalExpFromCompleted += earnedExp;
 
@@ -12735,7 +12731,7 @@ function updateChallengeStatsUI(activeChallenges, completedChallenges, eligibleC
     const approvedSubs = subs.filter(s => s.status === 'approved');
     approvedSubs.forEach(s => {
       permanentCompleted++;
-      const exp = s.exp_gain || ch.exp_reward || 0;
+      const exp = Number(s.exp_gain) || 0;   // v679: tik įskaityta EXP
       totalExpFromCompleted += exp;
       typeCounts.permanent++;
       typeExp.permanent += exp;
@@ -14772,7 +14768,7 @@ const CLUB_FLAG_DEFS = [
   { sec:'TRENIRUOTĖS' },
   { k:'plans_enabled', def:false, t:''+ico('treniruote')+' Treniruočių planai v2', d:'Kalendorius visoms rolėms, etapai su AI, pastangų vertinimas, pavadavimai. Įjungus jungiklis dingsta — tai nauja SPOBU tvarka.', info:'Treniruočių planai v2 — Kalendorius visoms rolėms. Treneris planuoja etapą su AI pagalba, patvirtina treniruotes (vaikai ir tėvai mato tik patvirtintas), po treniruotės žymi lankomumą ir vertina pastangas (EXP 20 / 14 / 8). Tu Kalendoriuje matai visų grupių treniruotes, tvirtini planus, skiri pavaduotojus ir kuri renginius.<br><br>Išjungus: dingsta Kalendorius, planai, pastangų vertinimas ir pavadavimai — grįžta senoji navigacija (Renginiai, Iššūkiai), lankomumas be pastangų.' },
   { k:'trainers_can_create_plans', t:''+ico('treneris')+' Treneriai kuria planus', d:'Ar treneris pats kuria grupės etapus, ar tik klubas. Numatyta: įjungta.', info:'Treneriai kuria planus — grupės treneris pats planuoja etapą (vedlys, AI). Išjungus: etapus kuria tik klubas, treneris mato ir patvirtina.' },
-  { k:'attendance_enabled', t:''+ico('lankomumas')+' Lankomumas', d:'Treneris žymi lankomumą ir pastangas — iš to vaikų EXP po treniruočių. Numatyta: įjungta.', info:'Lankomumas ir pastangos — treneris po treniruotės pažymi, kas dalyvavo, ir įvertina pastangas (iš visų jėgų / gerai / lengviau). Tai pagrindinis vaikų EXP šaltinis: +20 / +14 / +8 už treniruotę, +15 už pilną savaitę, +100 už pilną mėnesį.<br><br>Išjungus: treneriai nebežymės lankomumo ir pastangų, vaikai negaus EXP po treniruočių, vaikas ir tėvas nebematys lankomumo, dings Analitikos lankomumas.' },
+  { k:'attendance_enabled', t:''+ico('lankomumas')+' Lankomumas', d:'Treneris žymi lankomumą ir pastangas — iš to vaikų EXP po treniruočių. Numatyta: įjungta.', info:'Lankomumas ir pastangos — treneris po treniruotės pažymi, kas dalyvavo, ir įvertina pastangas (iš visų jėgų / gerai / lengviau). Tai pagrindinis vaikų EXP šaltinis: +20 / +14 / +8 už pastangas (kai įjungti ir planai), +15 už pilną savaitę, +100 už pilną mėnesį (kai pažymėta bent pusė mėnesio treniruočių).<br><br>Išjungus: treneriai nebežymės lankomumo ir pastangų, vaikai negaus EXP po treniruočių, vaikas ir tėvas nebematys lankomumo, dings Analitikos lankomumas.' },
   { k:'effort_visible_to_parents', t:''+ico('tikslas')+' Tėvai mato pastangų vertinimą', d:'Eilutė „dirbo iš visų jėgų" tėvų kalendoriuje ir Pasiekimuose. Numatyta: įjungta.', info:'Tėvai mato pastangų vertinimą — po treniruotės trenerio įvertintos pastangos (iš visų jėgų / gerai / lengviau) ir EXP už jas rodomi tėvams. Vaikas savo pastangas mato visada.<br><br>Išjungus: tėvams dingsta tik pastangų eilutė, EXP lieka.' },
   { k:'trainer_posts_enabled', t:''+ico('nuotrauka')+' Trenerių postai', d:'Treneris po treniruotės dalinasi nuotrauka su viena eilute — grupei, Facebook, Instagram. Numatyta: įjungta.', info:'Trenerių postai — po treniruotės treneris pasidaro postą: nuotrauka + viena eilutė, ir pasidalina tėvų grupės pokalbyje, Facebook ar Instagram. Vaikų vardai Facebook / Instagram — tik tų, kurių tėvai davė sutikimą.<br><br>Išjungus: treneriai nebematys „Postai" mygtuko. Klubo Postų studija lieka.' },
   { sec:'IŠŠŪKIAI' },
@@ -15377,7 +15373,7 @@ function _gcCalendarRange() {
 }
 function _gcTierExp(first, rnk){
   const f = Math.min(GROUP_CHALLENGE_EXP_CAP, Math.max(0, first||0));
-  return rnk===1 ? f : rnk===2 ? Math.round(f*0.7) : rnk===3 ? Math.round(f*0.5) : Math.round(f*0.3);
+  return rnk===1 ? f : rnk===2 ? Math.round(f*7/10) : rnk===3 ? Math.round(f*5/10) : Math.round(f*3/10);   // v679 (X11): sveikais skaičiais — 45×0.7 nebeapvalina į 31 (serveris 32)
 }
 
 // Atnaujina EXP lauko lubas pagal pasirinktą tipą (kūrimo forma)
@@ -21394,7 +21390,7 @@ async function openAttendance(groupId, dateStr){
       <div id="att-list"></div>
       <div id="att-sum"></div><!-- MODULIS: Kal (v535) — „13 buvo · 1 nebuvo · 2 išimtys · vidutiniškai +N EXP" -->
       <button id="att-confirm" onclick="_attConfirm()" style="width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#FF4D00,#FF7A33);border:none;color:white;border-radius:12px;font-weight:800;cursor:pointer;font-family:inherit;">${ico('patvirtinta')} Patvirtinti</button>
-      <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Pilna savaitė → +15 EXP · pilnas mėnuo → +100 EXP.<br>Neįvykusios treniruotės nežymimos — jos neskaičiuojamos.</div>
+      <div style="font-size:10px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.5;">Pilna savaitė → +15 EXP · pilnas mėnuo → +100 EXP (kai pažymėta bent pusė mėnesio treniruočių).<br>Neįvykusios treniruotės nežymimos — jos neskaičiuojamos.</div>
     </div></div>`;
   m.onclick=(e)=>{ if(e.target===m) m.remove(); };
   document.body.appendChild(m);
@@ -21663,7 +21659,7 @@ async function openKidAttendance(){
       st.weekBonus=b['week:'+Kal.isoWeekKey(t)]?.exp||0; st.monthBonus=b['month:'+mk]?.exp||0;
     }catch(e){ console.warn('[kid-att] premijos', e?.message||e); }
   }
-  if(body) body.innerHTML=_attPanelHtml(st)+`<div style="font-size:10px;color:var(--mut);text-align:center;margin-top:14px;line-height:1.5;">Pilna savaitė +15 EXP · pilnas mėnuo +100 EXP — jei buvai visose įvykusiose treniruotėse.<br>Premija atsiranda, kai treneris pažymi lankomumą.</div>`;
+  if(body) body.innerHTML=_attPanelHtml(st)+`<div style="font-size:10px;color:var(--mut);text-align:center;margin-top:14px;line-height:1.5;">Pilna savaitė +15 EXP · pilnas mėnuo +100 EXP — jei buvai visose įvykusiose treniruotėse (mėnesio — kai treneris pažymėjo bent pusę treniruočių).<br>Premija atsiranda, kai treneris pažymi lankomumą.</div>`;
 }
 
 // ════════════════════════════════════════
@@ -23019,7 +23015,7 @@ function openTrInfo(which) {
       break;
     case 'pat':
       title = ''+ico('pagalba')+' PATVIRTINIMAI';
-      html = intro('Čia tvirtini, ką pateikė vaikai. Patvirtinus — EXP priskiriamas automatiškai. Automatiniai iššūkiai (Strava, lankomumas, varžybos, egzaminas) čia nepatenka — užsiskaito patys. Naujų vaikų anketos — Grupių lange, treniruotės — Treniruočių lange. Gali filtruoti pagal grupę.') +
+      html = intro('Čia tvirtini, ką pateikė vaikai. Patvirtinus — EXP priskiriamas automatiškai. Savaitės Strava iššūkiai čia nepatenka — užsiskaito patys (jei klubas įjungęs). Atmetus ar pakeitus jau patvirtintą — EXP perskaičiuojamas. Naujų vaikų anketos — Grupių lange, treniruotės — Treniruočių lange. Gali filtruoti pagal grupę.') +
         row(''+ico('tikslas')+'', 'Kelias', 'Nauji pratimų rekordai — patvirtink arba grąžink pataisyti.') +
         row(''+ico('jega')+'', 'Iššūkiai', 'Rankiniai pateikimai sugrupuoti pagal iššūkį — paspaudus atsidaro suvestinė, ten tvirtini po vieną arba visus.') +
         row(''+ico('zenkliukai')+'', 'Varžybos', 'Varžybų rezultatai ir medaliai — visų tavo vaikų.') +
@@ -23154,7 +23150,7 @@ function openKidInfo(which) {
     case 'main':
       title = ''+ico('pagalba')+' PAGRINDINIS';
       html = intro('Tavo namų ekranas — viskas apie tave vienoje vietoje. Treniruotes ir dienas žiūrėk Kalendoriuje.') +
-        row(''+ico('dirzas')+'', 'Tavo lygis ir kanji', 'Skaičius viduryje — tavo lygis (1–99). Žiedas aplink pildosi link kito lygio. Kanji ženklas — tavo etapas (Naujokas → … → Sensėjus).') +
+        row(''+ico('dirzas')+'', 'Tavo lygis ir kanji', 'Skaičius viduryje — tavo lygis (1–99). Žiedas aplink pildosi link kito lygio. Kanji ženklas — tavo etapas (Naujokas → … → Šlovės salė).') +
         row(''+ico('greitis')+'', 'EXP taškai', 'Gauni juos už treniruotes ir pastangas jose, iššūkius, pratimų rekordus ir varžybas. Daugiau EXP → aukštesnis lygis. Visi skaičiai — Nustatymai → „Kaip veikia SPOBU".') +
         row(''+ico('streak')+'', 'Serijos', 'Treniruotės — kiek treniruočių iš eilės buvai (tas pats skaičius kaip Kalendoriuje). Savaitės ir Mėnesiai — kiek savaičių ar mėnesių iš eilės įveikei iššūkį; už jas premijos EXP (bakstelėk).') +   // v624 (28A)
         row(''+ico('trofejai')+'', 'Reitingai', 'Tavo vieta tarp BENDRAAMŽIŲ — lyginiesi su panašiais į tave, ne su vyresniais.') +
@@ -24264,7 +24260,7 @@ async function openTrainerSettings() {
             ${ico('zinutes')} Atsiliepimas po treniruotės („Kaip pavyko?") — <b style="color:var(--grn);">+2 tšk.</b><br>
             ${ico('zvaigzde')} Sukurtas iššūkis — <b style="color:var(--br);">+1 tšk.</b><br>
             ${ico('patvirtinta')} Rankinis patvirtinimas — rekordas, iššūkis „Išmoko / Atliko", varžybos — <b style="color:var(--grn);">+1 tšk.</b><br>
-            <span style="color:var(--mut);font-size:10px;">Automatiniai patvirtinimai (Strava, lankomumas, varžybos) taškų neduoda — juos atlieka sistema. Iš viso 99 lygiai, aukščiausias — Sensėjus (6 000 tšk.): su 2–3 grupėmis, žymint pastangas ir rašant atsiliepimus — apie 3 metai. Tikras meistro kelias.</span>
+            <span style="color:var(--mut);font-size:10px;">Automatiniai patvirtinimai (Strava) taškų neduoda — juos atlieka sistema. Iš viso 99 lygiai, aukščiausias — Sensėjus (6 000 tšk.): su 2–3 grupėmis, žymint pastangas ir rašant atsiliepimus — apie 3 metai. Tikras meistro kelias.</span>
           </div>
 
           <button onclick="trSetAcc('trs-stages-body')" style="background:var(--card);border:.5px solid var(--bdr);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;color:white;font-family:inherit;">
@@ -32996,18 +32992,21 @@ async function approveChallengeSubmission(subId) {
 async function rejectChallengeSubmission(subId) {
   const reason = await appPrompt('Atmetimo priežastis (neprivaloma):') || 'Treneris paprašė pateikti iš naujo';
   
-  const { error } = await sb.from('challenge_submissions')
-    .update({ 
-      status: 'rejected', 
+  const { data: rjRows, error } = await sb.from('challenge_submissions')
+    .update({
+      status: 'rejected',
       rejection_reason: reason,
       reviewed_at: new Date().toISOString()
     })
-    .eq('id', subId);
-  
+    .eq('id', subId)
+    .eq('status', 'pending')   // v679 (EXP-06): pasenusi kortelė nebeatmeta jau patvirtinto
+    .select('id');
+
   if (error) {
     showToast(ico('klaida')+' ' + _userError(error), 'error');
     return;
   }
+  if (!rjRows || !rjRows.length) { showToast('Šis pateikimas jau įvertintas — atnaujink sąrašą', 'info'); return; }
   
   const el = document.getElementById(`csub-${subId}`);
   if (el) {
@@ -33196,20 +33195,23 @@ async function approveCompetitionResult(resultId) {
 async function rejectCompetitionResult(resultId) {
   const reason = await appPrompt('Atmetimo priežastis (neprivaloma):') || 'Patikrink ir pateik iš naujo';
   
-  const { error } = await sb.from('competition_results')
-    .update({ 
+  const { data: rjRows, error } = await sb.from('competition_results')
+    .update({
       approval_status: 'rejected',
       rejection_reason: reason,
       approved_by: currentUser.id,
       approved_at: new Date().toISOString()
     })
-    .eq('id', resultId);
-  
+    .eq('id', resultId)
+    .eq('approval_status', 'pending')   // v679 (EXP-06): pasenusi kortelė nebeatmeta jau patvirtinto
+    .select('id');
+
   if (error) {
     console.error('rejectCompetitionResult:', error);
     showToast(ico('klaida')+' ' + _userError(error), 'error', 5000);
     return;
   }
+  if (!rjRows || !rjRows.length) { showToast('Šis rezultatas jau įvertintas — atnaujink sąrašą', 'info'); return; }
   
   const el = document.getElementById(`comp-result-${resultId}`);
   if (el) {
@@ -40765,7 +40767,7 @@ const Kal = {
       const belt = ['belt', 'belt_test'].includes(String(x.competition_type || ''));
       out.push({
         kind: 'comp', id: x.id, date: x.event_date, endDate: x.event_date, title: x.title || (belt ? 'Diržų egzaminas' : 'Varžybos'),
-        type: x.competition_type || 'comp', cls: belt ? 'ev-belt' : 'ev-comp', label: belt ? 'Egzaminas' : 'Varžybos',
+        type: x.competition_type || 'comp', level: x.level || null, cls: belt ? 'ev-belt' : 'ev-comp', label: belt ? 'Egzaminas' : 'Varžybos',
         location: x.location || null, url: x.registration_url || null,   // 5 etapas: vieta ir registracijos nuoroda
         price: x.price_info || null, deadline: x.registration_deadline || null   // 6 etapas (server-PERTVARKA-6a): mokestis ir registracijos terminas
       });
@@ -41516,9 +41518,10 @@ Object.assign(Kal, {
       (rs[0].data || []).forEach(a => {
         const rs_ = a.reason || '';
         if (/^effort:/.test(rs_) || K.isBonusReason(rs_)) return;
-        if (/atšaukta/i.test(rs_)) addTs(a.created_at, a.exp_change, 'revoke', 'Premija atšaukta');
+        if (/^Karjeros archyvas/i.test(rs_)) return;   // v679 (EXP-14): 14+ archyvas — ne naujas EXP (total_exp nekinta), į sumas neina
+        if (/^Stovykla:/i.test(rs_)) addTs(a.created_at, a.exp_change, 'camp', rs_.replace(/^Stovykla:\s*/i, ''));   // v679: ir „— atšaukta" (EXP-06, neigiamas)
+        else if (/atšaukta/i.test(rs_)) addTs(a.created_at, a.exp_change, 'revoke', 'Premija atšaukta');
         else if (/^Grupių iššūkis:/i.test(rs_)) addTs(a.created_at, a.exp_change, 'gc', rs_.replace(/^Grupių iššūkis:\s*/i, ''));
-        else if (/^Stovykla:/i.test(rs_)) addTs(a.created_at, a.exp_change, 'camp', rs_.replace(/^Stovykla:\s*/i, ''));
         else if (/^Dvikova \(/.test(rs_)) addTs(a.created_at, a.exp_change, 'duel', rs_);   // v625 (1A): duel_judge
         else addTs(a.created_at, a.exp_change, 'coach', rs_ || 'Trenerio įvertinimas');
       });
@@ -41721,7 +41724,7 @@ Object.assign(Kal, {
         const btns = !past && typeof setKidIntent === 'function' ? `<div style="display:flex;gap:8px;margin-top:10px;"><span class="kal-b g lg" style="flex:1;${intent === 'planning' ? 'opacity:.55;' : ''}" onclick="${this.ns}.intent('${ev.id}','planning')">${intent === 'planning' ? this.T.yesOn : this.T.yes}</span><span class="kal-b lg" style="flex:1;${intent === 'wont_attend' ? 'opacity:.55;' : ''}" onclick="${this.ns}.intent('${ev.id}','wont_attend')">${intent === 'wont_attend' ? this.T.noOn : 'Ne'}</span></div>` : '';
         return `<div class="kal-card ${ev.cls}"><div style="font-size:15px;font-weight:900;">${K.esc(ev.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${K.esc(ev.label)} · ${K.esc(ev.date)}${ev.location ? ' · ' + K.esc(ev.location) : ''}${intent === 'participated' ? ' · dalyvavo' : ''}</div>${(ev.deadline || ev.price) ? `<div style="display:flex;gap:12px;margin-top:7px;font-size:10.5px;font-weight:800;color:var(--mut);">${ev.deadline ? `<span>Registracija iki <b style="color:#FF7A33;">${K.esc(ev.deadline)}</b></span>` : ''}${ev.price ? `<span>Mokestis <b style="color:var(--txt);">${K.esc(ev.price)}</b></span>` : ''}</div>` : ''}${ev.url && /^https?:\/\//i.test(ev.url) ? `<div style="margin-top:7px;"><a href="${K.esc(ev.url)}" target="_blank" rel="noopener" class="kal-b" style="display:inline-block;text-decoration:none;">Registracija ↗</a></div>` : ''}</div>
           ${!past ? `<div style="margin:0 16px 10px;background:linear-gradient(155deg,rgba(59,130,246,.2),var(--card) 68%);border:.5px solid rgba(59,130,246,.45);border-radius:18px;padding:13px 14px;"><div style="font-size:9.5px;font-weight:900;letter-spacing:1.3px;color:#3B82F6;">${this.T.ask.toUpperCase()}</div>${btns}<div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:9px;line-height:1.45;">${this.T.note}</div></div>` : ''}
-          ${!belt ? `<div class="kal-sec">EXP UŽ REZULTATĄ</div><div class="kal-card"><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;text-align:center;">${[['150', '1 VIETA', '#FFD700'], ['100', '2 VIETA', 'var(--txt)'], ['70', '3 VIETA', 'var(--txt)'], ['40', 'DALYVAVO', 'var(--mut)']].map(x => `<div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${x[2]};line-height:1;">${x[0]}</div><div style="font-size:9px;font-weight:800;color:var(--mut);margin-top:3px;">${x[1]}</div></div>`).join('')}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:9px;padding-top:8px;border-top:.5px solid var(--bdr);text-align:center;">+3 už kiekvieną laimėtą kovą · +1 už pralaimėtą</div></div>` : ''}`;
+          ${!belt ? `<div class="kal-sec">EXP UŽ REZULTATĄ</div><div class="kal-card"><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;text-align:center;">${(ev.level === 'european' ? [1000, 700, 500, 300] : ev.level === 'medium' ? [400, 250, 180, 100] : [150, 100, 70, 40]).map((v, i) => [String(v), ['1 VIETA', '2 VIETA', '3 VIETA', 'DALYVAVO'][i], ['#FFD700', 'var(--txt)', 'var(--txt)', 'var(--mut)'][i]]).map(x => `<div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${x[2]};line-height:1;">${x[0]}</div><div style="font-size:9px;font-weight:800;color:var(--mut);margin-top:3px;">${x[1]}</div></div>`).join('')}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:9px;padding-top:8px;border-top:.5px solid var(--bdr);text-align:center;">${ev.type === 'kumite' ? (ev.level === 'european' ? '+20 už kiekvieną laimėtą kovą · +5 už pralaimėtą' : ev.level === 'medium' ? '+8 už kiekvieną laimėtą kovą · +2 už pralaimėtą' : '+3 už kiekvieną laimėtą kovą · +1 už pralaimėtą') : 'Kata — tik už vietą'}</div></div>` : ''}`;
       }
       const r = this.st.rsvp[ev.id];
       return `<div class="kal-card ${ev.cls}"><div style="font-size:15px;font-weight:900;">${K.esc(ev.title)}</div><div style="font-size:11px;color:var(--mut);font-weight:700;margin-top:3px;">${K.esc(ev.label)} · ${K.esc(ev.date)}${ev.endDate && ev.endDate !== ev.date ? ' – ' + K.esc(ev.endDate) : ''}${r ? ' · ' + (r.attended ? (this.T.campWas || 'dalyvavai') : (r.status === 'going' ? (this.T.campGo || 'dalyvausi') : (r.status === 'didnt_attend' ? (this.T.campNo || 'nedalyvavai') : K.esc(r.status || '')))) : ''}</div>${this.evNav ? `<div class="kal-acts"><span class="kal-b" onclick="Kal.sheetClose('kal-v-day',true);${this.evNav}">Atidaryti Varžybose</span></div>` : ''}</div>`;
@@ -42198,7 +42201,7 @@ Object.assign(Kal, {
         <div style="padding:16px 20px;border-bottom:.5px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:1;"><div style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1.2px;">NAUJAS RENGINYS</div><button onclick="document.getElementById('kal-k-new').remove()" style="background:transparent;color:var(--mut);border:.5px solid var(--bdr);width:30px;height:30px;border-radius:8px;cursor:pointer;">${ico('uzdaryti')}</button></div>
         <div style="padding:14px 0 20px;">
           ${types.map(x => `<div class="kal-card" style="cursor:pointer;display:flex;align-items:center;gap:11px;" onclick="document.getElementById('kal-k-new').remove();${x.go}"><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:900;">${x.t}</div><div style="font-size:10.5px;color:var(--mut);font-weight:700;margin-top:2px;">${x.s}</div></div>${ico('toliau')}</div>`).join('') || '<div class="kal-empty">Visi renginių tipai klube išjungti (Profilis → Nustatymai).</div>'}
-          <div style="margin:4px 16px 0;background:rgba(168,85,247,.09);border:.5px solid rgba(168,85,247,.3);border-radius:14px;padding:10px 13px;font-size:11.5px;line-height:1.45;">Sukurtas renginys atsiras <b>vaikų, tėvų ir trenerių</b> kalendoriuose iš karto. EXP už vietą — SPOBU formulė (150 · 100 · 70 · dalyvavimas 40), nekeičiama.</div>
+          <div style="margin:4px 16px 0;background:rgba(168,85,247,.09);border:.5px solid rgba(168,85,247,.3);border-radius:14px;padding:10px 13px;font-size:11.5px;line-height:1.45;">Sukurtas renginys atsiras <b>vaikų, tėvų ir trenerių</b> kalendoriuose iš karto. EXP už vietą — SPOBU formulė pagal lygį: vietinės 150 · 100 · 70 · 40, vidutinės 400 · 250 · 180 · 100, Europos 1000 · 700 · 500 · 300 (kumitė — dar už kovas), nekeičiama.</div>
         </div></div>`;
       document.body.appendChild(m);
     },
@@ -45424,12 +45427,13 @@ const KidInfo = {
     const b = (x) => `<b style="color:white;">${x}</b>`;
     const auto = typeof flagOn !== 'function' || flagOn('strava_auto_approve');
     const w = (kid, par) => this.par ? par : kid;   // v640: tėvui — trečiuoju asmeniu
-    let h = `<div class="hlp-intro">${w('EXP kelia tavo lygį (1–99). Daugiausia jų gauni treniruotėse — už tai, kad ateini ir stengiesi.', 'EXP kelia vaiko lygį (1–99). Daugiausia jų vaikas gauna treniruotėse — už tai, kad ateina ir stengiasi. Tie patys skaičiai rodomi vaikui.')}</div>`;
-    if (this.on('attendance')) h += row('jega', 'Pastangos treniruotėje', `Po kiekvienos treniruotės treneris įvertina: iš visų jėgų ${b('+20')} · gerai ${b('+14')} · lengviau ${b('+8')}.`)
-      + row('lankomumas', 'Lankomumo premijos', `${w('Buvai visose savaitės treniruotėse', 'Visos savaitės treniruotės')} — ${b('+15')}, visos mėnesio — ${b('+100')}. Neįvykusios treniruotės neskaičiuojamos.`);
+    let h = `<div class="hlp-intro">${w('EXP kelia tavo lygį (1–99). Daugiausia jų gauni treniruotėse — už pastangas ir pilną savaitę ar mėnesį.', 'EXP kelia vaiko lygį (1–99). Daugiausia jų vaikas gauna treniruotėse — už pastangas ir pilną savaitę ar mėnesį. Tie patys skaičiai rodomi vaikui.')}</div>`;
+    // v679 (X05): pastangų EXP serveris skiria tik su plans_enabled (Kal.on()), premijas — su lankomumu
+    if (this.on('attendance')) h += ((typeof Kal === 'undefined' || !Kal.on || Kal.on()) ? row('jega', 'Pastangos treniruotėje', `Po kiekvienos treniruotės treneris įvertina: iš visų jėgų ${b('+20')} · gerai ${b('+14')} · lengviau ${b('+8')}. Vien „buvo" — be EXP.`) : '')
+      + row('lankomumas', 'Lankomumo premijos', `${w('Buvai visose savaitės treniruotėse', 'Visos savaitės treniruotės')} — ${b('+15')}, visos mėnesio — ${b('+100')} (kai treneris pažymėjo bent pusę mėnesio treniruočių). Neįvykusios treniruotės neskaičiuojamos.`);
     if (this.on('challenges')) h += row('tikslas', 'Iššūkiai', `Savaitės (Strava): 3 pakopos pagal ${w('tavo', 'vaiko')} amžių ir lytį — ${w('pasiekęs 1-ą gauni', 'pasiekus 1-ą —')} ${b('+15')}, 2-ą — iš viso ${b('+20')}, 3-ią — iš viso ${b('+25')}. Savaitės iššūkis su vienu tikslu (pvz. greitas kilometras) — ${b('+20')}. Mėnesio pasiekimas (kata, spyriai) — ${b('+40')}, kai treneris pažymi „Išmoko". Strava veiklos ${auto ? 'užsiskaito pačios' : 'ateina pačios, patvirtina treneris'}.`)
-      + row('streak', 'Iššūkių serijos', `Savaitės iš eilės: kas 2 — ${b('+20')}, kas 4 — ${b('+40')}, 24 — ${b('+300')}. Mėnesiai iš eilės: nuo 2-o — ${b('+30')}, kas 3 — ${b('+60')}, 9 (sezonas) — ${b('+450')}.`);
-    h += row('augimas', 'Rekordai (Kelias)', `Pratimo EXP — iki ${b('100')}: bronza 25 · sidabras 50 · auksas 75 · MAX 100 (pagal ${w('tavo', 'vaiko')} amžiaus ir lyties normatyvą). ${w('Pagerinęs rekordą gauni skirtumą', 'Pagerinus rekordą — skirtumas')}. Patvirtina treneris${auto ? ' — o 1 km, ilgas bėgimas, dviratis ir žygis iš susietos Strava užsiskaito patys' : ''}.`);   // v627 (3A)
+      + row('streak', 'Iššūkių serijos', `Savaitės iš eilės: kas 2-ą — ${b('+20')}, kas 4-ą — dar ${b('+40')} (iš viso +60), kas 24-ą — dar ${b('+300')}. Mėnesiai iš eilės: nuo 2-o kas mėnesį — ${b('+30')}, kas 3-ią — dar ${b('+60')}, kas 9-ą (sezonas) — dar ${b('+450')}.`);
+    h += row('augimas', 'Rekordai (Kelias)', `Pratimo EXP — iki ${b('100')}: bronza 25 · sidabras 50 · auksas 75 · MAX 100 (pagal ${w('tavo', 'vaiko')} amžiaus ir lyties normatyvą). ${w('Pagerinęs rekordą gauni skirtumą', 'Pagerinus rekordą — skirtumas')}; vienai kategorijai — iki ${b('600')}. Patvirtina treneris${auto ? ' — o 1 km, ilgas bėgimas, dviratis ir žygis iš susietos Strava užsiskaito patys' : ''}.`);   // v627 (3A)
     if (this.on('comp')) h += row('trofejai', 'Varžybos', `Vietinės: 1 vieta ${b('+150')} · 2 — ${b('+100')} · 3 — ${b('+70')} · dalyvavimas ${b('+40')} (kumitė dar +3 už pergalę, +1 už pralaimėtą kovą). Vidutinės 400 / 250 / 180 / 100, Europos 1000 / 700 / 500 / 300.`);
     if (this.on('belt')) h += row('dirzas', 'Diržo egzaminas', `Išlaikius: 9–1 kyu ${b('+100…+400')}, 1–5 dan ${b('+1000…+3000')}. Neišlaikius vis tiek ${b('+25…+100')} — už drąsą.`);
     if (this.on('duels')) h += row('dvikova', 'Dvikovos', `Pergalė ${b('+50')} · lygiosios ${b('+35')} · pralaimėjus ${b('+25')}. Vyksta treniruotėje, rezultatus įveda treneris. ${w('Iškviesti gali', 'Vaikas iškviesti gali')} kartą per 7 d., priimti — be ribos.`);
@@ -46017,10 +46021,11 @@ const KidExp = {
     if (m) return { ic: 'lankomumas', head: 'LANKOMUMO PREMIJA', title: 'Lankomumo premija', body: `Pilnas ${m[1].toLowerCase()} lankomumas — nepraleidai nė vienos treniruotės!`, ok: a >= 0 };
     if (/^Lankomumo premija atšaukta/i.test(r)) return { ic: 'lankomumas', head: 'LANKOMUMO PREMIJA ATŠAUKTA', title: 'Lankomumo premija atšaukta', body: 'Treneris pataisė lankomumą — premija perskaičiuota', ok: false };   // server-B3 (trainer_id null)
     m = r.match(/^Stovykla:\s*(.*)$/);
+    if (m && (a < 0 || /—\s*atšaukta$/.test(r))) return { ic: 'stovykla', head: 'STOVYKLOS EXP GRĄŽINTAS', title: 'Stovyklos EXP grąžintas', body: this.esc(m[1].replace(/\s*—\s*atšaukta$/, '') || 'Stovykla') + ' — klubas pažymėjo, kad nedalyvavai', ok: false };   // v679 (EXP-06)
     if (m) return { ic: 'stovykla', head: 'STOVYKLA PATVIRTINTA', title: 'Stovykla patvirtinta', body: this.esc(m[1] || 'Stovykla'), ok: a >= 0 };
     m = r.match(/^Grupių iššūkis:\s*(.*)$/);
     if (m) return { ic: 'trofejai', head: 'GRUPIŲ IŠŠŪKIS BAIGĖSI', title: 'Grupių iššūkis baigėsi', body: this.esc(m[1] || ''), ok: a >= 0 };
-    if (/^Karjeros archyvas/.test(r)) return { ic: 'archyvas', head: 'KELIO ARCHYVAS', title: 'Kelio archyvas', body: this.esc(r), ok: true };
+    if (/^Karjeros archyvas/.test(r)) return { ic: 'archyvas', head: 'KELIO ARCHYVAS', title: 'Kelio archyvas', body: 'Perėjai į 14+ — ankstesnis Kelio EXP išsaugotas, tavo EXP ir lygis nepasikeitė', ok: true, noAmt: true };   // v679 (EXP-14): ne naujas EXP
     return a >= 0
       ? { ic: 'zvaigzde', head: 'TRENERIO ĮVERTINIMAS', title: 'Trenerio įvertinimas', body: this.esc(r || 'Už pastangas'), ok: true }
       : { ic: 'ispejimas', head: 'TRENERIO PASTABA', title: 'Trenerio pastaba', body: this.esc(r || 'Pasikalbėk su treneriu'), ok: false };
@@ -46029,7 +46034,7 @@ const KidExp = {
   toast(adj) {
     if (!adj || this.LIVE_SKIP.test(adj.reason || '')) return;
     const f = this.fmt(adj.reason, adj.exp_change);
-    showToast(`${ico(f.ic)} ${f.head}\n\n${f.body}\n${this.amtTxt(adj.exp_change)}`, f.ok ? 'success' : 'error', null, f.ok ? { confetti: 15, sound: 'exp' } : { sound: 'send' });
+    showToast(`${ico(f.ic)} ${f.head}\n\n${f.body}${f.noAmt ? '' : '\n' + this.amtTxt(adj.exp_change)}`, f.ok ? 'success' : 'error', null, f.ok && !f.noAmt ? { confetti: 15, sound: 'exp' } : { sound: 'send' });
     if (adj.id && typeof KidInfo !== 'undefined') KidInfo.seen([`adj-${adj.id}`]);   // v676 (VP-22): parodyta — varpelyje nebe „nauja"
   },
   // Praleisti (programėlė buvo uždaryta): ≤2 — po vieną, daugiau — viena suvestinė. Pirmą kartą įrenginyje po v630 senesni nei 3 min. tik pažymimi.
@@ -46076,7 +46081,7 @@ const KidExp = {
     });
     const items = rows.filter(a => Number(a.exp_change) && !this.BELL_SKIP.test(a.reason || '')).map(a => {
       const f = this.fmt(a.reason, a.exp_change);
-      return { id: `adj-${a.id}`, icon: ico(f.ic), title: f.title, body: `${f.body} · ${this.amtTxt(a.exp_change)}`, time: a.created_at, link: null };
+      return { id: `adj-${a.id}`, icon: ico(f.ic), title: f.title, body: f.noAmt ? f.body : `${f.body} · ${this.amtTxt(a.exp_change)}`, time: a.created_at, link: null };
     });
     const k = `spobu_kid_${currentKid.id}_adj_bell_init`;
     let init = null; try { init = localStorage.getItem(k); } catch (e) { }
@@ -47860,7 +47865,7 @@ const MenPdf = {
     if (c.belt) S.push(`Išlaikė diržo egzaminą — ${B(E(c.belt))}.`);
     if (c.lvl && c.toNext != null) S.push(`Iki LVL ${Number(c.lvl) + 1} liko ${B(Number(c.toNext) + ' EXP')}.`);
     if (!S.length) S.push(`${nm} dar tik pradeda — pirmieji pasiekimai atsiras čia.`);
-    const nx = mSch > 0 && mPres < mSch ? 'Nepraleisti nė vienos savaitės treniruotės — už pilną savaitę +15 EXP, už pilną mėnesį +100 EXP.'
+    const nx = mSch > 0 && mPres < mSch ? 'Nepraleisti nė vienos savaitės treniruotės — už pilną savaitę +15 EXP, už pilną mėnesį +100 EXP (kai treneris pažymi bent pusę mėnesio treniruočių).'
       : (mSch > 0 ? 'Nepraleido nė vienos treniruotės — taip ir toliau!' : '');
     return `<div class="kal-card" style="margin:0 0 10px;padding:13px 14px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1.5px;color:var(--mut);">${E(String(c.monN || mon).toUpperCase())} ŽODŽIAIS</div>
