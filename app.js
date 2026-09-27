@@ -15371,7 +15371,8 @@ function _gcCalendarRange() {
   const days = Math.max(1, Math.ceil((end - now) / 86400000));
   return { start: ymd(now), end: ymd(end), label: `Galioja iki ${ymd(end).slice(5)} · dar ${days} d.` };
 }
-function _gcTierExp(first, rnk){
+function _gcTierExp(first, rnk, total){
+  if (total != null && !(Number(total) > 0)) return 0;   // v681 (EXP-15, savininkas 09-27): grupė be indėlio EXP negauna — kaip serveryje
   const f = Math.min(GROUP_CHALLENGE_EXP_CAP, Math.max(0, first||0));
   return rnk===1 ? f : rnk===2 ? Math.round(f*7/10) : rnk===3 ? Math.round(f*5/10) : Math.round(f*3/10);   // v679 (X11): sveikais skaičiais — 45×0.7 nebeapvalina į 31 (serveris 32)
 }
@@ -15864,7 +15865,7 @@ async function _checkClubChallengeResultsKid(){
       if (!st || !st.length) continue;
       const mine = st.find(r=>r.g_id===gid);
       if (!mine) continue;
-      const gotExp = (typeof _gcTierExp==='function') ? _gcTierExp(c.winner_exp, mine.rnk) : (mine.rnk===1 ? c.winner_exp : 0);
+      const gotExp = (typeof _gcTierExp==='function') ? _gcTierExp(c.winner_exp, mine.rnk, mine.total_val) : (mine.rnk===1 ? c.winner_exp : 0);
       _showClubChallengeResultPopup(c.title, mine.rnk, st.length, mine.g_name, mine.rnk===1, gotExp);
       break;
     }
@@ -17448,7 +17449,7 @@ async function _kidGroupChallengesScreen(){
           </div>
         </div>`);
       } else {
-        const gotExp = (typeof _gcTierExp==='function') ? _gcTierExp(ch.winner_exp, rnk) : 0;
+        const gotExp = (typeof _gcTierExp==='function') ? _gcTierExp(ch.winner_exp, rnk, total) : 0;
         arch.push(`<div onclick="viewChallengeStandings('${ch.id}', ${titleArg})" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #6B7280;opacity:.9;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
             <div style="flex:1;min-width:0;">
@@ -31926,7 +31927,7 @@ async function _trainerGroupChallenges(){
         const rnk = mine ? +mine.rnk : N;
         const total = mine ? (+mine.total_val||0) : 0;
         const medal = rnk===1?''+ico('medalis')+'':rnk===2?''+ico('medalis')+'':rnk===3?''+ico('medalis')+'':`${rnk}.`;
-        const gotExp = (typeof _gcTierExp==='function') ? _gcTierExp(ch.winner_exp, rnk) : 0;
+        const gotExp = (typeof _gcTierExp==='function') ? _gcTierExp(ch.winner_exp, rnk, total) : 0;
         arr.push(`<div onclick="viewChallengeStandings('${ch.id}', ${titleArg})" style="background:var(--card);border:.5px solid var(--bdr);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid #6B7280;opacity:.9;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
             <div style="flex:1;min-width:0;">
@@ -46436,7 +46437,7 @@ const KidGrupe = {
     const left = ch.ends_on ? Math.max(0, Math.ceil((new Date(ch.ends_on + 'T23:59:59') - new Date()) / 86400000)) : null;
     const titleArg = this.esc(JSON.stringify(String(ch.title || '')));
     if (ch.is_active === false) {   // baigęsi (≤14 d.): tavo grupės vieta ir gautas EXP
-      const rk = mine ? n(mine.rnk) : null, exp = (rk && ch.exp_awarded && typeof _gcTierExp === 'function') ? _gcTierExp(ch.winner_exp, rk) : 0;
+      const rk = mine ? n(mine.rnk) : null, exp = (rk && ch.exp_awarded && typeof _gcTierExp === 'function') ? _gcTierExp(ch.winner_exp, rk, mine.total_val) : 0;
       return `<div style="border-top:.5px solid var(--bdr);margin-top:8px;padding-top:7px;display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="min-width:0;"><div style="font-size:9.5px;font-weight:800;letter-spacing:1px;color:var(--mut);">${ico('trofejai')} BAIGĖSI · ${this.esc(String(ch.title || '').toUpperCase())}</div><div style="font-size:11.5px;font-weight:800;margin-top:2px;">${rk ? `${this.mineWord()} grupė ${rk} vieta iš ${rows.length}` : `${rows.length} grupės`}${exp ? ` · <span style="color:#FFD700;">+${exp} EXP</span>` : ''}</div></div><span style="flex:none;font-size:10px;color:var(--br);font-weight:800;cursor:pointer;" onclick="viewChallengeStandings('${ch.id}', ${titleArg})">Lentelė ›</span></div>`;
     }
     let h = `<div style="font-size:9.5px;font-weight:800;letter-spacing:1px;color:#EAB308;margin:8px 0 6px;">${ico('trofejai')} GRUPIŲ IŠŠŪKIS · ${this.esc(String(ch.title || '').toUpperCase())}</div>`;
@@ -46997,7 +46998,7 @@ const TevDalin = Object.assign(Object.create(Postai), {
 // Vardų erdvė TevIvykiai, naujų globalių nėra; DOM id prefiksas tev-iv-.
 const TevIvykiai = {
   COLORS: ['#3B82F6', '#A855F7', '#22C55E', '#F59E0B', '#EC407A', '#14B8A6'],
-  ICO: { challenge: 'tikslas', comp: 'medalis', belt: 'dirzas', coach: 'zvaigzde', duel: 'dvikova', duel_invite: 'dvikova', level: 'augimas', reminder: 'laikmatis', season: 'trofejai', access: 'grupe' },   // v667: + prisijungė kitas tėvas   // v650: + Premium priminimai; v651: + sezono apžvalga
+  ICO: { challenge: 'tikslas', comp: 'medalis', belt: 'dirzas', coach: 'zvaigzde', revert: 'atnaujinti', bonus: 'lankomumas', duel: 'dvikova', duel_invite: 'dvikova', level: 'augimas', reminder: 'laikmatis', season: 'trofejai', access: 'grupe' },   // v667: + prisijungė kitas tėvas   // v650: + Premium priminimai; v651: + sezono apžvalga
   filter: 'all', rows: [], sub: null, _opened: false,   // _opened — šiame varpelio atidaryme jau perjungta į „Vaikai"
   esc(s) { return typeof escapeHtml === 'function' ? escapeHtml(String(s == null ? '' : s)) : ''; },
   kids() { return (typeof parentKids !== 'undefined' && Array.isArray(parentKids)) ? parentKids : []; },
